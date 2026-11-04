@@ -4,7 +4,7 @@ import {
   parseTimecode, quantize, removeClips, sliceTimeline, snapTargets, snapTime, splitClip, timelineDuration, timelineLooks,
   trimClip,
   type Timeline, type TimelineClip, type TimelineTrack,
-} from '@/lib/video-timeline';
+} from '@/lib/video-timeline-model';
 
 /** A 4-second clip of media `a`, unless told otherwise. */
 const clip = (id: string, p: Partial<TimelineClip> = {}): TimelineClip => ({ id, media: 'a', start: 0, in: 0, out: 4, ...p });

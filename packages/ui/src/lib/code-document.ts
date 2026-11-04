@@ -1,13 +1,13 @@
 /* The text behind an editable CodeEditor, and what editing does to it, as plain functions: no DOM and no React.
 
-   A document is an array of lines, on the same model as the rest of lib/code-editor.ts: lines from 0 and columns in UTF-16
+   A document is an array of lines, on the same model as the rest of lib/code-editor-model.ts: lines from 0 and columns in UTF-16
    code units. An edit replaces one continuous range with one text, whatever made it, so a change can be reported, undone
    and followed through every cache the same way. Commands look at the document and a selection and say which edit to
    make; applying it is one call in one place. */
 import {
   comparePositions, isCollapsed, isWordCode, orderedSelection,
   type CodePosition, type CodeSelection, type LineEdit, type LineMetrics, type LineSource, type RowMap,
-} from '@/lib/code-editor';
+} from '@/lib/code-editor-model';
 
 /* ── Lines ── */
 
@@ -58,7 +58,7 @@ export interface AppliedEdit extends CodeEdit {
 /** What made an edit, which also decides how undo groups it. */
 export type CodeEditOrigin = 'input' | 'delete' | 'newline' | 'indent' | 'paste' | 'cut' | 'composition' | 'undo' | 'redo' | 'value';
 
-/** The lines an edit touched, for the caches in lib/code-editor.ts. */
+/** The lines an edit touched, for the caches in lib/code-editor-model.ts. */
 export function lineEditOf(edit: AppliedEdit): LineEdit {
   return {
     fromLine: edit.from.line,

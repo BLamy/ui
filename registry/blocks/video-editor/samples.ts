@@ -1,5 +1,5 @@
 import type { Ffmpeg } from '@/lib/ffmpeg';
-import { layoutTrack, timelineId, type Timeline } from '@/lib/video-timeline';
+import { layoutTrack, timelineId, type Timeline } from '@/lib/video-timeline-model';
 import { TITLE_MEDIA, type TitleData } from './titles';
 
 /* Sample media, made in the browser by FFmpeg's own test sources, so the block ships no media files: three 6-second

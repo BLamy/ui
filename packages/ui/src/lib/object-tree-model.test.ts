@@ -4,7 +4,7 @@ import {
   invokeGetterOfValue, isNodeExpandable, isValueNode, jsonOfValue, nodeFromValue, planRanges, rangeBucketSize, rangeBuckets, rangeLabel,
   rebaseTreeState, retryLoad, rowText, setRowOpen, settleGetter, settleLoad, startGetter, startLoad,
   type ObjectTreeNode, type ObjectTreeRow, type ObjectTreeState,
-} from '@/lib/object-tree';
+} from '@/lib/object-tree-model';
 import { previewText, type ValuePreview } from '@/lib/object-tree-value';
 
 const str = (value: string): ValuePreview => ({ type: 'string', value });

@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { FilterBar, FilterToolbar } from '@/components/ui/filter';
 import { FilterInput } from '@/components/ui/filter-input';
-import type { Filter, FilterField } from '@/lib/filter';
+import type { Filter, FilterField } from '@/lib/filter-model';
 
 afterEach(cleanup);
 

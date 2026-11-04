@@ -12,7 +12,7 @@ import {
 import {
   lowerBound, stopAxis, stripHeight,
   type TraceAxis, type TraceKey, type TraceLane, type TraceRange, type TraceRequest, type TraceStop, type TraceTone,
-} from '@/lib/trace-timeline';
+} from '@/lib/trace-timeline-model';
 import { Phone } from '../stories/frame';
 
 /* ── A one-hour session: three lanes, about 400,000 marks and 300 stops. Seeded, with no clock, so every run draws the

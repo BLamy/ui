@@ -3,7 +3,7 @@
   "title": "ObjectTree logic",
   "description": "ObjectTree's logic as plain functions: nodes, ranges for large collections, what's loaded and open, the rows they make, and nodes from any live value.",
   "files": [
-    "lib/object-tree.ts"
+    "lib/object-tree-model.ts"
   ],
   "exports": [
     "nodeFromValue",

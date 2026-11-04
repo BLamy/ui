@@ -20,7 +20,7 @@ import { Icon, type IconShape } from '@/lib/icon';
 import { usePlaybackClock } from '@/lib/playback';
 import { BLProvider } from '@/lib/theme';
 import { cn } from '@/lib/utils';
-import { clipDuration, removeClips, timelineDuration, type Timeline, type TimelineClip, type TimelineTrack } from '@/lib/video-timeline';
+import { clipDuration, removeClips, timelineDuration, type Timeline, type TimelineClip, type TimelineTrack } from '@/lib/video-timeline-model';
 import { useActions } from './actions';
 import { ExportDialog } from './export-dialog';
 import { Inspector } from './inspector';

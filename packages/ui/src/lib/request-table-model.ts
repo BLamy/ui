@@ -1,5 +1,5 @@
 import { formatBytes } from '@/lib/format-bytes';
-import type { RowId } from '@/lib/log-list';
+import type { RowId } from '@/lib/log-list-model';
 import { formatDuration } from '@/lib/sql-format';
 
 /* ══ RequestTable's pure logic ══

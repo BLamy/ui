@@ -9,7 +9,7 @@
    `renderTimeline` runs it on a runner (lib/ffmpeg) and returns the file. Decoders get one or two threads each: every
    FFmpeg thread is a Web Worker. ══ */
 import { mediaFileName, type Ffmpeg, type FfmpegProgress } from '@/lib/ffmpeg';
-import { clipDuration, lookFfmpeg, timelineDuration, type Timeline, type TimelineClip, type TimelineFormat } from '@/lib/video-timeline';
+import { clipDuration, lookFfmpeg, timelineDuration, type Timeline, type TimelineClip, type TimelineFormat } from '@/lib/video-timeline-model';
 
 export interface RenderMedia {
   file: Blob;

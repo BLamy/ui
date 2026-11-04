@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
 import { ObjectTree } from '@/components/ui/object-tree';
-import { nodeFromValue, type ObjectTreeGetterResult, type ObjectTreeNode } from '@/lib/object-tree';
+import { nodeFromValue, type ObjectTreeGetterResult, type ObjectTreeNode } from '@/lib/object-tree-model';
 import type { ValuePreview } from '@/lib/object-tree-value';
 import { Phone } from '../stories/frame';
 

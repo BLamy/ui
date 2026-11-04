@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { FilterBar } from '@/components/ui/filter'
-import { matchFilters, serializeFilters, type Filter, type FilterField } from '@/lib/filter'
+import { matchFilters, serializeFilters, type Filter, type FilterField } from '@/lib/filter-model'
 
 interface Task {
   title: string

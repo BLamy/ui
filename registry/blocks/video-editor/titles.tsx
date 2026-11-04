@@ -1,4 +1,4 @@
-import type { TimelineClip, TimelineFormat } from '@/lib/video-timeline';
+import type { TimelineClip, TimelineFormat } from '@/lib/video-timeline-model';
 
 /* Titles: a title clip plays no file (its media is TITLE_MEDIA) and keeps its text and style in `clip.data`. One SVG
    draws it, at the project's size: the preview shows that SVG as an image, and a render rasterizes the same SVG to a

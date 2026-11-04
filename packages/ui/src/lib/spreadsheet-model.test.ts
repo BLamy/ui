@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   binScale, columnHistogram, columnNumbers, histogramCpu, inferColumnType, parseCellDate, parseCellNumber, selectionStats,
   sortKeys, sortPermutationCpu, sortRows,
-} from '@/lib/spreadsheet';
+} from '@/lib/spreadsheet-model';
 
 describe('parseCellNumber', () => {
   it('reads the ways spreadsheets write numbers', () => {

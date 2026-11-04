@@ -1,5 +1,5 @@
 import { ObjectTree } from '@/components/ui/object-tree'
-import type { ObjectTreeNode } from '@/lib/object-tree'
+import type { ObjectTreeNode } from '@/lib/object-tree-model'
 import type { ValuePreview } from '@/lib/object-tree-value'
 import { ThemeScope } from '@/lib/theme'
 

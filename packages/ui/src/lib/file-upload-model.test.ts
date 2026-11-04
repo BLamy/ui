@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   describeAccept, describeRules, entriesFromFileList, fileKind, matchesAccept, readDropItems, rejectionMessage,
   validateFiles, xhrUpload, type UploadFile,
-} from '@/lib/file-upload';
+} from '@/lib/file-upload-model';
 import { formatBytes } from '@/lib/format-bytes';
 
 const f = (name: string, size = 10, type = 'text/plain', lastModified = 1) => {

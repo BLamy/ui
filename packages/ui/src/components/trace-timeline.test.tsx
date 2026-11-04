@@ -4,7 +4,7 @@ import { StrictMode, createRef, useState } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ListRow } from '@/components/ui/list';
 import { TraceTimeline, traceTimelineVariants, type TraceTimelineHandle, type TraceTimelineProps } from '@/components/ui/trace-timeline';
-import type { TraceActivity, TraceLane, TraceRange, TraceStop } from '@/lib/trace-timeline';
+import type { TraceActivity, TraceLane, TraceRange, TraceStop } from '@/lib/trace-timeline-model';
 
 const RANGE: TraceRange = { start: 0, end: 3_600_000 };
 const LENGTH = 600;

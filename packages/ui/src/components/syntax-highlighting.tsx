@@ -4,7 +4,7 @@ import {
   CodeEditor, CodeEditorContent, CodeEditorCopyButton, CodeEditorHeader, CodeEditorTitle, SyntaxTokens, codeEditorVariants, useCodeEditor, useSyntaxTokens,
   type CodeEditorContentProps, type CodeEditorCopyButtonProps, type CodeEditorHandle, type CodeEditorProps, type SyntaxTokensState, type UseSyntaxTokensOptions,
 } from '@/components/ui/code-editor';
-import type { CodeLineRange } from '@/lib/code-editor';
+import type { CodeLineRange } from '@/lib/code-editor-model';
 import type { SyntaxEngine } from '@/lib/syntax';
 
 /* ══ SyntaxHighlighting — the name CodeEditor's read-only snippets had first. Every part here calls CodeEditor with `readOnly`,

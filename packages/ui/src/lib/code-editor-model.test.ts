@@ -5,7 +5,7 @@ import {
   markersInRange, movePosition, nextCellWindow, nextLineState, nextRowWindow, orderedSelection, originOf, physicalSize, revealScroll, selectionCells,
   selectionText, splitCodeLines, toPhysicalScroll, toVirtualScroll, visibleCells, visibleRows, wordAt, wrapRowMap, wrappedSpan,
   type CodeToken, type LexEmit, type LineEdit,
-} from '@/lib/code-editor';
+} from '@/lib/code-editor-model';
 
 const never = () => false;
 /** The quickest of a few runs, in ms: a slow run says the machine was busy, and only a quick one says anything about the code. */

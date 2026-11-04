@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { TraceTimeline } from '@/components/ui/trace-timeline'
-import type { TraceLane, TraceStop } from '@/lib/trace-timeline'
+import type { TraceLane, TraceStop } from '@/lib/trace-timeline-model'
 
 const MINUTE = 60_000
 const RANGE = { start: 0, end: 10 * MINUTE }

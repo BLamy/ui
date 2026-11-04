@@ -3,7 +3,7 @@
   "title": "Trace timeline model",
   "description": "The math and drawing behind TraceTimeline: linear and by-what-happened axes, stop selection and clustering, per-pixel pooling by binary search over sorted arrays, scrub speeds and re-anchoring, ruler ticks and time formatting, and one canvas drawing for both orientations.",
   "files": [
-    "lib/trace-timeline.ts",
+    "lib/trace-timeline-model.ts",
     "lib/trace-timeline-draw.ts"
   ],
   "exports": [

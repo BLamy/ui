@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { RequestLink, RequestTable, type RequestColumn, type RequestTableHandle } from '@/components/ui/request-table';
 import { Slider, SliderThumb, SliderTrack } from '@/components/ui/slider';
 import { Icon } from '@/lib/icon';
-import { formatLogTime, type RowId } from '@/lib/log-list';
+import { formatLogTime, type RowId } from '@/lib/log-list-model';
 import { usePlaybackClock, usePlaybackState } from '@/lib/playback';
-import { requestTimeRange, type RequestRow, type RequestTone } from '@/lib/request-table';
+import { requestTimeRange, type RequestRow, type RequestTone } from '@/lib/request-table-model';
 import { BLProvider } from '@/lib/theme';
 import { Phone as PhoneFrame } from '../stories/frame';
 

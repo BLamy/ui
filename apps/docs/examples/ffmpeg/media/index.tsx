@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Filmstrip } from '@/components/ui/filmstrip'
 import { Waveform } from '@/components/ui/waveform'
 import { FfmpegProvider, useFfmpeg, useFfmpegSupport, useMediaFrames, useMediaInfo, useMediaPeaks } from '@/lib/ffmpeg/react'
-import { formatTimecode } from '@/lib/video-timeline'
+import { formatTimecode } from '@/lib/video-timeline-model'
 
 // The hooks a media library or a timeline uses: what a file holds, filmstrip
 // frames and waveform peaks. Each file is worked on once and shared, however

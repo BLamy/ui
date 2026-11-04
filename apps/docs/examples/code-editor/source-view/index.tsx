@@ -1,5 +1,5 @@
 import { CodeEditor } from '@/components/ui/code-editor'
-import { splitCodeLines } from '@/lib/code-editor'
+import { splitCodeLines } from '@/lib/code-editor-model'
 
 const SOURCE = `import { useEffect, useState } from 'react'
 

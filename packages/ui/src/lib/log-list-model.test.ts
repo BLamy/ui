@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import {
   RowHeights, RowIdIndex, RowTimes, countLogLevels, followTop, formatLogTime, logRowText, nodeText, normalizeLogLevel, rowKeyTarget, rowRange, rowsChange,
-} from '@/lib/log-list';
+} from '@/lib/log-list-model';
 
 describe('RowHeights', () => {
   /** The same answers as adding up an array by hand. */

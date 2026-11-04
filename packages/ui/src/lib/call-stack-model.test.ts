@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCallStackRows, callStackRowOffset, fileBaseName, frameText, fullLocation, reuseCallStackRows, runLabel, shortLocation,
   type CallStackFrame, type CallStackRow, type CallStackSection,
-} from '@/lib/call-stack';
+} from '@/lib/call-stack-model';
 
 const app = (id: string): CallStackFrame => ({ id, functionName: id, location: { file: `/src/${id}.ts`, line: 1 } });
 const fw = (id: string, label?: string): CallStackFrame => ({ id, functionName: id, kind: 'framework', ...(label ? { label } : {}) });

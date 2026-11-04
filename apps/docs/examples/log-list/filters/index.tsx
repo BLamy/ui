@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { FilterBar, FilterToolbar } from '@/components/ui/filter'
 import { FilterInput } from '@/components/ui/filter-input'
 import { LogList } from '@/components/ui/log-list'
-import { matchFilters, type Filter, type FilterField } from '@/lib/filter'
-import { LOG_LEVELS, countLogLevels, nodeText, normalizeLogLevel, type LogLevel, type LogRow } from '@/lib/log-list'
+import { matchFilters, type Filter, type FilterField } from '@/lib/filter-model'
+import { LOG_LEVELS, countLogLevels, nodeText, normalizeLogLevel, type LogLevel, type LogRow } from '@/lib/log-list-model'
 
 const SOURCES = ['app.tsx:42', 'cart.tsx:118', 'api.ts:31', 'store.ts:204']
 const LEVELS: LogLevel[] = ['log', 'log', 'debug', 'log', 'info', 'log', 'warn', 'log', 'debug', 'log', 'log', 'error']

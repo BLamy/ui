@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, type ReactNode } from 'react';
-import type { Timeline, TimelineFormat } from '@/lib/video-timeline';
+import type { Timeline, TimelineFormat } from '@/lib/video-timeline-model';
 
 /* The editor's state: the project (name, format, timeline) with undo history, the media library and the selection.
    Each `commit` is one undo step; commits that share a `coalesce` key within a second (a slider being dragged) fold

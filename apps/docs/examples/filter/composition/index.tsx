@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { FilterChip, FilterMenu, useFilters } from '@/components/ui/filter'
 import { Icon } from '@/lib/icon'
-import { serializeFilters, type Filter, type FilterField } from '@/lib/filter'
+import { serializeFilters, type Filter, type FilterField } from '@/lib/filter-model'
 
 const fields: FilterField[] = [
   { id: 'plan', label: 'Plan', icon: 'tag', kind: 'select', options: [{ value: 'free', label: 'Free' }, { value: 'pro', label: 'Pro' }, { value: 'team', label: 'Team' }] },

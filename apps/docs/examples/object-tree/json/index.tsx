@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ObjectTree } from '@/components/ui/object-tree'
-import { nodeFromValue, type ObjectTreeNode } from '@/lib/object-tree'
+import { nodeFromValue, type ObjectTreeNode } from '@/lib/object-tree-model'
 import { previewText } from '@/lib/object-tree-value'
 import { ThemeScope } from '@/lib/theme'
 

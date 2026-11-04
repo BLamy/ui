@@ -5,7 +5,7 @@ import {
   type CodeEditorChange, type CodeEditorGutter, type CodeEditorHandle, type CodeEditorProps, type CodeEditorSelection,
 } from '@/components/ui/code-editor';
 import { lineAfterEdit } from '@/lib/code-document';
-import { MAX_PAGE_LINES } from '@/lib/code-editor';
+import { MAX_PAGE_LINES } from '@/lib/code-editor-model';
 import { STORE_SOURCE, generatedLine, halfMillionLines, minifiedCode } from '../stories/code-samples';
 import { Phone as Frame } from '../stories/frame';
 

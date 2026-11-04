@@ -11,7 +11,7 @@ import {
   adjacentStop, chooseTicks, clampView, formatTraceTime, layoutRail, layoutStrip, linearAxis, moveScrub, nearestMark, panWindow, pinchWindow, pixelEdges, placeRailCard, placeStripCard,
   railDashInset, requestAt, rescaleScrub, resolutionAt, rowAt, sameLanes, scrubPosition, selectStops, startScrub, stopsByTime, stripHeight, traceSwell, viewWindow, windowView, zoomWindow,
   type TraceActivity, type TraceAxis, type TraceKey, type TraceLane, type TraceRange, type TraceRequest, type TraceRow, type TraceScrub, type TraceStop, type TraceStopMark, type TraceTone, type TraceWindow,
-} from '@/lib/trace-timeline';
+} from '@/lib/trace-timeline-model';
 import {
   TraceBuffers, drawTraceData, drawTraceOverlay, groupRequests, toneColor,
   type TraceColors, type TraceFrame, type TraceLaneActivity,

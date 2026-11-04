@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { List, ListRow, ListSection } from '@/components/ui/list'
 import { TraceTimeline } from '@/components/ui/trace-timeline'
-import { stopAxis, type TraceKey, type TraceRange } from '@/lib/trace-timeline'
+import { stopAxis, type TraceKey, type TraceRange } from '@/lib/trace-timeline-model'
 import { RANGE, session } from './data'
 
 const ROWS = [

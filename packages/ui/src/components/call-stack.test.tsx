@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CallStack } from '@/components/ui/call-stack';
-import type { CallStackFrame } from '@/lib/call-stack';
+import type { CallStackFrame } from '@/lib/call-stack-model';
 
 // The rows are virtualized: give the list a size to lay them out in.
 beforeEach(() => {

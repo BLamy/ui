@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { RequestTable } from '@/components/ui/request-table'
 import { Slider, SliderThumb, SliderTrack } from '@/components/ui/slider'
-import type { RequestRow } from '@/lib/request-table'
+import type { RequestRow } from '@/lib/request-table-model'
 
 const PATHS = ['api/cart', 'api/products', 'assets/chunk-a81.js', 'img/product.webp', 'api/checkout']
 

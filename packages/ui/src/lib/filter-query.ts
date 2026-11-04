@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createFilter, type DateValue, type Filter, type FilterField, type FilterOperator, type FilterOption, type RelativeUnit } from '@/lib/filter';
+import { createFilter, type DateValue, type Filter, type FilterField, type FilterOperator, type FilterOption, type RelativeUnit } from '@/lib/filter-model';
 import { loadModel, parseWith, type Clause, type Field, type Schema, type Weights } from '@/lib/gpu-query';
 import { stem, withinOneEdit } from '@/lib/gpu-query/schema';
 

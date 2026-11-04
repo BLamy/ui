@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { RequestLink, RequestTable } from '@/components/ui/request-table'
-import type { RowId } from '@/lib/log-list'
-import type { RequestRow } from '@/lib/request-table'
+import type { RowId } from '@/lib/log-list-model'
+import type { RequestRow } from '@/lib/request-table-model'
 
 type Row = RequestRow & { other: RowId; otherLabel: string }
 

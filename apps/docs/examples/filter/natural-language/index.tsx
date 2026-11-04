@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { FilterBar, FilterToolbar } from '@/components/ui/filter'
 import { FilterInput } from '@/components/ui/filter-input'
-import { matchFilters, type Filter } from '@/lib/filter'
+import { matchFilters, type Filter } from '@/lib/filter-model'
 import { NOW, fields, issues, type Issue } from './issues'
 
 // FilterInput sits inside the FilterBar and applies into it. Type a sentence — "urgent bugs assigned to bob",

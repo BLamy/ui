@@ -7,7 +7,7 @@ import { FfmpegError, type Ffmpeg, type FfmpegProgress } from '@/lib/ffmpeg';
 import { formatBytes } from '@/lib/format-bytes';
 import { Icon } from '@/lib/icon';
 import { buildRender, type RenderContainer, type RenderMedia, type RenderPlan, type RenderQuality } from '@/lib/video-render';
-import { timelineDuration, type Timeline, type TimelineFormat } from '@/lib/video-timeline';
+import { timelineDuration, type Timeline, type TimelineFormat } from '@/lib/video-timeline-model';
 import type { MediaItem, Project } from './store';
 import { isTitle, titleData, titlePng } from './titles';
 

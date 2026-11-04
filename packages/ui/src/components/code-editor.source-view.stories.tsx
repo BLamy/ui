@@ -6,7 +6,7 @@ import {
   CodeEditor, type CodeEditorGutter, type CodeEditorHandle, type CodeEditorLineDecoration, type CodeEditorMarker,
 } from '@/components/ui/code-editor';
 import { Popover, PopoverTrigger } from '@/components/ui/popover';
-import { splitCodeLines } from '@/lib/code-editor';
+import { splitCodeLines } from '@/lib/code-editor-model';
 import { createGpuCodeHighlight } from '@/lib/code-editor-gpu';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';

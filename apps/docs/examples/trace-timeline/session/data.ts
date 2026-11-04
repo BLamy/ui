@@ -1,4 +1,4 @@
-import { lowerBound, type TraceLane, type TraceRange, type TraceRequest, type TraceStop } from '@/lib/trace-timeline'
+import { lowerBound, type TraceLane, type TraceRange, type TraceRequest, type TraceStop } from '@/lib/trace-timeline-model'
 import type { TraceFetchActivity } from '@/components/ui/trace-timeline'
 
 /* A one-hour session on one clock: three lanes, about 400,000 marks and 300 stops, in bursts with idle time between them.

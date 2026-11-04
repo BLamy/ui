@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { getReplayDevtools, replayDevtoolsAt } from '@brett_lamy/docstream/replay';
 import { LogList, LogRowContent, type LogListHandle, type LogRowState } from '@/components/ui/log-list';
 import { RequestTable } from '@/components/ui/request-table';
-import type { LogRow } from '@/lib/log-list';
+import type { LogRow } from '@/lib/log-list-model';
 
 afterEach(cleanup);
 

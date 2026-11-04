@@ -11,7 +11,7 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 ```tsx
 import { ObjectTree } from '@/components/ui/object-tree'
 import { ObjectValue } from '@/components/ui/object-value'
-import { nodeFromValue } from '@/lib/object-tree'
+import { nodeFromValue } from '@/lib/object-tree-model'
 ```
 {% endtab %}
 {% tab title="npm" %}

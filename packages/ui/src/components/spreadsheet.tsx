@@ -11,7 +11,7 @@ import { parseCsv, stringifyCsv } from '@/lib/csv';
 import {
   columnHistogram, columnNumbers, inferColumnType, selectionStats, sortRows, GPU_MIN_ROWS,
   type SpreadsheetHistogram, type SpreadsheetEngine, type SpreadsheetRanOn, type SpreadsheetSort, type SpreadsheetSortDirection,
-} from '@/lib/spreadsheet';
+} from '@/lib/spreadsheet-model';
 
 /* ══ Spreadsheet — a grid of string cells, with the heavy work on the GPU ══
    Rows and columns are virtualized: only the cells in view (plus a few) are in the DOM, so a million-row CSV scrolls

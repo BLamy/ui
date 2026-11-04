@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildRender, type RenderMedia, type RenderOptions } from '@/lib/video-render';
-import { layoutTrack, type Timeline, type TimelineClip, type TimelineTrack } from '@/lib/video-timeline';
+import { layoutTrack, type Timeline, type TimelineClip, type TimelineTrack } from '@/lib/video-timeline-model';
 
 const file = (name: string, type: string) => new File(['x'], name, { type });
 const media: Record<string, RenderMedia> = {

@@ -10,7 +10,7 @@ import { Popover } from '@/components/ui/popover';
 import {
   buildCallStackRows, callStackRowOffset, frameText, fullLocation, reuseCallStackRows, shortLocation,
   type CallStackFrame, type CallStackLocation, type CallStackRow, type CallStackSection,
-} from '@/lib/call-stack';
+} from '@/lib/call-stack-model';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 

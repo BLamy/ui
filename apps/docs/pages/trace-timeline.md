@@ -10,7 +10,7 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import { TraceTimeline } from '@/components/ui/trace-timeline'
-import { linearAxis, stopAxis } from '@/lib/trace-timeline'
+import { linearAxis, stopAxis } from '@/lib/trace-timeline-model'
 ```
 {% endtab %}
 {% tab title="npm" %}

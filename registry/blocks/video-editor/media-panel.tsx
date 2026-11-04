@@ -9,7 +9,7 @@ import { useMediaFrames, useMediaPeaks } from '@/lib/ffmpeg/react';
 import { formatBytes } from '@/lib/format-bytes';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { formatTimecode } from '@/lib/video-timeline';
+import { formatTimecode } from '@/lib/video-timeline-model';
 import { useEditor, type MediaItem } from './store';
 
 /* The media library: drop or browse for files (or make the samples), then drag a card onto a track, or press its +

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { LogList } from '@/components/ui/log-list'
 import { Segmented } from '@/components/ui/segmented'
-import type { LogRow } from '@/lib/log-list'
+import type { LogRow } from '@/lib/log-list-model'
 
 const TRACE = ['at readPrice (cart.tsx:118:24)', 'at CartRow (cart.tsx:96:12)', 'at renderWithHooks (react-dom.js:15486:18)'].join('\n')
 const LONG = '{ id: 812, sku: "A-812", qty: 2, price: 47.99, tags: ["sale", "new"], warehouse: "ams-1", reserved: false, note: "held for the customer until the payment has gone through" }'

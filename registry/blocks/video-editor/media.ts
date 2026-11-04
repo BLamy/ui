@@ -1,6 +1,6 @@
 import { FfmpegError, type Ffmpeg } from '@/lib/ffmpeg';
 import { probeMedia } from '@/lib/ffmpeg/react';
-import { timelineId } from '@/lib/video-timeline';
+import { timelineId } from '@/lib/video-timeline-model';
 import type { MediaItem } from './store';
 
 /* Bringing files in: each gets an id and an object URL for the preview, then a probe for its kind, length and size.

@@ -11,7 +11,7 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 ```tsx
 import { VideoTimeline } from '@/components/ui/video-timeline'
 import { usePlaybackClock } from '@/lib/playback'
-import { splitClip } from '@/lib/video-timeline'
+import { splitClip } from '@/lib/video-timeline-model'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -38,7 +38,7 @@ The timeline is controlled. It draws `timeline` and calls `onChange` once per ge
 ```tsx
 import { VideoTimeline } from '@/components/ui/video-timeline'
 import { usePlaybackClock } from '@/lib/playback'
-import { timelineDuration } from '@/lib/video-timeline'
+import { timelineDuration } from '@/lib/video-timeline-model'
 
 const clock = usePlaybackClock()
 const [timeline, setTimeline] = useState(start)

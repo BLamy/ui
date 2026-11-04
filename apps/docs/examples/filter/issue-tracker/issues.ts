@@ -1,4 +1,4 @@
-import type { FilterField } from '@/lib/filter'
+import type { FilterField } from '@/lib/filter-model'
 
 export interface Issue {
   id: string

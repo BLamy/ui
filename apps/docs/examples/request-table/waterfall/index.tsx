@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { RequestTable } from '@/components/ui/request-table'
 import { Slider, SliderThumb, SliderTrack } from '@/components/ui/slider'
-import { formatLogTime } from '@/lib/log-list'
-import type { RequestRow, RequestTone } from '@/lib/request-table'
+import { formatLogTime } from '@/lib/log-list-model'
+import type { RequestRow, RequestTone } from '@/lib/request-table-model'
 
 const ROUTES: { path: string; method: string; type: string; size: number; tone: RequestTone }[] = [
   { path: 'api/cart', method: 'GET', type: 'fetch', size: 1840, tone: 'primary' },

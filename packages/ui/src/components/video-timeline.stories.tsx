@@ -5,7 +5,7 @@ import { VideoTimeline, type TimelineMediaInfo } from '@/components/ui/video-tim
 import { Waveform } from '@/components/ui/waveform';
 import { usePlaybackClock } from '@/lib/playback';
 import { BLProvider } from '@/lib/theme';
-import { layoutTrack, timelineDuration, updateTrack, type Timeline, type TimelineClip, type TimelineTrack } from '@/lib/video-timeline';
+import { layoutTrack, timelineDuration, updateTrack, type Timeline, type TimelineClip, type TimelineTrack } from '@/lib/video-timeline-model';
 
 /* ── Synthetic media: no files, no FFmpeg — the same pixels on every run ── */
 

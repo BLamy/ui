@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { FileDropZone, FileUploadButton } from '@/components/ui/file-upload'
 import { ReplayPreview, getReplayMeta, replayDemoEvents, type ReplayEvent } from '@/components/ui/replay-preview'
 import { Icon } from '@/lib/icon'
-import type { FileEntry } from '@/lib/file-upload'
+import type { FileEntry } from '@/lib/file-upload-model'
 
 // Drop an rrweb recording (.rrweb, .json, or either gzipped) on the frame and it
 // plays. Drop another on the player to swap it. No file at hand? Download the

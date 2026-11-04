@@ -545,11 +545,11 @@ export type { SpreadsheetProps, SpreadsheetHandle, SpreadsheetCell, SpreadsheetS
 export {
   parseCellNumber, parseCellDate, inferColumnType, columnNumbers, sortKeys, sortPermutationCpu, sortTextPermutation, sortRows,
   selectionStats, columnHistogram, histogramCpu, binScale, GPU_MIN_ROWS, MAX_BINS,
-} from './lib/spreadsheet';
+} from './lib/spreadsheet-model';
 export type {
   SpreadsheetColumnType, SpreadsheetSortDirection, SpreadsheetSort, SpreadsheetEngine, SpreadsheetRanOn, SpreadsheetSortResult,
   SpreadsheetEngineOptions, SelectionStats, SpreadsheetHistogram,
-} from './lib/spreadsheet';
+} from './lib/spreadsheet-model';
 export { parseCsv, stringifyCsv, csvField, detectDelimiter, delimiterForPath } from './lib/csv';
 export type { CsvDelimiter, CsvFormat, CsvParseResult, CsvParseOptions } from './lib/csv';
 
@@ -559,10 +559,10 @@ export {
   DATE_PRESETS, FILTER_OPERATORS, RELATIVE_UNITS, coerceFilter, createFilter, createFilterId, dateRange, defaultOperator, describeFilter, describeValue,
   emptyValue, isDateValue, isFilterComplete, matchFilters, matchesFilters, operatorLabel, operatorsFor, parseFilters, serializeFilters, toTime,
   withOperator, withValue,
-} from './lib/filter';
+} from './lib/filter-model';
 export type {
   DateOptions, DatePreset, DateValue, Filter, FilterField, FilterKind, FilterOperator, FilterOption, FilterValue, MatchOptions, RelativeUnit,
-} from './lib/filter';
+} from './lib/filter-model';
 export {
   FilterBar, FilterToolbar, FilterMenu, FilterList, FilterChip, FilterClear, FilterMatch, FilterValueEditor, useFilters, useFilterBar, useOptionalFilterBar,
   filterBarVariants, filterToolbarVariants, filterChipVariants,
@@ -589,11 +589,11 @@ export type {
 export {
   useFileUpload, useFilePreview, xhrUpload, matchesAccept, describeAccept, describeRules, fileKind, validateFiles,
   readDropItems, entriesFromFileList, rejectionMessage,
-} from './lib/file-upload';
+} from './lib/file-upload-model';
 export type {
   UseFileUploadOptions, FileUploadState, UploadFile, UploadFn, UploadContext, UploadResult, FileStatus, FileEntry, FileRules,
   RejectionCode, RejectionContext, RejectionMessages, XhrUploadOptions, ReadDropOptions, FileKind,
-} from './lib/file-upload';
+} from './lib/file-upload-model';
 
 export { formatBytes } from './lib/format-bytes';
 
@@ -660,10 +660,10 @@ export {
   clipDuration, clipEnd, sourceTime, trackDuration, timelineDuration, quantize, clipsAt, findClip, timelineId,
   layoutTrack, updateClip, updateTrack, removeClips, splitClip, trimClip, moveClip, insertClip, magneticIndex,
   sliceTimeline, snapTargets, snapTime, formatTimecode, parseTimecode, timelineLooks, lookCss, lookFfmpeg,
-} from './lib/video-timeline';
+} from './lib/video-timeline-model';
 export type {
   Timeline, TimelineTrack, TimelineClip, TimelineFormat, TimelineLook, TrackKind, ClipFrame, TrimLimits, PlaceOptions,
-} from './lib/video-timeline';
+} from './lib/video-timeline-model';
 export { buildRender, renderTimeline, renderMime } from './lib/video-render';
 export type { RenderMedia, RenderContainer, RenderQuality, RenderOptions, RenderPlan, RenderTimelineOptions } from './lib/video-render';
 export { createPlayback, usePlaybackClock, usePlaybackState } from './lib/playback';
@@ -702,8 +702,8 @@ export type {
 // Debugging parts
 export { TraceTimeline, traceTimelineVariants } from './components/trace-timeline';
 export type { TraceTimelineProps, TraceTimelineHandle, TraceValueInfo, TraceDrawStats, TraceFetchActivity } from './components/trace-timeline';
-export { linearAxis, stopAxis, advanceAlong, selectStops, formatTraceTime, TRACE_SCRUB_SPEEDS } from './lib/trace-timeline';
-export type { TraceActivity, TraceAxis, TraceDensity, TraceDiamonds, TraceKey, TraceLane, TraceMarkSeries, TraceRange, TraceRequest, TraceScrubSpeed, TraceStop, TraceStopMark, TraceThread, TraceTone, TraceWindow } from './lib/trace-timeline';
+export { linearAxis, stopAxis, advanceAlong, selectStops, formatTraceTime, TRACE_SCRUB_SPEEDS } from './lib/trace-timeline-model';
+export type { TraceActivity, TraceAxis, TraceDensity, TraceDiamonds, TraceKey, TraceLane, TraceMarkSeries, TraceRange, TraceRequest, TraceScrubSpeed, TraceStop, TraceStopMark, TraceThread, TraceTone, TraceWindow } from './lib/trace-timeline-model';
 export {
   CodeEditor, CodeEditorHeader, CodeEditorTitle, CodeEditorCopyButton, CodeEditorContent, useCodeEditor, SyntaxTokens, useSyntaxTokens,
   codeEditorVariants, codeEditorLineVariants, codeEditorGutterCellVariants,
@@ -713,7 +713,7 @@ export type {
   CodeEditorLineDecoration, CodeEditorScrollOptions, CodeEditorScrollTarget, CodeEditorPosition, CodeEditorSelection, CodeEditorAlign, CodeHighlight, CodeHighlightContext, CodeLineRange,
   UseSyntaxTokensOptions, SyntaxTokensState,
 } from './components/code-editor';
-export { splitCodeLines, lexCodeLine, tooBigForPage, MAX_PAGE_LINES, MAX_PAGE_LINE_LENGTH, MAX_PAGE_CHARS } from './lib/code-editor';
+export { splitCodeLines, lexCodeLine, tooBigForPage, MAX_PAGE_LINES, MAX_PAGE_LINE_LENGTH, MAX_PAGE_CHARS } from './lib/code-editor-model';
 export { splitEditorLines, lineAfterEdit } from './lib/code-document';
 export { createGpuCodeHighlight } from './lib/code-editor-gpu';
 export type { GpuCodeHighlightOptions } from './lib/code-editor-gpu';
@@ -721,22 +721,22 @@ export { ObjectTree, objectTreeRowVariants } from './components/object-tree';
 export type { ObjectTreeProps } from './components/object-tree';
 export { ObjectValue } from './components/object-value';
 export type { ObjectValueProps } from './components/object-value';
-export { childrenOfValue, nodeFromValue } from './lib/object-tree';
-export type { ObjectTreeGetterResult, ObjectTreeNode, ObjectTreeRoot } from './lib/object-tree';
+export { childrenOfValue, nodeFromValue } from './lib/object-tree-model';
+export type { ObjectTreeGetterResult, ObjectTreeNode, ObjectTreeRoot } from './lib/object-tree-model';
 export { copyTextOf, previewFromValue, previewText, previewTokens } from './lib/object-tree-value';
 export type { ValueMapEntry, ValuePreview, ValuePreviewOptions, ValueProperty, ValueTint, ValueToken, ValueType } from './lib/object-tree-value';
 export { CallStack, callStackRowVariants } from './components/call-stack';
 export type { CallStackProps } from './components/call-stack';
-export { fileBaseName, fullLocation, shortLocation } from './lib/call-stack';
-export type { CallStackFrame, CallStackFrameKind, CallStackLocation } from './lib/call-stack';
+export { fileBaseName, fullLocation, shortLocation } from './lib/call-stack-model';
+export type { CallStackFrame, CallStackFrameKind, CallStackLocation } from './lib/call-stack-model';
 export { LogList, LogRowContent, logListVariants } from './components/log-list';
 export type { LogListProps, LogListHandle, LogRowContentProps, LogRowState } from './components/log-list';
-export { LOG_LEVELS, countLogLevels, formatLogTime, logRowText, nodeText, normalizeLogLevel } from './lib/log-list';
-export type { LogLevel, LogLevelCounts, LogRow, RowId } from './lib/log-list';
+export { LOG_LEVELS, countLogLevels, formatLogTime, logRowText, nodeText, normalizeLogLevel } from './lib/log-list-model';
+export type { LogLevel, LogLevelCounts, LogRow, RowId } from './lib/log-list-model';
 export { RequestLink, RequestTable, REQUEST_COLUMNS, requestTableVariants } from './components/request-table';
 export type { RequestColumn, RequestColumnId, RequestLinkProps, RequestTableHandle, RequestTableProps } from './components/request-table';
-export { isRequestFailed, requestDisplayName, requestDurationText, requestName, requestSizeText, requestStatusText, requestTimeRange, requestTone, sortRequests } from './lib/request-table';
-export type { RequestRow, RequestSort, RequestSortDirection, RequestSortValue, RequestColumnSize, RequestTimeRange, RequestTone } from './lib/request-table';
+export { isRequestFailed, requestDisplayName, requestDurationText, requestName, requestSizeText, requestStatusText, requestTimeRange, requestTone, sortRequests } from './lib/request-table-model';
+export type { RequestRow, RequestSort, RequestSortDirection, RequestSortValue, RequestColumnSize, RequestTimeRange, RequestTone } from './lib/request-table-model';
 export { Terminal, terminalVariants } from './components/terminal';
 export type { TerminalProps, TerminalHandle } from './components/terminal';
 export { createTerminalShell, createLineState, applyKey, applyCompletion, readKeys, renderLine, eraseLine, wordAtCursor, formatColumns, cellWidth, textWidth, stripAnsi, advance, toTerminalNewlines, trimTranscript, MAX_HISTORY } from './lib/terminal-line';

@@ -5,7 +5,7 @@ import { usePlaybackClock, type Playback } from '@/lib/playback';
 import {
   layoutTrack, timelineDuration, timelineLooks,
   type Timeline, type TimelineClip, type TimelineFormat, type TimelineLook,
-} from '@/lib/video-timeline';
+} from '@/lib/video-timeline-model';
 import { Phone } from '../stories/frame';
 
 /* ── Synthetic media: SVG cards as images (no video files, no FFmpeg), so every run shows the same pixels ── */

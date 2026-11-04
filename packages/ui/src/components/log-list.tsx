@@ -12,7 +12,7 @@ import { Icon, type IconShape } from '@/lib/icon';
 import {
   RowTimes, followTop, formatLogTime, logRowText, normalizeLogLevel, rowKeyTarget, rowsChange,
   type LogLevel, type LogRow, type RowId, type RowRange,
-} from '@/lib/log-list';
+} from '@/lib/log-list-model';
 import { RowWindow, isRowPress, tabThroughGrid, tabbablesIn, type RowAlign, type RowFlush } from '@/lib/log-list-window';
 import { selectableText } from '@/lib/primitives';
 import { useControllableState } from '@/lib/controllable-state';

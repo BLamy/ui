@@ -4,7 +4,7 @@ import { Input, TextField as AriaTextField } from 'react-aria-components';
 import { cva } from 'class-variance-authority';
 import { Button } from '@/components/ui/button';
 import { FilterChip, useOptionalFilterBar } from '@/components/ui/filter';
-import { describeFilter, type Filter, type FilterField } from '@/lib/filter';
+import { describeFilter, type Filter, type FilterField } from '@/lib/filter-model';
 import { useFilterQuery, warmFilterQuery, type UseFilterQueryOptions } from '@/lib/filter-query';
 import { Icon, type IconShape } from '@/lib/icon';
 import { selectableText } from '@/lib/primitives';

@@ -63,25 +63,46 @@ function emit(path, content) {
 // Converts a stylesheet to shadcn's nested-object form: rules → { selector: { prop: value } }, at-rules with a body →
 // { '@name params': { … } }. Imports, layer-order statements and `@source` are skipped (the app owns those).
 function cssToRegistry(css) {
+  // A stylesheet can open the same at-rule, or repeat a selector, any number of times.
+  const merge = (into, from) => {
+    for (const [key, value] of Object.entries(from)) {
+      const both = typeof value === 'object' && typeof into[key] === 'object';
+      into[key] = both ? merge(into[key], value) : value;
+    }
+    return into;
+  };
   const convert = (container) => {
     const out = {};
     container.each((node) => {
       if (node.type === 'decl') out[node.prop] = node.important ? `${node.value} !important` : node.value;
       else if (node.type === 'rule') {
-        const body = convert(node);
-        out[node.selector.replace(/\s+/g, ' ')] = { ...(out[node.selector.replace(/\s+/g, ' ')] ?? {}), ...body };
+        const selector = node.selector.replace(/\s+/g, ' ');
+        out[selector] = merge(out[selector] ?? {}, convert(node));
       } else if (node.type === 'atrule') {
         if (['import', 'source', 'plugin', 'theme'].includes(node.name)) return;
         if (!node.nodes) {
           if (node.name === 'custom-variant') out[`@custom-variant ${node.params}`] = {};
           return; // `@layer a, b;`
         }
-        out[`@${node.name} ${node.params}`.trim()] = convert(node);
+        const key = `@${node.name} ${node.params}`.trim();
+        out[key] = merge(out[key] ?? {}, convert(node));
       }
     });
     return out;
   };
   return convert(postcss.parse(css));
+}
+
+// All of the stylesheet has to reach the base item: it's how a copied part gets its classes.
+function checkCssArrived(css, converted) {
+  const walk = (container, out, where) =>
+    container.each((node) => {
+      if (node.type !== 'rule' && (node.type !== 'atrule' || !node.nodes || ['import', 'source', 'plugin', 'theme'].includes(node.name))) return;
+      const key = node.type === 'rule' ? node.selector.replace(/\s+/g, ' ') : `@${node.name} ${node.params}`.trim();
+      if (!out[key]) errors.push(`packages/ui/src/styles.css: "${where}${key}" didn't reach the bl-ui item`);
+      else walk(node, out[key], `${where}${key} > `);
+    });
+  walk(postcss.parse(css), converted, '');
 }
 
 /* ── bl-ui: the base item — tokens and framework CSS ── */
@@ -102,9 +123,12 @@ function themeVars() {
 function baseItem() {
   const tokens = read('packages/ui/src/tokens.css');
   const customVariant = tokens.match(/@custom-variant\s+dark\s+([^;]+);/)?.[1];
+  const styles = read('packages/ui/src/styles.css');
+  const converted = cssToRegistry(styles);
+  checkCssArrived(styles, converted);
   const css = {
     ...(customVariant ? { [`@custom-variant dark ${customVariant}`]: {} } : {}),
-    ...cssToRegistry(read('packages/ui/src/styles.css')),
+    ...converted,
   };
   return {
     name: 'bl-ui',
@@ -174,6 +198,12 @@ const definedAnywhere = new Set();
 for (const mod of graph.modules) {
   const ex = moduleExports(`${SRC}/${mod}`);
   for (const v of [...ex.values, ...ex.types]) definedAnywhere.add(v);
+}
+// shadcn's CLI goes by a file's last path part when it installs, so it turns `@/lib/x` into `@/components/ui/x` if
+// both are being installed, and a part ends up importing from itself. So a lib file can't be named after a component.
+for (const mod of graph.modules) {
+  const name = mod.startsWith('lib/') && !mod.slice('lib/'.length).includes('/') ? mod.slice('lib/'.length).replace(/\.tsx?$/, '') : null;
+  if (name && graph.modules.some((m) => m === `components/${name}.tsx` || m === `components/${name}.ts`)) errors.push(`${mod} has the same name as a component, which shadcn's CLI gets wrong: call it lib/${name}-model`);
 }
 const componentItems = [...graph.items.values()].map((it) => {
   const m = it.manifest ?? {};

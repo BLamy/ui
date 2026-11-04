@@ -3,7 +3,7 @@ import {
   FILTER_OPERATORS, coerceFilter, createFilter, dateRange, defaultOperator, describeFilter, matchFilters, matchesFilters,
   operatorLabel, operatorsFor, parseFilters, serializeFilters, toTime, withOperator, withValue,
   type DateValue, type Filter, type FilterField, type FilterOperator, type FilterValue,
-} from '@/lib/filter';
+} from '@/lib/filter-model';
 
 const fields: FilterField[] = [
   { id: 'status', label: 'Status', kind: 'select', options: [{ value: 'open', label: 'Open' }, { value: 'closed', label: 'Closed' }, { value: 'wip', label: 'In progress' }] },

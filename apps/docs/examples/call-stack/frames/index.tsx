@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { CallStack } from '@/components/ui/call-stack'
-import type { CallStackFrame } from '@/lib/call-stack'
+import type { CallStackFrame } from '@/lib/call-stack-model'
 import { ThemeScope } from '@/lib/theme'
 
 const REACT_DOM = 'https://shop.example/_next/static/chunks/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js'

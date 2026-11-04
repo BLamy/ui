@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { PlaybackControls, VideoPreview } from '@/components/ui/video-preview'
 import { VideoTimeline } from '@/components/ui/video-timeline'
 import { usePlaybackClock } from '@/lib/playback'
-import { layoutTrack, timelineDuration, type Timeline } from '@/lib/video-timeline'
+import { layoutTrack, timelineDuration, type Timeline } from '@/lib/video-timeline-model'
 
 // A preview and a timeline on one clock. The preview plays the edit live (no
 // render): each clip near the playhead is an element in its frame, faded,

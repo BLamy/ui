@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import {
   clipDuration, findClip, formatTimecode, timelineDuration, timelineLooks, updateClip,
   type ClipFrame, type TimelineClip, type TimelineLook, type TimelineTrack,
-} from '@/lib/video-timeline';
+} from '@/lib/video-timeline-model';
 import { useActions } from './actions';
 import { MediaPreview } from './media-panel';
 import { useEditor } from './store';

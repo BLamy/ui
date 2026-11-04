@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { CodeEditor } from '@/components/ui/code-editor'
 import { Switch } from '@/components/ui/switch'
-import { splitCodeLines } from '@/lib/code-editor'
+import { splitCodeLines } from '@/lib/code-editor-model'
 
 const LINES = splitCodeLines(`export function formatTitle(todo, width = 40) {
   const mark = todo.done ? '[x]' : '[ ]';

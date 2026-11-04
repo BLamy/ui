@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { FilterBar, FilterChip } from '@/components/ui/filter';
-import type { Filter, FilterField } from '@/lib/filter';
+import type { Filter, FilterField } from '@/lib/filter-model';
 import { Pad } from '../stories/frame';
 
 const fields: FilterField[] = [

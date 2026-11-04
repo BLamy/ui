@@ -9,7 +9,7 @@
 import {
   TRACE_RULER, TRACE_WAVE_REST, laneEnd, poolBuckets, poolDensity, poolPresence, sortedTimes,
   type DensityPool, type TraceAxis, type TraceKey, type TraceLane, type TraceRequest, type TraceRow, type TraceStopMark, type TraceTick, type TraceTone, type TraceWindow,
-} from '@/lib/trace-timeline';
+} from '@/lib/trace-timeline-model';
 
 export interface TraceColors {
   foreground: string;

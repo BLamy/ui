@@ -14,7 +14,7 @@ import {
   applyExpanded, buildRows, childrenOfValue, copyTextOfNode, createTreeState, errorText, invokeGetterOfValue, isValueNode, rebaseTreeState,
   retryLoad, rowText, setRowOpen, settleGetter, settleLoad, startGetter, startLoad,
   type ObjectTreeGetterResult, type ObjectTreeNode, type ObjectTreeRoot, type ObjectTreeRow, type ObjectTreeRows, type ObjectTreeState,
-} from '@/lib/object-tree';
+} from '@/lib/object-tree-model';
 import { previewText } from '@/lib/object-tree-value';
 import { cn } from '@/lib/utils';
 

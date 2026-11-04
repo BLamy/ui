@@ -2,7 +2,7 @@
 import { StrictMode, useState } from 'react';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useFilePreview, useFileUpload, type UploadContext, type UploadFile, type UseFileUploadOptions } from '@/lib/file-upload';
+import { useFilePreview, useFileUpload, type UploadContext, type UploadFile, type UseFileUploadOptions } from '@/lib/file-upload-model';
 
 const file = (name: string, size = 10, type = 'text/plain') => new File([new Uint8Array(size)], name, { type, lastModified: 1 });
 

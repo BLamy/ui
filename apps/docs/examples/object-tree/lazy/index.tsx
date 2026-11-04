@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ObjectTree } from '@/components/ui/object-tree'
-import type { ObjectTreeNode } from '@/lib/object-tree'
+import type { ObjectTreeNode } from '@/lib/object-tree-model'
 import { ThemeScope } from '@/lib/theme'
 
 const later = <T,>(ms: number, make: () => T) => new Promise<T>((resolve, reject) => {

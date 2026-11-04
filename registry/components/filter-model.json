@@ -2,7 +2,7 @@
   "name": "filter-model",
   "title": "Filter model",
   "description": "The data model behind Filter, with no UI: fields, filters, operator tables per kind, matchFilters (all/any), describeFilter, date presets, and a URL-safe serialize/parse that round-trips.",
-  "files": ["lib/filter.ts"],
+  "files": ["lib/filter-model.ts"],
   "exports": [
     "FILTER_OPERATORS",
     "DATE_PRESETS",

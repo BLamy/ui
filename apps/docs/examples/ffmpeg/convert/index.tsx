@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress'
 import { FfmpegError, mediaFileName } from '@/lib/ffmpeg'
 import { FfmpegProvider, useFfmpeg, useFfmpegSupport, useMediaInfo } from '@/lib/ffmpeg/react'
 import { formatBytes } from '@/lib/format-bytes'
-import { formatTimecode } from '@/lib/video-timeline'
+import { formatTimecode } from '@/lib/video-timeline-model'
 
 // FFmpeg in a worker, like a command line: probe a file, then turn it into an
 // MP3, a GIF or a poster frame, with FFmpeg's own progress. The file never

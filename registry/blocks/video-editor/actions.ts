@@ -3,7 +3,7 @@ import type { Playback } from '@/lib/playback';
 import {
   clipEnd, findClip, insertClip, quantize, removeClips, splitClip, timelineDuration, timelineId,
   type Timeline, type TimelineClip, type TimelineTrack,
-} from '@/lib/video-timeline';
+} from '@/lib/video-timeline-model';
 import { STILL_SECONDS } from './media';
 import { useEditor } from './store';
 import { TITLE_MEDIA } from './titles';

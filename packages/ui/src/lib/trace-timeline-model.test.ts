@@ -5,7 +5,7 @@ import {
   pinchWindow, pixelEdges, placeRailCard, placeStripCard, poolBuckets, poolDensity, poolPresence, railDashInset, requestAt, rescaleScrub, resolutionAt, rowAt, sameLanes, scrubPosition, seekForward,
   selectStops, sortedTimes, speedTier, startScrub, stopAxis, stopsByTime, stripHeight, tickStep, traceSwell, upperBound, viewWindow, windowView, zoomWindow,
   type TraceLane, type TraceRange, type TraceScrub, type TraceScrubContext, type TraceStop, type TraceTone, type TraceWindow,
-} from '@/lib/trace-timeline';
+} from '@/lib/trace-timeline-model';
 
 const HOUR = 3_600_000;
 const RANGE: TraceRange = { start: 0, end: HOUR };

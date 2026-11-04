@@ -9,7 +9,7 @@ The logic behind [FileUpload](https://blamy.github.io/ui/#/file-upload), without
 Copies the source into your project's `lib/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import { useFileUpload, xhrUpload } from '@/lib/file-upload'
+import { useFileUpload, xhrUpload } from '@/lib/file-upload-model'
 ```
 {% endtab %}
 {% tab title="npm" %}

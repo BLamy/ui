@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { Icon } from '@/lib/icon';
 import { usePlaybackState, type Playback } from '@/lib/playback';
 import { cn } from '@/lib/utils';
-import { clipDuration, clipEnd, formatTimecode, lookCss, type Timeline, type TimelineClip, type TimelineFormat, type TimelineTrack } from '@/lib/video-timeline';
+import { clipDuration, clipEnd, formatTimecode, lookCss, type Timeline, type TimelineClip, type TimelineFormat, type TimelineTrack } from '@/lib/video-timeline-model';
 import { Button } from '@/components/ui/button';
 
 /* ══ VideoPreview — a timeline played live in the page ══

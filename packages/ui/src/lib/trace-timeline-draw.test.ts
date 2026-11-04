@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TRACE_RULER, layoutRail, layoutStrip, linearAxis, pixelEdges, selectStops, type TraceLane, type TraceRange, type TraceRow } from '@/lib/trace-timeline';
+import { TRACE_RULER, layoutRail, layoutStrip, linearAxis, pixelEdges, selectStops, type TraceLane, type TraceRange, type TraceRow } from '@/lib/trace-timeline-model';
 import { TraceBuffers, drawTraceData, drawTraceOverlay, groupRequests, toneColor, type TraceColors, type TraceFrame, type TraceScene } from '@/lib/trace-timeline-draw';
 
 const COLORS: TraceColors = {

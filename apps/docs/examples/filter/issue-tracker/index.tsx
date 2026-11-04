@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { FilterBar } from '@/components/ui/filter'
-import { matchFilters, type Filter } from '@/lib/filter'
+import { matchFilters, type Filter } from '@/lib/filter-model'
 import { NOW, fields, issues, priorityColor, type Issue } from './issues'
 
 // A FilterBar owns the chips; the list is derived from them with matchFilters. The Status filter below is the

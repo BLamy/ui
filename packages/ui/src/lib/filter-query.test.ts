@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { Filter, FilterField, FilterOperator, FilterValue } from '@/lib/filter';
+import type { Filter, FilterField, FilterOperator, FilterValue } from '@/lib/filter-model';
 import { buildQuerySchema, clausesToFilters, interpretQuery, matchOption, parseDateText } from '@/lib/filter-query';
 import { loadModel, type Clause, type Weights } from '@/lib/gpu-query';
 

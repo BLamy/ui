@@ -1,5 +1,5 @@
 import { CodeEditor, type CodeHighlight } from '@/components/ui/code-editor'
-import { splitCodeLines } from '@/lib/code-editor'
+import { splitCodeLines } from '@/lib/code-editor-model'
 
 const LINES = splitCodeLines(`# A log, not code
 2026-11-03 09:41:07 INFO  started in 412 ms

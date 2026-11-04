@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { RequestLink, RequestTable, type RequestColumn, type RequestTableHandle } from '@/components/ui/request-table';
-import type { RowId } from '@/lib/log-list';
-import type { RequestRow } from '@/lib/request-table';
+import type { RowId } from '@/lib/log-list-model';
+import type { RequestRow } from '@/lib/request-table-model';
 
 afterEach(cleanup);
 

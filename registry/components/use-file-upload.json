@@ -15,6 +15,6 @@
     "xhrUpload"
   ],
   "files": [
-    "lib/file-upload.ts"
+    "lib/file-upload-model.ts"
   ]
 }

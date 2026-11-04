@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { CallStack } from '@/components/ui/call-stack'
-import type { CallStackFrame } from '@/lib/call-stack'
+import type { CallStackFrame } from '@/lib/call-stack-model'
 import { ThemeScope } from '@/lib/theme'
 
 const walk = (i: number): CallStackFrame => ({

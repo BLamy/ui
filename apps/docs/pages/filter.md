@@ -29,7 +29,7 @@ import {
 {% endtab %}
 {% endtabs %}
 
-The filters themselves are plain data. `FilterBar` and its parts are one view of a small, UI-independent, serializable model (`lib/filter`): fields, operator tables per kind, a pure `matchFilters`, and a URL-safe `serializeFilters` / `parseFilters`. For describing filters in a sentence, see [FilterInput](https://blamy.github.io/ui/#/filter-input).
+The filters themselves are plain data. `FilterBar` and its parts are one view of a small, UI-independent, serializable model (`lib/filter-model`): fields, operator tables per kind, a pure `matchFilters`, and a URL-safe `serializeFilters` / `parseFilters`. For describing filters in a sentence, see [FilterInput](https://blamy.github.io/ui/#/filter-input).
 
 ## Filtering a list
 
@@ -76,7 +76,7 @@ Picking two values on a `select` turns "is" into "is any of" (and back when one 
 ## Matching and the model
 
 ```ts
-import { matchFilters, describeFilter, serializeFilters, parseFilters } from '@/lib/filter'
+import { matchFilters, describeFilter, serializeFilters, parseFilters } from '@/lib/filter-model'
 
 matchFilters(items, filters, fields, (item, fieldId) => item[fieldId], { match: 'all', now })
 // → the items that satisfy the filters, in their original order

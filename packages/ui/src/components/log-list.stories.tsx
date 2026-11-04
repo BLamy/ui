@@ -5,11 +5,11 @@ import { FilterBar, FilterToolbar } from '@/components/ui/filter';
 import { FilterInput } from '@/components/ui/filter-input';
 import { LogList, LogRowContent, type LogListHandle, type LogRowState } from '@/components/ui/log-list';
 import { Slider, SliderThumb, SliderTrack } from '@/components/ui/slider';
-import { matchFilters, type Filter, type FilterField } from '@/lib/filter';
+import { matchFilters, type Filter, type FilterField } from '@/lib/filter-model';
 import { Icon } from '@/lib/icon';
 import {
   LOG_LEVELS, countLogLevels, formatLogTime, normalizeLogLevel, nodeText, type LogLevel, type LogRow,
-} from '@/lib/log-list';
+} from '@/lib/log-list-model';
 import { usePlaybackClock, usePlaybackState } from '@/lib/playback';
 import { BLProvider } from '@/lib/theme';
 import { Phone as PhoneFrame } from '../stories/frame';

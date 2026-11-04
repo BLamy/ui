@@ -5,7 +5,7 @@ import { PlaybackControls } from '@/components/ui/video-preview'
 import { VideoTimeline } from '@/components/ui/video-timeline'
 import { Waveform } from '@/components/ui/waveform'
 import { usePlaybackClock } from '@/lib/playback'
-import { clipEnd, layoutTrack, splitClip, timelineDuration, type Timeline } from '@/lib/video-timeline'
+import { clipEnd, layoutTrack, splitClip, timelineDuration, type Timeline } from '@/lib/video-timeline-model'
 
 // A timeline with a magnetic main track (drag a clip among the others; trim an
 // edge and the rest ripple), a free titles track and music under it. Edits come

@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/component
 import { FilterBar, FilterToolbar } from '@/components/ui/filter';
 import { FilterInput } from '@/components/ui/filter-input';
 import { SearchField } from '@/components/ui/search-field';
-import { matchFilters, serializeFilters, type Filter, type FilterField } from '@/lib/filter';
+import { matchFilters, serializeFilters, type Filter, type FilterField } from '@/lib/filter-model';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import {

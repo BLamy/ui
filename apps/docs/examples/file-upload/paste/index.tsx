@@ -1,5 +1,5 @@
 import { FileDropZone, FileList, FileUpload } from '@/components/ui/file-upload'
-import type { UploadContext } from '@/lib/file-upload'
+import type { UploadContext } from '@/lib/file-upload-model'
 
 // A stand-in for your server (see the basic example).
 function mockUpload(_file: File, { signal, onProgress }: UploadContext) {

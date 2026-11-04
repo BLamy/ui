@@ -5,7 +5,7 @@ import {
   positionAtRow, redoEdit, rowOfPosition, selectedLines, splitEditorLines, tabCommand, undoEdit, wordEndAfter, wordStartBefore,
   type CaretMove, type DeleteContext, type EditCommand, type EditorKey, type MoveContext,
 } from '@/lib/code-document';
-import { LineMetrics, identityRowMap, wrapRowMap, type CodePosition, type CodeSelection } from '@/lib/code-editor';
+import { LineMetrics, identityRowMap, wrapRowMap, type CodePosition, type CodeSelection } from '@/lib/code-editor-model';
 
 const at = (line: number, offset: number): CodePosition => ({ line, offset });
 const range = (anchor: CodePosition, focus: CodePosition): CodeSelection => ({ anchor, focus });

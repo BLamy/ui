@@ -3,7 +3,7 @@ import type { KeyboardEvent } from 'react';
 import { flushSync } from 'react-dom';
 import {
   RowHeights, RowIdIndex, rowRange, rowsChange, type RowId, type RowRange,
-} from '@/lib/log-list';
+} from '@/lib/log-list-model';
 
 /* ══ RowWindow — mounts the rows in view and places them, for LogList and RequestTable ══
    The part renders `range` as direct children of a sizer, each with `data-index`; this class does everything else

@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import {
   describeRules, entriesFromFileList, fileKind, readDropItems, useFileUpload, useFilePreview,
   type FileEntry, type FileKind, type FileRules, type FileUploadState, type UploadFile, type UseFileUploadOptions,
-} from '@/lib/file-upload';
+} from '@/lib/file-upload-model';
 
 /* ══ FileUpload — pick, drop or paste files, see them, send them ══
    Built on react-aria's FileTrigger (the hidden <input type=file>) and DropZone (drag and drop, with a labelled

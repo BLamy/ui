@@ -1,5 +1,5 @@
 import { FileUpload } from '@/components/ui/file-upload'
-import type { UploadContext } from '@/lib/file-upload'
+import type { UploadContext } from '@/lib/file-upload-model'
 
 // A stand-in for your server: steady progress, and a file with "fail" in its
 // name loses the connection once (so Retry has something to do).

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { LogList } from '@/components/ui/log-list'
 import { Slider, SliderThumb, SliderTrack } from '@/components/ui/slider'
-import { formatLogTime, type LogRow } from '@/lib/log-list'
+import { formatLogTime, type LogRow } from '@/lib/log-list-model'
 
 const MESSAGES: Pick<LogRow, 'level' | 'source' | 'message'>[] = [
   { level: 'log', source: 'app.tsx:42', message: 'Rendered <CartPage> in 12 ms' },

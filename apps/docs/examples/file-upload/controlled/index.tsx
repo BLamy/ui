@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileUpload } from '@/components/ui/file-upload'
-import { useFileUpload, type UploadContext, type UploadFile } from '@/lib/file-upload'
+import { useFileUpload, type UploadContext, type UploadFile } from '@/lib/file-upload-model'
 
 // A stand-in for your server (see the basic example).
 function mockUpload(_file: File, { signal, onProgress }: UploadContext) {

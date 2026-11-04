@@ -1,5 +1,5 @@
 import { ObjectTree } from '@/components/ui/object-tree'
-import type { ObjectTreeNode } from '@/lib/object-tree'
+import type { ObjectTreeNode } from '@/lib/object-tree-model'
 import { ThemeScope } from '@/lib/theme'
 
 const ROOT: ObjectTreeNode[] = [

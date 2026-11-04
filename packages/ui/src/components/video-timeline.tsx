@@ -11,7 +11,7 @@ import {
   clipDuration, clipEnd, findClip, formatTimecode, magneticIndex, moveClip, quantize, removeClips, snapTargets, snapTime,
   timelineDuration, trimClip, updateTrack,
   type Timeline, type TimelineClip, type TimelineTrack,
-} from '@/lib/video-timeline';
+} from '@/lib/video-timeline-model';
 import { Toggle } from '@/components/ui/toggle';
 
 /* ══ VideoTimeline — the editing surface for a lib/video-timeline Timeline ══

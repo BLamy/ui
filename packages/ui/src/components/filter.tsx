@@ -25,7 +25,7 @@ import {
   DATE_PRESETS, RELATIVE_UNITS, createFilter, describeFilter, describeValue, isDateValue, isFilterComplete,
   operatorLabel, operatorsFor, withOperator, withValue,
   type DatePreset, type DateValue, type Filter, type FilterField, type FilterOperator, type FilterOption, type FilterValue, type RelativeUnit,
-} from '@/lib/filter';
+} from '@/lib/filter-model';
 import { Icon } from '@/lib/icon';
 import { selectableText } from '@/lib/primitives';
 import { cn } from '@/lib/utils';

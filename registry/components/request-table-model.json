@@ -3,7 +3,7 @@
   "title": "RequestTable logic",
   "description": "RequestTable's logic as plain functions: names, sizes, status text, tones, sorting and the time range rows cover.",
   "files": [
-    "lib/request-table.ts"
+    "lib/request-table-model.ts"
   ],
   "exports": [
     "isRequestFailed",

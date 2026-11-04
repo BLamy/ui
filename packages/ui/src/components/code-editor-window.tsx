@@ -14,7 +14,7 @@ import {
   visibleCells, visibleRows, wordAt, wrapRowMap, wrappedSpan,
   type CodeHighlight, type CodeLineRange, type CodePosition, type CodeSelection, type CodeToken, type CodeEditorAlign, type DisplayPiece, type LineMetrics,
   type LineSource, type RowMap, type SelectionGranularity, type SelectionKey, type Span,
-} from '@/lib/code-editor';
+} from '@/lib/code-editor-model';
 import {
   caretAt, deleteBackwardCommand, deleteForwardCommand, detectIndent, editBetween, editorKeyAction, indentCommand, insertCommand, lineEditOf, mapSelection, moveCaret,
   newlineCommand, redoEdit, rowOfPosition, rowsOfCells, tabCommand, undoEdit,
@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 
 /* ══ CodeEditor's windowed renderer — source of any shape, read-only or editable ══
    A megabyte on one line and half a million lines both scroll and type like twenty lines do, because neither is ever in the
-   DOM: a monospace line is a grid of cells (lib/code-editor.ts), so what's on screen is arithmetic, and only that is rendered.
+   DOM: a monospace line is a grid of cells (lib/code-editor-model.ts), so what's on screen is arithmetic, and only that is rendered.
 
    The element that scrolls holds an empty box the size of the whole file, and a viewport stuck to its corner. Rows and
    their text sit in layers inside the viewport with small coordinates; scrolling writes one transform per layer. So the

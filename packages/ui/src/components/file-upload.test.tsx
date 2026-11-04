@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FileDropZone, FileItem, FileList, FileUpload, FileUploadButton } from '@/components/ui/file-upload';
-import { useFileUpload, type UploadContext, type UploadFile } from '@/lib/file-upload';
+import { useFileUpload, type UploadContext, type UploadFile } from '@/lib/file-upload-model';
 
 const file = (name: string, size = 2048, type = 'text/plain') => new File([new Uint8Array(size)], name, { type, lastModified: 1 });
 

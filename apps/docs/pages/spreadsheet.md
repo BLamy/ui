@@ -116,7 +116,7 @@ Give the Spreadsheet a height (`h-[420px]`, or `flex-1` in a flex column), becau
 The data side has no UI and works on its own, for example to sort rows on a server or in a worker:
 
 ```tsx
-import { sortRows, selectionStats, columnHistogram, columnNumbers } from '@/lib/spreadsheet'
+import { sortRows, selectionStats, columnHistogram, columnNumbers } from '@/lib/spreadsheet-model'
 
 const { order, ranOn, ms } = await sortRows(rows, { column: 2, direction: 'descending' }, { from: 1 })
 const sorted = Array.from(order, (i) => rows[i + 1])

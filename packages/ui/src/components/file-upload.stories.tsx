@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { FileDropZone, FileItem, FileList, FileUpload, FileUploadButton, type FileUploadProps } from '@/components/ui/file-upload';
-import type { UploadFile } from '@/lib/file-upload';
+import type { UploadFile } from '@/lib/file-upload-model';
 import { Pad } from '../stories/frame';
 
 /* Seeded states for the visual-regression suite: files are listed with fixed statuses (no `upload` function is

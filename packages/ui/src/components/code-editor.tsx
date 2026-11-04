@@ -11,7 +11,7 @@ import {
   type CodeEditorPosition, type CodeEditorScrollOptions, type CodeEditorScrollTarget, type CodeEditorSelection,
 } from '@/components/ui/code-editor-window';
 import { CodeDocument, CodeHistory, caretAt } from '@/lib/code-document';
-import { lineSet, tooBigForPage, type CodeHighlight, type CodeLineRange, type CodeSelection } from '@/lib/code-editor';
+import { lineSet, tooBigForPage, type CodeHighlight, type CodeLineRange, type CodeSelection } from '@/lib/code-editor-model';
 import {
   PLAIN_LANGUAGES, codeTokenClass, lexSyntax, peekSyntax, fallbackResult, tokenizeLines, webgpuSupported,
   type CodeToken, type SyntaxEngine, type SyntaxHighlighter, type SyntaxResult,
@@ -36,7 +36,7 @@ export type {
   CodeEditorScrollOptions, CodeEditorScrollTarget, CodeEditorSelection,
 } from '@/components/ui/code-editor-window';
 export { codeEditorGutterCellVariants, codeEditorLineVariants };
-export type { CodeEditorAlign, CodeHighlight, CodeHighlightContext, CodeLineRange } from '@/lib/code-editor';
+export type { CodeEditorAlign, CodeHighlight, CodeHighlightContext, CodeLineRange } from '@/lib/code-editor-model';
 export type { CodeToken, CodeTokenType } from '@/lib/syntax';
 
 /* ── Hook ── */

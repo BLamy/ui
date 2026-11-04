@@ -11,13 +11,13 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useControllableState } from '@/lib/controllable-state';
 import { Icon } from '@/lib/icon';
-import { rowKeyTarget, type RowId, type RowRange } from '@/lib/log-list';
+import { rowKeyTarget, type RowId, type RowRange } from '@/lib/log-list-model';
 import { RowWindow, isRowPress, tabThroughGrid, type RowAlign } from '@/lib/log-list-window';
 import {
   clampColumnWidth, columnTemplate, isRequestFailed, nextRequestSort, playheadShare, requestBar, requestDisplayName, requestDurationText,
   requestSizeText, requestSortValue, requestStatusText, requestTimeRange, requestTone, sortRequests,
   type RequestColumnSize, type RequestRow, type RequestSort, type RequestSortValue, type RequestTimeRange,
-} from '@/lib/request-table';
+} from '@/lib/request-table-model';
 import { formatDuration } from '@/lib/sql-format';
 import { cn } from '@/lib/utils';
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   clampColumnWidth, columnTemplate, isRequestFailed, nextRequestSort, playheadShare, requestBar, requestDisplayName, requestDurationText, requestName,
   requestSizeText, requestSortValue, requestStatusText, requestTimeRange, requestTone, sortRequests,
-} from '@/lib/request-table';
+} from '@/lib/request-table-model';
 
 describe('what a row says', () => {
   it('names a request by the end of its URL', () => {

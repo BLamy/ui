@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ObjectTree } from '@/components/ui/object-tree';
-import { nodeFromValue, type ObjectTreeNode } from '@/lib/object-tree';
+import { nodeFromValue, type ObjectTreeNode } from '@/lib/object-tree-model';
 
 // The rows are virtualized: give the tree a size to lay them out in.
 beforeEach(() => {
