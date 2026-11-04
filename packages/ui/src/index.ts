@@ -31,7 +31,7 @@ export {
 } from './lib/diagram-model';
 export { DIAGRAM_TEXT_CLASS, DIAGRAM_TEXT_MAX_WIDTH, clearTextCache, estimateText, measureText, measureTextGently, nextFrame, onFontsLoaded } from './lib/diagram-text';
 export type { DiagramTextKind, TextMeasurer, TextRun, TextSize } from './lib/diagram-text';
-export { useFontVersion } from './lib/use-font-version';
+export { useFontVersion, useShownVersion } from './lib/use-font-version';
 export { DIAGRAM_ELK_OPTIONS, DiagramLayoutError, createDiagramLayoutEngine, fromElkGraph, layoutDiagram, runLayout, toElkGraph } from './lib/diagram-layout';
 export type { DiagramDraft, DiagramDraftNode, DiagramLayoutEngine, DiagramLayoutOptions, DiagramLayoutResult, ElkGraph } from './lib/diagram-layout';
 export { useDiagramLayout } from './lib/diagram-layout/react';

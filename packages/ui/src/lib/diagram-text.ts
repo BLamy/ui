@@ -86,7 +86,9 @@ const PROBE = 'position:absolute;left:0;top:0;width:0;height:0;overflow:hidden;v
  */
 export function measureText(runs: readonly TextRun[], host?: Element | null, maxWidth = DIAGRAM_TEXT_MAX_WIDTH): TextMeasurer {
   if (typeof document === 'undefined') return (text, kind) => estimateText(text, kind, maxWidth);
-  const parent = host ?? document.body;
+  // Nothing has a size in something that isn't drawn, a `display: none` tab say, so that measures in the page, and a caller
+  // that cares (`useShownVersion`) measures again once it's shown.
+  const parent = host && host.getClientRects().length ? host : document.body;
   const probe = document.createElement('div');
   probe.setAttribute('data-slot', 'diagram-measure');
   probe.setAttribute('aria-hidden', 'true');

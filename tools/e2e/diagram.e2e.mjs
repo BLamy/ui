@@ -4,7 +4,9 @@ import { openDemo } from './helpers.mjs';
 
 /* Diagram, through its docs demos, with real input. */
 
-const zoomOf = (page) => page.locator('[data-slot=diagram-edges]').evaluate((el) => Number(el.style.getPropertyValue('--diagram-z')));
+/** The camera's zoom, from the transform on the board. */
+const realZoom = (page) => page.locator('[data-slot=canvas-board]').evaluate((el) => Number(/scale\(([^)]+)\)/.exec(el.style.transform)[1]));
+const zoomOf = realZoom;
 const strokeOf = (page, selector) => page.locator(selector).first().evaluate((el) => parseFloat(getComputedStyle(el).strokeWidth));
 
 /** ⌘-scrolls to `target`. One wheel event zooms by e^(-delta * 0.009), and at most 50 of delta counts. */
@@ -35,13 +37,13 @@ test.describe('drawing', () => {
 
   for (const target of [0.02, 4]) {
     test(`lines keep their thickness at ${target}`, async ({ page }) => {
-      const before = await zoomOf(page);
-      expect(await strokeOf(page, '[data-slot=diagram-edge]') * before).toBeCloseTo(1.25, 1);
+      const thickness = async (selector) => (await strokeOf(page, selector)) * (await realZoom(page));
+      // The lines' zoom moves in steps of about 9%, so they're within about 4.5% of this.
+      expect(Math.abs((await thickness('[data-slot=diagram-edge]')) - 1.25)).toBeLessThan(0.07);
       await zoomTo(page, target);
-      const z = await zoomOf(page);
-      expect(z).toBeCloseTo(target, 2);
-      expect(await strokeOf(page, '[data-slot=diagram-edge]') * z).toBeCloseTo(1.25, 1);
-      expect(await strokeOf(page, '[data-slot=diagram-divider]') * z).toBeCloseTo(1, 1);
+      expect(await realZoom(page)).toBeCloseTo(target, 2);
+      expect(Math.abs((await thickness('[data-slot=diagram-edge]')) - 1.25)).toBeLessThan(0.07);
+      expect(Math.abs((await thickness('[data-slot=diagram-divider]')) - 1)).toBeLessThan(0.06);
     });
   }
 
@@ -83,7 +85,7 @@ test.describe('drawing', () => {
 test.describe('text', () => {
   /** How far each node's words sit from its edges, in board units. */
   const margins = (scope) => scope.evaluate((root) => {
-    const z = Number(root.querySelector('[data-slot=diagram-edges]').style.getPropertyValue('--diagram-z'));
+    const z = Number(/scale\(([^)]+)\)/.exec(root.querySelector('[data-slot=canvas-board]').style.transform)[1]);
     const out = [];
     for (const node of root.querySelectorAll('[data-slot=diagram-node]')) {
       if (!['node', 'final'].includes(node.dataset.kind)) continue;
@@ -330,14 +332,17 @@ test.describe('editing', () => {
       await zoomTo(page, target);
       await dragBy(page, await blank(page), 60, 60, { release: false });
       const onScreen = await marquee.evaluate((el) => {
-        const z = Number(document.querySelector('[data-slot=diagram-edges]').style.getPropertyValue('--diagram-z'));
+        const z = Number(/scale\(([^)]+)\)/.exec(document.querySelector('[data-slot=canvas-board]').style.transform)[1]);
         const s = getComputedStyle(el);
         // However it's drawn, border or inset shadow: its thickness in board units, times the zoom.
         const border = parseFloat(s.borderTopWidth) || 0;
         const shadow = /inset/.test(s.boxShadow) ? parseFloat(s.boxShadow.match(/(-?[\d.]+)px (-?[\d.]+)px (-?[\d.]+)px (-?[\d.]+)px/)[4]) : 0;
         return (border + shadow) * z;
       });
-      expect(onScreen).toBeCloseTo(1, 1);
+      // Past 100% it's exact. Under 100% it's a border, as it always was, so that no baseline moves, and Chrome floors a border to
+      // a whole pixel: 0.5 to 1 px on screen. That's in E8-T41.
+      if (target > 1) expect(onScreen).toBeCloseTo(1, 1);
+      else { expect(onScreen).toBeGreaterThan(0.45); expect(onScreen).toBeLessThan(1.05); }
       await page.mouse.up();
     }
   });
@@ -347,15 +352,16 @@ test.describe('editing', () => {
     const a = await nodeBox(page, 'a');
     await page.mouse.click(a.x, a.y);
     const ring = () => page.locator('[data-slot=diagram-ring][data-ring-of=a]').evaluate((el) => {
-      const z = Number(document.querySelector('[data-slot=diagram-edges]').style.getPropertyValue('--diagram-z'));
+      const z = Number(/scale\(([^)]+)\)/.exec(document.querySelector('[data-slot=canvas-board]').style.transform)[1]);
       const spreads = [...getComputedStyle(el).boxShadow.matchAll(/(-?[\d.]+)px (-?[\d.]+)px (-?[\d.]+)px (-?[\d.]+)px/g)].map((m) => parseFloat(m[4]));
       return Math.max(...spreads) * z;
     });
-    expect(await ring()).toBeCloseTo(3.6, 1);
+    const near = async () => expect(Math.abs((await ring()) - 3.6)).toBeLessThan(0.2);
+    await near();
     await zoomTo(page, 3.5);
-    expect(await ring()).toBeCloseTo(3.6, 1);
+    await near();
     await zoomTo(page, 0.3);
-    expect(await ring()).toBeCloseTo(3.6, 1);
+    await near();
   });
 
   test('undo and redo come through the same change event, a whole drag at a time', async ({ page }) => {
@@ -1131,5 +1137,43 @@ test.describe('large', () => {
     await page.mouse.click(map.x + 30, map.y + 30);
     await expect.poll(() => page.locator('[data-slot=canvas-board]').getAttribute('style')).not.toBe(before);
     expect((await onScreen(page)).missing).toEqual([]);
+  });
+});
+
+test.describe('in a tab that starts hidden', () => {
+  test('it measures, lays out and fits when it’s shown', async ({ page }) => {
+    await page.goto('/?demo=diagram/hidden&theme=light', { waitUntil: 'load' });
+    await page.getByRole('button', { name: 'Show the tab' }).waitFor({ timeout: 30_000 });
+    await page.waitForTimeout(800);
+    await page.getByRole('button', { name: 'Show the tab' }).click();
+    const sized = page.locator('[data-demo=sized]'), laid = page.locator('[data-demo=laid]');
+    const width = (scope, id) => scope.locator(`[data-node="${id}"]`).evaluate((el) => parseFloat(el.style.width));
+    const natural = (scope, id) => scope.locator(`[data-node="${id}"] [data-slot=diagram-node-label]`).evaluate((el) => {
+      const probe = el.cloneNode(true);
+      probe.style.cssText = 'position:absolute;width:max-content;max-width:none;visibility:hidden';
+      el.parentElement.append(probe);
+      const w = parseFloat(getComputedStyle(probe).width);
+      probe.remove();
+      return Math.ceil(w) + 26;
+    });
+    // Measured, with the size of the words, and not left at what it got while hidden.
+    await expect.poll(async () => (await width(sized, 'one')) === (await natural(sized, 'one'))).toBe(true);
+    await expect.poll(async () => laid.locator('[data-node=one]').count()).toBe(1);
+    await expect.poll(async () => (await width(laid, 'one')) === (await natural(laid, 'one'))).toBe(true);
+    // Fitted to the size it turned out to be: both nodes are inside the canvas.
+    for (const scope of [sized, laid]) {
+      const inside = await scope.evaluate((root) => {
+        const c = root.querySelector('[data-slot=canvas]').getBoundingClientRect();
+        return [...root.querySelectorAll('[data-slot=diagram-node]')].every((el) => {
+          const r = el.getBoundingClientRect();
+          return r.left >= c.left && r.right <= c.right && r.top >= c.top && r.bottom <= c.bottom;
+        });
+      });
+      expect(inside).toBe(true);
+    }
+    // And it doesn't lose anything when it's hidden and shown again.
+    await page.getByRole('button', { name: 'Hide the tab' }).click();
+    await page.getByRole('button', { name: 'Show the tab' }).click();
+    await expect.poll(async () => (await width(sized, 'one')) === (await natural(sized, 'one'))).toBe(true);
   });
 });

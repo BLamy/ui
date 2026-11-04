@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { diagramTextRuns, type DiagramNode } from '@/lib/diagram-model';
 import { createDiagramLayoutEngine, runLayout, toElkGraph, type DiagramDraft, type DiagramLayoutEngine, type DiagramLayoutError, type DiagramLayoutOptions, type DiagramLayoutResult } from '@/lib/diagram-layout';
 import { measureTextGently, nextFrame } from '@/lib/diagram-text';
-import { useFontVersion } from '@/lib/use-font-version';
+import { useFontVersion, useShownVersion } from '@/lib/use-font-version';
 
 export interface UseDiagramLayoutOptions<N = unknown, E = unknown> extends Pick<DiagramLayoutOptions, 'direction' | 'elk' | 'worker'> {
   /** Measure text in here, so its fonts apply. Without it, measuring happens in the page's body. */
@@ -27,6 +27,7 @@ const NOTHING: never[] = [];
 export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N, E>, options: UseDiagramLayoutOptions<N, E> = {}): UseDiagramLayout<N, E> {
   const { direction, elk, worker, host, initial } = options;
   const fonts = useFontVersion();
+  const shown = useShownVersion(host);
   const [state, setState] = useState<{ result: DiagramLayoutResult<N, E> | null; status: UseDiagramLayout['status']; error: UseDiagramLayout['error'] }>(
     () => ({ result: initial ?? null, status: initial ? 'working' : 'pending', error: null }),
   );
@@ -80,9 +81,10 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
       if (!stop.signal.aborted) setState((s) => ({ ...s, status: 'error', error }));
     });
     return () => stop.abort();
-    // `key` stands for the draft and `elk`. `fonts` is here because the words haven't changed, but what they measure has.
+    // `key` stands for the draft and `elk`. `fonts` and `shown` are here because the words haven't changed, but what they
+    // measure has.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, fonts, worker, host]);
+  }, [key, fonts, shown, worker, host]);
 
   useEffect(() => () => {
     engine.current?.dispose();

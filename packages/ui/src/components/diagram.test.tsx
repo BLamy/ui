@@ -101,6 +101,11 @@ describe('Diagram', () => {
 
   it('feeds the zoom to the lines', () => {
     expect(renderToString(<Diagram nodes={[]} defaultCamera={{ x: 0, y: 0, z: 0.5 }} />)).toMatch(/data-slot="diagram-edges"[^>]*--diagram-z:0\.5/);
+    // In steps of about 9%, so that most frames of a zoom don't restyle every line.
+    const lines = (z: number) => Number(/data-slot="diagram-edges"[^>]*--diagram-z:([\d.]+)/.exec(renderToString(<Diagram nodes={[]} defaultCamera={{ x: 0, y: 0, z }} />))![1]);
+    expect(lines(0.5)).toBe(lines(0.51));
+    expect(lines(0.5)).not.toBe(lines(0.55));
+    for (const z of [0.02, 0.1, 0.33, 0.7, 1, 1.7, 2.9, 4]) expect(Math.abs(lines(z) / z - 1)).toBeLessThan(0.05);
     expect(diagramEdgeVariants({ kind: 'event' })).toContain('calc(1.25px/var(--diagram-z))');
   });
 
@@ -123,9 +128,9 @@ describe('Diagram', () => {
   it('fits its content when no camera is given, and honors one that is', () => {
     const nodes: DiagramNode[] = [{ id: 'a', x: 0, y: 0, w: 2000, h: 100 }];
     // The size before anything's measured is 1000 x 700, with 24 px of air: (1000 - 48) / 2000.
-    expect(renderToString(<Diagram nodes={nodes} />)).toContain('--diagram-z:0.476');
-    expect(renderToString(<Diagram nodes={nodes} defaultCamera={{ x: 1, y: 2, z: 3 }} />)).toContain('--diagram-z:3');
-    expect(renderToString(<Diagram nodes={nodes} camera={{ x: 1, y: 2, z: 0.75 }} />)).toContain('--diagram-z:0.75');
+    expect(renderToString(<Diagram nodes={nodes} />)).toMatch(/scale\(0\.476\)/);
+    expect(renderToString(<Diagram nodes={nodes} defaultCamera={{ x: 1, y: 2, z: 3 }} />)).toMatch(/scale\(3\)/);
+    expect(renderToString(<Diagram nodes={nodes} camera={{ x: 1, y: 2, z: 0.75 }} />)).toMatch(/scale\(0\.75\)/);
   });
 
   it('marks the minimap with everything but the root, which would be one solid block', () => {

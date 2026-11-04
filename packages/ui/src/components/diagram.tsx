@@ -11,7 +11,7 @@ import {
   type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramDivider, type DiagramEdge, type DiagramIndex, type DiagramNode, type DiagramPort, type DiagramSelection, type DiagramSide,
 } from '@/lib/diagram-model';
 import { DIAGRAM_TEXT_CLASS, estimateText, measureText, type TextMeasurer } from '@/lib/diagram-text';
-import { useFontVersion } from '@/lib/use-font-version';
+import { useFontVersion, useShownVersion } from '@/lib/use-font-version';
 import { cn } from '@/lib/utils';
 
 /* ══ Diagram — nodes, edges, labels and regions on the Canvas ══
@@ -70,11 +70,32 @@ type EdgeLook = NonNullable<Parameters<typeof diagramEdgeVariants>[0]>['kind'];
 const EDGE_LOOKS: readonly string[] = ['event', 'done', 'invoke', 'always', 'after', 'initial'];
 const edgeLook = (kind: string | undefined): EdgeLook => (kind && EDGE_LOOKS.includes(kind) ? (kind as EdgeLook) : 'event');
 
+/** A diagram can draw thousands of nodes and edges, with only a few looks between them, so each is only worked out once. */
+const once = <A extends string>(make: (key: A) => string) => {
+  const known = new Map<A, string>();
+  return (key: A) => {
+    let v = known.get(key);
+    if (v === undefined) { v = make(key); known.set(key, v); }
+    return v;
+  };
+};
+const edgeClass = once((key: string) => {
+  const [look, selected] = key.split(':');
+  return cn(diagramEdgeVariants({ kind: look as EdgeLook }), selected && 'stroke-primary', 'outline-none focus-visible:stroke-ring focus-visible:[stroke-width:calc(3px/var(--diagram-z))]');
+});
+const nodeBodyClass = once((kind: NonNullable<DiagramNode['kind']>) => diagramNodeVariants({ kind }));
+
 const isContainer = (n: DiagramNode<unknown>) => n.kind === 'compound' || n.kind === 'parallel' || n.kind === 'region' || n.kind === 'root';
 
 /** The zoom below which each kind of text hides: under about 3 px for a node's, and 4.4 px for an edge label's. */
 const NODE_TEXT_ZOOM = 0.25;
 const EDGE_LABEL_ZOOM = 0.4;
+
+const TITLE_CLASS = cn('absolute top-1.5 left-3 whitespace-nowrap text-foreground/70 group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.title);
+const LABEL_CLASS = cn('max-w-full text-center [overflow-wrap:anywhere] group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.label);
+const DETAIL_CLASS = cn('max-w-full text-center text-foreground/70 [overflow-wrap:anywhere] group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.detail);
+const EDGE_LABEL_CLASS = cn('absolute whitespace-nowrap text-foreground/70 group-data-[zoom=far]/diagram:hidden group-data-[zoom=mid]/diagram:hidden', DIAGRAM_TEXT_CLASS.edge);
+const nodeWrapClass = once((radius: string) => cn('absolute outline-none', radius));
 
 /* ── A node ── */
 
@@ -87,12 +108,12 @@ export interface DiagramNodeBodyProps {
 /** How a node looks, by its kind. Use it in `renderNode` to add to what's drawn rather than replacing it. */
 export function DiagramNodeBody({ node, className, style }: DiagramNodeBodyProps) {
   const kind = node.kind ?? 'node';
-  if (kind === 'initial') return <div data-slot="diagram-node-body" className={cn(diagramNodeVariants({ kind }), className)} style={style} />;
+  if (kind === 'initial') return <div data-slot="diagram-node-body" className={className ? cn(nodeBodyClass(kind), className) : nodeBodyClass(kind)} style={style} />;
   if (isContainer(node)) {
     return (
-      <div data-slot="diagram-node-body" className={cn(diagramNodeVariants({ kind }), className)} style={style}>
+      <div data-slot="diagram-node-body" className={className ? cn(nodeBodyClass(kind), className) : nodeBodyClass(kind)} style={style}>
         {node.label ? (
-          <div data-slot="diagram-node-label" className={cn('absolute top-1.5 left-3 whitespace-nowrap text-foreground/70 group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.title)}>
+          <div data-slot="diagram-node-label" className={TITLE_CLASS}>
             {node.label}
             {node.detail ? <span data-slot="diagram-node-detail" className="font-normal"> ({node.detail})</span> : null}
           </div>
@@ -101,9 +122,9 @@ export function DiagramNodeBody({ node, className, style }: DiagramNodeBodyProps
     );
   }
   return (
-    <div data-slot="diagram-node-body" className={cn(diagramNodeVariants({ kind }), className)} style={style}>
-      <div data-slot="diagram-node-label" className={cn('max-w-full text-center [overflow-wrap:anywhere] group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.label)}>{node.label}</div>
-      {node.detail ? <div data-slot="diagram-node-detail" className={cn('max-w-full text-center text-foreground/70 [overflow-wrap:anywhere] group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.detail)}>{node.detail}</div> : null}
+    <div data-slot="diagram-node-body" className={className ? cn(nodeBodyClass(kind), className) : nodeBodyClass(kind)} style={style}>
+      <div data-slot="diagram-node-label" className={LABEL_CLASS}>{node.label}</div>
+      {node.detail ? <div data-slot="diagram-node-detail" className={DETAIL_CLASS}>{node.detail}</div> : null}
     </div>
   );
 }
@@ -137,7 +158,7 @@ const NodeView = memo(function NodeView({ node, selected, selectable, label, ren
       tabIndex={-1}
       aria-label={label}
       aria-pressed={selectable ? !!selected : undefined}
-      className={cn('absolute outline-none', nodeRadius(node))}
+      className={nodeWrapClass(nodeRadius(node))}
       style={{ left: node.x, top: node.y, width: node.w, height: node.h }}
     >
       {renderNode ? renderNode(node) : <DiagramNodeBody node={node} />}
@@ -161,7 +182,7 @@ const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, 
       aria-pressed={selectable ? !!selected : undefined}
       d={d}
       markerEnd={`url(#${arrow}${selected ? '-selected' : look === 'initial' ? '-strong' : ''})`}
-      className={cn(diagramEdgeVariants({ kind: look }), selected && 'stroke-primary', 'outline-none focus-visible:stroke-ring focus-visible:[stroke-width:calc(3px/var(--diagram-z))]')}
+      className={edgeClass(`${look}:${selected ? '1' : ''}`)}
     />
   );
 });
@@ -173,7 +194,7 @@ const EdgeLabel = memo(function EdgeLabel({ edge, box }: { edge: DiagramEdge<unk
       data-edge={edge.id}
       // The edge's own label says this, along with what it joins.
       aria-hidden="true"
-      className={cn('absolute whitespace-nowrap text-foreground/70 group-data-[zoom=far]/diagram:hidden group-data-[zoom=mid]/diagram:hidden', DIAGRAM_TEXT_CLASS.edge)}
+      className={EDGE_LABEL_CLASS}
       style={{ left: box.x, top: box.y }}
     >
       {edge.label}
@@ -349,14 +370,15 @@ interface Snapshot<N, E> {
  *  measured in the real font, and again if the words change or a font turns up later. A drag doesn't measure anything. */
 function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly DiagramNode<any>[], edges: readonly DiagramEdge<any>[], needed: boolean): TextMeasurer {
   const fonts = useFontVersion();
+  const shown = useShownVersion(host);
   const [text, setText] = useState<TextMeasurer>(() => estimateText);
   const words = useMemo(() => (needed ? diagramTextRuns(nodes, edges) : []), [needed, nodes, edges]);
   const key = useMemo(() => words.map((r) => `${r.kind}:${r.text}`).join('\0'), [words]);
   useLayoutEffect(() => {
     if (needed) setText(() => measureText(words, host.current));
-    // `key` stands for `words`. `fonts` is here because what it's measuring hasn't changed, but the answer has.
+    // `key` stands for `words`. `fonts` and `shown` are here because what it's measuring hasn't changed, but the answer has.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [host, key, needed, fonts]);
+  }, [host, key, needed, fonts, shown]);
   return text;
 }
 
@@ -792,6 +814,9 @@ export function Diagram<N = unknown, E = unknown>({
   }, [drawn.containers, drawn.leaves, selectedSets.nodes, ringOn]);
   const marks = useMemo<CanvasMiniMapItem[]>(() => (minimap ? nodes.filter((n) => n.kind !== 'root').map((n) => ({ id: n.id, x: n.x, y: n.y, w: n.w, h: n.h })) : []), [minimap, nodes]);
   const zoom = camera.z < NODE_TEXT_ZOOM ? 'far' : camera.z < EDGE_LABEL_ZOOM ? 'mid' : 'near';
+  // Changing this restyles every line drawn, so it moves in steps of about 9%, a few frames apart, which keeps a line of
+  // 1.25 px within 0.06 px of that. At 2,000 nodes, a change every frame cost 25 ms a frame while zooming.
+  const lineZoom = 2 ** (Math.round(Math.log2(camera.z) * 8) / 8);
   const portDots = useMemo(() => handles.length ? (
     <div data-slot="diagram-ports" className="pointer-events-none absolute top-0 left-0" style={{ '--diagram-z': camera.z } as CSSProperties}>
       {(drawWindow ? handles.filter((h) => h.at.x >= drawWindow.x && h.at.x <= drawWindow.x + drawWindow.w && h.at.y >= drawWindow.y && h.at.y <= drawWindow.y + drawWindow.h) : handles).map((h) => (h.hit.kind === 'end'
@@ -859,12 +884,12 @@ export function Diagram<N = unknown, E = unknown>({
       >
         <div data-slot="diagram-layer" data-zoom={zoom} className="group/diagram pointer-events-none absolute top-0 left-0">
           {containers}
-          <svg data-slot="diagram-edges" role="group" aria-label="Edges" className="absolute top-0 left-0 overflow-visible" width={1} height={1} style={{ '--diagram-z': camera.z } as CSSProperties}>
+          <svg data-slot="diagram-edges" role="group" aria-label="Edges" className="absolute top-0 left-0 overflow-visible" width={1} height={1} style={{ '--diagram-z': lineZoom } as CSSProperties}>
             {lines}
           </svg>
           {leaves}
           {labelViews}
-          {rings.length ? <div data-slot="diagram-rings" className="absolute top-0 left-0" style={{ '--diagram-z': camera.z } as CSSProperties}>{rings}</div> : null}
+          {rings.length ? <div data-slot="diagram-rings" className="absolute top-0 left-0" style={{ '--diagram-z': lineZoom } as CSSProperties}>{rings}</div> : null}
         </div>
         {portDots}
         {guides.length ? <CanvasGuides guides={guides} /> : null}
