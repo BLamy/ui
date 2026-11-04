@@ -6667,7 +6667,7 @@
       "name": "state-diagram",
       "type": "registry:ui",
       "title": "StateDiagram",
-      "description": "An XState machine on a Diagram, drawn from machine.root: compound and parallel states, initial markers, final states, and all of always, after, invoke and guards labelled. A machine or its JSON config, with nothing run. XState and ELK are optional peers.",
+      "description": "An XState machine on a Diagram, drawn from machine.root: compound and parallel states, initial markers, final states, and all of always, after, invoke and guards labelled. A machine or its JSON config, which can be run with stand-ins for all it names, and edited, writing to the config. XState and ELK are optional peers.",
       "dependencies": [
         "xstate@^5.33.3"
       ],
@@ -6678,10 +6678,16 @@
         "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/diagram.json",
         "https://blamy.github.io/ui/r/diagram-layout.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/side-drawer.json",
+        "https://blamy.github.io/ui/r/state-diagram-edit.json",
         "https://blamy.github.io/ui/r/state-diagram-model.json",
         "https://blamy.github.io/ui/r/state-diagram-simulation.json",
         "https://blamy.github.io/ui/r/switch.json",
+        "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -8605,6 +8611,25 @@
           "path": "packages/ui/src/lib/sql-lex.ts",
           "type": "registry:lib",
           "target": "lib/sql-lex.ts"
+        }
+      ]
+    },
+    {
+      "name": "state-diagram-edit",
+      "type": "registry:lib",
+      "title": "State Diagram Edit",
+      "description": "State Diagram Edit — part of BL UI's library (lib/state-diagram-edit.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/state-diagram-model.json",
+        "https://blamy.github.io/ui/r/state-diagram-simulation.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/state-diagram-edit.ts",
+          "type": "registry:lib",
+          "target": "lib/state-diagram-edit.ts"
         }
       ]
     },

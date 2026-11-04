@@ -14,7 +14,7 @@ import type { DiagramLayoutResult } from '@/lib/diagram-layout';
 import { useDiagramLayout } from '@/lib/diagram-layout/react';
 import { NOTHING_SELECTED, type DiagramConnection, type DiagramSelection } from '@/lib/diagram-model';
 import {
-  addState, addTransition, inlineCodeIn, missingImplementations, removeItems, renameState, setInitial, setTransitionEvent, setTransitionGuard, setTransitionSource, setTransitionTarget, stateAt, StateEditRefused, tryEdit, uniqueName,
+  addState, addTransition, inlineCodeIn, missingImplementations, removeItems, renameState, setInitial, setTransitionEvent, setTransitionGuard, setTransitionSource, setTransitionTarget, stateAt, tryEdit, uniqueName,
   type MachineConfig, type MachineImplementations, type StatePath,
 } from '@/lib/state-diagram-edit';
 import { machineEdgePlaces, machineStatePaths, machineToDraft, type MachineLike, type StateEdgeData, type StateNodeData, type TransitionPlace } from '@/lib/state-diagram-model';
@@ -269,7 +269,7 @@ interface EditPanelProps {
   redo: () => void;
   addStateHere: () => void;
   node: { id: string; label: string; path: StatePath; isStart: boolean; canStart: boolean } | null;
-  edge: { label: string; event: string | null; guard: string; canDelete: boolean } | null;
+  edge: { label: string; event: string | null; guard: string } | null;
   renameNode: (name: string) => void;
   makeStart: () => void;
   addInside: () => void;
@@ -302,7 +302,7 @@ function EditPanel({ refusal, canUndo, canRedo, undo, redo, addStateHere, node, 
         <PanelSection title="This transition">
           {edge.event !== null ? <EditField label="Event" slot="edit-event" value={edge.event} onCommit={renameEvent} /> : <div className="text-footnote">{edge.label}</div>}
           <EditField label="Guard" slot="edit-guard" value={edge.guard} placeholder="None" onCommit={setGuard} />
-          {edge.canDelete ? <div className="pt-1"><Button data-slot="edit-delete" variant="secondary" size="sm" onPress={removeSelected}>Delete</Button></div> : null}
+          <div className="pt-1"><Button data-slot="edit-delete" variant="secondary" size="sm" onPress={removeSelected}>Delete</Button></div>
         </PanelSection>
       ) : (
         <p data-slot="edit-hint" className="m-0 text-footnote text-foreground/70">Select a state or a transition to change it. To connect two states, select one and drag from a dot on its edge, or press C.</p>
@@ -339,7 +339,7 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
   const outside = config ?? given;
   const controlled = config !== undefined && onConfigChange !== undefined;
   const [held, setHeld] = useState<{ outside: unknown; config: MachineConfig } | null>(null);
-  const current = controlled ? config : held?.outside === outside ? held.config : config;
+  const current = controlled ? config : held && held.outside === outside ? held.config : config;
   const { machine, error } = useMachine(current ? undefined : given, current, known);
   const { draft, paths, places, draftError } = useMemo(() => {
     const places = new Map<string, TransitionPlace>();
@@ -369,15 +369,17 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
   const [history, setHistory] = useState(NO_HISTORY);
   const [refusal, setRefusal] = useState<string | null>(null);
   const [selection, setSelection] = useState<DiagramSelection>(defaultSelection);
-  // Something new from outside starts over: what's undone from here is only what was done here.
+  // Something from outside starts over: what's undone from here is only what was done here.
+  const lastShown = useRef<unknown>(null);
   useEffect(() => {
-    if (config && known.has(config)) return;
+    if (config && config === lastShown.current) return;
     setHistory(NO_HISTORY);
     setRefusal(null);
     setHeld(null);
   }, [config, given, known]);
   const base = (current ?? (given?.config as MachineConfig | undefined)) ?? null;
   const show = (next: MachineConfig) => {
+    lastShown.current = next;
     if (!controlled) setHeld({ outside, config: next });
     onConfigChange?.(next);
   };
@@ -474,7 +476,7 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
   const addStateHere = () => {
     if (!base) return;
     const holds = nodePath && statesOf(stateAt(base, nodePath)).length;
-    const parent = nodePath ? (holds || !nodePath.length ? nodePath : nodePath.slice(0, -1)) : [];
+    const parent = nodePath ? (holds ? nodePath : nodePath.slice(0, -1)) : [];
     const name = uniqueName('state', statesOf(stateAt(base, parent)));
     const made = commit((c) => addState(c, parent, name));
     if (made) selectState(made, [...parent, name]);
@@ -533,21 +535,21 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
   const open = openChoice ?? beside;
   const panelRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLDivElement>(null);
+  const [tab, setTab] = useState<'run' | 'edit'>('edit');
+  const showEdit = editable && !!xstate && !!base;
   // Beside the board, the panel and the button that opens it take each other's place, so focus has to go from one to the other.
   // A tray does this itself, so the button stays there for it to come back to.
   const moved = useRef(false);
   useEffect(() => {
     if (!moved.current || !beside) return;
     moved.current = false;
-    if (open) panelRef.current?.querySelector<HTMLElement>('[data-slot=simulation-panel],[data-slot=edit-panel]')?.focus({ preventScroll: true });
+    if (open) panelRef.current?.querySelector<HTMLElement>(showEdit && (!sim || tab === 'edit') ? '[data-slot=edit-panel]' : '[data-slot=simulation-panel]')?.focus({ preventScroll: true });
     else openerRef.current?.querySelector('button')?.focus({ preventScroll: true });
   }, [open, beside]);
   const choose = (next: boolean) => {
     moved.current = true;
     setOpen(next);
   };
-  const [tab, setTab] = useState<'run' | 'edit'>('edit');
-  const showEdit = editable && !!xstate && !!base;
   const both = !!sim && showEdit;
   const title = both ? 'State machine' : showEdit ? 'Edit' : 'Simulation';
   const editPanel = showEdit ? (
@@ -563,11 +565,10 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
         isStart: !!parentOfNode && (typeof parentOfNode.initial === 'object' ? (parentOfNode.initial as { target?: unknown }).target : parentOfNode.initial) === nodePath[nodePath.length - 1],
         canStart: nodePath.length > 0 && parentOfNode?.type !== 'parallel',
       } : null}
-      edge={selectedEdge ? {
+      edge={selectedEdge && edgePlace ? {
         label: selectedEdge.label ?? '',
-        event: edgePlace && isOwnEvent(edgePlace, base && stateAt(base, edgePlace.state)) ? edgePlace.event : null,
+        event: isOwnEvent(edgePlace, base && stateAt(base, edgePlace.state)) ? edgePlace.event : null,
         guard: selectedEdge.data?.guard ?? '',
-        canDelete: !!edgePlace,
       } : null}
       renameNode={renameNode}
       makeStart={makeStart}
@@ -591,7 +592,7 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
   const trayHeight = Math.round(Math.min(size.height * TRAY_SHARE, TRAY_MOST));
   const opener = panel && (!open || !beside) ? (
     <div ref={openerRef} data-slot="simulation-bar" className={cn('absolute inset-x-3 bottom-3 flex items-center justify-between gap-2 rounded-ctl bg-popover p-2 pl-3 text-footnote text-foreground shadow-hairline', open && 'pointer-events-none opacity-0')}>
-      <span className="min-w-0 truncate font-semibold">{now.join(', ')}</span>
+      <span className="min-w-0 truncate font-semibold">{now.length ? now.join(', ') : selectedNode?.label ?? ''}</span>
       <Button data-slot="simulation-open" variant="secondary" size="sm" onPress={() => choose(true)}>{title}</Button>
     </div>
   ) : null;

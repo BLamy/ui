@@ -1633,6 +1633,8 @@ test.describe('StateDiagram edits', () => {
     // Start from somewhere else altogether, so that loading really does something.
     await page.getByRole('button', { name: 'Start again' }).click();
     await expect(node(page, 'door.broken')).toHaveCount(0);
+    // That's from outside, even though it's been seen before, so it can't be undone from here.
+    await expect(page.locator('[data-slot=edit-undo]')).toBeDisabled();
     await page.getByRole('button', { name: 'Load it' }).click();
     await expect(node(page, 'door.broken')).toHaveCount(1);
     await expect.poll(() => graph(page)).toEqual(graphBefore);
@@ -1741,6 +1743,22 @@ test.describe('StateDiagram edits', () => {
     await expect(refusal(page)).toHaveCount(0);
   });
 
+  test('with both on, focus goes to whichever’s showing', async ({ page }) => {
+    await open(page);
+    await page.getByRole('button', { name: 'Close State machine' }).click();
+    await page.locator('[data-slot=simulation-open]').click();
+    await expect(page.locator('[data-slot=edit-panel]')).toBeFocused();
+    await run(page, 'Run');
+    await page.getByRole('button', { name: 'Close State machine' }).click();
+    await page.locator('[data-slot=simulation-open]').click();
+    await expect(page.locator('[data-slot=simulation-panel]')).toBeFocused();
+    // A line that says where it starts has nothing to change.
+    await run(page, 'Edit');
+    const b = await page.locator('[data-slot=diagram-node][data-node="door.__initial"]').boundingBox();
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+    await expect(page.locator('[data-slot=edit-hint]')).toBeVisible();
+  });
+
   test('the phone: the tray has it all, with the board above to press on', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 780 });
     await page.goto('/?demo=state-diagram/edit&theme=light', { waitUntil: 'load' });
@@ -1769,6 +1787,11 @@ test.describe('StateDiagram edits', () => {
     await rename(page, 'receiving');
     await expect(node(page, 'upload.worker.receiving')).toHaveCount(1);
     await expect(page.locator('[data-slot=edit-missing]')).toHaveCount(0);
+    // Closed and opened, focus goes to the panel, and back.
+    await page.getByRole('button', { name: 'Close Edit' }).click();
+    await expect(page.locator('[data-slot=simulation-open]')).toBeFocused();
+    await page.locator('[data-slot=simulation-open]').press('Enter');
+    await expect(page.locator('[data-slot=edit-panel]')).toBeFocused();
     // A press on the middle of its line.
     const line = edge(page, 'upload.worker.receiving:EOF->upload.worker.committing');
     const at = await line.evaluate((el) => {
