@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { distToPolyline, type Pt, type Rect } from '@/lib/canvas-math';
 import {
   ARROW_BROAD, ARROW_SLIM, anchorNormal, anchorPoint, ancestorsOf, arrowHead, closedD, connectorBounds, connectorPath, curvePath, descendantsOf, dirOf, distToConnector,
-  diagramBounds, edgeAt, edgeGeometries, edgeGeometry, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, nearestAnchor, nearestSide, nodeAt, pointAlong, polygonPoints,
-  polylinePath, portPoint, regionDividers, selfLoopPath, type ConnectorGeometry, type DiagramEdge, type DiagramNode,
+  deleteItems, diagramBounds, edgeAt, edgeGeometries, edgeGeometry, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, moveNodes, nearestAnchor, nearestSide, nodeAt, pointAlong, polygonPoints,
+  polylinePath, portPoint, regionDividers, rerouteLabel, rerouteOrthogonal, selfLoopPath, simplifyRoute, type ConnectorGeometry, type DiagramEdge, type DiagramNode,
 } from './diagram-model';
 
 const node = (id: string, x: number, y: number, w = 100, h = 40, extra: Partial<DiagramNode> = {}): DiagramNode => ({ id, x, y, w, h, ...extra });
@@ -463,5 +463,170 @@ describe('what else gets drawn', () => {
     expect(diagramBounds([{ x: 0, y: 0, w: 100, h: 100 }], [g])).toEqual({ x: 0, y: -50, w: 500, h: 150 });
     expect(diagramBounds([{ x: 0, y: 0, w: 100, h: 100 }], [g], [{ x: -20, y: 90, w: 40, h: 40 }])).toEqual({ x: -20, y: -50, w: 520, h: 180 });
     expect(diagramBounds([])).toBeNull();
+  });
+});
+
+describe('routes that follow', () => {
+  it('leaves a route alone when nothing moved', () => {
+    const pts = [{ x: 0, y: 0 }, { x: 10, y: 0 }];
+    expect(rerouteOrthogonal(pts, { x: 0, y: 0 }, { x: 0, y: 0 })).toEqual(pts);
+  });
+
+  it('carries the whole route when both ends move together', () => {
+    expect(rerouteOrthogonal([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }], { x: 5, y: 7 }, { x: 5, y: 7 })).toEqual([{ x: 5, y: 7 }, { x: 15, y: 7 }, { x: 15, y: 17 }]);
+  });
+
+  it('keeps a route square, when one end moves', () => {
+    const pts = [{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 50, y: 100 }, { x: 100, y: 100 }];
+    const out = rerouteOrthogonal(pts, { x: 10, y: 30 }, { x: 0, y: 0 });
+    square(out);
+    expect(out[0]).toEqual({ x: 10, y: 30 });
+    expect(out[3]).toEqual({ x: 100, y: 100 });
+    const both = rerouteOrthogonal(pts, { x: 10, y: 30 }, { x: -20, y: 40 });
+    square(both);
+    expect(both[3]).toEqual({ x: 80, y: 140 });
+  });
+
+  it('works on one bend, moved by either end', () => {
+    const pts = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }];
+    const out = rerouteOrthogonal(pts, { x: 0, y: 20 }, { x: 30, y: 0 });
+    square(out);
+    expect(out).toEqual([{ x: 0, y: 20 }, { x: 130, y: 20 }, { x: 130, y: 100 }]);
+  });
+
+  it('gives a straight run a step when it can’t stay straight, and leaves it straight when it can', () => {
+    const level = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
+    const out = rerouteOrthogonal(level, { x: 0, y: 0 }, { x: 0, y: 50 });
+    square(out);
+    expect(out).toHaveLength(4);
+    expect(out[3]).toEqual({ x: 100, y: 50 });
+    expect(rerouteOrthogonal(level, { x: 0, y: 0 }, { x: 30, y: 0 })).toEqual([{ x: 0, y: 0 }, { x: 130, y: 0 }]);
+    const upright = rerouteOrthogonal([{ x: 0, y: 0 }, { x: 0, y: 100 }], { x: 40, y: 0 }, { x: 0, y: 0 });
+    square(upright);
+    expect(upright).toHaveLength(4);
+  });
+
+  it('moves only the ends of what isn’t square', () => {
+    expect(rerouteOrthogonal([{ x: 0, y: 0 }, { x: 100, y: 50 }], { x: 5, y: 5 }, { x: 0, y: 0 })).toEqual([{ x: 5, y: 5 }, { x: 100, y: 50 }]);
+  });
+
+  it('cleans a route up first, so a stray point can’t bend it', () => {
+    expect(simplifyRoute([{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 50, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }])).toEqual([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }]);
+    const out = rerouteOrthogonal([{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }], { x: 0, y: 20 }, { x: 0, y: 0 });
+    square(out);
+  });
+
+  it('keeps a label beside its run', () => {
+    const before = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 200, y: 100 }];
+    const after = rerouteOrthogonal(before, { x: 0, y: 30 }, { x: 0, y: 0 });
+    // By the first run, which came down 30.
+    expect(rerouteLabel({ x: 40, y: -14, w: 20, h: 11 }, before, after)).toEqual({ x: 40, y: 16, w: 20, h: 11 });
+    // By the last, which didn't.
+    expect(rerouteLabel({ x: 140, y: 86, w: 20, h: 11 }, before, after)).toEqual({ x: 140, y: 86, w: 20, h: 11 });
+  });
+});
+
+describe('moving nodes', () => {
+  const nodes: DiagramNode[] = [
+    node('a', 0, 0), node('b', 300, 0),
+    node('box', 500, 0, 300, 300, { kind: 'compound' }), node('kid', 550, 100, 100, 40, { parent: 'box' }), node('kid2', 660, 100, 100, 40, { parent: 'box' }),
+    node('far', 0, 500),
+  ];
+  const edges: DiagramEdge[] = [
+    { id: 'ab', from: 'a', to: 'b', points: [{ x: 100, y: 20 }, { x: 300, y: 20 }], label: 'x', labelBox: { x: 180, y: 6, w: 40, h: 11 } },
+    { id: 'kk', from: 'kid', to: 'kid2', points: [{ x: 650, y: 120 }, { x: 660, y: 120 }] },
+    { id: 'bx', from: 'b', to: 'box', points: [{ x: 400, y: 20 }, { x: 500, y: 20 }] },
+    { id: 'free', from: 'a', to: 'far' },
+    { id: 'other', from: 'far', to: 'far' },
+  ];
+
+  it('moves what’s asked, and follows with its edges, and leaves the rest the same object', () => {
+    const out = moveNodes(nodes, edges, ['a'], 10, 40);
+    expect(out.nodes[0]).toMatchObject({ x: 10, y: 40 });
+    expect(out.nodes[1]).toBe(nodes[1]);
+    expect(out.edges[0].points![0]).toEqual({ x: 110, y: 60 });
+    expect(out.edges[0].points![out.edges[0].points!.length - 1]).toEqual({ x: 300, y: 20 });
+    square(out.edges[0].points!);
+    expect(out.edges[1]).toBe(edges[1]);
+    expect(out.edges[4]).toBe(edges[4]);
+    // An edge with no route of its own has nothing to change: it's worked out from where the nodes are.
+    expect(out.edges[3]).toBe(edges[3]);
+  });
+
+  it('takes a compound’s children with it, and the edges between them whole', () => {
+    const out = moveNodes(nodes, edges, ['box'], 100, 50);
+    const byId = new Map(out.nodes.map((n) => [n.id, n]));
+    expect(byId.get('kid')).toMatchObject({ x: 650, y: 150 });
+    expect(byId.get('kid2')).toMatchObject({ x: 760, y: 150 });
+    expect(out.edges[1].points).toEqual([{ x: 750, y: 170 }, { x: 760, y: 170 }]);
+    expect(out.edges[2].points![0]).toEqual({ x: 400, y: 20 });
+    expect(out.edges[2].points!.at(-1)).toEqual({ x: 600, y: 70 });
+  });
+
+  it('doesn’t move a child twice when its parent’s moving too', () => {
+    const out = moveNodes(nodes, edges, ['box', 'kid'], 100, 0);
+    expect(out.nodes.find((n) => n.id === 'kid')).toMatchObject({ x: 650 });
+  });
+
+  it('keeps a label by its route', () => {
+    const out = moveNodes(nodes, edges, ['a', 'b'], 20, 30);
+    expect(out.edges[0].labelBox).toEqual({ x: 200, y: 36, w: 40, h: 11 });
+  });
+
+  it('grows a compound when a child’s dragged to its wall, and shrinks it again when it comes back', () => {
+    const out = moveNodes(nodes, edges, ['kid2'], 100, 0);
+    const box = out.nodes.find((n) => n.id === 'box')!;
+    // kid2's right edge is now at 860, and the compound keeps 12 of air.
+    expect(box).toMatchObject({ x: 500, y: 0, w: 372, h: 300 });
+    const back = moveNodes(nodes, edges, ['kid2'], 5, 0);
+    expect(back.nodes.find((n) => n.id === 'box')).toBe(nodes[2]);
+  });
+
+  it('grows up the chain, and carries an edge on a wall with that wall', () => {
+    const nested: DiagramNode[] = [node('outer', 0, 0, 400, 300, { kind: 'compound' }), node('inner', 20, 40, 200, 200, { kind: 'compound', parent: 'outer' }), node('kid', 40, 80, 100, 40, { parent: 'inner' }), node('o', 600, 100)];
+    const wall: DiagramEdge[] = [{ id: 'w', from: 'outer', to: 'o', points: [{ x: 400, y: 120 }, { x: 600, y: 120 }] }];
+    const out = moveNodes(nested, wall, ['kid'], 500, 0);
+    expect(out.nodes[1].w).toBe(540 + 100 + 12 - 20);
+    expect(out.nodes[0].x + out.nodes[0].w).toBe(out.nodes[1].x + out.nodes[1].w + 12);
+    expect(out.edges[0].points![0].x).toBe(out.nodes[0].x + out.nodes[0].w);
+  });
+
+  it('makes room for a compound’s title at the top', () => {
+    const out = moveNodes(nodes, edges, ['kid'], 0, -90);
+    expect(out.nodes.find((n) => n.id === 'box')).toMatchObject({ y: 10 - 32, h: 322 });
+  });
+
+  it('ignores what isn’t there, and returns the same objects when nothing moved', () => {
+    const out = moveNodes(nodes, edges, ['gone'], 10, 10);
+    expect(out.nodes[0]).toBe(nodes[0]);
+    expect(out.edges[0]).toBe(edges[0]);
+    expect(moveNodes(nodes, edges, ['a'], 0, 0).nodes[0]).toBe(nodes[0]);
+  });
+});
+
+describe('deleting', () => {
+  const nodes: DiagramNode[] = [node('a', 0, 0), node('box', 500, 0, 300, 300, { kind: 'compound' }), node('kid', 550, 100, 100, 40, { parent: 'box' }), node('b', 0, 200)];
+  const edges: DiagramEdge[] = [{ id: 'ak', from: 'a', to: 'kid' }, { id: 'ab', from: 'a', to: 'b' }, { id: 'bb', from: 'b', to: 'b' }];
+
+  it('takes a node’s edges with it', () => {
+    const out = deleteItems(nodes, edges, { nodes: ['a'], edges: [] });
+    expect(out.nodes.map((n) => n.id)).toEqual(['box', 'kid', 'b']);
+    expect(out.edges.map((e) => e.id)).toEqual(['bb']);
+  });
+
+  it('takes a compound’s children, and edges to them', () => {
+    const out = deleteItems(nodes, edges, { nodes: ['box'], edges: [] });
+    expect(out.nodes.map((n) => n.id)).toEqual(['a', 'b']);
+    expect(out.edges.map((e) => e.id)).toEqual(['ab', 'bb']);
+  });
+
+  it('takes an edge on its own', () => {
+    const out = deleteItems(nodes, edges, { nodes: [], edges: ['ab'] });
+    expect(out.nodes).toHaveLength(4);
+    expect(out.edges.map((e) => e.id)).toEqual(['ak', 'bb']);
+  });
+
+  it('ignores what isn’t there', () => {
+    expect(deleteItems(nodes, edges, { nodes: ['gone'], edges: ['gone'] }).nodes).toHaveLength(4);
   });
 });

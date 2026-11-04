@@ -651,3 +651,161 @@ export function sizeNodesToText<N>(nodes: readonly DiagramNode<N>[], text: TextO
     return { ...n, x: n.x + (n.w - w) / 2, y: n.y + (n.h - h) / 2, w, h };
   });
 }
+
+/* ── Moving things ── */
+
+const near = (a: number, b: number) => Math.abs(a - b) < 0.01;
+
+/** A polyline with points on top of each other and points in the middle of a straight run taken out. */
+export function simplifyRoute(points: readonly Pt[]): Pt[] {
+  const out: Pt[] = [];
+  for (const p of points) {
+    const a = out[out.length - 1], b = out[out.length - 2];
+    if (a && near(a.x, p.x) && near(a.y, p.y)) continue;
+    if (a && b && ((near(a.x, b.x) && near(a.x, p.x)) || (near(a.y, b.y) && near(a.y, p.y)))) out.pop();
+    out.push(p);
+  }
+  return out;
+}
+
+/**
+ * A route that follows its ends when they move by `a` and `b`, staying square: the bend next to each end moves across the
+ * run it's on, so that run keeps its direction and the next one only changes length. A single straight run that can't stay
+ * straight gets a step in the middle. Anything that isn't square to begin with only has its ends moved.
+ */
+export function rerouteOrthogonal(points: readonly Pt[], a: Pt, b: Pt): Pt[] {
+  if (points.length < 2 || (!a.x && !a.y && !b.x && !b.y)) return [...points];
+  if (a.x === b.x && a.y === b.y) return points.map((p) => ({ x: p.x + a.x, y: p.y + a.y }));
+  const pts = simplifyRoute(points);
+  if (pts.length < 2) return points.map((p, i) => (i === points.length - 1 ? { x: p.x + b.x, y: p.y + b.y } : { x: p.x + a.x, y: p.y + a.y }));
+  const last = pts.length - 1;
+  const start = { x: pts[0].x + a.x, y: pts[0].y + a.y }, end = { x: pts[last].x + b.x, y: pts[last].y + b.y };
+  if (last === 1) {
+    if (near(pts[0].y, pts[1].y) && !near(start.y, end.y)) { const m = (start.x + end.x) / 2; return [start, { x: m, y: start.y }, { x: m, y: end.y }, end]; }
+    if (near(pts[0].x, pts[1].x) && !near(start.x, end.x)) { const m = (start.y + end.y) / 2; return [start, { x: start.x, y: m }, { x: end.x, y: m }, end]; }
+    return [start, end];
+  }
+  const out = pts.map((p) => ({ ...p }));
+  const across = (at: number, run: number, d: Pt) => {
+    if (near(pts[at].y, pts[run].y)) out[at] = { x: out[at].x, y: out[at].y + d.y };
+    else if (near(pts[at].x, pts[run].x)) out[at] = { x: out[at].x + d.x, y: out[at].y };
+    else out[at] = { x: out[at].x + d.x, y: out[at].y + d.y };
+  };
+  across(1, 0, a);
+  across(last - 1, last, b);
+  out[0] = start;
+  out[last] = end;
+  return out;
+}
+
+/** A label's box after its route changed: it keeps its place beside the run it sits by. */
+export function rerouteLabel(box: Rect, before: readonly Pt[], after: readonly Pt[]): Rect {
+  const c = centerOf(box);
+  let shift: Pt;
+  if (before.length === after.length && before.length >= 2) {
+    let best = 1, d = Infinity;
+    for (let i = 1; i < before.length; i++) {
+      const here = distToPolyline(c, [before[i - 1], before[i]]);
+      if (here < d) { d = here; best = i; }
+    }
+    shift = {
+      x: (after[best - 1].x + after[best].x - before[best - 1].x - before[best].x) / 2,
+      y: (after[best - 1].y + after[best].y - before[best - 1].y - before[best].y) / 2,
+    };
+  } else {
+    const from = pointAlong(before).point, to = pointAlong(after).point;
+    shift = { x: to.x - from.x, y: to.y - from.y };
+  }
+  return { ...box, x: box.x + shift.x, y: box.y + shift.y };
+}
+
+/** The air a compound keeps around what's dragged inside it, and the room for its title. */
+const COMPOUND_AIR = { top: 32, side: 12 };
+
+/**
+ * Nodes moved by (dx, dy), with what's inside them, and edges that follow: a route keeps its shape and stays square, and its
+ * label stays beside it. A compound grows if a child's dragged to its wall, and because this works from the same starting
+ * data each time, it shrinks back if the child's dragged away again. Whatever didn't change comes back as the same object,
+ * so a memo on it holds. Ids that don't exist are ignored.
+ */
+export function moveNodes<N, E>(
+  nodes: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[], ids: Iterable<string>, dx: number, dy: number, index: DiagramIndex<N> = indexDiagram(nodes),
+): { nodes: DiagramNode<N>[]; edges: DiagramEdge<E>[] } {
+  const moving = new Set<string>();
+  const tops: string[] = [];
+  for (const id of ids) {
+    if (!index.byId.has(id) || moving.has(id)) continue;
+    tops.push(id);
+    moving.add(id);
+    for (const d of descendantsOf(index, id)) moving.add(d);
+  }
+  // The compounds that have to grow, from the inside out.
+  const grown = new Map<string, Rect>();
+  const growFor = (id: string, box: Rect) => {
+    const parentId = index.parent.get(id);
+    if (!parentId || moving.has(parentId)) return;
+    const was = grown.get(parentId) ?? index.byId.get(parentId)!;
+    const x0 = Math.min(was.x, box.x - COMPOUND_AIR.side), y0 = Math.min(was.y, box.y - COMPOUND_AIR.top);
+    const x1 = Math.max(was.x + was.w, box.x + box.w + COMPOUND_AIR.side), y1 = Math.max(was.y + was.h, box.y + box.h + COMPOUND_AIR.side);
+    if (x0 === was.x && y0 === was.y && x1 === was.x + was.w && y1 === was.y + was.h) return;
+    const next = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+    grown.set(parentId, next);
+    growFor(parentId, next);
+  };
+  if (dx || dy) for (const id of tops) { const n = index.byId.get(id)!; growFor(id, { x: n.x + dx, y: n.y + dy, w: n.w, h: n.h }); }
+  const nextNodes = nodes.map((n) => {
+    if (moving.has(n.id)) return dx || dy ? { ...n, x: n.x + dx, y: n.y + dy } : n;
+    const g = grown.get(n.id);
+    return g ? { ...n, ...g } : n;
+  });
+  const shift = { x: dx, y: dy }, none = { x: 0, y: 0 };
+  /** How far an edge's end goes: with its node, or with the wall it's on if its node grew. */
+  const endShift = (id: string, at: Pt | undefined): Pt => {
+    if (moving.has(id)) return shift;
+    const g = grown.get(id);
+    if (!g || !at) return none;
+    const was = index.byId.get(id)!;
+    const onLeft = near(at.x, was.x), onRight = near(at.x, was.x + was.w), onTop = near(at.y, was.y), onBottom = near(at.y, was.y + was.h);
+    return {
+      x: onLeft ? g.x - was.x : onRight ? g.x + g.w - was.x - was.w : 0,
+      y: onTop ? g.y - was.y : onBottom ? g.y + g.h - was.y - was.h : 0,
+    };
+  };
+  const nextEdges = edges.map((e) => {
+    const a = endShift(e.from, e.points?.[0]), b = endShift(e.to, e.points?.[e.points.length - 1]);
+    if (!a.x && !a.y && !b.x && !b.y) return e;
+    if (!e.points || e.points.length < 2) {
+      if (!e.labelBox) return e;
+      // No route of its own, so `labelBox` only needs to go along. It moves half as far when only one end did.
+      return { ...e, labelBox: { ...e.labelBox, x: e.labelBox.x + (a.x + b.x) / 2, y: e.labelBox.y + (a.y + b.y) / 2 } };
+    }
+    const points = rerouteOrthogonal(e.points, a, b);
+    return { ...e, points, ...(e.labelBox ? { labelBox: rerouteLabel(e.labelBox, simplifyRoute(e.points).length === points.length ? simplifyRoute(e.points) : e.points, points) } : null) };
+  });
+  return { nodes: nextNodes, edges: nextEdges };
+}
+
+/** What's selected in a diagram. */
+export interface DiagramSelection {
+  nodes: readonly string[];
+  edges: readonly string[];
+}
+
+export const NOTHING_SELECTED: DiagramSelection = { nodes: [], edges: [] };
+
+/** A diagram without what's selected: nodes go with what's inside them, and edges go with either end. */
+export function deleteItems<N, E>(
+  nodes: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[], selection: DiagramSelection, index: DiagramIndex<N> = indexDiagram(nodes),
+): { nodes: DiagramNode<N>[]; edges: DiagramEdge<E>[] } {
+  const gone = new Set<string>();
+  for (const id of selection.nodes) {
+    if (!index.byId.has(id)) continue;
+    gone.add(id);
+    for (const d of descendantsOf(index, id)) gone.add(d);
+  }
+  const goneEdges = new Set(selection.edges);
+  return {
+    nodes: nodes.filter((n) => !gone.has(n.id)),
+    edges: edges.filter((e) => !goneEdges.has(e.id) && !gone.has(e.from) && !gone.has(e.to)),
+  };
+}

@@ -1,12 +1,13 @@
 'use client';
-import { memo, useId, useLayoutEffect, useMemo, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { memo, useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react';
 import { cva } from 'class-variance-authority';
-import { Canvas, CanvasMiniMap, type CanvasMiniMapItem, type CanvasMiniMapProps, type CanvasProps } from '@/components/ui/canvas';
-import { fitCamera, type Camera, type Rect } from '@/lib/canvas-math';
+import { Canvas, CanvasGuides, CanvasMarquee, CanvasMiniMap, type CanvasMiniMapItem, type CanvasMiniMapProps, type CanvasPointerInfo, type CanvasProps } from '@/components/ui/canvas';
+import { fitCamera, type Camera, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';
+import { hitTestDiagram, stepDiagramGesture, type DiagramGesture, type DiagramGestureEvent, type DiagramHit } from '@/lib/diagram-gesture';
 import {
-  diagramBounds, diagramTextRuns, edgeGeometries, indexDiagram, labelBox, regionDividers, sizeNodesToText,
-  type ConnectorGeometry, type DiagramDivider, type DiagramEdge, type DiagramNode,
+  NOTHING_SELECTED, deleteItems, diagramBounds, diagramTextRuns, edgeGeometries, indexDiagram, labelBox, moveNodes, regionDividers, sizeNodesToText,
+  type ConnectorGeometry, type DiagramDivider, type DiagramEdge, type DiagramIndex, type DiagramNode, type DiagramSelection,
 } from '@/lib/diagram-model';
 import { DIAGRAM_TEXT_CLASS, estimateText, measureText, type TextMeasurer } from '@/lib/diagram-text';
 import { useFontVersion } from '@/lib/use-font-version';
@@ -16,7 +17,10 @@ import { cn } from '@/lib/utils';
    Hand it nodes and edges as plain data (`@/lib/diagram-model`) and it draws them on a `Canvas`, so the camera, the
    minimap and `useCanvas` are the canvas's own. Everything's in board units, and scales with the camera as an object on a
    board does, borders included. Lines and arrowheads are the exception: they keep their thickness on screen at any zoom.
-   Text that would be too small to read hides. */
+   Text that would be too small to read hides.
+
+   Give it `editable` and the pointer selects, moves and deletes, as one gesture (`@/lib/diagram-gesture`), with undo. The
+   data's controlled with `nodes`, `edges` and `onChange`, or left to it with `defaultNodes` and `defaultEdges`. */
 
 /* ── Looks ── */
 
@@ -98,16 +102,22 @@ export function DiagramNodeBody({ node, className, style }: DiagramNodeBodyProps
 
 interface NodeViewProps {
   node: DiagramNode<unknown>;
+  selected?: boolean;
   renderNode?: (node: DiagramNode<any>) => ReactNode;
 }
 
-const NodeView = memo(function NodeView({ node, renderNode }: NodeViewProps) {
+/** A ring around what's selected that's the same thickness on screen at any zoom. A box-shadow, as Chrome rounds a border or
+ *  an outline under 1 px up to 1 px, before the board's scale makes it thicker. */
+const SELECTED = 'data-selected:[box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--background),0_0_0_calc(3.6px/var(--diagram-z))_var(--primary)]';
+
+const NodeView = memo(function NodeView({ node, selected, renderNode }: NodeViewProps) {
   return (
     <div
       data-slot="diagram-node"
       data-node={node.id}
       data-kind={node.kind ?? 'node'}
-      className="absolute"
+      data-selected={selected || undefined}
+      className={cn('absolute', isContainer(node) ? 'rounded-card' : node.kind === 'initial' ? 'rounded-full' : 'rounded-ctl', SELECTED)}
       style={{ left: node.x, top: node.y, width: node.w, height: node.h }}
     >
       {renderNode ? renderNode(node) : <DiagramNodeBody node={node} />}
@@ -117,16 +127,17 @@ const NodeView = memo(function NodeView({ node, renderNode }: NodeViewProps) {
 
 /* ── An edge ── */
 
-const EdgeView = memo(function EdgeView({ edge, geometry, arrow }: { edge: DiagramEdge<unknown>; geometry: ConnectorGeometry; arrow: string }) {
+const EdgeView = memo(function EdgeView({ edge, d, arrow, selected }: { edge: DiagramEdge<unknown>; d: string; arrow: string; selected?: boolean }) {
   const look = edgeLook(edge.kind);
   return (
     <path
       data-slot="diagram-edge"
       data-edge={edge.id}
       data-kind={edge.kind ?? 'event'}
-      d={geometry.d}
-      markerEnd={`url(#${arrow}${look === 'initial' ? '-strong' : ''})`}
-      className={diagramEdgeVariants({ kind: look })}
+      data-selected={selected || undefined}
+      d={d}
+      markerEnd={`url(#${arrow}${selected ? '-selected' : look === 'initial' ? '-strong' : ''})`}
+      className={cn(diagramEdgeVariants({ kind: look }), selected && 'stroke-primary')}
     />
   );
 });
@@ -157,6 +168,8 @@ function ArrowMarker({ id, className }: { id: string; className: string }) {
 /* ── The board ── */
 
 interface Laid<N, E> {
+  index: DiagramIndex<N>;
+  geometries: Map<string, ConnectorGeometry>;
   containers: DiagramNode<N>[];
   leaves: DiagramNode<N>[];
   edges: { edge: DiagramEdge<E>; geometry: ConnectorGeometry }[];
@@ -181,19 +194,20 @@ function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramE
   const containers = nodes.filter(isContainer).map((n, i) => ({ n, i })).sort((a, b) => depth(a.n) - depth(b.n) || a.i - b.i).map(({ n }) => n);
   const leaves = nodes.filter((n) => !isContainer(n));
   return {
-    containers, leaves, edges: drawn, labels, dividers: regionDividers(index),
+    index, geometries, containers, leaves, edges: drawn, labels, dividers: regionDividers(index),
     bounds: diagramBounds(nodes, geometries.values(), labels.map((l) => l.box)),
   };
 }
 
-const Board = memo(function Board({ laid, renderNode, arrow }: { laid: Laid<any, any>; renderNode?: NodeViewProps['renderNode']; arrow: string }) {
+const Board = memo(function Board({ laid, renderNode, arrow, selection }: { laid: Laid<any, any>; renderNode?: NodeViewProps['renderNode']; arrow: string; selection: { nodes: Set<string>; edges: Set<string> } }) {
   return (
     <>
-      {laid.containers.map((n) => <NodeView key={n.id} node={n} renderNode={renderNode} />)}
+      {laid.containers.map((n) => <NodeView key={n.id} node={n} selected={selection.nodes.has(n.id)} renderNode={renderNode} />)}
       <svg data-slot="diagram-edges" aria-hidden="true" className="absolute top-0 left-0 overflow-visible" width={1} height={1}>
         <defs>
           <ArrowMarker id={arrow} className="fill-muted-foreground" />
           <ArrowMarker id={`${arrow}-strong`} className="fill-foreground" />
+          <ArrowMarker id={`${arrow}-selected`} className="fill-primary" />
         </defs>
         {laid.dividers.map((d) => (
           <line
@@ -203,9 +217,9 @@ const Board = memo(function Board({ laid, renderNode, arrow }: { laid: Laid<any,
             className="stroke-border [stroke-dasharray:calc(6px/var(--diagram-z))_calc(4px/var(--diagram-z))] [stroke-width:calc(1px/var(--diagram-z))]"
           />
         ))}
-        {laid.edges.map(({ edge, geometry }) => <EdgeView key={edge.id} edge={edge} geometry={geometry} arrow={arrow} />)}
+        {laid.edges.map(({ edge, geometry }) => <EdgeView key={edge.id} edge={edge} d={geometry.d} arrow={arrow} selected={selection.edges.has(edge.id)} />)}
       </svg>
-      {laid.leaves.map((n) => <NodeView key={n.id} node={n} renderNode={renderNode} />)}
+      {laid.leaves.map((n) => <NodeView key={n.id} node={n} selected={selection.nodes.has(n.id)} renderNode={renderNode} />)}
       {laid.labels.map(({ edge, box }) => <EdgeLabel key={edge.id} edge={edge} box={box} />)}
     </>
   );
@@ -213,9 +227,28 @@ const Board = memo(function Board({ laid, renderNode, arrow }: { laid: Laid<any,
 
 /* ── Diagram ── */
 
+/** What just happened to a diagram's data. Undo and redo come this way too, so an app sees every change the same way. */
+export interface DiagramChange<N = unknown, E = unknown> {
+  nodes: DiagramNode<N>[];
+  edges: DiagramEdge<E>[];
+  reason: 'move' | 'delete' | 'undo' | 'redo';
+}
+
 export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps, 'background' | 'panning' | 'cursor' | 'autoFocus' | 'aria-label' | 'overlay'> {
-  nodes: readonly DiagramNode<N>[];
+  /** Controlled data, with `onChange`. Refuse a change by not passing it back, and it goes back where it was. */
+  nodes?: readonly DiagramNode<N>[];
   edges?: readonly DiagramEdge<E>[];
+  /** Data left to the diagram. */
+  defaultNodes?: readonly DiagramNode<N>[];
+  defaultEdges?: readonly DiagramEdge<E>[];
+  onChange?: (change: DiagramChange<N, E>) => void;
+  /** Let the pointer select nodes and edges, one at a time, with shift or ⌘, or with a marquee. On when `editable` is. */
+  selectable?: boolean;
+  /** Let the pointer and the keys move and delete things, with undo. */
+  editable?: boolean;
+  selection?: DiagramSelection;
+  defaultSelection?: DiagramSelection;
+  onSelectionChange?: (selection: DiagramSelection) => void;
   /** Controlled camera. Left out, the diagram fits its content, and goes on fitting until the camera's moved. */
   camera?: Camera;
   defaultCamera?: Camera;
@@ -235,6 +268,14 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
 }
 
 const EMPTY: readonly never[] = [];
+const NO_GUIDES: Guide[] = [];
+/** How many changes undo reaches back. */
+const HISTORY_LIMIT = 100;
+
+interface Snapshot<N, E> {
+  nodes: readonly DiagramNode<N>[];
+  edges: readonly DiagramEdge<E>[];
+}
 
 /** What the text in a diagram measures. The first render, on a server or hydrating, goes by estimates. Straight after, it's
  *  measured in the real font, and again if the words change or a font turns up later. A drag doesn't measure anything. */
@@ -253,25 +294,152 @@ function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly Dia
 
 /** A diagram on a `Canvas`. Sits in its host like any BL UI container: it fills the nearest positioned box. */
 export function Diagram<N = unknown, E = unknown>({
-  nodes: given, edges = EMPTY, camera: controlled, defaultCamera, onCameraChange, fitPadding = 24, autoSize, minimap, renderNode,
+  nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onChange, selectable: selectableProp, editable = false,
+  selection: selectionProp, defaultSelection = NOTHING_SELECTED, onSelectionChange,
+  camera: controlled, defaultCamera, onCameraChange, fitPadding = 24, autoSize, minimap, renderNode,
   background, panning, cursor, autoFocus, 'aria-label': ariaLabel = 'Diagram', overlay, children, className, style,
 }: DiagramProps<N, E>) {
+  const selectable = selectableProp ?? editable;
   const [ref, size] = useContainerSize<HTMLDivElement>({ width: 1000, height: 700 });
   const [own, setOwn] = useState<Camera | null>(defaultCamera ?? null);
   const arrow = `diagram-arrow-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
-  const text = useDiagramText(ref, given, edges, !!autoSize || edges.some((e) => e.label && !e.labelBox));
-  const nodes = useMemo(() => (autoSize ? sizeNodesToText(given, text) : given), [autoSize, given, text]);
-  const laid = useMemo(() => layOut(nodes, edges, text), [nodes, edges, text]);
+
+  /* ── The data: given, or held here, and what a drag shows before it's committed ── */
+  const isControlled = givenNodes !== undefined;
+  const [heldData, setHeldData] = useState<Snapshot<N, E>>(() => ({ nodes: defaultNodes, edges: defaultEdges }));
+  const data = useMemo<Snapshot<N, E>>(() => (isControlled ? { nodes: givenNodes, edges: givenEdges ?? EMPTY } : heldData), [isControlled, givenNodes, givenEdges, heldData]);
+  const [draft, setDraft] = useState<Snapshot<N, E> | null>(null);
+  const [guides, setGuides] = useState<Guide[]>([]);
+  const [marquee, setMarquee] = useState<Rect | null>(null);
+
+  const shown = draft ?? data;
+  const text = useDiagramText(ref, shown.nodes, shown.edges, !!autoSize || shown.edges.some((e) => e.label && !e.labelBox));
+  const nodes = useMemo(() => (autoSize ? sizeNodesToText(shown.nodes, text) : shown.nodes), [autoSize, shown.nodes, text]);
+  const laid = useMemo(() => layOut(nodes, shown.edges, text), [nodes, shown.edges, text]);
+
   const camera = controlled ?? own ?? fitCamera(laid.bounds, size, fitPadding);
   const change = (next: Camera) => {
     setOwn(next);
     onCameraChange?.(next);
   };
-  const board = useMemo(() => <Board laid={laid} renderNode={renderNode as NodeViewProps['renderNode']} arrow={arrow} />, [laid, renderNode, arrow]);
+
+  /* ── Selection ── */
+  const [heldSelection, setHeldSelection] = useState<DiagramSelection>(defaultSelection);
+  const selection = selectionProp ?? heldSelection;
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+  const select = useCallback((next: DiagramSelection) => {
+    selectionRef.current = next;
+    setHeldSelection(next);
+    onSelectionChangeRef.current?.(next);
+  }, []);
+  const onSelectionChangeRef = useRef(onSelectionChange);
+  onSelectionChangeRef.current = onSelectionChange;
+  const selectedSets = useMemo(() => ({ nodes: new Set(selection.nodes), edges: new Set(selection.edges) }), [selection]);
+
+  /* ── Changes, and undoing them. A controlled parent may refuse, so history only moves once the data really has. ── */
+  const history = useRef<{ past: Snapshot<N, E>[]; future: Snapshot<N, E>[] }>({ past: [], future: [] });
+  const pending = useRef<{ before: Snapshot<N, E>; mode: 'edit' | 'undo' | 'redo' } | null>(null);
+  const dataRef = useRef(data);
+  const settle = (before: Snapshot<N, E>, mode: 'edit' | 'undo' | 'redo') => {
+    const h = history.current;
+    if (mode === 'edit') { h.past.push(before); if (h.past.length > HISTORY_LIMIT) h.past.shift(); h.future = []; }
+    else if (mode === 'undo') { h.past.pop(); h.future.push(before); }
+    else { h.future.pop(); h.past.push(before); }
+  };
+  useLayoutEffect(() => {
+    const before = dataRef.current;
+    dataRef.current = data;
+    if (before.nodes === data.nodes && before.edges === data.edges) return;
+    const p = pending.current;
+    pending.current = null;
+    if (p) settle(p.before, p.mode);
+    // Data that changed for reasons of its own can't be undone to what it was, without losing whatever the change was.
+    else history.current = { past: [], future: [] };
+  }, [data]);
+  const commit = (next: { nodes: readonly DiagramNode<N>[]; edges: readonly DiagramEdge<E>[] }, reason: DiagramChange['reason']) => {
+    const before = dataRef.current;
+    const mode = reason === 'undo' || reason === 'redo' ? reason : 'edit';
+    pending.current = { before, mode };
+    if (!isControlled) setHeldData(next);
+    onChange?.({ nodes: [...next.nodes], edges: [...next.edges], reason });
+  };
+  const undo = () => { const to = history.current.past[history.current.past.length - 1]; if (to) commit(to, 'undo'); };
+  const redo = () => { const to = history.current.future[history.current.future.length - 1]; if (to) commit(to, 'redo'); };
+
+  /* ── The gesture ── */
+  const gesture = useRef<DiagramGesture>({ k: 'idle' });
+  const send = (event: DiagramGestureEvent) => {
+    // A camera that's still fitting the content stops at the first press, or dragging would move the view under the pointer.
+    if (event.type === 'down' && !controlled && !own) setOwn(camera);
+    const step = stepDiagramGesture(gesture.current, event, { index: laid.index, selection: selectionRef.current, zoom: camera.z, editable });
+    const g = step.gesture;
+    gesture.current = g;
+    if (step.selection) select(step.selection);
+    if (g.k === 'move') {
+      const base = dataRef.current;
+      const index = indexDiagram(base.nodes);
+      setDraft(moveNodes(base.nodes, base.edges, g.ids, g.delta.x, g.delta.y, index));
+      setGuides(g.guides);
+    } else {
+      setDraft(null);
+      setGuides(NO_GUIDES);
+    }
+    setMarquee(g.k === 'marquee' ? g.rect : null);
+    if (step.commit) {
+      const base = dataRef.current;
+      commit(moveNodes(base.nodes, base.edges, step.commit.ids, step.commit.delta.x, step.commit.delta.y), 'move');
+    }
+  };
+  const cancel = () => { if (gesture.current.k !== 'idle') send({ type: 'cancel' }); };
+  const hitAt = (p: Pt): DiagramHit => hitTestDiagram(p, { index: laid.index, geometries: laid.geometries, labels: laid.labels.map((l) => ({ id: l.edge.id, box: l.box })) }, camera.z);
+  const interactive = selectable || editable;
+  const pointerProps = interactive ? {
+    onCanvasPointerDown: (e: ReactPointerEvent, { board, screen }: CanvasPointerInfo) => send({ type: 'down', hit: hitAt(board), board, screen, additive: e.shiftKey || e.metaKey || e.ctrlKey }),
+    onCanvasPointerMove: (e: ReactPointerEvent, { board, screen }: CanvasPointerInfo) => { if (gesture.current.k !== 'idle') send({ type: 'move', board, screen, noSnap: e.metaKey || e.ctrlKey }); },
+    onCanvasPointerUp: (e: ReactPointerEvent) => send(e.type === 'pointercancel' ? { type: 'cancel' } : { type: 'up' }),
+    onNavigationStart: cancel,
+  } : null;
+
+  const deleteSelection = () => {
+    const sel = selectionRef.current;
+    if (!sel.nodes.length && !sel.edges.length) return;
+    cancel();
+    const base = dataRef.current;
+    const index = indexDiagram(base.nodes);
+    const next = deleteItems(base.nodes, base.edges, { nodes: sel.nodes.filter((id) => index.byId.get(id)?.kind !== 'root'), edges: sel.edges }, index);
+    if (next.nodes.length === base.nodes.length && next.edges.length === base.edges.length) return;
+    commit(next, 'delete');
+    select(NOTHING_SELECTED);
+  };
+  const onKeyDown = (e: ReactKeyboardEvent) => {
+    const mod = e.metaKey || e.ctrlKey;
+    const key = e.key.toLowerCase();
+    if (key === 'escape') {
+      if (gesture.current.k !== 'idle') cancel();
+      else if (selection.nodes.length || selection.edges.length) select(NOTHING_SELECTED);
+      return;
+    }
+    if (mod && key === 'a' && selectable) { e.preventDefault(); select({ nodes: data.nodes.filter((n) => n.kind !== 'root').map((n) => n.id), edges: data.edges.map((x) => x.id) }); return; }
+    if (!editable) return;
+    if (mod && key === 'z') { e.preventDefault(); cancel(); if (e.shiftKey) redo(); else undo(); return; }
+    if (mod && key === 'y') { e.preventDefault(); cancel(); redo(); return; }
+    if (key === 'delete' || key === 'backspace') { e.preventDefault(); deleteSelection(); }
+  };
+
+  const board = useMemo(() => <Board laid={laid} renderNode={renderNode as NodeViewProps['renderNode']} arrow={arrow} selection={selectedSets} />, [laid, renderNode, arrow, selectedSets]);
   const marks = useMemo<CanvasMiniMapItem[]>(() => (minimap ? nodes.filter((n) => n.kind !== 'root').map((n) => ({ id: n.id, x: n.x, y: n.y, w: n.w, h: n.h })) : []), [minimap, nodes]);
   const zoom = camera.z < NODE_TEXT_ZOOM ? 'far' : camera.z < EDGE_LABEL_ZOOM ? 'mid' : 'near';
   return (
-    <div ref={ref} data-slot="diagram" className={cn('absolute inset-0', className)} style={style}>
+    <div
+      ref={ref}
+      data-slot="diagram"
+      className={cn('absolute inset-0', className)}
+      style={style}
+      // Holding Space to pan drops a drag in progress, the same as a pinch does. It's the canvas's key, so it isn't handed on.
+      onKeyDownCapture={(e) => { if (e.key === ' ') cancel(); }}
+      onLostPointerCapture={cancel}
+    >
       <Canvas
         camera={camera}
         onCameraChange={change}
@@ -282,6 +450,8 @@ export function Diagram<N = unknown, E = unknown>({
         cursor={cursor}
         autoFocus={autoFocus}
         aria-label={ariaLabel}
+        onCanvasKeyDown={interactive ? onKeyDown : undefined}
+        {...pointerProps}
         overlay={<>{minimap ? <CanvasMiniMap items={marks} {...(minimap === true ? null : minimap)} /> : null}{overlay}</>}
       >
         <div
@@ -292,6 +462,8 @@ export function Diagram<N = unknown, E = unknown>({
         >
           {board}
         </div>
+        {guides.length ? <CanvasGuides guides={guides} /> : null}
+        {marquee ? <CanvasMarquee rect={marquee} /> : null}
         {children}
       </Canvas>
     </div>

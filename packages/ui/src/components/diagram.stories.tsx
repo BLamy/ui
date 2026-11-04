@@ -186,6 +186,28 @@ export const LaidOutDark: Story = {
   render: () => <Phone w={1360} h={560} dark><LaidOutMachine /></Phone>,
 };
 
+const SELECTABLE: DiagramNode[] = [
+  { id: 'a', label: 'One selected', x: 0, y: 0, w: 130, h: 36 },
+  { id: 'b', label: 'And another', x: 220, y: 0, w: 130, h: 36 },
+  { id: 'c', label: 'Not this one', x: 110, y: 90, w: 130, h: 36 },
+  { id: 'box', kind: 'compound', label: 'A selected compound', x: 0, y: 170, w: 350, h: 90 },
+  { id: 'd', parent: 'box', label: 'Inside it', x: 110, y: 205, w: 130, h: 36 },
+];
+const SELECTABLE_EDGES: DiagramEdge[] = [
+  { id: 'ab', from: 'a', to: 'b', label: 'selected' },
+  { id: 'ac', from: 'a', to: 'c' },
+  { id: 'bc', from: 'b', to: 'c' },
+];
+
+/** What's selected gets a ring, and an edge the theme's primary color. Both stay the same thickness on screen at any zoom. */
+export const Selected: Story = {
+  render: () => <Phone w={500} h={320}><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable defaultSelection={{ nodes: ['a', 'b', 'box'], edges: ['ab'] }} /></Phone>,
+};
+
+export const SelectedDark: Story = {
+  render: () => <Phone w={500} h={320} dark><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable defaultSelection={{ nodes: ['a', 'b', 'box'], edges: ['ab'] }} /></Phone>,
+};
+
 /** Nothing to draw: it's an empty canvas, centered on the origin. */
 export const Empty: Story = {
   render: () => <Phone w={400} h={240}><Diagram nodes={[]} /></Phone>,

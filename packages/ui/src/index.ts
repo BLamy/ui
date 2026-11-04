@@ -37,8 +37,12 @@ export type { DiagramDraft, DiagramDraftNode, DiagramLayoutEngine, DiagramLayout
 export { useDiagramLayout } from './lib/diagram-layout/react';
 export type { UseDiagramLayout, UseDiagramLayoutOptions } from './lib/diagram-layout/react';
 export type { ArrowShape, ConnectorEnd, ConnectorGeometry, ConnectorRoute, DiagramBox, DiagramDivider, DiagramEdge, DiagramIndex, DiagramModel, DiagramNode, DiagramNodeKind, DiagramPort, DiagramSide } from './lib/diagram-model';
+export { NOTHING_SELECTED, deleteItems, moveNodes, rerouteLabel, rerouteOrthogonal, simplifyRoute } from './lib/diagram-model';
+export type { DiagramSelection } from './lib/diagram-model';
+export { DRAG_THRESHOLD, EDGE_HIT_DISTANCE, SNAP_DISTANCE, hitTestDiagram, movableNodes, nodesInMarquee, stepDiagramGesture } from './lib/diagram-gesture';
+export type { DiagramGesture, DiagramGestureContext, DiagramGestureEvent, DiagramGestureStep, DiagramHit } from './lib/diagram-gesture';
 export { Diagram, DiagramNodeBody, diagramEdgeVariants, diagramNodeVariants } from './components/diagram';
-export type { DiagramNodeBodyProps, DiagramProps } from './components/diagram';
+export type { DiagramChange, DiagramNodeBodyProps, DiagramProps } from './components/diagram';
 export type { AnimatedHeightProps, ContentSwapProps } from './components/animated-height';
 export { Celebrate } from './components/celebrate';
 export type { CelebrateProps } from './components/celebrate';

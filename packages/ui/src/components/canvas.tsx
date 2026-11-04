@@ -329,7 +329,8 @@ export function CanvasMarquee({ rect }: { rect: Rect }) {
       data-slot="canvas-marquee"
       aria-hidden="true"
       className="pointer-events-none absolute bg-primary/10"
-      style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, border: `${1 / z}px solid var(--primary)` }}
+      // Chrome rounds a border under 1 px up to 1 px, and then the board's scale makes it thicker, so past 100% it's a shadow.
+      style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, ...(z > 1 ? { boxShadow: `inset 0 0 0 ${1 / z}px var(--primary)` } : { border: `${1 / z}px solid var(--primary)` }) }}
     />
   );
 }
