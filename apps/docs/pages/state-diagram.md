@@ -66,7 +66,7 @@ A machine's config is plain data under `setup()`, with its implementations named
 {% demo src="state-diagram/config" %}
 
 {% hint style="warning" %}
-**XState and ELK are optional peers.** A `config` needs `xstate`, and laying anything out needs `elkjs`. The shadcn item installs both. With the npm package, run `npm install xstate elkjs`. Without them it says what to install. ELK's licence is called out on [Attributions](#/attributions).
+**XState and ELK are optional peers.** A `config`, simulating and editing all need `xstate`, and laying anything out needs `elkjs`. The shadcn item installs both. With the npm package, `xstate` comes along for now, as docstream uses it, and `elkjs` doesn't, so run `npm install xstate elkjs`, which doesn't leave you relying on that. Without one, the diagram says what to install. ELK's licence is called out on [Attributions](#/attributions).
 {% endhint %}
 
 ## Simulating

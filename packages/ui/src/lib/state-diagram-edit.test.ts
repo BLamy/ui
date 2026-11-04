@@ -439,8 +439,10 @@ describe('several at once', () => {
   it('takes a state along with one of its own transitions, and one that’s inside another', () => {
     const next = removeItems(DOOR, { states: [['locked']], transitions: [place(DOOR, 'door.closed:LOCK->door.locked')] });
     expect(states(next)).not.toContain('door.locked');
-    const inside = removeItems(TARGETS, { states: [['a', 'deep'], ['a']] });
-    expect(stateAt(inside, ['a'])).toBeNull();
+    for (const states of [[['a', 'deep'], ['a']], [['a'], ['a', 'deep']]]) {
+      const inside = removeItems(TARGETS, { states });
+      expect(stateAt(inside, ['a'])).toBeNull();
+    }
   });
 });
 
@@ -462,6 +464,14 @@ describe('asking XState', () => {
 
   it('refuses what it only finds when it starts', () => {
     const outcome = tryEdit(xstate as never, { id: 'm', initial: 'a', states: { a: { initial: 'nope', states: { x: {} } } } }, (c) => c);
+    expect(outcome.ok).toBe(false);
+    expect((outcome as { reason: string }).reason).toMatch(/nope/);
+  });
+
+  it('refuses what it only finds once it’s running, with what it said', () => {
+    const c: MachineConfig = { id: 'm', initial: 'h', states: { h: { type: 'history', target: 'nope' }, a: {} } };
+    expect(() => createMachine(c as never)).not.toThrow();
+    const outcome = tryEdit(xstate as never, c, (x) => x);
     expect(outcome.ok).toBe(false);
     expect((outcome as { reason: string }).reason).toMatch(/nope/);
   });

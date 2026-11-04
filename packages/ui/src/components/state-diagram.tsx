@@ -59,9 +59,7 @@ export interface StateDiagramProps extends Pick<DiagramProps, 'minimap' | 'backg
   style?: CSSProperties;
 }
 
-const XSTATE_PEER = 'Reading a machine’s config needs xstate, an optional peer of @brett_lamy/ui: npm install xstate';
-const XSTATE_PEER_SIMULATE = 'Simulating a machine needs xstate, an optional peer of @brett_lamy/ui: npm install xstate';
-const XSTATE_PEER_EDIT = 'Editing a machine needs xstate, an optional peer of @brett_lamy/ui: npm install xstate';
+const XSTATE_PEER = 'This needs xstate, an optional peer of @brett_lamy/ui: npm install xstate';
 const NO_CONFIG = 'Simulating needs a machine from XState, which has a config to run a copy of.';
 
 /** The panel goes beside the board at this width or more, and in a tray under it. */
@@ -131,7 +129,7 @@ function useSimulation(machine: MachineLike | null, simulate: StateDiagramProps[
           setMade({ machine, sim: null, error: e instanceof Error ? e.message : String(e) });
         }
       },
-      () => { if (live) setMade({ machine, sim: null, error: XSTATE_PEER_SIMULATE }); },
+      () => { if (live) setMade({ machine, sim: null, error: XSTATE_PEER }); },
     );
     return () => {
       live = false;
@@ -363,7 +361,7 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
   useEffect(() => {
     if (!editable) return undefined;
     let live = true;
-    import('xstate').then((x) => { if (live) setXState(x); }, () => { if (live) setXStateError(XSTATE_PEER_EDIT); });
+    import('xstate').then((x) => { if (live) setXState(x); }, () => { if (live) setXStateError(XSTATE_PEER); });
     return () => { live = false; };
   }, [editable]);
   const [history, setHistory] = useState(NO_HISTORY);

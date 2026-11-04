@@ -1455,6 +1455,19 @@ test.describe('StateDiagram simulates', () => {
   });
 });
 
+test.describe('StateDiagram without xstate', () => {
+  test('says what to install, when it can’t be loaded', async ({ page }) => {
+    // Installing the package brings xstate along, through docstream, so this is the only way to get here today.
+    await page.route(/\/deps\/xstate/, (route) => route.abort());
+    await page.goto('/?demo=state-diagram/config&theme=light', { waitUntil: 'load' });
+    const error = page.locator('[data-slot=state-diagram-error]');
+    await expect(error).toBeVisible({ timeout: 30_000 });
+    await expect(error).toHaveText('This needs xstate, an optional peer of @brett_lamy/ui: npm install xstate');
+    await expect(error).toHaveAttribute('role', 'alert');
+    await expect(page.locator('[data-slot=edit-panel],[data-slot=simulation-panel]')).toHaveCount(0);
+  });
+});
+
 test.describe('StateDiagram edits', () => {
   const node = (page, id) => page.locator(`[data-slot=diagram-node][data-node="${id}"]`);
   const edge = (page, id) => page.locator(`[data-slot=diagram-edge][data-edge="${id}"]`);
@@ -1527,19 +1540,22 @@ test.describe('StateDiagram edits', () => {
     await field(page, 'edit-guard').press('Enter');
     await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: 'canRepair' })).toHaveCount(0);
     await expect(page.locator('[data-slot=edit-missing] [data-kind=guards]')).not.toContainText('canRepair');
-    // The same two states can be connected again.
+    // The same two states can be connected again, and again, each under a name of its own.
     await connect(page, 'door.broken', 'door.closed');
     await expect(edge(page, 'door.broken:EVENT->door.closed')).toHaveCount(1);
     await expect(edge(page, 'door.broken:REPAIR->door.closed')).toHaveCount(1);
+    await connect(page, 'door.broken', 'door.closed');
+    await expect(edge(page, 'door.broken:EVENT2->door.closed')).toHaveAttribute('data-selected', 'true');
 
     // Back through all of it, one at a time.
-    for (let i = 0; i < 7; i++) await page.locator('[data-slot=edit-undo]').click();
+    for (let i = 0; i < 8; i++) await page.locator('[data-slot=edit-undo]').click();
     await expect(page.locator('[data-slot=edit-undo]')).toBeDisabled();
     await expect.poll(() => graph(page)).toEqual(before);
     // And forward again.
-    for (let i = 0; i < 7; i++) await page.locator('[data-slot=edit-redo]').click();
+    for (let i = 0; i < 8; i++) await page.locator('[data-slot=edit-redo]').click();
     await expect(page.locator('[data-slot=edit-redo]')).toBeDisabled();
     await expect(edge(page, 'door.broken:EVENT->door.closed')).toHaveCount(1);
+    await expect(edge(page, 'door.broken:EVENT2->door.closed')).toHaveCount(1);
     await expect(edge(page, 'door.broken:REPAIR->door.closed')).toHaveCount(1);
   });
 
@@ -1705,11 +1721,21 @@ test.describe('StateDiagram edits', () => {
     await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
     await page.mouse.down();
     await page.mouse.move(before.x + 60, before.y + 60, { steps: 6 });
+    // Not while it's being dragged, either, which would only look as if it could.
+    expect(await node(page, 'door.closed').boundingBox()).toEqual(before);
     await page.mouse.up();
     expect(await node(page, 'door.closed').boundingBox()).toEqual(before);
     await expect(page.locator('[data-slot=edit-undo]')).toBeDisabled();
 
-    // Select with a press, and let the keys do the rest.
+    // Select with a press, and let the keys do the rest. ⇧ with an arrow doesn't move it.
+    await select(page, 'door.jammed');
+    const jammed = await node(page, 'door.jammed').boundingBox();
+    await page.locator('[data-slot=canvas]').focus();
+    await page.keyboard.press('Home');
+    await page.keyboard.press('Shift+ArrowRight');
+    await page.keyboard.press('Shift+ArrowDown');
+    expect(await node(page, 'door.jammed').boundingBox()).toEqual(jammed);
+    await expect(page.locator('[data-slot=edit-undo]')).toBeDisabled();
     await select(page, 'door.jammed');
     await page.keyboard.press('Delete');
     await expect(node(page, 'door.jammed')).toHaveCount(0);
@@ -1741,6 +1767,70 @@ test.describe('StateDiagram edits', () => {
     await page.keyboard.press('Enter');
     await expect.poll(async () => (await graph(page)).edges.filter((e) => e.includes(':EVENT->')).length).toBe(1);
     await expect(refusal(page)).toHaveCount(0);
+  });
+
+  test('dragging an end of a transition moves that end, and only if it can', async ({ page }) => {
+    await open(page);
+    /** Presses on an edge's label, which is the same as pressing on the edge. */
+    const pressLabel = async (text) => {
+      const b = await page.locator('[data-slot=diagram-edge-label]', { hasText: text }).boundingBox();
+      await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+    };
+    const dragEnd = async (end, to) => {
+      const dot = await page.locator(`[data-slot=diagram-edge-end][data-end=${end}]`).boundingBox();
+      const b = await node(page, to).boundingBox();
+      await page.mouse.move(dot.x + dot.width / 2, dot.y + dot.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
+      await page.mouse.up();
+    };
+    // Where it goes.
+    await pressLabel('CLOSE');
+    await expect(edge(page, 'door.open:CLOSE->door.closed')).toHaveAttribute('data-selected', 'true');
+    await dragEnd('to', 'door.jammed');
+    await expect(edge(page, 'door.open:CLOSE->door.jammed')).toHaveCount(1);
+    await expect(edge(page, 'door.open:CLOSE->door.closed')).toHaveCount(0);
+    // Where it comes from.
+    await pressLabel('UNLOCK');
+    await expect(edge(page, 'door.locked:UNLOCK->door.closed')).toHaveAttribute('data-selected', 'true');
+    await dragEnd('from', 'door.open');
+    await expect(edge(page, 'door.open:UNLOCK->door.closed')).toHaveCount(1);
+    await expect(edge(page, 'door.locked:UNLOCK->door.closed')).toHaveCount(0);
+    // A timer can go somewhere else, but it goes with its state.
+    await pressLabel('after 5000');
+    const timer = 'door.open:xstate.after.5000.door.open->door.closed';
+    await expect(edge(page, timer)).toHaveAttribute('data-selected', 'true');
+    await dragEnd('from', 'door.locked');
+    await expect(refusal(page)).toContainText('goes with what its state does');
+    await expect(edge(page, timer)).toHaveCount(1);
+    // And it all undoes.
+    await page.locator('[data-slot=edit-undo]').click();
+    await expect(edge(page, 'door.locked:UNLOCK->door.closed')).toHaveCount(1);
+    await page.locator('[data-slot=edit-undo]').click();
+    await expect(edge(page, 'door.open:CLOSE->door.closed')).toHaveCount(1);
+    await expect(page.locator('[data-slot=edit-undo]')).toBeDisabled();
+  });
+
+  test('a clock that was running doesn’t carry on into the next run', async ({ page }) => {
+    await open(page);
+    // Starting where there's a timer, so that there's something for it to run to.
+    await select(page, 'door.open');
+    await page.locator('[data-slot=edit-make-start]').click();
+    await run(page, 'Run');
+    await expect(page.locator('[data-slot=simulation-now]')).toHaveText('open');
+    await page.locator('[data-slot=simulation-run]').click();
+    await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+    await run(page, 'Edit');
+    await select(page, 'door.jammed');
+    await rename(page, 'stuck');
+    await expect(node(page, 'door.stuck')).toHaveCount(1);
+    await run(page, 'Run');
+    await expect(page.locator('[data-slot=simulation-log-entry]')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Run', exact: true })).toBeVisible();
+    const time = page.locator('[data-slot=simulation-time]');
+    await expect(time).toHaveText('0 ms, next at 5,000 ms');
+    await page.waitForTimeout(300);
+    await expect(time).toHaveText('0 ms, next at 5,000 ms');
   });
 
   test('with both on, focus goes to whichever’s showing', async ({ page }) => {
