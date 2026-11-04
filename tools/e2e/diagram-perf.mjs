@@ -65,8 +65,11 @@ async function run({ n, cull, zoom, minimap, editable }) {
     const w = innerWidth, h = innerHeight;
     const fit = Math.max(0.02, Math.min(1, (w - 48) / b.w, (h - 48) / b.h));
     const z = zoom === 'fit' ? fit : zoom;
-    // At 100%, the middle of the graph.
-    large.setCamera({ z, x: w / 2 - (b.x + b.w / 2) * z, y: h / 2 - (b.y + b.h / 2) * z });
+    // At fit, the middle of the graph. Closer than that, a node in the middle of the list, as a place on the board might have
+    // nothing there, and then there's nothing to draw.
+    const middle = large.nodes().filter((n) => !n.kind)[large.nodes().filter((n) => !n.kind).length >> 1];
+    const on = zoom === 'fit' ? { x: b.x + b.w / 2, y: b.y + b.h / 2 } : { x: middle.x, y: middle.y };
+    large.setCamera({ z, x: w / 2 - on.x * z, y: h / 2 - on.y * z });
     await raf();
     const t0 = performance.now();
     large.show(true);
