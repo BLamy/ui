@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (98 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (99 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -258,14 +258,14 @@ Defined in `@/components/ui/checkbox`. Base classes:
 | `circle` (default) | `rounded-full` |
 | `square` | `rounded-md` |
 
-## CodeViewer
+## CodeEditor
 
-### `codeViewerLineVariants`
+### `codeEditorLineVariants`
 
-Defined in `@/components/ui/code-viewer`. Base classes:
+Defined in `@/components/ui/code-editor-window`. Base classes:
 
 ```text
-pointer-events-none absolute inset-x-0 h-(--code-viewer-line)
+pointer-events-none absolute inset-x-0 h-(--code-editor-line)
 ```
 
 **`tint`** — default `none`
@@ -280,9 +280,9 @@ pointer-events-none absolute inset-x-0 h-(--code-viewer-line)
 | `danger` | `bg-destructive/15` |
 | `muted` | `bg-secondary` |
 
-### `codeViewerGutterCellVariants`
+### `codeEditorGutterCellVariants`
 
-Defined in `@/components/ui/code-viewer`. Base classes:
+Defined in `@/components/ui/code-editor-window`. Base classes:
 
 ```text
 box-border flex h-full shrink-0 items-center overflow-hidden
@@ -295,6 +295,22 @@ box-border flex h-full shrink-0 items-center overflow-hidden
 | `start` | `justify-start` |
 | `center` (default) | `justify-center` |
 | `end` | `justify-end` |
+
+### `codeEditorVariants`
+
+Defined in `@/components/ui/code-editor`. Base classes:
+
+```text
+bl-syntax
+```
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `bl-syntax-card` |
+| `ghost` | `bl-syntax-ghost` |
+| `inline` | `bl-syntax-inline` |
 
 ## ColorField
 
@@ -1495,24 +1511,6 @@ flex min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground
 | `sm` | `[--editor-rows:4]` |
 | `lg` | `[--editor-rows:14]` |
 
-## SyntaxHighlighting
-
-### `syntaxHighlightingVariants`
-
-Defined in `@/components/ui/syntax-highlighting`. Base classes:
-
-```text
-bl-syntax
-```
-
-**`variant`** — default `default`
-
-| Value | Adds |
-| --- | --- |
-| `default` (default) | `bl-syntax-card` |
-| `ghost` | `bl-syntax-ghost` |
-| `inline` | `bl-syntax-inline` |
-
 ## TabView
 
 ### `tabViewVariants`
@@ -1738,6 +1736,23 @@ flex flex-col
 | --- | --- |
 | `radio` (default) | `gap-1.5` |
 | `networks` | `gap-1` |
+
+## Terminal
+
+### `terminalVariants`
+
+Defined in `@/components/ui/terminal`. Base classes:
+
+```text
+[ 'bl-scroll size-full min-h-0 min-w-0 rounded-none p-2 font-mono shadow-none', '[--term-bg:var(--background)] [--term-fg:var(--foreground)] [--term-cursor:var(--primary)]', '[--term-selection-bg:color-mix(in_oklab,var(--primary)_30%,transparent)] selection:bg-primary/30', '[--term-search-match:color-mix(in_oklab,var(--term-yellow)_30%,transparent)] [--term-search-active:color-mix(in_oklab,var(--term-yellow)_55%,transparent)] [--term-search-border:var(--term-yellow)]', '[--term-red:var(--destructive)] [--term-green:var(--success,oklch(0.723_0.191_149.6))] [--term-yellow:var(--warning,oklch(0.769_0.165_70.1))] [--term-blue:var(--link,var(--primary))]', '[--term-magenta:color-mix(in_oklch,var(--term-red),var(--term-blue))] [--term-cyan:color-mix(in_oklch,var(--term-blue),var(--term-green))]', '[--term-color-0:var(--foreground)] [--term-color-7:color-mix(in_oklab,var(--foreground)_55%,var(--background))] [--term-color-8:color-mix(in_oklab,var(--foreground)_55%,var(--background))] [--term-color-15:color-mix(in_oklab,var(--foreground)_70%,var(--background))]', '[--term-color-1:color-mix(in_oklab,var(--term-red)_85%,black)] [--term-color-2:color-mix(in_oklab,var(--term-green)_65%,black)] [--term-color-3:color-mix(in_oklab,var(--term-yellow)_55%,black)]', '[--term-color-4:color-mix(in_oklab,var(--term-blue)_85%,black)] [--term-color-5:color-mix(in_oklab,var(--term-magenta)_80%,black)] [--term-color-6:color-mix(in_oklab,var(--term-cyan)_65%,black)]', '[--term-color-9:var(--term-red)] [--term-color-10:color-mix(in_oklab,var(--term-green)_80%,black)] [--term-color-11:color-mix(in_oklab,var(--term-yellow)_70%,black)]', '[--term-color-12:var(--term-blue)] [--term-color-13:var(--term-magenta)] [--term-color-14:color-mix(in_oklab,var(--term-cyan)_80%,black)]', 'dark:[--term-color-0:color-mix(in_oklab,var(--foreground)_18%,var(--background))] dark:[--term-color-7:color-mix(in_oklab,var(--foreground)_80%,var(--background))] dark:[--term-color-15:var(--foreground)]', 'dark:[--term-color-1:var(--term-red)] dark:[--term-color-2:var(--term-green)] dark:[--term-color-3:var(--term-yellow)] dark:[--term-color-4:var(--term-blue)] dark:[--term-color-5:var(--term-magenta)] dark:[--term-color-6:var(--term-cyan)]', 'dark:[--term-color-9:color-mix(in_oklab,var(--term-red)_75%,white)] dark:[--term-color-10:color-mix(in_oklab,var(--term-green)_75%,white)] dark:[--term-color-11:color-mix(in_oklab,var(--term-yellow)_75%,white)]', 'dark:[--term-color-12:color-mix(in_oklab,var(--term-blue)_75%,white)] dark:[--term-color-13:color-mix(in_oklab,var(--term-magenta)_75%,white)] dark:[--term-color-14:color-mix(in_oklab,var(--term-cyan)_75%,white)]', ]
+```
+
+**`size`** — default `md`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `[--term-font-size:12px] [--term-row-height:16px]` |
+| `md` (default) | `[--term-font-size:13px] [--term-row-height:18px]` |
 
 ## Textarea
 

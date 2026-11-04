@@ -154,8 +154,8 @@
         { "id": "open-code", "title": "OpenCode" },
         { "id": "workspace", "title": "Workspace" },
         { "id": "markdown-editor", "title": "MarkdownEditor" },
-        { "id": "syntax-highlighting", "title": "SyntaxHighlighting" },
-        { "id": "code-viewer", "title": "CodeViewer" },
+        { "id": "code-editor", "title": "CodeEditor" },
+        { "id": "terminal", "title": "Terminal" },
         { "id": "pencilkit", "title": "PencilKit" },
         { "id": "replay-preview", "title": "ReplayPreview" },
         { "id": "trace-timeline", "title": "TraceTimeline" },
@@ -234,6 +234,7 @@
     }
   ],
   "standalone": [
-    { "id": "blocks", "title": "Blocks", "section": "Blocks", "wide": true }
+    { "id": "blocks", "title": "Blocks", "section": "Blocks", "wide": true },
+    { "id": "syntax-highlighting", "title": "SyntaxHighlighting", "section": "Editors and workbench" }
   ]
 }

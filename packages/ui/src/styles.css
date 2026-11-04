@@ -1,5 +1,5 @@
 @layer theme, base, components, docstream, utilities;
-@layer components.bl-editor, components.bl-mde;
+@layer components.bl-editor, components.bl-mde, components.bl-terminal;
 @import "./tokens.css";
 /* Utilities only — no preflight, so a host app's base styles are left alone. */
 @import "tailwindcss/utilities.css" layer(utilities);
@@ -7,6 +7,8 @@
    utility, so a host restyles the editor with plain classes — no !important. Imported here rather than from
    JavaScript: an unlayered copy anywhere would outrank every layer. */
 @import "@brett_lamy/docstream-editor/styles.css" layer(components.bl-editor);
+/* wterm's sheet, for the same reason: Terminal themes it from its recipe, with wterm's custom properties and plain classes. */
+@import "@wterm/dom/css" layer(components.bl-terminal);
 @source "./";
 
 /* Box sizing, scoped to the kit. There is no preflight (see above), so a host without Tailwind's would leave
@@ -721,7 +723,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .wb-md :where(img){max-width:100%;border-radius:8px}
 
 /* ── Code colors in MarkdownView (Docstream's hljs spans) and HlPre (.wb-tok-*) ──
-   SyntaxHighlighting's knobs (--bl-syntax-*) retheme them too. Defaults follow the code surface: a Material
+   CodeEditor's knobs (--bl-syntax-*) retheme them too. Defaults follow the code surface: a Material
    palette on the dark --code well, a One Light-style palette on a light Workbench's light well. */
 :root,[data-theme-scope="workbench"].dark{
   --_wb-code-keyword:#C792EA;--_wb-code-string:#A5D6A7;--_wb-code-number:#F78C6C;--_wb-code-comment:#777784;
@@ -886,9 +888,10 @@ body:has(:is([data-theme-scope="workbench"].dark,[data-theme-scope="glass"].dark
 [data-slot="composer"][data-collapsed="fab"]:has([data-folded])>[data-slot="composer-stack"]>[data-slot="composer-bump"]{height:0;min-height:0;margin-block:0;padding-block:0;border-width:0;opacity:0;overflow:hidden;pointer-events:none;transition:opacity .1s ease}
 @media (prefers-reduced-motion:reduce){[data-slot="composer-card"],[data-slot="composer-card-body"]>*,[data-slot="composer-card"]>[data-slot="composer-fab"],[data-slot="composer-stack"]>[data-slot="composer-bump"]{transition:none!important}}
 
-/* ══ SyntaxHighlighting — gpu-lexer token colors and the code block. Every color reads a --bl-syntax-* property
+/* ══ CodeEditor — gpu-lexer token colors and the code block. Every color reads a --bl-syntax-* property
    first (set it on any ancestor to retheme); the defaults follow the color scheme via light-dark(). Layered, so
    className utilities win. ══ */
+@keyframes blCodeCaret{0%,100%{opacity:1}50%{opacity:0}}
 @layer components{
 .bl-tok-keyword{color:var(--bl-syntax-keyword,light-dark(#8839C4,#C792EA))}
 .bl-tok-type{color:var(--bl-syntax-type,light-dark(#A15C00,#FFCB6B))}
@@ -934,6 +937,12 @@ body:has(:is([data-theme-scope="workbench"].dark,[data-theme-scope="glass"].dark
 .bl-syntax:hover>.bl-syntax-copy-float,.bl-syntax-copy-float[data-focus-visible],.bl-syntax-copy-float[data-copied]{opacity:1}
 @media (hover:none){.bl-syntax-copy-float{opacity:1}}
 .bl-syntax-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.bl-syntax[data-windowed]{font-family:var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace));font-size:var(--bl-syntax-font-size,13px)}
+.bl-code-band[data-mark=highlight]{background:var(--bl-syntax-highlight,color-mix(in srgb,var(--primary) 13%,transparent));box-shadow:inset 3px 0 var(--bl-syntax-highlight-bar,var(--primary))}
+.bl-code-band[data-mark=add]{background:var(--bl-syntax-added,light-dark(rgba(52,199,89,.14),rgba(48,209,88,.15)))}
+.bl-code-band[data-mark=del]{background:var(--bl-syntax-removed,light-dark(rgba(255,59,48,.11),rgba(255,69,58,.15)))}
+.bl-code-caret{animation:blCodeCaret 1.06s step-end infinite}
+@media (prefers-reduced-motion:reduce){.bl-code-caret{animation:none}}
 }
 
 /* ── NowPlayingBars (now-playing-bars.tsx): each bar scales from the bottom on its own period; still when paused

@@ -1235,6 +1235,14 @@
             "transition": "none !important"
           }
         },
+        "@keyframes blCodeCaret": {
+          "0%,100%": {
+            "opacity": "1"
+          },
+          "50%": {
+            "opacity": "0"
+          }
+        },
         "@keyframes blEq": {
           "from": {
             "transform": "scaleY(.25)"
@@ -1998,68 +2006,90 @@
       }
     },
     {
-      "name": "code-viewer-gpu",
+      "name": "code-editor-gpu",
       "type": "registry:lib",
-      "title": "CodeViewer GPU highlighting",
-      "description": "An opt-in highlighter for CodeViewer on gpu-lexer. It answers a frame late, and where there's no WebGPU the viewer stays plain text.",
+      "title": "CodeEditor GPU highlighting",
+      "description": "A highlighter for CodeEditor's windowed renderer on gpu-lexer. It answers a frame late, and where there's no WebGPU the editor stays plain text.",
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/code-viewer-model.json",
+        "https://blamy.github.io/ui/r/code-editor-model.json",
         "https://blamy.github.io/ui/r/syntax.json"
       ],
       "files": [
         {
-          "path": "packages/ui/src/lib/code-viewer-gpu.ts",
+          "path": "packages/ui/src/lib/code-editor-gpu.ts",
           "type": "registry:lib",
-          "target": "lib/code-viewer-gpu.ts"
+          "target": "lib/code-editor-gpu.ts"
         }
       ]
     },
     {
-      "name": "code-viewer-model",
+      "name": "code-editor-model",
       "type": "registry:lib",
-      "title": "CodeViewer logic",
-      "description": "CodeViewer's logic as plain functions: splitting lines, windowing long lines, its selection model, and a lexer that can resume in the middle of a long line.",
+      "title": "CodeEditor logic",
+      "description": "CodeEditor's logic as plain functions: splitting lines, windowing long lines, its selection model, a lexer that can resume in the middle of a long line, and a document with commands and undo.",
       "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/syntax.json"
       ],
       "files": [
         {
-          "path": "packages/ui/src/lib/code-viewer.ts",
+          "path": "packages/ui/src/lib/code-document.ts",
           "type": "registry:lib",
-          "target": "lib/code-viewer.ts"
+          "target": "lib/code-document.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/code-editor.ts",
+          "type": "registry:lib",
+          "target": "lib/code-editor.ts"
         }
       ]
     },
     {
-      "name": "code-viewer",
+      "name": "code-editor",
       "type": "registry:ui",
-      "title": "CodeViewer",
-      "description": "A read-only source view that stays smooth on a megabyte line and on hundreds of thousands of lines: windowed both ways, with pluggable gutters that stay put, a current line and column, line tints, inline markers, pluggable highlighting and its own selection and copy.",
+      "title": "CodeEditor",
+      "description": "Code you can edit, and read-only code of any shape, with one API and two renderers: in the page for a snippet or inline code, and windowed for an editor or a source view, smooth on a megabyte line and on half a million lines, with gutters, a current line, markers, undo and input methods.",
       "dependencies": [
         "class-variance-authority@^0.7.1",
         "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/code-viewer-model.json",
+        "https://blamy.github.io/ui/r/code-editor-gpu.json",
+        "https://blamy.github.io/ui/r/code-editor-model.json",
+        "https://blamy.github.io/ui/r/syntax.json",
+        "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "packages/ui/src/components/code-viewer.tsx",
+          "path": "packages/ui/src/components/code-editor-window.tsx",
           "type": "registry:ui",
-          "target": "components/ui/code-viewer.tsx"
+          "target": "components/ui/code-editor-window.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/code-editor.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/code-editor.tsx"
         }
       ],
       "meta": {
-        "page": "code-viewer",
+        "page": "code-editor",
         "exports": [
-          "CodeViewer",
-          "codeViewerLineVariants",
-          "codeViewerGutterCellVariants"
+          "CodeEditor",
+          "CodeEditorHeader",
+          "CodeEditorTitle",
+          "CodeEditorCopyButton",
+          "CodeEditorContent",
+          "useCodeEditor",
+          "SyntaxTokens",
+          "useSyntaxTokens",
+          "codeEditorVariants",
+          "codeEditorLineVariants",
+          "codeEditorGutterCellVariants"
         ]
       }
     },
@@ -4979,16 +5009,13 @@
       "name": "syntax-highlighting",
       "type": "registry:ui",
       "title": "SyntaxHighlighting",
-      "description": "Code highlighted on the GPU by gpu-lexer: file header, copy button, line numbers, highlighted and diff lines, inline code.",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
+      "description": "The old names for CodeEditor's read-only parts, each calling CodeEditor with readOnly. Use CodeEditor in new code.",
+      "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/syntax.json",
-        "https://blamy.github.io/ui/r/theme.json",
-        "https://blamy.github.io/ui/r/utils.json"
+        "https://blamy.github.io/ui/r/code-editor.json",
+        "https://blamy.github.io/ui/r/code-editor-model.json",
+        "https://blamy.github.io/ui/r/syntax.json"
       ],
       "files": [
         {
@@ -4996,26 +5023,7 @@
           "type": "registry:ui",
           "target": "components/ui/syntax-highlighting.tsx"
         }
-      ],
-      "meta": {
-        "page": "syntax-highlighting",
-        "exports": [
-          "SyntaxHighlighting",
-          "SyntaxHighlightingHeader",
-          "SyntaxHighlightingTitle",
-          "SyntaxHighlightingCopyButton",
-          "SyntaxHighlightingContent",
-          "SyntaxTokens",
-          "syntaxHighlightingVariants",
-          "useSyntaxTokens",
-          "useSyntaxHighlighting",
-          "lexSyntax",
-          "webgpuSupported",
-          "probeWebGPU",
-          "languageFromPath",
-          "tokenizeLines"
-        ]
-      }
+      ]
     },
     {
       "name": "tab-bar",
@@ -5318,6 +5326,58 @@
           "target": "lib/tailscale.ts"
         }
       ]
+    },
+    {
+      "name": "terminal-line",
+      "type": "registry:lib",
+      "title": "Terminal line discipline",
+      "description": "Line editing, history, completion, Ctrl-C and a prompt, for a terminal with no PTY behind it: pure functions, and a shell that ties them to a command handler and outlives the component showing it.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/terminal-line.ts",
+          "type": "registry:lib",
+          "target": "lib/terminal-line.ts"
+        }
+      ]
+    },
+    {
+      "name": "terminal",
+      "type": "registry:ui",
+      "title": "Terminal",
+      "description": "A real terminal emulator on wterm, themed from the library's tokens in light and dark. It fills its container and refits as that resizes. Connect it to a PTY with onData and write, or run whole lines with no PTY: prompt and onCommand add line editing, history, completion and Ctrl-C.",
+      "dependencies": [
+        "@wterm/dom@0.5.8",
+        "@wterm/ghostty@0.5.8",
+        "@wterm/react@0.5.8",
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/terminal-line.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "css": {
+        "@import \"@wterm/dom/css\" layer(components)": {}
+      },
+      "files": [
+        {
+          "path": "packages/ui/src/components/terminal.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/terminal.tsx"
+        }
+      ],
+      "meta": {
+        "page": "terminal",
+        "exports": [
+          "Terminal",
+          "terminalVariants"
+        ]
+      }
     },
     {
       "name": "text-field",
@@ -6898,6 +6958,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/code-editor.json",
         "https://blamy.github.io/ui/r/context-menu.json",
         "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/csv.json",
@@ -6917,7 +6978,6 @@
         "https://blamy.github.io/ui/r/spreadsheet.json",
         "https://blamy.github.io/ui/r/stl-viewer.json",
         "https://blamy.github.io/ui/r/syntax.json",
-        "https://blamy.github.io/ui/r/syntax-highlighting.json",
         "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/tree.json",
@@ -7698,6 +7758,7 @@
         "https://blamy.github.io/ui/r/avatar.json",
         "https://blamy.github.io/ui/r/badge.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/code-editor.json",
         "https://blamy.github.io/ui/r/composer.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/credenza.json",
@@ -7713,7 +7774,6 @@
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/syntax.json",
-        "https://blamy.github.io/ui/r/syntax-highlighting.json",
         "https://blamy.github.io/ui/r/tab-view.json",
         "https://blamy.github.io/ui/r/tailscale.json",
         "https://blamy.github.io/ui/r/theme.json",
@@ -7831,6 +7891,7 @@
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/card.json",
         "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/code-editor.json",
         "https://blamy.github.io/ui/r/color-field.json",
         "https://blamy.github.io/ui/r/color-picker.json",
         "https://blamy.github.io/ui/r/combobox.json",
@@ -7868,7 +7929,6 @@
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/split-view.json",
         "https://blamy.github.io/ui/r/switch.json",
-        "https://blamy.github.io/ui/r/syntax-highlighting.json",
         "https://blamy.github.io/ui/r/tab-bar.json",
         "https://blamy.github.io/ui/r/tab-view.json",
         "https://blamy.github.io/ui/r/tabs.json",
@@ -8103,6 +8163,7 @@
         "https://blamy.github.io/ui/r/animated-height.json",
         "https://blamy.github.io/ui/r/artifact-chat-container.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/code-editor.json",
         "https://blamy.github.io/ui/r/command-menu.json",
         "https://blamy.github.io/ui/r/composer.json",
         "https://blamy.github.io/ui/r/container.json",
@@ -8131,7 +8192,6 @@
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/split-view.json",
         "https://blamy.github.io/ui/r/switch.json",
-        "https://blamy.github.io/ui/r/syntax-highlighting.json",
         "https://blamy.github.io/ui/r/tab-view.json",
         "https://blamy.github.io/ui/r/tabs.json",
         "https://blamy.github.io/ui/r/text-field.json",
@@ -9185,6 +9245,138 @@
       ],
       "meta": {
         "entry": "components/blocks/video-editor/page.tsx"
+      }
+    },
+    {
+      "name": "vscode",
+      "type": "registry:block",
+      "title": "VS Code",
+      "description": "A VS Code window that really runs: an activity rail with Explorer, Search and Run, editors in a Workspace you can split, and wterm terminals, on one in-browser Node runtime (agent-wasm, the fork of almostnode). Everything it needs goes through one interface, so a real folder and real shells can replace the runtime. Packages you install run in a Worker. Where the host serves it with CORS, as GitHub Pages does, that Worker has an opaque origin and no access to the site's storage; elsewhere it's an ordinary Worker of the site that can read and change the site's IndexedDB and caches, and the status bar says which. They can use the network either way, as far as CORS allows.",
+      "categories": [
+        "developer-tools",
+        "application"
+      ],
+      "dependencies": [
+        "@agent-wasm/core@0.4.0",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/adaptive-pane.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/code-editor.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/context-menu.json",
+        "https://blamy.github.io/ui/r/credenza.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/syntax.json",
+        "https://blamy.github.io/ui/r/tab-view.json",
+        "https://blamy.github.io/ui/r/terminal.json",
+        "https://blamy.github.io/ui/r/terminal-line.json",
+        "https://blamy.github.io/ui/r/text-field.json",
+        "https://blamy.github.io/ui/r/tree.json",
+        "https://blamy.github.io/ui/r/utils.json",
+        "https://blamy.github.io/ui/r/workspace.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/vscode/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/page.tsx"
+        },
+        {
+          "path": "registry/blocks/vscode/explorer.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/explorer.tsx"
+        },
+        {
+          "path": "registry/blocks/vscode/search-panel.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/search-panel.tsx"
+        },
+        {
+          "path": "registry/blocks/vscode/run-panel.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/run-panel.tsx"
+        },
+        {
+          "path": "registry/blocks/vscode/editor-area.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/editor-area.tsx"
+        },
+        {
+          "path": "registry/blocks/vscode/status-bar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/status-bar.tsx"
+        },
+        {
+          "path": "registry/blocks/vscode/store.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/store.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/files.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/files.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/runtime.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/runtime.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/line-terminal.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/line-terminal.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/memory-runtime.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/memory-runtime.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/almostnode/index.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/almostnode/index.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/almostnode/project.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/almostnode/project.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/almostnode/protocol.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/almostnode/protocol.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/almostnode/shell-line.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/almostnode/shell-line.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/almostnode/worker-host.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/almostnode/worker-host.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/almostnode/worker-url.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/almostnode/worker-url.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/almostnode/runtime.worker.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/almostnode/runtime.worker.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/vscode/page.tsx"
       }
     },
     {

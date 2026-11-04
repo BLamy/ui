@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/ui",
-  "version": "5.14.0",
+  "version": "5.15.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/BLamy/ui.git",
@@ -61,6 +61,9 @@
     "@tiptap/react": "3.30.5",
     "@tiptap/starter-kit": "3.30.5",
     "@tiptap/suggestion": "3.30.5",
+    "@wterm/dom": "0.5.8",
+    "@wterm/ghostty": "0.5.8",
+    "@wterm/react": "0.5.8",
     "class-variance-authority": "^0.7",
     "clsx": "^2",
     "cronstrue": "^3.27.0",

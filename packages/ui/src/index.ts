@@ -194,14 +194,13 @@ export { Form, FormSection } from './components/form';
 export type { FormSectionProps } from './components/form';
 export {
   SyntaxHighlighting, SyntaxHighlightingHeader, SyntaxHighlightingTitle, SyntaxHighlightingCopyButton,
-  SyntaxHighlightingContent, SyntaxTokens, syntaxHighlightingVariants, useSyntaxTokens, useSyntaxHighlighting,
+  SyntaxHighlightingContent, syntaxHighlightingVariants, useSyntaxHighlighting,
 } from './components/syntax-highlighting';
 export type {
   SyntaxHighlightingProps, SyntaxHighlightingContentProps, SyntaxHighlightingCopyButtonProps, SyntaxLineRange,
-  UseSyntaxTokensOptions, SyntaxTokensState,
 } from './components/syntax-highlighting';
 export { lexSyntax, webgpuSupported, probeWebGPU, languageFromPath, tokenizeLines } from './lib/syntax';
-export type { SyntaxToken, SyntaxTokenType, SyntaxSpan, SyntaxHighlighter, SyntaxResult, SyntaxEngine, WebGPUProbe } from './lib/syntax';
+export type { CodeToken, CodeTokenType, SyntaxToken, SyntaxTokenType, SyntaxSpan, SyntaxHighlighter, SyntaxResult, SyntaxEngine, WebGPUProbe } from './lib/syntax';
 // ── end shadcn primitives ──
 
 // ── Workbench: IDE-style agent workspace — composer, chat, terminal dock, surface panel, WorkbenchShell ──
@@ -705,11 +704,19 @@ export { TraceTimeline, traceTimelineVariants } from './components/trace-timelin
 export type { TraceTimelineProps, TraceTimelineHandle, TraceValueInfo, TraceDrawStats, TraceFetchActivity } from './components/trace-timeline';
 export { linearAxis, stopAxis, advanceAlong, selectStops, formatTraceTime, TRACE_SCRUB_SPEEDS } from './lib/trace-timeline';
 export type { TraceActivity, TraceAxis, TraceDensity, TraceDiamonds, TraceKey, TraceLane, TraceMarkSeries, TraceRange, TraceRequest, TraceScrubSpeed, TraceStop, TraceStopMark, TraceThread, TraceTone, TraceWindow } from './lib/trace-timeline';
-export { CodeViewer, codeViewerLineVariants, codeViewerGutterCellVariants } from './components/code-viewer';
-export type { CodeViewerProps, CodeViewerHandle, CodeViewerGutter, CodeViewerMarker, CodeViewerLineDecoration, CodeViewerScrollOptions, CodeViewerScrollTarget, CodeViewerPosition, CodeViewerSelection, CodeViewerCopy, CodeHighlight, CodeHighlightContext, CodeToken, CodeTokenType, CodeViewerAlign } from './components/code-viewer';
-export { splitCodeLines, lexCodeLine } from './lib/code-viewer';
-export { createGpuCodeHighlight } from './lib/code-viewer-gpu';
-export type { GpuCodeHighlightOptions } from './lib/code-viewer-gpu';
+export {
+  CodeEditor, CodeEditorHeader, CodeEditorTitle, CodeEditorCopyButton, CodeEditorContent, useCodeEditor, SyntaxTokens, useSyntaxTokens,
+  codeEditorVariants, codeEditorLineVariants, codeEditorGutterCellVariants,
+} from './components/code-editor';
+export type {
+  CodeEditorProps, CodeEditorContentProps, CodeEditorCopyButtonProps, CodeEditorDisplayProps, CodeEditorHandle, CodeEditorChange, CodeEditorCopy, CodeEditorGutter, CodeEditorMarker,
+  CodeEditorLineDecoration, CodeEditorScrollOptions, CodeEditorScrollTarget, CodeEditorPosition, CodeEditorSelection, CodeEditorAlign, CodeHighlight, CodeHighlightContext, CodeLineRange,
+  UseSyntaxTokensOptions, SyntaxTokensState,
+} from './components/code-editor';
+export { splitCodeLines, lexCodeLine, tooBigForPage, MAX_PAGE_LINES, MAX_PAGE_LINE_LENGTH, MAX_PAGE_CHARS } from './lib/code-editor';
+export { splitEditorLines, lineAfterEdit } from './lib/code-document';
+export { createGpuCodeHighlight } from './lib/code-editor-gpu';
+export type { GpuCodeHighlightOptions } from './lib/code-editor-gpu';
 export { ObjectTree, objectTreeRowVariants } from './components/object-tree';
 export type { ObjectTreeProps } from './components/object-tree';
 export { ObjectValue } from './components/object-value';
@@ -730,3 +737,7 @@ export { RequestLink, RequestTable, REQUEST_COLUMNS, requestTableVariants } from
 export type { RequestColumn, RequestColumnId, RequestLinkProps, RequestTableHandle, RequestTableProps } from './components/request-table';
 export { isRequestFailed, requestDisplayName, requestDurationText, requestName, requestSizeText, requestStatusText, requestTimeRange, requestTone, sortRequests } from './lib/request-table';
 export type { RequestRow, RequestSort, RequestSortDirection, RequestSortValue, RequestColumnSize, RequestTimeRange, RequestTone } from './lib/request-table';
+export { Terminal, terminalVariants } from './components/terminal';
+export type { TerminalProps, TerminalHandle } from './components/terminal';
+export { createTerminalShell, createLineState, applyKey, applyCompletion, readKeys, renderLine, eraseLine, wordAtCursor, formatColumns, cellWidth, textWidth, stripAnsi, advance, toTerminalNewlines, trimTranscript, MAX_HISTORY } from './lib/terminal-line';
+export type { CellPosition, CompletionStep, LineEvent, LineState, LineStep, RenderedLine, TerminalCommandHandler, TerminalCommandIO, TerminalCompleter, TerminalShell, TerminalShellOptions, TerminalSink } from './lib/terminal-line';
