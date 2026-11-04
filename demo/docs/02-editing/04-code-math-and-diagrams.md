@@ -111,13 +111,14 @@ export const toggle = createMachine({
   id: "toggle",
   initial: "off",
   states: {
-    off: { on: { TOGGLE: "on" } },
+    off: { on: { TOGGLE: "loading" } },
+    loading: { invoke: { src: "fetchState", onDone: "on", onError: "off" } },
     on: { on: { TOGGLE: "off" } }
   }
 })
 ```
 
-XState accepts JSON configs and static TypeScript machine configs. Actions and guards are never executed. Invalid or unfinished source shows an inline error without stopping editing.
+XState accepts JSON configs and static TypeScript machine configs. Actions, guards and invoked actors are never executed. A state's `invoke` shows on a second line, with its `onDone` and `onError` as `done` and `error` edges, which is what **XState diagram** starts you with. Invalid or unfinished source shows an inline error without stopping editing.
 
 ```tscircuit
 circuit.add(

@@ -7,7 +7,7 @@ import { parseMarkdown } from "@brett_lamy/docstream/gitbook"
 import { GitbookEditor } from "./Editor"
 import { astToTiptap, serializeEditorMarkdown, tiptapToAst } from "./convert"
 import { getGitbookSchema } from "./extensions"
-import { SLASH_ITEMS } from "./slash-menu"
+import { SLASH_ITEMS, XSTATE_STARTER } from "./slash-menu"
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 const machine = JSON.stringify({ initial: "idle", states: { idle: { on: { START: "working" } }, working: {} } })
@@ -43,6 +43,38 @@ describe("live diagram code blocks", () => {
     await until(() => !!host.querySelector('[role="alert"]'))
     await act(async () => { editor.commands.insertContentAt({ from: 1, to: editor.state.doc.firstChild!.nodeSize - 1 }, { type: "text", text: machine }) })
     await until(() => !!host.querySelector(".docs-mermaid svg"))
+    expect(host.querySelector('[role="alert"]')).toBeNull()
+  })
+
+  it("authors a machine that invokes something: its edges and what it invokes show as it's typed", async () => {
+    let editor!: Editor
+    let saved = ""
+    await act(async () => root.render(<GitbookEditor markdown={fence("xstate", machine)} onChange={(md) => { saved = md }} onEditorReady={(instance) => { if (instance) editor = instance }} />))
+    await until(() => !!host.querySelector("[data-docstream-xstate] .docs-mermaid svg"))
+    const invoking = JSON.stringify({ initial: "idle", states: { idle: { invoke: { src: "load", onDone: "ready", onError: "failed" } }, ready: {}, failed: {} } })
+    await act(async () => { editor.commands.insertContentAt({ from: 1, to: editor.state.doc.firstChild!.nodeSize - 1 }, { type: "text", text: invoking }) })
+    await until(() => !!host.querySelector(".docs-mermaid svg")?.textContent?.includes("invoke load"))
+    const drawn = host.querySelector(".docs-mermaid svg")!.textContent!
+    expect(drawn).toContain("done")
+    expect(drawn).toContain("error")
+    expect(saved).toContain('"invoke"')
+    // Saved, it's what was typed, with nothing taken out or added.
+    expect(saved).toBe(fence("xstate", invoking))
+  })
+
+  it("round-trips a TypeScript machine with an inline actor, leaving the source alone", () => {
+    const source = 'createMachine({\n  initial: "a",\n  states: {\n    a: { invoke: { src: fromPromise(async () => load()), input: { id: 1 }, onDone: "b" } },\n    b: {}\n  }\n})'
+    const markdown = fence("xstate", source)
+    const doc = getGitbookSchema().nodeFromJSON(astToTiptap(parseMarkdown(markdown)))
+    expect(serializeEditorMarkdown(tiptapToAst(doc.toJSON()))).toBe(markdown)
+  })
+
+  it("starts a new diagram with something that invokes, so that you can see how it's written, and it draws", async () => {
+    expect(JSON.parse(XSTATE_STARTER).states.loading.invoke.src).toBe("fetchPage")
+    await act(async () => root.render(<GitbookEditor markdown={fence("xstate", XSTATE_STARTER)} />))
+    await until(() => !!host.querySelector(".docs-mermaid svg")?.textContent?.includes("invoke fetchPage"))
+    const drawn = host.querySelector(".docs-mermaid svg")!.textContent!
+    for (const text of ["FETCH", "done", "error", "RETRY"]) expect(drawn).toContain(text)
     expect(host.querySelector('[role="alert"]')).toBeNull()
   })
 

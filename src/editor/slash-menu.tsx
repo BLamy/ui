@@ -46,6 +46,18 @@ interface SlashItem {
 const insertBlock = (content: PMNode) => (editor: Editor) =>
   editor.chain().focus().insertContent(content).run()
 
+/** What a new XState diagram starts as: enough to show how to write a state that waits on something, as well as one that doesn't. */
+export const XSTATE_STARTER = JSON.stringify({
+  id: "request",
+  initial: "idle",
+  states: {
+    idle: { on: { FETCH: "loading" } },
+    loading: { invoke: { src: "fetchPage", onDone: "success", onError: "failure" } },
+    failure: { on: { RETRY: "loading" } },
+    success: { type: "final" },
+  },
+}, null, 2)
+
 export const SLASH_ITEMS: SlashItem[] = [
   { title: "Heading 1", keywords: "h1 title", icon: Heading1, run: (e) => e.chain().focus().setHeading({ level: 1 }).run() },
   { title: "Heading 2", keywords: "h2 section", icon: Heading2, run: (e) => e.chain().focus().setHeading({ level: 2 }).run() },
@@ -191,7 +203,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     run: insertBlock({
       type: "codeBlock",
       attrs: { language: "xstate", title: null, lineNumbers: false },
-      content: [{ type: "text", text: JSON.stringify({ id: "toggle", initial: "off", states: { off: { on: { TOGGLE: "on" } }, on: { on: { TOGGLE: "off" } } } }, null, 2) }],
+      content: [{ type: "text", text: XSTATE_STARTER }],
     }),
   },
   {
