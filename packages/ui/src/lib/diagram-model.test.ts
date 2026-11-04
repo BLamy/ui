@@ -275,6 +275,29 @@ describe('edge routes', () => {
     square(g.pts);
   });
 
+  it('goes across the wider gap, and never doubles back through a box', () => {
+    const box = (x: number, y: number) => ({ x, y, w: 130, h: 36 });
+    // Their centers are further apart across, but they overlap across, so it has to be up and down.
+    const sides = facingSides(box(0, 0), box(110, 90));
+    expect(sides).toEqual({ from: 'b', to: 't' });
+    const nodes2 = indexDiagram([node('a', 0, 0, 130, 36), node('c', 110, 90, 130, 36)]);
+    const g = edgeGeometry({ id: 'e', from: 'a', to: 'c' }, nodes2)!;
+    square(g.pts);
+    expect(g.start).toEqual({ x: 65, y: 36 });
+    expect(g.end).toEqual({ x: 175, y: 90 });
+    for (let i = 1; i < g.pts.length; i++) expect(g.pts[i].y).toBeGreaterThanOrEqual(g.pts[i - 1].y);
+    // And the other way round.
+    expect(facingSides(box(0, 0), box(90, 300))).toEqual({ from: 'b', to: 't' });
+    expect(facingSides(box(0, 0), box(300, 10))).toEqual({ from: 'r', to: 'l' });
+    expect(facingSides(box(300, 10), box(0, 0))).toEqual({ from: 'l', to: 'r' });
+    // Apart both ways: the wider gap.
+    expect(facingSides(box(0, 0), box(400, 60))).toEqual({ from: 'r', to: 'l' });
+    expect(facingSides(box(0, 0), box(140, 300))).toEqual({ from: 'b', to: 't' });
+    // Overlapping both ways: their centers.
+    expect(facingSides(box(0, 0), box(50, 5))).toEqual({ from: 'r', to: 'l' });
+    expect(facingSides(box(0, 0), box(5, 20))).toEqual({ from: 'b', to: 't' });
+  });
+
   it('uses the points it was given, whatever the nodes say', () => {
     const points = [{ x: 1, y: 1 }, { x: 2, y: 1 }, { x: 2, y: 9 }];
     expect(route({ from: 'a', to: 'b', points }).pts).toEqual(points);

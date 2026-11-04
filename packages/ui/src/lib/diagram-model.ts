@@ -289,7 +289,7 @@ export function curvePath(start: Pt, c1: Pt, c2: Pt, end: Pt, steps = 24): Conne
 export const ELBOW_GAP = 28;
 
 /** A connector between two ends. A curve and an elbow leave along the way each end faces; a free end faces the other. */
-export function connectorPath(route: ConnectorRoute, a: ConnectorEnd, b: ConnectorEnd): ConnectorGeometry {
+export function connectorPath(route: ConnectorRoute, a: ConnectorEnd, b: ConnectorEnd, gap = ELBOW_GAP): ConnectorGeometry {
   if (route === 'straight') return polylinePath([a.p, b.p]);
   const na = a.n ?? dominantSide(a.p, b.p);
   const nb = b.n ?? dominantSide(b.p, a.p);
@@ -298,8 +298,8 @@ export function connectorPath(route: ConnectorRoute, a: ConnectorEnd, b: Connect
     return curvePath(a.p, { x: a.p.x + na.x * k, y: a.p.y + na.y * k }, { x: b.p.x + nb.x * k, y: b.p.y + nb.y * k }, b.p);
   }
   // Elbow: leave each end along its side, and meet in the middle with right angles.
-  const a1 = { x: a.p.x + na.x * ELBOW_GAP, y: a.p.y + na.y * ELBOW_GAP };
-  const b1 = { x: b.p.x + nb.x * ELBOW_GAP, y: b.p.y + nb.y * ELBOW_GAP };
+  const a1 = { x: a.p.x + na.x * gap, y: a.p.y + na.y * gap };
+  const b1 = { x: b.p.x + nb.x * gap, y: b.p.y + nb.y * gap };
   const horizA = Math.abs(na.x) > 0.5, horizB = Math.abs(nb.x) > 0.5;
   let mid: Pt[];
   if (horizA && horizB) { const mx = (a1.x + b1.x) / 2; mid = [{ x: mx, y: a1.y }, { x: mx, y: b1.y }]; }
@@ -423,12 +423,15 @@ export function selfLoopPath(box: DiagramBox, a: ConnectorEnd, b: ConnectorEnd, 
   return polylinePath([a.p, a1, ...mid, b1, b.p]);
 }
 
-/** Which sides two boxes face each other on: along whichever axis their centers are further apart. Two boxes in the same
- *  place count as side by side, so the answer's still a real route. */
+/** Which sides two boxes face each other on: across the wider gap between them. Where they overlap one way there's only
+ *  the other, as a route out of the facing side would have to double back through the box. Two that overlap both ways go
+ *  by their centers, and two in the same place count as side by side, so the answer's still a real route. */
 export function facingSides(a: DiagramBox, b: DiagramBox): { from: DiagramSide; to: DiagramSide } {
   const ca = centerOf(a), cb = centerOf(b);
   const dx = cb.x - ca.x, dy = cb.y - ca.y;
-  const from: DiagramSide = Math.abs(dx) >= Math.abs(dy) ? (dx >= 0 ? 'r' : 'l') : dy >= 0 ? 'b' : 't';
+  const gapX = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w)), gapY = Math.max(b.y - (a.y + a.h), a.y - (b.y + b.h));
+  const across = gapX > 0 || gapY > 0 ? gapX >= gapY : Math.abs(dx) >= Math.abs(dy);
+  const from: DiagramSide = across ? (dx >= 0 ? 'r' : 'l') : dy >= 0 ? 'b' : 't';
   return { from, to: OPPOSITE[from] };
 }
 
@@ -472,7 +475,9 @@ export function edgeGeometry<N, E>(edge: DiagramEdge<E>, index: DiagramIndex<N>,
   const sides = facingSides(a, b);
   const from: ConnectorEnd = pa ? portPoint(a, pa) : { p: anchorPoint(a, sides.from, spread?.from ?? 0.5), n: anchorNormal(a, sides.from) };
   const to: ConnectorEnd = pb ? portPoint(b, pb) : { p: anchorPoint(b, sides.to, spread?.to ?? 0.5), n: anchorNormal(b, sides.to) };
-  return connectorPath(route, from, to);
+  // Two ends closer than two runs out from each would overshoot and come back, so each only goes halfway.
+  const apart = from.n ? (to.p.x - from.p.x) * from.n.x + (to.p.y - from.p.y) * from.n.y : Infinity;
+  return connectorPath(route, from, to, apart > 0 && apart < ELBOW_GAP * 2 ? apart / 2 : ELBOW_GAP);
 }
 
 /** The routes of many edges, by id. Edges that have no route of their own and leave the same side of a node share it out
