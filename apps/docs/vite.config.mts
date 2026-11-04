@@ -183,7 +183,7 @@ export default defineConfig(() => ({
     ],
   },
   // PGlite's worker (examples/pglite/worker) imports the engine, which code-splits: workers must build as ES modules.
-  worker: { format: 'es' },
+  worker: { format: 'es', plugins: () => [extractInlinedBinaries()] },
   build: {
     outDir: './dist',
     emptyOutDir: true,

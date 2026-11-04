@@ -32,6 +32,33 @@ import Vibecoder from '@/components/blocks/vibecoder/page';
 
 The default factory seeds `index.html`, `style.css`, `app.js` and `server.cjs`, then starts port 3000 automatically when the terminal is ready. **Stop OpenCode** releases that workspace and its server; **Start OpenCode** creates and starts a fresh one. For an existing AlmostNode or agent-wasm workspace, pass `host={bridge}` or a stable `createHost` factory. Custom hosts supply their own files and servers; their ports open automatically. The component’s runtime, preview host, theme and lifecycle callbacks remain configurable. See [OpenCode](https://blamy.github.io/ui/#/open-code) for the host bridge and provider setup.
 
+{% demo src="blocks/vscode" layout="multi" %}
+
+A VS Code window that really runs. The rail is a vertical [TabView](https://blamy.github.io/ui/#/tab-view): **Explorer** is a [Tree](https://blamy.github.io/ui/#/tree) of the project with new, rename and delete, **Search** looks through every file and opens a result where it is, and **Run** lists `package.json`'s scripts and runs each in a terminal of its own. Files open in tabs in a [Workspace](https://blamy.github.io/ui/#/workspace), each a [CodeEditor](https://blamy.github.io/ui/#/code-editor), and the terminals are [Terminal](https://blamy.github.io/ui/#/terminal)s in the same Workspace, so a tab of either can be dragged to any edge to split. In a narrow window the rail stays, gains Editor and Terminal, and one pane shows at a time. Output, the half-typed line, open tabs and the layout you had all come back when it widens.
+
+Behind it, by default, is Node in the browser: [agent-wasm](https://github.com/BLamy/agent-wasm), the fork of almostnode this repository uses, on a virtual disk. `ls`, `cd`, `cat`, pipes, `node index.js`, `node -e`, `npm run`, `npm install lodash` and then requiring it all work, and each terminal has its own folder and environment. Files are one truth: an edit reaches the disk before the next thing you type in a terminal, and a command that writes a file updates the tree and any open editor.
+
+**Where it runs.** Everything runs in a Worker, not on the page. A script can't freeze the window: `while (true)` stops only the Worker, and Ctrl-C replaces it, starting a new one from a copy of the files the page keeps. Each terminal keeps its folder. What's lost is anything else running at that moment, and a command that ignores Ctrl-C is stopped the same way.
+
+**What a package can reach.** Installing from npm runs other people's code, so this matters on a site where other blocks keep things. The Worker starts from a `data:` URL, which gives it an origin of its own. There, IndexedDB, the Cache API, OPFS and locks all refuse it, and it has no page, cookies or localStorage, so it can't reach a keychain or anything else this site keeps. That needs the host to serve the Worker's files with CORS, which GitHub Pages does and Vite's dev server doesn't. Where it can't load like that it runs as an ordinary Worker of the site: it still can't touch the page, cookies or localStorage, but it can read, change and delete the site's IndexedDB and caches. For the Passwords keychain that means encrypted data it can't read but could destroy. The status bar and a line in the first terminal say which you're getting. In both cases a package can use the network as far as CORS allows, can use up the tab's memory and CPU, and shares a process with the page, so this isn't a defense against an attack on the browser itself. Only install what you'd run.
+
+**The network.** Nothing is fetched from anywhere but your own site until you ask: opening the block downloads the runtime from your site, and `npm install` is the first thing to go further, to `registry.npmjs.org`. The runtime's default of sending every request through a third party's CORS proxy is turned off, so a script's own `fetch` works only where the other end allows browsers. Everything but `npm install` works with no connection.
+
+**Other limits.** `http.createServer` runs, but nothing can open it: previews need a service worker registered at the site's root, which this doesn't set up. `node file.ts` isn't supported. A script using `readline` keeps running after `rl.close()` until it calls `process.exit()` or you press Ctrl-C. And `git`, `npx`, and the other commands the runtime knows come with its limits.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/vscode.json{% endcommand %}
+
+The window knows nothing about any of this. Everything it needs is one small interface in `runtime.ts`, which the block's `almostnode/` folder implements and `memory-runtime.ts` implements in a page, for tests and stories. Pass your own as `runtime` for a real folder and real shells: files with a root you choose, terminals that are raw byte streams, the scripts to run and what the status bar should say.
+
+```tsx
+import VSCode from '@/components/blocks/vscode/page';
+import { createAlmostnodeRuntime } from '@/components/blocks/vscode/almostnode';
+
+<VSCode />; // a starter project
+<VSCode runtime={createAlmostnodeRuntime({ project: { 'index.js': 'console.log("hi")' } })} initialFile="index.js" />;
+<VSCode runtime={yourRuntime} />; // anything that implements VSCodeRuntime
+```
+
 {% demo src="blocks/interface-builder" layout="multi" %}
 
 The Interface Builder block is Xcode's storyboard for apps made of BL UI. Its library is the kit itself, and scenes are composed from its containers — a TabView of NavigationStacks, a SplitView's columns, lists — where a scene shown inside another is selected and edited in place: click anything you see (⌘-click works the way it does in a design tool), right-click for everything under the pointer, double-click a text to type over it. Segues, outlets, delegates, the first responder and context mean what they mean in React (navigation, refs, callback props, focus and a responder chain, `useContext`); motion is framer-motion's, with spring and curve editors and a timeline; text takes any Google Fonts family through the [FontPicker](https://blamy.github.io/ui/#/font-picker), previewed on the canvas as you hover the list. Every scene lays out for iPhone, iPad and desktop, runs as a live preview, and exports as a React app on the kit.

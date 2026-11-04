@@ -1,0 +1,33 @@
+{
+  "name": "vscode",
+  "title": "VS Code",
+  "description": "A VS Code window that really runs: an activity rail with Explorer, Search and Run, editors in a Workspace you can split, and wterm terminals, on one in-browser Node runtime (agent-wasm, the fork of almostnode). Everything it needs goes through one interface, so a real folder and real shells can replace the runtime. Packages you install run in a Worker. Where the host serves it with CORS, as GitHub Pages does, that Worker has an opaque origin and no access to the site's storage; elsewhere it's an ordinary Worker of the site that can read and change the site's IndexedDB and caches, and the status bar says which. They can use the network either way, as far as CORS allows.",
+  "categories": [
+    "developer-tools",
+    "application"
+  ],
+  "files": [
+    "page.tsx",
+    "explorer.tsx",
+    "search-panel.tsx",
+    "run-panel.tsx",
+    "editor-area.tsx",
+    "status-bar.tsx",
+    "store.ts",
+    "files.ts",
+    "runtime.ts",
+    "line-terminal.ts",
+    "memory-runtime.ts",
+    "almostnode/index.ts",
+    "almostnode/project.ts",
+    "almostnode/protocol.ts",
+    "almostnode/shell-line.ts",
+    "almostnode/worker-host.ts",
+    "almostnode/worker-url.ts",
+    "almostnode/runtime.worker.ts"
+  ],
+  "dependencies": [
+    "@agent-wasm/core",
+    "react-aria-components"
+  ]
+}
