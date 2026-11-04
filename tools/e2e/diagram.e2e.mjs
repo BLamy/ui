@@ -723,3 +723,281 @@ test.describe('the keyboard', () => {
     await expect(page.locator('[data-slot=diagram-node]')).toHaveCount(40);
   });
 });
+
+test.describe('connecting', () => {
+  const open = async (page) => {
+    await page.goto('/?demo=diagram/connecting&theme=light', { waitUntil: 'load' });
+    await page.locator('[data-slot=diagram-node]').first().waitFor({ timeout: 30_000 });
+  };
+  const port = async (page, node, name) => {
+    const b = await page.locator(`[data-slot=diagram-port][data-port-of="${node}"][data-port="${name}"]`).boundingBox();
+    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+  };
+  const center = async (page, id) => {
+    const b = await page.locator(`[data-slot=diagram-node][data-node="${id}"]`).boundingBox();
+    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+  };
+  const edges = (page) => page.locator('[data-demo-edges]').getAttribute('data-demo-edges');
+  const changes = (page) => page.locator('[data-demo-changes]').getAttribute('data-demo-changes');
+  const pressAt = async (page, at) => { await page.mouse.move(at.x, at.y); await page.mouse.down(); };
+  const moveTo = async (page, at) => { await page.mouse.move(at.x, at.y, { steps: 6 }); };
+  const FIRST = 'worker.sql>d1.in';
+
+  test('a drag from a port to a port connects them', async ({ page }) => {
+    await open(page);
+    await pressAt(page, await port(page, 'worker', 'files'));
+    await moveTo(page, await port(page, 'r2', 'in'));
+    const preview = page.locator('[data-slot=diagram-connection]');
+    await expect(preview).toHaveAttribute('data-valid', 'true');
+    await page.mouse.up();
+    await expect(preview).toHaveCount(0);
+    expect(await edges(page)).toBe(`${FIRST} worker.files>r2.in`);
+    expect(await changes(page)).toBe('connect');
+    await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(2);
+  });
+
+  test('it snaps to the nearest port in reach, and lets go of it out of reach', async ({ page }) => {
+    await open(page);
+    const to = await port(page, 'r2', 'in');
+    await pressAt(page, await port(page, 'worker', 'files'));
+    const target = page.locator('[data-slot=diagram-connection-target]');
+    // Way off: nothing's offered.
+    await moveTo(page, { x: to.x - 90, y: to.y + 30 });
+    await expect(target).toHaveCount(0);
+    // Within 24 px on screen: it snaps, and lands if let go.
+    await moveTo(page, { x: to.x - 15, y: to.y + 10 });
+    await expect(target).toHaveCount(1);
+    await page.mouse.up();
+    expect(await edges(page)).toBe(`${FIRST} worker.files>r2.in`);
+  });
+
+  test('let go over nothing, and nothing happens', async ({ page }) => {
+    await open(page);
+    const from = await port(page, 'worker', 'files');
+    await pressAt(page, from);
+    await moveTo(page, { x: from.x + 40, y: from.y + 60 });
+    await expect(page.locator('[data-slot=diagram-connection]')).toHaveAttribute('data-valid', 'true');
+    await page.mouse.up();
+    expect(await edges(page)).toBe(FIRST);
+    expect(await changes(page)).toBe('');
+    await expect(page.locator('[data-slot=diagram-connection]')).toHaveCount(0);
+  });
+
+  test('an invalid target says so while dragging, and refuses on release', async ({ page }) => {
+    await open(page);
+    await pressAt(page, await port(page, 'worker', 'files'));
+    // Files, into something that takes SQL.
+    await moveTo(page, await port(page, 'd1', 'in'));
+    await expect(page.locator('[data-slot=diagram-connection]')).toHaveAttribute('data-valid', 'false');
+    await expect(page.locator('[data-slot=diagram-connection-target]')).toHaveAttribute('data-valid', 'false');
+    await expect(page.locator('[data-slot=diagram-status]')).toHaveText('Can’t connect: BUCKET carries files, and queries takes sql.');
+    await expect(page.locator('[data-slot=diagram-status]')).toBeVisible();
+    await page.mouse.up();
+    expect(await edges(page)).toBe(FIRST);
+    expect(await changes(page)).toBe('');
+    await expect(page.locator('[data-slot=diagram-status]')).toHaveText('');
+    // And nothing can start from a port that only takes things in, in that it's refused wherever it goes.
+    await pressAt(page, await port(page, 'd1', 'in'));
+    await moveTo(page, await port(page, 'r2', 'in'));
+    await expect(page.locator('[data-slot=diagram-connection]')).toHaveAttribute('data-valid', 'false');
+    await page.mouse.up();
+    expect(await edges(page)).toBe(FIRST);
+  });
+
+  test('connecting what’s connected already is refused', async ({ page }) => {
+    await open(page);
+    await pressAt(page, await port(page, 'worker', 'sql'));
+    await moveTo(page, await port(page, 'd1', 'in'));
+    await expect(page.locator('[data-slot=diagram-status]')).toHaveText('Can’t connect: Those are already connected.');
+    await page.mouse.up();
+    expect(await edges(page)).toBe(FIRST);
+  });
+
+  test('a port under another node can be reached', async ({ page }) => {
+    await open(page);
+    await pressAt(page, await port(page, 'worker', 'files'));
+    await moveTo(page, await port(page, 'covered', 'in'));
+    await page.mouse.up();
+    expect(await edges(page)).toBe(`${FIRST} worker.files>covered.in`);
+  });
+
+  test('a node with no ports gets one on each side once selected, and can connect to itself', async ({ page }) => {
+    await open(page);
+    await expect(page.locator('[data-slot=diagram-port][data-port-of=plain]')).toHaveCount(0);
+    const plain = await center(page, 'plain');
+    await page.mouse.click(plain.x, plain.y);
+    await expect(page.locator('[data-slot=diagram-port][data-port-of=plain]')).toHaveCount(4);
+    const right = await page.locator('[data-slot=diagram-port][data-port-of=plain][data-side=r]').boundingBox();
+    await pressAt(page, { x: right.x + right.width / 2, y: right.y + right.height / 2 });
+    await moveTo(page, await center(page, 'other'));
+    await page.mouse.up();
+    expect(await edges(page)).toBe(`${FIRST} plain>other`);
+    // To itself: a self-loop, with an arrowhead pointing back in.
+    await page.mouse.click(plain.x, plain.y);
+    const top = await page.locator('[data-slot=diagram-port][data-port-of=plain][data-side=t]').boundingBox();
+    await pressAt(page, { x: top.x + top.width / 2, y: top.y + top.height / 2 });
+    await moveTo(page, { x: plain.x + 10, y: plain.y + 5 });
+    await page.mouse.up();
+    expect(await edges(page)).toBe(`${FIRST} plain>other plain>plain`);
+    await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(3);
+  });
+
+  test('a port can’t connect to itself', async ({ page }) => {
+    await open(page);
+    const p = await port(page, 'worker', 'files');
+    await pressAt(page, p);
+    await moveTo(page, { x: p.x + 40, y: p.y });
+    await moveTo(page, p);
+    await expect(page.locator('[data-slot=diagram-status]')).toHaveText('Can’t connect: A port can’t connect to itself.');
+    await page.mouse.up();
+    expect(await edges(page)).toBe(FIRST);
+  });
+
+  test('an edge’s end can be moved to another port, with undo, and an invalid one is refused', async ({ page }) => {
+    await open(page);
+    // Add one going to R2, then select it by its line.
+    await pressAt(page, await port(page, 'worker', 'files'));
+    await moveTo(page, await port(page, 'r2', 'in'));
+    await page.mouse.up();
+    const line = await page.locator('[data-slot=diagram-edge]').nth(1).evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const p = el.getPointAtLength(el.getTotalLength() / 2);
+      const m = el.getScreenCTM();
+      return { x: p.x * m.a + m.e, y: p.y * m.d + m.f, r: r.width };
+    });
+    await page.mouse.click(line.x, line.y);
+    await expect(page.locator('[data-slot=diagram-edge-end]')).toHaveCount(2);
+    const end = await page.locator('[data-slot=diagram-edge-end][data-end=to]').boundingBox();
+    // Onto something that only takes SQL: no.
+    await pressAt(page, { x: end.x + end.width / 2, y: end.y + end.height / 2 });
+    await moveTo(page, await port(page, 'd1', 'in'));
+    await expect(page.locator('[data-slot=diagram-connection]')).toHaveAttribute('data-valid', 'false');
+    await page.mouse.up();
+    expect(await edges(page)).toBe(`${FIRST} worker.files>r2.in`);
+    // Onto a node: yes.
+    const end2 = await page.locator('[data-slot=diagram-edge-end][data-end=to]').boundingBox();
+    await pressAt(page, { x: end2.x + end2.width / 2, y: end2.y + end2.height / 2 });
+    await moveTo(page, await center(page, 'other'));
+    await page.mouse.up();
+    expect(await edges(page)).toBe(`${FIRST} worker.files>other`);
+    expect(await changes(page)).toBe('connect reconnect');
+    await page.keyboard.press('ControlOrMeta+z');
+    expect(await edges(page)).toBe(`${FIRST} worker.files>r2.in`);
+    // Its start moves too.
+    const again = await page.locator('[data-slot=diagram-edge-end][data-end=from]').boundingBox();
+    await pressAt(page, { x: again.x + again.width / 2, y: again.y + again.height / 2 });
+    await moveTo(page, await center(page, 'plain'));
+    await page.mouse.up();
+    expect(await edges(page)).toBe(`${FIRST} plain>r2.in`);
+  });
+
+  test('connecting by keyboard', async ({ page }) => {
+    await open(page);
+    const status = page.locator('[data-slot=diagram-status]');
+    await page.locator('[data-slot=canvas]').focus();
+    await page.keyboard.press('Home');
+    await page.keyboard.press('c');
+    await expect(status).toContainText('Connecting from Worker');
+    // Enter with nothing chosen says so.
+    await page.keyboard.press('Enter');
+    await expect(status).toHaveText('Choose what to connect to first.');
+    // The next port out, and across to D1: SQL's taken, and files don't go there.
+    await page.keyboard.press('p');
+    await expect(status).toHaveText('From files.');
+    await page.keyboard.press('ArrowRight');
+    await expect(status).toContainText('To ');
+    await page.keyboard.press('p');
+    await expect(page.locator('[data-slot=diagram-connection]')).toHaveCount(1);
+    // Down to R2, whose only port takes files.
+    const name = await status.textContent();
+    if (name.includes('D1')) {
+      await expect(status).toContainText('Can’t connect');
+      await page.keyboard.press('Enter');
+      expect(await edges(page)).toBe(FIRST);
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('p');
+    }
+    await expect(status).toContainText('To R2, in. Enter connects.');
+    await page.keyboard.press('Enter');
+    expect(await edges(page)).toBe(`${FIRST} worker.files>r2.in`);
+    await expect(status).toContainText('Connected Worker to R2');
+    await expect(page.locator('[data-slot=diagram-connection]')).toHaveCount(0);
+    // Escape cancels, and focus stays.
+    await page.keyboard.press('c');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('Escape');
+    expect(await edges(page)).toBe(`${FIRST} worker.files>r2.in`);
+    await expect(page.locator('[data-slot=diagram-connection]')).toHaveCount(0);
+  });
+
+  test('moving an edge’s end by keyboard', async ({ page }) => {
+    await open(page);
+    await page.locator('[data-slot=canvas]').focus();
+    await page.keyboard.press('Home');
+    await page.keyboard.press(']');
+    await expect.poll(() => page.evaluate(() => document.activeElement?.dataset.edge)).toBe('first');
+    await page.keyboard.press('c');
+    await expect(page.locator('[data-slot=diagram-status]')).toContainText('Moving this edge’s end');
+    // From the edge, across to whatever's that way, and in.
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => edges(page)).not.toBe(FIRST);
+    expect(await changes(page)).toBe('reconnect');
+  });
+
+  test('it works zoomed right out, where every port’s under the pointer', async ({ page }) => {
+    await open(page);
+    await zoomTo(page, 0.02);
+    await pressAt(page, await port(page, 'worker', 'files'));
+    await moveTo(page, await port(page, 'r2', 'in'));
+    await page.mouse.up();
+    // At 0.02 the two are a few px apart: it lands on the nearest port, and that it doesn't throw or go elsewhere is the point.
+    expect((await edges(page)).split(' ').length).toBeLessThanOrEqual(2);
+    expect(await edges(page)).toContain(FIRST);
+    await expect(page.locator('[data-slot=diagram-connection]')).toHaveCount(0);
+    expect(await page.locator('[data-slot=diagram-port]').first().evaluate((el) => el.getBoundingClientRect().width)).toBeCloseTo(10, 0);
+  });
+
+  test('it works at a phone-size window', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 390, height: 720 }, baseURL: test.info().project.use.baseURL });
+    const page = await context.newPage();
+    await open(page);
+    await pressAt(page, await port(page, 'worker', 'files'));
+    await moveTo(page, await port(page, 'r2', 'in'));
+    await page.mouse.up();
+    expect(await edges(page)).toBe(`${FIRST} worker.files>r2.in`);
+    // What it says when it's refused fits on the screen.
+    await pressAt(page, await port(page, 'worker', 'files'));
+    await moveTo(page, await port(page, 'd1', 'in'));
+    const box = await page.locator('[data-slot=diagram-status]').boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+    await page.mouse.up();
+    await context.close();
+  });
+
+  test('Space drops a connection in progress', async ({ page }) => {
+    await open(page);
+    await pressAt(page, await port(page, 'worker', 'files'));
+    await moveTo(page, await port(page, 'r2', 'in'));
+    await page.keyboard.down('Space');
+    await expect(page.locator('[data-slot=diagram-connection]')).toHaveCount(0);
+    await page.keyboard.up('Space');
+    await page.mouse.up();
+    expect(await edges(page)).toBe(FIRST);
+  });
+
+  test('moving a node takes its ports and edges with it', async ({ page }) => {
+    await open(page);
+    const p0 = await port(page, 'd1', 'in');
+    const c = await center(page, 'd1');
+    const line0 = await page.locator('[data-slot=diagram-edge][data-edge=first]').getAttribute('d');
+    await page.mouse.move(c.x, c.y);
+    await page.mouse.down();
+    await page.mouse.move(c.x + 70, c.y - 25, { steps: 6 });
+    await page.mouse.up();
+    const p1 = await port(page, 'd1', 'in');
+    expect(p1.x).toBeGreaterThan(p0.x + 40);
+    expect(await page.locator('[data-slot=diagram-edge][data-edge=first]').getAttribute('d')).not.toBe(line0);
+  });
+});

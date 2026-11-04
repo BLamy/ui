@@ -37,10 +37,10 @@ export type { DiagramDraft, DiagramDraftNode, DiagramLayoutEngine, DiagramLayout
 export { useDiagramLayout } from './lib/diagram-layout/react';
 export type { UseDiagramLayout, UseDiagramLayoutOptions } from './lib/diagram-layout/react';
 export type { ArrowShape, ConnectorEnd, ConnectorGeometry, ConnectorRoute, DiagramBox, DiagramDivider, DiagramEdge, DiagramIndex, DiagramModel, DiagramNode, DiagramNodeKind, DiagramPort, DiagramSide } from './lib/diagram-model';
-export { NOTHING_SELECTED, deleteItems, moveNodes, rerouteLabel, rerouteOrthogonal, simplifyRoute } from './lib/diagram-model';
-export type { DiagramSelection } from './lib/diagram-model';
-export { DRAG_THRESHOLD, EDGE_HIT_DISTANCE, SNAP_DISTANCE, hitTestDiagram, movableNodes, nodesInMarquee, stepDiagramGesture } from './lib/diagram-gesture';
-export type { DiagramGesture, DiagramGestureContext, DiagramGestureEvent, DiagramGestureStep, DiagramHit } from './lib/diagram-gesture';
+export { NOTHING_SELECTED, addConnection, checkConnection, deleteItems, moveEdgeEnd, moveNodes, rerouteLabel, rerouteOrthogonal, simplifyRoute } from './lib/diagram-model';
+export type { DiagramConnection, DiagramSelection } from './lib/diagram-model';
+export { DRAG_THRESHOLD, EDGE_HIT_DISTANCE, PORT_HIT_DISTANCE, SNAP_DISTANCE, SNAP_RADIUS, connectionOf, connectionTargetAt, hitTestDiagram, movableNodes, nodesInMarquee, offerConnection, startConnection, stepDiagramGesture } from './lib/diagram-gesture';
+export type { DiagramConnectionEnd, DiagramGesture, DiagramGestureContext, DiagramGestureEvent, DiagramGestureStep, DiagramHit } from './lib/diagram-gesture';
 export { cameraToShow, describeEdge, describeNode, edgesByNode, focusOrder, nearestNode, nodeInDirection, stepFocus } from './lib/diagram-keyboard';
 export type { DiagramFocus, DiagramFocusContext, DiagramFocusStep } from './lib/diagram-keyboard';
 export { Diagram, DiagramNodeBody, diagramEdgeVariants, diagramNodeVariants } from './components/diagram';

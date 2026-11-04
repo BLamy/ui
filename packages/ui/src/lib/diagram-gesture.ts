@@ -3,16 +3,29 @@
    next, what's selected, and what to commit. There's only ever one gesture, so a press can't start two things and a
    cancel can't leave one half done. Nothing's committed until the pointer comes up. */
 import { dist, inFrame, intersects, rectOf, snapMove, unionRect, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
-import { ancestorsOf, edgeAt, nodeAt, type ConnectorGeometry, type DiagramIndex, type DiagramSelection } from '@/lib/diagram-model';
+import { ancestorsOf, edgeAt, nodeAt, portPoint, type ConnectorGeometry, type DiagramConnection, type DiagramIndex, type DiagramSelection, type DiagramSide } from '@/lib/diagram-model';
 
-export type DiagramHit = { kind: 'node' | 'edge'; id: string } | null;
+/** Where a connection starts or lands: a node, or one of its ports. */
+export interface DiagramConnectionEnd {
+  node: string;
+  port?: string;
+}
+
+/** What's under the pointer: a node or edge, a place to start a connection, or an end of a selected edge to move. */
+export type DiagramHit =
+  | { kind: 'node' | 'edge'; id: string }
+  | { kind: 'port'; id: string; port?: string; side?: DiagramSide }
+  | { kind: 'end'; id: string; end: 'from' | 'to' }
+  | null;
 
 export type DiagramGesture =
   | { k: 'idle' }
   /** Down, and not far enough yet to be a drag. */
-  | { k: 'press'; hit: DiagramHit; start: Pt; screen: Pt; additive: boolean; wasSelected: boolean }
+  | { k: 'press'; hit: Extract<DiagramHit, { kind: 'node' | 'edge' } | null>; start: Pt; screen: Pt; additive: boolean; wasSelected: boolean }
   | { k: 'move'; ids: readonly string[]; start: Pt; delta: Pt; guides: Guide[]; box: Rect; others: readonly Rect[] }
-  | { k: 'marquee'; start: Pt; rect: Rect; additive: boolean; before: DiagramSelection };
+  | { k: 'marquee'; start: Pt; rect: Rect; additive: boolean; before: DiagramSelection }
+  /** Drawing a connection, or moving an end of `edge`. `fixed` is the end that stays, and `over` what's being offered. */
+  | { k: 'connect'; fixed: DiagramConnectionEnd; side?: DiagramSide; edge?: string; end: 'from' | 'to'; at: Pt; over: DiagramConnectionEnd | null; valid: true | string | null; keyboard?: boolean };
 
 export type DiagramGestureEvent =
   | { type: 'down'; hit: DiagramHit; board: Pt; screen: Pt; additive: boolean }
@@ -27,6 +40,12 @@ export interface DiagramGestureContext {
   zoom: number;
   /** Whether dragging a node moves it. */
   editable: boolean;
+  /** Whether connections can be drawn, and what's there to land on, and whether it's allowed. */
+  connect?: {
+    targetAt: (p: Pt) => DiagramConnectionEnd | null;
+    check: (c: DiagramConnection) => true | string;
+    edgeEnds: (id: string) => { from: DiagramConnectionEnd; to: DiagramConnectionEnd } | null;
+  };
 }
 
 export interface DiagramGestureStep {
@@ -35,6 +54,8 @@ export interface DiagramGestureStep {
   selection?: DiagramSelection;
   /** Nodes to move, for good. */
   commit?: { ids: readonly string[]; delta: Pt };
+  /** A connection to make, or an end to move. */
+  connect?: DiagramConnection;
 }
 
 /** How far the pointer goes, in px on screen, before a press is a drag. */
@@ -48,12 +69,64 @@ const toggled = (list: readonly string[], id: string) => (list.includes(id) ? li
 
 /** How near a line has to be to the pointer to count as hit, in px on screen. */
 export const EDGE_HIT_DISTANCE = 6;
+/** How near a port or an edge's end has to be to be pressed, in px on screen. */
+export const PORT_HIT_DISTANCE = 10;
+/** How near the pointer has to come to a port for a connection to land on it, in px on screen. React Flow's is 20. */
+export const SNAP_RADIUS = 24;
+
+/** What a connection would land on at a board point: the nearest port in reach, wherever it is, even under another node.
+ *  Failing that, the deepest node there. A root's the background, so it can't be connected to. */
+export function connectionTargetAt(p: Pt, index: DiagramIndex<any>, zoom: number): DiagramConnectionEnd | null {
+  const reach = SNAP_RADIUS / zoom;
+  let best: DiagramConnectionEnd | null = null, d = reach;
+  for (const n of index.nodes) {
+    if (!n.ports) continue;
+    for (const port of n.ports) {
+      const here = dist(portPoint(n, port).p, p);
+      if (here <= d) { best = { node: n.id, port: port.id }; d = here; }
+    }
+  }
+  if (best) return best;
+  const n = nodeAt(p, index, 8 / zoom);
+  return n && n.kind !== 'root' ? { node: n.id } : null;
+}
+
+/** The connection a gesture would make, if it landed on `over`. */
+export function connectionOf(g: Extract<DiagramGesture, { k: 'connect' }>, over: DiagramConnectionEnd): DiagramConnection {
+  const fixed = { node: g.fixed.node, port: g.fixed.port };
+  const [a, b] = g.end === 'to' ? [fixed, over] : [over, fixed];
+  return { from: a.node, ...(a.port ? { fromPort: a.port } : null), to: b.node, ...(b.port ? { toPort: b.port } : null), ...(g.edge ? { edge: g.edge } : null) };
+}
+
+/** A press in a place that starts a connection or moves an edge's end. */
+export function startConnection(hit: Extract<NonNullable<DiagramHit>, { kind: 'port' | 'end' }>, at: Pt, ctx: DiagramGestureContext): Extract<DiagramGesture, { k: 'connect' }> | null {
+  if (hit.kind === 'port') return { k: 'connect', fixed: { node: hit.id, ...(hit.port ? { port: hit.port } : null) }, side: hit.side, end: 'to', at, over: null, valid: null };
+  const ends = ctx.connect?.edgeEnds(hit.id);
+  if (!ends) return null;
+  // What stays is the other end.
+  return { k: 'connect', fixed: hit.end === 'to' ? ends.from : ends.to, edge: hit.id, end: hit.end, at, over: null, valid: null };
+}
+
+/** A connection gesture, offered `over`. */
+export function offerConnection(g: Extract<DiagramGesture, { k: 'connect' }>, at: Pt, over: DiagramConnectionEnd | null, ctx: DiagramGestureContext): Extract<DiagramGesture, { k: 'connect' }> {
+  return { ...g, at, over, valid: over && ctx.connect ? ctx.connect.check(connectionOf(g, over)) : null };
+}
 
 /**
  * What's under a board point. A node on top of an edge comes first. An edge runs over what holds other nodes, so it and its
  * label come before those. A root's the background, and can't be hit at all.
  */
-export function hitTestDiagram(p: Pt, what: { index: DiagramIndex<any>; geometries: ReadonlyMap<string, ConnectorGeometry>; labels: readonly { id: string; box: Rect }[] }, zoom: number): DiagramHit {
+export function hitTestDiagram(p: Pt, what: {
+  index: DiagramIndex<any>; geometries: ReadonlyMap<string, ConnectorGeometry>; labels: readonly { id: string; box: Rect }[];
+  /** Places on top of everything that start a connection or move an edge's end, nearest first. */
+  handles?: readonly { hit: NonNullable<DiagramHit>; at: Pt }[];
+}, zoom: number): DiagramHit {
+  let handle: NonNullable<DiagramHit> | null = null, near = PORT_HIT_DISTANCE / zoom;
+  for (const h of what.handles ?? []) {
+    const d = dist(h.at, p);
+    if (d <= near) { handle = h.hit; near = d; }
+  }
+  if (handle) return handle;
   const n = nodeAt(p, what.index);
   const node = n && n.kind !== 'root' ? n : null;
   const holds = node && (node.kind === 'compound' || node.kind === 'parallel' || node.kind === 'region');
@@ -124,6 +197,10 @@ export function stepDiagramGesture(g: DiagramGesture, e: DiagramGestureEvent, ct
     case 'down': {
       if (g.k !== 'idle') return { gesture: g };
       const { hit, additive } = e;
+      if (hit?.kind === 'port' || hit?.kind === 'end') {
+        const connect = startConnection(hit, e.board, ctx);
+        return connect ? { gesture: connect } : { gesture: g };
+      }
       const press = (wasSelected: boolean): DiagramGesture => ({ k: 'press', hit, start: e.board, screen: e.screen, additive, wasSelected });
       if (hit?.kind === 'node') {
         const was = selection.nodes.includes(hit.id);
@@ -157,6 +234,7 @@ export function stepDiagramGesture(g: DiagramGesture, e: DiagramGestureEvent, ct
         return { gesture: g };
       }
       if (g.k === 'move') return { gesture: moved(g, e.board, ctx.zoom, e.noSnap) };
+      if (g.k === 'connect') return g.keyboard ? { gesture: g } : { gesture: offerConnection(g, e.board, ctx.connect?.targetAt(e.board) ?? null, ctx) };
       if (g.k === 'marquee') {
         const rect = rectOf([g.start, e.board]);
         const base = g.additive ? g.before.nodes : [];
@@ -177,6 +255,10 @@ export function stepDiagramGesture(g: DiagramGesture, e: DiagramGestureEvent, ct
         return { gesture: IDLE };
       }
       if (g.k === 'move') return { gesture: IDLE, ...(g.delta.x || g.delta.y ? { commit: { ids: g.ids, delta: g.delta } } : null) };
+      if (g.k === 'connect') {
+        if (g.keyboard) return { gesture: g };
+        return { gesture: IDLE, ...(g.over && g.valid === true ? { connect: connectionOf(g, g.over) } : null) };
+      }
       return { gesture: IDLE };
     }
     case 'cancel': {

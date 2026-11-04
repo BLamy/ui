@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DRAG_THRESHOLD, hitTestDiagram, movableNodes, nodesInMarquee, stepDiagramGesture, type DiagramGesture, type DiagramGestureContext, type DiagramGestureEvent } from './diagram-gesture';
+import { DRAG_THRESHOLD, SNAP_RADIUS, connectionOf, connectionTargetAt, hitTestDiagram, movableNodes, nodesInMarquee, stepDiagramGesture, type DiagramGesture, type DiagramGestureContext, type DiagramGestureEvent } from './diagram-gesture';
 import { indexDiagram, polylinePath, type DiagramNode, type DiagramSelection } from './diagram-model';
 
 const nodes: DiagramNode[] = [
@@ -206,5 +206,101 @@ describe('what’s under the pointer', () => {
     // At half size, that's 12 units.
     expect(hit(925, 111, 0.5)).toEqual({ kind: 'edge', id: 'open' });
     expect(hit(925, 106, 4)).toBeNull();
+  });
+});
+
+describe('connecting', () => {
+  const list: DiagramNode[] = [
+    { id: 'root', kind: 'root', x: -1000, y: -1000, w: 3000, h: 3000 },
+    { id: 'a', parent: 'root', x: 0, y: 0, w: 100, h: 40, ports: [{ id: 'out', side: 'r' }] },
+    { id: 'b', parent: 'root', x: 300, y: 0, w: 100, h: 40, ports: [{ id: 'p1', side: 'l', at: 0.25 }, { id: 'p2', side: 'l', at: 0.75 }] },
+    { id: 'c', parent: 'root', x: 300, y: 100, w: 100, h: 40 },
+    { id: 'lid', parent: 'root', x: 280, y: 10, w: 40, h: 20 },
+  ];
+  const idx = indexDiagram(list);
+  const at = (x: number, y: number, z = 1) => connectionTargetAt({ x, y }, idx, z);
+
+  it('lands on the nearest port in reach', () => {
+    // b's ports are at (300, 10) and (300, 30).
+    expect(at(290, 12)).toEqual({ node: 'b', port: 'p1' });
+    expect(at(290, 28)).toEqual({ node: 'b', port: 'p2' });
+    expect(at(300, 19)).toEqual({ node: 'b', port: 'p1' });
+    expect(at(300, 21)).toEqual({ node: 'b', port: 'p2' });
+  });
+
+  it('reaches SNAP_RADIUS px on screen, whatever the zoom', () => {
+    expect(SNAP_RADIUS).toBe(24);
+    expect(at(300 - 23, 10)).toEqual({ node: 'b', port: 'p1' });
+    expect(at(300 - 25, 10)?.port).toBeUndefined();
+    // At 200%, 24 px is 12 units.
+    expect(at(300 - 11, 10, 2)).toEqual({ node: 'b', port: 'p1' });
+    expect(at(300 - 13, 10, 2)?.port).toBeUndefined();
+    // At 25%, 24 px is 96 units.
+    expect(at(300 - 90, 10, 0.25)).toEqual({ node: 'b', port: 'p1' });
+  });
+
+  it('prefers a port to the node over it, so one under another node can be reached', () => {
+    expect(at(300, 10)).toEqual({ node: 'b', port: 'p1' });
+  });
+
+  it('lands on the deepest node with no port in reach, and never on the root', () => {
+    expect(at(350, 120)).toEqual({ node: 'c' });
+    expect(at(800, 800)).toBeNull();
+  });
+
+  const conn: DiagramGestureContext['connect'] = {
+    targetAt: (p) => connectionTargetAt(p, idx, 1),
+    check: (c) => (c.to === 'c' ? 'No.' : true),
+    edgeEnds: (id) => (id === 'e' ? { from: { node: 'a', port: 'out' }, to: { node: 'b', port: 'p1' } } : null),
+  };
+  const go = (events: DiagramGestureEvent[]) => {
+    let g = IDLE; let made: unknown;
+    for (const e of events) { const step = stepDiagramGesture(g, e, ctx(none, { connect: conn })); g = step.gesture; if (step.connect) made = step.connect; }
+    return { g, made };
+  };
+  const port = { type: 'down', hit: { kind: 'port', id: 'a', port: 'out' }, board: { x: 100, y: 20 }, screen: { x: 100, y: 20 }, additive: false } as const;
+  const end = (which: 'from' | 'to') => ({ type: 'down', hit: { kind: 'end', id: 'e', end: which }, board: { x: 100, y: 20 }, screen: { x: 100, y: 20 }, additive: false }) as const;
+
+  it('starts at once, with nothing offered', () => {
+    const { g } = go([port]);
+    expect(g).toMatchObject({ k: 'connect', fixed: { node: 'a', port: 'out' }, end: 'to', over: null, valid: null });
+  });
+
+  it('makes the connection on release, when it’s allowed', () => {
+    expect(go([port, move(300, 10), up]).made).toEqual({ from: 'a', fromPort: 'out', to: 'b', toPort: 'p1' });
+  });
+
+  it('refuses on release when it isn’t, and when there’s nothing there', () => {
+    const refused = go([port, move(350, 120)]);
+    expect(refused.g).toMatchObject({ valid: 'No.', over: { node: 'c' } });
+    expect(go([port, move(350, 120), up])).toMatchObject({ g: IDLE, made: undefined });
+    expect(go([port, move(800, 800), up])).toMatchObject({ g: IDLE, made: undefined });
+  });
+
+  it('forgets it all on cancel', () => {
+    expect(go([port, move(300, 10), { type: 'cancel' }, up])).toMatchObject({ g: IDLE, made: undefined });
+  });
+
+  it('moves either end of an edge, keeping the other', () => {
+    expect(go([end('to'), move(300, 30), up]).made).toEqual({ from: 'a', fromPort: 'out', to: 'b', toPort: 'p2', edge: 'e' });
+    expect(go([end('from'), move(300, 30), up]).made).toEqual({ from: 'b', fromPort: 'p2', to: 'b', toPort: 'p1', edge: 'e' });
+  });
+
+  it('does nothing for an edge that’s gone', () => {
+    const step = stepDiagramGesture(IDLE, { ...end('to'), hit: { kind: 'end', id: 'gone', end: 'to' } }, ctx(none, { connect: conn }));
+    expect(step.gesture).toEqual(IDLE);
+  });
+
+  it('says what a gesture would make, either way round', () => {
+    const g: Extract<DiagramGesture, { k: 'connect' }> = { k: 'connect', fixed: { node: 'a' }, end: 'from', at: { x: 0, y: 0 }, over: null, valid: null };
+    expect(connectionOf(g, { node: 'b', port: 'p' })).toEqual({ from: 'b', fromPort: 'p', to: 'a' });
+  });
+
+  it('takes a handle over what’s under it, and the nearest of several', () => {
+    const what = { index: idx, geometries: new Map(), labels: [], handles: [{ hit: { kind: 'port', id: 'a', port: 'out' } as const, at: { x: 100, y: 20 } }, { hit: { kind: 'port', id: 'b', port: 'p1' } as const, at: { x: 106, y: 20 } }] };
+    expect(hitTestDiagram({ x: 96, y: 20 }, what, 1)).toEqual({ kind: 'port', id: 'a', port: 'out' });
+    expect(hitTestDiagram({ x: 104, y: 20 }, what, 1)).toEqual({ kind: 'port', id: 'b', port: 'p1' });
+    // Out of reach of them, and it's the node.
+    expect(hitTestDiagram({ x: 80, y: 20 }, what, 1)).toEqual({ kind: 'node', id: 'a' });
   });
 });

@@ -4,11 +4,11 @@ import { cva } from 'class-variance-authority';
 import { Canvas, CanvasGuides, CanvasMarquee, CanvasMiniMap, type CanvasMiniMapItem, type CanvasMiniMapProps, type CanvasPointerInfo, type CanvasProps } from '@/components/ui/canvas';
 import { centerOf, fitCamera, rectOf, toBoard, type Camera, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';
-import { hitTestDiagram, movableNodes, stepDiagramGesture, type DiagramGesture, type DiagramGestureEvent, type DiagramHit } from '@/lib/diagram-gesture';
+import { connectionOf, connectionTargetAt, hitTestDiagram, movableNodes, offerConnection, stepDiagramGesture, type DiagramConnectionEnd, type DiagramGesture, type DiagramGestureEvent, type DiagramHit } from '@/lib/diagram-gesture';
 import { cameraToShow, describeEdge, describeNode, edgesByNode, nearestNode, stepFocus, type DiagramFocus, type DiagramFocusStep } from '@/lib/diagram-keyboard';
 import {
-  NOTHING_SELECTED, deleteItems, diagramBounds, diagramTextRuns, edgeGeometries, indexDiagram, labelBox, moveNodes, regionDividers, sizeNodesToText,
-  type ConnectorGeometry, type DiagramDivider, type DiagramEdge, type DiagramIndex, type DiagramNode, type DiagramSelection,
+  DIAGRAM_SIDES, NOTHING_SELECTED, addConnection, anchorNormal, anchorPoint, checkConnection, connectorPath, deleteItems, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, indexDiagram, labelBox, moveEdgeEnd, moveNodes, nearestSide, portPoint, regionDividers, sizeNodesToText,
+  type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramDivider, type DiagramEdge, type DiagramIndex, type DiagramNode, type DiagramPort, type DiagramSelection, type DiagramSide,
 } from '@/lib/diagram-model';
 import { DIAGRAM_TEXT_CLASS, estimateText, measureText, type TextMeasurer } from '@/lib/diagram-text';
 import { useFontVersion } from '@/lib/use-font-version';
@@ -24,7 +24,11 @@ import { cn } from '@/lib/utils';
    data's controlled with `nodes`, `edges` and `onChange`, or left to it with `defaultNodes` and `defaultEdges`.
 
    It's one tab stop. From there the keys move between nodes and along edges (`@/lib/diagram-keyboard`), and the view follows.
-   Each node and edge says what it is and what it connects to. */
+   Each node and edge says what it is and what it connects to.
+
+   Named ports (`DiagramNode.ports`) draw on their nodes. With `connectable`, which `editable` turns on, a drag from a port
+   draws a connection that snaps to the nearest port in reach, and a node without ports gets one on each side once it's
+   selected. `isValidConnection` says what's allowed, and a selected edge's ends can be moved. C does all that by keyboard. */
 
 /* ── Looks ── */
 
@@ -184,6 +188,41 @@ function ArrowMarker({ id, className }: { id: string; className: string }) {
   );
 }
 
+/* ── Ports, and what's drawn while connecting ── */
+
+const DOT = 'pointer-events-none absolute rounded-full [transform:translate(-50%,-50%)]';
+
+/** A place to connect: the same size on screen at any zoom. It sits over every node, so one underneath can still be reached. */
+const PortDot = memo(function PortDot({ at, node, port, side, active }: { at: Pt; node: string; port?: string; side?: DiagramSide; active: boolean }) {
+  return (
+    <span
+      data-slot="diagram-port"
+      data-port-of={node}
+      data-port={port}
+      data-side={side}
+      aria-hidden="true"
+      className={cn(DOT, 'bg-background', active ? 'size-[calc(10px/var(--diagram-z))] [box-shadow:inset_0_0_0_calc(1.6px/var(--diagram-z))_var(--primary)]' : 'size-[calc(6px/var(--diagram-z))] [box-shadow:inset_0_0_0_calc(1.2px/var(--diagram-z))_var(--muted-foreground)]')}
+      style={{ left: at.x, top: at.y }}
+    />
+  );
+});
+
+const EDGE_END = cn(DOT, 'size-[calc(12px/var(--diagram-z))] bg-background [box-shadow:inset_0_0_0_calc(2px/var(--diagram-z))_var(--primary)]');
+
+/** The route a connection would take, as it's being drawn. Dashed, and in the destructive color if it isn't allowed. */
+function ConnectionPreview({ d, valid }: { d: string; valid: boolean }) {
+  return (
+    <svg aria-hidden="true" className="pointer-events-none absolute top-0 left-0 overflow-visible" width={1} height={1}>
+      <path
+        data-slot="diagram-connection"
+        data-valid={valid}
+        d={d}
+        className={cn('fill-none [stroke-dasharray:calc(5px/var(--diagram-z))_calc(4px/var(--diagram-z))] [stroke-width:calc(1.6px/var(--diagram-z))]', valid ? 'stroke-primary' : 'stroke-destructive')}
+      />
+    </svg>
+  );
+}
+
 /* ── The board ── */
 
 interface Laid<N, E> {
@@ -259,7 +298,7 @@ const Board = memo(function Board({ laid, renderNode, arrow, selection, selectab
 export interface DiagramChange<N = unknown, E = unknown> {
   nodes: DiagramNode<N>[];
   edges: DiagramEdge<E>[];
-  reason: 'move' | 'delete' | 'undo' | 'redo';
+  reason: 'move' | 'delete' | 'connect' | 'reconnect' | 'undo' | 'redo';
 }
 
 export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps, 'background' | 'panning' | 'cursor' | 'autoFocus' | 'aria-label' | 'overlay'> {
@@ -277,6 +316,12 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   selection?: DiagramSelection;
   defaultSelection?: DiagramSelection;
   onSelectionChange?: (selection: DiagramSelection) => void;
+  /** Let the pointer and the keys draw connections, and move an edge's ends. On when `editable` is. */
+  connectable?: boolean;
+  /** Whether a connection's allowed: true, false, or the reason it isn't, in words. The default keeps to `checkConnection`. */
+  isValidConnection?: (connection: DiagramConnection) => boolean | string;
+  /** Makes the edge for a new connection. The default's an edge with only its ends and an id. */
+  createEdge?: (connection: DiagramConnection) => DiagramEdge<E>;
   /** Enter on a focused node or edge, or a double click. */
   onActivate?: (item: DiagramFocus) => void;
   /** What a screen reader says for a node. The default says what it is, what it's in and what it connects to. */
@@ -327,12 +372,13 @@ function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly Dia
 
 /** A diagram on a `Canvas`. Sits in its host like any BL UI container: it fills the nearest positioned box. */
 export function Diagram<N = unknown, E = unknown>({
-  nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onChange, selectable: selectableProp, editable = false,
-  selection: selectionProp, defaultSelection = NOTHING_SELECTED, onSelectionChange, onActivate, describeNode: nodeLabel, describeEdge: edgeLabel,
+  nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onChange, selectable: selectableProp, editable = false, connectable: connectableProp,
+  isValidConnection, createEdge, selection: selectionProp, defaultSelection = NOTHING_SELECTED, onSelectionChange, onActivate, describeNode: nodeLabel, describeEdge: edgeLabel,
   camera: controlled, defaultCamera, onCameraChange, fitPadding = 24, autoSize, minimap, renderNode,
   background, panning, cursor, autoFocus, 'aria-label': ariaLabel = 'Diagram', overlay, children, className, style,
 }: DiagramProps<N, E>) {
   const selectable = selectableProp ?? editable;
+  const connectable = connectableProp ?? editable;
   const [ref, size] = useContainerSize<HTMLDivElement>({ width: 1000, height: 700 });
   const [own, setOwn] = useState<Camera | null>(defaultCamera ?? null);
   const arrow = `diagram-arrow-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -344,6 +390,8 @@ export function Diagram<N = unknown, E = unknown>({
   const [draft, setDraft] = useState<Snapshot<N, E> | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [marquee, setMarquee] = useState<Rect | null>(null);
+  const [connecting, setConnecting] = useState<Extract<DiagramGesture, { k: 'connect' }> | null>(null);
+  const [status, setStatus] = useState('');
 
   const shown = draft ?? data;
   const text = useDiagramText(ref, shown.nodes, shown.edges, !!autoSize || shown.edges.some((e) => e.label && !e.labelBox));
@@ -402,10 +450,30 @@ export function Diagram<N = unknown, E = unknown>({
 
   /* ── The gesture ── */
   const gesture = useRef<DiagramGesture>({ k: 'idle' });
+  const checkOf = (c: DiagramConnection): true | string => {
+    if (!isValidConnection) return checkConnection(c, laid.index, shown.edges);
+    const verdict = isValidConnection(c);
+    return verdict === true ? true : verdict === false ? 'That can’t connect there.' : verdict;
+  };
+  const connectContext = connectable ? {
+    targetAt: (p: Pt) => connectionTargetAt(p, laid.index, camera.z),
+    check: checkOf,
+    edgeEnds: (id: string) => {
+      const e = shown.edges.find((x) => x.id === id);
+      return e ? { from: { node: e.from, ...(e.fromPort ? { port: e.fromPort } : null) }, to: { node: e.to, ...(e.toPort ? { port: e.toPort } : null) } } : null;
+    },
+  } : undefined;
+  const gestureContext = () => ({ index: laid.index, selection: selectionRef.current, zoom: camera.z, editable, connect: connectContext });
+  const applyConnection = (c: DiagramConnection) => {
+    const base = dataRef.current;
+    if (c.edge) commit({ nodes: base.nodes, edges: moveEdgeEnd(base.edges, c as DiagramConnection & { edge: string }) }, 'reconnect');
+    else commit({ nodes: base.nodes, edges: addConnection(base.edges, c, createEdge) }, 'connect');
+  };
+  const nameOf = (id: string) => laid.index.byId.get(id)?.label || id;
   const send = (event: DiagramGestureEvent) => {
     // A camera that's still fitting the content stops at the first press, or dragging would move the view under the pointer.
     if (event.type === 'down' && !controlled && !own) setOwn(camera);
-    const step = stepDiagramGesture(gesture.current, event, { index: laid.index, selection: selectionRef.current, zoom: camera.z, editable });
+    const step = stepDiagramGesture(gesture.current, event, gestureContext());
     const g = step.gesture;
     gesture.current = g;
     if (step.selection) select(step.selection);
@@ -419,19 +487,42 @@ export function Diagram<N = unknown, E = unknown>({
       setGuides(NO_GUIDES);
     }
     setMarquee(g.k === 'marquee' ? g.rect : null);
+    setConnecting(g.k === 'connect' ? g : null);
+    setStatus(g.k === 'connect' && typeof g.valid === 'string' ? `Can’t connect: ${g.valid}` : '');
     if (step.commit) {
       const base = dataRef.current;
       commit(moveNodes(base.nodes, base.edges, step.commit.ids, step.commit.delta.x, step.commit.delta.y), 'move');
     }
+    if (step.connect) applyConnection(step.connect);
   };
   const cancel = () => { if (gesture.current.k !== 'idle') send({ type: 'cancel' }); };
-  const hitAt = (p: Pt): DiagramHit => hitTestDiagram(p, { index: laid.index, geometries: laid.geometries, labels: laid.labels.map((l) => ({ id: l.edge.id, box: l.box })) }, camera.z);
-  const interactive = selectable || editable;
+  /** The places to start a connection, or to take hold of an edge's end. Named ports are always there, and a node without
+   *  any gets one on each side once it's the only thing selected. */
+  const handles = useMemo(() => {
+    const out: { hit: NonNullable<DiagramHit>; at: Pt }[] = [];
+    for (const n of laid.index.nodes) {
+      for (const port of n.ports ?? []) out.push({ hit: { kind: 'port', id: n.id, port: port.id }, at: portPoint(n, port).p });
+    }
+    if (!connectable) return out;
+    if (selection.nodes.length === 1 && !selection.edges.length) {
+      const n = laid.index.byId.get(selection.nodes[0]);
+      if (n && !n.ports?.length && n.kind !== 'root') for (const side of DIAGRAM_SIDES) out.push({ hit: { kind: 'port', id: n.id, side }, at: anchorPoint(n, side) });
+    }
+    if (selection.edges.length === 1 && !selection.nodes.length) {
+      const g = laid.geometries.get(selection.edges[0]);
+      if (g) out.push({ hit: { kind: 'end', id: selection.edges[0], end: 'from' }, at: g.start }, { hit: { kind: 'end', id: selection.edges[0], end: 'to' }, at: g.end });
+    }
+    return out;
+  }, [laid, selection, connectable]);
+  const labels = useMemo(() => laid.labels.map((l) => ({ id: l.edge.id, box: l.box })), [laid]);
+  const hitAt = (p: Pt): DiagramHit => hitTestDiagram(p, { index: laid.index, geometries: laid.geometries, labels, handles: connectable ? handles : undefined }, camera.z);
+  const interactive = selectable || editable || connectable;
   const pointerProps = interactive ? {
     onCanvasPointerDown: (e: ReactPointerEvent, { board, screen }: CanvasPointerInfo) => {
       const hit = hitAt(board);
-      // The keys carry on from what was pressed.
-      if (hit) { focus.current = hit; focusPlace.current = board; }
+      // A press ends connecting by keyboard, and the keys carry on from what was pressed.
+      cancel();
+      if (hit?.kind === 'node' || hit?.kind === 'edge') { focus.current = hit; focusPlace.current = board; }
       send({ type: 'down', hit, board, screen, additive: e.shiftKey || e.metaKey || e.ctrlKey });
     },
     onCanvasPointerMove: (e: ReactPointerEvent, { board, screen }: CanvasPointerInfo) => { if (gesture.current.k !== 'idle') send({ type: 'move', board, screen, noSnap: e.metaKey || e.ctrlKey }); },
@@ -493,6 +584,63 @@ export function Diagram<N = unknown, E = unknown>({
     const ctx = { index: laid.index, edges: laid.edges.map((d) => d.edge) };
     const next = here ? stepFocus(here, step, ctx) : step === 'first' || step === 'last' ? stepFocus(null, step, ctx) : startFocus();
     if (next) moveFocus(next);
+    if (next?.kind === 'node') offerByKeyboard({ node: next.id });
+  };
+  /** While connecting by keyboard, what's focused is what's offered, and a screen reader's told if it can be. */
+  const offerByKeyboard = (over: DiagramConnectionEnd | null) => {
+    const g = gesture.current;
+    if (g.k !== 'connect' || !g.keyboard) return;
+    const box = over ? laid.index.byId.get(over.node) : null;
+    const next = offerConnection(g, box ? centerOf(box) : g.at, over, gestureContext());
+    gesture.current = next;
+    setConnecting(next);
+    if (over) {
+      const port = over.port ? `, ${over.port}` : '';
+      setStatus(next.valid === true ? `To ${nameOf(over.node)}${port}. Enter connects.` : `To ${nameOf(over.node)}${port}. Can’t connect: ${next.valid}`);
+    }
+  };
+  const startKeyboardConnection = (reverse: boolean) => {
+    const f = focus.current;
+    if (!f || !connectable) return;
+    if (f.kind === 'node') {
+      const n = laid.index.byId.get(f.id);
+      if (!n || n.kind === 'root') return;
+      const port = n.ports?.find((p) => p.direction !== 'in')?.id;
+      const g: DiagramGesture = { k: 'connect', fixed: { node: n.id, ...(port ? { port } : null) }, end: 'to', at: centerOf(n), over: null, valid: null, keyboard: true };
+      gesture.current = g;
+      setConnecting(g);
+      setStatus(`Connecting from ${nameOf(n.id)}. Arrows choose what to connect to, P changes port, Enter connects, Escape cancels.`);
+      return;
+    }
+    const ends = connectContext?.edgeEnds(f.id);
+    const route = laid.geometries.get(f.id);
+    if (!ends || !route) return;
+    const g: DiagramGesture = { k: 'connect', fixed: reverse ? ends.to : ends.from, edge: f.id, end: reverse ? 'from' : 'to', at: reverse ? route.start : route.end, over: null, valid: null, keyboard: true };
+    gesture.current = g;
+    setConnecting(g);
+    setStatus(`Moving this edge’s ${reverse ? 'start' : 'end'}. Arrows choose where to, P changes port, Enter moves it, Escape cancels.`);
+  };
+  /** The next port on what's being offered, or on where it's starting from if nothing's been chosen yet. */
+  const nextKeyboardPort = () => {
+    const g = gesture.current;
+    if (g.k !== 'connect' || !g.keyboard) return;
+    if (!g.over) {
+      const n = laid.index.byId.get(g.fixed.node);
+      const list = (n?.ports ?? []).filter((p) => p.direction !== 'in');
+      if (!list.length) return;
+      const at = list.findIndex((p) => p.id === g.fixed.port);
+      const fixed = { node: g.fixed.node, port: list[(at + 1) % list.length].id };
+      const next = { ...g, fixed };
+      gesture.current = next;
+      setConnecting(next);
+      setStatus(`From ${fixed.port}.`);
+      return;
+    }
+    const n = laid.index.byId.get(g.over.node);
+    const list = n?.ports ?? [];
+    if (!list.length) return;
+    const at = list.findIndex((p) => p.id === g.over!.port);
+    offerByKeyboard({ node: g.over.node, port: list[(at + 1) % list.length].id });
   };
   // What's focused can go away, by a delete or from outside: focus stays nearby rather than falling out of the diagram.
   useLayoutEffect(() => {
@@ -510,6 +658,21 @@ export function Diagram<N = unknown, E = unknown>({
   const onKeyDown = (e: ReactKeyboardEvent) => {
     const mod = e.metaKey || e.ctrlKey;
     const key = e.key.toLowerCase();
+    const g = gesture.current;
+    if (g.k === 'connect' && g.keyboard) {
+      if (key === 'p') { e.preventDefault(); nextKeyboardPort(); return; }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (g.over && g.valid === true) {
+          const c = connectionOf(g, g.over);
+          gesture.current = { k: 'idle' };
+          setConnecting(null);
+          setStatus(`Connected ${nameOf(c.from)} to ${nameOf(c.to)}.`);
+          applyConnection(c);
+        } else setStatus(g.over ? `Can’t connect: ${g.valid}` : 'Choose what to connect to first.');
+        return;
+      }
+    }
     if (key === 'escape') {
       if (gesture.current.k !== 'idle') cancel();
       else if (selection.nodes.length || selection.edges.length) select(NOTHING_SELECTED);
@@ -555,6 +718,7 @@ export function Diagram<N = unknown, E = unknown>({
       if (!e.shiftKey) onActivate?.(f);
       return;
     }
+    if (key === 'c' && !mod && connectable && g.k === 'idle') { e.preventDefault(); startKeyboardConnection(e.shiftKey); return; }
     if (mod && key === 'a' && selectable) { e.preventDefault(); select({ nodes: data.nodes.filter((n) => n.kind !== 'root').map((n) => n.id), edges: data.edges.map((x) => x.id) }); return; }
     if (!editable) return;
     if (mod && key === 'z') { e.preventDefault(); cancel(); if (e.shiftKey) redo(); else undo(); return; }
@@ -576,6 +740,44 @@ export function Diagram<N = unknown, E = unknown>({
   ), [laid, renderNode, arrow, selectedSets, selectable, nodeLabel, edgeLabel]);
   const marks = useMemo<CanvasMiniMapItem[]>(() => (minimap ? nodes.filter((n) => n.kind !== 'root').map((n) => ({ id: n.id, x: n.x, y: n.y, w: n.w, h: n.h })) : []), [minimap, nodes]);
   const zoom = camera.z < NODE_TEXT_ZOOM ? 'far' : camera.z < EDGE_LABEL_ZOOM ? 'mid' : 'near';
+  const portDots = useMemo(() => handles.length ? (
+    <div data-slot="diagram-ports" className="pointer-events-none absolute top-0 left-0" style={{ '--diagram-z': camera.z } as CSSProperties}>
+      {handles.map((h) => (h.hit.kind === 'end'
+        ? <span key={`end:${h.hit.end}`} data-slot="diagram-edge-end" data-end={h.hit.end} aria-hidden="true" className={EDGE_END} style={{ left: h.at.x, top: h.at.y }} />
+        : h.hit.kind === 'port' ? <PortDot key={`${h.hit.id}/${h.hit.port ?? h.hit.side}`} at={h.at} node={h.hit.id} port={h.hit.port} side={h.hit.side} active={connectable} /> : null))}
+    </div>
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ) : null, [handles, connectable, camera.z]);
+  const connection = useMemo(() => {
+    if (!connecting) return null;
+    const index = laid.index;
+    const a = index.byId.get(connecting.fixed.node);
+    if (!a) return null;
+    const c = connecting.over ? connectionOf(connecting, connecting.over) : null;
+    let route: ConnectorGeometry | null = null;
+    if (c) route = edgeGeometry({ id: 'connecting', from: c.from, fromPort: c.fromPort, to: c.to, toPort: c.toPort }, index);
+    else {
+      // Nothing to land on yet: from the fixed end to the pointer.
+      const port = connecting.fixed.port ? a.ports?.find((x) => x.id === connecting.fixed.port) : undefined;
+      const side = connecting.side ?? nearestSide(a, connecting.at).side;
+      const fixedEnd: ConnectorEnd = port ? portPoint(a, port) : { p: anchorPoint(a, side), n: anchorNormal(a, side) };
+      const free: ConnectorEnd = { p: connecting.at, n: null };
+      route = connecting.end === 'to' ? connectorPath('elbow', fixedEnd, free) : connectorPath('elbow', free, fixedEnd);
+    }
+    const target = connecting.over ? index.byId.get(connecting.over.node) : null;
+    const portTarget = connecting.over?.port && target ? target.ports?.find((x: DiagramPort) => x.id === connecting.over!.port) : undefined;
+    const valid = connecting.valid !== null ? connecting.valid === true : true;
+    return (
+      <div className="pointer-events-none absolute top-0 left-0" style={{ '--diagram-z': camera.z } as CSSProperties}>
+        {route ? <ConnectionPreview d={route.d} valid={valid} /> : null}
+        {portTarget && target ? (
+          <span data-slot="diagram-connection-target" data-valid={valid} aria-hidden="true" className={cn(DOT, 'size-[calc(16px/var(--diagram-z))]', valid ? 'bg-primary/40' : 'bg-destructive/40')} style={{ left: portPoint(target, portTarget).p.x, top: portPoint(target, portTarget).p.y }} />
+        ) : target ? (
+          <span data-slot="diagram-connection-target" data-valid={valid} aria-hidden="true" className={cn('absolute rounded-ctl', valid ? '[box-shadow:0_0_0_calc(3px/var(--diagram-z))_var(--primary)]' : '[box-shadow:0_0_0_calc(3px/var(--diagram-z))_var(--destructive)]')} style={{ left: target.x, top: target.y, width: target.w, height: target.h }} />
+        ) : null}
+      </div>
+    );
+  }, [connecting, laid, camera.z]);
   return (
     <div
       ref={ref}
@@ -599,7 +801,7 @@ export function Diagram<N = unknown, E = unknown>({
         autoFocus={autoFocus}
         aria-label={ariaLabel}
         onCanvasKeyDown={onKeyDown}
-        onCanvasDoubleClick={onActivate ? (_e, { board: at }) => { const hit = hitAt(at); if (hit) onActivate(hit); } : undefined}
+        onCanvasDoubleClick={onActivate ? (_e, { board: at }) => { const hit = hitAt(at); if (hit?.kind === 'node' || hit?.kind === 'edge') onActivate({ kind: hit.kind, id: hit.id }); } : undefined}
         {...pointerProps}
         overlay={<>{minimap ? <CanvasMiniMap items={marks} {...(minimap === true ? null : minimap)} /> : null}{overlay}</>}
       >
@@ -611,10 +813,19 @@ export function Diagram<N = unknown, E = unknown>({
         >
           {board}
         </div>
+        {portDots}
         {guides.length ? <CanvasGuides guides={guides} /> : null}
         {marquee ? <CanvasMarquee rect={marquee} /> : null}
+        {connection}
         {children}
       </Canvas>
+      <div
+        data-slot="diagram-status"
+        role="status"
+        className={cn(status.startsWith('Can’t') && connecting && !connecting.keyboard ? 'pointer-events-none absolute bottom-3 left-1/2 z-10 max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-ctl bg-popover px-3 py-2 text-footnote text-foreground shadow-hairline' : 'sr-only')}
+      >
+        {status}
+      </div>
     </div>
   );
 }

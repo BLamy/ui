@@ -208,6 +208,39 @@ export const SelectedDark: Story = {
   render: () => <Phone w={500} h={320} dark><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable defaultSelection={{ nodes: ['a', 'b', 'box'], edges: ['ab'] }} /></Phone>,
 };
 
+const PORTED: DiagramNode[] = [
+  { id: 'w', label: 'Worker', x: 0, y: 40, w: 130, h: 80, ports: [{ id: 'db', side: 'r', at: 0.25, kind: 'sql' }, { id: 'files', side: 'r', at: 0.75, kind: 'files' }, { id: 'in', side: 'l', direction: 'in' }] },
+  { id: 'd1', label: 'D1', x: 260, y: 0, w: 110, h: 50, ports: [{ id: 'in', side: 'l', kind: 'sql', direction: 'in' }] },
+  { id: 'r2', label: 'R2', x: 260, y: 110, w: 110, h: 50, ports: [{ id: 'in', side: 'l', kind: 'files', direction: 'in' }] },
+];
+const PORTED_EDGES: DiagramEdge[] = [
+  { id: 'a', from: 'w', fromPort: 'db', to: 'd1', toPort: 'in', label: 'prepare' },
+  { id: 'b', from: 'w', fromPort: 'files', to: 'r2', toPort: 'in', label: 'put' },
+];
+
+/** Named ports, on their sides, with edges from one to another. They're quieter where nothing can be connected. */
+export const Ports: Story = {
+  render: () => <Phone w={500} h={240}><Diagram nodes={PORTED} edges={PORTED_EDGES} /></Phone>,
+};
+
+export const PortsConnectable: Story = {
+  render: () => <Phone w={500} h={240}><Diagram defaultNodes={PORTED} defaultEdges={PORTED_EDGES} editable /></Phone>,
+};
+
+export const PortsConnectableDark: Story = {
+  render: () => <Phone w={500} h={240} dark><Diagram defaultNodes={PORTED} defaultEdges={PORTED_EDGES} editable /></Phone>,
+};
+
+/** Selected, a node with no ports of its own has one on each side, and an edge has a handle on each end. */
+export const ConnectHandles: Story = {
+  render: () => (
+    <div className="flex flex-col gap-3">
+      <Phone w={500} h={160}><Diagram defaultNodes={SELECTABLE.slice(0, 3)} defaultEdges={SELECTABLE_EDGES} editable defaultSelection={{ nodes: ['c'], edges: [] }} /></Phone>
+      <Phone w={500} h={160}><Diagram defaultNodes={SELECTABLE.slice(0, 3)} defaultEdges={SELECTABLE_EDGES} editable defaultSelection={{ nodes: [], edges: ['ab'] }} /></Phone>
+    </div>
+  ),
+};
+
 /** Nothing to draw: it's an empty canvas, centered on the origin. */
 export const Empty: Story = {
   render: () => <Phone w={400} h={240}><Diagram nodes={[]} /></Phone>,

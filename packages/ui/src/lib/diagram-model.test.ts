@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { distToPolyline, type Pt, type Rect } from '@/lib/canvas-math';
 import {
   ARROW_BROAD, ARROW_SLIM, anchorNormal, anchorPoint, ancestorsOf, arrowHead, closedD, connectorBounds, connectorPath, curvePath, descendantsOf, dirOf, distToConnector,
-  deleteItems, diagramBounds, edgeAt, edgeGeometries, edgeGeometry, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, moveNodes, nearestAnchor, nearestSide, nodeAt, pointAlong, polygonPoints,
+  addConnection, checkConnection, deleteItems, diagramBounds, edgeAt, edgeGeometries, edgeGeometry, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, moveEdgeEnd, moveNodes, nearestAnchor, nearestSide, nodeAt, pointAlong, polygonPoints,
   polylinePath, portPoint, regionDividers, rerouteLabel, rerouteOrthogonal, selfLoopPath, simplifyRoute, type ConnectorGeometry, type DiagramEdge, type DiagramNode,
 } from './diagram-model';
 
@@ -651,5 +651,61 @@ describe('deleting', () => {
 
   it('ignores what isn’t there', () => {
     expect(deleteItems(nodes, edges, { nodes: ['gone'], edges: ['gone'] }).nodes).toHaveLength(4);
+  });
+});
+
+describe('connections', () => {
+  const nodes: DiagramNode[] = [
+    node('w', 0, 0, 100, 100, { ports: [{ id: 'sql', side: 'r', kind: 'sql', label: 'DB', direction: 'out' }, { id: 'files', side: 'r', at: 0.8, kind: 'files', direction: 'out' }, { id: 'in', side: 'l', direction: 'in' }, { id: 'both', side: 't' }] }),
+    node('d', 300, 0, 100, 40, { ports: [{ id: 'in', side: 'l', kind: 'sql', label: 'queries', direction: 'in' }, { id: 'out', side: 'r', direction: 'out' }] }),
+    node('plain', 0, 300), node('plain2', 300, 300),
+  ];
+  const index = indexDiagram(nodes);
+  const edges: DiagramEdge[] = [{ id: 'one', from: 'w', fromPort: 'sql', to: 'd', toPort: 'in' }, { id: 'two', from: 'plain', to: 'plain2' }];
+
+  it('allows what’s ordinary, including a self-loop', () => {
+    expect(checkConnection({ from: 'w', fromPort: 'files', to: 'plain' }, index, edges)).toBe(true);
+    expect(checkConnection({ from: 'plain2', to: 'plain' }, index, edges)).toBe(true);
+    expect(checkConnection({ from: 'plain', to: 'plain' }, index, edges)).toBe(true);
+    expect(checkConnection({ from: 'w', fromPort: 'both', to: 'w', toPort: 'in' }, index, edges)).toBe(true);
+  });
+
+  it('refuses a port to itself, and what’s gone', () => {
+    expect(checkConnection({ from: 'w', fromPort: 'both', to: 'w', toPort: 'both' }, index, edges)).toBe('A port can’t connect to itself.');
+    expect(checkConnection({ from: 'w', to: 'gone' }, index, edges)).toBe('That isn’t there any more.');
+  });
+
+  it('goes the way its ports go', () => {
+    expect(checkConnection({ from: 'w', fromPort: 'in', to: 'plain' }, index, edges)).toBe('in only takes connections in.');
+    expect(checkConnection({ from: 'plain', to: 'd', toPort: 'out' }, index, edges)).toBe('out only goes out.');
+    // A port that doesn't say goes both ways.
+    expect(checkConnection({ from: 'w', fromPort: 'both', to: 'd', toPort: 'in' }, index, edges)).toBe(true);
+  });
+
+  it('joins ports of a kind only with that kind, and a port with no kind with anything', () => {
+    expect(checkConnection({ from: 'w', fromPort: 'files', to: 'd', toPort: 'in' }, index, edges)).toBe('files carries files, and queries takes sql.');
+    expect(checkConnection({ from: 'w', fromPort: 'both', to: 'd', toPort: 'in' }, index, edges)).toBe(true);
+  });
+
+  it('won’t connect what’s connected, but moving an edge onto where it already is isn’t a duplicate', () => {
+    expect(checkConnection({ from: 'w', fromPort: 'sql', to: 'd', toPort: 'in' }, index, edges)).toBe('Those are already connected.');
+    expect(checkConnection({ from: 'plain', to: 'plain2' }, index, edges)).toBe('Those are already connected.');
+    expect(checkConnection({ from: 'plain', to: 'plain2', edge: 'two' }, index, edges)).toBe(true);
+    // The other way round isn't the same connection.
+    expect(checkConnection({ from: 'plain2', to: 'plain' }, index, edges)).toBe(true);
+  });
+
+  it('adds an edge under an id nothing else has, or the one you make', () => {
+    const out = addConnection([{ id: 'edge-2', from: 'a', to: 'b' }], { from: 'w', fromPort: 'sql', to: 'd' });
+    expect(out[1]).toEqual({ id: 'edge-3', from: 'w', fromPort: 'sql', to: 'd' });
+    expect(addConnection([], { from: 'a', to: 'b' }, (c) => ({ id: 'mine', from: c.from, to: c.to, label: 'hi' }))).toEqual([{ id: 'mine', from: 'a', to: 'b', label: 'hi' }]);
+  });
+
+  it('moves an edge’s ends: its old route and label place go, as they were for the old ends, and the rest stays', () => {
+    const before: DiagramEdge[] = [{ id: 'e', from: 'a', fromPort: 'p', to: 'b', toPort: 'q', label: 'x', kind: 'after', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], labelBox: { x: 0, y: 0, w: 1, h: 1 } }, { id: 'f', from: 'a', to: 'b' }];
+    const [e, f] = moveEdgeEnd(before, { edge: 'e', from: 'a', to: 'c' });
+    expect(e).toEqual({ id: 'e', from: 'a', to: 'c', label: 'x', kind: 'after' });
+    expect(f).toBe(before[1]);
+    expect(moveEdgeEnd(before, { edge: 'e', from: 'z', fromPort: 'r', to: 'c', toPort: 's' })[0]).toMatchObject({ from: 'z', fromPort: 'r', to: 'c', toPort: 's' });
   });
 });

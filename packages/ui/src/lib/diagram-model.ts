@@ -24,8 +24,10 @@ export interface DiagramPort {
   /** How far along the side, from 0 at its top or left end to 1 at the other (default 0.5). */
   at?: number;
   label?: string;
-  /** What it carries, for whoever validates a connection. */
+  /** What it carries. By default a connection can only join ports of the same kind. */
   kind?: string;
+  /** Which way connections go: `in`, `out` or (the default) `both`. */
+  direction?: 'in' | 'out' | 'both';
 }
 
 /** What a node is drawn as. `compound`, `parallel`, `region` and `root` hold other nodes. */
@@ -813,4 +815,48 @@ export function deleteItems<N, E>(
     nodes: nodes.filter((n) => !gone.has(n.id)),
     edges: edges.filter((e) => !goneEdges.has(e.id) && !gone.has(e.from) && !gone.has(e.to)),
   };
+}
+
+/* ── Connecting ── */
+
+/** A connection between two nodes, or two of their ports. With `edge`, it's an existing edge whose end is moving. */
+export interface DiagramConnection {
+  from: string;
+  fromPort?: string;
+  to: string;
+  toPort?: string;
+  edge?: string;
+}
+
+/** The ordinary rules, for when an app has none of its own: a port can't connect to itself, nothing's connected twice, a
+ *  connection goes the way its ports go, and ports of a kind only join that kind. Self-loops are fine. Returns true, or why
+ *  not, in words. */
+export function checkConnection<N, E>(c: DiagramConnection, index: DiagramIndex<N>, edges: readonly DiagramEdge<E>[]): true | string {
+  const a = index.byId.get(c.from), b = index.byId.get(c.to);
+  if (!a || !b) return 'That isn’t there any more.';
+  const pa = c.fromPort ? a.ports?.find((p) => p.id === c.fromPort) : undefined, pb = c.toPort ? b.ports?.find((p) => p.id === c.toPort) : undefined;
+  if (a.id === b.id && c.fromPort && c.fromPort === c.toPort) return 'A port can’t connect to itself.';
+  if (pa?.direction === 'in') return `${pa.label ?? pa.id} only takes connections in.`;
+  if (pb?.direction === 'out') return `${pb.label ?? pb.id} only goes out.`;
+  if (pa?.kind && pb?.kind && pa.kind !== pb.kind) return `${pa.label ?? pa.id} carries ${pa.kind}, and ${pb.label ?? pb.id} takes ${pb.kind}.`;
+  if (edges.some((e) => e.id !== c.edge && e.from === c.from && e.to === c.to && (e.fromPort ?? '') === (c.fromPort ?? '') && (e.toPort ?? '') === (c.toPort ?? ''))) return 'Those are already connected.';
+  return true;
+}
+
+/** The edges with a new one added, under an id nothing else has. */
+export function addConnection<E>(edges: readonly DiagramEdge<E>[], c: DiagramConnection, create?: (c: DiagramConnection) => DiagramEdge<E>): DiagramEdge<E>[] {
+  if (create) return [...edges, create(c)];
+  const taken = new Set(edges.map((e) => e.id));
+  let n = edges.length + 1;
+  while (taken.has(`edge-${n}`)) n++;
+  return [...edges, { id: `edge-${n}`, from: c.from, to: c.to, ...(c.fromPort ? { fromPort: c.fromPort } : null), ...(c.toPort ? { toPort: c.toPort } : null) }];
+}
+
+/** The edges with one's ends moved. Its old route's dropped, as it was for the old ends, and it keeps everything else. */
+export function moveEdgeEnd<E>(edges: readonly DiagramEdge<E>[], c: DiagramConnection & { edge: string }): DiagramEdge<E>[] {
+  return edges.map((e) => {
+    if (e.id !== c.edge) return e;
+    const { points: _p, labelBox: _l, fromPort: _f, toPort: _t, ...rest } = e;
+    return { ...rest, from: c.from, to: c.to, ...(c.fromPort ? { fromPort: c.fromPort } : null), ...(c.toPort ? { toPort: c.toPort } : null) };
+  });
 }
