@@ -1,0 +1,12 @@
+{
+  "name": "state-diagram",
+  "title": "StateDiagram",
+  "description": "An XState machine on a Diagram, drawn from machine.root: compound and parallel states, initial markers, final states, and all of always, after, invoke and guards labelled. A machine or its JSON config, with nothing run. XState and ELK are optional peers.",
+  "page": "state-diagram",
+  "exports": [
+    "StateDiagram"
+  ],
+  "imports": [
+    "StateDiagram"
+  ]
+}

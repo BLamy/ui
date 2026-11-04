@@ -6664,6 +6664,36 @@
       }
     },
     {
+      "name": "state-diagram",
+      "type": "registry:ui",
+      "title": "StateDiagram",
+      "description": "An XState machine on a Diagram, drawn from machine.root: compound and parallel states, initial markers, final states, and all of always, after, invoke and guards labelled. A machine or its JSON config, with nothing run. XState and ELK are optional peers.",
+      "dependencies": [
+        "xstate@^5.33.3"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/diagram.json",
+        "https://blamy.github.io/ui/r/diagram-layout.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/state-diagram-model.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/state-diagram.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/state-diagram.tsx"
+        }
+      ],
+      "meta": {
+        "page": "state-diagram",
+        "exports": [
+          "StateDiagram"
+        ]
+      }
+    },
+    {
       "name": "stl-viewer",
       "type": "registry:ui",
       "title": "StlViewer",
@@ -8570,6 +8600,25 @@
           "path": "packages/ui/src/lib/sql-lex.ts",
           "type": "registry:lib",
           "target": "lib/sql-lex.ts"
+        }
+      ]
+    },
+    {
+      "name": "state-diagram-model",
+      "type": "registry:lib",
+      "title": "State Diagram Model",
+      "description": "State Diagram Model — part of BL UI's library (lib/state-diagram-model.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/diagram-layout.json",
+        "https://blamy.github.io/ui/r/diagram-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/state-diagram-model.ts",
+          "type": "registry:lib",
+          "target": "lib/state-diagram-model.ts"
         }
       ]
     },

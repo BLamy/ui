@@ -1177,3 +1177,38 @@ test.describe('in a tab that starts hidden', () => {
     await expect.poll(async () => (await width(sized, 'one')) === (await natural(sized, 'one'))).toBe(true);
   });
 });
+
+test.describe('StateDiagram', () => {
+  test('draws all of the spike’s machine, in a worker, with nothing touching its nodes’ edges', async ({ page }) => {
+    await page.goto('/?demo=state-diagram/machine&theme=light', { waitUntil: 'load' });
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(40);
+    await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(43);
+    await expect(page.locator('[data-slot=diagram-edge-label]')).toHaveCount(36);
+    await expect(page.locator('[data-slot=diagram-divider]')).toHaveCount(2);
+    await expect(page.locator('[data-node="upload.worker.__initial"]')).toHaveAttribute('data-kind', 'initial');
+    await expect(page.locator('[data-node="upload.done"]')).toHaveAttribute('data-kind', 'final');
+    await expect(page.locator('[data-node="upload.processing"]')).toHaveAttribute('data-kind', 'parallel');
+    // In a machine's words, with what it connects to.
+    await expect(page.locator('[data-node="upload.worker.streaming"]')).toHaveAttribute('aria-label', /^streaming, state, in worker\./);
+    // Labelled by name, always, after and guards.
+    for (const label of ['always [withinQuota]', 'after IDLE_TIMEOUT', 'after BACKOFF [retriesLeft]', 'always [isClean]']) {
+      await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: label }).first()).toHaveCount(1);
+    }
+  });
+
+  test('a config works, and one XState won’t have shows what it said, not a blank', async ({ page }) => {
+    await page.goto('/?demo=state-diagram/config&theme=light', { waitUntil: 'load' });
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBeGreaterThan(3);
+    await expect(page.locator('[data-slot=state-diagram-error]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'One XState won’t have' }).click();
+    const error = page.locator('[data-slot=state-diagram-error]');
+    await expect(error).toBeVisible();
+    await expect(error).toContainText('nowhere');
+    await expect(error).toHaveAttribute('role', 'alert');
+    await expect(page.locator('[data-slot=diagram-node]')).toHaveCount(0);
+    // And it recovers.
+    await page.getByRole('button', { name: 'A good one' }).click();
+    await expect(error).toHaveCount(0);
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count()).toBeGreaterThan(3);
+  });
+});

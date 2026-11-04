@@ -333,6 +333,8 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   createEdge?: (connection: DiagramConnection) => DiagramEdge<E>;
   /** Enter on a focused node or edge, or a double click. */
   onActivate?: (item: DiagramFocus) => void;
+  /** What a screen reader calls a node (default `node`): a state, a service. */
+  noun?: string;
   /** What a screen reader says for a node. The default says what it is, what it's in and what it connects to. */
   describeNode?: (node: DiagramNode<N>) => string;
   describeEdge?: (edge: DiagramEdge<E>) => string;
@@ -385,7 +387,7 @@ function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly Dia
 /** A diagram on a `Canvas`. Sits in its host like any BL UI container: it fills the nearest positioned box. */
 export function Diagram<N = unknown, E = unknown>({
   nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onChange, selectable: selectableProp, editable = false, connectable: connectableProp,
-  isValidConnection, createEdge, selection: selectionProp, defaultSelection = NOTHING_SELECTED, onSelectionChange, onActivate, describeNode: nodeLabel, describeEdge: edgeLabel,
+  isValidConnection, createEdge, selection: selectionProp, defaultSelection = NOTHING_SELECTED, onSelectionChange, onActivate, noun, describeNode: nodeLabel, describeEdge: edgeLabel,
   camera: controlled, defaultCamera, onCameraChange, fitPadding = 24, autoSize, cull, minimap, renderNode,
   background, panning, cursor, autoFocus, 'aria-label': ariaLabel = 'Diagram', overlay, children, className, style,
 }: DiagramProps<N, E>) {
@@ -770,14 +772,14 @@ export function Diagram<N = unknown, E = unknown>({
   const drawn = useMemo(() => (drawWindow ? within(laid, drawWindow, kept) : laid), [laid, drawWindow, kept]);
   // Each kept in a memo, so a camera that only moves changes none of them, and what depends on the zoom is one attribute.
   const nodeView = (n: DiagramNode<any>) => (
-    <NodeView key={n.id} node={n} selected={selectedSets.nodes.has(n.id)} selectable={selectable} renderNode={renderNode as NodeViewProps['renderNode']} label={(nodeLabel as DiagramProps<any, any>['describeNode'])?.(n) ?? describeNode(n, laid.index, laid.edgesAt.get(n.id))} />
+    <NodeView key={n.id} node={n} selected={selectedSets.nodes.has(n.id)} selectable={selectable} renderNode={renderNode as NodeViewProps['renderNode']} label={(nodeLabel as DiagramProps<any, any>['describeNode'])?.(n) ?? describeNode(n, laid.index, laid.edgesAt.get(n.id), noun)} />
   );
   const containers = useMemo(() => drawn.containers.map(nodeView),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [drawn.containers, selectedSets.nodes, selectable, renderNode, nodeLabel, laid.edgesAt]);
+    [drawn.containers, selectedSets.nodes, selectable, renderNode, nodeLabel, noun, laid.edgesAt]);
   const leaves = useMemo(() => drawn.leaves.map(nodeView),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [drawn.leaves, selectedSets.nodes, selectable, renderNode, nodeLabel, laid.edgesAt]);
+    [drawn.leaves, selectedSets.nodes, selectable, renderNode, nodeLabel, noun, laid.edgesAt]);
   const lines = useMemo(() => (
     <>
       <defs>

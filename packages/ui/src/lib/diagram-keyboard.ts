@@ -145,17 +145,17 @@ export function nearestNode(index: DiagramIndex<any>, p: Pt): string | null {
 
 const nameOf = (n: DiagramNode<any> | undefined, fallback: string) => n?.label || fallback;
 
-function kindOf(n: DiagramNode<any>, index: DiagramIndex<any>): string {
+function kindOf(n: DiagramNode<any>, index: DiagramIndex<any>, noun: string): string {
   const count = index.children.get(n.id)?.length ?? 0;
-  const inside = count === 1 ? 'holding 1 node' : `holding ${count} nodes`;
+  const inside = count === 1 ? `holding 1 ${noun}` : `holding ${count} ${noun}s`;
   switch (n.kind) {
     case 'initial': return 'start marker';
-    case 'final': return 'final node';
+    case 'final': return `final ${noun}`;
     case 'compound': return `group, ${inside}`;
     case 'parallel': return `parallel group, ${inside}`;
     case 'region': return `region, ${inside}`;
     case 'root': return `diagram, ${inside}`;
-    default: return 'node';
+    default: return noun;
   }
 }
 
@@ -169,7 +169,7 @@ function listEdges(edges: readonly DiagramEdge<any>[], name: (e: DiagramEdge<any
 }
 
 /** What a node is, what it's in, and what it connects to, as a sentence or two. */
-export function describeNode(node: DiagramNode<any>, index: DiagramIndex<any>, at: { out: readonly DiagramEdge<any>[]; into: readonly DiagramEdge<any>[] } | undefined): string {
+export function describeNode(node: DiagramNode<any>, index: DiagramIndex<any>, at: { out: readonly DiagramEdge<any>[]; into: readonly DiagramEdge<any>[] } | undefined, noun = 'node'): string {
   const parent = index.parent.get(node.id);
   const parentNode = parent ? index.byId.get(parent) : undefined;
   const where = parentNode && parentNode.kind !== 'root' ? `, in ${nameOf(parentNode, parentNode.id)}` : '';
@@ -179,7 +179,7 @@ export function describeNode(node: DiagramNode<any>, index: DiagramIndex<any>, a
   const going = (e: DiagramEdge<any>) => (e.to === node.id ? `${e.label ? `${e.label} ` : ''}back to itself` : `${e.label ? `${e.label} ` : ''}to ${nameOf(index.byId.get(e.to), e.to)}`);
   const coming = (e: DiagramEdge<any>) => `${e.label ? `${e.label} ` : ''}from ${nameOf(index.byId.get(e.from), e.from)}`;
   const none = !out.length && !into.length ? ' Not connected to anything.' : '';
-  return `${name}, ${kindOf(node, index)}${where}.${detail}${listEdges(out, going, 'going out')}${listEdges(into, coming, 'coming in')}${none}`;
+  return `${name}, ${kindOf(node, index, noun)}${where}.${detail}${listEdges(out, going, 'going out')}${listEdges(into, coming, 'coming in')}${none}`;
 }
 
 /** What an edge is, and what it joins. */

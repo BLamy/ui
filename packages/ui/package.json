@@ -84,7 +84,8 @@
     "@electric-sql/pglite-tools": "^0.4.8",
     "elkjs": "^0.12.1",
     "react": "^19",
-    "react-dom": "^19"
+    "react-dom": "^19",
+    "xstate": "^5.33.3"
   },
   "peerDependenciesMeta": {
     "@agent-wasm/tailscale-connect": {
@@ -97,6 +98,9 @@
       "optional": true
     },
     "elkjs": {
+      "optional": true
+    },
+    "xstate": {
       "optional": true
     }
   },
@@ -131,6 +135,7 @@
     "@testing-library/react": "^16.3.3",
     "elkjs": "0.12.1",
     "fake-indexeddb": "^6.2.5",
-    "happy-dom": "^20.14.5"
+    "happy-dom": "^20.14.5",
+    "xstate": "5.33.3"
   }
 }
