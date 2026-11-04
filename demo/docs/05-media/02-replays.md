@@ -147,6 +147,28 @@ A long recording often matters for a few seconds of it. `timeWindow={[start, end
 
 An `.rrweb` embed takes its window from the URL: `{% embed url="./checkout.rrweb#t=6.2,8" %}`.
 
+## A stage of your own
+
+The player doesn't have to play rrweb. `stage` puts anything with a playhead in its place, such as pictures of a page, with the same frame, scrubber, keys and markers. rrweb is never loaded. A stage is a component the player drives through a `ReplayStageHandle` on its ref, and it reports the time after every move, whoever made it.
+
+{% demo src="media-replay/custom-stage" %}
+
+```tsx
+const stage: ReplayCustomStage = { component: FramesStage, duration, width, height, href }
+
+<ReplayPreview
+  stage={stage}
+  devtools={{ console: messages, network: requests }}
+  elements={{ getDocument: () => rebuilt, getElementRect: (el) => boxes.get(el) ?? null }}
+/>
+```
+
+With no events to read, the rest comes as data. `devtools` takes `ReplayDevtools`' two lists, in time order, with times in ms from the start, and is used as it is in place of what `getReplayDevtools` would read from a recording. Markers come from it too, with `markers`. `elements` says where the **Elements** tab reads from: a `Document`, which can be one rebuilt from a recording in a hidden iframe, and `getElementRect`, for where each element really was, since the layout of a rebuilt page means nothing. A stage with no document has no Elements tab, and `elements={false}` takes it away from one that has.
+
+These are for code that hosts a player, so they're props and not attributes of an embed: a `.rrweb` embed has `har=`, `log=`, `evidence=` and `captions=` for what's recorded beside it.
+
+Both lists can be an hour long, so the top bar's counts come from `replayDevtoolsCountsAt`, a few binary searches, and the panel builds its lists only when it's open and `replayDevtoolsCutAt` says they've changed. The panel has no windowing, so it lays out the latest 2,000 rows of each list and says how many more there are. A console that has to hold a whole hour belongs in a virtualized list of your own.
+
 ## Three ways in
 
 {% tabs %}
@@ -202,7 +224,7 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 
 | Prop | Type | Default | Purpose |
 | --- | --- | --- | --- |
-| `events` / `source` | `ReplayEvent[]` / `ReplaySource` | none | One of the two. |
+| `events` / `source` / `stage` | `ReplayEvent[]` / `ReplaySource` / `ReplayCustomStage` | none | One of the three. `stage` plays something other than rrweb. |
 | `chrome` | `"browser" \| "minimal" \| "none"` | `"browser"` (`"minimal"` for iframes) | Window with traffic lights and URL bar; a rounded card; or no frame, filling the parent. |
 | `url` | `string` | the recording's | Address in the URL bar. By default it follows the recording's own navigations, led by path, query and hash. |
 | `title` | `string` | `"Session replay"` | Accessible name (the iframe title for page URLs). |
@@ -215,7 +237,9 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `markers` | `boolean \| ReplayMarker[]` | `false` | A marker rail above the seek bar: `true` reads them from the recording, or pass your own. Off by default since 1.26. |
 | `markerKinds` | `ReplayMarkerKind[]` | all | Which recorded kinds to show: `click`, `error`, `network`, `navigation`, `custom`. |
 | `cursor` | `boolean` | `true` | Draw the recorded pointer and click ripples. |
-| `disableDevtools` | `boolean` | `false` | Remove the Console and Network buttons, their panel and the inspections. (The older `devtools={false}` does the same.) |
+| `disableDevtools` | `boolean` | `false` | Remove the Console and Network buttons, their panel and the inspections. (`devtools={false}` does the same.) |
+| `devtools` | `boolean \| ReplayDevtools` | what the events say | What DevTools shows, as data, in place of what's read from the events. |
+| `elements` | `ReplayElementsSource \| false` | the stage's document | Where the Elements tab reads from: `{ getDocument, getElementRect }`. |
 | `defaultDevtoolsTab` | `"console" \| "network"` | none | Open the DevTools panel on this tab at mount. |
 | `evidence` | `ReplayEvidence \| string` | none | A debugger's source excerpts, logpoints and screenshots: the Sources tab and screenshot captures. |
 | `captions` | `string` | none | WebVTT captions on the recording's clock, shown over the page; a CC button toggles them. |
