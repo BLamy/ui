@@ -57,6 +57,7 @@
   },
   "devDependencies": {
     "@agent-wasm/tailscale-connect": "1.39.98-t02582083d",
-    "@electric-sql/pglite": "0.5.8"
+    "@electric-sql/pglite": "0.5.8",
+    "xstate": "5.33.3"
   }
 }
