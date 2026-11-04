@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Diagram, type DiagramProps } from '@/components/ui/diagram';
 import type { DiagramLayoutResult } from '@/lib/diagram-layout';
 import { useDiagramLayout } from '@/lib/diagram-layout/react';
-import type { DiagramEdge, DiagramNode } from '@/lib/diagram-model';
 import { machineToDraft, type MachineLike, type StateEdgeData, type StateNodeData } from '@/lib/state-diagram-model';
 import { cn } from '@/lib/utils';
 
@@ -53,9 +52,6 @@ function useMachine(machine: MachineLike | undefined, config: Record<string, unk
   return { machine: made.machine, error: made.error };
 }
 
-const NO_NODES: DiagramNode<StateNodeData>[] = [];
-const NO_EDGES: DiagramEdge<StateEdgeData>[] = [];
-
 export function StateDiagram({ machine: given, config, direction, initial, className, style, 'aria-label': ariaLabel, ...diagram }: StateDiagramProps) {
   const { machine, error } = useMachine(given, config);
   const draft = useMemo(() => {
@@ -74,8 +70,8 @@ export function StateDiagram({ machine: given, config, direction, initial, class
   return (
     <div ref={host} data-slot="state-diagram" className={cn('absolute inset-0', className)} style={style}>
       <Diagram<StateNodeData, StateEdgeData>
-        nodes={problem ? NO_NODES : laid.nodes}
-        edges={problem ? NO_EDGES : laid.edges}
+        nodes={laid.nodes}
+        edges={laid.edges}
         aria-label={name}
         noun="state"
         overlay={problem ? (
