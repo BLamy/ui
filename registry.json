@@ -7979,6 +7979,24 @@
       ]
     },
     {
+      "name": "diagram-model",
+      "type": "registry:lib",
+      "title": "Diagram Model",
+      "description": "Diagram Model — part of BL UI's library (lib/diagram-model.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas-math.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-model.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-model.ts"
+        }
+      ]
+    },
+    {
       "name": "drawer-swipe",
       "type": "registry:lib",
       "title": "Drawer Swipe",
@@ -9385,6 +9403,7 @@
         "https://blamy.github.io/ui/r/canvas.json",
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
@@ -9639,6 +9658,7 @@
         "https://blamy.github.io/ui/r/context-menu.json",
         "https://blamy.github.io/ui/r/date-field.json",
         "https://blamy.github.io/ui/r/date-picker.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
         "https://blamy.github.io/ui/r/disclosure.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/font-picker.json",
@@ -10309,6 +10329,7 @@
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/plain-button.json",

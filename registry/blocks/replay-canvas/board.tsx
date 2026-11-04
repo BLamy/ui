@@ -14,6 +14,7 @@ import { Canvas, CanvasFrame, CanvasMiniMap, useCanvas } from '@/components/ui/c
 import { HoverCard, HoverCardHeader, useHoverCard } from '@/components/ui/hover-card';
 import { formatReplayTime } from '@/components/ui/replay-preview';
 import { fitCamera, unionRect, type Camera, type Rect } from '@/lib/canvas-math';
+import { ARROW_SLIM, arrowHead, closedD, dirOf } from '@/lib/diagram-model';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import type { AppMap, ChromeType, Evidence, MapNode, OverlayType, Recording, Segue, SegueKind } from './analyze';
@@ -350,10 +351,6 @@ function Segues({ routes, crops, journeys, related, hover, followed, journey, sh
   const color = useMemo(() => new Map(journeys.map((j) => [j.id, j.color])), [journeys]);
   // One curve per segue, as thick as how many journeys took it; the followed journey's drawn again in its color.
   const curves = useMemo(() => routes.map((r) => ({ route: r, path: seguePath(r.segue, r.from, r.to, crops) })), [routes, crops]);
-  const arrowhead = (end: { x: number; y: number }, angle: number, size: number) => {
-    const a1 = angle + Math.PI - 0.45, a2 = angle + Math.PI + 0.45;
-    return `M ${end.x} ${end.y} L ${end.x + Math.cos(a1) * size} ${end.y + Math.sin(a1) * size} L ${end.x + Math.cos(a2) * size} ${end.y + Math.sin(a2) * size} Z`;
-  };
   return (
     <>
       <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width={1} height={1} aria-hidden="true">
@@ -377,7 +374,7 @@ function Segues({ routes, crops, journeys, related, hover, followed, journey, sh
                   <path d={d} fill="none" className="[pointer-events:stroke] stroke-transparent" strokeWidth={10 / zoom} data-rc-segue={s.id} />
                   <path d={d} fill="none" stroke={mine ? color.get(journey!) : ink} strokeWidth={mine ? Math.max(weight, w * 2) : on ? weight * 1.5 : weight}
                     strokeDasharray={s.kind === 'dismiss' ? `${6 / zoom} ${5 / zoom}` : undefined} />
-                  <path d={arrowhead(end, angle, head)} fill={mine ? color.get(journey!) : ink} />
+                  <path d={closedD(arrowHead(end, dirOf(angle), head, ARROW_SLIM))} fill={mine ? color.get(journey!) : ink} />
                 </>
               )}
               {shownDots.map((id, i) => {

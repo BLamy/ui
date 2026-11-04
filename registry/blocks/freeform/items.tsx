@@ -5,7 +5,7 @@ import { HoverCardHeader } from '@/components/ui/hover-card';
 import { StrokePath } from '@/components/ui/pencilkit/stroke-path';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import type { Pt } from '@/lib/canvas-math';
+import { arrowHead, polygonPoints } from '@/lib/diagram-model';
 import { connectorGeometry } from './geometry';
 import { type BoxItem, type ConnectorItem, type ImageItem, type Item, type LinkItem, type ShapeItem, type StickyItem, type StrokeItem, type TextItem } from './model';
 import { ART, LINK_ACCENT, SCENE } from './palette';
@@ -203,12 +203,6 @@ function Stroke({ item }: { item: StrokeItem }) {
   );
 }
 
-function arrowHead(tip: Pt, dir: Pt, size: number): string {
-  const bx = tip.x - dir.x * size, by = tip.y - dir.y * size;
-  const px = -dir.y * size * 0.55, py = dir.x * size * 0.55;
-  return `${tip.x},${tip.y} ${bx + px},${by + py} ${bx - px},${by - py}`;
-}
-
 export function Connector({ item, byId, preview }: { item: ConnectorItem; byId: Map<string, Item>; preview?: boolean }) {
   const g = connectorGeometry(item, byId);
   const color = item.color ?? 'currentColor';
@@ -219,8 +213,8 @@ export function Connector({ item, byId, preview }: { item: ConnectorItem; byId: 
         d={g.d} fill="none" stroke={color} strokeWidth={item.width} strokeLinecap="round" strokeLinejoin="round"
         strokeDasharray={item.dashed || preview ? `${item.width * 3} ${item.width * 2.6}` : undefined}
       />
-      {item.heads !== 'none' ? <polygon points={arrowHead(g.end, g.endDir, size)} fill={color} stroke={color} strokeWidth="1" strokeLinejoin="round" /> : null}
-      {item.heads === 'both' ? <polygon points={arrowHead(g.start, g.startDir, size)} fill={color} stroke={color} strokeWidth="1" strokeLinejoin="round" /> : null}
+      {item.heads !== 'none' ? <polygon points={polygonPoints(arrowHead(g.end, g.endDir, size))} fill={color} stroke={color} strokeWidth="1" strokeLinejoin="round" /> : null}
+      {item.heads === 'both' ? <polygon points={polygonPoints(arrowHead(g.start, g.startDir, size))} fill={color} stroke={color} strokeWidth="1" strokeLinejoin="round" /> : null}
     </svg>
   );
 }

@@ -58,7 +58,7 @@ export function cornersOf(f: Frame): Pt[] {
 }
 
 /** The smallest rectangle holding all of `pts`. */
-export function rectOf(pts: Pt[]): Rect {
+export function rectOf(pts: readonly Pt[]): Rect {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const p of pts) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); }
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
@@ -73,7 +73,7 @@ export const unionRect = (rs: Rect[]): Rect | null => {
 export const intersects = (a: Rect, b: Rect) => a.x <= b.x + b.w && b.x <= a.x + a.w && a.y <= b.y + b.h && b.y <= a.y + a.h;
 
 /** Is `p` inside the (rotated) frame, `pad` units out? */
-export function inFrame(p: Pt, f: Frame, pad = 0): boolean {
+export function inFrame(p: Pt, f: Rect & { rot?: number }, pad = 0): boolean {
   const q = f.rot ? rotatePt(p, centerOf(f), -f.rot) : p;
   return q.x >= f.x - pad && q.x <= f.x + f.w + pad && q.y >= f.y - pad && q.y <= f.y + f.h + pad;
 }
@@ -85,7 +85,7 @@ export function distToSegment(p: Pt, a: Pt, b: Pt): number {
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 }
 
-export function distToPolyline(p: Pt, pts: Pt[]): number {
+export function distToPolyline(p: Pt, pts: readonly Pt[]): number {
   let best = Infinity;
   for (let i = 1; i < pts.length; i++) best = Math.min(best, distToSegment(p, pts[i - 1], pts[i]));
   return pts.length === 1 ? dist(p, pts[0]) : best;

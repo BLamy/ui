@@ -1,6 +1,7 @@
 /* The storyboard's geometry: where every rendered node is (measured once per change, in board units, so camera
-   moves don't invalidate it), which scene is under a point, and the paths of the segue arrows. Which node is under
-   the pointer, and where a dragged component lands, are pick.ts's: the browser's own hit-testing answers those. */
+   moves don't invalidate it) and which scene is under a point. Which node is under
+   the pointer, and where a dragged component lands, are pick.ts's: the browser's own hit-testing answers those. Segue arrows
+   are the diagram model's, in @/lib/diagram-model. */
 import type { Camera, Pt, Rect } from '@/lib/canvas-math';
 import type { Device, Doc, Node, Scene } from './model';
 import { walk, type Place } from './tree';
@@ -147,70 +148,4 @@ export interface DropTarget {
   line: Rect | null;
   /** The container (or slot) it lands in. */
   box: Rect;
-}
-
-/* ── Segue arrows ── */
-
-export interface SegueGeometry {
-  d: string;
-  start: Pt;
-  end: Pt;
-  /** Where the badge sits (the curve's middle). */
-  mid: Pt;
-  /** The arrowhead's direction at the end, radians. */
-  angle: number;
-}
-
-const bez = (a: Pt, b: Pt, c: Pt, d: Pt, t: number): Pt => {
-  const u = 1 - t;
-  return {
-    x: u * u * u * a.x + 3 * u * u * t * b.x + 3 * u * t * t * c.x + t * t * t * d.x,
-    y: u * u * u * a.y + 3 * u * u * t * b.y + 3 * u * t * t * c.y + t * t * t * d.y,
-  };
-};
-
-/**
- * A segue's curve: from its source node's trailing edge (or the scene's) to the destination's nearest edge. Mostly
- * sideways when the scenes sit side by side, from above when the destination is below.
- */
-export function segueGeometry(from: Rect, to: Rect, src: Rect | null, gap: number): SegueGeometry {
-  const fc = { x: from.x + from.w / 2, y: from.y + from.h / 2 }, tc = { x: to.x + to.w / 2, y: to.y + to.h / 2 };
-  const dx = tc.x - fc.x, dy = tc.y - fc.y;
-  const sideways = Math.abs(dx) >= Math.abs(dy) * 0.6;
-  let start: Pt, end: Pt, c1: Pt, c2: Pt;
-  if (sideways) {
-    const dir = dx >= 0 ? 1 : -1;
-    start = src ? { x: dir > 0 ? src.x + src.w : src.x, y: src.y + src.h / 2 } : { x: dir > 0 ? from.x + from.w : from.x, y: fc.y };
-    end = { x: dir > 0 ? to.x - gap : to.x + to.w + gap, y: Math.max(to.y + 40, Math.min(to.y + to.h - 40, start.y)) };
-    const k = Math.max(48, Math.abs(end.x - start.x) * 0.42);
-    c1 = { x: start.x + k * dir, y: start.y };
-    c2 = { x: end.x - k * dir, y: end.y };
-  } else {
-    const dir = dy >= 0 ? 1 : -1;
-    start = src ? { x: src.x + src.w, y: src.y + src.h / 2 } : { x: fc.x, y: dir > 0 ? from.y + from.h : from.y };
-    end = { x: tc.x, y: dir > 0 ? to.y - gap : to.y + to.h + gap };
-    const k = Math.max(60, Math.abs(end.y - start.y) * 0.45);
-    c1 = src ? { x: start.x + k, y: start.y } : { x: start.x, y: start.y + k * dir };
-    c2 = { x: end.x, y: end.y - k * dir };
-  }
-  return {
-    d: `M ${start.x} ${start.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${end.x} ${end.y}`,
-    start, end,
-    mid: bez(start, c1, c2, end, 0.5),
-    angle: Math.atan2(end.y - c2.y, end.x - c2.x),
-  };
-}
-
-/** Distance from `p` to a segue's curve (sampled), for clicking near a line. */
-export function distToSegue(g: SegueGeometry, p: Pt): number {
-  const m = /M ([-\d.e]+) ([-\d.e]+) C ([-\d.e]+) ([-\d.e]+), ([-\d.e]+) ([-\d.e]+), ([-\d.e]+) ([-\d.e]+)/.exec(g.d);
-  if (!m) return Infinity;
-  const v = m.slice(1).map(Number);
-  const a = { x: v[0], y: v[1] }, b = { x: v[2], y: v[3] }, c = { x: v[4], y: v[5] }, d = { x: v[6], y: v[7] };
-  let best = Infinity;
-  for (let i = 0; i <= 40; i++) {
-    const q = bez(a, b, c, d, i / 40);
-    best = Math.min(best, Math.hypot(q.x - p.x, q.y - p.y));
-  }
-  return best;
 }

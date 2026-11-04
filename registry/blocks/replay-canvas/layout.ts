@@ -4,7 +4,8 @@
    it, each layer a row of its own states — and the blocks follow the order the recordings reach them from the entry,
    wrapped into lines so the whole map is about as wide as a screen. Segues
    leave from where the click landed and enter their target's nearest side. */
-import type { Pt, Rect } from '@/lib/canvas-math';
+import type { Rect } from '@/lib/canvas-math';
+import { loopingCurve, type ConnectorGeometry } from '@/lib/diagram-model';
 import type { AppMap, Evidence, MapNode, OverlayType, Segue, StateRef } from './analyze';
 
 /** A measured layer: where it sits in the recorded viewport (px). */
@@ -19,14 +20,8 @@ export interface FrameBox extends Rect {
   cropped: boolean;
 }
 
-export interface SeguePath {
+export interface SeguePath extends ConnectorGeometry {
   segue: Segue;
-  d: string;
-  start: Pt;
-  end: Pt;
-  mid: Pt;
-  /** Direction at the end (radians), for the arrowhead. */
-  angle: number;
 }
 
 export const frameKey = (r: StateRef) => `${r.node}/${r.state}`;
@@ -130,14 +125,6 @@ function unionOf(boxes: Rect[]): Rect {
   return { x: x0, y: y0, w: Math.max(...boxes.map((b) => b.x + b.w)) - x0, h: Math.max(...boxes.map((b) => b.y + b.h)) - y0 };
 }
 
-function bez(a: Pt, b: Pt, c: Pt, d: Pt, t: number): Pt {
-  const u = 1 - t;
-  return {
-    x: u * u * u * a.x + 3 * u * u * t * b.x + 3 * u * t * t * c.x + t * t * t * d.x,
-    y: u * u * u * a.y + 3 * u * u * t * b.y + 3 * u * t * t * c.y + t * t * t * d.y,
-  };
-}
-
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /** A segue's curve: from the click (in its frame) to the target frame's nearest side, moved `offset` board units to its
@@ -146,24 +133,5 @@ export function seguePath(segue: Segue, from: FrameBox, to: FrameBox, crops: Cro
   const crop = from.cropped ? crops[from.key] : undefined;
   const local = crop ? { x: segue.point.x - crop.x, y: segue.point.y - crop.y } : segue.point;
   const start = { x: from.x + clamp(local.x, 0, from.w), y: from.y + clamp(local.y, 0, from.h) };
-  let end: Pt, c1: Pt, c2: Pt;
-  if (to.x >= start.x + 60) {
-    end = { x: to.x - 10, y: clamp(start.y, to.y + 24, to.y + to.h - 24) };
-    const k = Math.max(80, (end.x - start.x) * 0.45);
-    c1 = { x: start.x + k, y: start.y };
-    c2 = { x: end.x - k, y: end.y };
-  } else {
-    const below = to.y >= start.y;
-    end = { x: to.x + Math.min(to.w / 2, 240), y: below ? to.y - 10 : to.y + to.h + 10 };
-    const k = Math.max(160, Math.abs(end.y - start.y) * 0.4);
-    const side = Math.max(start.x, end.x) + 220;
-    c1 = { x: side, y: start.y };
-    c2 = { x: end.x, y: below ? end.y - k : end.y + k };
-  }
-  if (offset) {
-    const len = Math.hypot(end.x - start.x, end.y - start.y) || 1;
-    const nx = (-(end.y - start.y) / len) * offset, ny = ((end.x - start.x) / len) * offset;
-    for (const pt of [start, c1, c2, end]) { pt.x += nx; pt.y += ny; }
-  }
-  return { segue, d: `M ${start.x} ${start.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${end.x} ${end.y}`, start, end, mid: bez(start, c1, c2, end, 0.5), angle: Math.atan2(end.y - c2.y, end.x - c2.x) };
+  return { segue, ...loopingCurve(start, to, offset) };
 }
