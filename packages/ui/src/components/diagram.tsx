@@ -1,13 +1,15 @@
 'use client';
-import { memo, useId, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { memo, useId, useLayoutEffect, useMemo, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { cva } from 'class-variance-authority';
 import { Canvas, CanvasMiniMap, type CanvasMiniMapItem, type CanvasMiniMapProps, type CanvasProps } from '@/components/ui/canvas';
 import { fitCamera, type Camera, type Rect } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';
 import {
-  diagramBounds, edgeGeometries, indexDiagram, labelBox, regionDividers,
+  diagramBounds, diagramTextRuns, edgeGeometries, indexDiagram, labelBox, regionDividers, sizeNodesToText,
   type ConnectorGeometry, type DiagramDivider, type DiagramEdge, type DiagramNode,
 } from '@/lib/diagram-model';
+import { DIAGRAM_TEXT_CLASS, estimateText, measureText, type TextMeasurer } from '@/lib/diagram-text';
+import { useFontVersion } from '@/lib/use-font-version';
 import { cn } from '@/lib/utils';
 
 /* ══ Diagram — nodes, edges, labels and regions on the Canvas ══
@@ -24,8 +26,8 @@ const LINE = '[stroke-width:calc(1.25px/var(--diagram-z))] [stroke-linejoin:roun
 export const diagramNodeVariants = cva('relative size-full', {
   variants: {
     kind: {
-      node: 'flex flex-col items-center justify-center rounded-ctl border border-border bg-card text-card-foreground shadow-hairline',
-      final: 'flex flex-col items-center justify-center rounded-ctl border-2 border-foreground bg-card text-card-foreground outline-1 -outline-offset-4 outline-foreground',
+      node: 'flex flex-col items-center justify-center rounded-ctl border border-border bg-card px-3 py-2 text-card-foreground shadow-hairline',
+      final: 'flex flex-col items-center justify-center rounded-ctl border-2 border-foreground bg-card px-3 py-2 text-card-foreground outline-1 -outline-offset-4 outline-foreground',
       initial: 'rounded-full bg-foreground',
       compound: 'rounded-card border border-border bg-secondary',
       parallel: 'rounded-card border border-dashed border-border bg-secondary',
@@ -78,7 +80,7 @@ export function DiagramNodeBody({ node, className, style }: DiagramNodeBodyProps
     return (
       <div data-slot="diagram-node-body" className={cn(diagramNodeVariants({ kind }), className)} style={style}>
         {node.label ? (
-          <div data-slot="diagram-node-label" className="absolute top-1.5 left-3 whitespace-nowrap text-caption font-semibold text-muted-foreground group-data-[zoom=far]/diagram:hidden">
+          <div data-slot="diagram-node-label" className={cn('absolute top-1.5 left-3 whitespace-nowrap text-muted-foreground group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.title)}>
             {node.label}
             {node.detail ? <span data-slot="diagram-node-detail" className="font-normal"> ({node.detail})</span> : null}
           </div>
@@ -88,8 +90,8 @@ export function DiagramNodeBody({ node, className, style }: DiagramNodeBodyProps
   }
   return (
     <div data-slot="diagram-node-body" className={cn(diagramNodeVariants({ kind }), className)} style={style}>
-      <div data-slot="diagram-node-label" className="whitespace-nowrap text-caption font-medium leading-tight group-data-[zoom=far]/diagram:hidden">{node.label}</div>
-      {node.detail ? <div data-slot="diagram-node-detail" className="whitespace-nowrap text-caption2 leading-tight text-muted-foreground group-data-[zoom=far]/diagram:hidden">{node.detail}</div> : null}
+      <div data-slot="diagram-node-label" className={cn('max-w-full text-center [overflow-wrap:anywhere] group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.label)}>{node.label}</div>
+      {node.detail ? <div data-slot="diagram-node-detail" className={cn('max-w-full text-center text-muted-foreground [overflow-wrap:anywhere] group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.detail)}>{node.detail}</div> : null}
     </div>
   );
 }
@@ -134,7 +136,7 @@ const EdgeLabel = memo(function EdgeLabel({ edge, box }: { edge: DiagramEdge<unk
     <div
       data-slot="diagram-edge-label"
       data-edge={edge.id}
-      className="absolute whitespace-nowrap text-caption2 leading-none text-muted-foreground group-data-[zoom=far]/diagram:hidden group-data-[zoom=mid]/diagram:hidden"
+      className={cn('absolute whitespace-nowrap text-muted-foreground group-data-[zoom=far]/diagram:hidden group-data-[zoom=mid]/diagram:hidden', DIAGRAM_TEXT_CLASS.edge)}
       style={{ left: box.x, top: box.y }}
     >
       {edge.label}
@@ -163,10 +165,7 @@ interface Laid<N, E> {
   bounds: Rect | null;
 }
 
-/** A label's size, before anything's measured it. */
-const estimateLabel = (text: string) => ({ w: text.length * 5.6 + 2, h: 11 });
-
-function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[]): Laid<N, E> {
+function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[], text: TextMeasurer): Laid<N, E> {
   const index = indexDiagram(nodes);
   const geometries = edgeGeometries(edges, index);
   const drawn: Laid<N, E>['edges'] = [];
@@ -175,7 +174,7 @@ function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramE
     const geometry = geometries.get(edge.id);
     if (!geometry) continue;
     drawn.push({ edge, geometry });
-    if (edge.label) labels.push({ edge, box: edge.labelBox ?? labelBox(geometry.pts, estimateLabel(edge.label)) });
+    if (edge.label) labels.push({ edge, box: edge.labelBox ?? labelBox(geometry.pts, text(edge.label, 'edge')) });
   }
   // Outer containers first, so what's inside draws over them, however the nodes were listed.
   const depth = (n: DiagramNode<N>) => index.depth.get(n.id) ?? 0;
@@ -223,6 +222,8 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   onCameraChange?: (camera: Camera) => void;
   /** How much air to leave around the content when fitting it, in px (default 24). */
   fitPadding?: number;
+  /** Size each node to its words, measured in the real font, around its center. A node that holds others keeps its size. */
+  autoSize?: boolean;
   /** An overview in a corner, on `CanvasMiniMap`. */
   minimap?: boolean | Omit<CanvasMiniMapProps, 'items'>;
   /** Draws a node's insides, within a box it's placed in. Keep the function stable, as it's what the nodes memoize on. */
@@ -235,15 +236,32 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
 
 const EMPTY: readonly never[] = [];
 
+/** What the text in a diagram measures. The first render, on a server or hydrating, goes by estimates. Straight after, it's
+ *  measured in the real font, and again if the words change or a font turns up later. A drag doesn't measure anything. */
+function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly DiagramNode<any>[], edges: readonly DiagramEdge<any>[], needed: boolean): TextMeasurer {
+  const fonts = useFontVersion();
+  const [text, setText] = useState<TextMeasurer>(() => estimateText);
+  const words = useMemo(() => (needed ? diagramTextRuns(nodes, edges) : []), [needed, nodes, edges]);
+  const key = useMemo(() => words.map((r) => `${r.kind}:${r.text}`).join('\0'), [words]);
+  useLayoutEffect(() => {
+    if (needed) setText(() => measureText(words, host.current));
+    // `key` stands for `words`. `fonts` is here because what it's measuring hasn't changed, but the answer has.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [host, key, needed, fonts]);
+  return text;
+}
+
 /** A diagram on a `Canvas`. Sits in its host like any BL UI container: it fills the nearest positioned box. */
 export function Diagram<N = unknown, E = unknown>({
-  nodes, edges = EMPTY, camera: controlled, defaultCamera, onCameraChange, fitPadding = 24, minimap, renderNode,
+  nodes: given, edges = EMPTY, camera: controlled, defaultCamera, onCameraChange, fitPadding = 24, autoSize, minimap, renderNode,
   background, panning, cursor, autoFocus, 'aria-label': ariaLabel = 'Diagram', overlay, children, className, style,
 }: DiagramProps<N, E>) {
   const [ref, size] = useContainerSize<HTMLDivElement>({ width: 1000, height: 700 });
   const [own, setOwn] = useState<Camera | null>(defaultCamera ?? null);
   const arrow = `diagram-arrow-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
-  const laid = useMemo(() => layOut(nodes, edges), [nodes, edges]);
+  const text = useDiagramText(ref, given, edges, !!autoSize || edges.some((e) => e.label && !e.labelBox));
+  const nodes = useMemo(() => (autoSize ? sizeNodesToText(given, text) : given), [autoSize, given, text]);
+  const laid = useMemo(() => layOut(nodes, edges, text), [nodes, edges, text]);
   const camera = controlled ?? own ?? fitCamera(laid.bounds, size, fitPadding);
   const change = (next: Camera) => {
     setOwn(next);
@@ -253,7 +271,7 @@ export function Diagram<N = unknown, E = unknown>({
   const marks = useMemo<CanvasMiniMapItem[]>(() => (minimap ? nodes.filter((n) => n.kind !== 'root').map((n) => ({ id: n.id, x: n.x, y: n.y, w: n.w, h: n.h })) : []), [minimap, nodes]);
   const zoom = camera.z < NODE_TEXT_ZOOM ? 'far' : camera.z < EDGE_LABEL_ZOOM ? 'mid' : 'near';
   return (
-    <div ref={ref} data-slot="diagram" className={cn('absolute inset-0 font-sans', className)} style={style}>
+    <div ref={ref} data-slot="diagram" className={cn('absolute inset-0', className)} style={style}>
       <Canvas
         camera={camera}
         onCameraChange={change}

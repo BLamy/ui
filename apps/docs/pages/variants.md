@@ -536,8 +536,8 @@ relative size-full
 
 | Value | Adds |
 | --- | --- |
-| `node` (default) | `flex flex-col items-center justify-center rounded-ctl border border-border bg-card text-card-foreground shadow-hairline` |
-| `final` | `flex flex-col items-center justify-center rounded-ctl border-2 border-foreground bg-card text-card-foreground outline-1 -outline-offset-4 outline-foreground` |
+| `node` (default) | `flex flex-col items-center justify-center rounded-ctl border border-border bg-card px-3 py-2 text-card-foreground shadow-hairline` |
+| `final` | `flex flex-col items-center justify-center rounded-ctl border-2 border-foreground bg-card px-3 py-2 text-card-foreground outline-1 -outline-offset-4 outline-for…` |
 | `initial` | `rounded-full bg-foreground` |
 | `compound` | `rounded-card border border-border bg-secondary` |
 | `parallel` | `rounded-card border border-dashed border-border bg-secondary` |

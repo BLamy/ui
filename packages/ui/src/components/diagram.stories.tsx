@@ -14,20 +14,20 @@ type Story = StoryObj<typeof Diagram>;
 
 /* The file-upload machine: 33 states, 36 transitions, compound and parallel states and self-loops, laid out ahead of time. */
 export const Machine: Story = {
-  render: () => <Phone w={1360} h={560}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1360} h={560}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize aria-label="File upload" /></Phone>,
 };
 
 export const MachineDark: Story = {
-  render: () => <Phone w={1360} h={560} dark><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1360} h={560} dark><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize aria-label="File upload" /></Phone>,
 };
 
 /** Close enough to read: the parallel state and its regions. */
 export const MachineCloseUp: Story = {
-  render: () => <Phone w={1000} h={700}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: -1680, y: -210, z: 1.05 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1000} h={700}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize defaultCamera={{ x: -1680, y: -210, z: 1.05 }} aria-label="File upload" /></Phone>,
 };
 
 export const MachineCloseUpDark: Story = {
-  render: () => <Phone w={1000} h={700} dark><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: -1680, y: -210, z: 1.05 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1000} h={700} dark><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize defaultCamera={{ x: -1680, y: -210, z: 1.05 }} aria-label="File upload" /></Phone>,
 };
 
 const KINDS: DiagramNode[] = [
@@ -109,22 +109,22 @@ export const EdgeKindsDark: Story = {
 
 /** At the smallest zoom: lines keep their thickness, and the text is gone. */
 export const ZoomMin: Story = {
-  render: () => <Phone w={800} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: 370, y: 170, z: 0.02 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={800} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize defaultCamera={{ x: 370, y: 170, z: 0.02 }} aria-label="File upload" /></Phone>,
 };
 
 /** Below the point where an edge's label could be read, a node's can still be made out. */
 export const ZoomMiddle: Story = {
-  render: () => <Phone w={1200} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: 20, y: 80, z: 0.3 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1200} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize defaultCamera={{ x: 20, y: 80, z: 0.3 }} aria-label="File upload" /></Phone>,
 };
 
 /** At the largest zoom: lines keep their thickness, and the text is big. */
 export const ZoomMax: Story = {
-  render: () => <Phone w={800} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: -7836, y: -1224, z: 4 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={800} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize defaultCamera={{ x: -7836, y: -1224, z: 4 }} aria-label="File upload" /></Phone>,
 };
 
 /** `CanvasMiniMap`, with the root left out so it isn't one solid block. */
 export const WithMiniMap: Story = {
-  render: () => <Phone w={1000} h={500}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} minimap defaultCamera={{ x: -1600, y: -100, z: 0.9 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1000} h={500}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize minimap defaultCamera={{ x: -1600, y: -100, z: 0.9 }} aria-label="File upload" /></Phone>,
 };
 
 function ZoomReadout() {
@@ -142,6 +142,26 @@ const renderCustom = (node: DiagramNode) => <DiagramNodeBody node={node} classNa
 /** A custom node is whatever you draw in its box. Here, the usual body, with another color. */
 export const CustomNode: Story = {
   render: () => <Phone w={500} h={160}><Diagram nodes={EDGE_NODES.slice(0, 2)} edges={EDGES.slice(0, 1)} renderNode={renderCustom} defaultCamera={{ x: 30, y: 50, z: 1 }} /></Phone>,
+};
+
+const WORDY: DiagramNode[] = [
+  { id: 'short', label: 'idle', x: 0, y: 0, w: 1, h: 1 },
+  { id: 'detail', label: 'checkingQuota', detail: 'invoke verifyTokenAndQuota', x: 240, y: 0, w: 1, h: 1 },
+  { id: 'long', label: 'A very long state name that goes on for a good deal longer than any node should', x: 0, y: 90, w: 1, h: 1 },
+  { id: 'nospaces', label: 'aVeryLongStateNameWithNoSpacesInItAtAllThatHasToBreakSomewhereOrItWillRunOutOfItsBox', x: 280, y: 90, w: 1, h: 1 },
+  { id: 'cjk', label: '認証を確認しています', detail: 'アップロードを待っています', x: 0, y: 190, w: 1, h: 1 },
+  { id: 'cjklong', label: 'これはとても長い状態の名前で、折り返さなければ箱からはみ出してしまいます', x: 280, y: 190, w: 1, h: 1 },
+  { id: 'final', kind: 'final', label: 'quarantined', x: 0, y: 280, w: 1, h: 1 },
+  { id: 'emoji', label: '🚀 launching 🌕', x: 280, y: 280, w: 1, h: 1 },
+];
+
+/** With `autoSize`, a node's as big as its words, in the real font: short ones, long ones, ones with no spaces, and CJK. */
+export const SizedToText: Story = {
+  render: () => <Phone w={700} h={400}><Diagram nodes={WORDY} autoSize /></Phone>,
+};
+
+export const SizedToTextDark: Story = {
+  render: () => <Phone w={700} h={400} dark><Diagram nodes={WORDY} autoSize /></Phone>,
 };
 
 /** Nothing to draw: it's an empty canvas, centered on the origin. */

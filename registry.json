@@ -7750,6 +7750,8 @@
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/diagram-text.json",
+        "https://blamy.github.io/ui/r/use-font-version.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -8017,6 +8019,23 @@
           "path": "packages/ui/src/lib/diagram-model.ts",
           "type": "registry:lib",
           "target": "lib/diagram-model.ts"
+        }
+      ]
+    },
+    {
+      "name": "diagram-text",
+      "type": "registry:lib",
+      "title": "Diagram Text",
+      "description": "Diagram Text — part of BL UI's library (lib/diagram-text.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-text.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-text.ts"
         }
       ]
     },
@@ -8543,6 +8562,24 @@
           "path": "packages/ui/src/lib/tokens.generated.ts",
           "type": "registry:lib",
           "target": "lib/tokens.generated.ts"
+        }
+      ]
+    },
+    {
+      "name": "use-font-version",
+      "type": "registry:lib",
+      "title": "Use Font Version",
+      "description": "Use Font Version — part of BL UI's library (lib/use-font-version.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/diagram-text.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/use-font-version.ts",
+          "type": "registry:lib",
+          "target": "lib/use-font-version.ts"
         }
       ]
     },

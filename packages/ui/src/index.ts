@@ -27,7 +27,11 @@ export {
   edgeAt, edgeGeometries, edgeGeometry, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, nearestAnchor, nearestSide, nodeAt,
   pointAlong, polygonPoints, polylineD, polylinePath, portPoint, selfLoopPath,
   diagramBounds, regionDividers,
+  INITIAL_SIZE, NODE_MIN_SIZE, NODE_PADDING, diagramTextRuns, nodeTextSize, sizeNodesToText,
 } from './lib/diagram-model';
+export { DIAGRAM_TEXT_CLASS, DIAGRAM_TEXT_MAX_WIDTH, clearTextCache, estimateText, measureText, onFontsLoaded } from './lib/diagram-text';
+export type { DiagramTextKind, TextMeasurer, TextRun, TextSize } from './lib/diagram-text';
+export { useFontVersion } from './lib/use-font-version';
 export type { ArrowShape, ConnectorEnd, ConnectorGeometry, ConnectorRoute, DiagramBox, DiagramDivider, DiagramEdge, DiagramIndex, DiagramModel, DiagramNode, DiagramNodeKind, DiagramPort, DiagramSide } from './lib/diagram-model';
 export { Diagram, DiagramNodeBody, diagramEdgeVariants, diagramNodeVariants } from './components/diagram';
 export type { DiagramNodeBodyProps, DiagramProps } from './components/diagram';

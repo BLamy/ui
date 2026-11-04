@@ -598,3 +598,56 @@ export function diagramBounds(nodes: readonly Rect[], geometries: Iterable<{ pts
   for (const l of labels) rects.push(l);
   return unionRect(rects);
 }
+
+/* ── Sizes from text ── */
+
+/** The room a node keeps around its words, and the least it's drawn as. */
+export const NODE_PADDING = { x: 12, y: 8 };
+export const NODE_MIN_SIZE = { w: 72, h: 34 };
+/** An `initial` marker's size. */
+export const INITIAL_SIZE = 12;
+
+type TextOf = (text: string, kind: 'label' | 'detail' | 'title' | 'edge') => { w: number; h: number };
+
+/** The texts in a diagram, for measuring in one go. */
+export function diagramTextRuns(nodes: readonly DiagramNode<unknown>[], edges: readonly DiagramEdge<unknown>[] = []): { text: string; kind: 'label' | 'detail' | 'title' | 'edge' }[] {
+  const runs: { text: string; kind: 'label' | 'detail' | 'title' | 'edge' }[] = [];
+  for (const n of nodes) {
+    const holds = n.kind === 'compound' || n.kind === 'parallel' || n.kind === 'region' || n.kind === 'root';
+    if (n.label) runs.push({ text: n.label, kind: holds ? 'title' : 'label' });
+    if (n.detail) runs.push({ text: n.detail, kind: holds ? 'title' : 'detail' });
+  }
+  for (const e of edges) if (e.label) runs.push({ text: e.label, kind: 'edge' });
+  return runs;
+}
+
+/** How big a node needs to be for its words. What holds other nodes gets its size from them, so this is the least it can
+ *  be: wide enough for its title. */
+export function nodeTextSize(node: Pick<DiagramNode<unknown>, 'kind' | 'label' | 'detail'>, text: TextOf): { w: number; h: number } {
+  if (node.kind === 'initial') return { w: INITIAL_SIZE, h: INITIAL_SIZE };
+  const holds = node.kind === 'compound' || node.kind === 'parallel' || node.kind === 'region' || node.kind === 'root';
+  if (holds) {
+    const title = node.label ? text(node.label, 'title') : { w: 0, h: 0 };
+    const detail = node.detail ? text(` (${node.detail})`, 'title').w : 0;
+    return { w: title.w + detail + NODE_PADDING.x * 2, h: title.h + NODE_PADDING.y * 2 };
+  }
+  // A final state's border is a pixel thicker on each side, and its inner line takes up the rest of the padding.
+  const border = node.kind === 'final' ? 4 : 2;
+  const a = node.label ? text(node.label, 'label') : { w: 0, h: 0 };
+  const b = node.detail ? text(node.detail, 'detail') : { w: 0, h: 0 };
+  return {
+    w: Math.max(NODE_MIN_SIZE.w, Math.max(a.w, b.w) + NODE_PADDING.x * 2 + border),
+    h: Math.max(NODE_MIN_SIZE.h, a.h + b.h + NODE_PADDING.y * 2 + border),
+  };
+}
+
+/** Nodes resized to their words, around their centers. Nodes that hold others, and nodes whose size didn't change, come
+ *  back as they were, so a memo on them holds. */
+export function sizeNodesToText<N>(nodes: readonly DiagramNode<N>[], text: TextOf): DiagramNode<N>[] {
+  return nodes.map((n) => {
+    if (n.kind === 'compound' || n.kind === 'parallel' || n.kind === 'region' || n.kind === 'root') return n;
+    const { w, h } = nodeTextSize(n, text);
+    if (w === n.w && h === n.h) return n;
+    return { ...n, x: n.x + (n.w - w) / 2, y: n.y + (n.h - h) / 2, w, h };
+  });
+}
