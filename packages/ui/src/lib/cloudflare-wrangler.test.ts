@@ -139,7 +139,7 @@ const commentsIn = (text: string) => {
   const found: string[] = [];
   for (let i = 0; i < text.length; i++) {
     if (text[i] === '"') { for (i++; text[i] !== '"'; i++) if (text[i] === '\\') i++; continue; }
-    if (text.startsWith('//', i)) { const end = text.slice(i).search(/\r?\n|$/) + i; found.push(text.slice(i, end)); i = end; } else if (text.startsWith('/*', i)) { const end = text.indexOf('*/', i) + 2; found.push(text.slice(i, end)); i = end; }
+    if (text.startsWith('//', i)) { const end = text.slice(i).search(/\r?\n|$/) + i; found.push(text.slice(i, end)); i = end; } else if (text.startsWith('/*', i)) { const end = text.indexOf('*/', i) + 2; found.push(text.slice(i, end)); i = end - 1; }
   }
   return found;
 };
@@ -416,6 +416,33 @@ describe('the file as it’s laid out', () => {
     for (const text of ['{ "name": "w", "kv_namespaces": [] }', '{\n  "kv_namespaces": [\n    // none yet\n  ]\n}', '{}', '{ /* nothing */ }']) expect(parses(add(text)), text).toEqual([]);
   });
 
+  it('takes the first out of a list on one line, with what’s between', () => {
+    const text = '{ "name": "w", "kv_namespaces": [{ "binding": "A", "id": "1" }, { "binding": "B", "id": "2" }] }';
+    const r = read(text);
+    const without = (name: string) => write(text, withEdges(r.system, r.system.edges.filter((e) => e.binding !== name))).text;
+    expect(without('A')).toBe('{ "name": "w", "kv_namespaces": [{ "binding": "B", "id": "2" }] }');
+    expect(without('B')).toBe('{ "name": "w", "kv_namespaces": [{ "binding": "A", "id": "1" }] }');
+  });
+
+  it('finds a comma past a comment', () => {
+    const text = '{\n  "name": "w",\n  "kv_namespaces": [\n    { "binding": "A", "id": "1" } /* why */, // and this\n    { "binding": "B", "id": "2" } /* last */,\n  ]\n}\n';
+    const r = read(text);
+    const first = write(text, withEdges(r.system, r.system.edges.filter((e) => e.binding !== 'A'))).text;
+    expect(first).toContain('\n    /* why */ // and this\n');
+    expect(parses(first)).toEqual([]);
+    expect(commentsIn(first)).toEqual(commentsIn(text));
+    expect(read(first).system.edges.map((e) => e.binding)).toEqual(['B']);
+    const last = write(text, withEdges(r.system, r.system.edges.filter((e) => e.binding !== 'B'))).text;
+    expect(parses(last)).toEqual([]);
+    expect(commentsIn(last)).toEqual(commentsIn(text));
+    expect(read(last).system.edges.map((e) => e.binding)).toEqual(['A']);
+    const s = { id: 'kv:n', kind: 'kv', resource: 'n' };
+    const added = write(text, withEdges(r.system, [...r.system.edges, { id: 'n', from: r.worker, to: s.id, via: 'kv_namespaces', binding: 'N' }], [...r.system.services, s])).text;
+    expect(parses(added)).toEqual([]);
+    expect(read(added).system.edges.map((e) => e.binding)).toEqual(['A', 'B', 'N']);
+    expect(commentsIn(added)).toEqual(commentsIn(text));
+  });
+
   it('isn’t fooled by what looks like a comment or a key in a string', () => {
     const text = '{ "name": "http://x/*y*/", "vars": { "r2_buckets": "[]" }, "kv_namespaces": [{ "binding": "A", "id": "// not a comment" }] }';
     const r = read(text);
@@ -668,6 +695,15 @@ describe('comparing', () => {
     expect(w.differences).toEqual(c.differences);
     expect(compareWrangler(w.text, next)).toMatchObject({ ok: true, differences: [] });
     expect(parses(w.text)).toEqual([]);
+  });
+});
+
+describe('where it’s from', () => {
+  it('is all on the entry the docs say', async () => {
+    const entry = await import('../cloudflare');
+    for (const name of ['readWrangler', 'writeWrangler', 'compareWrangler', 'WRANGLER_RESOURCE_FIELDS', 'parseSystem', 'systemToJson', 'validateSystem', 'checkMachines', 'searchCatalog', 'addService', 'removeServices', 'sharedServices', 'machineEvents', 'machineReceives', 'machinesPast', 'serviceName', 'edgeBinding', 'newEdge', 'CloudflareDiagram']) {
+      expect(entry, name).toHaveProperty(name);
+    }
   });
 });
 

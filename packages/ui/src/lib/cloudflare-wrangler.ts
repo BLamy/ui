@@ -497,9 +497,10 @@ function removeFrom(text: string, container: Node, index: number): string {
   const own = commaAfter(text, item);
   const next = items[index + 1];
   if (own !== null) {
+    // A comment before its comma stays where it is.
+    if (text.slice(end, own).trim()) return cut(text, [[start, past(end)], [own, own + 1]]);
     // With another after it on the same line, what's between goes too, unless there's a comment in it.
-    const until = next && sameLine(text, end, next.offset) && skipSpace(text, own + 1) === next.offset ? next.offset : past(own + 1);
-    return text.slice(end, own).trim() ? cut(text, [[start, end], [own, until]]) : cut(text, [[start, until]]);
+    return cut(text, [[start, next && sameLine(text, end, next.offset) && skipSpace(text, own + 1) === next.offset ? next.offset : past(own + 1)]]);
   }
   const prev = items[index - 1];
   if (!prev) return cut(text, [[start, past(end)]]);
