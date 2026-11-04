@@ -262,6 +262,31 @@ F fullscreen, Home/End. `chrome` is `"browser"` (default), `"minimal"` or `"none
 `m:ss`. `replayDemoEvents` (a small synthetic recording) is exported from
 `@brett_lamy/docstream/replay/demo`, outside the main entry.
 
+The player isn't tied to rrweb. `stage` puts a stage of your own in rrweb's place, with the same chrome, scrubber, keys
+and markers, and rrweb is never loaded. `devtools` takes the Console and Network lists as data, in `ReplayDevtools`'
+shape, instead of working them out from events, and `elements` says where the Elements tab reads from: a `Document`,
+which can be one rebuilt from a recording, and where each element really is on the page, for its outline.
+
+```tsx
+import { ReplayPreview, type ReplayCustomStage } from "@brett_lamy/docstream/replay"
+
+// `component` gets `onReady`, `onTimeUpdate`, `onPlayingChange`, `onFinish`, `speed`, `overlay` and `className`, and
+// answers to a `ReplayStageHandle` through its ref. Report the time after every move, whoever made it.
+const stage: ReplayCustomStage = { component: FramesStage, duration, width, height, href }
+
+<ReplayPreview
+  stage={stage}
+  devtools={{ console: messages, network: requests }}
+  elements={{ getDocument: () => rebuilt, getElementRect: (el) => rectangles.get(el) ?? null }}
+/>
+```
+
+With no `elements`, a stage whose handle has `getDocument` gets an Elements tab from that, and one without has no tab.
+`replayDevtoolsCountsAt` and `replayDevtoolsCutAt` answer "how many so far" and "has the list changed" in a few binary
+searches, and the panel builds its lists only when it's open and they've changed, so a long recording can drive this on
+every frame. The panel lays out the latest 2,000 rows of each list and says how many more there are: it has no
+windowing, so a console that has to hold a whole hour belongs in a virtualized list of your own.
+
 The player is styled by `styles.css` in plain CSS, inside the `docstream.replay` cascade
 layer and under zero-specificity `:where()` selectors, so your own rules (and utility
 classes such as `w-full` or `pointer-events-none`) override it; if your utilities layer

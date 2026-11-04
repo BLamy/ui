@@ -230,6 +230,68 @@ function countUpTo(list: readonly { time: number }[], time: number) {
   return lo
 }
 
+/** How many of a sorted list of times are at or before `time`. */
+function timesUpTo(times: Float64Array, time: number) {
+  let lo = 0
+  let hi = times.length
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1
+    if (times[mid]! <= time) lo = mid + 1
+    else hi = mid
+  }
+  return lo
+}
+
+/** What the counts need, worked out once per data set: when each error, warning and failure happened, and when each
+ *  request got its answer. A failure only counts once it's happened, which is when its answer came. */
+interface DevtoolsIndex {
+  errors: Float64Array
+  warnings: Float64Array
+  failures: Float64Array
+  answers: Float64Array
+}
+
+const INDEXES = new WeakMap<ReplayDevtools, DevtoolsIndex>()
+
+const sortedTimes = (times: number[]) => Float64Array.from(times).sort()
+
+function devtoolsIndex(devtools: ReplayDevtools): DevtoolsIndex {
+  let index = INDEXES.get(devtools)
+  if (!index) {
+    const answered = (r: ReplayRequest) => r.time + (r.duration ?? 0)
+    index = {
+      errors: sortedTimes(devtools.console.filter((e) => e.level === 'error').map((e) => e.time)),
+      warnings: sortedTimes(devtools.console.filter((e) => e.level === 'warn').map((e) => e.time)),
+      failures: sortedTimes(devtools.network.filter((r) => r.failed).map(answered)),
+      answers: sortedTimes(devtools.network.map(answered)),
+    }
+    INDEXES.set(devtools, index)
+  }
+  return index
+}
+
+/** The counts on their own, which are all the top bar's buttons need. A few binary searches, so a long recording can
+ *  ask on every frame. */
+export function replayDevtoolsCountsAt(devtools: ReplayDevtools, time: number): ReplayDevtoolsState['counts'] {
+  const index = devtoolsIndex(devtools)
+  const logged = countUpTo(devtools.console, time)
+  const sent = countUpTo(devtools.network, time)
+  return {
+    requests: sent,
+    failed: timesUpTo(index.failures, time),
+    errors: timesUpTo(index.errors, time),
+    warnings: timesUpTo(index.warnings, time),
+    laterMessages: devtools.console.length - logged,
+    laterRequests: devtools.network.length - sent,
+  }
+}
+
+/** Something that only changes when what's listed at the playhead does: a message or a request has gone past it, or a
+ *  request has got its answer. So a panel needs building again only when this does, and not on every frame. */
+export function replayDevtoolsCutAt(devtools: ReplayDevtools, time: number): string {
+  return `${countUpTo(devtools.console, time)}:${countUpTo(devtools.network, time)}:${timesUpTo(devtoolsIndex(devtools).answers, time)}`
+}
+
 /** The console and network as they stood at `time` (ms from the start). */
 export function replayDevtoolsAt(devtools: ReplayDevtools, time: number): ReplayDevtoolsState {
   const logged = devtools.console.slice(0, countUpTo(devtools.console, time))

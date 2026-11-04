@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { BrowserBar, ReplayPlayer } from './ReplayPlayer';
 import type { ReplayPlayerOptions, ReplayPreviewHandle } from './ReplayPlayer';
+import type { ReplayCustomStage } from './stage-types';
 import type { ReplayEvent } from './types';
 import { normalizeReplayEmbedUrl } from './url';
 
@@ -40,16 +41,28 @@ interface ReplayPreviewCommon extends ReplayPlayerOptions {
 export interface ReplayPreviewEventsProps extends ReplayPreviewCommon {
   events: ReplayEvent[];
   source?: undefined;
+  stage?: undefined;
 }
 
 /** Embed a public Loop QA URL, a public event endpoint, or an in-memory rrweb event list. */
 export interface ReplayPreviewSourceProps extends ReplayPreviewCommon {
   source: ReplaySource;
   events?: undefined;
+  stage?: undefined;
 }
 
-/** Pass `events` (the player API) or `source` (the embed API): both render the same player. */
-export type ReplayPreviewProps = ReplayPreviewEventsProps | ReplayPreviewSourceProps;
+/** Play something other than rrweb, such as frames from a recording, with the same chrome, scrubber, keys and markers.
+ *  There's no event list to read, so DevTools comes through `devtools` and Elements through `elements`. */
+export interface ReplayPreviewStageProps extends ReplayPreviewCommon {
+  stage: ReplayCustomStage;
+  events?: undefined;
+  source?: undefined;
+}
+
+/** Pass `events` (the player API), `source` (the embed API) or `stage` (your own stage): all render the same player. */
+export type ReplayPreviewProps = ReplayPreviewEventsProps | ReplayPreviewSourceProps | ReplayPreviewStageProps;
+
+const NO_EVENTS: ReplayEvent[] = [];
 
 function sourcePage(source: ReplaySource): ReplayPageSource | null {
   if (typeof source === 'string') return { kind: 'url', url: source };
@@ -169,10 +182,11 @@ function RemoteReplay({ source, options }: { source: ReplayEventsUrlSource; opti
  * A session replay in a browser frame. Pass `events` (an rrweb recording) to play it with the full player:
  * URL bar, poster, scrubber with markers, pointer overlay, keyboard map, fullscreen. Or pass `source` (a
  * public Loop QA URL, an events URL, or an event list), which renders the same player, or an iframe for
- * page URLs. rrweb loads on first render of an event player, never for iframes.
+ * page URLs. rrweb loads on first render of an event player, never for iframes. Or pass `stage`, a stage of your own
+ * that stands in for rrweb's, which rrweb is then never loaded for.
  */
 export function ReplayPreview(props: ReplayPreviewProps) {
-  const { active = true, source, events, ...options } = props;
+  const { active = true, source, events, stage, ...options } = props;
   const { chrome, className, style } = options;
 
   if (!active) {
@@ -187,6 +201,7 @@ export function ReplayPreview(props: ReplayPreviewProps) {
     );
   }
 
+  if (stage) return <ReplayPlayer {...options} events={NO_EVENTS} stage={stage} />;
   if (events) return <ReplayPlayer {...options} events={events} />;
   if (source === undefined) return null;
 

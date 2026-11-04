@@ -1,5 +1,6 @@
 /* Pure readers over an rrweb event list — no rrweb import, so custom player chrome (a
    scrubber with event markers, a cursor overlay) can be drawn before the player chunk loads. */
+import type { ReplayDevtools } from './devtools'
 import { ReplayEventType, ReplayIncrementalSource, ReplayMouseInteraction, type ReplayEvent } from './types'
 
 export interface ReplayMeta {
@@ -167,6 +168,19 @@ export function getReplayMarkers(events: readonly ReplayEvent[]): ReplayMarker[]
     }
   }
   return markers
+}
+
+/** Timeline markers from DevTools data handed over directly: console errors and failed requests, under the same rules
+ *  and with the same labels as `getReplayMarkers`. */
+export function getReplayDevtoolsMarkers(devtools: ReplayDevtools): ReplayMarker[] {
+  const markers: ReplayMarker[] = []
+  for (const entry of devtools.console) {
+    if (entry.level === 'error') markers.push({ id: `error-${entry.id}`, kind: 'error', time: entry.time, label: 'Console error', detail: entry.message })
+  }
+  for (const request of devtools.network) {
+    if (request.failed) markers.push({ id: `network-${request.id}`, kind: 'network', time: request.time, label: `${request.method} ${request.status || 'failed'}`, detail: request.url })
+  }
+  return markers.sort((a, b) => a.time - b.time)
 }
 
 /** The recorded pointer path (mouse/touch moves and drags) and click points, in viewport px. */

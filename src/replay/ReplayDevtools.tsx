@@ -15,6 +15,9 @@ import type { ResolvedReplayInspection } from './inspections'
 
 export type ReplayDevtoolsTab = 'console' | 'network' | 'elements' | 'sources'
 
+/** How many rows a pane lays out, keeping the latest. It has no windowing, and this list can be an hour long. */
+const MAX_ROWS = 2000
+
 const time = (ms: number) => {
   const s = Math.max(0, ms) / 1000
   return `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`
@@ -22,10 +25,10 @@ const time = (ms: number) => {
 const duration = (ms?: number) => (ms === undefined ? '—' : ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(2)} s`)
 
 /** The two buttons for the top bar (or the controls row): icon, request count and, in red, what failed. */
-export function DevtoolsButtons({ state, open, onOpen }: {
-  state: ReplayDevtoolsState; open: ReplayDevtoolsTab | null; onOpen: (tab: ReplayDevtoolsTab) => void
+export function DevtoolsButtons({ counts, open, onOpen }: {
+  counts: ReplayDevtoolsState['counts']; open: ReplayDevtoolsTab | null; onOpen: (tab: ReplayDevtoolsTab) => void
 }) {
-  const { requests, failed, errors, warnings } = state.counts
+  const { requests, failed, errors, warnings } = counts
   return (
     <div data-slot="replay-devtools-buttons">
       <button
@@ -201,7 +204,8 @@ function ConsolePane({ state, onSeek, inspected }: {
         aria-label="Console messages"
         onScroll={(e) => { const el = e.currentTarget; pinned.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8 }}
       >
-        {rows.map((entry) => <ConsoleRow key={entry.id} entry={entry} onSeek={onSeek} inspected={entry.id === inspectedId} />)}
+        {rows.length > MAX_ROWS ? <p data-slot="replay-devtools-later">{rows.length - MAX_ROWS} earlier messages aren&apos;t shown here</p> : null}
+        {rows.slice(-MAX_ROWS).map((entry) => <ConsoleRow key={entry.id} entry={entry} onSeek={onSeek} inspected={entry.id === inspectedId} />)}
         {!rows.length ? <p data-slot="replay-devtools-empty">{state.console.length ? 'No messages match the filter' : 'Nothing logged yet'}</p> : null}
         {state.counts.laterMessages ? <p data-slot="replay-devtools-later">{state.counts.laterMessages} more later in the recording</p> : null}
       </div>
@@ -289,7 +293,7 @@ function NetworkPane({ state, onSeek, inspected }: {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {rows.slice(-MAX_ROWS).map((r) => (
                 <tr
                   key={r.id}
                   data-failed={(r.failed && !r.pending) || undefined}
@@ -323,6 +327,7 @@ function NetworkPane({ state, onSeek, inspected }: {
             </tbody>
           </table>
           {!rows.length ? <p data-slot="replay-devtools-empty">{state.network.length ? 'No requests match the filter' : 'No requests yet'}</p> : null}
+          {rows.length > MAX_ROWS ? <p data-slot="replay-devtools-later">{rows.length - MAX_ROWS} earlier requests aren&apos;t shown here</p> : null}
         </div>
         {selected ? <RequestDetail request={selected} onClose={() => setSelectedId(null)} onSeek={onSeek} /> : null}
       </div>

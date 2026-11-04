@@ -9,13 +9,14 @@ export type {
   ReplayPreviewHandle,
   ReplayPreviewProps,
   ReplayPreviewSourceProps,
+  ReplayPreviewStageProps,
   ReplaySource,
 } from './ReplayPreview';
 export { ReplayStage, preloadReplayStage } from './ReplayStage';
-export type { ReplayStageHandle, ReplayStageLayout, ReplayStageProps } from './stage-types';
-export { getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt } from './markers';
+export type { ReplayCustomStage, ReplayCustomStageProps, ReplayElementRect, ReplayElementsSource, ReplayStageHandle, ReplayStageLayout, ReplayStageProps } from './stage-types';
+export { getReplayDevtoolsMarkers, getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt } from './markers';
 export type { ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerPoint, ReplayPointerTrack } from './markers';
-export { getReplayDevtools, replayDevtoolsAt, requestName } from './devtools';
+export { getReplayDevtools, replayDevtoolsAt, replayDevtoolsCountsAt, replayDevtoolsCutAt, requestName } from './devtools';
 export type { ReplayConsoleEntry, ReplayConsoleLevel, ReplayDevtools, ReplayDevtoolsState, ReplayRequest } from './devtools';
 export type { ReplayDevtoolsTab } from './ReplayDevtools';
 export { getReplayInspections, replayInspectionAt, replayInspectionDwellSpeed, resolveReplayInspections } from './inspections';

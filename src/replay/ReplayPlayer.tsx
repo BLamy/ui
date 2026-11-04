@@ -19,14 +19,14 @@ import { useReducedMotion } from 'framer-motion'
 import { Captions, CaptionsOff, Lock, Maximize, Minimize, Pause, Play, RotateCcw } from 'lucide-react'
 import { ReplayStage } from './ReplayStage'
 import { DevtoolsButtons, DevtoolsPanel, type ElementsProps, type ReplayDevtoolsTab, type SourcesProps } from './ReplayDevtools'
-import { getReplayDevtools, replayDevtoolsAt } from './devtools'
+import { getReplayDevtools, replayDevtoolsAt, replayDevtoolsCountsAt, replayDevtoolsCutAt, type ReplayDevtools } from './devtools'
 import { parseWebVTT, replayCaptionsAt, type ReplayCaption } from './captions'
 import { getReplayInspections, replayInspectionAt, replayInspectionDwellSpeed, resolveReplayInspections, type ReplayInspection } from './inspections'
 import { mergeReplaySources } from './sources'
 import { resolveReplayEvidence, type ReplayEvidence } from './evidence'
-import { getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt } from './markers'
-import type { ReplayMarker, ReplayMarkerKind, ReplayPointerTrack } from './markers'
-import type { ReplayStageHandle } from './stage-types'
+import { getReplayDevtoolsMarkers, getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt } from './markers'
+import type { ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerTrack } from './markers'
+import type { ReplayCustomStage, ReplayElementsSource, ReplayElementRect, ReplayStageHandle } from './stage-types'
 import type { ReplayEvent } from './types'
 
 const TRAFFIC_LIGHTS = ['#FF5F57', '#FEBC2E', '#28C840'] as const
@@ -80,8 +80,13 @@ export interface ReplayPlayerOptions {
    *  DevTools panel cut at the playhead, shown when the recording has console messages, requests or inspections.
    *  `disableDevtools` removes them, the panel and the inspections. */
   disableDevtools?: boolean
-  /** @deprecated Use `disableDevtools`. `false` is the same as `disableDevtools`. */
-  devtools?: boolean
+  /** What DevTools shows, as data: the messages and requests in `ReplayDevtools`' shape, in time order, with times in ms
+   *  from the start of the recording. It's used as it is, in place of what `getReplayDevtools` would read from the
+   *  events, and a new object can come at any time. `false` is the same as `disableDevtools`. */
+  devtools?: boolean | ReplayDevtools
+  /** Where the Elements tab reads from. Default: the stage's document, as rrweb's stage has one. A stage with none has
+   *  no Elements tab unless this gives it one. `false` takes the tab away. */
+  elements?: ReplayElementsSource | false
   /** Open the DevTools panel on this tab at mount. */
   defaultDevtoolsTab?: ReplayDevtoolsTab
   /** Moments where a request or console message was inspected. As playback reaches one, DevTools opens on its
@@ -159,9 +164,9 @@ function ScreenshotCaptures({ shots, time, playing, reduced }: {
 
 /** DevTools' element highlight over the replayed page: the element's box, in recorded-viewport px (the stage
  *  overlay's space), with a tag-and-size label. Read on every render, so it follows the element as the page moves. */
-function ElementHighlight({ el }: { el: Element }) {
-  const r = el.getBoundingClientRect()
-  if (!r.width && !r.height) return null
+function ElementHighlight({ el, rect }: { el: Element; rect: ReplayElementRect | null }) {
+  const r = rect
+  if (!r || (!r.width && !r.height)) return null
   const first = (el.getAttribute('class') ?? '').split(/\s+/).find((c) => c && !c.startsWith(':') && !c.startsWith('rrweb-') && !c.startsWith('rr_'))
   const tag = el.tagName.toLowerCase() + (el.id ? `#${el.id}` : '') + (first ? `.${first}` : '')
   return (
@@ -207,11 +212,11 @@ const MARKER_NOUN: Record<ReplayMarkerKind, string> = {
 }
 
 export function ReplayPlayer({
-  events: recordingEvents, har, consoleLog, evidence, captions, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
+  events: recordingEvents, stage: customStage, har, consoleLog, evidence, captions, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
   autoplay = false, loop = false, initialTime: initialTimeProp, timeWindow, speeds = DEFAULT_PLAYER_SPEEDS, markers, markerKinds,
-  cursor = true, disableDevtools = false, devtools = true, defaultDevtoolsTab, inspections, autoCloseDevtools = 5000, inspectionDwell = 2500, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
+  cursor = true, disableDevtools = false, devtools = true, elements: elementsSource, defaultDevtoolsTab, inspections, autoCloseDevtools = 5000, inspectionDwell = 2500, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
   className, style,
-}: ReplayPlayerOptions & { events: ReplayEvent[] }) {
+}: ReplayPlayerOptions & { events: ReplayEvent[]; stage?: ReplayCustomStage }) {
   // The recording plus whatever was recorded beside it (a HAR, a console log), as one event list for DevTools,
   // inspections and markers. The stage, the clock and the pointer read the recording alone, so a HAR or a log that
   // arrives while it plays only adds to DevTools: the page replay never restarts.
@@ -219,12 +224,24 @@ export function ReplayPlayer({
   const rootRef = useRef<HTMLDivElement>(null)
   const stage = useRef<ReplayStageHandle>(null)
   const reduced = useReducedMotion()
-  const meta = useMemo(() => getReplayMeta(recordingEvents), [recordingEvents])
+  // A stage of your own says what the recording is, as there are no events to read it from.
+  const stageDuration = customStage?.duration
+  const stageWidth = customStage?.width
+  const stageHeight = customStage?.height
+  const stageHref = customStage?.href
+  const hasStage = !!customStage
+  const meta = useMemo<ReplayMeta>(() => (hasStage
+    ? { start: 0, end: stageDuration ?? 0, duration: stageDuration ?? 0, width: stageWidth ?? 0, height: stageHeight ?? 0, href: stageHref, playable: true }
+    : getReplayMeta(recordingEvents)), [hasStage, stageDuration, stageWidth, stageHeight, stageHref, recordingEvents])
   const track = useMemo(() => getReplayPointerTrack(recordingEvents), [recordingEvents])
-  const recorded = useMemo(() => getReplayMarkers(events), [events])
+  const toolsData = typeof devtools === 'object' ? devtools : null
+  const recorded = useMemo(() => {
+    const read = getReplayMarkers(events)
+    return toolsData ? [...read, ...getReplayDevtoolsMarkers(toolsData)].sort((a, b) => a.time - b.time) : read
+  }, [events, toolsData])
 
-  const toolsOn = devtools && !disableDevtools
-  const tools = useMemo(() => getReplayDevtools(events), [events])
+  const toolsOn = devtools !== false && !disableDevtools
+  const tools = useMemo(() => toolsData ?? getReplayDevtools(events), [toolsData, events])
   const proof = useMemo(() => resolveReplayEvidence(evidence, meta.start, meta.duration), [evidence, meta.start, meta.duration])
   const cues = useMemo(() => (captions ? parseWebVTT(captions) : []), [captions])
   const [captionsOn, setCaptionsOn] = useState(true)
@@ -408,7 +425,12 @@ export function ReplayPlayer({
     return current
   }, [url, meta.href, recorded, time])
 
-  const toolsState = useMemo(() => replayDevtoolsAt(tools, time), [tools, time])
+  // Where the time has got to is a few binary searches, and the panel's lists are only built when it's open and
+  // something in them has changed, as this runs on every frame of a recording that can be an hour long.
+  const toolsCounts = replayDevtoolsCountsAt(tools, time)
+  const toolsCut = replayDevtoolsCutAt(tools, time)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const toolsState = useMemo(() => (panel ? replayDevtoolsAt(tools, time) : null), [tools, toolsCut, !panel])
   const openTools = (tab: ReplayDevtoolsTab) => { setAutoOpened(false); setPanel((p) => (p === tab ? null : tab)) }
   // Clicking, scrolling or typing in a panel an inspection opened makes it the user's: it won't close by itself.
   const claimPanel = () => setAutoOpened(false)
@@ -452,7 +474,10 @@ export function ReplayPlayer({
 
   // Elements: the inspection's element (by selector, looked up in the page at the playhead) unless one was picked
   // in the tree; hovering a row previews another. The highlighted one gets DevTools' overlay on the page.
-  const getDocument = useCallback(() => stage.current?.getDocument?.() ?? null, [])
+  const sourceRef = useRef(elementsSource)
+  sourceRef.current = elementsSource
+  const getDocument = useCallback(() => (sourceRef.current ? sourceRef.current.getDocument() : stage.current?.getDocument?.() ?? null), [])
+  const rectOf = (el: Element): ReplayElementRect | null => (elementsSource && elementsSource.getElementRect ? elementsSource.getElementRect(el) : el.getBoundingClientRect())
   const [picked, setPicked] = useState<Element | null>(null)
   const [hovered, setHovered] = useState<Element | null>(null)
   const inspectedSelector = inspection?.element
@@ -462,7 +487,9 @@ export function ReplayPlayer({
     if (!inspectedSelector) return null
     try { return getDocument()?.querySelector(inspectedSelector) ?? null } catch { return null }
   })()
-  const elements: ElementsProps | undefined = showTools && ready
+  // rrweb's stage always has a page to read. A stage of your own may not, and an empty tab would say nothing.
+  const canInspect = elementsSource === false ? false : !!elementsSource || !hasStage || !!stage.current?.getDocument
+  const elements: ElementsProps | undefined = showTools && ready && canInspect
     ? { getDocument, selected: selectedElement, onSelect: (el) => { claimPanel(); setPicked(el) }, onHover: setHovered }
     : undefined
   // With Elements open, the tree's hovered or selected element; otherwise an element inspection's own.
@@ -480,7 +507,7 @@ export function ReplayPlayer({
         onPath: (p) => { claimPanel(); setPickedPath(p) },
       }
     : undefined
-  const toolButtons = showTools ? <DevtoolsButtons state={toolsState} open={panel} onOpen={openTools} /> : null
+  const toolButtons = showTools ? <DevtoolsButtons counts={toolsCounts} open={panel} onOpen={openTools} /> : null
 
   const w = meta.width || 1280
   const h = meta.height || 800
@@ -512,27 +539,27 @@ export function ReplayPlayer({
 
       <div data-slot="replay-preview-stage" style={{ '--replay-ar': `${w} / ${h}` } as CSSProperties}>
         {visible && meta.playable ? (
-          <ReplayStage
-            ref={stage}
-            events={recordingEvents}
-            fit="contain"
-            speed={playSpeed}
-            loop={loop && !span}
-            autoplay={autoplay}
-            initialTime={initialTime}
-            showMouse={false}
-            className="replay-preview__page"
-            overlay={
-              <>
-                {highlighted ? <ElementHighlight el={highlighted} /> : null}
-                {cursor ? <PointerOverlay track={track} time={time} reduced={!!reduced} /> : null}
-              </>
+          (() => {
+            const shared = {
+              ref: stage,
+              speed: playSpeed,
+              loop: loop && !span,
+              autoplay,
+              initialTime,
+              className: 'replay-preview__page',
+              overlay: (
+                <>
+                  {highlighted ? <ElementHighlight el={highlighted} rect={rectOf(highlighted)} /> : null}
+                  {cursor ? <PointerOverlay track={track} time={time} reduced={!!reduced} /> : null}
+                </>
+              ),
+              onReady: () => setReady(true),
+              onTimeUpdate: onTime,
+              onPlayingChange: onPlaying,
+              onFinish: () => setFinished(true),
             }
-            onReady={() => setReady(true)}
-            onTimeUpdate={onTime}
-            onPlayingChange={onPlaying}
-            onFinish={() => setFinished(true)}
-          />
+            return customStage ? <customStage.component {...shared} /> : <ReplayStage {...shared} events={recordingEvents} fit="contain" showMouse={false} />
+          })()
         ) : null}
 
         {captionsOn && cues.length ? <CaptionTrack cues={cues} time={time} raised={!!(showTools && panel)} /> : null}
@@ -545,7 +572,7 @@ export function ReplayPlayer({
           </div>
         ) : null}
 
-        {showTools && panel ? (
+        {showTools && panel && toolsState ? (
           <DevtoolsPanel
             state={toolsState}
             tab={panel}
