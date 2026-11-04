@@ -4,7 +4,7 @@ import { openDemo } from './helpers.mjs';
 
 /* Diagram, through its docs demos, with real input. */
 
-const zoomOf = (page) => page.locator('[data-slot=diagram-layer]').evaluate((el) => Number(el.style.getPropertyValue('--diagram-z')));
+const zoomOf = (page) => page.locator('[data-slot=diagram-edges]').evaluate((el) => Number(el.style.getPropertyValue('--diagram-z')));
 const strokeOf = (page, selector) => page.locator(selector).first().evaluate((el) => parseFloat(getComputedStyle(el).strokeWidth));
 
 /** ⌘-scrolls to `target`. One wheel event zooms by e^(-delta * 0.009), and at most 50 of delta counts. */
@@ -83,7 +83,7 @@ test.describe('drawing', () => {
 test.describe('text', () => {
   /** How far each node's words sit from its edges, in board units. */
   const margins = (scope) => scope.evaluate((root) => {
-    const z = Number(root.querySelector('[data-slot=diagram-layer]').style.getPropertyValue('--diagram-z'));
+    const z = Number(root.querySelector('[data-slot=diagram-edges]').style.getPropertyValue('--diagram-z'));
     const out = [];
     for (const node of root.querySelectorAll('[data-slot=diagram-node]')) {
       if (!['node', 'final'].includes(node.dataset.kind)) continue;
@@ -330,7 +330,7 @@ test.describe('editing', () => {
       await zoomTo(page, target);
       await dragBy(page, await blank(page), 60, 60, { release: false });
       const onScreen = await marquee.evaluate((el) => {
-        const z = Number(document.querySelector('[data-slot=diagram-layer]').style.getPropertyValue('--diagram-z'));
+        const z = Number(document.querySelector('[data-slot=diagram-edges]').style.getPropertyValue('--diagram-z'));
         const s = getComputedStyle(el);
         // However it's drawn, border or inset shadow: its thickness in board units, times the zoom.
         const border = parseFloat(s.borderTopWidth) || 0;
@@ -346,8 +346,8 @@ test.describe('editing', () => {
     await open(page);
     const a = await nodeBox(page, 'a');
     await page.mouse.click(a.x, a.y);
-    const ring = () => page.locator('[data-node=a]').evaluate((el) => {
-      const z = Number(document.querySelector('[data-slot=diagram-layer]').style.getPropertyValue('--diagram-z'));
+    const ring = () => page.locator('[data-slot=diagram-ring][data-ring-of=a]').evaluate((el) => {
+      const z = Number(document.querySelector('[data-slot=diagram-edges]').style.getPropertyValue('--diagram-z'));
       const spreads = [...getComputedStyle(el).boxShadow.matchAll(/(-?[\d.]+)px (-?[\d.]+)px (-?[\d.]+)px (-?[\d.]+)px/g)].map((m) => parseFloat(m[4]));
       return Math.max(...spreads) * z;
     });
@@ -649,6 +649,23 @@ test.describe('the keyboard', () => {
     const before = await page.locator('[data-slot=canvas-board]').getAttribute('style');
     await press(page, 'ControlOrMeta+ArrowLeft');
     expect(await page.locator('[data-slot=canvas-board]').getAttribute('style')).not.toBe(before);
+  });
+
+  test('what the keys go to gets a ring, and a press clears it', async ({ page }) => {
+    await open(page);
+    const ring = page.locator('[data-slot=diagram-ring][data-focused]');
+    await expect(ring).toHaveCount(0);
+    await press(page, 'Home');
+    await expect(ring).toHaveAttribute('data-ring-of', 'a');
+    await press(page, 'ArrowRight');
+    await expect(ring).toHaveAttribute('data-ring-of', 'b');
+    const c = await page.locator('[data-slot=canvas]').boundingBox();
+    await page.mouse.click(c.x + c.width - 10, c.y + c.height - 10);
+    await expect(ring).toHaveCount(0);
+    await press(page, 'ArrowRight');
+    await expect(ring).toHaveCount(1);
+    await page.keyboard.press('Tab');
+    await expect(ring).toHaveCount(0);
   });
 
   test('shift and an arrow nudges, with undo', async ({ page }) => {

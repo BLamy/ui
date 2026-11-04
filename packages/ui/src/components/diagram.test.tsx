@@ -100,8 +100,24 @@ describe('Diagram', () => {
   });
 
   it('feeds the zoom to the lines', () => {
-    expect(renderToString(<Diagram nodes={[]} defaultCamera={{ x: 0, y: 0, z: 0.5 }} />)).toContain('--diagram-z:0.5');
+    expect(renderToString(<Diagram nodes={[]} defaultCamera={{ x: 0, y: 0, z: 0.5 }} />)).toMatch(/data-slot="diagram-edges"[^>]*--diagram-z:0\.5/);
     expect(diagramEdgeVariants({ kind: 'event' })).toContain('calc(1.25px/var(--diagram-z))');
+  });
+
+  it('gives the zoom only to what needs it, so a zoom doesn’t restyle every node', () => {
+    const out = renderToString(<Diagram nodes={[{ id: 'a', label: 'hi', x: 0, y: 0, w: 10, h: 10 }]} defaultCamera={{ x: 0, y: 0, z: 0.5 }} />);
+    expect(/data-slot="diagram-layer"[^>]*--diagram-z/.test(out)).toBe(false);
+    expect(/data-slot="canvas-board"[^>]*--diagram-z/.test(out)).toBe(false);
+    expect(/data-slot="diagram-node"[^>]*--diagram-z/.test(out)).toBe(false);
+    expect(out.match(/--diagram-z:/g)).toHaveLength(1);
+  });
+
+  it('rings what’s selected, in a layer of its own', () => {
+    const out = renderToString(<Diagram defaultNodes={[{ id: 'a', label: 'hi', x: 1, y: 2, w: 10, h: 10 }, { id: 'b', x: 50, y: 0, w: 10, h: 10 }]} editable defaultSelection={{ nodes: ['a'], edges: [] }} defaultCamera={{ x: 0, y: 0, z: 0.5 }} />);
+    expect(out.match(/data-slot="diagram-ring"/g)).toHaveLength(1);
+    expect(out).toContain('data-ring-of="a"');
+    expect(out).toMatch(/data-slot="diagram-rings"[^>]*--diagram-z:0\.5/);
+    expect(renderToString(<Diagram defaultNodes={[{ id: 'a', x: 1, y: 2, w: 10, h: 10 }]} editable />)).not.toContain('diagram-rings');
   });
 
   it('fits its content when no camera is given, and honors one that is', () => {

@@ -117,10 +117,13 @@ interface NodeViewProps {
   renderNode?: (node: DiagramNode<any>) => ReactNode;
 }
 
-/** A ring around what's selected that's the same thickness on screen at any zoom. A box-shadow, as Chrome rounds a border or
- *  an outline under 1 px up to 1 px, before the board's scale makes it thicker. */
-const SELECTED = 'data-selected:[box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--background),0_0_0_calc(3.6px/var(--diagram-z))_var(--primary)]';
-const FOCUSED = 'outline-none focus-visible:[box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--background),0_0_0_calc(4px/var(--diagram-z))_var(--ring)]';
+/** A ring around what's selected or has focus, the same thickness on screen at any zoom. A box-shadow, as Chrome rounds a
+ *  border or an outline under 1 px up to 1 px, before the board's scale makes it thicker. These sit in a layer of their own,
+ *  and it's only that layer and the lines that get `--diagram-z`: a custom property that changes restyles everything under it,
+ *  and with all the nodes under it, that was 79 ms a frame while zooming, at 2,000 nodes. */
+const RING_SELECTED = '[box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--background),0_0_0_calc(3.6px/var(--diagram-z))_var(--primary)]';
+const RING_FOCUSED = '[box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--background),0_0_0_calc(4px/var(--diagram-z))_var(--ring)]';
+const nodeRadius = (n: DiagramNode<any>) => (isContainer(n) ? 'rounded-card' : n.kind === 'initial' ? 'rounded-full' : 'rounded-ctl');
 
 const NodeView = memo(function NodeView({ node, selected, selectable, label, renderNode }: NodeViewProps) {
   return (
@@ -134,7 +137,7 @@ const NodeView = memo(function NodeView({ node, selected, selectable, label, ren
       tabIndex={-1}
       aria-label={label}
       aria-pressed={selectable ? !!selected : undefined}
-      className={cn('absolute', isContainer(node) ? 'rounded-card' : node.kind === 'initial' ? 'rounded-full' : 'rounded-ctl', SELECTED, FOCUSED)}
+      className={cn('absolute outline-none', nodeRadius(node))}
       style={{ left: node.x, top: node.y, width: node.w, height: node.h }}
     >
       {renderNode ? renderNode(node) : <DiagramNodeBody node={node} />}
@@ -276,40 +279,6 @@ function within<N, E>(laid: Laid<N, E>, win: Rect, keep: DiagramFocus | null): L
     dividers: laid.dividers.filter((d) => intersects({ x: Math.min(d.x1, d.x2), y: Math.min(d.y1, d.y2), w: Math.abs(d.x2 - d.x1), h: Math.abs(d.y2 - d.y1) }, win)),
   };
 }
-
-const Board = memo(function Board({ laid, renderNode, arrow, selection, selectable, describeNode: nodeLabel, describeEdge: edgeLabel }: {
-  laid: Laid<any, any>; renderNode?: NodeViewProps['renderNode']; arrow: string; selection: { nodes: Set<string>; edges: Set<string> }; selectable: boolean;
-  describeNode?: DiagramProps<any, any>['describeNode']; describeEdge?: DiagramProps<any, any>['describeEdge'];
-}) {
-  const at = laid.edgesAt;
-  const node = (n: DiagramNode<any>) => (
-    <NodeView key={n.id} node={n} selected={selection.nodes.has(n.id)} selectable={selectable} renderNode={renderNode} label={nodeLabel?.(n) ?? describeNode(n, laid.index, at.get(n.id))} />
-  );
-  return (
-    <>
-      {laid.containers.map(node)}
-      <svg data-slot="diagram-edges" role="group" aria-label="Edges" className="absolute top-0 left-0 overflow-visible" width={1} height={1}>
-        <defs>
-          <ArrowMarker id={arrow} className="fill-muted-foreground" />
-          <ArrowMarker id={`${arrow}-strong`} className="fill-foreground" />
-          <ArrowMarker id={`${arrow}-selected`} className="fill-primary" />
-        </defs>
-        {laid.dividers.map((d) => (
-          <line
-            key={d.id}
-            data-slot="diagram-divider"
-            aria-hidden="true"
-            x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}
-            className="stroke-border [stroke-dasharray:calc(6px/var(--diagram-z))_calc(4px/var(--diagram-z))] [stroke-width:calc(1px/var(--diagram-z))]"
-          />
-        ))}
-        {laid.edges.map(({ edge, geometry }) => <EdgeView key={edge.id} edge={edge} d={geometry.d} arrow={arrow} selected={selection.edges.has(edge.id)} selectable={selectable} label={edgeLabel?.(edge) ?? describeEdge(edge, laid.index)} />)}
-      </svg>
-      {laid.leaves.map(node)}
-      {laid.labels.map(({ edge, box }) => <EdgeLabel key={edge.id} edge={edge} box={box} />)}
-    </>
-  );
-});
 
 /* ── Diagram ── */
 
@@ -543,6 +512,7 @@ export function Diagram<N = unknown, E = unknown>({
       const hit = hitAt(board);
       // A press ends connecting by keyboard, and the keys carry on from what was pressed.
       cancel();
+      setRingOn(null);
       if (hit?.kind === 'node' || hit?.kind === 'edge') { focus.current = hit; focusPlace.current = board; }
       send({ type: 'down', hit, board, screen, additive: e.shiftKey || e.metaKey || e.ctrlKey });
     },
@@ -566,6 +536,8 @@ export function Diagram<N = unknown, E = unknown>({
   const focus = useRef<DiagramFocus | null>(null);
   // What the keys have gone to stays drawn wherever it is, and gets its focus once it's there.
   const [kept, setKept] = useState<DiagramFocus | null>(null);
+  // The keys draw a ring on what they go to. A press clears it, and so does focus leaving.
+  const [ringOn, setRingOn] = useState<DiagramFocus | null>(null);
   const focusNext = useRef<{ item: DiagramFocus | null } | null>(null);
   const focusWithin = useRef(false);
   /** Where what's focused last was, so that if it's deleted focus can stay nearby. */
@@ -593,6 +565,7 @@ export function Diagram<N = unknown, E = unknown>({
   });
   const moveFocus = (item: DiagramFocus) => {
     focus.current = item;
+    setRingOn(item);
     const box = boxOf(item);
     if (box) {
       focusPlace.current = centerOf(box);
@@ -682,6 +655,7 @@ export function Diagram<N = unknown, E = unknown>({
     const near = focusPlace.current ? nearestNode(laid.index, focusPlace.current) : null;
     const next: DiagramFocus | null = near ? { kind: 'node', id: near } : null;
     focus.current = next;
+    setRingOn(next);
     focusEl(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [laid]);
@@ -772,9 +746,50 @@ export function Diagram<N = unknown, E = unknown>({
   windowRef.current = culling ? renderWindow(windowRef.current, { x: -camera.x / camera.z, y: -camera.y / camera.z, w: size.width / camera.z, h: size.height / camera.z }) : null;
   const drawWindow = windowRef.current;
   const drawn = useMemo(() => (drawWindow ? within(laid, drawWindow, kept) : laid), [laid, drawWindow, kept]);
-  const board = useMemo(() => (
-    <Board laid={drawn} renderNode={renderNode as NodeViewProps['renderNode']} arrow={arrow} selection={selectedSets} selectable={selectable} describeNode={nodeLabel as DiagramProps<any, any>['describeNode']} describeEdge={edgeLabel as DiagramProps<any, any>['describeEdge']} />
-  ), [drawn, renderNode, arrow, selectedSets, selectable, nodeLabel, edgeLabel]);
+  // Each kept in a memo, so a camera that only moves changes none of them, and what depends on the zoom is one attribute.
+  const nodeView = (n: DiagramNode<any>) => (
+    <NodeView key={n.id} node={n} selected={selectedSets.nodes.has(n.id)} selectable={selectable} renderNode={renderNode as NodeViewProps['renderNode']} label={(nodeLabel as DiagramProps<any, any>['describeNode'])?.(n) ?? describeNode(n, laid.index, laid.edgesAt.get(n.id))} />
+  );
+  const containers = useMemo(() => drawn.containers.map(nodeView),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [drawn.containers, selectedSets.nodes, selectable, renderNode, nodeLabel, laid.edgesAt]);
+  const leaves = useMemo(() => drawn.leaves.map(nodeView),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [drawn.leaves, selectedSets.nodes, selectable, renderNode, nodeLabel, laid.edgesAt]);
+  const lines = useMemo(() => (
+    <>
+      <defs>
+        <ArrowMarker id={arrow} className="fill-muted-foreground" />
+        <ArrowMarker id={`${arrow}-strong`} className="fill-foreground" />
+        <ArrowMarker id={`${arrow}-selected`} className="fill-primary" />
+      </defs>
+      {drawn.dividers.map((d) => (
+        <line
+          key={d.id}
+          data-slot="diagram-divider"
+          aria-hidden="true"
+          x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}
+          className="stroke-border [stroke-dasharray:calc(6px/var(--diagram-z))_calc(4px/var(--diagram-z))] [stroke-width:calc(1px/var(--diagram-z))]"
+        />
+      ))}
+      {drawn.edges.map(({ edge, geometry }) => <EdgeView key={edge.id} edge={edge} d={geometry.d} arrow={arrow} selected={selectedSets.edges.has(edge.id)} selectable={selectable} label={(edgeLabel as DiagramProps<any, any>['describeEdge'])?.(edge) ?? describeEdge(edge, laid.index)} />)}
+    </>
+  ), [drawn.dividers, drawn.edges, arrow, selectedSets.edges, selectable, edgeLabel, laid.index]);
+  const labelViews = useMemo(() => drawn.labels.map(({ edge, box }) => <EdgeLabel key={edge.id} edge={edge} box={box} />), [drawn.labels]);
+  const rings = useMemo(() => {
+    const ringed = drawn.containers.concat(drawn.leaves).filter((n) => selectedSets.nodes.has(n.id) || (ringOn?.kind === 'node' && ringOn.id === n.id));
+    return ringed.map((n) => (
+      <span
+        key={n.id}
+        data-slot="diagram-ring"
+        data-ring-of={n.id}
+        data-focused={ringOn?.kind === 'node' && ringOn.id === n.id ? true : undefined}
+        aria-hidden="true"
+        className={cn('absolute', nodeRadius(n), ringOn?.kind === 'node' && ringOn.id === n.id ? RING_FOCUSED : RING_SELECTED)}
+        style={{ left: n.x, top: n.y, width: n.w, height: n.h }}
+      />
+    ));
+  }, [drawn.containers, drawn.leaves, selectedSets.nodes, ringOn]);
   const marks = useMemo<CanvasMiniMapItem[]>(() => (minimap ? nodes.filter((n) => n.kind !== 'root').map((n) => ({ id: n.id, x: n.x, y: n.y, w: n.w, h: n.h })) : []), [minimap, nodes]);
   const zoom = camera.z < NODE_TEXT_ZOOM ? 'far' : camera.z < EDGE_LABEL_ZOOM ? 'mid' : 'near';
   const portDots = useMemo(() => handles.length ? (
@@ -825,7 +840,7 @@ export function Diagram<N = unknown, E = unknown>({
       onKeyDownCapture={(e) => { if (e.key === ' ') cancel(); }}
       onLostPointerCapture={cancel}
       onFocus={() => { focusWithin.current = true; }}
-      onBlur={(e) => { if (!e.relatedTarget || !ref.current?.contains(e.relatedTarget as Node)) focusWithin.current = false; }}
+      onBlur={(e) => { if (!e.relatedTarget || !ref.current?.contains(e.relatedTarget as Node)) { focusWithin.current = false; setRingOn(null); } }}
     >
       <Canvas
         camera={camera}
@@ -842,13 +857,14 @@ export function Diagram<N = unknown, E = unknown>({
         {...pointerProps}
         overlay={<>{minimap ? <CanvasMiniMap items={marks} {...(minimap === true ? null : minimap)} /> : null}{overlay}</>}
       >
-        <div
-          data-slot="diagram-layer"
-          data-zoom={zoom}
-          className="group/diagram pointer-events-none absolute top-0 left-0"
-          style={{ '--diagram-z': camera.z } as CSSProperties}
-        >
-          {board}
+        <div data-slot="diagram-layer" data-zoom={zoom} className="group/diagram pointer-events-none absolute top-0 left-0">
+          {containers}
+          <svg data-slot="diagram-edges" role="group" aria-label="Edges" className="absolute top-0 left-0 overflow-visible" width={1} height={1} style={{ '--diagram-z': camera.z } as CSSProperties}>
+            {lines}
+          </svg>
+          {leaves}
+          {labelViews}
+          {rings.length ? <div data-slot="diagram-rings" className="absolute top-0 left-0" style={{ '--diagram-z': camera.z } as CSSProperties}>{rings}</div> : null}
         </div>
         {portDots}
         {guides.length ? <CanvasGuides guides={guides} /> : null}
