@@ -1,6 +1,6 @@
 /* ══ Diagram layout — where nodes go, by ELK ══
    `elk.algorithm: layered` with `elk.hierarchyHandling: INCLUDE_CHILDREN` places nodes, compounds and the routes between
-   them. In a browser it runs in a Web Worker: on the main thread, 2,000 nodes stop the page for about 5 s. On a server it
+   them, and with nothing inside anything, `SEPARATE_CHILDREN` packs what isn't connected into rows. In a browser it runs in a Web Worker: on the main thread, 2,000 nodes stop the page for about 5 s. On a server it
    runs in the process.
 
    ELK is an optional peer, as it's 442 KB gzipped and licensed EPL-2.0 OR GPL-3.0-or-later, so it's only imported here, when
@@ -136,7 +136,9 @@ export function toElkGraph<N, E>(draft: DiagramDraft<N, E>, options: Pick<Diagra
   }
   const root: ElkGraph = {
     id: ROOT,
-    layoutOptions: { ...DIAGRAM_ELK_OPTIONS, ...(options.direction ? { 'elk.direction': options.direction } : null), ...options.elk },
+    // Laying out what's inside something takes everything at once. With nothing inside anything, ELK can treat what isn't connected
+    // apart, and pack it into rows, where otherwise it's all one long column.
+    layoutOptions: { ...DIAGRAM_ELK_OPTIONS, ...(placed.some((n) => index.parent.get(n.id)) ? null : { 'elk.hierarchyHandling': 'SEPARATE_CHILDREN' }), ...(options.direction ? { 'elk.direction': options.direction } : null), ...options.elk },
     children: [],
     edges: [],
   };

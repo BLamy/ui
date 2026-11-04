@@ -1,12 +1,12 @@
 'use client';
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Diagram, type DiagramChange, type DiagramProps } from '@/components/ui/diagram';
 import { DiagramFrame, DiagramPanelField, DiagramPanelSection } from '@/components/ui/diagram-frame';
 import { CLOUDFLARE_CATALOG } from '@/lib/cloudflare-catalog.generated';
 import type { CatalogProduct } from '@/lib/cloudflare-catalog';
-import { bindingName, catalogBinding, catalogProduct, linkBetween, linkOf, methodSignature, SERVICE_NODE, serviceIconName, serviceNodeHeight, servicePorts, type CloudflareEdge, type CloudflareService, type ServiceLink } from '@/lib/cloudflare-services';
+import { catalogBinding, catalogProduct, linkBetween, linkOf, methodSignature, newEdge, SERVICE_NODE, serviceIconName, serviceNodeHeight, servicePorts, type CloudflareEdge, type CloudflareService, type ServiceLink } from '@/lib/cloudflare-services';
 import { useContainerSize } from '@/lib/container';
 import { useDiagramLayout } from '@/lib/diagram-layout/react';
 import { NOTHING_SELECTED, type DiagramConnection, type DiagramEdge, type DiagramNode, type DiagramPort, type DiagramSelection } from '@/lib/diagram-model';
@@ -203,26 +203,6 @@ export function CloudflareDiagram({ services, edges = [], onChange, editable = f
     const check = linkBetween(kindOf(c.from) ?? '', c.fromPort, kindOf(c.to) ?? '', c.toPort);
     return check.ok ? true : check.reason;
   };
-  const uniqueEdgeId = (from: string, via: string) => {
-    const taken = new Set(edges.map((e) => e.id));
-    const base = `${from}-${via}`;
-    if (!taken.has(base)) return base;
-    for (let n = 2; ; n++) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
-  };
-  /** A new edge, as what it joins says it is. */
-  const edgeFrom = (c: { from: string; fromPort?: string; to: string; toPort?: string }): CloudflareEdge | null => {
-    const check = linkBetween(kindOf(c.from) ?? '', c.fromPort, kindOf(c.to) ?? '', c.toPort);
-    if (!check.ok) return null;
-    const { link } = check;
-    const takenNames = edges.filter((e) => e.from === c.from && e.binding).map((e) => e.binding!);
-    return {
-      id: uniqueEdgeId(c.from, link.via),
-      from: c.from,
-      to: c.to,
-      via: link.via,
-      ...(link.kind === 'binding' ? { binding: bindingName(link.label, takenNames) } : null),
-    };
-  };
   const onDiagramChange = (change: DiagramChange<ServiceNodeData, ServiceEdgeData>) => {
     // Undoing's here, as it has more to go back to than the board does.
     if (change.reason === 'undo' || change.reason === 'redo') return;
@@ -236,7 +216,7 @@ export function CloudflareDiagram({ services, edges = [], onChange, editable = f
     const nextEdges = change.edges.flatMap((e): CloudflareEdge[] => {
       const was = had.get(e.id);
       if (was) return [was];
-      const made = edgeFrom({ from: e.from, fromPort: e.fromPort, to: e.to, toPort: e.toPort });
+      const made = newEdge(edges, kindOf, e);
       return made ? [made] : [];
     });
     send({ services: nextServices, edges: nextEdges }, change.reason);
@@ -255,6 +235,7 @@ export function CloudflareDiagram({ services, edges = [], onChange, editable = f
     send({ services: services.filter((s) => s.id !== id), edges: edges.filter((e) => e.from !== id && e.to !== id) }, 'delete');
   };
 
+  const renderNode = useCallback((node: DiagramNode<ServiceNodeData>) => <ServiceNodeBody node={node} icon={icon} />, [icon]);
   const selectedDraft = selectedEdge ? draftEdges.find((e) => e.id === selectedEdge.id) : undefined;
   const panel = (
     <div data-slot="cloudflare-panel" tabIndex={-1} className="flex flex-col gap-3.5 px-3.5 pt-1 pb-3.5 outline-none">
@@ -304,7 +285,7 @@ export function CloudflareDiagram({ services, edges = [], onChange, editable = f
           selectable
           selection={selection}
           onSelectionChange={setSelection}
-          renderNode={(node) => <ServiceNodeBody node={node} icon={icon} />}
+          renderNode={renderNode}
           {...(editable ? { editable: true, portsOnly: true, onChange: onDiagramChange, isValidConnection: validConnection } : null)}
           overlay={laid.error && !placed ? (
             <div data-slot="cloudflare-diagram-error" role="alert" className="absolute inset-x-4 top-4 rounded-ctl bg-popover p-3 text-footnote text-destructive shadow-hairline">{laid.error.message}</div>

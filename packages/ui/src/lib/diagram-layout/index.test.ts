@@ -6,11 +6,42 @@ const text = (t: string) => ({ w: t.length * 10, h: 15 });
 const inside = (a: DiagramNode, b: DiagramNode) => a.x >= b.x && a.y >= b.y && a.x + a.w <= b.x + b.w + 0.01 && a.y + a.h <= b.y + b.h + 0.01;
 const overlap = (a: DiagramNode, b: DiagramNode) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
+describe('what isn’t connected', () => {
+  const nodes = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `n${i}`, w: 224, h: 58 + (i % 5) * 19 }));
+  const spread = (laid: readonly DiagramNode[]) => {
+    const wide = Math.max(...laid.map((n) => n.x + n.w)) - Math.min(...laid.map((n) => n.x));
+    const high = Math.max(...laid.map((n) => n.y + n.h)) - Math.min(...laid.map((n) => n.y));
+    return wide / high;
+  };
+
+  it('goes in rows, where it would otherwise be one long column', async () => {
+    const loose = await layoutDiagram({ nodes: nodes(40) }, { worker: false });
+    expect(new Set(loose.nodes.map((n) => n.x)).size).toBeGreaterThan(3);
+    expect(spread(loose.nodes)).toBeGreaterThan(0.8);
+    for (let i = 0; i < loose.nodes.length; i++) for (let j = i + 1; j < loose.nodes.length; j++) expect(overlap(loose.nodes[i]!, loose.nodes[j]!)).toBe(false);
+    // Asked for what it was, it's one column, which is what this is here to stop.
+    const column = await layoutDiagram({ nodes: nodes(40) }, { worker: false, elk: { 'elk.hierarchyHandling': 'INCLUDE_CHILDREN' } });
+    expect(new Set(column.nodes.map((n) => n.x)).size).toBe(1);
+  });
+
+  it('keeps what is connected together, and in order', async () => {
+    const out = await layoutDiagram({ nodes: nodes(12), edges: [{ id: 'a', from: 'n0', to: 'n1' }, { id: 'b', from: 'n1', to: 'n2' }] }, { worker: false });
+    const at = (id: string) => out.nodes.find((n) => n.id === id)!;
+    expect(at('n0').x).toBeLessThan(at('n1').x);
+    expect(at('n1').x).toBeLessThan(at('n2').x);
+    expect(out.edges).toHaveLength(2);
+    for (const e of out.edges) expect(e.points?.length).toBeGreaterThan(1);
+  });
+});
+
 describe('toElkGraph', () => {
   it('asks for layered layout, with hierarchy, and takes your options over its own', () => {
-    const g = toElkGraph({ nodes: [] });
+    const g = toElkGraph({ nodes: [{ id: 'box', kind: 'compound' }, { id: 'in', parent: 'box' }] });
     expect(g.layoutOptions!['elk.algorithm']).toBe('layered');
     expect(g.layoutOptions!['elk.hierarchyHandling']).toBe('INCLUDE_CHILDREN');
+    // With nothing inside anything, what isn't connected can be packed.
+    expect(toElkGraph({ nodes: [{ id: 'a' }, { id: 'b' }] }).layoutOptions!['elk.hierarchyHandling']).toBe('SEPARATE_CHILDREN');
+    expect(toElkGraph({ nodes: [{ id: 'a' }] }, { elk: { 'elk.hierarchyHandling': 'INCLUDE_CHILDREN' } }).layoutOptions!['elk.hierarchyHandling']).toBe('INCLUDE_CHILDREN');
     expect(g.layoutOptions!['elk.direction']).toBe('RIGHT');
     expect(toElkGraph({ nodes: [] }, { direction: 'DOWN' }).layoutOptions!['elk.direction']).toBe('DOWN');
     expect(toElkGraph({ nodes: [] }, { direction: 'DOWN', elk: { 'elk.direction': 'LEFT', 'elk.foo': 'bar' } }).layoutOptions).toMatchObject({ 'elk.direction': 'LEFT', 'elk.foo': 'bar' });

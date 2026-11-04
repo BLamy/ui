@@ -195,6 +195,19 @@ export function bindingName(label: string, taken: readonly string[]): string {
   for (let n = 2; ; n++) if (!taken.includes(`${base}_${n}`)) return `${base}_${n}`;
 }
 
+/** The edge for a new connection, as what it joins says it is, or null if the catalog says there's no such thing. Its id is its own
+ *  on the board. Its name only has to be its own on what it's from, as each Worker has an `env` of its own. */
+export function newEdge(edges: readonly CloudflareEdge[], kindOf: (id: string) => string | undefined, c: { from: string; fromPort?: string; to: string; toPort?: string }): CloudflareEdge | null {
+  const check = linkBetween(kindOf(c.from) ?? '', c.fromPort, kindOf(c.to) ?? '', c.toPort);
+  if (!check.ok) return null;
+  const { link } = check;
+  const taken = new Set(edges.map((e) => e.id));
+  let id = `${c.from}-${link.via}`;
+  for (let n = 2; taken.has(id); n++) id = `${c.from}-${link.via}-${n}`;
+  const names = edges.filter((e) => e.from === c.from && e.binding).map((e) => e.binding!);
+  return { id, from: c.from, to: c.to, via: link.via, ...(link.kind === 'binding' ? { binding: bindingName(link.label, names) } : null) };
+}
+
 /** A plain way to write a method: `get(key, options)`. */
 export const methodSignature = (m: CatalogMethod) => (m.params ? `${m.name}(${m.params.join(', ')})` : m.name);
 

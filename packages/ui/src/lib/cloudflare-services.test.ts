@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CLOUDFLARE_CATALOG as C } from './cloudflare-catalog.generated';
-import { ENV_PORT, EVENTS_PORT, SERVICE_PRODUCTS, bindingName, catalogProduct, linkBetween, linkOf, methodSignature, runsCode, serviceIconName, serviceNodeHeight, servicePorts, SERVICE_NODE } from './cloudflare-services';
+import { ENV_PORT, EVENTS_PORT, SERVICE_PRODUCTS, bindingName, catalogProduct, linkBetween, linkOf, methodSignature, newEdge, runsCode, serviceIconName, serviceNodeHeight, servicePorts, SERVICE_NODE } from './cloudflare-services';
 
 const ids = (kind: string, dir: 'in' | 'out') => servicePorts(kind).filter((p) => p.direction === dir).map((p) => p.id);
 const ok = (a: string, ap: string | undefined, b: string, bp: string | undefined) => {
@@ -152,6 +152,36 @@ describe('what can join what', () => {
     expect(linkOf({ via: 'r2_buckets' }, 'workers', 'd1')).toMatchObject({ ok: false, reason: expect.stringContaining('can’t be reached that way') });
     expect(linkOf({ via: 'queue-consumer' }, 'r2', 'workers')).toMatchObject({ ok: false, reason: expect.stringContaining('doesn’t send that') });
     expect(linkOf({ via: 'queue-consumer' }, 'queues', 'r2').ok).toBe(false);
+  });
+});
+
+describe('a new connection', () => {
+  const kinds: Record<string, string> = { a: 'workers', b: 'workers', files: 'r2', pics: 'r2', db: 'd1', jobs: 'queues' };
+  const kindOf = (id: string) => kinds[id];
+  const to = (from: string, target: string) => ({ from, fromPort: ENV_PORT, to: target, toPort: `binding:${kinds[target] === 'r2' ? 'r2_buckets' : 'd1_databases'}` });
+
+  it('is what the catalog says it is, with a name on env', () => {
+    expect(newEdge([], kindOf, to('a', 'files'))).toEqual({ id: 'a-r2_buckets', from: 'a', to: 'files', via: 'r2_buckets', binding: 'R2_BUCKET' });
+    // What isn't a binding has no name.
+    expect(newEdge([], kindOf, { from: 'files', fromPort: `out:${EVENTS_PORT}`, to: 'jobs', toPort: EVENTS_PORT })).toEqual({ id: 'files-events', from: 'files', to: 'jobs', via: 'events' });
+  });
+
+  it('isn’t anything the catalog says there isn’t', () => {
+    expect(newEdge([], kindOf, { from: 'files', fromPort: ENV_PORT, to: 'db', toPort: 'binding:d1_databases' })).toBeNull();
+    expect(newEdge([], kindOf, { from: 'gone', fromPort: ENV_PORT, to: 'db', toPort: 'binding:d1_databases' })).toBeNull();
+  });
+
+  it('has an id nothing else has', () => {
+    const one = newEdge([], kindOf, to('a', 'files'))!;
+    const two = newEdge([one], kindOf, to('a', 'pics'))!;
+    const three = newEdge([one, two], kindOf, to('a', 'pics'))!;
+    expect([one.id, two.id, three.id]).toEqual(['a-r2_buckets', 'a-r2_buckets-2', 'a-r2_buckets-3']);
+  });
+
+  it('has a name of its own on each Worker, as each has its own env', () => {
+    const one = newEdge([], kindOf, to('a', 'files'))!;
+    expect(newEdge([one], kindOf, to('a', 'pics'))!.binding).toBe('R2_BUCKET_2');
+    expect(newEdge([one], kindOf, to('b', 'pics'))!.binding).toBe('R2_BUCKET');
   });
 });
 

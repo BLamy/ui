@@ -215,12 +215,39 @@ test.describe('drawing', () => {
     await expect.poll(() => page.locator('[data-slot=cloudflare-service]').count(), { timeout: 60_000 }).toBe(101);
     expect(await page.locator('[data-slot=cloudflare-service][data-kind=flagship]').count()).toBe(1);
     expect(errors).toEqual([]);
+    // Nothing's connected, so they're in rows, and not in one long column you can't read at all.
+    const boxes = await page.locator('[data-slot=diagram-node]').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, r: r.right, b: r.bottom }; }));
+    const wide = Math.max(...boxes.map((b) => b.r)) - Math.min(...boxes.map((b) => b.x));
+    const high = Math.max(...boxes.map((b) => b.b)) - Math.min(...boxes.map((b) => b.y));
+    expect(wide / high).toBeGreaterThan(0.8);
   });
 
   test('there’s no artwork: only the library’s icons', async ({ page }) => {
     await open(page, 'upload');
     const images = await page.locator('[data-slot=cloudflare-diagram] img, [data-slot=cloudflare-diagram] image').count();
     expect(images).toBe(0);
+  });
+});
+
+test.describe('only to read', () => {
+  test('it says what things are, and offers no way to change them', async ({ page }) => {
+    await open(page, 'upload');
+    const none = async () => {
+      for (const slot of ['cloudflare-delete', 'cloudflare-undo', 'cloudflare-redo', 'cloudflare-label']) await expect(page.locator(`[data-slot=${slot}]`)).toHaveCount(0);
+    };
+    await none();
+    const box = await service(page, 'files').boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + 10);
+    await expect(panel(page).locator('[data-slot=cloudflare-description]')).toBeVisible();
+    await none();
+    // Nothing to drag from, and pressing Delete doesn't do anything.
+    await page.keyboard.press('Delete');
+    await expect(service(page, 'files')).toHaveCount(1);
+    await pressOnEdge(page, 'api-files');
+    await expect(panel(page).locator('[data-slot=cloudflare-operation]').first()).toBeVisible();
+    await expect(panel(page).locator('input')).toHaveCount(0);
+    await expect(panel(page).locator('[data-slot=cloudflare-binding-name]')).toContainText('FILES');
+    await none();
   });
 });
 
