@@ -3749,20 +3749,27 @@
       "name": "cloudflare-diagram",
       "type": "registry:ui",
       "title": "CloudflareDiagram",
-      "description": "Cloudflare's services on a Diagram: each a node with what it can call and receive as ports, from a catalog generated from Cloudflare's docs, Wrangler's schema and the Workers types. A connection can only be one the catalog says there is, and it offers the real methods. No Cloudflare artwork. ELK is an optional peer.",
-      "dependencies": [],
+      "description": "Cloudflare's services on a Diagram: each a node with what it can call and receive as ports, from a catalog generated from Cloudflare's docs, Wrangler's schema and the Workers types. A connection can only be one the catalog says there is, and it offers the real methods. No Cloudflare artwork. ELK is an optional peer. What it's given is a system, which saves as JSON: it says what's wrong with one, a search of the catalog adds a service, and a service's machine opens in a StateDiagram.",
+      "dependencies": [
+        "xstate@^5.33.3"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/canvas.json",
         "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/cloudflare-catalog.json",
         "https://blamy.github.io/ui/r/cloudflare-services.json",
+        "https://blamy.github.io/ui/r/cloudflare-system.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/diagram.json",
         "https://blamy.github.io/ui/r/diagram-frame.json",
         "https://blamy.github.io/ui/r/diagram-layout.json",
         "https://blamy.github.io/ui/r/diagram-model.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/list-box.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/state-diagram.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -8127,6 +8134,49 @@
           "path": "packages/ui/src/lib/cloudflare-services.ts",
           "type": "registry:lib",
           "target": "lib/cloudflare-services.ts"
+        }
+      ]
+    },
+    {
+      "name": "cloudflare-system",
+      "type": "registry:lib",
+      "title": "Cloudflare System",
+      "description": "Cloudflare System — part of BL UI's library (lib/cloudflare-system.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/cloudflare-catalog.json",
+        "https://blamy.github.io/ui/r/cloudflare-services.json",
+        "https://blamy.github.io/ui/r/state-diagram-edit.json",
+        "https://blamy.github.io/ui/r/state-diagram-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cloudflare-system.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-system.ts"
+        }
+      ]
+    },
+    {
+      "name": "cloudflare-wrangler",
+      "type": "registry:lib",
+      "title": "Cloudflare Wrangler",
+      "description": "Cloudflare Wrangler — part of BL UI's library (lib/cloudflare-wrangler.ts).",
+      "dependencies": [
+        "jsonc-parser@3.3.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/cloudflare-catalog.json",
+        "https://blamy.github.io/ui/r/cloudflare-services.json",
+        "https://blamy.github.io/ui/r/cloudflare-system.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cloudflare-wrangler.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-wrangler.ts"
         }
       ]
     },

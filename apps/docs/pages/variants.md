@@ -562,6 +562,7 @@ fill-none ${LINE}
 | `always` | `stroke-muted-foreground [stroke-dasharray:calc(5px/var(--diagram-z))_calc(3px/var(--diagram-z))]` |
 | `after` | `stroke-muted-foreground [stroke-dasharray:calc(1.5px/var(--diagram-z))_calc(3px/var(--diagram-z))] [stroke-linecap:round]` |
 | `initial` | `stroke-foreground` |
+| `problem` | `stroke-destructive [stroke-dasharray:calc(6px/var(--diagram-z))_calc(3px/var(--diagram-z))]` |
 
 ## Dialog
 

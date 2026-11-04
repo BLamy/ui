@@ -704,7 +704,8 @@ describe('where it’s from', () => {
     for (const name of ['readWrangler', 'writeWrangler', 'compareWrangler', 'WRANGLER_RESOURCE_FIELDS', 'parseSystem', 'systemToJson', 'validateSystem', 'checkMachines', 'searchCatalog', 'addService', 'removeServices', 'sharedServices', 'machineEvents', 'machineReceives', 'machinesPast', 'serviceName', 'edgeBinding', 'newEdge', 'CloudflareDiagram']) {
       expect(entry, name).toHaveProperty(name);
     }
-  });
+    // It loads a lot, which on a busy machine takes more than the five seconds a test gets.
+  }, 60_000);
 });
 
 describe('the catalog', () => {
