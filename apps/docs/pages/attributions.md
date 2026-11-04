@@ -71,6 +71,18 @@ The STL viewer is Docstream's own WebGL code and has no third-party dependencies
 | [agent-wasm](https://github.com/BLamy/agent-wasm) (`@agent-wasm/core`, `@agent-wasm/tailscale-connect`) | The in-browser Node sandbox behind live React demos (Docstream's playground), and the optional Tailscale connection in the Safari block | MIT, BSD-3-Clause |
 | [Google Fonts](https://fonts.google.com) | The font picker's catalog. Fonts load from Google's servers under each font's own license, mostly the SIL Open Font License. | Per font |
 
+## Data
+
+The Cloudflare catalog, in `@brett_lamy/ui/cloudflare`, is generated from these by `tools/cloudflare/catalog.mjs`, each pinned to an exact version. It's about 150 KB, or 26 KB gzipped, and only an app that imports that entry gets it.
+
+| Source | Used for | License |
+| --- | --- | --- |
+| [Cloudflare's docs](https://github.com/cloudflare/cloudflare-docs) (`cloudflare/cloudflare-docs` at `5c2ac2bf064c`), © Cloudflare, Inc. and contributors | Product names, URLs, groups and descriptions, copied unchanged, and event names. Each product's class and parent are added here | [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) |
+| [Wrangler](https://github.com/cloudflare/workers-sdk) 4.157.0's `config-schema.json` and type generator | Binding keys, their fields, and which runtime type each has | MIT OR Apache-2.0 |
+| [`@cloudflare/workers-types`](https://github.com/cloudflare/workerd) 5.20261104.1 | Each runtime type's methods, and the handlers a Worker can export | MIT OR Apache-2.0 |
+
+Cloudflare's names are used in words, to say which of their products a thing is. Cloudflare is a trademark of Cloudflare, Inc., which doesn't endorse this library, and none of its logos are in it.
+
 ## Design references
 
 The icon set is drawn for BL UI. Its names follow the SF Symbols vocabulary, and several components and blocks follow Apple's Human Interface Guidelines and apps (Notes, Reminders, Music, Mail, Settings). No Apple artwork or fonts are included. The system font stack only names fonts that are already on the device.
