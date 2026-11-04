@@ -119,7 +119,7 @@ const ms = (n: number) => `${Math.round(n).toLocaleString('en-US')} ms`;
 function PanelSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section data-slot="simulation-section" aria-label={title} className="flex flex-col gap-1.5">
-      <h3 className="m-0 text-footnote font-semibold text-muted-foreground">{title}</h3>
+      <h3 className="m-0 text-footnote font-semibold text-foreground/70">{title}</h3>
       {children}
     </section>
   );
@@ -170,7 +170,7 @@ function SimulationPanel({ sim, panelRef }: { sim: Simulation; panelRef?: RefObj
           <Button data-slot="simulation-next" variant="secondary" size="sm" isDisabled={!canRun} onPress={() => sim.stepTime()}>Next timer</Button>
           <Button data-slot="simulation-run" variant="secondary" size="sm" isDisabled={!canRun} onPress={() => setRunning(!running)}>{run ? 'Pause' : 'Run'}</Button>
         </div>
-        <div data-slot="simulation-time" className="text-footnote text-muted-foreground tabular-nums">
+        <div data-slot="simulation-time" className="text-footnote text-foreground/70 tabular-nums">
           {ms(state.time)}{state.next !== null ? `, next at ${ms(state.next)}` : ', nothing waiting'}
         </div>
       </PanelSection>
@@ -194,7 +194,7 @@ function SimulationPanel({ sim, panelRef }: { sim: Simulation; panelRef?: RefObj
           {state.log.map((entry) => (
             <li key={entry.id} data-slot="simulation-log-entry" className="[overflow-wrap:anywhere]">
               <span className="font-semibold">{entry.what}</span>
-              <span className="text-muted-foreground"> at {ms(entry.at)}, in {entry.now.join(', ')}</span>
+              <span className="text-foreground/70"> at {ms(entry.at)}, in {entry.now.join(', ')}</span>
             </li>
           ))}
         </ol>

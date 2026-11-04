@@ -388,6 +388,18 @@ describe('running the spike’s machine', () => {
     expect(s.get().time).toBe(0);
   });
 
+  it('starts its clock over with Reset, with the timers that were on it gone', () => {
+    const s = start();
+    finish(s, 'verifyToken: done');
+    s.advance(5000);
+    expect(s.get().time).toBe(5000);
+    s.reset();
+    expect(s.get().time).toBe(0);
+    expect(s.get().next).toBeNull();
+    finish(s, 'verifyToken: done');
+    expect(s.get().next).toBe(30000);
+  });
+
   it('says which edges it just took, by the ids they’re drawn with, always included', () => {
     const s = start();
     const drawn = new Set(machineToDraft(uploadMachine as never).edges.map((e) => e.id));

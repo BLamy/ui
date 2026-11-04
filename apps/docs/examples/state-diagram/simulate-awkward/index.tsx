@@ -51,7 +51,7 @@ export default function Awkward() {
     <div className="grid h-full min-h-[560px] w-full grid-rows-[auto_1fr]">
       <div className="flex flex-wrap gap-2 border-b border-border p-3">
         {Object.keys(CONFIGS).map((n) => (
-          <Button key={n} variant={n === name ? 'default' : 'secondary'} size="sm" onPress={() => setName(n)}>{n}</Button>
+          <Button key={n} variant={n === name ? 'ghost' : 'secondary'} size="sm" onPress={() => setName(n)}>{n}</Button>
         ))}
       </div>
       <div className="relative"><StateDiagram key={name} config={CONFIGS[name]} simulate /></div>
