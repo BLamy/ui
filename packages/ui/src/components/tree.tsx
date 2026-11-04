@@ -129,6 +129,9 @@ function indexOf(items: readonly TreeNode[]): Index {
   return index;
 }
 
+/** A folder's path ends in a slash in the index, which the tree's rename callbacks leave off. */
+const nodeAt = (index: Index, path: string) => index.byPath.get(path) ?? index.byPath.get(`${path.replace(/\/$/, '')}/`);
+
 const prepare = (paths: string[], sort?: boolean) => (sort ? prepareFileTreeInput(paths) : preparePresortedFileTreeInput(paths));
 
 /* ── Icons: the icon set as an SVG sprite the tree can reference ── */
@@ -213,9 +216,9 @@ export function Tree({
       return node?.detail ? { text: node.detail, ...(node.detailTitle ? { title: node.detailTitle } : {}) } : null;
     },
     renaming: {
-      canRename: ({ path }) => !!live.current.onRename && live.current.index.byPath.get(path)?.id === renamingRef.current,
+      canRename: ({ path }) => !!live.current.onRename && nodeAt(live.current.index, path)?.id === renamingRef.current,
       onRename: ({ sourcePath, destinationPath }) => {
-        const node = live.current.index.byPath.get(sourcePath);
+        const node = nodeAt(live.current.index, sourcePath);
         const name = destinationPath.replace(/\/$/, '').split('/').at(-1)?.replaceAll(ZWSP, '').replaceAll(SLASH, '/').trim();
         if (node && name && name !== node.name) live.current.onRename?.(node, name);
         settle();
@@ -344,10 +347,18 @@ export function Tree({
     let frame = 0;
     const start = () => {
       if (document.querySelector('[data-slot=dropdown-menu]')) { frame = requestAnimationFrame(start); return; }
-      frame = requestAnimationFrame(() => {
+      // A row in a closed folder has no field to show until its folders are open.
+      const parts = path.replace(/\/$/, '').split('/');
+      let opened = false;
+      for (let i = 1; i < parts.length; i++) {
+        const folder = model.getItem(`${parts.slice(0, i).join('/')}/`) as FileTreeDirectoryHandle | null;
+        if (folder && !folder.isExpanded()) { folder.expand(); opened = true; }
+      }
+      const begin = () => {
         if (!model.startRenaming(path)) { endRename(); return; }
         if (host?.shadowRoot) watch.observe(host.shadowRoot, { childList: true, subtree: true });
-      });
+      };
+      frame = requestAnimationFrame(() => { if (opened) frame = requestAnimationFrame(begin); else begin(); });
     };
     start();
     return () => { cancelAnimationFrame(frame); watch.disconnect(); };

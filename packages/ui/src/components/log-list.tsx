@@ -673,7 +673,8 @@ function LogListBodyInner<T extends LogRow>({
     <div data-slot="log-list" data-rows={rows.length} className={cn(logListVariants({ density }), className)} {...props}>
       <div
         ref={gridRef}
-        role="grid"
+        // A row can open to show more, and aria-expanded on a row is only allowed in a treegrid.
+        role="treegrid"
         tabIndex={0}
         aria-label={ariaLabel}
         aria-rowcount={rows.length}

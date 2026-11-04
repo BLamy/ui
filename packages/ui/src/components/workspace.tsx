@@ -47,7 +47,8 @@ export type WorkspaceProps<
 > = ResizableWorkspaceProps<TabData, TabsetData>;
 
 const workspaceClasses: WorkspaceClassNames = {
-  tabset: 'flex min-h-0 flex-col overflow-hidden bg-background text-foreground',
+  // h-full: maximized, a tabset is out of its split, and would otherwise be only as tall as what's in it.
+  tabset: 'flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground',
   header: 'flex min-h-9 min-w-0 items-center border-b border-border bg-muted',
   tabList: 'flex min-w-0 flex-1 items-stretch gap-0.5 overflow-auto px-1',
   tab: 'group flex max-w-56 shrink-0 cursor-default items-center gap-2 border-r border-border px-3 py-2 text-xs text-muted-foreground outline-none hover:text-foreground data-[tab-selected]:bg-background data-[tab-selected]:text-foreground data-[tab-selected]:shadow-hairline-b focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',

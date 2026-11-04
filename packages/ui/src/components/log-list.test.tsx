@@ -12,7 +12,7 @@ afterEach(cleanup);
 const makeRows = (count: number, patch?: (i: number) => Partial<LogRow>): LogRow[] =>
   Array.from({ length: count }, (_, i) => ({ id: `r${i}`, level: 'log', time: i * 100, source: `app.js:${i}`, message: `Message ${i}`, ...patch?.(i) }));
 
-const grid = () => screen.getByRole('grid');
+const grid = () => screen.getByRole('treegrid');
 const row = (index: number) => document.querySelector<HTMLElement>(`[data-slot=log-list-row][data-index="${index}"]`) as HTMLElement;
 const allRows = () => [...document.querySelectorAll<HTMLElement>('[data-slot=log-list-row]')];
 const marker = () => document.querySelector('[data-slot=log-list-marker]') as HTMLElement;

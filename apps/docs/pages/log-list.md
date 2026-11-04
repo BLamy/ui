@@ -109,7 +109,7 @@ The limit is the browser's: the list's full height has to fit in an element, whi
 
 ## Accessibility
 
-It's an ARIA grid with one tab stop, and the active row is `aria-activedescendant`, as in [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet), so focus can't be lost when a row scrolls out and unmounts. `aria-rowcount` gives the full length and each row has `aria-rowindex`. The current row has `aria-current`, and a row with more to show has `aria-expanded`. The marker's line is drawn for sighted users and hidden from assistive technology.
+It's an ARIA treegrid with one tab stop, and the active row is `aria-activedescendant`, as in [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet), so focus can't be lost when a row scrolls out and unmounts. `aria-rowcount` gives the full length and each row has `aria-rowindex`. The current row has `aria-current`, and a row with more to show has `aria-expanded`. The marker's line is drawn for sighted users and hidden from assistive technology.
 
 A row isn't a react-aria element, for scale: giving each its own hooks is what adds up at this size. A press on a row is the grid's own click, so touch, mouse and a screen reader's click all reach it, and dragging across text to select it isn't a press. The Copy and way-back buttons are real react-aria buttons. Copy is a single button that moves to the row under the pointer, or the active row, which is how touch and keys get to it.
 

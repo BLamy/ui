@@ -370,7 +370,8 @@ describe('pooling', () => {
     expect(many).toBeLessThan(2400 * 60);
     // Eight times the samples costs a few more reads per search.
     expect(many).toBeLessThan(some * 1.5);
-  });
+    // It counts reads, not time, so a busy machine only makes building the samples take longer.
+  }, 60_000);
 
   it('poolPresence marks each column with a time, as a walk would', () => {
     const random = seeded(9);
