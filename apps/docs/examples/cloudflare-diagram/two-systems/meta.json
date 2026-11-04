@@ -1,0 +1,4 @@
+{
+  "title": "Two systems sharing a service",
+  "description": "Each keeps its own copy of what they share."
+}

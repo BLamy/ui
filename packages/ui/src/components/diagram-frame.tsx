@@ -37,13 +37,15 @@ export interface DiagramFrameProps {
   /** The root's `data-slot`, for a part made of this. */
   slot?: string;
   onBoardKeyDown?: KeyboardEventHandler<HTMLDivElement>;
+  /** Something to show over all of it, like what's inside what's selected. The board stays as it is underneath, and out of reach. */
+  cover?: ReactNode;
   /** The board, given the bar to put in its `overlay`. */
   children: (bar: ReactNode) => ReactNode;
   className?: string;
   style?: CSSProperties;
 }
 
-export function DiagramFrame({ host, size, title, panel, status, defaultOpen, focusSelector = 'button', slot = 'diagram-frame', onBoardKeyDown, children, className, style }: DiagramFrameProps) {
+export function DiagramFrame({ host, size, title, panel, status, defaultOpen, focusSelector = 'button', slot = 'diagram-frame', onBoardKeyDown, cover, children, className, style }: DiagramFrameProps) {
   const beside = size.width >= PANEL_BESIDE_FROM;
   const [choice, setChoice] = useState<boolean | null>(defaultOpen ?? null);
   const open = choice ?? beside;
@@ -72,9 +74,9 @@ export function DiagramFrame({ host, size, title, panel, status, defaultOpen, fo
   ) : null;
   return (
     <div ref={host} data-slot={slot} className={cn('absolute inset-0 flex overflow-hidden', !beside && 'flex-col', className)} style={style}>
-      <div className="relative min-h-0 min-w-0 flex-1" onKeyDown={onBoardKeyDown}>{children(bar)}</div>
-      {panel && beside && open ? <div ref={panelRef} className="contents"><SideDrawer mode="fixed" open onClose={() => choose(false)} title={title} width={PANEL_WIDTH}>{panel}</SideDrawer></div> : null}
-      {panel && !beside ? (
+      <div className="relative min-h-0 min-w-0 flex-1" inert={!!cover || undefined} onKeyDown={onBoardKeyDown}>{children(bar)}</div>
+      {panel && beside && open ? <div ref={panelRef} className="contents" inert={!!cover || undefined}><SideDrawer mode="fixed" open onClose={() => choose(false)} title={title} width={PANEL_WIDTH}>{panel}</SideDrawer></div> : null}
+      {panel && !beside && !cover ? (
         // A tray's modal to what it's in. That's only this, under the board, which isn't covered or dimmed, as it's what you're watching.
         <div data-slot="diagram-frame-tray-host" className="relative shrink-0 bg-background [&>div:first-child]:bg-transparent" style={{ height: open ? trayHeight : 0 }}>
           <Credenza compact open={open} onClose={() => choose(false)} title={title} className="top-2.5">
@@ -82,6 +84,7 @@ export function DiagramFrame({ host, size, title, panel, status, defaultOpen, fo
           </Credenza>
         </div>
       ) : null}
+      {cover ? <div data-slot="diagram-frame-cover" className="absolute inset-0 z-10 flex flex-col bg-background">{cover}</div> : null}
     </div>
   );
 }

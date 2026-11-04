@@ -157,31 +157,41 @@ describe('what can join what', () => {
 
 describe('a new connection', () => {
   const kinds: Record<string, string> = { a: 'workers', b: 'workers', files: 'r2', pics: 'r2', db: 'd1', jobs: 'queues' };
-  const kindOf = (id: string) => kinds[id];
+  const services = Object.entries(kinds).map(([id, kind]) => ({ id, kind }));
   const to = (from: string, target: string) => ({ from, fromPort: ENV_PORT, to: target, toPort: `binding:${kinds[target] === 'r2' ? 'r2_buckets' : 'd1_databases'}` });
 
   it('is what the catalog says it is, with a name on env', () => {
-    expect(newEdge([], kindOf, to('a', 'files'))).toEqual({ id: 'a-r2_buckets', from: 'a', to: 'files', via: 'r2_buckets', binding: 'R2_BUCKET' });
+    expect(newEdge(services, [], to('a', 'files'))).toEqual({ id: 'a-r2_buckets', from: 'a', to: 'files', via: 'r2_buckets', binding: 'R2_BUCKET' });
     // What isn't a binding has no name.
-    expect(newEdge([], kindOf, { from: 'files', fromPort: `out:${EVENTS_PORT}`, to: 'jobs', toPort: EVENTS_PORT })).toEqual({ id: 'files-events', from: 'files', to: 'jobs', via: 'events' });
+    expect(newEdge(services, [], { from: 'files', fromPort: `out:${EVENTS_PORT}`, to: 'jobs', toPort: EVENTS_PORT })).toEqual({ id: 'files-events', from: 'files', to: 'jobs', via: 'events' });
   });
 
   it('isn’t anything the catalog says there isn’t', () => {
-    expect(newEdge([], kindOf, { from: 'files', fromPort: ENV_PORT, to: 'db', toPort: 'binding:d1_databases' })).toBeNull();
-    expect(newEdge([], kindOf, { from: 'gone', fromPort: ENV_PORT, to: 'db', toPort: 'binding:d1_databases' })).toBeNull();
+    expect(newEdge(services, [], { from: 'files', fromPort: ENV_PORT, to: 'db', toPort: 'binding:d1_databases' })).toBeNull();
+    expect(newEdge(services, [], { from: 'gone', fromPort: ENV_PORT, to: 'db', toPort: 'binding:d1_databases' })).toBeNull();
   });
 
   it('has an id nothing else has', () => {
-    const one = newEdge([], kindOf, to('a', 'files'))!;
-    const two = newEdge([one], kindOf, to('a', 'pics'))!;
-    const three = newEdge([one, two], kindOf, to('a', 'pics'))!;
+    const one = newEdge(services, [], to('a', 'files'))!;
+    const two = newEdge(services, [one], to('a', 'pics'))!;
+    const three = newEdge(services, [one, two], to('a', 'pics'))!;
     expect([one.id, two.id, three.id]).toEqual(['a-r2_buckets', 'a-r2_buckets-2', 'a-r2_buckets-3']);
   });
 
+  it('goes by what the service it goes to is bound as, if it says', () => {
+    const named = [...services, { id: 'files', kind: 'r2', binding: 'uploads_v2' }].filter((x, i, all) => all.findLastIndex((y) => y.id === x.id) === i);
+    const one = newEdge(named, [], to('a', 'files'))!;
+    expect(one.binding).toBe('uploads_v2');
+    // That's taken on this one, so it's made its own from that, and on another Worker, it isn't.
+    expect(newEdge(named, [one], to('a', 'files'))!.binding).toBe('UPLOADS_V2');
+    expect(newEdge(named, [{ ...one, binding: undefined }], to('a', 'files'))!.binding).toBe('UPLOADS_V2');
+    expect(newEdge(named, [one], to('b', 'files'))!.binding).toBe('uploads_v2');
+  });
+
   it('has a name of its own on each Worker, as each has its own env', () => {
-    const one = newEdge([], kindOf, to('a', 'files'))!;
-    expect(newEdge([one], kindOf, to('a', 'pics'))!.binding).toBe('R2_BUCKET_2');
-    expect(newEdge([one], kindOf, to('b', 'pics'))!.binding).toBe('R2_BUCKET');
+    const one = newEdge(services, [], to('a', 'files'))!;
+    expect(newEdge(services, [one], to('a', 'pics'))!.binding).toBe('R2_BUCKET_2');
+    expect(newEdge(services, [one], to('b', 'pics'))!.binding).toBe('R2_BUCKET');
   });
 });
 

@@ -64,7 +64,7 @@ Like the library's other containers, it fills the nearest positioned box. With n
 | `route` | `elbow`, `straight` or `curve`, when it has no `points`. |
 | `points` | A route already worked out, from start to tip. |
 | `label`, `labelBox` | Its label, and where a layout put it. Without `labelBox` it finds a place beside the line. |
-| `kind` | How it looks: `event`, `done`, `invoke`, `always` (dashes), `after` (dots), `initial`. Anything else looks like `event`. |
+| `kind` | How it looks: `event`, `done`, `invoke`, `always` (dashes), `after` (dots), `initial`, `problem` (dashes in red, for something that's wrong). Anything else looks like `event`. |
 
 An edge with no `points` works out its route from where its ends are. Edges that leave the same side of a node share it out, a node's self-loops nest, and an edge between a compound and its own child runs from the nearest wall.
 
@@ -195,7 +195,7 @@ The view is where it matters: the smallest zoom is 2%, so a board this size does
 
 ## A panel beside it
 
-`DiagramFrame` is what `StateDiagram` and `CloudflareDiagram` put their panels in: a column beside the board when there's the room, and a tray under it when there isn't, which is closed to begin with, and leaves the board uncovered to watch and press on. Either way there's a bar to open it again, which it hands you to put in `overlay`.
+`DiagramFrame` is what `StateDiagram` and `CloudflareDiagram` put their panels in: a column beside the board when there's the room, and a tray under it when there isn't, which is closed to begin with, and leaves the board uncovered to watch and press on. Either way there's a bar to open it again, which it hands you to put in `overlay`. With `cover`, something else shows over all of it, like a service's machine, and the board stays as it is underneath, out of reach.
 
 ```tsx
 const [host, size] = useContainerSize()

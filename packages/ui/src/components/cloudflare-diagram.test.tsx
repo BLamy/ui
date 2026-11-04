@@ -6,6 +6,28 @@ const placed = [{ id: 'w', kind: 'workers', at: { x: 0, y: 0 } }, { id: 'r', kin
 const edges = [{ id: 'e', from: 'w', to: 'r', via: 'r2_buckets', binding: 'FILES', operations: ['get', 'put', 'list', 'head'] }];
 
 describe('CloudflareDiagram, on a server', () => {
+  it('says which have a machine, and draws what’s wrong as wrong', () => {
+    const machine = { initial: 'a', states: { a: { on: { HELLO: 'a' } } } };
+    const html = renderToString(<CloudflareDiagram services={[placed[0]!, { ...placed[1]!, machine }, { id: 'gone-to', kind: 'not-in-the-catalog', at: { x: 0, y: 300 } }]} edges={[{ id: 'bad', from: 'r', to: 'w', via: 'r2_buckets' }, { id: 'dangling', from: 'w', to: 'nowhere', via: 'r2_buckets', binding: 'X' }]} />);
+    expect(html.match(/data-slot="cloudflare-service-machine"/g)).toHaveLength(1);
+    expect(html).toContain('data-slot="diagram-edge" data-edge="bad" data-kind="problem"');
+    // It has nowhere to go, so it isn't drawn, and it's said.
+    expect(html).not.toContain('data-slot="diagram-edge" data-edge="dangling"');
+    expect(html).toContain('data-slot="cloudflare-issue" data-severity="error" data-code="edge-end" data-edge="dangling"');
+  });
+
+  it('keeps apart the labels of two edges on one line', () => {
+    const html = renderToString(<CloudflareDiagram services={placed} edges={[edges[0]!, { ...edges[0]!, id: 'e2', binding: 'OTHER', operations: undefined }]} />);
+    const top = (id: string) => Number(new RegExp(`data-slot="diagram-edge-label" data-edge="${id}"[^>]*?top:\\s*(-?[\\d.]+)px`).exec(html)?.[1]);
+    expect(top('e')).not.toBeNaN();
+    expect(top('e2')).toBeLessThan(top('e') - 5);
+  });
+
+  it('goes by what a service is bound as, on an edge with no name', () => {
+    const html = renderToString(<CloudflareDiagram services={[placed[0]!, { ...placed[1]!, binding: 'UPLOADS' }]} edges={[{ id: 'e', from: 'w', to: 'r', via: 'r2_buckets', operations: ['get'] }]} />);
+    expect(html).toContain('UPLOADS: get');
+  });
+
   it('draws what it’s given in words, with its ports named', () => {
     const html = renderToString(<CloudflareDiagram services={placed} edges={edges} />);
     expect(html).toContain('Workers');

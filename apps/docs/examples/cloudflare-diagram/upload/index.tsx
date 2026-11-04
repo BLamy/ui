@@ -7,7 +7,12 @@ const SERVICES: CloudflareService[] = [
   { id: 'jobs', kind: 'queues' },
   { id: 'consumer', kind: 'workers', label: 'Consumer' },
   { id: 'db', kind: 'd1' },
-  { id: 'room', kind: 'durable-objects', label: 'Room' },
+  {
+    id: 'room',
+    kind: 'durable-objects',
+    label: 'Room',
+    machine: { id: 'room', initial: 'empty', states: { empty: { on: { VIEWER_JOINED: 'watched' } }, watched: { on: { VIEWER_LEFT: 'empty' } } } },
+  },
 ]
 
 const EDGES: CloudflareEdge[] = [
@@ -19,7 +24,7 @@ const EDGES: CloudflareEdge[] = [
   { id: 'consumer-room', from: 'consumer', to: 'room', via: 'durable_objects', binding: 'ROOM' },
 ]
 
-// A file upload, in a Worker, R2, a Queue, a consumer, D1 and a Durable Object. Select one to see what it can do.
+// A file upload, in a Worker, R2, a Queue, a consumer, D1 and a Durable Object with a machine. Select one to see what it can do.
 export default function Upload() {
   return (
     <div className="relative h-full min-h-[560px] w-full">

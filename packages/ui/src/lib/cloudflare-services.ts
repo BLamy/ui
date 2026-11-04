@@ -26,6 +26,12 @@ export interface CloudflareService {
   label?: string;
   /** Where it is on the board. With none on any of them, they're laid out. */
   at?: { x: number; y: number };
+  /** What a binding to it is called on `env`, unless its edge says otherwise. */
+  binding?: string;
+  /** What's behind it at Cloudflare: a bucket's name, a queue's. */
+  resource?: string;
+  /** What it does, as a machine's config, in JSON. Its implementations stay out of it, by name. */
+  machine?: Record<string, unknown>;
 }
 
 /** One service reaching another. `via` says how: a binding key, a row of `receives`, `surface:<Type>`, or `events`. */
@@ -38,6 +44,8 @@ export interface CloudflareEdge {
   binding?: string;
   /** Which of what's on offer it uses. */
   operations?: string[];
+  /** The machine events that cross it, which a machine it reaches has to be able to receive. */
+  events?: string[];
 }
 
 /** How two ports are joined, and what's on offer across it. */
@@ -60,7 +68,7 @@ export const ENV_PORT = 'env';
 export const EVENTS_PORT = 'events';
 
 /** Where a binding's one of a Worker's own settings, it isn't a way to anything else. */
-const isOwnSetting = (b: CatalogBinding) => b.container === 'map' || !b.product || (b.product === 'workers' && b.key !== 'services');
+export const isOwnSetting = (b: CatalogBinding) => b.container === 'map' || !b.product || (b.product === 'workers' && b.key !== 'services');
 const typeOf = (handler: string) => handler.slice(0, handler.indexOf('.'));
 const memberOf = (handler: string) => handler.slice(handler.indexOf('.') + 1);
 const ownerOf = (row: CatalogReceive) => C.runsCode.find((r) => r.handlerTypes.includes(typeOf(row.handler)))?.product;
@@ -196,16 +204,20 @@ export function bindingName(label: string, taken: readonly string[]): string {
 }
 
 /** The edge for a new connection, as what it joins says it is, or null if the catalog says there's no such thing. Its id is its own
- *  on the board. Its name only has to be its own on what it's from, as each Worker has an `env` of its own. */
-export function newEdge(edges: readonly CloudflareEdge[], kindOf: (id: string) => string | undefined, c: { from: string; fromPort?: string; to: string; toPort?: string }): CloudflareEdge | null {
-  const check = linkBetween(kindOf(c.from) ?? '', c.fromPort, kindOf(c.to) ?? '', c.toPort);
+ *  on the board. Its name is what the service it goes to is bound as, if it says, and only has to be its own on what it's from, as
+ *  each Worker has an `env` of its own. */
+export function newEdge(services: readonly CloudflareService[], edges: readonly CloudflareEdge[], c: { from: string; fromPort?: string; to: string; toPort?: string }): CloudflareEdge | null {
+  const find = (id: string) => services.find((s) => s.id === id);
+  const to = find(c.to);
+  const check = linkBetween(find(c.from)?.kind ?? '', c.fromPort, to?.kind ?? '', c.toPort);
   if (!check.ok) return null;
   const { link } = check;
   const taken = new Set(edges.map((e) => e.id));
   let id = `${c.from}-${link.via}`;
   for (let n = 2; taken.has(id); n++) id = `${c.from}-${link.via}-${n}`;
-  const names = edges.filter((e) => e.from === c.from && e.binding).map((e) => e.binding!);
-  return { id, from: c.from, to: c.to, via: link.via, ...(link.kind === 'binding' ? { binding: bindingName(link.label, names) } : null) };
+  const names = edges.filter((e) => e.from === c.from).flatMap((e) => e.binding ?? find(e.to)?.binding ?? []);
+  const name = to?.binding && !names.includes(to.binding) ? to.binding : bindingName(to?.binding ?? link.label, names);
+  return { id, from: c.from, to: c.to, via: link.via, ...(link.kind === 'binding' ? { binding: name } : null) };
 }
 
 /** A plain way to write a method: `get(key, options)`. */

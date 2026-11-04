@@ -84,3 +84,55 @@ export const OnAPhone: Story = {
 export const OwnIcons: Story = {
   render: () => <Phone w={900} h={360}><CloudflareDiagram services={UPLOAD.slice(0, 2)} edges={UPLOAD_EDGES.slice(0, 1)} icon={(p) => <span className="text-caption font-semibold">{p.name.slice(0, 2)}</span>} /></Phone>,
 };
+
+const ROOM = { id: 'room', initial: 'empty', states: { empty: { on: { VIEWER_JOINED: 'watched' } }, watched: { on: { VIEWER_LEFT: 'empty' } } } };
+const SYSTEM: CloudflareService[] = [
+  { id: 'api', kind: 'workers', label: 'API', at: { x: 0, y: 30 } },
+  { id: 'files', kind: 'r2', label: 'Files', binding: 'FILES', at: { x: 340, y: 0 } },
+  { id: 'room', kind: 'durable-objects', label: 'Room', machine: ROOM, at: { x: 340, y: 110 } },
+];
+const SYSTEM_EDGES: CloudflareEdge[] = [
+  { id: 'upload', from: 'api', to: 'files', via: 'r2_buckets', operations: ['put'] },
+  { id: 'join', from: 'api', to: 'room', via: 'durable_objects', binding: 'ROOM', events: ['VIEWER_JOINED'] },
+];
+
+/** A system: a service that says what it's bound as, a machine, and the events that cross a connection. A search adds a service. */
+export const ASystem: Story = {
+  render: () => <Phone w={1100} h={520}><CloudflareDiagram editable services={SYSTEM} edges={SYSTEM_EDGES} /></Phone>,
+};
+
+/** What's wrong with one: an event nothing receives, a machine that sends to a service that's gone, a connection that isn't real, a
+ *  name that's used twice, and a kind that's not in the catalog. */
+export const SystemWithProblems: Story = {
+  render: () => (
+    <Phone w={1100} h={720}>
+      <CloudflareDiagram
+        services={[...SYSTEM, { id: 'other', kind: 'not-in-the-catalog', at: { x: 0, y: 260 } }]}
+        edges={[
+          ...SYSTEM_EDGES.map((e) => (e.id === 'join' ? { ...e, events: ['NOT_RECEIVED'] } : e)),
+          { id: 'gone', from: 'api', to: 'deleted', via: 'queues', binding: 'JOBS', events: ['WORK'] },
+          { id: 'not-real', from: 'files', to: 'room', via: 'r2_buckets' },
+          { id: 'twice', from: 'api', to: 'files', via: 'r2_buckets', binding: 'ROOM' },
+        ]}
+      />
+    </Phone>
+  ),
+};
+
+/** A service's machine opens in a StateDiagram, over the board. */
+export const ItsMachine: Story = {
+  render: () => <Phone w={1100} h={520}><CloudflareDiagram editable services={SYSTEM} edges={SYSTEM_EDGES} defaultMachine="room" /></Phone>,
+};
+
+export const ItsMachineOnAPhone: Story = {
+  render: () => <Phone><CloudflareDiagram services={SYSTEM} edges={SYSTEM_EDGES} defaultMachine="room" /></Phone>,
+};
+
+/** Selected, it says what it receives, and a connection says what's past it. */
+export const AServiceWithAMachine: Story = {
+  render: () => <Phone w={1100} h={520}><CloudflareDiagram editable services={SYSTEM} edges={SYSTEM_EDGES} defaultSelection={{ nodes: ['room'], edges: [] }} /></Phone>,
+};
+
+export const AConnectionWithEvents: Story = {
+  render: () => <Phone w={1100} h={720}><CloudflareDiagram editable services={SYSTEM} edges={SYSTEM_EDGES} defaultSelection={{ nodes: [], edges: ['join'] }} /></Phone>,
+};

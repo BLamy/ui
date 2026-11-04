@@ -61,13 +61,15 @@ export const diagramEdgeVariants = cva(`fill-none ${LINE}`, {
       /** Taken when time runs out: dots. */
       after: 'stroke-muted-foreground [stroke-dasharray:calc(1.5px/var(--diagram-z))_calc(3px/var(--diagram-z))] [stroke-linecap:round]',
       initial: 'stroke-foreground',
+      /** Something's wrong with it: dashes as well as the color, as a color isn't enough on its own. */
+      problem: 'stroke-destructive [stroke-dasharray:calc(6px/var(--diagram-z))_calc(3px/var(--diagram-z))]',
     },
   },
   defaultVariants: { kind: 'event' },
 });
 
 type EdgeLook = NonNullable<Parameters<typeof diagramEdgeVariants>[0]>['kind'];
-const EDGE_LOOKS: readonly string[] = ['event', 'done', 'invoke', 'always', 'after', 'initial'];
+const EDGE_LOOKS: readonly string[] = ['event', 'done', 'invoke', 'always', 'after', 'initial', 'problem'];
 const edgeLook = (kind: string | undefined): EdgeLook => (kind && EDGE_LOOKS.includes(kind) ? (kind as EdgeLook) : 'event');
 
 /** A diagram can draw thousands of nodes and edges, with only a few looks between them, so each is only worked out once. */
@@ -187,7 +189,7 @@ const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, 
       aria-label={label}
       aria-pressed={selectable ? !!selected : undefined}
       d={d}
-      markerEnd={`url(#${arrow}${selected || lit ? '-selected' : look === 'initial' ? '-strong' : ''})`}
+      markerEnd={`url(#${arrow}${selected || lit ? '-selected' : look === 'initial' ? '-strong' : look === 'problem' ? '-problem' : ''})`}
       className={edgeClass(`${look}:${selected ? '1' : ''}:${lit ? '1' : ''}`)}
     />
   );
@@ -272,11 +274,20 @@ function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramE
   const geometries = edgeGeometries(edges, index);
   const drawn: Laid<N, E>['edges'] = [];
   const labels: Laid<N, E>['labels'] = [];
+  // Two edges between the same two ports are one line, so their labels would be one on top of the other.
+  const onRoute = new Map<string, number>();
+  const placeLabel = (edge: DiagramEdge<E>, geometry: ConnectorGeometry) => {
+    if (edge.labelBox) return edge.labelBox;
+    const box = labelBox(geometry.pts, text(edge.label!, 'edge'));
+    const before = onRoute.get(geometry.d) ?? 0;
+    onRoute.set(geometry.d, before + 1);
+    return before ? { ...box, y: box.y - before * box.h } : box;
+  };
   for (const edge of edges) {
     const geometry = geometries.get(edge.id);
     if (!geometry) continue;
     drawn.push({ edge, geometry, box: rectOf(geometry.pts) });
-    if (edge.label) labels.push({ edge, box: edge.labelBox ?? labelBox(geometry.pts, text(edge.label, 'edge')) });
+    if (edge.label) labels.push({ edge, box: placeLabel(edge, geometry) });
   }
   // Outer containers first, so what's inside draws over them, however the nodes were listed.
   const depth = (n: DiagramNode<N>) => index.depth.get(n.id) ?? 0;
@@ -805,6 +816,7 @@ export function Diagram<N = unknown, E = unknown>({
         <ArrowMarker id={arrow} className="fill-muted-foreground" />
         <ArrowMarker id={`${arrow}-strong`} className="fill-foreground" />
         <ArrowMarker id={`${arrow}-selected`} className="fill-primary" />
+        <ArrowMarker id={`${arrow}-problem`} className="fill-destructive" />
       </defs>
       {drawn.dividers.map((d) => (
         <line

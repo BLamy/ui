@@ -9,6 +9,10 @@ export type {
   CatalogBinding, CatalogClass, CatalogContextType, CatalogField, CatalogHandlers, CatalogMethod, CatalogOtherKey, CatalogProduct, CatalogProperty, CatalogReceive, CatalogRunner, CatalogSurface, CloudflareCatalog,
 } from './lib/cloudflare-catalog';
 export {
-  ENV_PORT, EVENTS_PORT, SERVICE_NODE, SERVICE_PRODUCTS, bindingName, catalogBinding, catalogProduct, linkBetween, linkOf, methodSignature, runsCode, serviceIconName, serviceNodeHeight, servicePorts,
+  ENV_PORT, EVENTS_PORT, SERVICE_NODE, SERVICE_PRODUCTS, bindingName, catalogBinding, catalogProduct, linkBetween, linkOf, methodSignature, newEdge, runsCode, serviceIconName, serviceNodeHeight, servicePorts,
 } from './lib/cloudflare-services';
 export type { CloudflareEdge, CloudflareService, ServiceLink, ServiceLinkCheck } from './lib/cloudflare-services';
+export {
+  BINDING_NAME, EMPTY_SYSTEM, addService, checkMachines, edgeBinding, machineEvents, machineReceives, machinesPast, parseSystem, removeServices, searchCatalog, serviceName, sharedServices, systemToJson, validateSystem,
+} from './lib/cloudflare-system';
+export type { CloudflareSystem, SystemIssue } from './lib/cloudflare-system';
