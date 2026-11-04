@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { distToPolyline, type Pt, type Rect } from '@/lib/canvas-math';
 import {
   ARROW_BROAD, ARROW_SLIM, anchorNormal, anchorPoint, ancestorsOf, arrowHead, closedD, connectorBounds, connectorPath, curvePath, descendantsOf, dirOf, distToConnector,
-  edgeAt, edgeGeometries, edgeGeometry, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, nearestAnchor, nearestSide, nodeAt, pointAlong, polygonPoints,
-  polylinePath, portPoint, selfLoopPath, type ConnectorGeometry, type DiagramEdge, type DiagramNode,
+  diagramBounds, edgeAt, edgeGeometries, edgeGeometry, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, nearestAnchor, nearestSide, nodeAt, pointAlong, polygonPoints,
+  polylinePath, portPoint, regionDividers, selfLoopPath, type ConnectorGeometry, type DiagramEdge, type DiagramNode,
 } from './diagram-model';
 
 const node = (id: string, x: number, y: number, w = 100, h = 40, extra: Partial<DiagramNode> = {}): DiagramNode => ({ id, x, y, w, h, ...extra });
@@ -429,5 +429,39 @@ describe('hit tests', () => {
     const g = curvePath({ x: 0, y: 0 }, { x: 800, y: 0 }, { x: 800, y: 0 }, { x: 1600, y: 0 });
     // A long straight-looking curve: halfway between any two samples is still on the line.
     for (let x = 3; x < 1600; x += 41) expect(distToConnector(g, { x, y: 0 })).toBeLessThan(0.001);
+  });
+});
+
+describe('what else gets drawn', () => {
+  it('puts a line across each gap between stacked regions, wall to wall', () => {
+    const i = indexDiagram([
+      node('p', 0, 0, 400, 300, { kind: 'parallel' }),
+      node('b', 10, 110, 100, 90, { kind: 'region', parent: 'p' }),
+      node('a', 50, 10, 300, 80, { kind: 'region', parent: 'p' }),
+      node('c', 10, 220, 200, 70, { kind: 'region', parent: 'p' }),
+    ]);
+    expect(regionDividers(i)).toEqual([
+      { id: 'p/1', x1: 0, x2: 400, y1: 100, y2: 100 },
+      { id: 'p/2', x1: 0, x2: 400, y1: 210, y2: 210 },
+    ]);
+  });
+
+  it('stands the line up between regions side by side', () => {
+    const i = indexDiagram([node('p', 0, 0, 400, 100, { kind: 'parallel' }), node('a', 10, 10, 100, 80, { kind: 'region', parent: 'p' }), node('b', 200, 10, 100, 80, { kind: 'region', parent: 'p' })]);
+    expect(regionDividers(i)).toEqual([{ id: 'p/1', x1: 155, x2: 155, y1: 0, y2: 100 }]);
+  });
+
+  it('draws no line for one region, or for a parallel state that has none', () => {
+    expect(regionDividers(indexDiagram([node('p', 0, 0, 400, 100, { kind: 'parallel' }), node('a', 10, 10, 100, 80, { kind: 'region', parent: 'p' })]))).toEqual([]);
+    expect(regionDividers(indexDiagram([node('p', 0, 0, 400, 100, { kind: 'parallel' }), node('a', 10, 10, 100, 80, { parent: 'p' }), node('b', 10, 10, 100, 80, { parent: 'p' })]))).toEqual([]);
+    expect(regionDividers(indexDiagram([node('c', 0, 0, 400, 100, { kind: 'compound' }), node('a', 10, 10, 100, 80, { kind: 'region', parent: 'c' }), node('b', 200, 10, 100, 80, { kind: 'region', parent: 'c' })]))).toEqual([]);
+  });
+
+  it('takes in the nodes, the routes that stray past them and the labels', () => {
+    const g = polylinePath([{ x: 0, y: 0 }, { x: 500, y: -50 }]);
+    expect(diagramBounds([{ x: 0, y: 0, w: 100, h: 100 }])).toEqual({ x: 0, y: 0, w: 100, h: 100 });
+    expect(diagramBounds([{ x: 0, y: 0, w: 100, h: 100 }], [g])).toEqual({ x: 0, y: -50, w: 500, h: 150 });
+    expect(diagramBounds([{ x: 0, y: 0, w: 100, h: 100 }], [g], [{ x: -20, y: 90, w: 40, h: 40 }])).toEqual({ x: -20, y: -50, w: 520, h: 180 });
+    expect(diagramBounds([])).toBeNull();
   });
 });

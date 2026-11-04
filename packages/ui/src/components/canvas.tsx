@@ -42,6 +42,8 @@ export interface CanvasProps {
   panning?: boolean;
   /** What ⌘0 fits the view to (the bounds of your content); empty centers the origin. */
   fit?: Rect | null;
+  /** How much air ⌘0 leaves around `fit`, in px (default 72). */
+  fitPadding?: number;
   /** The cursor over the canvas when it is not being dragged (`grab` / `grabbing` take over while panning). */
   cursor?: string;
   /** Focus the canvas on mount, so keys work before a click. */
@@ -95,7 +97,7 @@ type Nav = { k: 'pan'; sx: number; sy: number; cam: Camera } | { k: 'pinch'; d: 
 const ORIGIN: Camera = { x: 0, y: 0, z: 1 };
 
 export function Canvas({
-  camera: controlled, defaultCamera = ORIGIN, onCameraChange, background = 'dots', panning, fit, cursor = 'default', autoFocus,
+  camera: controlled, defaultCamera = ORIGIN, onCameraChange, background = 'dots', panning, fit, fitPadding, cursor = 'default', autoFocus,
   onCanvasPointerDown, onCanvasPointerMove, onCanvasPointerUp, onCanvasDoubleClick, onNavigationStart, onCanvasKeyDown,
   'aria-label': ariaLabel = 'Canvas', overlay, children, className, style,
 }: CanvasProps) {
@@ -218,7 +220,7 @@ export function Canvas({
     if (key === ' ' && !mod) { e.preventDefault(); setSpace(true); return; }
     if (mod && (key === '=' || key === '+')) { e.preventDefault(); zoomBy(1.25); return; }
     if (mod && key === '-') { e.preventDefault(); zoomBy(0.8); return; }
-    if (mod && key === '0') { e.preventDefault(); update(() => fitCamera(fit ?? null, size)); return; }
+    if (mod && key === '0') { e.preventDefault(); update(() => fitCamera(fit ?? null, size, fitPadding)); return; }
     if (mod && key === '1') { e.preventDefault(); update((c) => zoomAt(c, 1 / c.z, size.width / 2, size.height / 2)); return; }
     onCanvasKeyDown?.(e);
   };

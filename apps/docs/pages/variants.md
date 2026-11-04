@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (99 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (101 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -521,6 +521,47 @@ Defined in `@/components/ui/date-picker`. Base classes:
 | `sm` | `h-8 rounded-lg text-subhead` |
 | `default` (default) | `h-11 rounded-ctl text-body` |
 | `lg` | `h-[50px] rounded-xl text-body` |
+
+## Diagram
+
+### `diagramNodeVariants`
+
+Defined in `@/components/ui/diagram`. Base classes:
+
+```text
+relative size-full
+```
+
+**`kind`** — default `node`
+
+| Value | Adds |
+| --- | --- |
+| `node` (default) | `flex flex-col items-center justify-center rounded-ctl border border-border bg-card text-card-foreground shadow-hairline` |
+| `final` | `flex flex-col items-center justify-center rounded-ctl border-2 border-foreground bg-card text-card-foreground outline-1 -outline-offset-4 outline-foreground` |
+| `initial` | `rounded-full bg-foreground` |
+| `compound` | `rounded-card border border-border bg-secondary` |
+| `parallel` | `rounded-card border border-dashed border-border bg-secondary` |
+| `region` | `rounded-card` |
+| `root` | `rounded-card border border-border` |
+
+### `diagramEdgeVariants`
+
+Defined in `@/components/ui/diagram`. Base classes:
+
+```text
+fill-none ${LINE}
+```
+
+**`kind`** — default `event`
+
+| Value | Adds |
+| --- | --- |
+| `event` (default) | `stroke-muted-foreground` |
+| `done` | `stroke-muted-foreground` |
+| `invoke` | `stroke-muted-foreground` |
+| `always` | `stroke-muted-foreground [stroke-dasharray:calc(5px/var(--diagram-z))_calc(3px/var(--diagram-z))]` |
+| `after` | `stroke-muted-foreground [stroke-dasharray:calc(1.5px/var(--diagram-z))_calc(3px/var(--diagram-z))] [stroke-linecap:round]` |
+| `initial` | `stroke-foreground` |
 
 ## Dialog
 

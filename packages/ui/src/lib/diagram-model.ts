@@ -6,7 +6,7 @@
      without it `edgeGeometry` finds one.
    Freeform's connectors, Interface Builder's segues and Replay Canvas's segues run on the same geometry. The frame math
    underneath (rotation, distances, bounds) is the canvas toolkit's, in `@/lib/canvas-math`. */
-import { centerOf, dist, distToPolyline, inFrame, rectOf, rotatePt, type Pt, type Rect } from '@/lib/canvas-math';
+import { centerOf, dist, distToPolyline, inFrame, rectOf, rotatePt, unionRect, type Pt, type Rect } from '@/lib/canvas-math';
 
 /* ── The data ── */
 
@@ -552,4 +552,49 @@ export function edgeAt(p: Pt, geometries: ReadonlyMap<string, ConnectorGeometry>
     if (here <= tol && here <= d) { best = id; d = here; }
   }
   return best;
+}
+
+/* ── What else gets drawn ── */
+
+export interface DiagramDivider {
+  id: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+/** The lines between the regions of each `parallel` node: halfway across each gap, wall to wall. Regions stacked one above
+ *  another get level lines, and regions side by side get upright ones. */
+export function regionDividers<N>(index: DiagramIndex<N>): DiagramDivider[] {
+  const out: DiagramDivider[] = [];
+  for (const p of index.nodes) {
+    if (p.kind !== 'parallel') continue;
+    const regions = (index.children.get(p.id) ?? []).filter((n) => n.kind === 'region');
+    if (regions.length < 2) continue;
+    // Regions one above another overlap across, and regions side by side overlap down. Their sizes can differ, so where
+    // their centers are doesn't say.
+    let across = 0, down = 0;
+    for (let i = 0; i < regions.length; i++) for (let j = i + 1; j < regions.length; j++) {
+      const a = regions[i], b = regions[j];
+      across += Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+      down += Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+    }
+    const stacked = across >= down;
+    const sorted = [...regions].sort((a, b) => (stacked ? a.y - b.y : a.x - b.x));
+    for (let i = 1; i < sorted.length; i++) {
+      const a = sorted[i - 1], b = sorted[i];
+      if (stacked) { const y = (a.y + a.h + b.y) / 2; out.push({ id: `${p.id}/${i}`, x1: p.x, x2: p.x + p.w, y1: y, y2: y }); }
+      else { const x = (a.x + a.w + b.x) / 2; out.push({ id: `${p.id}/${i}`, x1: x, x2: x, y1: p.y, y2: p.y + p.h }); }
+    }
+  }
+  return out;
+}
+
+/** Everything that gets drawn: the nodes, the routes and the labels' boxes. Null when there's nothing. */
+export function diagramBounds(nodes: readonly Rect[], geometries: Iterable<{ pts: readonly Pt[] }> = [], labels: Iterable<Rect> = []): Rect | null {
+  const rects: Rect[] = [...nodes];
+  for (const g of geometries) rects.push(rectOf(g.pts));
+  for (const l of labels) rects.push(l);
+  return unionRect(rects);
 }

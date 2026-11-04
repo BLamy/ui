@@ -1,0 +1,121 @@
+import { renderToString } from 'react-dom/server';
+import { describe, expect, it } from 'vitest';
+import { useCanvas } from '@/components/ui/canvas';
+import { Diagram, DiagramNodeBody, diagramEdgeVariants } from '@/components/ui/diagram';
+import type { DiagramEdge, DiagramNode } from '@/lib/diagram-model';
+import { UPLOAD_EDGES, UPLOAD_NODES } from '../stories/diagram-machine';
+
+const count = (html: string, re: RegExp) => (html.match(re) ?? []).length;
+
+describe('Diagram', () => {
+  const html = renderToString(<Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} />);
+
+  it('draws everything in the 33-state machine', () => {
+    expect(count(html, /data-slot="diagram-node"/g)).toBe(40);
+    expect(count(html, /data-kind="initial"/g)).toBe(14); // 7 markers, and the 7 edges from them
+    expect(count(html, /data-slot="diagram-edge"/g)).toBe(43);
+    expect(count(html, /data-slot="diagram-edge-label"/g)).toBe(36);
+    expect(count(html, /data-slot="diagram-divider"/g)).toBe(2);
+    expect(UPLOAD_NODES.filter((n) => n.kind !== 'initial')).toHaveLength(33);
+    expect(UPLOAD_EDGES.filter((e) => e.kind !== 'initial')).toHaveLength(36);
+  });
+
+  it('puts an arrowhead on every edge, from a marker that exists', () => {
+    const id = /<marker id="([^"]+)"/.exec(html)![1];
+    expect(count(html, new RegExp(`marker-end="url\\(#${id}(-strong)?\\)"`, 'g'))).toBe(43);
+    expect(html).toContain(`<marker id="${id}-strong"`);
+  });
+
+  it('draws what holds things under the lines, and the rest over them', () => {
+    const edges = html.indexOf('data-slot="diagram-edges"');
+    expect(html.indexOf('data-node="upload.worker"')).toBeLessThan(edges);
+    expect(html.indexOf('data-node="upload.processing.scan"')).toBeLessThan(edges);
+    expect(html.indexOf('data-node="upload.worker.streaming"')).toBeGreaterThan(edges);
+    expect(html.indexOf('data-slot="diagram-edge-label"')).toBeGreaterThan(html.indexOf('data-node="upload.worker.streaming"'));
+    // An outer container draws first, whatever order they were listed in.
+    const shuffled = renderToString(<Diagram nodes={[{ id: 'inner', parent: 'outer', kind: 'compound', x: 0, y: 0, w: 1, h: 1 }, { id: 'outer', kind: 'compound', x: 0, y: 0, w: 1, h: 1 }]} />);
+    expect(shuffled.indexOf('data-node="outer"')).toBeLessThan(shuffled.indexOf('data-node="inner"'));
+  });
+
+  it('has a data-slot on the root and each part, and merges className and style last', () => {
+    for (const slot of ['diagram', 'canvas', 'canvas-board', 'diagram-layer', 'diagram-node', 'diagram-node-body', 'diagram-node-label', 'diagram-node-detail', 'diagram-edges', 'diagram-edge', 'diagram-edge-label', 'diagram-divider']) {
+      expect(html).toContain(`data-slot="${slot}"`);
+    }
+    const root = renderToString(<Diagram nodes={[]} className="absolute-not inset-4 mine" style={{ opacity: 0.5 }} />);
+    const tag = /<div[^>]*data-slot="diagram"[^>]*>/.exec(root)![0];
+    expect(tag).toContain('mine');
+    // tailwind-merge drops the default it replaces.
+    expect(tag).toContain('inset-4');
+    expect(tag).not.toContain('inset-0');
+    expect(tag).toContain('opacity:0.5');
+  });
+
+  it('labels the canvas', () => {
+    expect(renderToString(<Diagram nodes={[]} />)).toContain('aria-label="Diagram"');
+    expect(renderToString(<Diagram nodes={[]} aria-label="A machine" />)).toContain('aria-label="A machine"');
+  });
+
+  it('keeps an edge whose end is missing out of the picture, rather than failing', () => {
+    const out = renderToString(<Diagram nodes={[{ id: 'a', x: 0, y: 0, w: 10, h: 10 }]} edges={[{ id: 'e', from: 'a', to: 'gone', label: 'lost' }]} />);
+    expect(count(out, /data-slot="diagram-edge"/g)).toBe(0);
+    expect(out).not.toContain('lost');
+  });
+
+  it('places a label it was given, and works one out when it wasn’t', () => {
+    const nodes: DiagramNode[] = [{ id: 'a', x: 0, y: 0, w: 100, h: 40 }, { id: 'b', x: 300, y: 0, w: 100, h: 40 }];
+    const given: DiagramEdge = { id: 'e', from: 'a', to: 'b', label: 'SUBMIT', labelBox: { x: 7, y: 9, w: 40, h: 11 } };
+    expect(renderToString(<Diagram nodes={nodes} edges={[given]} />)).toMatch(/left:7px;top:9px/);
+    const found = renderToString(<Diagram nodes={nodes} edges={[{ id: 'e', from: 'a', to: 'b', label: 'SUBMIT' }]} />);
+    const m = /data-slot="diagram-edge-label"[^>]*style="left:([\d.]+)px;top:([\d.]+)px"/.exec(found)!;
+    // Above the middle of the line, which runs along y = 20.
+    expect(Number(m[2])).toBeLessThan(20);
+    expect(Number(m[1])).toBeGreaterThan(150);
+    expect(Number(m[1])).toBeLessThan(250);
+  });
+
+  it('draws custom nodes, gives children the canvas, and hides nothing in the data', () => {
+    function Readout() {
+      const { zoom } = useCanvas();
+      return <span data-testid="readout">{zoom}</span>;
+    }
+    const custom = renderToString(
+      <Diagram nodes={[{ id: 'a', label: 'hi', x: 0, y: 0, w: 10, h: 10, data: { n: 7 } }]} defaultCamera={{ x: 0, y: 0, z: 2 }} renderNode={(n) => <i data-custom={(n.data as { n: number }).n}><DiagramNodeBody node={n} /></i>}>
+        <Readout />
+      </Diagram>,
+    );
+    expect(custom).toContain('data-custom="7"');
+    expect(custom).toContain('data-slot="diagram-node-body"');
+    expect(custom).toMatch(/data-testid="readout">2</);
+  });
+
+  it('says when text has to hide, by zoom', () => {
+    const at = (z: number) => /data-zoom="(\w+)"/.exec(renderToString(<Diagram nodes={[]} defaultCamera={{ x: 0, y: 0, z }} />))![1];
+    expect(at(1)).toBe('near');
+    expect(at(0.4)).toBe('near');
+    expect(at(0.39)).toBe('mid');
+    expect(at(0.25)).toBe('mid');
+    expect(at(0.24)).toBe('far');
+    expect(at(0.02)).toBe('far');
+    expect(at(4)).toBe('near');
+  });
+
+  it('feeds the zoom to the lines', () => {
+    expect(renderToString(<Diagram nodes={[]} defaultCamera={{ x: 0, y: 0, z: 0.5 }} />)).toContain('--diagram-z:0.5');
+    expect(diagramEdgeVariants({ kind: 'event' })).toContain('calc(1.25px/var(--diagram-z))');
+  });
+
+  it('fits its content when no camera is given, and honors one that is', () => {
+    const nodes: DiagramNode[] = [{ id: 'a', x: 0, y: 0, w: 2000, h: 100 }];
+    // The size before anything's measured is 1000 x 700, with 24 px of air: (1000 - 48) / 2000.
+    expect(renderToString(<Diagram nodes={nodes} />)).toContain('--diagram-z:0.476');
+    expect(renderToString(<Diagram nodes={nodes} defaultCamera={{ x: 1, y: 2, z: 3 }} />)).toContain('--diagram-z:3');
+    expect(renderToString(<Diagram nodes={nodes} camera={{ x: 1, y: 2, z: 0.75 }} />)).toContain('--diagram-z:0.75');
+  });
+
+  it('marks the minimap with everything but the root, which would be one solid block', () => {
+    const out = renderToString(<Diagram nodes={[{ id: 'r', kind: 'root', x: 0, y: 0, w: 500, h: 500 }, { id: 'a', parent: 'r', x: 10, y: 10, w: 50, h: 50 }, { id: 'b', parent: 'r', x: 100, y: 10, w: 50, h: 50 }]} minimap />);
+    expect(out).toContain('data-slot="canvas-minimap"');
+    expect(count(out, /fill-muted-foreground\/35/g)).toBe(2);
+    expect(renderToString(<Diagram nodes={[]} />)).not.toContain('canvas-minimap');
+  });
+});

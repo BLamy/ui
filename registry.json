@@ -7737,6 +7737,30 @@
       }
     },
     {
+      "name": "diagram",
+      "type": "registry:ui",
+      "title": "Diagram",
+      "description": "Diagram — part of BL UI's library (components/diagram.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/diagram.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/diagram.tsx"
+        }
+      ]
+    },
+    {
       "name": "edge-drawer",
       "type": "registry:ui",
       "title": "Edge Drawer",

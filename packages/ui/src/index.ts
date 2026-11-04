@@ -26,8 +26,11 @@ export {
   anchorNormal, anchorPoint, ancestorsOf, arrowHead, closedD, connectorBounds, connectorPath, cubicAt, curvePath, descendantsOf, dirOf, distToConnector,
   edgeAt, edgeGeometries, edgeGeometry, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, nearestAnchor, nearestSide, nodeAt,
   pointAlong, polygonPoints, polylineD, polylinePath, portPoint, selfLoopPath,
+  diagramBounds, regionDividers,
 } from './lib/diagram-model';
-export type { ArrowShape, ConnectorEnd, ConnectorGeometry, ConnectorRoute, DiagramBox, DiagramEdge, DiagramIndex, DiagramModel, DiagramNode, DiagramNodeKind, DiagramPort, DiagramSide } from './lib/diagram-model';
+export type { ArrowShape, ConnectorEnd, ConnectorGeometry, ConnectorRoute, DiagramBox, DiagramDivider, DiagramEdge, DiagramIndex, DiagramModel, DiagramNode, DiagramNodeKind, DiagramPort, DiagramSide } from './lib/diagram-model';
+export { Diagram, DiagramNodeBody, diagramEdgeVariants, diagramNodeVariants } from './components/diagram';
+export type { DiagramNodeBodyProps, DiagramProps } from './components/diagram';
 export type { AnimatedHeightProps, ContentSwapProps } from './components/animated-height';
 export { Celebrate } from './components/celebrate';
 export type { CelebrateProps } from './components/celebrate';
