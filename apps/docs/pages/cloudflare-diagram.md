@@ -101,7 +101,7 @@ Two systems can have a service in common. Each is a document of its own, so taki
 
 {% demo src="cloudflare-diagram/wrangler" %}
 
-It reads a Worker's config into a system, writes a system's bindings back to that file, and says where the two differ. It's files only: nothing's deployed, and no account comes into it.
+It reads a Worker's config into a system, writes a system's bindings back to that file, and says where the two differ. It's files only: nothing's deployed, and no account comes into it. From the registry it's an item of its own, `cloudflare-wrangler`, as not every app wants `jsonc-parser`.
 
 ```tsx
 import { compareWrangler, readWrangler, writeWrangler } from '@brett_lamy/ui/cloudflare'
