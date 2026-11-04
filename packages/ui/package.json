@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/ui",
-  "version": "5.15.0",
+  "version": "5.15.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/BLamy/ui.git",
@@ -105,6 +105,9 @@
     "dist",
     "README.md"
   ],
+  "scripts": {
+    "prepublishOnly": "cd ../.. && pnpm nx run-many -t build -p @brett_lamy/ui"
+  },
   "publishConfig": {
     "access": "public"
   },
