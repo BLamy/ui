@@ -4319,6 +4319,76 @@
       }
     },
     {
+      "name": "diagram-layout",
+      "type": "registry:lib",
+      "title": "Diagram layout",
+      "description": "Places a Diagram's nodes and routes its edges with ELK, in a Web Worker, measuring their words first. ELK is 442 KB gzipped and licensed EPL-2.0 OR GPL-3.0-or-later, so it's only loaded when a layout's first asked for, and this item is what installs it.",
+      "dependencies": [
+        "elkjs@^0.12.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/diagram-text.json",
+        "https://blamy.github.io/ui/r/use-font-version.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-layout/index.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-layout/index.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/diagram-layout/layout-worker.js",
+          "type": "registry:lib",
+          "target": "lib/diagram-layout/layout-worker.js"
+        },
+        {
+          "path": "packages/ui/src/lib/diagram-layout/react.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-layout/react.ts"
+        }
+      ]
+    },
+    {
+      "name": "diagram",
+      "type": "registry:ui",
+      "title": "Diagram",
+      "description": "Nodes, edges, labels and regions on a Canvas, as plain data. Lines keep their thickness at any zoom, text hides when it's too small to read, and only what's near the view is drawn. With editable: selecting, dragging, deleting and undo as one gesture, named ports, and connecting with validation. Every node and edge can be reached by keyboard, and says what it connects to.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/diagram-gesture.json",
+        "https://blamy.github.io/ui/r/diagram-keyboard.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/diagram-text.json",
+        "https://blamy.github.io/ui/r/use-font-version.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/diagram.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/diagram.tsx"
+        }
+      ],
+      "meta": {
+        "page": "diagram",
+        "exports": [
+          "Diagram",
+          "DiagramNodeBody",
+          "diagramNodeVariants",
+          "diagramEdgeVariants"
+        ]
+      }
+    },
+    {
       "name": "dialog",
       "type": "registry:ui",
       "title": "Dialog",
@@ -7737,34 +7807,6 @@
       }
     },
     {
-      "name": "diagram",
-      "type": "registry:ui",
-      "title": "Diagram",
-      "description": "Diagram — part of BL UI's library (components/diagram.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/canvas.json",
-        "https://blamy.github.io/ui/r/canvas-math.json",
-        "https://blamy.github.io/ui/r/container.json",
-        "https://blamy.github.io/ui/r/diagram-gesture.json",
-        "https://blamy.github.io/ui/r/diagram-keyboard.json",
-        "https://blamy.github.io/ui/r/diagram-model.json",
-        "https://blamy.github.io/ui/r/diagram-text.json",
-        "https://blamy.github.io/ui/r/use-font-version.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/diagram.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/diagram.tsx"
-        }
-      ]
-    },
-    {
       "name": "edge-drawer",
       "type": "registry:ui",
       "title": "Edge Drawer",
@@ -8041,39 +8083,6 @@
           "path": "packages/ui/src/lib/diagram-keyboard.ts",
           "type": "registry:lib",
           "target": "lib/diagram-keyboard.ts"
-        }
-      ]
-    },
-    {
-      "name": "diagram-layout",
-      "type": "registry:lib",
-      "title": "Diagram Layout",
-      "description": "Diagram Layout — part of BL UI's library (lib/diagram-layout/index.ts, lib/diagram-layout/layout-worker.js, lib/diagram-layout/react.ts).",
-      "dependencies": [
-        "elkjs@^0.12.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/canvas-math.json",
-        "https://blamy.github.io/ui/r/diagram-model.json",
-        "https://blamy.github.io/ui/r/diagram-text.json",
-        "https://blamy.github.io/ui/r/use-font-version.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/diagram-layout/index.ts",
-          "type": "registry:lib",
-          "target": "lib/diagram-layout/index.ts"
-        },
-        {
-          "path": "packages/ui/src/lib/diagram-layout/layout-worker.js",
-          "type": "registry:lib",
-          "target": "lib/diagram-layout/layout-worker.js"
-        },
-        {
-          "path": "packages/ui/src/lib/diagram-layout/react.ts",
-          "type": "registry:lib",
-          "target": "lib/diagram-layout/react.ts"
         }
       ]
     },

@@ -121,7 +121,8 @@
         { "id": "sidebar", "title": "Sidebar" },
         { "id": "side-drawer", "title": "SideDrawer" },
         { "id": "adaptive-pane", "title": "AdaptivePane" },
-        { "id": "canvas", "title": "Canvas" }
+        { "id": "canvas", "title": "Canvas" },
+        { "id": "diagram", "title": "Diagram" }
       ]
     },
     {
