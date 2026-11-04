@@ -182,6 +182,17 @@ Above 200 nodes and edges, what's out of view isn't drawn. A window half as big 
 
 `node tools/e2e/diagram-perf.mjs` measures it, and fails if drawing less is ever worse than drawing it all.
 
+It works at 10,000 nodes. These are medians of 3 runs, in headless Chromium on a machine with a load of about 50, and 8.3 ms is the fastest that screen can go:
+
+| 10,000 nodes | First paint | A frame of panning | A frame of zooming | Drawn |
+| --- | --- | --- | --- | --- |
+| At 100%, drawing what's near the view | 52 ms | 8.3 ms | 8.3 ms | 25 nodes, 375 edges |
+| At 100%, drawing it all | 690 ms | 8.3 ms | 9.0 ms | all of it |
+| Zoomed all the way out, drawing what's near the view | 236 ms | 16.5 ms | 15.8 ms | 4,351 nodes, 7,977 edges |
+| Zoomed all the way out, drawing it all | 612 ms | 16.3 ms | 14.0 ms | all of it |
+
+The view is where it matters: the smallest zoom is 2%, so a board this size doesn't all fit on the screen even then, and what's drawn is what's near it.
+
 ## Server rendering
 
 `renderToString` draws it all, with no browser, and it hydrates with no mismatch: tested in TanStack Start and Next.js. With `useDiagramLayout`, pass a layout done ahead of time as `initial`, or the server draws nothing until the client's laid it out, as ELK's answer takes a while.
