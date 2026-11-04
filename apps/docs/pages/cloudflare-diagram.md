@@ -6,16 +6,16 @@ Cloudflare's services on a [Diagram](#/diagram). Each service is a node, with wh
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/cloudflare-diagram.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` and `lib/` (with the parts it is built from, and the catalog) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
 import { CloudflareDiagram } from '@/components/ui/cloudflare-diagram'
 ```
 {% endtab %}
 {% tab title="npm" %}
-{% command %}npm install @brett_lamy/ui elkjs{% endcommand %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their own entry, which is what keeps the catalog out of the main one:
+Import the stylesheet once at your app's entry, then the parts from their own entry, which keeps them out of the main one:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'

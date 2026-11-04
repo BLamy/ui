@@ -81,9 +81,10 @@ export function installSection(entry) {
     '{% tab title="npm" %}',
     command('npm install @brett_lamy/ui'),
     '',
-    "Import the stylesheet once at your app's entry, then the parts from the package root:",
+    // A part too big for the main entry says which it's on.
+    `Import the stylesheet once at your app's entry, then the parts from ${entry.npmEntry ? 'their own entry, which keeps them out of the main one' : 'the package root'}:`,
     '',
-    IMPORT_FENCE, `import '@brett_lamy/ui/styles.css'`, '', importLine(names, '@brett_lamy/ui'), '```',
+    IMPORT_FENCE, `import '@brett_lamy/ui/styles.css'`, '', importLine(names, entry.npmEntry ?? '@brett_lamy/ui'), '```',
     '{% endtab %}',
     '{% endtabs %}',
   ].join('\n');

@@ -186,10 +186,10 @@ const titleOf = (name) => name.split('-').map((w) => w[0].toUpperCase() + w.slic
 const depsField = (npm) => npm.map(([n, v]) => (v ? `${n}@${v}` : n));
 
 // The npm package's barrel must carry everything the docs show (a name documented on a page but missing from the
-// barrel would work with the registry and break with `npm install`).
+// barrel would work with the registry and break with `npm install`). A part too big for the main entry has one of its own.
 const barrelNames = new Set();
-{
-  const sf = ts.createSourceFile('index.ts', read(`${SRC}/index.ts`), ts.ScriptTarget.Latest, true);
+for (const entry of ['index.ts', 'cloudflare.ts']) {
+  const sf = ts.createSourceFile(entry, read(`${SRC}/${entry}`), ts.ScriptTarget.Latest, true);
   sf.forEachChild((n) => {
     if (ts.isExportDeclaration(n) && n.exportClause && ts.isNamedExports(n.exportClause)) for (const e of n.exportClause.elements) barrelNames.add(e.name.text);
   });

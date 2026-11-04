@@ -3746,6 +3746,40 @@
       }
     },
     {
+      "name": "cloudflare-diagram",
+      "type": "registry:ui",
+      "title": "CloudflareDiagram",
+      "description": "Cloudflare's services on a Diagram: each a node with what it can call and receive as ports, from a catalog generated from Cloudflare's docs, Wrangler's schema and the Workers types. A connection can only be one the catalog says there is, and it offers the real methods. No Cloudflare artwork. ELK is an optional peer.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/cloudflare-catalog.json",
+        "https://blamy.github.io/ui/r/cloudflare-services.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/diagram.json",
+        "https://blamy.github.io/ui/r/diagram-frame.json",
+        "https://blamy.github.io/ui/r/diagram-layout.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/cloudflare-diagram.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/cloudflare-diagram.tsx"
+        }
+      ],
+      "meta": {
+        "page": "cloudflare-diagram",
+        "exports": [
+          "CloudflareDiagram"
+        ]
+      }
+    },
+    {
       "name": "code-editor-gpu",
       "type": "registry:lib",
       "title": "CodeEditor GPU highlighting",
@@ -4317,6 +4351,30 @@
           "datePickerFieldVariants"
         ]
       }
+    },
+    {
+      "name": "diagram-frame",
+      "type": "registry:ui",
+      "title": "DiagramFrame",
+      "description": "A board with a panel: a column beside it when there's the room, and a tray under it when there isn't, which leaves the board uncovered to watch and press on.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/credenza.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/side-drawer.json",
+        "https://blamy.github.io/ui/r/text-field.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/diagram-frame.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/diagram-frame.tsx"
+        }
+      ]
     },
     {
       "name": "diagram-layout",
@@ -6675,20 +6733,15 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/container.json",
-        "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/diagram.json",
+        "https://blamy.github.io/ui/r/diagram-frame.json",
         "https://blamy.github.io/ui/r/diagram-layout.json",
         "https://blamy.github.io/ui/r/diagram-model.json",
-        "https://blamy.github.io/ui/r/input.json",
-        "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/segmented.json",
-        "https://blamy.github.io/ui/r/side-drawer.json",
         "https://blamy.github.io/ui/r/state-diagram-edit.json",
         "https://blamy.github.io/ui/r/state-diagram-model.json",
         "https://blamy.github.io/ui/r/state-diagram-simulation.json",
-        "https://blamy.github.io/ui/r/switch.json",
-        "https://blamy.github.io/ui/r/text-field.json",
-        "https://blamy.github.io/ui/r/utils.json"
+        "https://blamy.github.io/ui/r/switch.json"
       ],
       "files": [
         {
@@ -8055,6 +8108,25 @@
           "path": "packages/ui/src/lib/cloudflare-catalog.ts",
           "type": "registry:lib",
           "target": "lib/cloudflare-catalog.ts"
+        }
+      ]
+    },
+    {
+      "name": "cloudflare-services",
+      "type": "registry:lib",
+      "title": "Cloudflare Services",
+      "description": "Cloudflare Services — part of BL UI's library (lib/cloudflare-services.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/cloudflare-catalog.json",
+        "https://blamy.github.io/ui/r/diagram-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cloudflare-services.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-services.ts"
         }
       ]
     },

@@ -48,13 +48,38 @@ describe('toElkGraph', () => {
     expect(g.edges!.map((e) => e.id)).toEqual(['ok']);
   });
 
+  it('puts a node’s ports where they’re drawn, and leaves those of what holds others for ELK to place', () => {
+    const fixed = toElkGraph({ nodes: [{ id: 'a', w: 100, h: 50, ports: [
+      { id: 'l', side: 'l', at: 0.2 }, { id: 'r', side: 'r', at: 0.8 }, { id: 't', side: 't', at: 0.25 }, { id: 'b', side: 'b' },
+    ] }] });
+    const node = fixed.children![0];
+    expect(node.layoutOptions!['elk.portConstraints']).toBe('FIXED_POS');
+    expect(node.ports!.map((p) => [p.x, p.y])).toEqual([[0, 10], [100, 40], [25, 0], [50, 50]]);
+    const holding = toElkGraph({ nodes: [{ id: 'c', kind: 'compound', ports: [{ id: 'in', side: 'l' }] }, { id: 'kid', parent: 'c' }] });
+    const compound = holding.children![0];
+    expect(compound.layoutOptions!['elk.portConstraints']).toBe('FIXED_SIDE');
+    expect(compound.ports![0].x).toBeUndefined();
+  });
+
+  it('reads back where ELK put a port it was left to place, and leaves one that had a place alone', () => {
+    const draft = { nodes: [
+      { id: 'c', kind: 'compound' as const, ports: [{ id: 'in', side: 'l' as const }, { id: 'out', side: 'r' as const, at: 0.25 }] },
+      { id: 'kid', parent: 'c' },
+    ] };
+    const graph = toElkGraph(draft);
+    const out = JSON.parse(JSON.stringify(graph));
+    out.children[0] = { ...out.children[0], x: 0, y: 0, width: 200, height: 100, children: [{ ...out.children[0].children[0], x: 10, y: 10, width: 50, height: 20 }] };
+    out.children[0].ports[0] = { ...out.children[0].ports[0], x: 0, y: 40 };
+    const { nodes } = fromElkGraph(draft, out);
+    expect(nodes.find((n) => n.id === 'c')!.ports).toEqual([{ id: 'in', side: 'l', at: 0.4 }, { id: 'out', side: 'r', at: 0.25 }]);
+  });
+
   it('passes ports on, by side', () => {
     const g = toElkGraph({
       nodes: [{ id: 'a', ports: [{ id: 'out', side: 'r' }, { id: 'up', side: 't' }] }, { id: 'b', ports: [{ id: 'in', side: 'l' }] }],
       edges: [{ id: 'e', from: 'a', fromPort: 'out', to: 'b', toPort: 'in' }, { id: 'f', from: 'a', fromPort: 'nope', to: 'b' }],
     });
     const a = g.children![0];
-    expect(a.layoutOptions!['elk.portConstraints']).toBe('FIXED_SIDE');
     expect(a.ports!.map((p) => p.layoutOptions!['elk.port.side'])).toEqual(['EAST', 'NORTH']);
     expect(g.edges![0].sources[0]).toBe(a.ports![0].id);
     expect(g.edges![0].targets[0]).toBe(g.children![1].ports![0].id);
