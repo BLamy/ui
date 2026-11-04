@@ -1212,3 +1212,245 @@ test.describe('StateDiagram', () => {
     await expect.poll(() => page.locator('[data-slot=diagram-node]').count()).toBeGreaterThan(3);
   });
 });
+
+test.describe('StateDiagram simulates', () => {
+  const lit = (page) => page.locator('[data-slot=diagram-lit]').evaluateAll((els) => els.map((el) => el.getAttribute('data-lit-of')).sort());
+  const offered = (page) => page.locator('[data-slot=simulation-event]').evaluateAll((els) => els.map((el) => el.getAttribute('data-event')).sort());
+  const event = (page, name) => page.locator(`[data-slot=simulation-event][data-event="${name}"]`);
+  const finish = (page, name) => page.locator('[data-slot=simulation-finish]').filter({ hasText: name });
+  const log = (page) => page.locator('[data-slot=simulation-log-entry] .font-semibold').allTextContents();
+  const now = (page) => page.locator('[data-slot=simulation-now]');
+  const awkward = async (page, name) => {
+    await page.goto('/?demo=state-diagram/simulate-awkward&theme=light', { waitUntil: 'load' });
+    await page.getByRole('button', { name }).click();
+    await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible({ timeout: 30_000 });
+  };
+
+  test('runs the spike’s whole machine with the buttons, lit at each step, with parallel regions lit together', async ({ page }) => {
+    await page.goto('/?demo=state-diagram/simulate&theme=light', { waitUntil: 'load' });
+    await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible({ timeout: 30_000 });
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(40);
+    await expect(now(page)).toHaveText('authenticating');
+    expect(await lit(page)).toEqual(['upload.worker', 'upload.worker.authenticating']);
+    // What's lit says so to a screen reader too, and what isn't doesn't.
+    await expect(page.locator('[aria-current=true]')).toHaveCount(2);
+    await expect(page.locator('[data-node="upload.worker.authenticating"]')).toHaveAttribute('aria-current', 'true');
+    await expect(page.locator('[data-node="upload.worker.streaming"]')).not.toHaveAttribute('aria-current', 'true');
+    // Through checkingQuota's always, on its own, with both edges lit.
+    await finish(page, 'verifyToken: done').click();
+    await expect(now(page)).toHaveText('streaming');
+    await expect(page.locator('[data-slot=diagram-edge][data-lit]')).toHaveCount(2);
+    await expect(page.locator('[data-edge="upload.worker.checkingQuota:always->upload.worker.streaming"][data-slot=diagram-edge]')).toHaveAttribute('data-lit', 'true');
+    expect(await offered(page)).toEqual(['CANCEL', 'CHUNK', 'EOF', 'HEARTBEAT'].sort());
+    await event(page, 'CHUNK').click();
+    await expect(page.locator('[data-slot=diagram-edge][data-lit]')).toHaveCount(1);
+    await event(page, 'EOF').click();
+    await expect(now(page)).toHaveText('committing');
+    await finish(page, 'putObject: done').click();
+    await expect(now(page)).toHaveText('waiting');
+    await event(page, 'R2_EVENT').click();
+    await finish(page, 'pullMessage: done').click();
+    await expect(now(page)).toHaveText('scanning, resizing, inserting');
+    expect(await lit(page)).toEqual([
+      'upload.processing', 'upload.processing.metadata', 'upload.processing.metadata.inserting', 'upload.processing.scan', 'upload.processing.scan.scanning', 'upload.processing.thumbnails', 'upload.processing.thumbnails.resizing',
+    ].sort());
+    // Each lit where its node is.
+    for (const id of ['upload.processing.scan.scanning', 'upload.processing.metadata']) {
+      const [a, b] = await Promise.all([page.locator(`[data-lit-of="${id}"]`).boundingBox(), page.locator(`[data-node="${id}"]`).boundingBox()]);
+      expect(a).toEqual(b);
+    }
+    await finish(page, 'scanObject: done').click();
+    await finish(page, 'makeThumbnails: done').click();
+    await finish(page, 'insertRow: done').click();
+    await expect(now(page)).toHaveText('broadcasting');
+    await finish(page, 'broadcast: done').click();
+    await expect(now(page)).toHaveText('done (finished)');
+    expect(await offered(page)).toEqual([]);
+    await expect(page.locator('[data-slot=simulation-finish]')).toHaveCount(0);
+    expect(await log(page)).toEqual(['Started', 'verifyToken: done', 'CHUNK', 'EOF', 'putObject: done', 'R2_EVENT', 'pullMessage: done', 'scanObject: done', 'makeThumbnails: done', 'insertRow: done', 'broadcast: done']);
+    // In order for a screen reader, with the newest at the top to look at.
+    const entries = page.locator('[data-slot=simulation-log-entry]');
+    expect((await entries.last().boundingBox()).y).toBeLessThan((await entries.first().boundingBox()).y);
+    // Reset starts over, with nothing left of the run.
+    await page.locator('[data-slot=simulation-reset]').click();
+    await expect(now(page)).toHaveText('authenticating');
+    expect(await log(page)).toEqual(['Started']);
+    await expect(page.locator('[data-slot=diagram-edge][data-lit]')).toHaveCount(0);
+  });
+
+  test('only offers what it can take, as its guards answer', async ({ page }) => {
+    await page.goto('/?demo=state-diagram/simulate&theme=light', { waitUntil: 'load' });
+    await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible({ timeout: 30_000 });
+    expect(await offered(page)).toEqual(['CANCEL']);
+    // withinQuota says no, so the always goes the other way, to rejected.
+    await page.locator('[data-guard=withinQuota] [data-slot=switch]').click();
+    await finish(page, 'verifyToken: done').click();
+    await expect(now(page)).toHaveText('rejected (finished)');
+    await expect(page.locator('[data-lit-of="upload.rejected"]')).toHaveCount(1);
+    // The answer lasts through a Reset, to try the other way again.
+    await page.locator('[data-slot=simulation-reset]').click();
+    await expect(page.getByRole('switch', { name: 'withinQuota answers yes' })).not.toBeChecked();
+  });
+
+  test('steps through timers, and runs them', async ({ page }) => {
+    await page.goto('/?demo=state-diagram/simulate&theme=light', { waitUntil: 'load' });
+    await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-slot=simulation-next]')).toBeDisabled();
+    await finish(page, 'verifyToken: done').click();
+    const time = page.locator('[data-slot=simulation-time]');
+    await expect(time).toHaveText('0 ms, next at 30,000 ms');
+    // Nothing moves on its own.
+    await page.waitForTimeout(250);
+    await expect(time).toHaveText('0 ms, next at 30,000 ms');
+    await expect(now(page)).toHaveText('streaming');
+    await page.locator('[data-slot=simulation-next]').click();
+    await expect(now(page)).toHaveText('rejected (finished)');
+    await expect(time).toHaveText('30,000 ms, nothing waiting');
+    expect((await log(page)).at(-1)).toBe('after IDLE_TIMEOUT');
+    await expect(page.locator('[data-slot=simulation-log-entry]').last()).toContainText('at 30,000 ms, in rejected');
+
+    // Running: time goes by as it does, until it's paused.
+    await page.locator('[data-slot=simulation-reset]').click();
+    await finish(page, 'verifyToken: done').click();
+    await page.locator('[data-slot=simulation-run]').click();
+    await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+    await expect.poll(async () => parseInt((await time.textContent()).replace(',', ''), 10), { timeout: 5_000 }).toBeGreaterThan(150);
+    await page.getByRole('button', { name: 'Pause' }).click();
+    await expect(page.getByRole('button', { name: 'Run' })).toBeVisible();
+    const paused = await time.textContent();
+    await page.waitForTimeout(300);
+    await expect(time).toHaveText(paused);
+
+    await awkward(page, 'One with a short timer');
+    await expect(now(page)).toHaveText('green');
+    await page.locator('[data-slot=simulation-run]').click();
+    await expect(now(page)).toHaveText('red', { timeout: 5_000 });
+    // Each at the time it was due, however often the page got to look.
+    await expect(page.locator('[data-slot=simulation-log-entry]')).toHaveText(['Started at 0 ms, in green', 'after 400 at 400 ms, in amber', 'after 400 at 800 ms, in red']);
+    // With nothing left to wait for, it stops on its own.
+    await expect(page.locator('[data-slot=simulation-run]')).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Run' })).toBeVisible();
+    const after = await page.locator('[data-slot=simulation-time]').textContent();
+    await page.waitForTimeout(250);
+    await expect(page.locator('[data-slot=simulation-time]')).toHaveText(after);
+    // And pausing means it.
+    await event(page, 'RESET').click();
+    await expect(now(page)).toHaveText('green');
+    await page.locator('[data-slot=simulation-run]').click();
+    await page.locator('[data-slot=simulation-run]').click();
+    await expect(page.getByRole('button', { name: 'Run' })).toBeVisible();
+    await page.waitForTimeout(600);
+    await expect(now(page)).toHaveText('green');
+  });
+
+  test('an invoke with nothing behind it waits, and you say how it finished', async ({ page }) => {
+    await awkward(page, 'An invoke with nothing behind it');
+    await event(page, 'LOAD').click();
+    await expect(now(page)).toHaveText('loading');
+    await expect(page.locator('[data-slot=simulation-error]')).toHaveCount(0);
+    await expect(page.locator('[data-slot=simulation-finish]')).toHaveCount(2);
+    await finish(page, 'fetchThings: error').click();
+    await expect(now(page)).toHaveText('failed');
+    await event(page, 'LOAD').click();
+    await finish(page, 'fetchThings: done').click();
+    await expect(now(page)).toHaveText('loaded (finished)');
+  });
+
+  test('a machine that never settles is stopped, and says so, and the page goes on', async ({ page }) => {
+    await awkward(page, 'One that never settles');
+    await event(page, 'GO').click();
+    const error = page.locator('[data-slot=simulation-error]');
+    await expect(error).toContainText('never settles');
+    await expect(error).toHaveAttribute('role', 'alert');
+    expect(await offered(page)).toEqual([]);
+    // Nothing thrown at the page, and it still answers.
+    await page.locator('[data-slot=simulation-reset]').click();
+    await expect(error).toHaveCount(0);
+    await expect(now(page)).toHaveText('still');
+
+    await awkward(page, 'One that goes round on timers');
+    await page.locator('[data-slot=simulation-next]').click();
+    await expect(now(page)).toHaveText('off');
+    await page.locator('[data-slot=simulation-run]').click();
+    await expect(page.locator('[data-slot=simulation-error]')).toContainText('never settles', { timeout: 10_000 });
+    await expect(page.locator('[data-slot=simulation-run]')).toBeDisabled();
+  });
+
+  test('nothing moves with reduced motion, and it all still works', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/?demo=state-diagram/simulate&theme=light', { waitUntil: 'load' });
+    await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible({ timeout: 30_000 });
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(40);
+    const moving = () => page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running' && a.effect?.getTiming().duration > 0).map((a) => a.animationName ?? a.transitionProperty ?? a.constructor.name));
+    await finish(page, 'verifyToken: done').click();
+    await expect(now(page)).toHaveText('streaming');
+    expect(await moving()).toEqual([]);
+    await event(page, 'EOF').click();
+    await expect(now(page)).toHaveText('committing');
+    expect(await moving()).toEqual([]);
+  });
+
+  test('the phone: a tray, with the board still there to watch', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 780 });
+    await page.goto('/?demo=state-diagram/simulate&theme=light', { waitUntil: 'load' });
+    const bar = page.locator('[data-slot=simulation-bar]');
+    await expect(bar).toBeVisible({ timeout: 30_000 });
+    await expect(bar).toContainText('authenticating');
+    await expect.poll(() => page.locator('[data-slot=diagram-lit]').count(), { timeout: 30_000 }).toBe(2);
+    // It isn't in the way until it's asked for.
+    await expect(page.locator('[data-slot=simulation-panel]')).toHaveCount(0);
+    await page.locator('[data-slot=simulation-open]').click();
+    const tray = page.locator('[data-slot=credenza]');
+    await expect(tray).toBeVisible();
+    // It stays within the window, and scrolls inside itself.
+    const box = await tray.boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+    await expect.poll(async () => (await tray.boundingBox()).y).toBeGreaterThan(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+    const scroller = page.locator('[data-slot=simulation-tray]');
+    expect(await scroller.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    // It stays open while it's used, with the board changing above it, and none of the board under the tray or its shade.
+    await finish(page, 'verifyToken: done').click();
+    await expect(now(page)).toHaveText('streaming');
+    await expect(tray).toBeVisible();
+    const litNode = page.locator('[data-lit-of="upload.worker.streaming"]');
+    await expect(litNode).toHaveCount(1);
+    await expect.poll(async () => {
+      const [node, sheet, under] = await Promise.all([litNode.boundingBox(), tray.boundingBox(), page.locator('[data-slot=simulation-tray-host]').boundingBox()]);
+      return node.y >= 0 && node.y + node.height <= sheet.y && node.y + node.height <= under.y;
+    }).toBe(true);
+    const board = await page.locator('[data-slot=canvas]').boundingBox();
+    const trayHost = await page.locator('[data-slot=simulation-tray-host]').boundingBox();
+    expect(board.y + board.height).toBeLessThanOrEqual(trayHost.y + 0.5);
+    // And closes, back to the bar, with what it's in now.
+    await page.getByRole('button', { name: 'Close' }).click();
+    await expect(page.locator('[data-slot=simulation-panel]')).toHaveCount(0);
+    await expect(bar).toContainText('streaming');
+    await expect(page.locator('[data-slot=simulation-open]')).toBeFocused();
+  });
+
+  test('the panel can go away and come back, and the keys work it', async ({ page }) => {
+    await page.goto('/?demo=state-diagram/simulate&theme=light', { waitUntil: 'load' });
+    await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible({ timeout: 30_000 });
+    await page.locator('[data-slot=side-drawer]').getByRole('button', { name: 'Close Simulation' }).click();
+    const open = page.locator('[data-slot=simulation-open]');
+    await expect(open).toBeVisible();
+    await expect(page.locator('[data-slot=side-drawer]')).toHaveCount(0);
+    await open.click();
+    await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible();
+    await expect(open).toHaveCount(0);
+    // Focus goes with it, each way, and never into something hidden.
+    await expect(page.locator('[data-slot=simulation-panel]')).toBeFocused();
+    await page.getByRole('button', { name: 'Close Simulation' }).press('Enter');
+    await expect(open).toBeFocused();
+    await expect(page.locator('[data-slot=side-drawer]')).toHaveCount(0);
+    await open.press('Enter');
+    await expect(page.locator('[data-slot=simulation-panel]')).toBeFocused();
+    // The run goes on through that.
+    const done = finish(page, 'verifyToken: done');
+    await done.focus();
+    await page.keyboard.press('Enter');
+    await expect(now(page)).toHaveText('streaming');
+  });
+});

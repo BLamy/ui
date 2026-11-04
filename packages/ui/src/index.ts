@@ -43,8 +43,10 @@ export { DRAG_THRESHOLD, EDGE_HIT_DISTANCE, PORT_HIT_DISTANCE, SNAP_DISTANCE, SN
 export type { DiagramConnectionEnd, DiagramGesture, DiagramGestureContext, DiagramGestureEvent, DiagramGestureStep, DiagramHit } from './lib/diagram-gesture';
 export { cameraToShow, describeEdge, describeNode, edgesByNode, focusOrder, nearestNode, nodeInDirection, stepFocus } from './lib/diagram-keyboard';
 export type { DiagramFocus, DiagramFocusContext, DiagramFocusStep } from './lib/diagram-keyboard';
-export { describeEvent, machineToDraft } from './lib/state-diagram-model';
+export { describeEvent, machineEdgeIds, machineToDraft } from './lib/state-diagram-model';
 export type { MachineLike, MachineStateNode, MachineTransition, StateEdgeData, StateNodeData } from './lib/state-diagram-model';
+export { SETTLE_LIMIT, SimulationClock, TIMER_LIMIT, activeLeaves, activeStateIds, createSimulation, standInConfig } from './lib/state-diagram-simulation';
+export type { MachineNames, Simulation, SimulationFinish, SimulationLogEntry, SimulationStandIns, SimulationState } from './lib/state-diagram-simulation';
 export { StateDiagram } from './components/state-diagram';
 export type { StateDiagramProps } from './components/state-diagram';
 export { Diagram, DiagramNodeBody, diagramEdgeVariants, diagramNodeVariants } from './components/diagram';

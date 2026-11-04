@@ -80,8 +80,8 @@ const once = <A extends string>(make: (key: A) => string) => {
   };
 };
 const edgeClass = once((key: string) => {
-  const [look, selected] = key.split(':');
-  return cn(diagramEdgeVariants({ kind: look as EdgeLook }), selected && 'stroke-primary', 'outline-none focus-visible:stroke-ring focus-visible:[stroke-width:calc(3px/var(--diagram-z))]');
+  const [look, selected, lit] = key.split(':');
+  return cn(diagramEdgeVariants({ kind: look as EdgeLook }), selected && 'stroke-primary', lit && 'stroke-primary [stroke-width:calc(2.5px/var(--diagram-z))]', 'outline-none focus-visible:stroke-ring focus-visible:[stroke-width:calc(3px/var(--diagram-z))]');
 });
 const nodeBodyClass = once((kind: NonNullable<DiagramNode['kind']>) => diagramNodeVariants({ kind }));
 
@@ -134,6 +134,7 @@ interface NodeViewProps {
   selected?: boolean;
   /** Whether being selected is something it can be, so that a screen reader says if it is. */
   selectable?: boolean;
+  lit?: boolean;
   label: string;
   renderNode?: (node: DiagramNode<any>) => ReactNode;
 }
@@ -144,9 +145,12 @@ interface NodeViewProps {
  *  and with all the nodes under it, that was 79 ms a frame while zooming, at 2,000 nodes. */
 const RING_SELECTED = '[box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--background),0_0_0_calc(3.6px/var(--diagram-z))_var(--primary)]';
 const RING_FOCUSED = '[box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--background),0_0_0_calc(4px/var(--diagram-z))_var(--ring)]';
+/** What's lit: a tint over it and a line around it, or only a thinner line for something that holds others. */
+const LIT_LEAF = 'bg-primary/15 [box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--primary)]';
+const LIT_CONTAINER = '[box-shadow:0_0_0_calc(1.5px/var(--diagram-z))_var(--primary)]';
 const nodeRadius = (n: DiagramNode<any>) => (isContainer(n) ? 'rounded-card' : n.kind === 'initial' ? 'rounded-full' : 'rounded-ctl');
 
-const NodeView = memo(function NodeView({ node, selected, selectable, label, renderNode }: NodeViewProps) {
+const NodeView = memo(function NodeView({ node, selected, selectable, lit, label, renderNode }: NodeViewProps) {
   return (
     <div
       data-slot="diagram-node"
@@ -158,6 +162,7 @@ const NodeView = memo(function NodeView({ node, selected, selectable, label, ren
       tabIndex={-1}
       aria-label={label}
       aria-pressed={selectable ? !!selected : undefined}
+      aria-current={lit || undefined}
       className={nodeWrapClass(nodeRadius(node))}
       style={{ left: node.x, top: node.y, width: node.w, height: node.h }}
     >
@@ -168,7 +173,7 @@ const NodeView = memo(function NodeView({ node, selected, selectable, label, ren
 
 /* ── An edge ── */
 
-const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, label }: { edge: DiagramEdge<unknown>; d: string; arrow: string; selected?: boolean; selectable?: boolean; label: string }) {
+const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, lit, label }: { edge: DiagramEdge<unknown>; d: string; arrow: string; selected?: boolean; selectable?: boolean; lit?: boolean; label: string }) {
   const look = edgeLook(edge.kind);
   return (
     <path
@@ -176,13 +181,14 @@ const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, 
       data-edge={edge.id}
       data-kind={edge.kind ?? 'event'}
       data-selected={selected || undefined}
+      data-lit={lit || undefined}
       role="button"
       tabIndex={-1}
       aria-label={label}
       aria-pressed={selectable ? !!selected : undefined}
       d={d}
-      markerEnd={`url(#${arrow}${selected ? '-selected' : look === 'initial' ? '-strong' : ''})`}
-      className={edgeClass(`${look}:${selected ? '1' : ''}`)}
+      markerEnd={`url(#${arrow}${selected || lit ? '-selected' : look === 'initial' ? '-strong' : ''})`}
+      className={edgeClass(`${look}:${selected ? '1' : ''}:${lit ? '1' : ''}`)}
     />
   );
 });
@@ -324,6 +330,9 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   editable?: boolean;
   selection?: DiagramSelection;
   defaultSelection?: DiagramSelection;
+  /** What to pick out, apart from what's selected: where a machine is, and how it got there. Each lit node says so to a screen
+   *  reader, with `aria-current`. */
+  lit?: DiagramSelection;
   onSelectionChange?: (selection: DiagramSelection) => void;
   /** Let the pointer and the keys draw connections, and move an edge's ends. On when `editable` is. */
   connectable?: boolean;
@@ -387,7 +396,7 @@ function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly Dia
 /** A diagram on a `Canvas`. Sits in its host like any BL UI container: it fills the nearest positioned box. */
 export function Diagram<N = unknown, E = unknown>({
   nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onChange, selectable: selectableProp, editable = false, connectable: connectableProp,
-  isValidConnection, createEdge, selection: selectionProp, defaultSelection = NOTHING_SELECTED, onSelectionChange, onActivate, noun, describeNode: nodeLabel, describeEdge: edgeLabel,
+  isValidConnection, createEdge, selection: selectionProp, defaultSelection = NOTHING_SELECTED, lit = NOTHING_SELECTED, onSelectionChange, onActivate, noun, describeNode: nodeLabel, describeEdge: edgeLabel,
   camera: controlled, defaultCamera, onCameraChange, fitPadding = 24, autoSize, cull, minimap, renderNode,
   background, panning, cursor, autoFocus, 'aria-label': ariaLabel = 'Diagram', overlay, children, className, style,
 }: DiagramProps<N, E>) {
@@ -431,6 +440,7 @@ export function Diagram<N = unknown, E = unknown>({
   const onSelectionChangeRef = useRef(onSelectionChange);
   onSelectionChangeRef.current = onSelectionChange;
   const selectedSets = useMemo(() => ({ nodes: new Set(selection.nodes), edges: new Set(selection.edges) }), [selection]);
+  const litSets = useMemo(() => ({ nodes: new Set(lit.nodes), edges: new Set(lit.edges) }), [lit]);
 
   /* ── Changes, and undoing them. A controlled parent may refuse, so history only moves once the data really has. ── */
   const history = useRef<{ past: Snapshot<N, E>[]; future: Snapshot<N, E>[] }>({ past: [], future: [] });
@@ -772,14 +782,14 @@ export function Diagram<N = unknown, E = unknown>({
   const drawn = useMemo(() => (drawWindow ? within(laid, drawWindow, kept) : laid), [laid, drawWindow, kept]);
   // Each kept in a memo, so a camera that only moves changes none of them, and what depends on the zoom is one attribute.
   const nodeView = (n: DiagramNode<any>) => (
-    <NodeView key={n.id} node={n} selected={selectedSets.nodes.has(n.id)} selectable={selectable} renderNode={renderNode as NodeViewProps['renderNode']} label={(nodeLabel as DiagramProps<any, any>['describeNode'])?.(n) ?? describeNode(n, laid.index, laid.edgesAt.get(n.id), noun)} />
+    <NodeView key={n.id} node={n} selected={selectedSets.nodes.has(n.id)} selectable={selectable} lit={litSets.nodes.has(n.id)} renderNode={renderNode as NodeViewProps['renderNode']} label={(nodeLabel as DiagramProps<any, any>['describeNode'])?.(n) ?? describeNode(n, laid.index, laid.edgesAt.get(n.id), noun)} />
   );
   const containers = useMemo(() => drawn.containers.map(nodeView),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [drawn.containers, selectedSets.nodes, selectable, renderNode, nodeLabel, noun, laid.edgesAt]);
+    [drawn.containers, selectedSets.nodes, litSets.nodes, selectable, renderNode, nodeLabel, noun, laid.edgesAt]);
   const leaves = useMemo(() => drawn.leaves.map(nodeView),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [drawn.leaves, selectedSets.nodes, selectable, renderNode, nodeLabel, noun, laid.edgesAt]);
+    [drawn.leaves, selectedSets.nodes, litSets.nodes, selectable, renderNode, nodeLabel, noun, laid.edgesAt]);
   const lines = useMemo(() => (
     <>
       <defs>
@@ -796,13 +806,25 @@ export function Diagram<N = unknown, E = unknown>({
           className="stroke-border [stroke-dasharray:calc(6px/var(--diagram-z))_calc(4px/var(--diagram-z))] [stroke-width:calc(1px/var(--diagram-z))]"
         />
       ))}
-      {drawn.edges.map(({ edge, geometry }) => <EdgeView key={edge.id} edge={edge} d={geometry.d} arrow={arrow} selected={selectedSets.edges.has(edge.id)} selectable={selectable} label={(edgeLabel as DiagramProps<any, any>['describeEdge'])?.(edge) ?? describeEdge(edge, laid.index)} />)}
+      {drawn.edges.map(({ edge, geometry }) => <EdgeView key={edge.id} edge={edge} d={geometry.d} arrow={arrow} selected={selectedSets.edges.has(edge.id)} selectable={selectable} lit={litSets.edges.has(edge.id)} label={(edgeLabel as DiagramProps<any, any>['describeEdge'])?.(edge) ?? describeEdge(edge, laid.index)} />)}
     </>
-  ), [drawn.dividers, drawn.edges, arrow, selectedSets.edges, selectable, edgeLabel, laid.index]);
+  ), [drawn.dividers, drawn.edges, arrow, selectedSets.edges, litSets.edges, selectable, edgeLabel, laid.index]);
   const labelViews = useMemo(() => drawn.labels.map(({ edge, box }) => <EdgeLabel key={edge.id} edge={edge} box={box} />), [drawn.labels]);
   const rings = useMemo(() => {
-    const ringed = drawn.containers.concat(drawn.leaves).filter((n) => selectedSets.nodes.has(n.id) || (ringOn?.kind === 'node' && ringOn.id === n.id));
-    return ringed.map((n) => (
+    const all = drawn.containers.concat(drawn.leaves);
+    // Lit first, so that a selection's line goes over it.
+    const litUp = all.filter((n) => litSets.nodes.has(n.id)).map((n) => (
+      <span
+        key={`lit:${n.id}`}
+        data-slot="diagram-lit"
+        data-lit-of={n.id}
+        aria-hidden="true"
+        className={cn('absolute', nodeRadius(n), isContainer(n) ? LIT_CONTAINER : LIT_LEAF)}
+        style={{ left: n.x, top: n.y, width: n.w, height: n.h }}
+      />
+    ));
+    const ringed = all.filter((n) => selectedSets.nodes.has(n.id) || (ringOn?.kind === 'node' && ringOn.id === n.id));
+    return litUp.concat(ringed.map((n) => (
       <span
         key={n.id}
         data-slot="diagram-ring"
@@ -812,8 +834,8 @@ export function Diagram<N = unknown, E = unknown>({
         className={cn('absolute', nodeRadius(n), ringOn?.kind === 'node' && ringOn.id === n.id ? RING_FOCUSED : RING_SELECTED)}
         style={{ left: n.x, top: n.y, width: n.w, height: n.h }}
       />
-    ));
-  }, [drawn.containers, drawn.leaves, selectedSets.nodes, ringOn]);
+    )));
+  }, [drawn.containers, drawn.leaves, selectedSets.nodes, litSets.nodes, ringOn]);
   const marks = useMemo<CanvasMiniMapItem[]>(() => (minimap ? nodes.filter((n) => n.kind !== 'root').map((n) => ({ id: n.id, x: n.x, y: n.y, w: n.w, h: n.h })) : []), [minimap, nodes]);
   const zoom = camera.z < NODE_TEXT_ZOOM ? 'far' : camera.z < EDGE_LABEL_ZOOM ? 'mid' : 'near';
   // Changing this restyles every line drawn, so it moves in steps of about 9%, a few frames apart, which keeps a line of

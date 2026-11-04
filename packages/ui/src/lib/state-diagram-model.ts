@@ -30,6 +30,9 @@ export interface MachineTransition {
 /** A machine, or anything with its resolved graph. */
 export interface MachineLike {
   root: MachineStateNode;
+  /** What it was made from, which is what's simulated and edited. */
+  config?: unknown;
+  implementations?: { delays?: Readonly<Record<string, unknown>> };
 }
 
 /** What a state's edge stands for, for simulating and editing. */
@@ -74,7 +77,7 @@ const label = (name: string, guard: string | undefined) => (guard ? `${name} [${
 /** A machine as a draft for `useDiagramLayout`: a node for each state and each initial marker, and an edge for each way out,
  *  including `always`, `after`, `invoke` and transitions that stay where they are. Ids follow the machine's, and stay the
  *  same each time, so a state can be found again. */
-export function machineToDraft(machine: MachineLike): DiagramDraft<StateNodeData, StateEdgeData> {
+export function machineToDraft(machine: MachineLike, onEdge?: (transition: MachineTransition, edgeId: string) => void): DiagramDraft<StateNodeData, StateEdgeData> {
   const nodes: DiagramDraftNode<StateNodeData>[] = [];
   const edges: DiagramEdge<StateEdgeData>[] = [];
   const used = new Map<string, number>();
@@ -103,18 +106,34 @@ export function machineToDraft(machine: MachineLike): DiagramDraft<StateNodeData
         const guard = guardName(t.guard);
         const internal = !t.target?.length;
         for (const to of internal ? [n] : t.target!) {
-          edges.push({ id: edgeId(`${n.id}:${event}->${to.id}`), from: n.id, to: to.id, kind: edgeKind, label: label(name, guard), data: { event, ...(guard ? { guard } : null), ...(internal ? { internal } : null) } });
+          const id = edgeId(`${n.id}:${event}->${to.id}`);
+          edges.push({ id, from: n.id, to: to.id, kind: edgeKind, label: label(name, guard), data: { event, ...(guard ? { guard } : null), ...(internal ? { internal } : null) } });
+          onEdge?.(t, id);
         }
       }
     }
     for (const t of n.always ?? []) {
       const guard = guardName(t.guard);
       for (const to of t.target?.length ? t.target : [n]) {
-        edges.push({ id: edgeId(`${n.id}:always->${to.id}`), from: n.id, to: to.id, kind: 'always', label: label('always', guard), data: { ...(guard ? { guard } : null) } });
+        const id = edgeId(`${n.id}:always->${to.id}`);
+        edges.push({ id, from: n.id, to: to.id, kind: 'always', label: label('always', guard), data: { ...(guard ? { guard } : null) } });
+        onEdge?.(t, id);
       }
     }
     for (const k of kids) walk(k, n.id);
   };
   walk(machine.root, null);
   return { nodes, edges };
+}
+
+/** Which edges each of a machine's transitions is drawn as, by the ids `machineToDraft` gives them. A transition with two
+ *  targets is two edges. */
+export function machineEdgeIds(machine: MachineLike): Map<MachineTransition, string[]> {
+  const out = new Map<MachineTransition, string[]>();
+  machineToDraft(machine, (transition, id) => {
+    const ids = out.get(transition);
+    if (ids) ids.push(id);
+    else out.set(transition, [id]);
+  });
+  return out;
 }

@@ -61,3 +61,39 @@ export const History: Story = {
 export const Invalid: Story = {
   render: () => <Phone w={700} h={240}><StateDiagram config={{ id: 'door', initial: 'closed', states: { closed: { on: { OPEN: 'nowhere' } } } }} /></Phone>,
 };
+
+/** Running, with stand-ins for all it names: where it is is lit, and the panel has what it can do next. */
+export const Simulating: Story = {
+  render: () => <Phone w={1360} h={560}><StateDiagram machine={uploadMachine as never} simulate aria-label="File upload" /></Phone>,
+};
+
+export const SimulatingDark: Story = {
+  render: () => <Phone w={1360} h={560} dark><StateDiagram machine={uploadMachine as never} simulate aria-label="File upload" /></Phone>,
+};
+
+const IN_PROCESSING = { ...(uploadMachine as unknown as { config: object }).config, initial: 'processing' };
+
+/** In a parallel state, it's in one state of each region, all lit at once. */
+export const SimulatingRegions: Story = {
+  render: () => <Phone w={1360} h={560}><StateDiagram config={IN_PROCESSING} simulate aria-label="File upload" /></Phone>,
+};
+
+/** At a phone's size, the panel's out of the way until it's asked for. */
+export const SimulatingPhone: Story = {
+  render: () => <Phone w={390} h={700}><StateDiagram config={DOOR} direction="DOWN" simulate /></Phone>,
+};
+
+export const SimulatingPhoneTray: Story = {
+  render: () => <Phone w={390} h={700}><StateDiagram config={DOOR} direction="DOWN" simulate defaultPanelOpen /></Phone>,
+};
+
+export const SimulatingPhoneTrayDark: Story = {
+  render: () => <Phone w={390} h={700} dark><StateDiagram config={DOOR} direction="DOWN" simulate defaultPanelOpen /></Phone>,
+};
+
+const SPIN = { id: 'spin', initial: 'tick', states: { tick: { always: 'tock' }, tock: { always: 'tick' } } };
+
+/** A machine that would hang the page is stopped, and says why. */
+export const NeverSettles: Story = {
+  render: () => <Phone w={900} h={360}><StateDiagram config={SPIN} simulate /></Phone>,
+};

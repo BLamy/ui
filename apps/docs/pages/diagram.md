@@ -211,6 +211,7 @@ The view is where it matters: the smallest zoom is 2%, so a board this size does
 | `isValidConnection` | `checkConnection` | True, false or the reason. |
 | `createEdge` | an id and its ends | The edge for a new connection. |
 | `selection`, `defaultSelection`, `onSelectionChange` | nothing | What's selected, as `{ nodes, edges }`. |
+| `lit` | nothing | What to pick out apart from that, as `{ nodes, edges }`: where a machine is, and how it got there. A lit node has `aria-current`. |
 | `onActivate` | — | Enter on what's focused, or a double click. |
 | `autoSize` | `false` | Size each node to its words, around its center. |
 | `cull` | above 200 | Draw only what's near the view. |
@@ -225,7 +226,7 @@ The view is where it matters: the smallest zoom is 2%, so a board this size does
 | `aria-label` | "Diagram" | The region's name. |
 | `className`, `style` | — | Merged onto the root. |
 
-The root carries `data-slot="diagram"`, with `diagram-layer`, `diagram-node`, `diagram-node-body`, `diagram-node-label`, `diagram-node-detail`, `diagram-edges`, `diagram-edge`, `diagram-edge-label`, `diagram-divider`, `diagram-port`, `diagram-edge-end`, `diagram-ring`, `diagram-connection`, `diagram-connection-target` and `diagram-status` under it. A node also has `data-node` and `data-kind`, and an edge `data-edge` and `data-kind`.
+The root carries `data-slot="diagram"`, with `diagram-layer`, `diagram-node`, `diagram-node-body`, `diagram-node-label`, `diagram-node-detail`, `diagram-edges`, `diagram-edge`, `diagram-edge-label`, `diagram-divider`, `diagram-port`, `diagram-edge-end`, `diagram-ring`, `diagram-lit`, `diagram-connection`, `diagram-connection-target` and `diagram-status` under it. A node also has `data-node` and `data-kind`, and an edge `data-edge` and `data-kind`.
 
 ### `useDiagramLayout(draft, options)`
 
