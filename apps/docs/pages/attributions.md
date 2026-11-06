@@ -17,6 +17,7 @@ Most of these are MIT, ISC, BSD or Apache-2.0. Two need a closer look before you
 | [class-variance-authority](https://cva.style) | Variant recipes | Apache-2.0 |
 | [clsx](https://github.com/lukeed/clsx) and [tailwind-merge](https://github.com/dcastil/tailwind-merge) | Class names (`cn`) | MIT |
 | [Motion](https://motion.dev) (`framer-motion`) | Springs, layout and gesture animation | MIT |
+| [Codicons](https://github.com/microsoft/vscode-codicons) (`@vscode/codicons`) | Debugger control icons in `DebugToolbar` | MIT |
 
 ## Trees, files and data
 

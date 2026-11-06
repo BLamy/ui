@@ -155,6 +155,7 @@
         { "id": "workspace", "title": "Workspace" },
         { "id": "markdown-editor", "title": "MarkdownEditor" },
         { "id": "code-editor", "title": "CodeEditor" },
+        { "id": "debug-toolbar", "title": "DebugToolbar" },
         { "id": "terminal", "title": "Terminal" },
         { "id": "pencilkit", "title": "PencilKit" },
         { "id": "replay-preview", "title": "ReplayPreview" },

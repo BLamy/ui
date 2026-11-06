@@ -1,6 +1,7 @@
 @layer theme, base, components, docstream, utilities;
 @layer components.bl-editor, components.bl-mde, components.bl-terminal;
 @import "./tokens.css";
+@import "@vscode/codicons/dist/codicon.css" layer(components);
 /* Utilities only — no preflight, so a host app's base styles are left alone. */
 @import "tailwindcss/utilities.css" layer(utilities);
 /* The Docstream editor's sheet (MarkdownEditor, Composer), layered under the kit's own editor rules and every

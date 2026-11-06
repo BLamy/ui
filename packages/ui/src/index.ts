@@ -700,6 +700,8 @@ export type {
 } from './components/workspace';
 
 // Debugging parts
+export { DebugToolbar } from './components/debug-toolbar';
+export type { DebugToolbarAction, DebugToolbarProps } from './components/debug-toolbar';
 export { TraceTimeline, traceTimelineVariants } from './components/trace-timeline';
 export type { TraceTimelineProps, TraceTimelineHandle, TraceValueInfo, TraceDrawStats, TraceFetchActivity } from './components/trace-timeline';
 export { linearAxis, stopAxis, advanceAlong, selectStops, formatTraceTime, TRACE_SCRUB_SPEEDS } from './lib/trace-timeline-model';

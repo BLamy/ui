@@ -61,6 +61,7 @@
     "@tiptap/react": "3.30.5",
     "@tiptap/starter-kit": "3.30.5",
     "@tiptap/suggestion": "3.30.5",
+    "@vscode/codicons": "0.0.46-24",
     "@wterm/dom": "0.5.8",
     "@wterm/ghostty": "0.5.8",
     "@wterm/react": "0.5.8",

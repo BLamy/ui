@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Dialog } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
+import { DebugToolbar, type DebugToolbarAction } from '@/components/ui/debug-toolbar';
 import {
   CodeEditor, type CodeEditorGutter, type CodeEditorHandle, type CodeEditorLineDecoration, type CodeEditorMarker,
 } from '@/components/ui/code-editor';
@@ -182,6 +183,7 @@ function DebuggerDemo({ wide = true }: { wide?: boolean }) {
   const [position, setPosition] = useState({ line: 25, column: 12, hit: 3 });
   const [breakpoints, setBreakpoints] = useState(() => new Set([25, 51]));
   const [columnBreakpoints, setColumnBreakpoints] = useState(() => new Set(['25:12', '60:26']));
+  const [sessionStopped, setSessionStopped] = useState(false);
 
   const toggle = useCallback((line: number) => {
     setBreakpoints((set) => {
@@ -193,6 +195,28 @@ function DebuggerDemo({ wide = true }: { wide?: boolean }) {
 
   const go = useCallback((line: number, hit: number) => setPosition({ line, column: SITES[line]?.[0] ?? 0, hit }), []);
   const jump = useCallback((line: number) => go(line, 1), [go]);
+  const onDebugAction = useCallback((action: DebugToolbarAction) => {
+    if (action === 'stop') {
+      setSessionStopped(true);
+      return;
+    }
+    if (action === 'restart') {
+      setSessionStopped(false);
+      setPosition({ line: 25, column: 12, hit: 3 });
+      return;
+    }
+    const direction = action === 'step-back' || action === 'reverse-continue' ? -1 : 1;
+    const lines = (action === 'continue' || action === 'reverse-continue'
+      ? [...breakpoints]
+      : Object.keys(HITS).map(Number)
+    ).sort((a, b) => a - b);
+    const candidates = direction > 0 ? lines : [...lines].reverse();
+    const nextLine = candidates.find((line) => direction > 0 ? line > position.line : line < position.line);
+    if (nextLine !== undefined) {
+      setSessionStopped(false);
+      go(nextLine, Math.min(position.hit, HITS[nextLine] ?? 1));
+    }
+  }, [breakpoints, go, position.line, position.hit]);
 
   const gutters = useMemo<CodeEditorGutter[]>(() => [
     {
@@ -234,7 +258,22 @@ function DebuggerDemo({ wide = true }: { wide?: boolean }) {
 
   return (
     <div className="absolute inset-0 flex flex-col bg-card">
-      <Header title="src/store.js" detail={`paused at ${position.line}:${position.column}, run ${position.hit}`} />
+      <div className={cn('flex shrink-0 items-center gap-3 border-b border-border bg-card', wide ? 'h-[60px] px-3' : 'h-[52px] justify-center px-2')}>
+        {wide ? (
+          <div className="min-w-0 flex-1 font-mono text-caption">
+            <div className="truncate text-foreground">src/store.js</div>
+            <div className="truncate text-caption2 text-muted-foreground">
+              {sessionStopped ? 'session stopped' : `paused at ${position.line}:${position.column}, run ${position.hit}`}
+            </div>
+          </div>
+        ) : null}
+        <DebugToolbar
+          size={wide ? 'default' : 'compact'}
+          onAction={onDebugAction}
+          disabledActions={sessionStopped ? ['continue', 'step-over', 'step-into', 'step-out', 'step-back', 'reverse-continue', 'stop'] : []}
+          className={wide ? 'ml-auto' : undefined}
+        />
+      </div>
       <div className="min-h-0 flex-1">
         <CodeEditor
           readOnly
