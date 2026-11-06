@@ -15,6 +15,7 @@ Try these in the terminal:
     node index.js
     node -e "console.log(process.version)"
     npm run count
+    opencode
     npm install lodash
     node -e "console.log(require('lodash').capitalize('hello'))"
 
@@ -22,6 +23,13 @@ Edit a file and run it again: what you run is what you see. A command that write
 shows up here too. Try \`echo hi >> notes.txt\`.
 
 Ctrl-C stops a command, even \`node -e "while (true) {}"\`.
+
+Type \`opencode\` to open OpenCode in this terminal, using these same files and commands.
+Stop OpenCode or choose Return to terminal to get back to your shell.
+
+Connect Tailscale from the status bar to reach your tailnet from Node's \`fetch\`, for example:
+
+    node -e "fetch('http://your-device.your-tailnet.ts.net/').then(r => r.text()).then(console.log)"
 `,
   'package.json': `${JSON.stringify(
     {

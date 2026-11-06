@@ -15,8 +15,12 @@ import { ROOT, STARTER_PROJECT } from './project';
 import type { FileData, FsBatch } from './protocol';
 import { completeCommandLine, npmScriptCommand } from './shell-line';
 import { createWorkerHost, spawnBrowserWorker, type RunResult, type SpawnWorker } from './worker-host';
+import { createVSCodeOpenCodeHost } from './open-code';
+import { toResponse, type Tailscale } from '@/lib/tailscale';
 
 export interface AlmostnodeRuntimeOptions {
+  /** The connection used by HTTP requests to tailnet names and addresses. */
+  tailscale?: Pick<Tailscale, 'fetch'>;
   /** The files to start with: path relative to the root → text. Default: a small starter project. */
   project?: Record<string, string>;
   /** How to start the Worker. For tests. */
@@ -100,6 +104,14 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
     spawn: options.spawn ?? spawnBrowserWorker,
     snapshot: () => ({ files: [...files].map(([path, data]) => ({ path, data })), dirs: [...dirs] }),
     onFiles: fromWorker,
+    fetch: async (request, signal) => {
+      if (!options.tailscale) throw new Error('Connect Tailscale from the status bar to reach your devices.');
+      const response = toResponse(await options.tailscale.fetch({ ...request, signal }));
+      return {
+        status: response.status, statusText: response.statusText, headers: [...response.headers],
+        body: response.body ? new Uint8Array(await response.arrayBuffer()) : null,
+      };
+    },
   });
 
   /* ── Status ── */
@@ -183,7 +195,7 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
     return result;
   };
 
-  const openShell = ({ cols, rows }: RuntimeTerminalOptions): RuntimeTerminal => {
+  const openShell = ({ cols, rows, onOpenCode }: RuntimeTerminalOptions): RuntimeTerminal => {
     const session = newSession(cols, rows);
     let cwd = root;
     let lastExit = 0;
@@ -204,6 +216,13 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
         if (command === 'exit') {
           // On a later tick: the shell is still finishing this line.
           setTimeout(() => terminal.exit(0));
+          return;
+        }
+        if (command === 'opencode') {
+          if (!onOpenCode) throw new Error('OpenCode needs the VS Code terminal pane.');
+          const bridge = createVSCodeOpenCodeHost({ root, directory: cwd, files, dirs, worker: host, changed: fire });
+          try { await onOpenCode(bridge, io.signal); } finally { bridge.dispose?.(); }
+          lastExit = 0;
           return;
         }
         const result = await runLine(session, line, io);

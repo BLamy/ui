@@ -4,6 +4,9 @@ import { Button as AriaButton, Dialog } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger } from '@/components/ui/popover';
 import { Icon } from '@/lib/icon';
+import { TailscaleMark } from '@/components/ui/tailscale-login-button';
+import { TailscaleMenu } from '@/components/ui/tailscale-menu';
+import { useTailscaleStatus } from '@/lib/tailscale-react';
 import { languageFromPath } from '@/lib/syntax';
 import { cn } from '@/lib/utils';
 import { detectEol, detectIndentation, languageName } from './files';
@@ -41,6 +44,7 @@ function Item({ children, wide }: { children: React.ReactNode; wide?: boolean })
 /** Facts about the file in use, and the runtime's state. */
 export function StatusBar({ store }: { store: VSCodeStore }) {
   useSyncExternalStore(store.subscribe, store.getVersion);
+  const tailnet = useTailscaleStatus();
   const path = store.activePath;
   const text = path ? store.text(path) : undefined;
   const cursor = store.cursor(path);
@@ -62,6 +66,21 @@ export function StatusBar({ store }: { store: VSCodeStore }) {
           <Popover placement="top start">
             <Dialog className="outline-none" aria-label={status.title ?? status.text}>
               {({ close }) => <RuntimeDetails status={status} close={close} />}
+            </Dialog>
+          </Popover>
+        </PopoverTrigger>
+        <PopoverTrigger>
+          <AriaButton
+            aria-label="Tailscale connection"
+            data-status={tailnet.status}
+            className="flex h-[22px] shrink-0 cursor-pointer items-center gap-1 border-0 bg-transparent px-1 text-inherit outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary-foreground/70 data-hovered:bg-primary-foreground/15"
+          >
+            <TailscaleMark size={12} />
+            <span>{tailnet.status === 'connected' ? 'Tailscale: Connected' : 'Tailscale'}</span>
+          </AriaButton>
+          <Popover placement="top start">
+            <Dialog aria-label="Tailscale connection" className="w-72 p-3.5 outline-none">
+              <TailscaleMenu />
             </Dialog>
           </Popover>
         </PopoverTrigger>

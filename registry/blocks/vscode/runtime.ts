@@ -6,6 +6,8 @@
    Paths are absolute, with `/` between segments on every platform. Nothing here assumes they are under `/`: what's in
    them, and where `root` is, is up to the implementation. ══ */
 
+import type { OpenCodeHostBridge } from '@/lib/open-code-host';
+
 export type Unsubscribe = () => void;
 
 /* ── Files ── */
@@ -57,6 +59,8 @@ export interface RuntimeTerminalSize {
 export interface RuntimeTerminalOptions extends RuntimeTerminalSize {
   /** Runs this command line and exits with its status, instead of an interactive shell. */
   command?: string;
+  /** Browser runtimes use this to run OpenCode in the terminal pane until it exits. */
+  onOpenCode?: (host: OpenCodeHostBridge, signal: AbortSignal) => Promise<void>;
 }
 
 /** A raw byte stream, as a PTY is one: `write` gets exactly what the Terminal panel's keyboard sends, Ctrl-C included, and

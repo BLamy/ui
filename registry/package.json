@@ -31,6 +31,12 @@
           "command": "playwright test -c tools/e2e/playwright.config.mjs apple-notes.e2e.mjs"
         }
       },
+      "e2e-vscode": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "playwright test -c tools/e2e/playwright.config.mjs vscode.e2e.mjs"
+        }
+      },
       "registry": {
         "cache": true,
         "inputs": [

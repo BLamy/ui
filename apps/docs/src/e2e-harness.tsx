@@ -3,6 +3,9 @@ import { Button } from '@/components/ui/button'
 import { CodeEditor, type CodeEditorChange, type CodeEditorGutter, type CodeEditorHandle } from '@/components/ui/code-editor'
 import { Input } from '@/components/ui/input'
 import Safari from '@/components/blocks/safari/page'
+import VSCode from '@/components/blocks/vscode/page'
+import MacOS from '@/components/blocks/macos/page'
+import { createTailscale } from '@/lib/tailscale'
 import ReplayCanvas, { type Recording } from '@/components/blocks/replay-canvas/page'
 import { createDemoTailnet } from '@/components/blocks/safari/data'
 import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button'
@@ -39,6 +42,15 @@ function AuthKey() {
       <TailscaleStatusBadge />
     </TailscaleProvider>
   )
+}
+
+function VSCodeOnDemoTailnet({ desktop = false }: { desktop?: boolean }) {
+  const [controller] = useState(() => createTailscale({
+    client: routerTailnet().client,
+    auth: { mode: 'auth-key', authKey: 'demo-not-a-real-key' },
+    lockName: 'harness-vscode',
+  }))
+  return <div className="fixed inset-0">{desktop ? <MacOS controller={controller} /> : <VSCode controller={controller} />}</div>
 }
 
 const routerTailnet = () =>
@@ -234,6 +246,8 @@ const HARNESSES: Record<string, () => React.ReactElement> = {
   'tailscale-auth-key': () => <AuthKey />,
   'tailscale-router': () => <Router />,
   safari: () => <SafariOnDemoTailnet />,
+  vscode: () => <VSCodeOnDemoTailnet />,
+  'macos-vscode': () => <VSCodeOnDemoTailnet desktop />,
   'replay-canvas-local': () => <ReplayCanvasLocal />,
 }
 

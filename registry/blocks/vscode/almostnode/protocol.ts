@@ -24,7 +24,24 @@ export interface SessionState {
   rows: number;
 }
 
+/** Only HTTP requests for tailnet addresses cross from the Worker to the signed-in page. */
+export interface RuntimeFetchRequest {
+  url: string;
+  method: string;
+  headers: Array<[string, string]>;
+  body: Uint8Array | null;
+  redirect: RequestRedirect;
+}
+
+export interface RuntimeFetchResponse {
+  status: number;
+  statusText: string;
+  headers: Array<[string, string]>;
+  body: Uint8Array | null;
+}
+
 export type HostMessage =
+  | { type: 'fetch-result'; id: number; response?: RuntimeFetchResponse; error?: string }
   | { type: 'init'; root: string; files: FileEntry[]; dirs: string[]; sessions: Array<SessionState & { session: string }> }
   | { type: 'open-session'; session: string; state: SessionState }
   | { type: 'close-session'; session: string }
@@ -40,6 +57,8 @@ export type HostMessage =
   | { type: 'remove'; seq: number; path: string };
 
 export type RuntimeMessage =
+  | { type: 'fetch'; id: number; request: RuntimeFetchRequest }
+  | { type: 'cancel-fetch'; id: number }
   /** The module has loaded and is listening. */
   | { type: 'hello' }
   /** The module, started in an opaque-origin Worker, couldn't load (the host doesn't allow it). */
