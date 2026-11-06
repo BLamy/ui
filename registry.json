@@ -7740,6 +7740,25 @@
       }
     },
     {
+      "name": "debug-toolbar",
+      "type": "registry:ui",
+      "title": "Debug Toolbar",
+      "description": "Debug Toolbar — part of BL UI's library (components/debug-toolbar.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/debug-toolbar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/debug-toolbar.tsx"
+        }
+      ]
+    },
+    {
       "name": "edge-drawer",
       "type": "registry:ui",
       "title": "Edge Drawer",
