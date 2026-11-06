@@ -114,7 +114,7 @@ export const npmScriptCommand = (name: string) => `npm run ${/^[\w:.-]+$/.test(n
 /** The first word of a line: what it can run even with no program installed. */
 const COMMANDS = [
   'awk', 'cat', 'cd', 'clear', 'cp', 'cut', 'date', 'diff', 'echo', 'env', 'exit', 'export', 'find', 'git', 'grep', 'head', 'ls', 'mkdir', 'mv', 'node', 'npm', 'npx', 'printf', 'pwd',
-  'rm', 'rmdir', 'sed', 'seq', 'sleep', 'sort', 'tail', 'tee', 'touch', 'tr', 'uniq', 'wc', 'which', 'xargs',
+  'opencode', 'rm', 'rmdir', 'sed', 'seq', 'sleep', 'sort', 'tail', 'tee', 'touch', 'tr', 'uniq', 'wc', 'which', 'xargs',
 ];
 
 /** Candidates for a path being typed: whole replacements for `word`, folders ending in `/`. */

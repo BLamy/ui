@@ -2677,6 +2677,9 @@
           "--gb-accent-foreground": "currentColor",
           "--gb-code-fg": "currentColor"
         },
+        ":is(.wb-md,.bl-mde,.wb-composer-doc) .docs-task-control[data-task-state=\"verified\"]": {
+          "color": "var(--success, oklch(0.723 0.191 149.6))"
+        },
         ".docstream-stl": {
           "--gb-primary": "var(--primary)",
           "--gb-muted": "var(--secondary)",
@@ -10056,7 +10059,7 @@
       "name": "macos",
       "type": "registry:block",
       "title": "macOS",
-      "description": "A macOS desktop whose apps are the other examples — Reminders, Mail, Safari, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, OpenCode, T3 Code and Loop QA. Open one from the Dock or from Alfred and it appears in a window you can drag, resize, zoom, minimize and stack (right-click the Dock to turn magnification off or hiding on — a hidden Dock slides up from the bottom edge and windows take its room); the menu bar follows the frontmost app, and its Tailscale and Wi-Fi items are working menus. The desktop owns one Tailscale controller (the real Tailscale by default; its WebAssembly client loads only when someone signs in) that the Safari window and the menu bar share, so signing in or choosing an exit node in either shows in both: the Tailscale menu is the core TailscaleMenu with exit nodes drawn like Wi-Fi networks (a check for the one in use, the name, a signal glyph, Connecting…), and the Wi-Fi menu is invented sample data in the same row style — a switch, the network you are on, nearby ones with locks and signal bars, and Network Settings…. Alfred is the launcher on top, built on the CommandMenu primitive: type an app's name and press Enter, or use its pages — a calculator with live results and history (type math at the root and the answer shows inline), clipboard history with a preview pane, pinning (⌘P) and delete (⌘⌫), an emoji grid you move through with the arrow keys, snippets that expand from ;keywords, file search with folders you open with → and reveal with ⌘↵, system commands (lock screen, sleep, empty Trash with a confirmation, dark mode, restart), web searches, and multi-step workflows (create a GitHub issue, start a timer). ⌥Space hides and shows the bar, and a HUD confirms each copy. Every session is recorded with rrweb into append-only localStorage streams, and Time Machine plays them back; apps load on first launch. Below 640px wide the desktop turns into an iPhone — a status bar with the Dynamic Island, a springboard of the same apps (paged when they don't fit, with a dock and a Search pill that opens Alfred), full-screen apps that zoom out of their icons, and a home bar that sends one back while it keeps running. Light and dark.",
+      "description": "A macOS desktop whose apps are the other examples — Reminders, Mail, Safari, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, VS Code, OpenCode, T3 Code and Loop QA. Open one from the Dock or from Alfred and it appears in a window you can drag, resize, zoom, minimize and stack (right-click the Dock to turn magnification off or hiding on — a hidden Dock slides up from the bottom edge and windows take its room); the menu bar follows the frontmost app, and its Tailscale and Wi-Fi items are working menus. The desktop owns one Tailscale controller (the real Tailscale by default; its WebAssembly client loads only when someone signs in) that Safari, VS Code and the menu bar share, so signing in or choosing an exit node in either shows in both: the Tailscale menu is the core TailscaleMenu with exit nodes drawn like Wi-Fi networks (a check for the one in use, the name, a signal glyph, Connecting…), and the Wi-Fi menu is invented sample data in the same row style — a switch, the network you are on, nearby ones with locks and signal bars, and Network Settings…. Alfred is the launcher on top, built on the CommandMenu primitive: type an app's name and press Enter, or use its pages — a calculator with live results and history (type math at the root and the answer shows inline), clipboard history with a preview pane, pinning (⌘P) and delete (⌘⌫), an emoji grid you move through with the arrow keys, snippets that expand from ;keywords, file search with folders you open with → and reveal with ⌘↵, system commands (lock screen, sleep, empty Trash with a confirmation, dark mode, restart), web searches, and multi-step workflows (create a GitHub issue, start a timer). ⌥Space hides and shows the bar, and a HUD confirms each copy. Every session is recorded with rrweb into append-only localStorage streams, and Time Machine plays them back; apps load on first launch. Below 640px wide the desktop turns into an iPhone — a status bar with the Dynamic Island, a springboard of the same apps (paged when they don't fit, with a dock and a Search pill that opens Alfred), full-screen apps that zoom out of their icons, and a home bar that sends one back while it keeps running. Light and dark.",
       "categories": [
         "application",
         "productivity",
@@ -10108,7 +10111,8 @@
         "https://blamy.github.io/ui/r/map-chat.json",
         "https://blamy.github.io/ui/r/safari.json",
         "https://blamy.github.io/ui/r/t3-clone.json",
-        "https://blamy.github.io/ui/r/timemachine.json"
+        "https://blamy.github.io/ui/r/timemachine.json",
+        "https://blamy.github.io/ui/r/vscode.json"
       ],
       "files": [
         {
@@ -10991,13 +10995,14 @@
       "name": "vscode",
       "type": "registry:block",
       "title": "VS Code",
-      "description": "A VS Code window that really runs: an activity rail with Explorer, Search and Run, editors in a Workspace you can split, and wterm terminals, on one in-browser Node runtime (agent-wasm, the fork of almostnode). Everything it needs goes through one interface, so a real folder and real shells can replace the runtime. Packages you install run in a Worker. Where the host serves it with CORS, as GitHub Pages does, that Worker has an opaque origin and no access to the site's storage; elsewhere it's an ordinary Worker of the site that can read and change the site's IndexedDB and caches, and the status bar says which. They can use the network either way, as far as CORS allows.",
+      "description": "A VS Code window that really runs: an activity rail with Explorer, Search and Run, editors in a Workspace you can split, and wterm terminals where opencode opens the real OpenCode TUI on the same files. A Tailscale status-bar menu connects terminal fetches to your tailnet and shares the desktop connection inside macOS. It runs on one in-browser Node runtime (agent-wasm, the fork of almostnode). Everything it needs goes through one interface, so a real folder and real shells can replace the runtime. Packages you install run in a Worker. Where the host serves it with CORS, as GitHub Pages does, that Worker has an opaque origin and no access to the site's storage; elsewhere it's an ordinary Worker of the site that can read and change the site's IndexedDB and caches, and the status bar says which. They can use the network either way, as far as CORS allows.",
       "categories": [
         "developer-tools",
         "application"
       ],
       "dependencies": [
         "@agent-wasm/core@0.4.0",
+        "@agent-wasm/tailscale-connect@1.39.98-t02582083d",
         "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
@@ -11011,14 +11016,21 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/open-code.json",
+        "https://blamy.github.io/ui/r/open-code-host.json",
         "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/search-field.json",
         "https://blamy.github.io/ui/r/syntax.json",
         "https://blamy.github.io/ui/r/tab-view.json",
+        "https://blamy.github.io/ui/r/tailscale.json",
+        "https://blamy.github.io/ui/r/tailscale-connect.json",
+        "https://blamy.github.io/ui/r/tailscale-login-button.json",
+        "https://blamy.github.io/ui/r/tailscale-menu.json",
         "https://blamy.github.io/ui/r/terminal.json",
         "https://blamy.github.io/ui/r/terminal-line.json",
         "https://blamy.github.io/ui/r/text-field.json",
+        "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/tree.json",
         "https://blamy.github.io/ui/r/utils.json",
         "https://blamy.github.io/ui/r/workspace.json"
@@ -11075,6 +11087,11 @@
           "target": "components/blocks/vscode/line-terminal.ts"
         },
         {
+          "path": "registry/blocks/vscode/tailnet.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/tailnet.ts"
+        },
+        {
           "path": "registry/blocks/vscode/memory-runtime.ts",
           "type": "registry:component",
           "target": "components/blocks/vscode/memory-runtime.ts"
@@ -11083,6 +11100,16 @@
           "path": "registry/blocks/vscode/almostnode/index.ts",
           "type": "registry:component",
           "target": "components/blocks/vscode/almostnode/index.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/almostnode/open-code.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/almostnode/open-code.ts"
+        },
+        {
+          "path": "registry/blocks/vscode/almostnode/tailnet-fetch.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vscode/almostnode/tailnet-fetch.ts"
         },
         {
           "path": "registry/blocks/vscode/almostnode/project.ts",

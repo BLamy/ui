@@ -790,6 +790,9 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
   --gb-code-fg:currentColor;
 }
 
+/* Verified task icons follow the success token in MarkdownView, MarkdownEditor and Composer. */
+:is(.wb-md,.bl-mde,.wb-composer-doc) .docs-task-control[data-task-state="verified"]{color:var(--success, oklch(0.723 0.191 149.6))}
+
 /* StlViewer used on its own (outside a docstream article or editor) takes the theme's tokens too. */
 .docstream-stl{--gb-primary:var(--primary);--gb-muted:var(--secondary);--gb-border:var(--border)}
 /* Tree (@pierre/trees) in the theme: its rows live in a shadow root and read these overrides. Git colors lean toward

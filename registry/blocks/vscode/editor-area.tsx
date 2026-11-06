@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'r
 import { Button } from '@/components/ui/button';
 import { CodeEditor, type CodeEditorHandle } from '@/components/ui/code-editor';
 import { Terminal, type TerminalHandle } from '@/components/ui/terminal';
+import { OpenCode } from '@/components/ui/open-code';
 import { TreeFileIcon } from '@/components/ui/tree';
 import {
   Workspace, WorkspaceTabCloseButton, WorkspaceToolbar,
@@ -11,6 +12,7 @@ import {
 import { Icon } from '@/lib/icon';
 import { languageFromPath } from '@/lib/syntax';
 import { cn } from '@/lib/utils';
+import { useAppearance } from '@/lib/theme';
 import { EDITORS_TABSET, TERMINALS_TABSET, type TabData, type VSCodeStore } from './store';
 
 function FileEditor({ store, path }: { store: VSCodeStore; path: string }) {
@@ -44,6 +46,8 @@ function FileEditor({ store, path }: { store: VSCodeStore; path: string }) {
 function TerminalPane({ store, id }: { store: VSCodeStore; id: string }) {
   const term = useRef<TerminalHandle>(null);
   const box = useRef<HTMLDivElement>(null);
+  const openCode = useSyncExternalStore(store.subscribe, () => store.terminal(id)?.openCode ?? null);
+  const appearance = useAppearance();
   useEffect(() => {
     // A hidden tab has no size to open with, so its terminal waits until it's first on show.
     const element = box.current;
@@ -58,22 +62,38 @@ function TerminalPane({ store, id }: { store: VSCodeStore; id: string }) {
     return () => observer.disconnect();
   }, [store, id]);
   return (
-    <div ref={box} className="size-full min-h-0" data-slot="vscode-terminal">
-      <Terminal
-        ref={term}
-        size="sm"
-        className="[--term-bg:var(--card)]"
-        aria-label={store.terminal(id)?.title}
-        onData={(data) => store.terminalInput(id, data)}
-        onFocusCapture={() => store.setActiveTerminal(id)}
-        onReady={() => {
-          const handle = term.current;
-          if (!handle) return;
-          store.attachTerminal(id, handle);
-          if (box.current && box.current.clientWidth > 0 && box.current.clientHeight > 0) store.sizeTerminal(id, handle.cols, handle.rows);
-        }}
-        onResize={(cols, rows) => { if (box.current && box.current.clientWidth > 0) store.sizeTerminal(id, cols, rows); }}
-      />
+    <div ref={box} className="relative size-full min-h-0" data-slot="vscode-terminal">
+      {openCode ? (
+        <div className="absolute inset-0 z-10 flex min-h-0 flex-col bg-background" data-slot="vscode-opencode">
+          <div className="flex shrink-0 justify-end border-b border-border px-2">
+            <Button size="sm" variant="quiet" onPress={openCode.close}>Return to terminal</Button>
+          </div>
+          <OpenCode
+            host={openCode.host}
+            theme={appearance ?? 'dark'}
+            className="min-h-0 flex-1 rounded-none border-0"
+            style={{ height: '100%', minHeight: 0 }}
+            onStateChange={(state) => { if (state === 'stopped') openCode.close(); }}
+          />
+        </div>
+      ) : null}
+      <div className="size-full" inert={!!openCode || undefined} style={openCode ? { visibility: 'hidden' } : undefined}>
+        <Terminal
+          ref={term}
+          size="sm"
+          className="[--term-bg:var(--card)]"
+          aria-label={store.terminal(id)?.title}
+          onData={(data) => store.terminalInput(id, data)}
+          onFocusCapture={() => store.setActiveTerminal(id)}
+          onReady={() => {
+            const handle = term.current;
+            if (!handle) return;
+            store.attachTerminal(id, handle);
+            if (box.current && box.current.clientWidth > 0 && box.current.clientHeight > 0) store.sizeTerminal(id, handle.cols, handle.rows);
+          }}
+          onResize={(cols, rows) => { if (box.current && box.current.clientWidth > 0) store.sizeTerminal(id, cols, rows); }}
+        />
+      </div>
     </div>
   );
 }

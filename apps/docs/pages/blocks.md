@@ -38,11 +38,15 @@ A VS Code window that really runs. The rail is a vertical [TabView](https://blam
 
 Behind it, by default, is Node in the browser: [agent-wasm](https://github.com/BLamy/agent-wasm), the fork of almostnode this repository uses, on a virtual disk. `ls`, `cd`, `cat`, pipes, `node index.js`, `node -e`, `npm run`, `npm install lodash` and then requiring it all work, and each terminal has its own folder and environment. Files are one truth: an edit reaches the disk before the next thing you type in a terminal, and a command that writes a file updates the tree and any open editor.
 
-**Where it runs.** Everything runs in a Worker, not on the page. A script can't freeze the window: `while (true)` stops only the Worker, and Ctrl-C replaces it, starting a new one from a copy of the files the page keeps. Each terminal keeps its folder. What's lost is anything else running at that moment, and a command that ignores Ctrl-C is stopped the same way.
+Type **`opencode`** in a terminal to open the real [OpenCode TUI](https://blamy.github.io/ui/#/open-code) in that pane. It opens in the shell's current folder, shares the Explorer's files and runs its shell tools in the same Node runtime. The pane expands while OpenCode is open; **Stop OpenCode**, `/exit`, or **Return to terminal** returns to the shell. The OpenCode runtime downloads on the first launch.
+
+The status bar's **Tailscale** button opens sign-in, connection details, exit-node selection and sign-out. Once connected, Node's `fetch` reaches tailnet names and addresses through that device, including from OpenCode's shell tools. For example, `node -e "fetch('http://your-device.your-tailnet.ts.net/').then(r => r.text()).then(console.log)"`. A standalone window has its own Tailscale device for the tab; inside the macOS example it shares the desktop's connection with the menu bar and Safari. Pass `controller` to share another connection, or `tailscale` to configure the standalone one.
+
+**Where it runs.** Shell commands and installed packages run in a Worker. A script can't freeze the window: `while (true)` stops only the Worker, and Ctrl-C replaces it, starting a new one from a copy of the files the page keeps. Each terminal keeps its folder. What's lost is anything else running at that moment, and a command that ignores Ctrl-C is stopped the same way.
 
 **What a package can reach.** Installing from npm runs other people's code, so this matters on a site where other blocks keep things. The Worker starts from a `data:` URL, which gives it an origin of its own. There, IndexedDB, the Cache API, OPFS and locks all refuse it, and it has no page, cookies or localStorage, so it can't reach a keychain or anything else this site keeps. That needs the host to serve the Worker's files with CORS, which GitHub Pages does and Vite's dev server doesn't. Where it can't load like that it runs as an ordinary Worker of the site: it still can't touch the page, cookies or localStorage, but it can read, change and delete the site's IndexedDB and caches. For the Passwords keychain that means encrypted data it can't read but could destroy. The status bar and a line in the first terminal say which you're getting. In both cases a package can use the network as far as CORS allows, can use up the tab's memory and CPU, and shares a process with the page, so this isn't a defense against an attack on the browser itself. Only install what you'd run.
 
-**The network.** Nothing is fetched from anywhere but your own site until you ask: opening the block downloads the runtime from your site, and `npm install` is the first thing to go further, to `registry.npmjs.org`. The runtime's default of sending every request through a third party's CORS proxy is turned off, so a script's own `fetch` works only where the other end allows browsers. Everything but `npm install` works with no connection.
+**The network.** Opening the block downloads the Node runtime from your site. Installing packages reaches npm; launching OpenCode downloads its hosted runtime; signing in loads Tailscale's WebAssembly client. Tailnet HTTP requests use the connection in the status bar. Other requests stay in the Worker and follow the browser's CORS rules; the runtime's default third-party CORS proxy is turned off. The starter project's local shell commands work without an internet connection once Node has loaded.
 
 **Other limits.** `http.createServer` runs, but nothing can open it: previews need a service worker registered at the site's root, which this doesn't set up. `node file.ts` isn't supported. A script using `readline` keeps running after `rl.close()` until it calls `process.exit()` or you press Ctrl-C. And `git`, `npx`, and the other commands the runtime knows come with its limits.
 
@@ -57,6 +61,7 @@ import { createAlmostnodeRuntime } from '@/components/blocks/vscode/almostnode';
 <VSCode />; // a starter project
 <VSCode runtime={createAlmostnodeRuntime({ project: { 'index.js': 'console.log("hi")' } })} initialFile="index.js" />;
 <VSCode runtime={yourRuntime} />; // anything that implements VSCodeRuntime
+<VSCode controller={yourTailscale} />; // share an existing Tailscale connection
 ```
 
 {% demo src="blocks/interface-builder" layout="multi" %}
@@ -90,7 +95,7 @@ The Video Editor block is iMovie and Final Cut in a page: a media library, a vie
 
 {% demo src="blocks/macos" layout="multi" %}
 
-The macOS block is a desktop whose apps are the blocks on this page — Reminders, Mail, Safari, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, OpenCode, T3 Code and Loop QA; the Dock and Alfred open them in windows — so adding it also adds each of them; delete an entry from its `apps.ts` (and the block it imports) to trim the desktop.
+The macOS block is a desktop whose apps are the blocks on this page — Reminders, Mail, Safari, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, VS Code, OpenCode, T3 Code and Loop QA; the Dock and Alfred open them in windows — so adding it also adds each of them; delete an entry from its `apps.ts` (and the block it imports) to trim the desktop.
 
 **OpenCode** opens the real [OpenCode terminal](https://blamy.github.io/ui/#/open-code) in its own window. Select **Start OpenCode**, then **Run starter app** to run a local HTTP server and interact with its preview without connecting an AI provider. Minimizing keeps the session running; closing releases its terminal and workspace. Provider sign-ins use the shared encrypted Passwords keychain: unlock it before signing in, and lock it to stop the terminal. Reopening restores saved sign-ins after unlocking, with a fresh workspace.
 

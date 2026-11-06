@@ -5,6 +5,8 @@ import { TabView, TabViewBar, TabViewIndicator, TabViewList, TabViewSeparator, T
 import { useContainerWidth } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
+import type { Tailscale, TailscaleOptions } from '@/lib/tailscale';
+import { TailscaleProvider, useOptionalTailscale, useTailscale } from '@/lib/tailscale-react';
 import { createAlmostnodeRuntime } from './almostnode';
 import { EditorArea } from './editor-area';
 import { Explorer, ExplorerDialogs } from './explorer';
@@ -13,11 +15,16 @@ import type { VSCodeRuntime } from './runtime';
 import { SearchPanel } from './search-panel';
 import { StatusBar } from './status-bar';
 import { VSCodeStore, type SidebarView, type ViewId } from './store';
+import { vscodeTailnet } from './tailnet';
 
 /** Below this the window shows one pane at a time. */
 const NARROW_WIDTH = 640;
 
 export interface VSCodeProps {
+  /** Share an existing connection, such as the macOS desktop's. */
+  controller?: Tailscale;
+  /** Options for the standalone Tailscale device. */
+  tailscale?: TailscaleOptions;
   /** What's behind the window: its files, terminals, scripts and status. Default: `createAlmostnodeRuntime()`, Node in
    *  the browser on a small starter project. A runtime you pass stays yours to dispose of. */
   runtime?: VSCodeRuntime;
@@ -63,8 +70,15 @@ function RailTab({ store, id, icon, label }: { store: VSCodeStore; id: ViewId; i
 }
 
 /** A VS Code window: a rail of views, editors and terminals you can arrange, and a Node runtime behind them all. */
-export default function VSCode({ runtime, initialFile, initialView, className, style }: VSCodeProps) {
-  const [store] = useState(() => new VSCodeStore(runtime ?? createAlmostnodeRuntime(), { initialFile, initialView }));
+export default function VSCode({ controller, tailscale, ...props }: VSCodeProps) {
+  const shared = useOptionalTailscale(controller);
+  const [options] = useState(() => tailscale ?? vscodeTailnet());
+  return <TailscaleProvider tailscale={shared ?? undefined} options={options}><VSCodeWindow {...props} /></TailscaleProvider>;
+}
+
+function VSCodeWindow({ runtime, initialFile, initialView, className, style }: VSCodeProps) {
+  const tailscale = useTailscale();
+  const [store] = useState(() => new VSCodeStore(runtime ?? createAlmostnodeRuntime({ tailscale }), { initialFile, initialView }));
   // Only a runtime made here is this window's to end. Like the store, it's chosen when the window mounts.
   const [owned] = useState(() => !runtime);
   useEffect(() => {

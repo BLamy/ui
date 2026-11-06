@@ -3,6 +3,7 @@
    what's behind the window is the `VSCodeRuntime` it's given, whose calls all take time. */
 import type { CodeEditorHandle } from '@/components/ui/code-editor';
 import type { TerminalHandle } from '@/components/ui/terminal';
+import type { OpenCodeHostBridge } from '@/lib/open-code-host';
 import type { WorkspaceChangedMeta, WorkspaceImperativeHandle, WorkspaceModel, WorkspaceModelInput, WorkspaceNode, TabNode, TabsetNode } from '@/components/ui/workspace';
 import { ancestors, basename, buildTree, dirname, isSearchable, isValidName, resolvePath } from './files';
 import type { FileContent, RuntimeEntryKind, RuntimeFileEvent, RuntimeScriptList, RuntimeStatus, RuntimeTerminal, Unsubscribe, VSCodeRuntime } from './runtime';
@@ -39,6 +40,7 @@ export interface TerminalRecord {
   pendingInput: string[];
   /** Keys waiting for edits to be saved, so that what runs is what's on screen. */
   inputChain: Promise<void> | null;
+  openCode: { host: OpenCodeHostBridge; close: () => void } | null;
   stop: Unsubscribe[];
 }
 
@@ -548,7 +550,7 @@ export class VSCodeStore {
     const title = script ? `Run: ${script}` : `Terminal ${this.nextTerminal}`;
     this.nextTerminal += 1;
     const record: TerminalRecord = {
-      id, title, script, state: 'idle', exitCode: null, stream: null, handle: null, output: [], outputSize: 0, pendingInput: [], inputChain: null, stop: [],
+      id, title, script, state: 'idle', exitCode: null, stream: null, handle: null, output: [], outputSize: 0, pendingInput: [], inputChain: null, openCode: null, stop: [],
     };
     this.terminals.push(record);
     return record;
@@ -579,7 +581,9 @@ export class VSCodeStore {
     record.state = 'opening';
     this.emit();
     void this.flushSaves()
-      .then(() => (record.script ? this.runtime.scripts.run(record.script, { cols, rows }) : this.runtime.terminals.open({ cols, rows })))
+      .then(() => (record.script ? this.runtime.scripts.run(record.script, { cols, rows }) : this.runtime.terminals.open({
+        cols, rows, onOpenCode: (host, signal) => this.launchOpenCode(record, host, signal),
+      })))
       .then(
         (stream) => {
           if (!this.terminals.includes(record)) {
@@ -611,6 +615,30 @@ export class VSCodeStore {
     record.outputSize += data.length;
     while (record.outputSize > MAX_OUTPUT && record.output.length > 1) record.outputSize -= (record.output.shift() as string | Uint8Array).length;
     record.handle?.write(data);
+  }
+
+  private launchOpenCode(record: TerminalRecord, host: OpenCodeHostBridge, signal: AbortSignal): Promise<void> {
+    if (signal.aborted || !this.terminals.includes(record)) return Promise.resolve();
+    if (this.terminals.some((terminal) => terminal.openCode)) {
+      return Promise.reject(new Error('OpenCode is already running in another terminal. Stop it there first.'));
+    }
+    return new Promise((resolve) => {
+      const model = this.workspace?.getModel();
+      const pane = model && !model.maximizedTabsetId ? tabsetsOf(model.root).find((tabset) => tabset.tabs.some((tab) => tab.id === record.id)) : undefined;
+      const close = () => {
+        if (!record.openCode) return;
+        record.openCode = null;
+        signal.removeEventListener('abort', close);
+        if (pane && this.workspace?.getModel().maximizedTabsetId === pane.id) this.workspace.restoreTabset();
+        this.emit();
+        resolve();
+        this.focusTerminalSoon(record.id);
+      };
+      record.openCode = { host, close };
+      if (pane) this.workspace?.maximizeTabset(pane.id);
+      signal.addEventListener('abort', close, { once: true });
+      this.emit();
+    });
   }
 
   private terminalExited(record: TerminalRecord, code: number | null) {
@@ -682,6 +710,7 @@ export class VSCodeStore {
     for (const stop of terminal.stop) stop();
     terminal.stop = [];
     terminal.stream?.kill();
+    terminal.openCode?.close();
     terminal.stream = null;
     if (this.activeTerminal === terminal.id) this.activeTerminal = this.terminals.at(-1)?.id ?? null;
   }
