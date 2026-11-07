@@ -117,8 +117,14 @@ export function loadGoogleFont(family: string, options: GoogleFontOptions = {}):
         if (!res.ok) return false;
         const style = document.createElement('style');
         style.dataset.googleFont = name;
+        // A later matching @font-face wins. Full families must follow name subsets,
+        // and overlapping requests must keep the same order whichever fetch finishes first.
+        const order = JSON.stringify([name.toLowerCase(), options.text ? 0 : 1, url]);
+        style.dataset.googleFontOrder = order;
         style.textContent = await res.text();
-        document.head.append(style);
+        const next = [...document.head.querySelectorAll<HTMLStyleElement>('style[data-google-font-order]')]
+          .find((existing) => existing.dataset.googleFontOrder! > order);
+        document.head.insertBefore(style, next ?? null);
         await document.fonts.load(`${weights?.includes(400) === false ? weights[0] : 400} 16px "${name}"`, options.text || undefined);
         return true;
       } catch {

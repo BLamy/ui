@@ -11,11 +11,12 @@ const newWorker = () => new Worker(new URL('./pglite.worker.ts', import.meta.url
 
 function Clicks() {
   // Live: another tab on the same worker writing shows up here too.
-  const { rows } = useLiveQuery<{ n: number }>('select count(*)::int as n from clicks')
+  const { rows, isLoading, error } = useLiveQuery<{ n: number }>('select count(*)::int as n from clicks')
   const { exec } = useExec()
   const { info } = useDatabaseStatus()
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-3" aria-busy={isLoading}>
+      {error ? <p role="alert" className="text-footnote text-destructive">{error.message}</p> : null}
       <p className="text-subhead">
         <strong data-testid="click-count" className="tabular-nums">{rows[0]?.n ?? 0}</strong> clicks, shared by every tab that has this page open.
       </p>

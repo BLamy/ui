@@ -54,6 +54,31 @@ describe('googleFontsUrl', () => {
 });
 
 describe('loadGoogleFont', () => {
+  it.each([
+    ['full-first', ['full', 'lastSubset', 'firstSubset']],
+    ['subset-first', ['firstSubset', 'lastSubset', 'full']],
+  ] as const)('keeps full-family precedence when requests resolve %s', async (scenario, order) => {
+    const family = `Font Order ${scenario}`;
+    const responses = new Map<string, (response: Response) => void>();
+    vi.stubGlobal('fetch', vi.fn((input: string) => new Promise<Response>((resolve) => {
+      const role = input.includes('&text=A') ? 'firstSubset' : input.includes('&text=Z') ? 'lastSubset' : 'full';
+      responses.set(role, resolve);
+    })));
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { load: vi.fn(async () => []) } });
+    const loads = {
+      full: loadGoogleFont(family, { weights: [400, 700] }),
+      firstSubset: loadGoogleFont(family, { text: 'A' }),
+      lastSubset: loadGoogleFont(family, { text: 'Z' }),
+    };
+    for (const role of order) {
+      responses.get(role)!(new Response(`/* ${role} */${css(family)}`, { status: 200 }));
+      expect(await loads[role]).toBe(true);
+    }
+    expect([...document.head.querySelectorAll('style[data-google-font]')].map((style) =>
+      /\/\* (\w+) \*\//.exec(style.textContent!)?.[1],
+    )).toEqual(['firstSubset', 'lastSubset', 'full']);
+  });
+
   it('adds the family’s stylesheet once and resolves when its faces can be used', async () => {
     const fetch = vi.fn(async () => new Response(css('Fraunces'), { status: 200 }));
     vi.stubGlobal('fetch', fetch);

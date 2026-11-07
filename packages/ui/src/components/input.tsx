@@ -1,6 +1,11 @@
 'use client';
-import { Input as AriaInput, type InputProps as AriaInputProps, composeRenderProps } from 'react-aria-components';
+import {
+  Input as AriaInput,
+  type InputProps as AriaInputProps,
+  composeRenderProps,
+} from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
+import type { Ref } from 'react';
 import { selectableText } from '@/lib/primitives';
 import { cn } from '@/lib/utils';
 
@@ -26,13 +31,19 @@ export const inputVariants = cva(
   },
 );
 
-export interface InputProps extends Omit<AriaInputProps, 'size'>, VariantProps<typeof inputVariants> {}
+export interface InputProps
+  extends Omit<AriaInputProps, 'size'>, VariantProps<typeof inputVariants> {
+  /** The underlying input, for selection and programmatic focus. */
+  ref?: Ref<HTMLInputElement>;
+}
 
 export function Input({ className, size, ...props }: InputProps) {
   return (
     <AriaInput
       data-slot="input"
-      className={composeRenderProps(className, (cls) => cn(inputVariants({ size }), cls))}
+      className={composeRenderProps(className, (cls) =>
+        cn(inputVariants({ size }), cls),
+      )}
       {...props}
     />
   );

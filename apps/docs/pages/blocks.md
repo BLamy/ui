@@ -267,3 +267,31 @@ components/blocks/discord-clone/
 **Adapting one.** You own the copy. Replace `data.ts` with your data source, delete the parts you do not want, change a recipe. Blocks that another page wants to reuse export their parts: the docs import `TileMap` from `@/components/blocks/map-chat/tile-map` and `ModelPicker` from `@/components/blocks/t3-clone/components/workbench/model-picker`.
 
 See [How the registry works](https://blamy.github.io/ui/#/registry) for how a block becomes an item.
+
+A time-travel debugger composed from CodeEditor, CallStack, ObjectTree, LogList and Workspace. It includes forward and reverse stepping, source navigation, breakpoints, logpoints, scopes and expression evaluation. At a narrow window width it shows one panel at a time; widening the window keeps the same model and selection.
+
+{% demo src="blocks/replay-debugger" layout="multi" %}
+
+## Installation
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/replay-debugger.json{% endcommand %}
+
+The block installs as source into `components/blocks/replay-debugger`. Its imported core components are installed with it. It does not require the npm package or a replay engine.
+
+## Supply a host
+
+```tsx
+import { ReplayDebugger, DebuggerModel } from '@/components/blocks/replay-debugger';
+import type { DebuggerHost, DebuggerSummary, StepClock } from '@/components/blocks/replay-debugger';
+import '@/components/blocks/replay-debugger/replay-debugger.css';
+
+const model = new DebuggerModel(recordingId, host);
+model.ready(summary, clock);
+await model.show(initialTime, initialStep);
+
+<ReplayDebugger model={model} logged={consoleRows} />;
+```
+
+`DebuggerHost` supplies plain source, step, frame and value data plus callbacks for navigation, pauses, evaluations and logpoints. `StepClock` maps indexed steps to the host's playhead. The host owns loading and persistence; dispose the model when replacing that session. The included `createDemoHost`, `DemoClock` and `DEMO_SUMMARY` answer from an in-memory table and show how to implement the interface.
+
+The summary's optional `engineLabel` is display text supplied by the host. An empty index can supply no sources and zero steps. The demo page's `empty` prop (or `variant="empty"` in the docs viewer) exercises that completed empty state, and `startAt` chooses its initial table step. `DebuggerModel` accepts an optional third argument, `{ now }`, for the monotonic clock used to display pause latency; it defaults to `performance.now`. The in-memory demo supplies a fixed clock so its screenshots repeat exactly.
