@@ -51,8 +51,10 @@ export interface TreeProps extends Omit<HTMLAttributes<HTMLElement>, 'children' 
   defaultSelectedIds?: readonly string[];
   /** A click, a ⌘- or ⇧-click, or the arrow keys changed the selection. */
   onSelectionChange?: (ids: string[]) => void;
-  /** Double-click or Return on a row. */
+  /** Double-click (or a single click with `activationMode="singleClick"`) or Return on a row. */
   onAction?: (node: TreeNode) => void;
+  /** When a pointer activates a row. Arrow keys still only move the selection. */
+  activationMode?: 'singleClick' | 'doubleClick';
   /** Which folders start open: all, none (the default), or these. */
   defaultExpanded?: 'all' | 'none' | readonly string[];
   /** Folders to open whenever they appear in this list (with their ancestors). The user can still close them. */
@@ -178,7 +180,7 @@ function rowPathOf(e: Event): string | null {
 const quote = (path: string) => JSON.stringify(path);
 
 export function Tree({
-  'aria-label': ariaLabel, items, sort, selectedIds, defaultSelectedIds, onSelectionChange, onAction, defaultExpanded = 'none',
+  'aria-label': ariaLabel, items, sort, selectedIds, defaultSelectedIds, onSelectionChange, onAction, activationMode = 'doubleClick', defaultExpanded = 'none',
   expandedIds, search, flatten, icons, gitStatus, density = 'default', contextMenu, preview, renamingId, onRename, onRenameEnd,
   canDrag, onDragStart, onMove, canMove, externalDrop, className, ...hostProps
 }: TreeProps) {
@@ -456,7 +458,8 @@ export function Tree({
     return !!node;
   };
   const action = (e: Event) => {
-    const node = targetOf(rowPathOf(e));
+    // With aria-activedescendant, keys arrive on the tree's viewport, rather than on a row.
+    const node = targetOf(rowPathOf(e) ?? model.getFocusedPath());
     if (!node || !onAction) return;
     // The action may move focus (into an editor, say): the key that ran it mustn't land there too.
     e.preventDefault();
@@ -489,8 +492,9 @@ export function Tree({
       onPointerMove={preview ? onPointerMove : undefined}
       onPointerDownCapture={preview ? card.triggerProps.onPointerDown : undefined}
       onPointerLeave={preview ? (e: ReactPointerEvent<HTMLElement>) => { previewRow.current = null; card.triggerProps.onPointerLeave(e); } : undefined}
-      onDoubleClick={(e: MouseEvent<HTMLElement>) => action(e.nativeEvent)}
-      onKeyDown={(e: KeyboardEvent<HTMLElement>) => { if (e.key === 'Enter' && !e.nativeEvent.composedPath().some((el) => el instanceof HTMLInputElement)) action(e.nativeEvent); }}
+      onClick={activationMode === 'singleClick' ? (e: MouseEvent<HTMLElement>) => action(e.nativeEvent) : undefined}
+      onDoubleClick={activationMode === 'doubleClick' ? (e: MouseEvent<HTMLElement>) => action(e.nativeEvent) : undefined}
+      onKeyDownCapture={(e: KeyboardEvent<HTMLElement>) => { if (e.key === 'Enter' && !e.nativeEvent.composedPath().some((el) => el instanceof HTMLInputElement)) action(e.nativeEvent); }}
     />
   );
   const field = search ? (

@@ -249,6 +249,8 @@ export class DebuggerModel {
   scrollRequest: { line: number; seq: number } | null = null;
   /** The Sources list: whether it's open, where it's a thing to open. */
   sourcesOpen = false;
+  /** The source browser's highlight survives a window layout change. */
+  sourcePickerSelection: string | null = null;
 
   devToolsClients = 0;
   /** Where another client can attach, once it's been opened. */

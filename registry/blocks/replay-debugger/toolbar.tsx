@@ -1,38 +1,21 @@
 'use client';
 import { cn } from '@/lib/utils';
 import type { DebuggerPartProps } from './styles';
+import { DebugToolbar, type DebugToolbarAction } from '@/components/ui/debug-toolbar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import type { NavigationKind, StepLink } from './host';
 import { frameName, sourceName, type DebuggerModel } from './model';
 import { useModel } from './use-model';
-const Navigation: {
-  how: NavigationKind;
-  label: string;
-  title: string;
-}[] = [
-  {
-    how: 'rewind',
-    label: '⏮',
-    title: 'Rewind to the previous breakpoint hit (Alt+F8)',
-  },
-  {
-    how: 'stepOutBack',
-    label: '⤴',
-    title: 'Step out backward (Alt+Shift+F11, Shift+←)',
-  },
-  { how: 'stepOverBack', label: '↶', title: 'Step over backward (Alt+F10, ↑)' },
-  { how: 'stepInBack', label: '↖', title: 'Step in backward (Alt+F11, ←)' },
-  { how: 'stepIn', label: '↘', title: 'Step in (F11, →)' },
-  { how: 'stepOver', label: '↷', title: 'Step over (F10, ↓)' },
-  { how: 'stepOut', label: '⤵', title: 'Step out (Shift+F11, Shift+→)' },
-  {
-    how: 'continue',
-    label: '⏭',
-    title: 'Continue to the next breakpoint hit (F8)',
-  },
-];
+const Navigation: Partial<Record<DebugToolbarAction, NavigationKind>> = {
+  continue: 'continue',
+  'step-over': 'stepOver',
+  'step-into': 'stepIn',
+  'step-out': 'stepOut',
+  'step-back': 'stepInBack',
+  'reverse-continue': 'rewind',
+};
 export function formatMs(ms: number) {
   const a = Math.abs(ms);
   const sign = ms < 0 ? '−' : '';
@@ -55,27 +38,30 @@ export function StepButtons({
 }: DebuggerPartProps & {
   model: DebuggerModel;
 }) {
+  useModel(model, (m) => m.version);
+  const disabled: DebugToolbarAction[] = [];
+  const summary = model.summary;
+  if (!summary?.steps) disabled.push('continue', 'step-over', 'step-into', 'step-out', 'step-back', 'reverse-continue', 'restart', 'stop');
+  else {
+    if (model.stackFrames().length <= 1) disabled.push('step-out');
+    if (!model.host.restartPlayback) disabled.push('restart');
+    if (!model.host.stopPlayback) disabled.push('stop');
+  }
   return (
-    <div
-      className={cn('debugger-steps flex shrink-0 gap-px', className)}
-      data-slot="debugger-steps"
+    <DebugToolbar
+      size="compact"
+      className={cn('debugger-steps h-9 max-w-full overflow-x-auto rounded-none border-0 bg-transparent px-0 shadow-none [&_.codicon-gripper]:hidden [&_button]:size-7 [&_button_.codicon]:text-info [&_button_.codicon]:text-body [&_button:disabled_.codicon]:grayscale [&_button[data-hovered]]:bg-secondary [&_button[data-pressed]]:bg-secondary-strong [&_button[data-action=continue]_.codicon]:text-success [&_button[data-action=reverse-continue]_.codicon]:text-success [&_button[data-action=restart]_.codicon]:text-success [&_button[data-action=stop]_.codicon]:text-destructive', className)}
       style={style}
-    >
-      {Navigation.map((n) => (
-        <Button
-          key={n.how}
-          variant="quiet"
-          size="icon-sm"
-          className="debugger-step min-w-7 h-7 text-subhead leading-none text-foreground"
-          data-action={n.how}
-          aria-label={n.title}
-          title={n.title}
-          onPress={() => void model.navigate(n.how)}
-        >
-          {n.label}
-        </Button>
-      ))}
-    </div>
+      disabledActions={disabled}
+      onAction={(action) => {
+        const how = Navigation[action];
+        if (how) void model.navigate(how);
+        else {
+          const perform = action === 'restart' ? model.host.restartPlayback : model.host.stopPlayback;
+          if (perform) void Promise.resolve().then(perform).catch((error: Error) => model.host.status(error.message, { error: true }));
+        }
+      }}
+    />
   );
 }
 function Links({ groups }: { groups: StepLink[][] }) {
@@ -185,7 +171,7 @@ export function DebuggerPosition({
       data-slot="debugger-position"
       style={style}
     >
-      <span className="debugger-paused text-warning font-semibold">Paused</span>
+      <span className="debugger-paused me-1.5 inline-flex rounded-sm bg-warning/10 px-1.5 py-0.5 text-warning font-semibold">Paused</span>
       <span>{frame ? ` in ${frameName(frame)}` : ''}</span>
       {loc ? (
         <span className="debugger-mono font-mono text-caption">{` ${sourceName(source)}:${loc.line}:${loc.column ?? 0}`}</span>
@@ -321,8 +307,8 @@ export function DebuggerToolbar({
     <div
       className={cn(
         compact
-          ? 'debugger-toolbar flex shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 border-b border-border px-2 py-1 min-w-0 [&.compact]:px-1.5 [&.compact]:py-0.5 [&.compact_.debugger-position]:basis-full [&.compact_.debugger-position]:max-h-[34px] compact'
-          : 'debugger-toolbar flex shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 border-b border-border px-2 py-1 min-w-0 [&.compact]:px-1.5 [&.compact]:py-0.5 [&.compact_.debugger-position]:basis-full [&.compact_.debugger-position]:max-h-[34px]',
+          ? 'debugger-toolbar flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-background px-3 py-2 min-w-0 [&.compact]:px-2 [&.compact_.debugger-position]:basis-full compact'
+          : 'debugger-toolbar flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-background px-3 py-2 min-w-0',
         className,
       )}
       data-slot="debugger-toolbar"
@@ -335,6 +321,7 @@ export function DebuggerToolbar({
         aria-pressed={applicationCodeOnly}
         title="Prefer application code when scrubbing. Turn off to include dependencies and runtime code."
         data-action="application-code-only"
+        className="h-7 shrink-0 rounded-md px-2 text-caption font-medium"
         onPress={() => model.setApplicationCodeOnly(!applicationCodeOnly)}
       >
         {applicationCodeOnly ? 'App code' : 'All code'}
@@ -349,7 +336,7 @@ export function DebuggerToolbar({
       <DebuggerPosition model={model} />
       {compact ? null : (
         <div
-          className="debugger-engine min-w-0 shrink overflow-hidden text-muted-foreground text-caption2 whitespace-nowrap text-ellipsis"
+          className="debugger-engine basis-full min-w-0 shrink overflow-hidden text-muted-foreground text-caption2 whitespace-nowrap text-ellipsis"
           data-slot="debugger-engine"
         >
           {engine}

@@ -25,6 +25,19 @@ function DebugControls({ dispatch, stopped }: {
 }
 ```
 
-`onAction` receives one of the eight actions shown above. `disabledActions` removes controls the active debugger cannot run. Set `size="compact"` to keep all controls visible in a narrow pane.
+`onAction` receives the action that was pressed. `disabledActions` disables unavailable controls. Set `size="compact"` for a narrow pane.
+
+Pass `actions` to choose and order the controls a debugger supports. The Replay Debugger block uses the standard order. Its host supplies `restartPlayback` and `stopPlayback`; unavailable controls are disabled:
+
+```tsx
+<DebugToolbar
+  size="compact"
+  actions={[
+    'continue', 'step-over', 'step-into', 'step-out',
+    'step-back', 'reverse-continue', 'restart', 'stop',
+  ]}
+  onAction={dispatch}
+/>
+```
 
 The reverse controls need a debugger that supports reverse execution. The icons come from [Microsoft's Codicons](https://microsoft.github.io/vscode-codicons/dist/codicon).

@@ -259,6 +259,10 @@ export interface DevToolsReply {
 }
 
 export interface DebuggerHost {
+  /** Return to the recording's beginning and pause playback. Omit when unavailable. */
+  restartPlayback?(): void | Promise<void>;
+  /** Pause the host's playback transport. Omit when this host has no playback. */
+  stopPlayback?(): void | Promise<void>;
   /* What's known about a step without paying for a replay. */
   peek(step: number): Promise<Peek>;
   /** Nearest application pause in this indexed window; -1 when it has none. */

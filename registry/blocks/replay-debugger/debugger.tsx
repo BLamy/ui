@@ -141,7 +141,7 @@ function StackPart({
   return (
     <div className="debugger-stack flex flex-col flex-1 h-full min-w-0 min-h-0 overflow-hidden">
       <section className="debugger-section min-h-0 flex flex-col overflow-hidden [&+.debugger-section]:border-t [&+.debugger-section]:border-border flex-[2_1_0%]">
-        <div className="debugger-pane-title shrink-0 px-2 py-[3px] text-muted-foreground text-caption2 font-semibold">
+        <div className="debugger-pane-title shrink-0 border-b border-border/60 bg-secondary/25 px-3 py-2 text-muted-foreground text-caption2 font-semibold uppercase tracking-wide">
           Call stack
         </div>
         <div className="debugger-section-body flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -150,7 +150,7 @@ function StackPart({
         <DebuggerCalls model={model} />
       </section>
       <section className="debugger-section min-h-0 flex flex-col overflow-hidden [&+.debugger-section]:border-t [&+.debugger-section]:border-border flex-[3_1_0%]">
-        <div className="debugger-pane-title shrink-0 px-2 py-[3px] text-muted-foreground text-caption2 font-semibold">
+        <div className="debugger-pane-title shrink-0 border-b border-border/60 bg-secondary/25 px-3 py-2 text-muted-foreground text-caption2 font-semibold uppercase tracking-wide">
           Scopes
         </div>
         <div className="debugger-section-body flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -158,7 +158,7 @@ function StackPart({
         </div>
       </section>
       <section className="debugger-section min-h-0 flex flex-col overflow-hidden [&+.debugger-section]:border-t [&+.debugger-section]:border-border flex-[1_1_0%]">
-        <div className="debugger-pane-title shrink-0 px-2 py-[3px] text-muted-foreground text-caption2 font-semibold">
+        <div className="debugger-pane-title shrink-0 border-b border-border/60 bg-secondary/25 px-3 py-2 text-muted-foreground text-caption2 font-semibold uppercase tracking-wide">
           Breakpoints and logpoints
         </div>
         <div className="debugger-section-body flex flex-col flex-1 min-h-0 overflow-hidden">

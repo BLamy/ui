@@ -188,6 +188,16 @@ describe('Breadcrumb siblings menu', () => {
 });
 
 describe('Breadcrumb width', () => {
+  it('changes a short source path into a collapsed framework path with dialog pickers', () => {
+    box.width = 280;
+    const item = (id: string, label: string): BreadcrumbItemData => ({ id, label, onPress: () => pressed(id), 'aria-haspopup': 'dialog', 'aria-expanded': false });
+    const { rerender } = render(<Breadcrumb items={[item('sources', 'Sources'), item('src', 'src'), item('cart', 'cart.js')]} />);
+    rerender(<Breadcrumb items={[item('sources', 'Sources'), item('framework', 'Framework and generated code (1)'), item('node_modules', 'node_modules'), item('runtime', 'runtime.js')]} />);
+    expect(screen.getByRole('button', { name: 'runtime.js' })).toBeTruthy();
+    press(screen.getByRole('button', { name: 'More' }));
+    press(within(screen.getByRole('menu')).getByRole('menuitem', { name: 'Framework and generated code (1)' }));
+    expect(pressed).toHaveBeenCalledWith('framework');
+  });
   it('renders the full list first and when it fits', () => {
     box.width = 600;
     render(<Breadcrumb items={TRAIL} />);

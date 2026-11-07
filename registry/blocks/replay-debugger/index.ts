@@ -18,7 +18,7 @@ export {
 } from './model';
 export { useModel } from './use-model';
 export { DebuggerCode, type DebuggerCodeHandle } from './code';
-export { DebuggerSources } from './sources';
+export { DebuggerSources, DebuggerSourceBreadcrumbs } from './sources';
 export { DebuggerLinePanels, HitNavigator } from './line-panels';
 export {
   DebuggerToolbar,

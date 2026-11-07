@@ -15,11 +15,11 @@ test('the plain-data host steps in both directions through keyboard-activated co
   await expect(position(page)).toContainText('step 0 of 18');
   await expect(root(page)).toContainText('in-memory table');
   await expect(root(page)).not.toContainText('native arm64');
-  const forward = root(page).locator('[data-action="stepIn"]');
+  const forward = root(page).locator('[data-action="step-into"]');
   await forward.focus();
   await page.keyboard.press('Enter');
   await expect(position(page)).toContainText('step 1 of 18');
-  await root(page).locator('[data-action="stepInBack"]').click();
+  await root(page).locator('[data-action="step-back"]').click();
   await expect(position(page)).toContainText('step 0 of 18');
 });
 
@@ -32,7 +32,7 @@ test('window resizing preserves the step and an evaluated value across panels', 
     'blocks/replay-debugger',
     '[data-slot="replay-debugger"]',
   );
-  await root(page).locator('[data-action="stepIn"]').click();
+  await root(page).locator('[data-action="step-into"]').click();
   await expect(position(page)).toContainText('step 1 of 18');
   await page
     .getByRole('textbox', { name: 'Evaluate', exact: true })
@@ -76,7 +76,7 @@ test('a completed empty host stays empty when stepping and evaluating are reques
   await expect(root(page)).toContainText('No frames');
   await expect(root(page)).toContainText('No messages');
   await expect(page.locator('[data-slot="code-editor-line"]')).toHaveCount(0);
-  await root(page).locator('[data-action="stepIn"]').click();
+  await expect(root(page).locator('[data-action="step-into"]')).toBeDisabled();
   await page.getByRole('textbox', { name: 'Evaluate', exact: true }).fill('42');
   await page
     .getByRole('textbox', { name: 'Evaluate', exact: true })

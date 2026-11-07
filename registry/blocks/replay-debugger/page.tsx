@@ -86,6 +86,7 @@ function DemoDebugger({
       ),
       { now: () => 0 },
     );
+    if (!empty) made.host.restartPlayback = () => made.pauseAt(DEMO_SUMMARY.firstStep);
     return made;
   });
   const clock = useMemo(() => new DemoClock(), []);

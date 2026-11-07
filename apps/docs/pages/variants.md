@@ -106,7 +106,7 @@ box-border inline-flex h-[22px] shrink-0 items-center justify-center gap-1 round
 Defined in `@/components/ui/breadcrumb`. Base classes:
 
 ```text
-relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px]
+relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px] [contain:inline-size]
 ```
 
 **`size`** — default `default`

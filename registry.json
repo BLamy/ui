@@ -10424,12 +10424,14 @@
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/breadcrumb.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/call-stack.json",
         "https://blamy.github.io/ui/r/call-stack-model.json",
         "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/code-editor.json",
         "https://blamy.github.io/ui/r/code-editor-model.json",
+        "https://blamy.github.io/ui/r/debug-toolbar.json",
         "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/log-list.json",
         "https://blamy.github.io/ui/r/log-list-model.json",
@@ -10437,8 +10439,10 @@
         "https://blamy.github.io/ui/r/object-tree-model.json",
         "https://blamy.github.io/ui/r/object-tree-value.json",
         "https://blamy.github.io/ui/r/object-value.json",
+        "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/tab-bar.json",
+        "https://blamy.github.io/ui/r/tree.json",
         "https://blamy.github.io/ui/r/utils.json",
         "https://blamy.github.io/ui/r/workspace.json"
       ],
@@ -10472,6 +10476,11 @@
           "path": "registry/blocks/replay-debugger/sources.tsx",
           "type": "registry:component",
           "target": "components/blocks/replay-debugger/sources.tsx"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/source-tree.ts",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/source-tree.ts"
         },
         {
           "path": "registry/blocks/replay-debugger/stack.tsx",

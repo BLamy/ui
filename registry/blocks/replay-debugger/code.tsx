@@ -12,15 +12,13 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
-  useLayoutEffect,
   useMemo,
   useRef,
-  useState,
   type Ref,
 } from 'react';
 import { DebuggerLinePanels } from './line-panels';
 import { formatCount, type DebuggerModel } from './model';
-import { DebuggerSources } from './sources';
+import { DebuggerSourceBreadcrumbs } from './sources';
 import { useModel } from './use-model';
 /* ══ The source, at the moment you're on ══
    A read-only CodeEditor on whatever the source's size: the current line, how many times each line ran, a dot beside it for
@@ -166,20 +164,13 @@ function CodeTitle({ model }: { model: DebuggerModel }) {
         data-slot="debugger-title"
       />
     );
-  const raw = model.rawOf(source.id)!;
-  const name = source.url || raw;
   const format = model.titleFormat();
   return (
     <div
       className="debugger-title-text flex flex-1 min-w-0 items-center gap-1.5 text-caption"
       data-slot="debugger-title"
     >
-      <span
-        className="debugger-title-name min-w-0 overflow-hidden whitespace-nowrap text-ellipsis [direction:rtl] text-start"
-        title={name}
-      >
-        {name}
-      </span>
+      <DebuggerSourceBreadcrumbs model={model} />
       {format ? (
         <span
           className="debugger-format shrink-0 text-muted-foreground text-caption2"
@@ -210,8 +201,6 @@ export interface DebuggerCodeHandle {
   /** The CodeEditor's own handle. */
   editor(): CodeEditorHandle | null;
 }
-/** Wide enough to keep the source list beside the code. Otherwise it's a button away. */
-const SideBySideWidth = 620;
 export function DebuggerCode({
   model,
   ref,
@@ -224,22 +213,9 @@ export function DebuggerCode({
   toolbar?: React.ReactNode;
 }) {
   const sourceId = useModel(model, (m) => m.sourceId);
-  const loaded = useModel(model, (m) => Boolean(m.summary));
   const request = useModel(model, (m) => m.scrollRequest);
-  const sourcesOpen = useModel(model, (m) => m.sourcesOpen);
   const root = useRef<HTMLDivElement>(null);
   const editor = useRef<CodeEditorHandle>(null);
-  const [wide, setWide] = useState(true);
-  useLayoutEffect(() => {
-    const el = root.current!;
-    const look = () => {
-      if (el.clientWidth) setWide(el.clientWidth >= SideBySideWidth);
-    };
-    look();
-    const observer = new ResizeObserver(look);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
   /* A line's only moved to when it isn't already comfortably in view. An editor that's just been made for another source
        hasn't measured itself yet, and takes no notice until it has, so this goes on asking for a few frames. */
   const asking = useRef(0);
@@ -303,42 +279,13 @@ export function DebuggerCode({
         className,
       )}
       data-slot="debugger-code"
-      data-side-by-side={wide || undefined}
       style={style}
     >
       {toolbar}
-      <div className="debugger-code-head flex shrink-0 items-center gap-1 min-h-[26px] px-2 py-0 border-b border-border min-w-0">
-        {loaded && !wide ? (
-          <Button
-            variant="quiet"
-            size="sm"
-            className="debugger-sources-button shrink-0 h-[22px] px-1.5 text-caption2"
-            data-slot="debugger-sources-button"
-            aria-expanded={sourcesOpen}
-            onPress={() => {
-              model.sourcesOpen = !model.sourcesOpen;
-              model.changed();
-            }}
-          >
-            Sources
-          </Button>
-        ) : null}
+      <div className="debugger-code-head flex shrink-0 items-center gap-2 min-h-8 px-2 py-1 border-b border-border bg-secondary/20 min-w-0">
         <CodeTitle model={model} />
       </div>
       <div className="debugger-code-body relative flex flex-1 min-h-0">
-        {loaded ? (
-          <div
-            className={
-              wide
-                ? 'debugger-sources-column flex flex-col basis-[170px] shrink-0 min-h-0 overflow-hidden border-e border-border [&[hidden]]:hidden'
-                : 'debugger-sources-over absolute inset-y-0 start-0 z-[5] w-[min(280px,86%)] bg-background border-e border-border shadow-lg flex flex-col [&[hidden]]:hidden'
-            }
-            data-slot="debugger-sources-place"
-            hidden={!wide && !sourcesOpen}
-          >
-            <DebuggerSources model={model} />
-          </div>
-        ) : null}
         <div
           className="debugger-editor relative flex-1 min-w-0 min-h-0 [&>*]:h-full"
           data-slot="debugger-editor"

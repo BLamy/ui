@@ -10,6 +10,7 @@
     "console.tsx",
     "line-panels.tsx",
     "sources.tsx",
+    "source-tree.ts",
     "stack.tsx",
     "toolbar.tsx",
     "use-model.ts",
