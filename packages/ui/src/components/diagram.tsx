@@ -557,11 +557,12 @@ export function Diagram<N = unknown, E = unknown>({
     return out;
   }, [laid, selection, connectable, portsOnly]);
   const labels = useMemo(() => laid.labels.map((l) => ({ id: l.edge.id, box: l.box })), [laid]);
-  const hitAt = (p: Pt): DiagramHit => hitTestDiagram(p, { index: laid.index, geometries: laid.geometries, labels, handles: connectable ? handles : undefined }, camera.z);
+  // A press goes on to the next of the edges on one line, and a double press opens the one it's left selected.
+  const hitAt = (p: Pt, cycle = false): DiagramHit => hitTestDiagram(p, { index: laid.index, geometries: laid.geometries, labels, handles: connectable ? handles : undefined, selectedEdges: selection.edges, cycle }, camera.z);
   const interactive = selectable || editable || connectable;
   const pointerProps = interactive ? {
     onCanvasPointerDown: (e: ReactPointerEvent, { board, screen }: CanvasPointerInfo) => {
-      const hit = hitAt(board);
+      const hit = hitAt(board, true);
       // A press ends connecting by keyboard, and the keys carry on from what was pressed.
       cancel();
       setRingOn(null);

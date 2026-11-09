@@ -3,7 +3,7 @@
    next, what's selected, and what to commit. There's only ever one gesture, so a press can't start two things and a
    cancel can't leave one half done. Nothing's committed until the pointer comes up. */
 import { dist, inFrame, intersects, rectOf, snapMove, unionRect, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
-import { ancestorsOf, edgeAt, nodeAt, portPoint, type ConnectorGeometry, type DiagramConnection, type DiagramIndex, type DiagramSelection, type DiagramSide } from '@/lib/diagram-model';
+import { ancestorsOf, edgesAtPoint, nodeAt, portPoint, type ConnectorGeometry, type DiagramConnection, type DiagramIndex, type DiagramSelection, type DiagramSide } from '@/lib/diagram-model';
 
 /** Where a connection starts or lands: a node, or one of its ports. */
 export interface DiagramConnectionEnd {
@@ -114,12 +114,16 @@ export function offerConnection(g: Extract<DiagramGesture, { k: 'connect' }>, at
 
 /**
  * What's under a board point. A node on top of an edge comes first. An edge runs over what holds other nodes, so it and its
- * label come before those. A root's the background, and can't be hit at all.
+ * label come before those. A root's the background, and can't be hit at all. Where edges lie on one line, it's the one
+ * selected, or with `cycle` the next one after it, so that pressing again goes to each in turn. With none of them
+ * selected, it's the last given.
  */
 export function hitTestDiagram(p: Pt, what: {
   index: DiagramIndex<any>; geometries: ReadonlyMap<string, ConnectorGeometry>; labels: readonly { id: string; box: Rect }[];
   /** Places on top of everything that start a connection or move an edge's end, nearest first. */
   handles?: readonly { hit: NonNullable<DiagramHit>; at: Pt }[];
+  selectedEdges?: readonly string[];
+  cycle?: boolean;
 }, zoom: number): DiagramHit {
   let handle: NonNullable<DiagramHit> | null = null, near = PORT_HIT_DISTANCE / zoom;
   for (const h of what.handles ?? []) {
@@ -133,8 +137,11 @@ export function hitTestDiagram(p: Pt, what: {
   if (node && !holds) return { kind: 'node', id: node.id };
   const label = what.labels.find((l) => inFrame(p, l.box));
   if (label) return { kind: 'edge', id: label.id };
-  const edge = edgeAt(p, what.geometries, EDGE_HIT_DISTANCE / zoom);
-  if (edge) return { kind: 'edge', id: edge };
+  const along = edgesAtPoint(p, what.geometries, EDGE_HIT_DISTANCE / zoom);
+  if (along.length) {
+    const at = what.selectedEdges?.length ? along.findIndex((id) => what.selectedEdges!.includes(id)) : -1;
+    return { kind: 'edge', id: at < 0 ? along[along.length - 1] : what.cycle ? along[(at + 1) % along.length] : along[at] };
+  }
   return node ? { kind: 'node', id: node.id } : null;
 }
 

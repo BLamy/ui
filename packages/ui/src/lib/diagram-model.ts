@@ -559,13 +559,22 @@ export function nodeAt<N>(p: Pt, index: DiagramIndex<N>, pad = 0): DiagramNode<N
 
 /** The nearest connector within `tol` of `p`, and the last given of those at the same distance. */
 export function edgeAt(p: Pt, geometries: ReadonlyMap<string, ConnectorGeometry>, tol: number): string | null {
-  let best: string | null = null;
+  const along = edgesAtPoint(p, geometries, tol);
+  return along.length ? along[along.length - 1] : null;
+}
+
+/** Every connector within `tol` of `p` that's as near as the nearest, in the order given. Two edges between the same two
+ *  ports are one line, so a press there is on both. */
+export function edgesAtPoint(p: Pt, geometries: ReadonlyMap<string, ConnectorGeometry>, tol: number): string[] {
+  let out: string[] = [];
   let d = Infinity;
   for (const [id, g] of geometries) {
     const here = distToConnector(g, p);
-    if (here <= tol && here <= d) { best = id; d = here; }
+    if (here > tol) continue;
+    if (here < d - 1e-9) { out = [id]; d = here; }
+    else if (here <= d + 1e-9) out.push(id);
   }
-  return best;
+  return out;
 }
 
 /* ── What else gets drawn ── */

@@ -115,6 +115,45 @@ test.describe('connecting', () => {
     await expect.poll(() => edges(page)).toContain('consumer>r2:r2_buckets:R2_BUCKET');
   });
 
+  // Every service here has a place, so both bindings' routes come from the same two ports, and they're one line.
+  test('connections on one line can each be pressed, on the line and on their labels', async ({ page }) => {
+    for (let i = 0; i < 3; i++) await connect(page, 'worker', 'env', 'r2', 'binding:r2_buckets');
+    await expect.poll(() => edges(page)).toBe('worker>r2:r2_buckets:R2_BUCKET worker>r2:r2_buckets:R2_BUCKET_2 worker>r2:r2_buckets:R2_BUCKET_3');
+    const lines = page.locator('[data-slot=diagram-edge]');
+    expect(new Set(await lines.evaluateAll((els) => els.map((el) => el.getAttribute('d')))).size).toBe(1);
+    const name = page.locator('[data-slot=cloudflare-binding-name] input');
+    const selectedEdges = () => page.locator('[data-slot=diagram-edge][data-selected=true]').evaluateAll((els) => els.map((el) => el.getAttribute('data-edge')));
+    // Pressing the same place on the line goes to each in turn, and back round.
+    const ids = await lines.evaluateAll((els) => els.map((el) => el.getAttribute('data-edge')));
+    const seen = [];
+    for (let i = 0; i < 4; i++) {
+      await pressOnEdge(page, ids[0]);
+      await expect(name).toHaveCount(1);
+      seen.push(await name.inputValue());
+      expect(await selectedEdges()).toHaveLength(1);
+    }
+    expect(new Set(seen.slice(0, 3)).size).toBe(3);
+    expect(seen[3]).toBe(seen[0]);
+    // Each label selects its own.
+    for (const binding of ['R2_BUCKET', 'R2_BUCKET_2', 'R2_BUCKET_3']) {
+      const label = await page.locator('[data-slot=diagram-edge-label]', { hasText: new RegExp(`^${binding}$`) }).boundingBox();
+      await page.mouse.click(label.x + label.width / 2, label.y + label.height / 2);
+      await expect(name).toHaveValue(binding);
+    }
+    // Moving a service with one selected, they're still one line after, and a press still goes from one to the next.
+    const r2 = await service(page, 'r2').boundingBox();
+    await page.mouse.move(r2.x + 60, r2.y + 14);
+    await page.mouse.down();
+    await page.mouse.move(r2.x + 120, r2.y + 74, { steps: 8 });
+    await page.mouse.up();
+    await pressOnEdge(page, ids[0]);
+    await expect(name).toHaveCount(1);
+    const first = await name.inputValue();
+    await pressOnEdge(page, ids[0]);
+    await expect(name).not.toHaveValue(first);
+    expect(new Set(await lines.evaluateAll((els) => els.map((el) => el.getAttribute('d')))).size).toBe(1);
+  });
+
   test('a service with no binding, like a dashboard feature, is there, and can’t be connected', async ({ page }) => {
     const dlp = service(page, 'dlp');
     const b = await dlp.boundingBox();

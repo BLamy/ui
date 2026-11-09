@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { distToPolyline, type Pt, type Rect } from '@/lib/canvas-math';
 import {
   ARROW_BROAD, ARROW_SLIM, anchorNormal, anchorPoint, ancestorsOf, arrowHead, closedD, connectorBounds, connectorPath, curvePath, descendantsOf, dirOf, distToConnector,
-  addConnection, checkConnection, deleteItems, diagramBounds, edgeAt, edgeGeometries, edgeGeometry, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, moveEdgeEnd, moveNodes, nearestAnchor, nearestSide, nodeAt, pointAlong, polygonPoints,
+  addConnection, checkConnection, deleteItems, diagramBounds, edgeAt, edgeGeometries, edgeGeometry, edgesAtPoint, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, moveEdgeEnd, moveNodes, nearestAnchor, nearestSide, nodeAt, pointAlong, polygonPoints,
   polylinePath, portPoint, regionDividers, renderWindow, rerouteLabel, rerouteOrthogonal, selfLoopPath, simplifyRoute, type ConnectorGeometry, type DiagramEdge, type DiagramNode,
 } from './diagram-model';
 
@@ -446,6 +446,16 @@ describe('hit tests', () => {
     expect(edgeAt({ x: 50, y: 5 }, m, 6)).toBe('b');
     expect(edgeAt({ x: 50, y: 50 }, m, 6)).toBeNull();
     expect(connectorBounds(b)).toEqual({ x: 0, y: 10, w: 100, h: 0 });
+  });
+
+  it('finds every edge as near as the nearest, in order, and edgeAt takes the last of them', () => {
+    const a = polylinePath([{ x: 0, y: 0 }, { x: 100, y: 0 }]), b = polylinePath([{ x: 0, y: 10 }, { x: 100, y: 10 }]);
+    const m = new Map([['a', a], ['same', a], ['b', b]]);
+    expect(edgesAtPoint({ x: 50, y: 2 }, m, 4)).toEqual(['a', 'same']);
+    expect(edgeAt({ x: 50, y: 2 }, m, 4)).toBe('same');
+    expect(edgesAtPoint({ x: 50, y: 8 }, m, 4)).toEqual(['b']);
+    expect(edgesAtPoint({ x: 50, y: 5 }, m, 6)).toEqual(['a', 'same', 'b']);
+    expect(edgesAtPoint({ x: 50, y: 50 }, m, 6)).toEqual([]);
   });
 
   it('hits a curve between its samples, where the old sampled distance missed', () => {

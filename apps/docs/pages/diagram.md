@@ -118,6 +118,8 @@ Give it `editable`, and the pointer selects, moves and deletes, with undo. It's 
 
 Shift or ⌘ adds to the selection, and a drag from nothing draws a marquee, which takes a leaf it touches and a compound only if all of it's inside. Moving lines up with what's nearby, unless you hold ⌘. Edges keep their shape and stay square as they follow, a compound's children go with it, and a compound grows when a child's dragged to its wall.
 
+Two edges between the same two ports are one line. A press there selects one, and pressing again goes to the next, and round, as their labels each select their own. A double press opens whichever it's left selected. `edgesAtPoint` gives every edge on the line at a point, and `edgeAt` the last of them.
+
 ```tsx
 const [data, setData] = useState({ nodes, edges })
 
@@ -258,7 +260,7 @@ It returns `nodes`, `edges`, `bounds`, `status`, `error`, and `engine` and `ms`,
 
 ### The model
 
-`@/lib/diagram-model` is plain functions on plain data, with nothing to render: `edgeGeometry`, `edgeGeometries`, `connectorPath`, `nodeAt`, `edgeAt`, `moveNodes`, `deleteItems`, `checkConnection`, `addConnection`, `moveEdgeEnd`, `indexDiagram`, `labelBox`, `regionDividers` and more. `@/lib/diagram-keyboard` has `stepFocus`, `describeNode` and `describeEdge`, and `@/lib/diagram-gesture` has `stepDiagramGesture` and `hitTestDiagram`.
+`@/lib/diagram-model` is plain functions on plain data, with nothing to render: `edgeGeometry`, `edgeGeometries`, `connectorPath`, `nodeAt`, `edgeAt`, `edgesAtPoint`, `moveNodes`, `deleteItems`, `checkConnection`, `addConnection`, `moveEdgeEnd`, `indexDiagram`, `labelBox`, `regionDividers` and more. `@/lib/diagram-keyboard` has `stepFocus`, `describeNode` and `describeEdge`, and `@/lib/diagram-gesture` has `stepDiagramGesture` and `hitTestDiagram`.
 
 ## cva recipes
 

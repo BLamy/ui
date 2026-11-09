@@ -24,7 +24,7 @@ export type { Camera, Frame, Guide, Handle, HandleId, Pt, Rect } from './lib/can
 export {
   ARROW_BROAD, ARROW_SLIM, DIAGRAM_SIDES, ELBOW_GAP, SELF_LOOP_SIZE,
   anchorNormal, anchorPoint, ancestorsOf, arrowHead, closedD, connectorBounds, connectorPath, cubicAt, curvePath, descendantsOf, dirOf, distToConnector,
-  edgeAt, edgeGeometries, edgeGeometry, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, nearestAnchor, nearestSide, nodeAt,
+  edgeAt, edgeGeometries, edgeGeometry, edgesAtPoint, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, nearestAnchor, nearestSide, nodeAt,
   pointAlong, polygonPoints, polylineD, polylinePath, portPoint, selfLoopPath,
   diagramBounds, regionDividers,
   INITIAL_SIZE, NODE_MIN_SIZE, NODE_PADDING, diagramTextRuns, nodeTextSize, sizeNodesToText,

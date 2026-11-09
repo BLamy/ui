@@ -207,6 +207,22 @@ describe('what’s under the pointer', () => {
     expect(hit(925, 111, 0.5)).toEqual({ kind: 'edge', id: 'open' });
     expect(hit(925, 106, 4)).toBeNull();
   });
+
+  // Two bindings from one Worker to one bucket are two edges on one line.
+  it('goes on to the next of the edges on one line, and back round, and keeps to the selected one without cycle', () => {
+    const line = polylinePath([{ x: 900, y: 300 }, { x: 1000, y: 300 }]);
+    const three = { ...what, geometries: new Map([['first', line], ['second', line], ['third', line], ['open', what.geometries.get('open')!]]) };
+    const at = (selectedEdges: string[], cycle: boolean) => hitTestDiagram({ x: 950, y: 301 }, { ...three, selectedEdges, cycle }, 1);
+    expect(at([], true)).toEqual({ kind: 'edge', id: 'third' });
+    expect(at(['third'], true)).toEqual({ kind: 'edge', id: 'first' });
+    expect(at(['first'], true)).toEqual({ kind: 'edge', id: 'second' });
+    expect(at(['second'], true)).toEqual({ kind: 'edge', id: 'third' });
+    expect(at(['second'], false)).toEqual({ kind: 'edge', id: 'second' });
+    // Something selected that isn't on the line doesn't count.
+    expect(at(['open'], true)).toEqual({ kind: 'edge', id: 'third' });
+    // A line on its own is itself, selected or not.
+    expect(hitTestDiagram({ x: 925, y: 103 }, { ...three, selectedEdges: ['open'], cycle: true }, 1)).toEqual({ kind: 'edge', id: 'open' });
+  });
 });
 
 describe('connecting', () => {
