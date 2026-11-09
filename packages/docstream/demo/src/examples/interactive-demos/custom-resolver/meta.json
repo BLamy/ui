@@ -1,0 +1,4 @@
+{
+  "title": "Custom resolver",
+  "description": "A page rendered with an in-memory `DemoResolver` (see `memoryResolver.ts`): `list`, `meta`, `files` and `load` are all it takes."
+}

@@ -1,0 +1,12 @@
+{
+  "title": "DocsSite playground",
+  "description": "A real `DocsSite` over an editable in-memory VFS. Edit a file, add a page, press **⌘K** inside the site, or switch to a `SUMMARY.md`-driven sidebar.",
+  "height": 620,
+  "bleed": true,
+  "entry": "index.tsx",
+  "variants": [
+    { "id": "auto", "label": "Folder tree" },
+    { "id": "summary", "label": "SUMMARY.md" }
+  ],
+  "status": "Live"
+}

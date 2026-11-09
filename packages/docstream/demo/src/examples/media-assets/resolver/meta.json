@@ -1,0 +1,10 @@
+{
+  "title": "AssetResolverProvider",
+  "description": "Edit the Markdown or drop a file. The resolver log shows every URL docstream asks about; the **Async** variant waits 1.2 s so you can see the pending frame.",
+  "status": "Live",
+  "height": 760,
+  "variants": [
+    { "id": "sync", "label": "Sync" },
+    { "id": "async", "label": "Async" }
+  ]
+}

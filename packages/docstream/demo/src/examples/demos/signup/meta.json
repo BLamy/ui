@@ -1,0 +1,5 @@
+{
+  "title": "Centred card",
+  "description": "The root is `max-width: 480px; margin: 0 auto` — it keeps its 480px and centres, as on a page.",
+  "status": "Block root"
+}

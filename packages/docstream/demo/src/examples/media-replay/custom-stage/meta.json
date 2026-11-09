@@ -1,0 +1,6 @@
+{
+  "title": "A stage of your own",
+  "description": "The player's frame, scrubber, keys and DevTools, on a stage that isn't rrweb: here, numbered frames on a canvas, with the Console and Network lists handed over as data.",
+  "status": "Live",
+  "height": 500
+}

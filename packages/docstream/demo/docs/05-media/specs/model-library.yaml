@@ -1,0 +1,105 @@
+openapi: 3.0.3
+info:
+  title: Model library
+  version: 1.0.0
+  description: A tiny example API for the docstream docs, served as a static YAML file.
+servers:
+  - url: https://models.example.com/v1
+security:
+  - bearer: []
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      description: A personal access token from **Settings → Tokens**.
+  parameters:
+    ModelId:
+      name: modelId
+      in: path
+      required: true
+      description: The model's slug, e.g. `l-bracket`.
+      schema:
+        type: string
+  schemas:
+    Model:
+      type: object
+      properties:
+        id:
+          type: string
+          example: l-bracket
+        name:
+          type: string
+          example: L-bracket
+        format:
+          type: string
+          enum: [stl-ascii, stl-binary]
+        triangles:
+          type: integer
+          example: 40
+        size:
+          $ref: '#/components/schemas/Size'
+        url:
+          type: string
+          example: https://models.example.com/files/l-bracket.stl
+    Size:
+      type: object
+      description: Bounding box in millimetres.
+      properties:
+        x:
+          type: number
+          example: 60
+        y:
+          type: number
+          example: 40
+        z:
+          type: number
+          example: 45
+paths:
+  /models:
+    get:
+      summary: List models
+      description: |
+        Returns every model in the library, newest first.
+
+        {% hint style="info" %}
+        This description is Markdown, rendered by docstream itself, so GitBook blocks work here too.
+        {% endhint %}
+      parameters:
+        - name: format
+          in: query
+          description: Only models stored in this format.
+          schema:
+            type: string
+            enum: [stl-ascii, stl-binary]
+        - name: limit
+          in: query
+          description: At most this many models (default 20).
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The models.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Model'
+        '401':
+          description: Missing or invalid token.
+  /models/{modelId}:
+    get:
+      summary: Get a model
+      description: One model's metadata. Fetch `url` for the mesh itself.
+      parameters:
+        - $ref: '#/components/parameters/ModelId'
+      responses:
+        '200':
+          description: The model.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+        '404':
+          description: No model with that id.
