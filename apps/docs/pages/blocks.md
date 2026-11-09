@@ -82,6 +82,22 @@ import ReplayCanvas from '@/components/blocks/replay-canvas/page';
 <ReplayCanvas replayApiKey={replayAccessToken} />; // your Replay QA projects and test runs
 ```
 
+{% demo src="blocks/cloudflare-studio" layout="multi" %}
+
+The Cloudflare Studio block is a system of Cloudflare's services as an app, on a [CloudflareDiagram](https://blamy.github.io/ui/#/cloudflare-diagram). Search the catalog to add a service, drag from a Worker's `env` to what it binds and choose the operations it uses, and give anything that runs code an XState machine, edited in a [StateDiagram](https://blamy.github.io/ui/#/state-diagram), with what crosses each connection checked against what the machine receives. Select anything to inspect it: a SideDrawer beside the board, or a Credenza tray under it at a phone's width. It's kept in the browser as it changes, so a reload carries on where it was, and Open reads a `system.json` back.
+
+Export lists what it makes, each file with what it still needs that a system doesn't say: the system's `system.json`, a `wrangler.jsonc` for each Worker, written by `writeWrangler`, and a module for each machine, with its config, the machine and `sentBy`, who sends each event. They're files only: nothing's deployed, and there's no account. A browser won't make folders, so a download has its folder in its name, as `api-wrangler.jsonc`. No Cloudflare logos: services are in words, with the library's own icons.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/cloudflare-studio.json{% endcommand %}
+
+```tsx
+import CloudflareStudio from '@/components/blocks/cloudflare-studio/page';
+
+<CloudflareStudio />; // the file upload, kept in localStorage under cloudflare-studio
+<CloudflareStudio initial={{ name: 'Orders', system }} storageKey="orders" />;
+<CloudflareStudio storageKey={null} />; // keeps nothing
+```
+
 {% demo src="blocks/video-editor" layout="multi" %}
 
 The Video Editor block is iMovie and Final Cut in a page: a media library, a viewer that plays the edit live, an inspector and a timeline with a magnetic main track, titles over it and music under it. Drop files on the library (or drag cards onto a track), drag clips to move them, trim their edges, split at the playhead (S), dissolve between clips, give them a look, fill or fit the frame, set clips over the main track as picture in picture, and undo anything. [FFmpeg](https://blamy.github.io/ui/#/ffmpeg) does the reading and the writing on the device: it probes files, draws the filmstrips and waveforms, makes the sample clips and exports the timeline to WebM, MP4, GIF, MP3 or WAV with live progress and the command it ran. FFmpeg's threads need a cross-origin isolated page: in browsers other than Chrome, open the demo in its own tab. Where it can't run, the browser reads and plays what it can and exporting is off.

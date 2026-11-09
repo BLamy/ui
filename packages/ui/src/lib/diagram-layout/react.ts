@@ -92,9 +92,38 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
   }, []);
 
   const result = state.result;
+  // Where things are is the layout's, and what they are is the draft's as it is now. A new name the same size, or new data,
+  // lays out the same, so no new layout brings it, and without this the last one's nodes were drawn as they were.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const now = useMemo(() => (result ? onLayout(draft, result) : null), [draft.nodes, draft.edges, result]);
   return {
-    nodes: result?.nodes ?? NOTHING, edges: result?.edges ?? NOTHING,
+    nodes: now?.nodes ?? NOTHING, edges: now?.edges ?? NOTHING,
     bounds: result?.bounds, engine: result?.engine, ms: result?.ms,
     status: state.status, error: state.error,
   };
+}
+
+/** A draft's nodes and edges where a layout put them: each with the layout's place, size, port places and route, and the
+ *  draft's everything else. What the layout hasn't placed yet isn't there. */
+export function onLayout<N, E>(draft: DiagramDraft<N, E>, laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges'>): Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges'> {
+  const placedNodes = new Map(laid.nodes.map((n) => [n.id, n]));
+  const placedEdges = new Map(laid.edges.map((e) => [e.id, e]));
+  const nodes: DiagramNode<N>[] = [];
+  for (const n of draft.nodes) {
+    const at = placedNodes.get(n.id);
+    if (!at) continue;
+    const ports = n.ports?.map((p) => {
+      const placed = at.ports?.find((q) => q.id === p.id)?.at;
+      return p.at !== undefined || placed === undefined ? p : { ...p, at: placed };
+    });
+    nodes.push({ ...n, x: at.x, y: at.y, w: at.w, h: at.h, ...(ports ? { ports } : null) } as DiagramNode<N>);
+  }
+  const edges: DiagramLayoutResult<N, E>['edges'] = [];
+  for (const e of draft.edges ?? NOTHING) {
+    const at = placedEdges.get(e.id);
+    if (!at) continue;
+    const { labelBox: _stale, ...rest } = e;
+    edges.push({ ...rest, points: at.points, ...(at.labelBox ? { labelBox: at.labelBox } : null) });
+  }
+  return { nodes, edges };
 }

@@ -9522,6 +9522,51 @@
       }
     },
     {
+      "name": "cloudflare-studio",
+      "type": "registry:block",
+      "title": "Cloudflare Studio",
+      "description": "A system of Cloudflare's services as an app: search the catalog to add a service, drag from a Worker's env to what it binds, choose the operations it uses, and give anything that runs code an XState machine, edited in a StateDiagram, with what crosses each connection checked against what the machine receives. Export gives the system's JSON, a wrangler.jsonc for each Worker with what it still needs listed, and a module for each machine, as files: nothing's deployed and there's no account. It's kept in the browser as it changes, and works down to a phone's width, with the inspector in a SideDrawer beside the board or a Credenza under it.",
+      "categories": [
+        "developer",
+        "diagram",
+        "application"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/cloudflare-diagram.json",
+        "https://blamy.github.io/ui/r/cloudflare-services.json",
+        "https://blamy.github.io/ui/r/cloudflare-system.json",
+        "https://blamy.github.io/ui/r/cloudflare-wrangler.json",
+        "https://blamy.github.io/ui/r/credenza.json",
+        "https://blamy.github.io/ui/r/file-upload.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/text-field.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/cloudflare-studio/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/cloudflare-studio/page.tsx"
+        },
+        {
+          "path": "registry/blocks/cloudflare-studio/studio-files.ts",
+          "type": "registry:component",
+          "target": "components/blocks/cloudflare-studio/studio-files.ts"
+        },
+        {
+          "path": "registry/blocks/cloudflare-studio/example.ts",
+          "type": "registry:component",
+          "target": "components/blocks/cloudflare-studio/example.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/cloudflare-studio/page.tsx"
+      }
+    },
+    {
       "name": "codex-clone",
       "type": "registry:block",
       "title": "Codex clone",
