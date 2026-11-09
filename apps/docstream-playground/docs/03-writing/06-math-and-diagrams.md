@@ -344,6 +344,29 @@ A state's `invoke` shows on a second line, with its `onDone` and `onError` as `d
 
 Import `XStateDiagram` or the result-only `XStatePreview` from `@brett_lamy/ui/docstream/xstate` to use them directly. The parser and XState load only when a statechart is displayed. To read a config yourself, `parseXState` and `xstateToMermaid` are in `@brett_lamy/ui/docstream/xstate/machine`, which loads them straight away.
 
+## Workerd configs
+
+A `capnp` fence that's a workerd config, `config.capnp`, draws as the Cloudflare services it runs: each Worker, its Durable Object classes, and what its bindings reach, on a read-only [`CloudflareDiagram`](https://blamy.github.io/ui/#/cloudflare-diagram). What isn't one of Cloudflare's services, like a disk, a socket or a plain value, is listed under it, and the source is a press away. Cap'n Proto that isn't a config, like a schema, stays code.
+
+```capnp
+using Workerd = import "/workerd/workerd.capnp";
+
+const config :Workerd.Config = (
+  services = [ (name = "main", worker = .main) ],
+  sockets = [ (name = "http", address = "*:8080", http = (), service = "main") ],
+);
+
+const main :Workerd.Worker = (
+  modules = [ (name = "worker.js", esModule = embed "worker.js") ],
+  compatibilityDate = "2026-01-01",
+  bindings = [ (name = "ROOMS", durableObjectNamespace = "Room"), (name = "CACHE", kvNamespace = "cache") ],
+  durableObjectNamespaces = [ (className = "Room", uniqueKey = "rooms", enableSql = true) ],
+  durableObjectStorage = (inMemory = ()),
+);
+```
+
+Import `CapnpDiagram`, or the board alone as `CapnpPreview`, from `@brett_lamy/ui/docstream/capnp`. The reader is `readWorkerdConfig` on `@brett_lamy/ui/cloudflare`, which, with the diagram and its catalog, loads only when a config's displayed.
+
 ## tscircuit examples
 
 A `tscircuit` (or `ts-circuit`) fence renders TSX source beside schematic, PCB, and 3D views. The [RunFrame runtime](https://github.com/tscircuit/runframe) runs code in an isolated cross-origin iframe and worker; the hosted runtime requires a network connection. Regular `tsx` fences stay ordinary code.

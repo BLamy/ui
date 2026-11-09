@@ -22,9 +22,10 @@ The renderer tries these rules in order and stops at the first match:
 | 2 | ends in `.rrweb` | `ReplayFile`: the rrweb recording, played in the page | [Session replays](02-replays.md) |
 | 3 | ends in `.stl` | `StlViewer`: an interactive WebGL model | [3D models](03-3d-models.md) |
 | 4 | ends in `.strudel` | `StrudelPlayer`: a live-coded music pattern | [Music](04-music.md) |
-| 5 | is `youtube.com/watch?v=ID` or `youtu.be/ID` | `VideoEmbed` with `https://www.youtube.com/embed/ID` (an iframe) | this page |
-| 6 | ends in `.mp4`, `.webm` or `.ogg` | `VideoEmbed` as a native `<video playsinline>` | this page |
-| 7 | anything else | a link card that opens the URL in a new tab | this page |
+| 5 | ends in `.capnp` | `CapnpEmbed`: a workerd config, drawn as the Cloudflare services it runs | [Math and diagrams](../03-writing/06-math-and-diagrams.md) |
+| 6 | is `youtube.com/watch?v=ID` or `youtu.be/ID` | `VideoEmbed` with `https://www.youtube.com/embed/ID` (an iframe) | this page |
+| 7 | ends in `.mp4`, `.webm` or `.ogg` | `VideoEmbed` as a native `<video playsinline>` | this page |
+| 8 | anything else | a link card that opens the URL in a new tab | this page |
 
 File extensions are matched on the path only: `clip.mp4?v=2` and `model.stl#top` still count. Matching is case-insensitive.
 

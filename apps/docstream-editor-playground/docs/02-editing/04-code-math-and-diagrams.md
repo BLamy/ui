@@ -120,6 +120,8 @@ export const toggle = createMachine({
 
 XState accepts JSON configs and static TypeScript machine configs. Actions, guards and invoked actors are never executed. A state's `invoke` shows on a second line, with its `onDone` and `onError` as `done` and `error` edges, which is what **XState diagram** starts you with. Invalid or unfinished source shows an inline error without stopping editing.
 
+A `capnp` fence that's a workerd config draws as the Cloudflare services it runs, under its source, as you edit it. Type `/` and choose **workerd config** for a Worker and its Durable Object to start from. An embedded `.capnp` file is drawn the same way. Cap'n Proto that isn't a config stays code.
+
 ```tscircuit
 circuit.add(
   <board width="16mm" height="12mm">
