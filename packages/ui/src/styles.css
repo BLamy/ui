@@ -6,7 +6,7 @@
 /* The Docstream editor's sheet (MarkdownEditor, Composer), layered under the kit's own editor rules and every
    utility, so a host restyles the editor with plain classes — no !important. Imported here rather than from
    JavaScript: an unlayered copy anywhere would outrank every layer. */
-@import "@brett_lamy/docstream-editor/styles.css" layer(components.bl-editor);
+@import "./docstream-editor/styles.css" layer(components.bl-editor);
 /* wterm's sheet, for the same reason: Terminal themes it from its recipe, with wterm's custom properties and plain classes. */
 @import "@wterm/dom/css" layer(components.bl-terminal);
 @source "./";

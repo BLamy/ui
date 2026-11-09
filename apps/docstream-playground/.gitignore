@@ -1,0 +1,5 @@
+node_modules
+dist
+# Copied in by scripts/copy-sw.mjs before each build.
+public/__sw__.js
+public/assets/

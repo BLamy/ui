@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.docstream-editor.json",
+  "compilerOptions": {
+    "composite": false,
+    "incremental": false,
+    "emitDeclarationOnly": false,
+    "tsBuildInfoFile": null,
+    "noEmit": false,
+    "rootDir": "src/docstream-editor",
+    "outDir": "dist/docstream-editor",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "customConditions": []
+  },
+  "include": ["src/docstream-editor"],
+  "exclude": ["src/docstream-editor/**/*.test.ts", "src/docstream-editor/**/*.test.tsx", "src/docstream-editor/**/__fixtures__"],
+  "references": []
+}

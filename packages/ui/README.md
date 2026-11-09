@@ -174,7 +174,7 @@ export function Workbench() {
 
 Descendants read and drive the shell with `useWorkbenchShell()` (`sidebarOpen`, `dockOpen`, `panelOpen`, `panelFullscreen`, their setters and toggles, `widthClass`, `compact`).
 
-`Composer` is compositional (like shadcn's InputGroup): `Composer` owns the draft, `ComposerCard` holds `ComposerInput` (the `@brett_lamy/docstream-editor` WYSIWYG editor; pasted images become attachment chips) and addons (`ComposerFooter`, `ComposerSelect`, `ModelPicker`, `ComposerSend`, …), and `ComposerBump`s attach above or below the card. `WorkbenchComposer` is the default composition. `MarkdownView` renders replies with `@brett_lamy/docstream`; `SurfaceFiles` and `SurfaceDiff` use `@pierre/trees` and `@pierre/diffs`.
+`Composer` is compositional (like shadcn's InputGroup): `Composer` owns the draft, `ComposerCard` holds `ComposerInput` (the `@brett_lamy/ui/docstream-editor` WYSIWYG editor; pasted images become attachment chips) and addons (`ComposerFooter`, `ComposerSelect`, `ModelPicker`, `ComposerSend`, …), and `ComposerBump`s attach above or below the card. `WorkbenchComposer` is the default composition. `MarkdownView` renders replies with `@brett_lamy/ui/docstream`; `SurfaceFiles` and `SurfaceDiff` use `@pierre/trees` and `@pierre/diffs`.
 
 ### Image annotation
 

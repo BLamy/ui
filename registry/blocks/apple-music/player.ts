@@ -2,7 +2,7 @@
    repeat. Each song is a Strudel pattern (songs.ts) that loops while the song's clock runs. Sound starts only after
    a press (browsers block audio until then), so stories and screenshots that start "playing" stay silent. */
 import { useEffect, useRef, useState } from 'react';
-import { getStrudelSnapshot, playStrudel, stopStrudel, subscribeStrudel } from '@brett_lamy/docstream/strudel';
+import { getStrudelSnapshot, playStrudel, stopStrudel, subscribeStrudel } from '@brett_lamy/ui/docstream/strudel';
 import { albumSongs, ALBUM, type Song } from './data';
 import { songCode } from './songs';
 

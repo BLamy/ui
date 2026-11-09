@@ -25,7 +25,7 @@ import { StrudelPlayer } from '@brett_lamy/ui'
 {% endtab %}
 {% endtabs %}
 
-`StrudelPlayer` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (`@brett_lamy/docstream/strudel`, 1.10 and later), where a ` ```strudel ` fence or a `{% embed url="song.strudel" %}` renders it. BL UI keeps a thin re-export, so `@/components/ui/strudel-player` resolves like every other part.
+`StrudelPlayer` lives in [`@brett_lamy/ui/docstream`](https://blamy.github.io/ui/#/docstream) (`@brett_lamy/ui/docstream/strudel`, 1.10 and later), where a ` ```strudel ` fence or a `{% embed url="song.strudel" %}` renders it. BL UI keeps a thin re-export, so `@/components/ui/strudel-player` resolves like every other part.
 
 ## Inline code
 

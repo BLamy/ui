@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
 import { copyFileSync, mkdirSync } from 'fs';
+import { execFileSync } from 'child_process';
 import pkg from './package.json' with { type: 'json' };
 import { aliases } from '../../tools/alias.mjs';
 
@@ -37,6 +38,9 @@ export default defineConfig(() => ({
       closeBundle: () =>
         copyFileSync(path.join(import.meta.dirname, 'src/lib/ffmpeg/ffmpeg-worker.js'), path.join(import.meta.dirname, 'dist/ffmpeg-worker.js')),
     },
+    // docstream and docstream-editor are compiled as they were as packages of their own, a module per file, into dist/docstream and
+    // dist/docstream-editor (scripts/build-docstream.mjs). The library's own modules import them by the package's name, so they stay external here.
+    { name: 'bl-docstream', closeBundle: () => execFileSync(process.execPath, [path.join(import.meta.dirname, 'scripts/build-docstream.mjs')], { stdio: 'inherit' }) },
     // The diagram layout worker stays a plain script beside its module, and it's the app's bundler that has to pick it up,
     // because it imports ELK, an optional peer with another licence that mustn't end up in this package. So the line that
     // starts it is hidden from this build's own worker handling, and put back as it was.
@@ -80,7 +84,7 @@ export default defineConfig(() => ({
       // External packages that should not be bundled into your library.
       // Dependencies stay external so apps share one copy (react-aria's contexts must be shared).
       external: (id: string) =>
-        [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.peerDependencies ?? {}), 'react/jsx-runtime']
+        [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.peerDependencies ?? {}), 'react/jsx-runtime', '@brett_lamy/ui/docstream', '@brett_lamy/ui/docstream-editor']
           .some((dep) => id === dep || id.startsWith(dep + '/')),
     },
   },

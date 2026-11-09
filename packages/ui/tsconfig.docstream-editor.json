@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "types": ["vite/client"],
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "rootDir": "src/docstream-editor",
+    "outDir": "out-tsc/docstream-editor",
+    "tsBuildInfoFile": "out-tsc/docstream-editor/tsconfig.tsbuildinfo",
+    "customConditions": ["@org/source"]
+  },
+  "include": ["src/docstream-editor"],
+  "exclude": ["out-tsc", "dist"],
+  "references": [{ "path": "./tsconfig.docstream.json" }]
+}

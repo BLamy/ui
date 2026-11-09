@@ -1,4 +1,4 @@
-import type { DemoComponent, DemoComponentProps } from '@brett_lamy/docstream';
+import type { DemoComponent, DemoComponentProps } from '@brett_lamy/ui/docstream';
 import { ThemeScopeContext, themeScopeProps, useAppearance } from '@/lib/theme';
 
 /* Every demo renders inside the bl-theme for the docs' appearance: a `light` / `dark` wrapper (display: contents, so

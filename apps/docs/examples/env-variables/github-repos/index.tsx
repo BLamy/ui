@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useDocstreamEnv } from '@brett_lamy/docstream'
+import { useDocstreamEnv } from '@brett_lamy/ui/docstream'
 import { Spinner } from '@/components/ui/spinner'
 
 // The page declares `env: [GITHUB_TOKEN]`, and this file mentions GITHUB_TOKEN, so docstream holds it behind

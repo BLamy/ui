@@ -1,10 +1,10 @@
 import { defineConfig } from 'vitest/config';
-import { aliases } from '../../tools/alias.mjs';
+import { aliases, docstreamAliases } from '../../tools/alias.mjs';
 
 // Unit tests for @brett_lamy/ui (kept separate from vite.config.mts so the lib build plugins don't load).
 export default defineConfig({
   root: import.meta.dirname,
-  resolve: { alias: aliases },
+  resolve: { alias: [...docstreamAliases, ...aliases] },
   oxc: { jsx: { runtime: 'automatic' } },
   test: {
     name: 'ui',

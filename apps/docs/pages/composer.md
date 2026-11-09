@@ -1,6 +1,6 @@
 # Composer
 
-The Workbench prompt box is a set of parts, in the spirit of shadcn's `InputGroup`: the root owns the draft, the card holds the editor and its addons, and **bumps** attach above or below the card. Compose exactly the box you need — a bare editor with a send button, the Workbench default, or the full T3 Code layout below. The editor is `@brett_lamy/docstream-editor`, so drafts use the same GitBook-flavored Markdown model as rendered replies.
+The Workbench prompt box is a set of parts, in the spirit of shadcn's `InputGroup`: the root owns the draft, the card holds the editor and its addons, and **bumps** attach above or below the card. Compose exactly the box you need — a bare editor with a send button, the Workbench default, or the full T3 Code layout below. The editor is `@brett_lamy/ui/docstream-editor`, so drafts use the same GitBook-flavored Markdown model as rendered replies.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}

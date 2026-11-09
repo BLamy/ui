@@ -1,5 +1,5 @@
 /** Only real files and folders belong to Notes. There is no seeded demo content. */
-import { parseMarkdown, plainText } from '@brett_lamy/docstream/gitbook';
+import { parseMarkdown, plainText } from '@brett_lamy/ui/docstream/gitbook';
 export interface Note {
   id: string;
   folder: string;

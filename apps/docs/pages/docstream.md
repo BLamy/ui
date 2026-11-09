@@ -1,6 +1,6 @@
 # MarkdownView
 
-Workbench chat replies and these docs use `@brett_lamy/docstream` through the package's `MarkdownView` adapter. Docstream provides GitBook-aware parsing, code highlighting, tables, hints, and streaming-aware markup.
+Workbench chat replies and these docs use `@brett_lamy/ui/docstream` through the package's `MarkdownView` adapter. Docstream provides GitBook-aware parsing, code highlighting, tables, hints, and streaming-aware markup.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}

@@ -2,7 +2,7 @@
 
 A session replay in a browser window. `ReplayPreview` plays an [rrweb](https://github.com/rrweb-io/rrweb) recording with docstream's headless `ReplayStage` and wraps it in browser chrome: a URL bar that follows the recording's navigations, play/pause, a plain seek bar (with `markers`, the recording's moments on a rail above it), a speed control, fullscreen, and a drawn cursor whose clicks ripple. Until the player is ready, a page-shaped skeleton holds the frame at the recording's aspect ratio, so nothing jumps when the page appears.
 
-`ReplayPreview` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (since 1.7.0, `@brett_lamy/docstream/replay`), next to the rrweb stage and the marker helpers it is built on. BL UI keeps a thin re-export, so `@/components/ui/replay-preview` (and the package root) resolves like every other part. The registry item adds `@brett_lamy/docstream` as its one npm dependency.
+`ReplayPreview` lives in [`@brett_lamy/ui/docstream`](https://blamy.github.io/ui/#/docstream) (since 1.7.0, `@brett_lamy/ui/docstream/replay`), next to the rrweb stage and the marker helpers it is built on. BL UI keeps a thin re-export, so `@/components/ui/replay-preview` (and the package root) resolves like every other part. The registry item adds `@brett_lamy/ui/docstream` as its one npm dependency.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -30,10 +30,10 @@ import { ReplayPreview } from '@brett_lamy/ui'
 Import docstream's stylesheet once. The player is plain CSS in `@layer docstream.replay` under zero-specificity selectors, so your utilities and rules override it, and it reads your shadcn tokens (`--card`, `--border`, `--primary`, `--muted-foreground`, `--destructive`, `--success`, `--warning`, `--tertiary-foreground`, `--ring`) with neutral fallbacks:
 
 ```tsx
-import '@brett_lamy/docstream/styles.css'
+import '@brett_lamy/ui/docstream/styles.css'
 ```
 
-Using docstream directly is the same component: `import { ReplayPreview } from '@brett_lamy/docstream/replay'`.
+Using docstream directly is the same component: `import { ReplayPreview } from '@brett_lamy/ui/docstream/replay'`.
 
 
 ## Browser frame
@@ -157,7 +157,7 @@ Record with rrweb (`record({ emit })`) and pass the events. To embed instead of 
 | `getReplayPointerTrack(events)` · `replayPointerAt(track, ms)` | The recorded pointer path and clicks; the pointer's position at a time |
 | `formatReplayTime(ms)` | `m:ss` |
 
-`replayDemoEvents`, from `@brett_lamy/docstream/replay/demo` (also re-exported by `@/components/ui/replay-preview`), is a small synthetic recording (58 events, 20 KB): a shopper on a mock storefront whose checkout fails with a promo code.
+`replayDemoEvents`, from `@brett_lamy/ui/docstream/replay/demo` (also re-exported by `@/components/ui/replay-preview`), is a small synthetic recording (58 events, 20 KB): a shopper on a mock storefront whose checkout fails with a promo code.
 
 ## Drop a recording
 

@@ -11,7 +11,7 @@
     "use-fs",
     "react-aria-components",
     "@agent-wasm/core",
-    "@brett_lamy/docstream",
+    "@brett_lamy/ui",
     "@visual-json/react",
     "@visual-json/yaml"
   ],

@@ -27,7 +27,7 @@ import { StrudelRack, Knob, Fader, StepGrid } from '@brett_lamy/ui'
 {% endtab %}
 {% endtabs %}
 
-It lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (`@brett_lamy/docstream/strudel`, 1.11 and later) and is what [StrudelPlayer](https://blamy.github.io/ui/#/strudel-player)'s sliders button opens. The parser it needs (acorn) loads with it.
+It lives in [`@brett_lamy/ui/docstream`](https://blamy.github.io/ui/#/docstream) (`@brett_lamy/ui/docstream/strudel`, 1.11 and later) and is what [StrudelPlayer](https://blamy.github.io/ui/#/strudel-player)'s sliders button opens. The parser it needs (acorn) loads with it.
 
 ## On a grid
 

@@ -6,8 +6,8 @@ import '@brett_lamy/registry/styles.css';
 // Docstream's renderer sheet, in the same order dev loads it (after ui's). Imported here, not only through
 // lazily-loaded modules, so the production build ships it in the entry CSS. (The editor's sheet comes layered
 // inside ui's stylesheet — an unlayered copy here would outrank the kit's editor rules and every utility.)
-import '@brett_lamy/docstream/styles.css';
-import { DemoFullscreen, demoFromSearch } from '@brett_lamy/docstream';
+import '@brett_lamy/ui/docstream/styles.css';
+import { DemoFullscreen, demoFromSearch } from '@brett_lamy/ui/docstream';
 import { AppearanceProvider } from '@/lib/theme';
 import App from './app/app';
 import RenderPage from './app/render-page';

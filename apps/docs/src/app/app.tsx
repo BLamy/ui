@@ -2,8 +2,8 @@
    sidebar comes from pages/nav.json (as a SUMMARY.md) and the blocks from pages/blocks.md, so every URL stays what it
    was (`#/composer`, `#/blocks`, `#/blocks/apple-notes`). */
 import { useMemo, useState, type MouseEvent, type ReactNode } from 'react';
-import { DocstreamEnvProvider } from '@brett_lamy/docstream';
-import { DocsSite, type DocsPage, type DocsSiteTab } from '@brett_lamy/docstream/site';
+import { DocstreamEnvProvider } from '@brett_lamy/ui/docstream';
+import { DocsSite, type DocsPage, type DocsSiteTab } from '@brett_lamy/ui/docstream/site';
 import { AppearanceProvider, type Appearance } from '@/lib/theme';
 import { demoResolver } from '../demos';
 import { EnvKeychain } from '../env-keychain';

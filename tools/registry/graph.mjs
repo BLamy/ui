@@ -61,6 +61,7 @@ const pkgVersions = (() => {
   return versions;
 })();
 export const npmVersion = (name) => pkgVersions[name];
+const uiVersion = readJson('packages/ui/package.json').version;
 
 /** Real import specifiers of a file (TypeScript's scanner, so strings in sample data don't count). */
 export function importsOf(path) {
@@ -166,7 +167,11 @@ export function buildGraph({ errors = [] } = {}) {
           if (!/\.(css|json)$/.test(spec)) errors.push(`${SRC}/${f}: cannot resolve "${spec}"`);
         } else if (!(spec === 'react' || spec.startsWith('react/') || spec === 'react-dom' || spec.startsWith('react-dom/'))) {
           const pkg = spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0];
-          if (pkg === '@brett_lamy/ui') errors.push(`${SRC}/${f}: the library must not import itself ("${spec}")`);
+          // Docstream and its editor are part of the library, and not copied by the registry: an item that uses them installs the
+          // library at this version, as it once installed @brett_lamy/docstream. Anything else of the library's is copied, so it's
+          // imported by its alias, never by name.
+          if (pkg === '@brett_lamy/ui' && /^@brett_lamy\/ui\/docstream(-editor)?(\/|$)/.test(spec)) npm.set(pkg, uiVersion);
+          else if (pkg === '@brett_lamy/ui') errors.push(`${SRC}/${f}: the library must not import itself ("${spec}"), but for docstream and docstream-editor`);
           else npm.set(pkg, npmVersion(pkg));
         }
       }

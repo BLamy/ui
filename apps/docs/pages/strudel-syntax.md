@@ -29,7 +29,7 @@ import {
 {% endtab %}
 {% endtabs %}
 
-It lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (`@brett_lamy/docstream/strudel`, 1.11 and later).
+It lives in [`@brett_lamy/ui/docstream`](https://blamy.github.io/ui/#/docstream) (`@brett_lamy/ui/docstream/strudel`, 1.11 and later).
 
 {% demo src="strudel-syntax/inspector" %}
 

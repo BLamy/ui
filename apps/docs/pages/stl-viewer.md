@@ -25,7 +25,7 @@ import { StlViewer } from '@brett_lamy/ui'
 {% endtab %}
 {% endtabs %}
 
-`StlViewer` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (`@brett_lamy/docstream/stl`, 1.10 and later), where `{% embed url="part.stl" %}` renders it. BL UI keeps a thin re-export, so `@/components/ui/stl-viewer` resolves like every other part.
+`StlViewer` lives in [`@brett_lamy/ui/docstream`](https://blamy.github.io/ui/#/docstream) (`@brett_lamy/ui/docstream/stl`, 1.10 and later), where `{% embed url="part.stl" %}` renders it. BL UI keeps a thin re-export, so `@/components/ui/stl-viewer` resolves like every other part.
 
 ## A model by URL
 
@@ -55,7 +55,7 @@ Any docstream page embeds a model the same way. A relative path resolves against
 ```
 
 ```tsx
-import { AssetResolverProvider } from '@brett_lamy/docstream'
+import { AssetResolverProvider } from '@brett_lamy/ui/docstream'
 
 <AssetResolverProvider resolve={(url) => blobUrlFor(url)}>{document}</AssetResolverProvider>
 ```

@@ -2,8 +2,8 @@
    flag, subtasks that fold open, and the info button that opens the details sheet. Also the list icon, and a list's
    hover card (what's next in it), which the sidebar rows and the smart lists' list headings show. */
 import { useState, type CSSProperties } from 'react';
-import { TASK_STATES } from '@brett_lamy/docstream/gitbook';
-import { TASK_STATE_ICONS } from '@brett_lamy/docstream/tasks';
+import { TASK_STATES } from '@brett_lamy/ui/docstream/gitbook';
+import { TASK_STATE_ICONS } from '@brett_lamy/ui/docstream/tasks';
 import { ContextMenu, ContextMenuContent } from '@/components/ui/context-menu';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { HoverCardHeader } from '@/components/ui/hover-card';

@@ -141,7 +141,7 @@ export default defineConfig(() => ({
   resolve: {
     conditions: ['@org/source'], alias: aliases,
     // The registry and app share Docstream's demo contexts even when optional runtime peers differ.
-    dedupe: ['react', 'react-dom', '@brett_lamy/docstream', '@brett_lamy/docstream-editor'],
+    dedupe: ['react', 'react-dom', '@brett_lamy/ui/docstream', '@brett_lamy/ui/docstream-editor'],
   },
   optimizeDeps: {
     // PGlite finds its WebAssembly with `new URL('./pglite.wasm', import.meta.url)`; pre-bundling would move the JS
@@ -174,12 +174,12 @@ export default defineConfig(() => ({
       'lowlight',
       'lowlight > highlight.js',
       // docstream pulls CommonJS deps (style-to-js, debug) the browser can't import unbundled; pre-bundle it whole.
-      '@brett_lamy/ui > @brett_lamy/docstream',
-      '@brett_lamy/ui > @brett_lamy/docstream-editor',
+      '@brett_lamy/ui > @brett_lamy/ui/docstream',
+      '@brett_lamy/ui > @brett_lamy/ui/docstream-editor',
       // ReplayPreview's player (rrweb loads from it lazily).
-      '@brett_lamy/ui > @brett_lamy/docstream/replay',
+      '@brett_lamy/ui > @brett_lamy/ui/docstream/replay',
       // The live example card (ReactDemo with an in-page preview).
-      '@brett_lamy/docstream/playground',
+      '@brett_lamy/ui/docstream/playground',
     ],
   },
   // PGlite's worker (examples/pglite/worker) imports the engine, which code-splits: workers must build as ES modules.

@@ -1,9 +1,9 @@
 'use client';
 import * as React from 'react';
-import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/docstream-editor/editor';
-import type { EditorAttachment } from '@brett_lamy/docstream-editor';
-import { astToTiptap } from '@brett_lamy/docstream-editor/convert';
-import { parseMarkdown } from '@brett_lamy/docstream/gitbook';
+import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/ui/docstream-editor/editor';
+import type { EditorAttachment } from '@brett_lamy/ui/docstream-editor';
+import { astToTiptap } from '@brett_lamy/ui/docstream-editor/convert';
+import { parseMarkdown } from '@brett_lamy/ui/docstream/gitbook';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 

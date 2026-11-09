@@ -2,8 +2,8 @@
 import * as React from 'react';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/docstream-editor/editor';
-import type { EditorAttachment } from '@brett_lamy/docstream-editor';
+import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/ui/docstream-editor/editor';
+import type { EditorAttachment } from '@brett_lamy/ui/docstream-editor';
 import { cva, type VariantProps } from 'class-variance-authority';
 import {
   Dialog,

@@ -120,7 +120,7 @@ export default function App() {
 
 {% command %}npm run dev{% endcommand %}
 
-Some parts wrap libraries that ship CommonJS-only dependencies. If Vite reports a missing export from `@brett_lamy/docstream` or `@brett_lamy/docstream-editor`, add them to `optimizeDeps.include` (see [Optimization](https://blamy.github.io/ui/#/optimization)).
+Some parts wrap libraries that ship CommonJS-only dependencies. If Vite reports a missing export from `@brett_lamy/ui/docstream` or `@brett_lamy/ui/docstream-editor`, add them to `optimizeDeps.include` (see [Optimization](https://blamy.github.io/ui/#/optimization)).
 {% endstep %}
 {% endstepper %}
 {% endtab %}
@@ -287,7 +287,7 @@ import '@brett_lamy/ui/theme.css' // optional: the iOS palette
 import { BLProvider, NavigationStack, SplitView } from '@brett_lamy/ui'
 ```
 
-Vite pre-bundles the docstream packages on first use. If it reports a missing export from `@brett_lamy/docstream` or `@brett_lamy/docstream-editor`, add them to `optimizeDeps.include` ([Optimization](https://blamy.github.io/ui/#/optimization)).
+Vite pre-bundles the docstream packages on first use. If it reports a missing export from `@brett_lamy/ui/docstream` or `@brett_lamy/ui/docstream-editor`, add them to `optimizeDeps.include` ([Optimization](https://blamy.github.io/ui/#/optimization)).
 {% endstep %}
 {% endstepper %}
 {% endtab %}

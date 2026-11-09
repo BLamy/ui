@@ -4,7 +4,7 @@
 // registry installs and chat responses on the same implementation.
 export {
   TuiPreview, TuiEmbed, DEFAULT_TUI_RUNTIME_URL, isTuiCodeBlock,
-} from '@brett_lamy/docstream/tui';
+} from '@brett_lamy/ui/docstream/tui';
 export type {
   TuiPreviewProps, TuiPreviewOptions, TuiPreviewState, TuiTheme,
-} from '@brett_lamy/docstream/tui';
+} from '@brett_lamy/ui/docstream/tui';

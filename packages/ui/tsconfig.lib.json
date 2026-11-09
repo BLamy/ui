@@ -2,7 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "out-tsc/lib",
-    "lib": ["es2022", "dom", "dom.iterable"],
+    "lib": [
+      "es2022",
+      "dom",
+      "dom.iterable"
+    ],
     "types": [
       "node",
       "@nx/react/typings/cssmodule.d.ts",
@@ -27,7 +31,9 @@
     "**/*.test.jsx",
     "eslint.config.js",
     "eslint.config.cjs",
-    "eslint.config.mjs"
+    "eslint.config.mjs",
+    "src/docstream/**",
+    "src/docstream-editor/**"
   ],
   "include": [
     "src/**/*.js",
@@ -38,10 +44,10 @@
   ],
   "references": [
     {
-      "path": "../docstream-editor/tsconfig.lib.json"
+      "path": "./tsconfig.docstream.json"
     },
     {
-      "path": "../docstream/tsconfig.lib.json"
+      "path": "./tsconfig.docstream-editor.json"
     }
   ]
 }

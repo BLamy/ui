@@ -32,7 +32,7 @@ Most of these are MIT, ISC, BSD or Apache-2.0. Three need a closer look before y
 
 | Library | Used for | License |
 | --- | --- | --- |
-| [Docstream](https://github.com/BLamy/docstream) and Docstream Editor (`@brett_lamy/docstream`, `@brett_lamy/docstream-editor`) | MarkdownView, MarkdownEditor and the docs site itself. These are BL UI's sibling projects, and they bring the libraries below. | — |
+| [Docstream](https://github.com/BLamy/docstream) and Docstream Editor (`@brett_lamy/ui/docstream`, `@brett_lamy/ui/docstream-editor`) | MarkdownView, MarkdownEditor and the docs site itself. These are BL UI's sibling projects, and they bring the libraries below. | — |
 | [Pele](https://pele.run) by Obsidian | Mermaid diagrams, drawn as SVG | MIT |
 | [XState](https://stately.ai/docs/xstate) by Stately, an optional peer | Reading, simulating and editing state machines in StateDiagram | MIT |
 | [ELK](https://eclipse.dev/elk/) (`elkjs`) by the Eclipse Foundation, an optional peer | Laying out Diagram and StateDiagram, in a worker, when a layout's first asked for. An app with fixed positions never loads it | **EPL-2.0 OR GPL-3.0-or-later** |

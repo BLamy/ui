@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createBundledSourceClient, SourcePreview, type DemoResolver, type SourceRefNode } from '@brett_lamy/docstream'
+import { createBundledSourceClient, SourcePreview, type DemoResolver, type SourceRefNode } from '@brett_lamy/ui/docstream'
 import { Button } from '@/components/ui/button'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { MarkdownView, type ReferenceNode } from '@/components/ui/markdown-view'

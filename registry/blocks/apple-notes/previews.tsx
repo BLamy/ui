@@ -1,7 +1,7 @@
 /* Hover cards for what the master list and the tree point at, the way Finder previews a file: a note's opening
    lines, word count, folder and last edit; a folder's notes, subfolders and latest notes; another file's type and
    path. They only show what opening the item shows in full, so touch (which never opens them) misses nothing. */
-import { parseMarkdown, plainText } from '@brett_lamy/docstream/gitbook';
+import { parseMarkdown, plainText } from '@brett_lamy/ui/docstream/gitbook';
 import { HoverCardHeader } from '@/components/ui/hover-card';
 import { TreeFileIcon } from '@/components/ui/tree';
 import { Icon, type IconName } from '@/lib/icon';
