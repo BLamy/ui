@@ -62,7 +62,8 @@ const FramesStage = forwardRef<ReplayStageHandle, ReplayCustomStageProps>(functi
   }, [moveTo])
 
   useImperativeHandle(ref, () => ({
-    play(offset) {
+    // Optional here too: toggle calls it with nothing, and TypeScript 6 takes this method's own arity for `this`.
+    play(offset?: number) {
       moveTo(offset ?? (time.current >= DURATION ? 0 : time.current))
       setPlaying(true)
     },

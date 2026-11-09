@@ -50,7 +50,15 @@ const pkgVersions = (() => {
   const registry = readJson('registry/package.json');
   // The workspace root pins concrete versions for what the blocks and the library share; the ui package's ranges fill in the rest.
   // The ui package's optional peers (the PGlite engine) are installed as ordinary dependencies by a registry item, at the peer range.
-  return { ...registry.dependencies, ...ui.peerDependencies, ...ui.dependencies, ...root.devDependencies, ...root.dependencies };
+  const versions = { ...registry.dependencies, ...ui.peerDependencies, ...ui.dependencies, ...root.devDependencies, ...root.dependencies };
+  // A package from this workspace is installed by its version, as `pnpm pack` writes it: `workspace:*` means nothing to npm.
+  for (const [name, spec] of Object.entries(versions)) {
+    if (!String(spec).startsWith('workspace:')) continue;
+    const dir = readdirSync(abs('packages'), { withFileTypes: true }).find((d) => d.isDirectory() && readJson(`packages/${d.name}/package.json`).name === name);
+    if (!dir) throw new Error(`${name} is ${spec}, and no package in packages/ is called that`);
+    versions[name] = readJson(`packages/${dir.name}/package.json`).version;
+  }
+  return versions;
 })();
 export const npmVersion = (name) => pkgVersions[name];
 
