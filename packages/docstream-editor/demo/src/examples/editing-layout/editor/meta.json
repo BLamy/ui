@@ -1,0 +1,36 @@
+{
+  "title": "Tables and layout",
+  "description": "Tables, hints, tabs, steppers, columns, expandables, page links, embeds and updates — edited in place.",
+  "height": 784,
+  "status": "Live",
+  "variants": [
+    {
+      "id": "tables",
+      "label": "Tables"
+    },
+    {
+      "id": "hints",
+      "label": "Hints"
+    },
+    {
+      "id": "tabs",
+      "label": "Tabs"
+    },
+    {
+      "id": "steppers",
+      "label": "Steppers"
+    },
+    {
+      "id": "columns",
+      "label": "Columns"
+    },
+    {
+      "id": "links",
+      "label": "Links & embeds"
+    },
+    {
+      "id": "updates",
+      "label": "Updates"
+    }
+  ]
+}

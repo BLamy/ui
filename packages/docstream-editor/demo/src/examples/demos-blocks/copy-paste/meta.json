@@ -1,0 +1,10 @@
+{
+  "title": "Copy and paste demos between editors",
+  "description": "Select the demo in A, press ⌘C (or **Copy it**), click into B and press ⌘V. Or drag the block's grip from A into B. Compare the two `pastedDemoFiles` modes in B's Markdown.",
+  "height": 1000,
+  "variants": [
+    { "id": "inline", "label": "inline" },
+    { "id": "vfs", "label": "vfs" }
+  ],
+  "status": "Live"
+}

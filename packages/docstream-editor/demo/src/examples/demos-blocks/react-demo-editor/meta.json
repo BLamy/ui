@@ -1,0 +1,11 @@
+{
+  "title": "ReactDemoEditor",
+  "description": "Edit `Greeting.js` (change the color, the text). With a `liveRenderer` the preview follows after a 350 ms pause; with `autoPreview={false}` it waits for **Run demo**. The renderer here is a small stand-in, see the note on the page.",
+  "height": 640,
+  "variants": [
+    { "id": "live", "label": "live" },
+    { "id": "manual", "label": "Run demo" },
+    { "id": "none", "label": "no renderer" }
+  ],
+  "status": "Live"
+}

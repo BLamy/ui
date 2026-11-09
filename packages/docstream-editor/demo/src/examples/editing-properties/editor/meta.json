@@ -1,0 +1,20 @@
+{
+  "title": "Properties and tasks",
+  "description": "YAML frontmatter as an editable sheet, and task boxes with eight states.",
+  "height": 784,
+  "status": "Live",
+  "variants": [
+    {
+      "id": "properties",
+      "label": "Properties"
+    },
+    {
+      "id": "tasks",
+      "label": "Tasks"
+    },
+    {
+      "id": "commands",
+      "label": "Commands"
+    }
+  ]
+}

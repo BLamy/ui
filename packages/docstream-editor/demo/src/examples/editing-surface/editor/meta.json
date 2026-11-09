@@ -1,0 +1,32 @@
+{
+  "title": "The editing surface",
+  "description": "A GitbookEditor beside the Markdown it serializes. Edit either side.",
+  "height": 804,
+  "status": "Live",
+  "variants": [
+    {
+      "id": "blocks",
+      "label": "Blocks"
+    },
+    {
+      "id": "inline",
+      "label": "Inline"
+    },
+    {
+      "id": "preserved",
+      "label": "Preserved"
+    },
+    {
+      "id": "editable",
+      "label": "Editable"
+    },
+    {
+      "id": "readonly",
+      "label": "Read-only"
+    },
+    {
+      "id": "bare",
+      "label": "Bare"
+    }
+  ]
+}

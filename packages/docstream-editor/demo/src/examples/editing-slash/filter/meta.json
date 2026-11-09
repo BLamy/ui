@@ -1,0 +1,5 @@
+{
+  "title": "Slash filter",
+  "description": "SLASH_ITEMS filtered the way the menu filters them: by title and keywords, case-insensitively.",
+  "height": 440
+}

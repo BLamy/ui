@@ -1,0 +1,6 @@
+{
+  "title": "Playground",
+  "description": "The real `GitbookEditor` beside the Markdown it serializes on every keystroke. Toggle props, type `/`, `@` or `#`, paste an image, or edit the Button source at the bottom.",
+  "height": 660,
+  "status": "Live"
+}

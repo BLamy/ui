@@ -1,0 +1,10 @@
+{
+  "title": "Pasted images: inline or chip",
+  "description": "Paste or drop an image (or press **Paste a sample image**). Switch modes to see where the file goes: into the Markdown, or into the host's store.",
+  "height": 640,
+  "variants": [
+    { "id": "inline", "label": "inline" },
+    { "id": "chip", "label": "chip" }
+  ],
+  "status": "Live"
+}

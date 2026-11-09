@@ -1,0 +1,24 @@
+{
+  "title": "Code, math and diagrams",
+  "description": "Edit a fence's attributes, a command box, TeX or Mermaid, and watch the Markdown.",
+  "height": 804,
+  "status": "Live",
+  "variants": [
+    {
+      "id": "code",
+      "label": "Code"
+    },
+    {
+      "id": "commands",
+      "label": "Commands"
+    },
+    {
+      "id": "math",
+      "label": "Math"
+    },
+    {
+      "id": "diagrams",
+      "label": "Diagrams"
+    }
+  ]
+}
