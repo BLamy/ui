@@ -1610,6 +1610,11 @@
   margin: 1.25em 0;
 }
 
+.docs-capnp > .docs-split-head {
+  margin: 0;
+  padding: 8px 12px 8px 16px;
+}
+
 .docs-capnp-board {
   position: relative;
   height: 380px;
