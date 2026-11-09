@@ -457,9 +457,14 @@ export function Tree({
     setMenuNode(node);
     return !!node;
   };
+  // The row a click was on, taken as it starts: by the time it's handled, a search's activation can have recycled that
+  // virtual row for another path (the Recording Inspector's source tree, 5.17.0).
+  const activationTargets = useRef(new WeakMap<Event, TreeNode | null>());
+  const keepTarget = (e: MouseEvent<HTMLElement>) => { activationTargets.current.set(e.nativeEvent, targetOf(rowPathOf(e.nativeEvent) ?? model.getFocusedPath())); };
   const action = (e: Event) => {
     // With aria-activedescendant, keys arrive on the tree's viewport, rather than on a row.
-    const node = targetOf(rowPathOf(e) ?? model.getFocusedPath());
+    const node = activationTargets.current.has(e) ? activationTargets.current.get(e)! : targetOf(rowPathOf(e) ?? model.getFocusedPath());
+    activationTargets.current.delete(e);
     if (!node || !onAction) return;
     // The action may move focus (into an editor, say): the key that ran it mustn't land there too.
     e.preventDefault();
@@ -492,6 +497,8 @@ export function Tree({
       onPointerMove={preview ? onPointerMove : undefined}
       onPointerDownCapture={preview ? card.triggerProps.onPointerDown : undefined}
       onPointerLeave={preview ? (e: ReactPointerEvent<HTMLElement>) => { previewRow.current = null; card.triggerProps.onPointerLeave(e); } : undefined}
+      onClickCapture={keepTarget}
+      onDoubleClickCapture={keepTarget}
       onClick={activationMode === 'singleClick' ? (e: MouseEvent<HTMLElement>) => action(e.nativeEvent) : undefined}
       onDoubleClick={activationMode === 'doubleClick' ? (e: MouseEvent<HTMLElement>) => action(e.nativeEvent) : undefined}
       onKeyDownCapture={(e: KeyboardEvent<HTMLElement>) => { if (e.key === 'Enter' && !e.nativeEvent.composedPath().some((el) => el instanceof HTMLInputElement)) action(e.nativeEvent); }}
