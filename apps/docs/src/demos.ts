@@ -41,6 +41,3 @@ export const demoResolver: DemoResolver = {
   load: (src) => pick(src).load(src).then(themed),
   href,
 };
-
-/** Registry block slugs (the nav's Blocks count). */
-export const BLOCK_COUNT = blocks.list!().length;

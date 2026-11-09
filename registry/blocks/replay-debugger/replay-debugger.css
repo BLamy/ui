@@ -1,0 +1,4 @@
+/* The editor supplies the gutter button; its marker belongs to this block. */
+button:hover > .debugger-marker:not(.on) {
+  background: color-mix(in srgb, var(--warning) 45%, transparent);
+}

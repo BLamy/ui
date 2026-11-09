@@ -4,7 +4,7 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
 import type { Tailscale } from '@/lib/tailscale';
 
-/** What the desktop shares with its apps: one Tailscale controller, so the menu bar and Safari are always in step.
+/** What the desktop shares with its apps: one Tailscale controller, so the menu bar, Safari and VS Code are in step.
     Null when no provider is above the desktop (an app then falls back to its own). */
 export interface DesktopShared {
   tailscale: Tailscale | null;
@@ -103,6 +103,11 @@ export const APPS: DesktopApp[] = [
     id: 'codex', name: 'Codex', description: 'An AI coding agent and its threads', keywords: ['ai', 'chat', 'agent', 'openai', 'assistant'],
     tile: ['#4B4F63', '#1E2030'], icon: 'bolt-fill', size: { w: 1000, h: 640 },
     Component: lazy(() => import('../codex-clone/page')),
+  },
+  {
+    id: 'vscode', name: 'Visual Studio Code', description: 'Code, terminals and OpenCode in one workspace', keywords: ['vscode', 'vs code', 'editor', 'ide', 'terminal', 'node', 'opencode'],
+    tile: ['#3AAAF2', '#007ACC'], icon: 'rectangle-split', size: { w: 1120, h: 720 }, props: ({ tailscale }) => ({ controller: tailscale ?? undefined }),
+    Component: lazy(() => import('../vscode/page')),
   },
   {
     id: 'opencode', name: 'OpenCode', description: 'A live terminal, browser workspace and app previews', keywords: ['terminal', 'shell', 'code', 'ai', 'agent', 'workspace', 'opentui'],

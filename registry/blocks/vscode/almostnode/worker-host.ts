@@ -1,6 +1,7 @@
 /* The page's side of the Worker: it starts it, runs commands on it, and when a command won't stop, replaces it. Nothing
    loads until it starts, and it asks for the files to start a Worker with each time, so a Worker can be thrown away. */
-import type { FileData, FileEntry, FsBatch, HostMessage, RuntimeMessage, SessionState } from './protocol';
+import type { FileData, FileEntry, FsBatch, HostMessage, RuntimeMessage, RuntimeFetchRequest, RuntimeFetchResponse, SessionState } from './protocol';
+import { isTailnetUrl } from './tailnet-fetch';
 
 export type WorkerStatus = 'off' | 'starting' | 'ready' | 'restarting' | 'failed';
 
@@ -51,6 +52,7 @@ export interface WorkerHost {
 }
 
 export interface WorkerHostOptions {
+  fetch?: (request: RuntimeFetchRequest, signal: AbortSignal) => Promise<RuntimeFetchResponse>;
   root: string;
   spawn: SpawnWorker;
   /** Every file and folder, to start a Worker with. */
@@ -112,6 +114,8 @@ export function createWorkerHost(options: WorkerHostOptions): WorkerHost {
     aborted: boolean;
   }
   const runs = new Map<number, ActiveRun>();
+  const fetches = new Map<number, AbortController>();
+  const cancelFetches = () => { for (const controller of fetches.values()) controller.abort(); fetches.clear(); };
   let nextRun = 1;
   let flushTimer: ReturnType<typeof setTimeout> | undefined;
   /** A stopped command can leave timers going, with no way to reach them but to replace the Worker. */
@@ -180,6 +184,7 @@ export function createWorkerHost(options: WorkerHostOptions): WorkerHost {
   };
 
   const replaceWorker = (blocked?: ActiveRun) => {
+    cancelFetches();
     transport?.terminate();
     transport = null;
     inFlight.clear();
@@ -197,6 +202,32 @@ export function createWorkerHost(options: WorkerHostOptions): WorkerHost {
 
   function handle(message: RuntimeMessage) {
     switch (message.type) {
+      case 'fetch': {
+        const request = message.request;
+        const target = transport;
+        if (!Number.isSafeInteger(message.id) || fetches.has(message.id)) return;
+        if (!request || typeof request.url !== 'string' || !isTailnetUrl(request.url) || typeof request.method !== 'string'
+          || !Array.isArray(request.headers) || !request.headers.every((header) => Array.isArray(header) && header.length === 2 && header.every((value) => typeof value === 'string'))
+          || (request.body !== null && !(request.body instanceof Uint8Array)) || !['follow', 'error', 'manual'].includes(request.redirect)) {
+          target?.post({ type: 'fetch-result', id: message.id, error: 'Only tailnet HTTP requests are allowed.' });
+          return;
+        }
+        const controller = new AbortController();
+        fetches.set(message.id, controller);
+        void Promise.resolve().then(() => {
+          controller.signal.throwIfAborted();
+          if (!options.fetch) throw new Error('Tailscale is not connected.');
+          return options.fetch(request, controller.signal);
+        }).then(
+          (response) => { if (!controller.signal.aborted) target?.post({ type: 'fetch-result', id: message.id, response }); },
+          (error: unknown) => { if (!controller.signal.aborted) target?.post({ type: 'fetch-result', id: message.id, error: error instanceof Error ? error.message : String(error) }); },
+        ).finally(() => { if (fetches.get(message.id) === controller) fetches.delete(message.id); });
+        return;
+      }
+      case 'cancel-fetch':
+        fetches.get(message.id)?.abort();
+        fetches.delete(message.id);
+        return;
       case 'ready': {
         error = null;
         setStatus('ready');
@@ -273,6 +304,7 @@ export function createWorkerHost(options: WorkerHostOptions): WorkerHost {
       replaceWorker();
     },
     dispose() {
+      cancelFetches();
       disposed = true;
       generation += 1;
       clearTimeout(flushTimer);

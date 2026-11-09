@@ -237,7 +237,7 @@ Lines are numbered from `startLine`, 1 by default, everywhere in the props and t
 
 `gutters` is an ordered list. A gutter has an `id`, a `width` in px and `render(lineNumber)`, which can return anything: a dot, a count, a popover trigger. `onPress` makes the cell a button, and `isPressable` says on which lines. Gutters stay put while the code scrolls sideways. The built-in line numbers go next to the code, or first with `lineNumbers="start"`, or not at all with `lineNumbers={false}`. They're on by default in an editor and for `lines` or `getLine`, and off for a read-only text, in either renderer.
 
-Here's a debugger's source view, composed from the outside. Press a line number to jump there. Press a hit count for arrows and a box to type which execution. Press beside a line number for a breakpoint, and on a notch above the code for one at that column.
+Here's a debugger's source view, composed from the outside. The [DebugToolbar](https://blamy.github.io/ui/#/debug-toolbar) moves between executed lines and breakpoints. Press a line number to jump there. Press a hit count for arrows and a box to type which execution. Press beside a line number for a breakpoint, and on a notch above the code for one at that column.
 
 {% demo src="code-editor/debugger" %}
 

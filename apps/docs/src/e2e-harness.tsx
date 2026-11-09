@@ -3,12 +3,16 @@ import { Button } from '@/components/ui/button'
 import { CodeEditor, type CodeEditorChange, type CodeEditorGutter, type CodeEditorHandle } from '@/components/ui/code-editor'
 import { Input } from '@/components/ui/input'
 import Safari from '@/components/blocks/safari/page'
+import VSCode from '@/components/blocks/vscode/page'
+import MacOS from '@/components/blocks/macos/page'
+import { createTailscale } from '@/lib/tailscale'
 import ReplayCanvas, { type Recording } from '@/components/blocks/replay-canvas/page'
 import { createDemoTailnet } from '@/components/blocks/safari/data'
 import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button'
 import { createFakeTailscaleClient } from '@/lib/tailscale-fake'
 import { TailscaleProvider, useTailscaleStatus } from '@/lib/tailscale-react'
 import { useTailscaleRouter } from '@/lib/tailscale-router/react'
+import { ReplayDebugger, DebuggerModel, createDemoHost, DemoClock, DEMO_SUMMARY } from '@/components/blocks/replay-debugger'
 
 /* Test tooling, not a demo: `?harness=<name>` (dev server only; main.tsx never loads this in a production build)
    renders the Tailscale components on an in-memory tailnet, so tools/e2e can drive them without a Tailscale account.
@@ -39,6 +43,15 @@ function AuthKey() {
       <TailscaleStatusBadge />
     </TailscaleProvider>
   )
+}
+
+function VSCodeOnDemoTailnet({ desktop = false }: { desktop?: boolean }) {
+  const [controller] = useState(() => createTailscale({
+    client: routerTailnet().client,
+    auth: { mode: 'auth-key', authKey: 'demo-not-a-real-key' },
+    lockName: 'harness-vscode',
+  }))
+  return <div className="fixed inset-0">{desktop ? <MacOS controller={controller} /> : <VSCode controller={controller} />}</div>
 }
 
 const routerTailnet = () =>
@@ -228,16 +241,43 @@ function CodeEditorHarness() {
   )
 }
 
+function DebuggerSourcesHarness() {
+  const [model] = useState(() => {
+    const host = createDemoHost();
+    return new DebuggerModel('source-browser', {
+      ...host,
+      loadSource: (id) => id === 'cart' ? host.loadSource(id) : Promise.resolve({
+        id, url: id === 'discount' ? 'src/discount.ts' : 'node_modules/@example/runtime/src/runtime.js',
+        contents: id === 'discount' ? 'export const discount = 0.9;' : 'export const runtime = true;',
+        breakableLines: [], hitCounts: {},
+      }),
+    }, { now: () => 0 });
+  });
+  useEffect(() => {
+    const clock = new DemoClock();
+    model.ready({ ...DEMO_SUMMARY, sources: [
+      ...DEMO_SUMMARY.sources,
+      { id: 'discount', url: 'src/discount.ts', kind: 'original' },
+      { id: 'runtime', url: 'node_modules/@example/runtime/src/runtime.js', framework: true },
+    ] }, clock);
+    void model.show(clock.timeOf(12), 12);
+  }, [model]);
+  return <div className="h-[640px]"><ReplayDebugger model={model} /></div>;
+}
+
 const HARNESSES: Record<string, () => React.ReactElement> = {
+  'debugger-sources': () => <DebuggerSourcesHarness />,
   'code-editor': () => <CodeEditorHarness />,
   'tailscale-sign-in': () => <SignIn />,
   'tailscale-auth-key': () => <AuthKey />,
   'tailscale-router': () => <Router />,
   safari: () => <SafariOnDemoTailnet />,
+  vscode: () => <VSCodeOnDemoTailnet />,
+  'macos-vscode': () => <VSCodeOnDemoTailnet desktop />,
   'replay-canvas-local': () => <ReplayCanvasLocal />,
 }
 
 export default function E2eHarness({ name }: { name: string }) {
   const render = HARNESSES[name]
-  return <div className="mx-auto grid w-full max-w-5xl gap-3 p-4">{render ? render() : <p>No harness named {name}.</p>}</div>
+  return <div className={`mx-auto grid w-full max-w-5xl gap-3 p-4${name === 'debugger-sources' ? ' box-border' : ''}`}>{render ? render() : <p>No harness named {name}.</p>}</div>
 }

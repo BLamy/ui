@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { HostMessage, RuntimeMessage } from './almostnode/protocol';
+import type { HostMessage, RuntimeMessage, RuntimeFetchRequest, RuntimeFetchResponse } from './almostnode/protocol';
 import { createWorkerHost, sanitizeBatch, type WorkerHostOptions, type WorkerTransport } from './almostnode/worker-host';
 
 /* A Worker that does what it's told, when it's told. */
@@ -40,6 +40,41 @@ function setup(options: Partial<WorkerHostOptions> = {}) {
 }
 
 afterEach(() => { vi.useRealTimers(); });
+
+describe('tailnet requests from the Worker', () => {
+  const request: RuntimeFetchRequest = { url: 'http://notes.demo-tailnet.ts.net/', method: 'GET', headers: [], body: null, redirect: 'follow' };
+  const response: RuntimeFetchResponse = { status: 200, statusText: 'OK', headers: [], body: new TextEncoder().encode('hello') };
+
+  it('uses the supplied connection, and refuses forged public-network requests', async () => {
+    const fetch = vi.fn().mockResolvedValue(response);
+    const { host, workers, ready } = setup({ fetch });
+    host.start();
+    await ready();
+    workers[0].say({ type: 'fetch', id: 1, request });
+    await vi.waitFor(() => expect(workers[0].sent).toContainEqual({ type: 'fetch-result', id: 1, response }));
+    workers[0].say({ type: 'fetch', id: 2, request: { ...request, url: 'https://example.com/' } });
+    expect(workers[0].sent.at(-1)).toMatchObject({ type: 'fetch-result', id: 2, error: expect.any(String) });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    host.dispose();
+  });
+
+  it('cancels network work on restart and never delivers old replies to the replacement Worker', async () => {
+    let finish!: (response: RuntimeFetchResponse) => void;
+    let signal!: AbortSignal;
+    const { host, workers, ready } = setup({ fetch: (_request, active) => { signal = active; return new Promise((resolve) => { finish = resolve; }); } });
+    host.start();
+    await ready();
+    workers[0].say({ type: 'fetch', id: 1, request });
+    await Promise.resolve();
+    host.restart();
+    await ready();
+    expect(signal.aborted).toBe(true);
+    finish(response);
+    await Promise.resolve();
+    expect(workers.flatMap((worker) => worker.sent).some((message) => message.type === 'fetch-result')).toBe(false);
+    host.dispose();
+  });
+});
 
 describe('createWorkerHost', () => {
   it('starts nothing until told, then gives the Worker the files and sessions', async () => {

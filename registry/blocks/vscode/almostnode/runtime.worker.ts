@@ -3,7 +3,8 @@
    `data:` URL (runtime.ts), this Worker has an origin of its own, so nothing that runs here, including a package from npm,
    can read the site's storage. */
 import type { ContainerInstance, PackageManager as PackageManagerClass, TerminalSession } from '@agent-wasm/core';
-import type { FileData, FileEntry, FsBatch, HostMessage, RuntimeMessage, SessionState } from './protocol';
+import type { FileData, FileEntry, FsBatch, HostMessage, RuntimeMessage, RuntimeFetchResponse, SessionState } from './protocol';
+import { createWorkerTailnetFetch } from './tailnet-fetch';
 import { npmInstallOf, npmScriptHeader, npmScriptOf, splitCommandLine, unstreamed, type PackageManifest } from './shell-line';
 
 const scope = globalThis as unknown as {
@@ -12,6 +13,22 @@ const scope = globalThis as unknown as {
   origin: string;
 };
 const post = (message: RuntimeMessage, transfer?: Transferable[]) => scope.postMessage(message, transfer);
+
+let nextFetch = 1;
+const fetches = new Map<number, { resolve: (response: RuntimeFetchResponse) => void; reject: (error: Error) => void; cleanup: () => void }>();
+globalThis.fetch = createWorkerTailnetFetch((request, signal) => new Promise((resolve, reject) => {
+  signal.throwIfAborted();
+  const id = nextFetch++;
+  const abort = () => {
+    fetches.delete(id);
+    signal.removeEventListener('abort', abort);
+    post({ type: 'cancel-fetch', id });
+    reject(signal.reason);
+  };
+  fetches.set(id, { resolve, reject, cleanup: () => signal.removeEventListener('abort', abort) });
+  signal.addEventListener('abort', abort, { once: true });
+  post({ type: 'fetch', id, request });
+}), globalThis.fetch.bind(globalThis));
 
 /* The runtime tells a browser from Node by `window`, and without one it reaches for `node:fs` to load ES modules. */
 (globalThis as { window?: unknown }).window ??= globalThis;
@@ -405,6 +422,15 @@ async function init(message: Extract<HostMessage, { type: 'init' }>) {
 
 scope.onmessage = ({ data: message }) => {
   switch (message.type) {
+    case 'fetch-result': {
+      const pending = fetches.get(message.id);
+      if (!pending) return;
+      fetches.delete(message.id);
+      pending.cleanup();
+      if (message.response) pending.resolve(message.response);
+      else pending.reject(new Error(message.error ?? 'Tailscale request failed.'));
+      return;
+    }
     case 'init':
       init(message).catch((error: unknown) => post({ type: 'failed', message: error instanceof Error ? error.message : String(error) }));
       return;

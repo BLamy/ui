@@ -1,5 +1,5 @@
 /* macOS — a desktop (wallpaper, menu bar, Dock, windows) whose apps are the other examples: Reminders, Mail, Safari, Notes,
-   Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA. Open one
+   Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, VS Code, OpenCode, T3 Code and Loop QA. Open one
    from the Dock or from Alfred; windows drag, resize, zoom, minimize and stack. Right-click the Dock to turn
    magnification off or hiding on (a hidden Dock slides up from the bottom edge, and windows take its room).
    Alfred is the launcher on top, on the CommandMenu primitive: type an app's name and press Enter. Its features are
@@ -8,7 +8,7 @@
    empty Trash, dark mode, restart…), Web Search, and multi-step Workflows. ⌥Space hides and shows the bar; Esc
    clears, then hides. All sample data is invented; the clock is fixed at 9:41.
    The menu bar's Tailscale and Wi-Fi items open menus. The desktop owns one Tailscale controller (the real Tailscale by
-   default; the WebAssembly client loads only when someone signs in), shared by the Tailscale menu and the Safari window:
+   default; the WebAssembly client loads only when someone signs in), shared by the Tailscale menu, Safari and VS Code:
    sign in from either, and an exit node chosen in either shows in both. The Tailscale menu is the core TailscaleMenu
    with exit nodes drawn like Wi-Fi networks; the Wi-Fi menu is invented sample data.
    Under 640px wide the desktop becomes an iPhone: a status bar, a springboard of the same apps (Search opens Alfred),

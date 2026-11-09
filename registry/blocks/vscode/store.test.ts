@@ -267,7 +267,7 @@ describe('terminals', () => {
   async function withStreams() {
     const runtime = createMemoryRuntime({ files: FILES });
     const streams: Array<ReturnType<typeof fakeStream>> = [];
-    const open = vi.fn(async () => {
+    const open = vi.fn<VSCodeRuntime['terminals']['open']>(async () => {
       const made = fakeStream();
       streams.push(made);
       return made.stream;
@@ -291,9 +291,33 @@ describe('terminals', () => {
     store.sizeTerminal(id, 100, 30);
     await flush();
     expect(open).toHaveBeenCalledTimes(1);
-    expect(open).toHaveBeenCalledWith({ cols: 100, rows: 30 });
+    expect(open).toHaveBeenCalledWith({ cols: 100, rows: 30, onOpenCode: expect.any(Function) });
     store.sizeTerminal(id, 90, 20);
     expect(streams[0].stream.resize).toHaveBeenCalledWith(90, 20);
+  });
+
+  it('holds the shell while OpenCode is open, returns on Stop, and cancels on abort', async () => {
+    const { store, open, workspace } = await withStreams();
+    const id = store.terminals[0].id;
+    store.sizeTerminal(id, 100, 30);
+    await flush();
+    const launch = open.mock.calls[0][0].onOpenCode!;
+    const host = { directory: '/project' } as Parameters<typeof launch>[0];
+    const controller = new AbortController();
+    const exited = vi.fn();
+    const pending = launch(host, controller.signal).then(exited);
+    expect(store.terminal(id)?.openCode?.host).toBe(host);
+    expect(workspace.handle.maximizeTabset).toHaveBeenCalledWith('terminals');
+    await flush();
+    expect(exited).not.toHaveBeenCalled();
+    await expect(launch(host, controller.signal)).rejects.toThrow('already running');
+    store.terminal(id)?.openCode?.close();
+    await pending;
+    expect(store.terminal(id)?.openCode).toBeNull();
+    const cancelled = launch(host, controller.signal);
+    controller.abort();
+    await cancelled;
+    expect(store.terminal(id)?.openCode).toBeNull();
   });
 
   it('keeps what\'s typed before it opens, and sends it after', async () => {

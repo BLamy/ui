@@ -7,7 +7,7 @@
   "workspaces": {
     ".": {
       "entry": [
-        "tools/**/*.mjs"
+        "tools/**/*.{mjs,mts}"
       ],
       "project": [
         "tools/**/*.{mjs,mts,ts}"
@@ -16,6 +16,7 @@
         "clsx",
         "tailwind-merge",
         "perfect-freehand",
+        "buffer",
         "shadcn",
         "@nx/devkit",
         "@nx/workspace",
@@ -32,9 +33,6 @@
         "eslint-plugin-react-hooks",
         "happy-dom",
         "@electron/packager"
-      ],
-      "ignoreBinaries": [
-        "wait-on"
       ]
     },
     "packages/ui": {

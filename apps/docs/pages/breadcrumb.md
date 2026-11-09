@@ -134,7 +134,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/breadcrumb`. Base classes:
 
 ```text
-relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px]
+relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px] [contain:inline-size]
 ```
 
 **`size`** — default `default`

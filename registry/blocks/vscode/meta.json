@@ -1,7 +1,7 @@
 {
   "name": "vscode",
   "title": "VS Code",
-  "description": "A VS Code window that really runs: an activity rail with Explorer, Search and Run, editors in a Workspace you can split, and wterm terminals, on one in-browser Node runtime (agent-wasm, the fork of almostnode). Everything it needs goes through one interface, so a real folder and real shells can replace the runtime. Packages you install run in a Worker. Where the host serves it with CORS, as GitHub Pages does, that Worker has an opaque origin and no access to the site's storage; elsewhere it's an ordinary Worker of the site that can read and change the site's IndexedDB and caches, and the status bar says which. They can use the network either way, as far as CORS allows.",
+  "description": "A VS Code window that really runs: an activity rail with Explorer, Search and Run, editors in a Workspace you can split, and wterm terminals where opencode opens the real OpenCode TUI on the same files. A Tailscale status-bar menu connects terminal fetches to your tailnet and shares the desktop connection inside macOS. It runs on one in-browser Node runtime (agent-wasm, the fork of almostnode). Everything it needs goes through one interface, so a real folder and real shells can replace the runtime. Packages you install run in a Worker. Where the host serves it with CORS, as GitHub Pages does, that Worker has an opaque origin and no access to the site's storage; elsewhere it's an ordinary Worker of the site that can read and change the site's IndexedDB and caches, and the status bar says which. They can use the network either way, as far as CORS allows.",
   "categories": [
     "developer-tools",
     "application"
@@ -17,8 +17,11 @@
     "files.ts",
     "runtime.ts",
     "line-terminal.ts",
+    "tailnet.ts",
     "memory-runtime.ts",
     "almostnode/index.ts",
+    "almostnode/open-code.ts",
+    "almostnode/tailnet-fetch.ts",
     "almostnode/project.ts",
     "almostnode/protocol.ts",
     "almostnode/shell-line.ts",
@@ -28,6 +31,7 @@
   ],
   "dependencies": [
     "@agent-wasm/core",
+    "@agent-wasm/tailscale-connect",
     "react-aria-components"
   ]
 }

@@ -149,12 +149,14 @@ test.describe('queries', () => {
   });
 
   test('the loaded console has no axe violations, light or dark', async ({ page }) => {
-    await setSql(page, 'select * from books');
-    await run(page);
-    await expect(results(page).getByRole('grid')).toBeVisible();
-    await page.waitForTimeout(1000); // the Run button's label morphs back from "Running…"
     for (const theme of ['light', 'dark']) {
-      await page.evaluate((t) => document.documentElement.classList.toggle('dark', t === 'dark'), theme);
+      // The demo's provider owns its theme scope; changing only <html> leaves it light.
+      await page.goto(`/?demo=sql-console/console&theme=${theme}`, { waitUntil: 'load' });
+      await expect(page.locator(READY)).toBeVisible();
+      await setSql(page, 'select * from books');
+      await run(page);
+      await expect(results(page).getByRole('grid')).toBeVisible();
+      await page.waitForTimeout(1000); // the Run button's label morphs back from "Running…"
       await page.addScriptTag({ content: AXE });
       const violations = await page.evaluate(async () => {
         const r = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } });

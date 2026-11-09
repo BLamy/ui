@@ -65,12 +65,6 @@ export const PAGE_LIST: PageInfo[] = [
   ...NAV.standalone,
   ...BLOCK_PAGES.map(({ description: _, env: __, ...page }) => page),
 ];
-export const PAGES: Record<string, PageInfo> = Object.fromEntries(PAGE_LIST.map((p) => [p.id, p]));
-
-/** Component docs in reading order (prev / next). */
-export const PAGE_ORDER: string[] = NAV.sections.flatMap((s) => s.pages.map((p) => p.id));
-/** Blocks in reading order (prev / next), after the overview. */
-export const BLOCK_ORDER: string[] = [SITE_BLOCKS, ...BLOCK_PAGES.map((b) => b.id)];
 export const isBlockPage = (id: string) => id === SITE_BLOCKS || id.startsWith(`${SITE_BLOCKS}/`);
 
 /** A page's Markdown source. */

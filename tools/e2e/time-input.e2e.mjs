@@ -64,6 +64,7 @@ test.describe('basic demo', () => {
   });
 
   test('is keyboard-reachable, labelled, and described by its preview', async ({ page }) => {
+    await expect(page.locator(PREVIEW)).toBeVisible();
     const field = page.getByRole('textbox', { name: 'When' });
     for (let i = 0; i < 3 && !(await field.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press('Tab');
     await expect(field).toBeFocused();
@@ -73,6 +74,7 @@ test.describe('basic demo', () => {
   });
 
   test('keeps the old preview, dimmed, while a new one is being read, and never shows offsets of old text', async ({ page }) => {
+    await expect(page.locator(PREVIEW)).toBeVisible();
     const field = page.getByRole('textbox', { name: 'When' });
     await field.click();
     await field.press('ControlOrMeta+a');

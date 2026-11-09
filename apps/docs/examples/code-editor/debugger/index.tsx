@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { Dialog } from 'react-aria-components'
 import { Button } from '@/components/ui/button'
 import { CodeEditor, type CodeEditorGutter, type CodeEditorMarker } from '@/components/ui/code-editor'
+import { DebugToolbar, type DebugToolbarAction } from '@/components/ui/debug-toolbar'
 import { Popover, PopoverTrigger } from '@/components/ui/popover'
 import { splitCodeLines } from '@/lib/code-editor-model'
 import { Icon } from '@/lib/icon'
@@ -75,11 +76,34 @@ function HitCount({ line, hit, onGo }: { line: number; hit: number; onGo: (line:
 
 export default function Debugger() {
   const [position, setPosition] = useState({ line: 6, column: 2, hit: 1 })
-  const [breakpoints, setBreakpoints] = useState(() => new Set([6]))
+  const [breakpoints, setBreakpoints] = useState(() => new Set([6, 10]))
   const [sites, setSites] = useState(() => new Set(['7:10']))
+  const [sessionStopped, setSessionStopped] = useState(false)
 
   const go = useCallback((line: number, hit: number) => setPosition({ line, column: SITES[line]?.[0] ?? 0, hit }), [])
   const jump = useCallback((line: number) => go(line, 1), [go])
+  const onDebugAction = useCallback((action: DebugToolbarAction) => {
+    if (action === 'stop') {
+      setSessionStopped(true)
+      return
+    }
+    if (action === 'restart') {
+      setSessionStopped(false)
+      setPosition({ line: 6, column: 2, hit: 1 })
+      return
+    }
+    const direction = action === 'step-back' || action === 'reverse-continue' ? -1 : 1
+    const lines = (action === 'continue' || action === 'reverse-continue'
+      ? [...breakpoints]
+      : Object.keys(HITS).map(Number)
+    ).sort((a, b) => a - b)
+    const candidates = direction > 0 ? lines : [...lines].reverse()
+    const nextLine = candidates.find((line) => direction > 0 ? line > position.line : line < position.line)
+    if (nextLine !== undefined) {
+      setSessionStopped(false)
+      go(nextLine, Math.min(position.hit, HITS[nextLine] ?? 1))
+    }
+  }, [breakpoints, go, position.line, position.hit])
   const toggle = useCallback((line: number) => {
     setBreakpoints((set) => {
       const next = new Set(set)
@@ -126,9 +150,18 @@ export default function Debugger() {
   return (
     <ThemeScope className="mx-auto w-full max-w-2xl">
       <div className="flex h-[360px] flex-col overflow-hidden rounded-card border border-border">
-        <div className="flex h-9 shrink-0 items-center justify-between border-b border-border bg-card px-3 font-mono text-caption text-muted-foreground">
-          <span className="text-foreground">store.js</span>
-          <span>paused at {position.line}:{position.column}, run {position.hit}</span>
+        <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-border bg-card px-3">
+          <div className="min-w-0 flex-1 font-mono text-caption">
+            <div className="truncate text-foreground">store.js</div>
+            <div className="truncate text-caption2 text-muted-foreground">
+              {sessionStopped ? 'session stopped' : `paused at ${position.line}:${position.column}, run ${position.hit}`}
+            </div>
+          </div>
+          <DebugToolbar
+            onAction={onDebugAction}
+            disabledActions={sessionStopped ? ['continue', 'step-over', 'step-into', 'step-out', 'step-back', 'reverse-continue', 'stop'] : []}
+            className="ml-auto"
+          />
         </div>
         <div className="min-h-0 flex-1">
           <CodeEditor

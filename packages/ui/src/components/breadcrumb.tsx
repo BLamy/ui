@@ -1,7 +1,7 @@
 'use client';
 import {
   Children, createContext, isValidElement, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState,
-  type ComponentProps, type ReactElement, type ReactNode,
+  type AriaAttributes, type ComponentProps, type ReactElement, type ReactNode,
 } from 'react';
 import {
   Breadcrumb as AriaBreadcrumb,
@@ -88,7 +88,7 @@ export function fitBreadcrumbs(
 
 /* ── Variants ── */
 
-export const breadcrumbVariants = cva('relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px]', {
+export const breadcrumbVariants = cva('relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px] [contain:inline-size]', {
   variants: {
     size: {
       sm: 'text-caption',
@@ -130,7 +130,7 @@ const SEPARATOR_SIZE = { sm: 12, default: 13, lg: 15 } as const;
 /* ── Types ── */
 
 /** A sibling, or an entry of the `…` menu. */
-export interface BreadcrumbEntry {
+export interface BreadcrumbEntry extends Pick<AriaAttributes, 'aria-haspopup' | 'aria-expanded' | 'aria-controls'> {
   id: Key;
   label: ReactNode;
   /** The plain-text label, for the menu's type-to-select when `label` is not a string. */
@@ -246,7 +246,7 @@ function ItemFace({ icon, children }: { icon?: ReactNode; children?: ReactNode }
 
 const itemClass = (isCurrent: boolean, className?: string) => cn('flex min-w-0 items-center', isCurrent ? 'shrink' : 'shrink-0', className);
 
-function BreadcrumbItemContent({ isCurrent, icon, href, onPress, items, selectedId, children }: BreadcrumbItemProps & { isCurrent: boolean }) {
+function BreadcrumbItemContent({ isCurrent, icon, href, onPress, items, selectedId, children, 'aria-haspopup': hasPopup, 'aria-expanded': expanded, 'aria-controls': controls }: BreadcrumbItemProps & { isCurrent: boolean }) {
   const { size } = useContext(BreadcrumbContext);
   const face = <ItemFace icon={icon}>{children}</ItemFace>;
   const actionable = !!(href || onPress);
@@ -264,6 +264,21 @@ function BreadcrumbItemContent({ isCurrent, icon, href, onPress, items, selected
         </AriaButton>
         <BreadcrumbMenu entries={items} selectedId={selectedId} />
       </DropdownMenu>
+    );
+  } else if (onPress && hasPopup) {
+    control = (
+      <AriaButton
+        data-slot="breadcrumb-link"
+        data-current={isCurrent || undefined}
+        aria-current={isCurrent ? 'page' : undefined}
+        aria-haspopup={hasPopup}
+        aria-expanded={expanded}
+        aria-controls={controls}
+        onPress={onPress}
+        className={breadcrumbItemVariants({ size })}
+      >
+        {face}
+      </AriaButton>
     );
   } else if (actionable || isCurrent) {
     // react-aria disables the current item's link; a handler or href opts it back in.
@@ -375,8 +390,8 @@ function contentWidth(el: HTMLElement) {
 type ItemElement = ReactElement<BreadcrumbItemProps>;
 
 const entryOf = (el: ItemElement): BreadcrumbItemData => {
-  const { id, label, children, icon, href, onPress, items, selectedId } = el.props;
-  return { id: id ?? el.key ?? '', label: children ?? label, icon, href, onPress, items, selectedId };
+  const { id, label, children, icon, href, onPress, items, selectedId, 'aria-haspopup': hasPopup, 'aria-expanded': expanded, 'aria-controls': controls } = el.props;
+  return { id: id ?? el.key ?? '', label: children ?? label, icon, href, onPress, items, selectedId, 'aria-haspopup': hasPopup, 'aria-expanded': expanded, 'aria-controls': controls };
 };
 
 export interface BreadcrumbProps extends Omit<ComponentProps<'nav'>, 'children'>, VariantProps<typeof breadcrumbVariants> {
