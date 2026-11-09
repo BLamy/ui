@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { BrowserBar, ReplayPlayer } from './ReplayPlayer';
-import type { ReplayPlayerOptions, ReplayPreviewHandle } from './ReplayPlayer';
+import type { ReplayPlayerOptions } from './ReplayPlayer';
 import type { ReplayCustomStage } from './stage-types';
 import type { ReplayEvent } from './types';
 import { normalizeReplayEmbedUrl } from './url';

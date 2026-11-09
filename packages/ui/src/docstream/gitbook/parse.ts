@@ -36,7 +36,7 @@ import type {
 } from "./ast"
 import { TAG_ATTRS, parseAttrs } from "./attrs"
 import { containerTags, defaultDelimiterRow, definitionLine, delimiterAlign, fenceInfo, figureMarkdown, serializeBlocks, type TaggedNode } from "./serialize"
-import { footnoteDefinitions, normalizeLabel, parseInline, plainText, refDefinitions } from "./inline"
+import { footnoteDefinitions, normalizeLabel, parseInline, refDefinitions } from "./inline"
 import { taskStateFromMarker } from "./tasks"
 
 // Minimal HTML-inline → markdown-inline bridge for HTML table cells.

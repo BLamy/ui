@@ -332,7 +332,7 @@ function NavEntry({ item, current, href, go, depth = 0 }: Omit<NavProps, "items"
       aria-expanded={open}
       aria-controls={childrenId}
       aria-label={`${open ? "Collapse" : "Expand"} ${item.title}`}
-      onClick={(e) => {
+      onClick={() => {
         setOpen((o) => !o)
       }}
     >

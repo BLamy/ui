@@ -180,7 +180,7 @@ export function docstreamSources(options: DocstreamSourcesOptions): Plugin {
       installMiddleware(server, apiBase, viteBase, mounts)
     },
     resolveId(id) {
-      if (id === VIRTUAL_ID) return RESOLVED_VIRTUAL_ID
+      return id === VIRTUAL_ID ? RESOLVED_VIRTUAL_ID : undefined
     },
     load(id) {
       if (id !== RESOLVED_VIRTUAL_ID) return

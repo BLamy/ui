@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.docstream.json",
+  "extends": "./tsconfig.lib.json",
   "compilerOptions": {
     "composite": false,
     "incremental": false,
@@ -13,7 +13,12 @@
     "sourceMap": true,
     "customConditions": []
   },
-  "include": ["src/docstream"],
-  "exclude": ["src/docstream/**/*.test.ts", "src/docstream/**/*.test.tsx", "src/docstream/**/__fixtures__"],
-  "references": []
+  "include": [
+    "src/docstream"
+  ],
+  "exclude": [
+    "src/docstream/**/*.test.ts",
+    "src/docstream/**/*.test.tsx",
+    "src/docstream/**/__fixtures__"
+  ]
 }

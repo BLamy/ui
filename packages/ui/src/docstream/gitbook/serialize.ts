@@ -27,7 +27,6 @@ import type {
 } from "./ast"
 import { attr } from "./attrs"
 import { normalizeLabel, serializeInline, serializeReference, withDocumentDefinitions } from "./inline"
-import { plainText } from "./inline"
 import { parseBlocks } from "./parse"
 import { taskMarker } from "./tasks"
 

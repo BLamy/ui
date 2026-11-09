@@ -21,6 +21,8 @@ export default defineConfig(() => ({
     tailwindcss(),
     dts({
       entryRoot: 'src',
+      // docstream's and docstream-editor's are written here too, as the library's import them, and their own per-file build
+      // (scripts/build-docstream.mjs) then writes them again beside their modules.
       exclude: ['**/*.stories.tsx', 'src/stories/**'],
       tsconfigPath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
     }),

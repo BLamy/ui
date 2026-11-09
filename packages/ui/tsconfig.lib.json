@@ -31,9 +31,7 @@
     "**/*.test.jsx",
     "eslint.config.js",
     "eslint.config.cjs",
-    "eslint.config.mjs",
-    "src/docstream/**",
-    "src/docstream-editor/**"
+    "eslint.config.mjs"
   ],
   "include": [
     "src/**/*.js",
@@ -41,13 +39,5 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/lib/gpu-query/*.json"
-  ],
-  "references": [
-    {
-      "path": "./tsconfig.docstream.json"
-    },
-    {
-      "path": "./tsconfig.docstream-editor.json"
-    }
   ]
 }
