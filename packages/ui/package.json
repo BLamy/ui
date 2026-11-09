@@ -222,6 +222,13 @@
       "import": "./dist/docstream/xstate/machine.js",
       "default": "./dist/docstream/xstate/machine.js"
     },
+    "./docstream/capnp": {
+      "@org/source": "./src/docstream/capnp/index.ts",
+      "source": "./src/docstream/capnp/index.ts",
+      "types": "./dist/docstream/capnp/index.d.ts",
+      "import": "./dist/docstream/capnp/index.js",
+      "default": "./dist/docstream/capnp/index.js"
+    },
     "./docstream/tscircuit": {
       "@org/source": "./src/docstream/tscircuit/index.ts",
       "source": "./src/docstream/tscircuit/index.ts",

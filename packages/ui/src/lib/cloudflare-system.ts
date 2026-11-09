@@ -4,7 +4,7 @@
    what's left can still be looked at. `validateSystem` says what's wrong with one that reads. */
 import type { CatalogProduct } from '@/lib/cloudflare-catalog';
 import { CLOUDFLARE_CATALOG as C } from '@/lib/cloudflare-catalog.generated';
-import { catalogProduct, linkOf, runsCode, type CloudflareEdge, type CloudflareService } from '@/lib/cloudflare-services';
+import { SERVICE_NODE, catalogProduct, linkOf, runsCode, serviceNodeHeight, servicePorts, type CloudflareEdge, type CloudflareService } from '@/lib/cloudflare-services';
 import { inlineCodeIn } from '@/lib/state-diagram-edit';
 import { machineToDraft, type MachineLike } from '@/lib/state-diagram-model';
 
@@ -288,4 +288,47 @@ export function sharedServices(a: CloudflareSystem, b: CloudflareSystem): { id: 
     if (other) out.push({ id: s.id, kind: s.kind, sameMachine: JSON.stringify(s.machine ?? null) === JSON.stringify(other.machine ?? null) });
   }
   return out;
+}
+
+/* ── A place for each ── */
+
+const LAYER_GAP = 120;
+const ROW_GAP = 40;
+
+/**
+ * Every service without a place given one, in layers by what reaches what: what nothing reaches on the left, then what
+ * those reach, and so on, in the order they're listed. It's quick and the same every time, for something read from a file,
+ * which needs no layout engine to be drawn. Services that already have a place keep it.
+ */
+export function placeInLayers(system: CloudflareSystem): CloudflareSystem {
+  const ids = system.services.map((s) => s.id);
+  const into = new Map(ids.map((id) => [id, [] as string[]]));
+  for (const e of system.edges) if (e.from !== e.to && into.has(e.to) && into.has(e.from)) into.get(e.to)!.push(e.from);
+  const layer = new Map<string, number>();
+  const depth = (id: string, path: Set<string>): number => {
+    if (layer.has(id)) return layer.get(id)!;
+    if (path.has(id)) return 0; // round in a circle: it goes where the circle began
+    path.add(id);
+    const d = Math.max(-1, ...into.get(id)!.map((from) => depth(from, path))) + 1;
+    path.delete(id);
+    layer.set(id, d);
+    return d;
+  };
+  for (const id of ids) depth(id, new Set());
+  const heightOf = (kind: string) => {
+    const ports = servicePorts(kind);
+    const ins = ports.filter((p) => p.direction === 'in').length;
+    return serviceNodeHeight(ins, ports.length - ins);
+  };
+  const nextY = new Map<number, number>();
+  return {
+    ...system,
+    services: system.services.map((s) => {
+      if (s.at) return s;
+      const l = layer.get(s.id) ?? 0;
+      const y = nextY.get(l) ?? 0;
+      nextY.set(l, y + heightOf(s.kind) + ROW_GAP);
+      return { ...s, at: { x: l * (SERVICE_NODE.w + LAYER_GAP), y } };
+    }),
+  };
 }

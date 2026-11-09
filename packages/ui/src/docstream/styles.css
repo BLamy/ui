@@ -1599,6 +1599,41 @@
 /* A source-and-result card (Mermaid → Pele, LaTeX → KaTeX): side by side when the card is wide, the source above
    the result when it isn't. */
 .docs-mermaid-preview,
+/* A workerd config drawn as the Cloudflare services it runs (```capnp, or an embedded .capnp): the board fills the card, with
+   what isn't drawn listed under it, and the source a press away. The board is the library's CloudflareDiagram, in its own styles. */
+.docs-capnp {
+  border: 1px solid var(--gb-border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--gb-panel);
+  color: var(--gb-panel-foreground, inherit);
+  margin: 1.25em 0;
+}
+
+.docs-capnp-board {
+  position: relative;
+  height: 380px;
+  border-top: 1px solid var(--gb-border);
+}
+
+.docs-capnp-source {
+  margin: 0;
+  border-top: 1px solid var(--gb-border);
+}
+
+.docs-capnp-notes {
+  margin: 0;
+  padding: 8px 16px 10px 32px;
+  border-top: 1px solid var(--gb-border);
+  font-size: 13px;
+  color: var(--gb-muted-foreground, inherit);
+}
+
+.docs-capnp .docs-mermaid-pending,
+.docs-capnp .docs-mermaid-error {
+  border-top: 1px solid var(--gb-border);
+}
+
 .docs-split-card {
   container-type: inline-size;
   border: 1px solid var(--gb-border);

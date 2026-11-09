@@ -38,6 +38,7 @@ import { VideoEmbed } from "@brett_lamy/ui/docstream/video"
 import { StlViewer, isStlUrl } from "@brett_lamy/ui/docstream/stl"
 import { StrudelPlayer, isStrudelFile, isStrudelLanguage } from "@brett_lamy/ui/docstream/strudel"
 import { XStatePreview, isXStateLanguage } from "@brett_lamy/ui/docstream/xstate"
+import { CapnpEmbed, CapnpPreview, isCapnpLanguage, isCapnpUrl, isWorkerdConfig } from "@brett_lamy/ui/docstream/capnp"
 import { TsCircuitPreview, isTsCircuitLanguage } from "@brett_lamy/ui/docstream/tscircuit"
 import { DemoViewer, prefetchDemoSources, useDemoVFSEntry, writeDocstreamClipboard } from "@brett_lamy/ui/docstream/demo"
 import { pmToCommand, pmToDemo } from "./convert"
@@ -514,6 +515,8 @@ function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
         <ReplayFile url={url} title={node.attrs.title ? title : fileName(url)} />
       ) : isStlUrl(url) ? (
         <ResolvedStl url={url} {...(node.attrs.title ? { title } : {})} />
+      ) : isCapnpUrl(url) ? (
+        <CapnpEmbed url={url} {...(node.attrs.title ? { title } : {})} />
       ) : isStrudelFile(url) ? (
         <ResolvedStrudel url={url} {...(node.attrs.title ? { title } : {})} />
       ) : preview || isDirectVideo(url) ? (
@@ -1216,8 +1219,10 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
   const mermaid = language === "mermaid"
   const xstate = isXStateLanguage(language)
   const tscircuit = isTsCircuitLanguage(language)
-  const diagram = mermaid || xstate || tscircuit
-  const diagramKind = xstate ? "xstate" : tscircuit ? "tscircuit" : "mermaid"
+  // A workerd config draws as its services; other Cap'n Proto stays code.
+  const capnp = isCapnpLanguage(language) && isWorkerdConfig(code)
+  const diagram = mermaid || xstate || tscircuit || capnp
+  const diagramKind = xstate ? "xstate" : tscircuit ? "tscircuit" : capnp ? "capnp" : "mermaid"
   const strudel = isStrudelLanguage(language)
   const { liveRenderer } = useEditorRuntime()
   const live = !!liveRenderer && !!node.attrs.live && (language === "jsx" || language === "tsx" || language === "react")
@@ -1231,7 +1236,7 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
         <div className="docs-split-grid">
         <div className="docs-split-pane docs-split-source-pane">
           <div className="docs-split-head" contentEditable={false}>
-            <span className="docs-split-label">{xstate ? "XState" : tscircuit ? "tscircuit" : "Mermaid"}</span>
+            <span className="docs-split-label">{xstate ? "XState" : tscircuit ? "tscircuit" : capnp ? "workerd config" : "Mermaid"}</span>
             {editor.isEditable ? (
               <input
                 className="gb-inline-input gb-code-lang"
@@ -1247,7 +1252,7 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
           </pre>
         </div>
         <div className="gb-diagram-result" contentEditable={false}>
-          {xstate ? <XStatePreview code={previewCode} /> : tscircuit ? <TsCircuitPreview code={previewCode} /> : <PeleDiagram code={previewCode} />}
+          {xstate ? <XStatePreview code={previewCode} /> : tscircuit ? <TsCircuitPreview code={previewCode} /> : capnp ? <CapnpPreview code={previewCode} /> : <PeleDiagram code={previewCode} />}
         </div>
         </div>
       </NodeViewWrapper>

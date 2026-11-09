@@ -765,3 +765,40 @@ test.describe('at a phone’s size', () => {
     expect(node.y).toBeLessThan(sheet.y);
   });
 });
+
+test.describe('a workerd config', () => {
+  const nodesIn = (scope) => scope.locator('[data-slot=diagram-node]').evaluateAll((els) => els.map((el) => el.getAttribute('data-node')).sort());
+
+  test('its services are drawn from the text, and what isn’t one of them is said', async ({ page }) => {
+    await page.goto('/?demo=cloudflare-diagram/workerd&theme=light', { waitUntil: 'load' });
+    await page.locator('[data-slot=cloudflare-service]').first().waitFor({ timeout: 30_000 });
+    expect(await nodesIn(page)).toEqual(['broker', 'consumer', 'main', 'main.Order', 'queues:broker']);
+    expect(await page.locator('[data-slot=diagram-edge]').count()).toBe(5);
+    await expect(page.locator('[data-demo-notes]')).toContainText('do-storage is a disk service');
+    // Broken, it says where, and draws nothing; put right, it's back.
+    const text = page.locator('[data-demo-config]');
+    const config = await text.inputValue();
+    await text.fill(config.replace('(name = "main", worker = .main),', '(name = "main" worker = .main),'));
+    await expect(page.locator('[data-demo-unreadable]')).toContainText('line 5');
+    await expect(page.locator('[data-slot=cloudflare-service]')).toHaveCount(0);
+    await text.fill(config);
+    await expect(page.locator('[data-slot=cloudflare-service]')).toHaveCount(5);
+  });
+
+  test('a capnp fence and an embedded .capnp file draw themselves in the docs', async ({ page }) => {
+    await page.goto('/#/cloudflare-diagram', { waitUntil: 'load' });
+    const cards = page.locator('[data-docstream-capnp]');
+    await expect(cards).toHaveCount(2, { timeout: 30_000 });
+    await cards.nth(0).scrollIntoViewIfNeeded();
+    await expect.poll(() => nodesIn(cards.nth(0)), { timeout: 30_000 }).toEqual(['kv:cache', 'main', 'main.Room']);
+    await cards.nth(1).scrollIntoViewIfNeeded();
+    await expect(cards.nth(1)).toHaveAttribute('aria-label', 'event-log.capnp');
+    await expect.poll(() => nodesIn(cards.nth(1)), { timeout: 30_000 }).toEqual(['main', 'main.ProofAccount']);
+    await expect(cards.nth(1).locator('[data-docstream-capnp-notes]')).toContainText('listens on 127.0.0.1:19610 for main');
+    // The source is a press away, and back.
+    await cards.nth(0).locator('.docs-capnp-toggle').click();
+    await expect(cards.nth(0).locator('.docs-capnp-source')).toContainText('durableObjectNamespace');
+    await cards.nth(0).locator('.docs-capnp-toggle').click();
+    await expect.poll(() => nodesIn(cards.nth(0))).toEqual(['kv:cache', 'main', 'main.Room']);
+  });
+});

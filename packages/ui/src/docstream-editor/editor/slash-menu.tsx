@@ -58,6 +58,22 @@ export const XSTATE_STARTER = JSON.stringify({
   },
 }, null, 2)
 
+/** What a new workerd config starts as: a Worker and its Durable Object, which draws as the two, bound. */
+export const WORKERD_STARTER = `using Workerd = import "/workerd/workerd.capnp";
+
+const config :Workerd.Config = (
+  services = [ (name = "main", worker = .main) ],
+  sockets = [ (name = "http", address = "*:8080", http = (), service = "main") ],
+);
+
+const main :Workerd.Worker = (
+  modules = [ (name = "worker.js", esModule = embed "worker.js") ],
+  compatibilityDate = "2026-01-01",
+  bindings = [ (name = "ROOMS", durableObjectNamespace = "Room") ],
+  durableObjectNamespaces = [ (className = "Room", uniqueKey = "rooms", enableSql = true) ],
+  durableObjectStorage = (inMemory = ()),
+);`
+
 export const SLASH_ITEMS: SlashItem[] = [
   { title: "Heading 1", keywords: "h1 title", icon: Heading1, run: (e) => e.chain().focus().setHeading({ level: 1 }).run() },
   { title: "Heading 2", keywords: "h2 section", icon: Heading2, run: (e) => e.chain().focus().setHeading({ level: 2 }).run() },
@@ -204,6 +220,16 @@ export const SLASH_ITEMS: SlashItem[] = [
       type: "codeBlock",
       attrs: { language: "xstate", title: null, lineNumbers: false },
       content: [{ type: "text", text: XSTATE_STARTER }],
+    }),
+  },
+  {
+    title: "workerd config",
+    keywords: "capnp cloudflare worker durable object services diagram",
+    icon: Workflow,
+    run: insertBlock({
+      type: "codeBlock",
+      attrs: { language: "capnp", title: null, lineNumbers: false },
+      content: [{ type: "text", text: WORKERD_STARTER }],
     }),
   },
   {

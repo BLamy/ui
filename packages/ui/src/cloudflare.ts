@@ -13,8 +13,10 @@ export {
 } from './lib/cloudflare-services';
 export type { CloudflareEdge, CloudflareService, ServiceLink, ServiceLinkCheck } from './lib/cloudflare-services';
 export {
-  BINDING_NAME, EMPTY_SYSTEM, addService, checkMachines, edgeBinding, machineEvents, machineReceives, machinesPast, parseSystem, removeServices, searchCatalog, serviceName, sharedServices, systemToJson, validateSystem,
+  BINDING_NAME, EMPTY_SYSTEM, addService, checkMachines, placeInLayers, edgeBinding, machineEvents, machineReceives, machinesPast, parseSystem, removeServices, searchCatalog, serviceName, sharedServices, systemToJson, validateSystem,
 } from './lib/cloudflare-system';
 export type { CloudflareSystem, SystemIssue } from './lib/cloudflare-system';
 export { WRANGLER_RESOURCE_FIELDS, compareWrangler, readWrangler, writeWrangler } from './lib/cloudflare-wrangler';
 export type { WranglerCompare, WranglerDifference, WranglerNeed, WranglerNote, WranglerOptions, WranglerRead, WranglerSetting, WranglerWrite } from './lib/cloudflare-wrangler';
+export { looksLikeWorkerdConfig, parseCapnp, readWorkerdConfig } from './lib/cloudflare-workerd';
+export type { CapnpConst, CapnpValue, WorkerdNote, WorkerdRead, WorkerdSocket } from './lib/cloudflare-workerd';

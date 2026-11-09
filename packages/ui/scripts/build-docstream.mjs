@@ -14,6 +14,10 @@ import { fileURLToPath } from "node:url"
 // The editor's imports of docstream are the package's own name, which resolves to dist/docstream, so docstream goes first.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const tsc = createRequire(import.meta.url).resolve("typescript/bin/tsc")
+// What docstream imports of the rest of the library, by the package's name, it reads from the library's own build.
+for (const entry of ["index.d.ts", "cloudflare.d.ts"]) {
+  if (!existsSync(join(root, "dist", entry))) throw new Error(`dist/${entry} isn't there yet: docstream is built after the library's own build`)
+}
 
 for (const part of ["docstream", "docstream-editor"]) {
 const src = join(root, "src", part)

@@ -2,6 +2,8 @@
 // inline-file demos run only when the host passes a runtime — see `@brett_lamy/ui/docstream/playground`.
 export { GitbookStreamdown } from "./streamdown"
 export { XStateDiagram, XStatePreview, isXStateLanguage } from "./xstate"
+export { CapnpDiagram, CapnpEmbed, CapnpPreview, isCapnpLanguage, isCapnpUrl, isWorkerdConfig } from "./capnp"
+export type { CapnpDiagramProps } from "./capnp"
 export type { XStateDiagramProps } from "./xstate"
 export { TsCircuit, TsCircuitPreview, DEFAULT_TSCIRCUIT_RUNTIME_URL, isTsCircuitLanguage } from "./tscircuit"
 export type { TsCircuitProps } from "./tscircuit"

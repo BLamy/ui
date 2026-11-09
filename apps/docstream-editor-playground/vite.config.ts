@@ -1,16 +1,18 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
+import { aliases, docstreamAliases } from '../../tools/alias.mjs';
 
+// Docstream, the editor and what they use of the rest of the library resolve to their sources, so this runs the checkout as it is.
 export default defineConfig({
   base: '/docstream-editor/',
   plugins: [react()],
   resolve: {
-    alias: {
-      react: path.resolve(__dirname, 'node_modules/react'),
-      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
-      '@brett_lamy/ui/docstream-editor/styles.css': path.resolve(__dirname, '../../packages/ui/src/docstream-editor/styles.css'),
-      '@brett_lamy/ui/docstream-editor': path.resolve(__dirname, '../../packages/ui/src/docstream-editor/index.ts'),
-    },
+    alias: [
+      { find: /^react$/, replacement: path.resolve(__dirname, 'node_modules/react') },
+      { find: /^react-dom$/, replacement: path.resolve(__dirname, 'node_modules/react-dom') },
+      ...docstreamAliases,
+      ...aliases,
+    ],
   },
 });

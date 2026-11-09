@@ -120,7 +120,8 @@ describe("entry boundaries", () => {
     const declared = new Set([...Object.keys(pkg.dependencies), ...Object.keys(pkg.peerDependencies)])
     for (const [name, target] of entries) {
       for (const spec of graph(target).bare) {
-        if (spec.startsWith("node:")) continue
+        // The library itself, which docstream is part of.
+        if (spec.startsWith("node:") || spec.startsWith("@brett_lamy/ui/")) continue
         const id = spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0]!
         expect(declared.has(id), `${name} imports ${spec}`).toBe(true)
       }
@@ -143,6 +144,11 @@ describe("entry boundaries", () => {
       .map(([name]) => `@brett_lamy/ui/docstream${name.slice(1)}`)
     const script = `for (const s of ${JSON.stringify(specs)}) await import(s)`
     expect(() => execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: root, stdio: "pipe" })).not.toThrow()
+  })
+
+  // The capnp fence draws with the library's Cloudflare entry, which brings the catalog, about 150 KB: only when there's one to draw.
+  it.each(entries)("%s (%s) loads the library's Cloudflare entry only through a dynamic import", (_name, target) => {
+    expect([...graph(target, { dynamic: false }).bare].filter((spec) => spec === "@brett_lamy/ui/cloudflare")).toEqual([])
   })
 
   it.each(entries)("%s (%s) loads rrweb only through a dynamic import", (_name, target) => {

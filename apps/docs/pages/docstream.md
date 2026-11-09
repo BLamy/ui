@@ -81,6 +81,8 @@ Use the **Markdown**, **Rich editor**, and **Preview** tabs inside the example t
 
 Use an `xstate` fence for a JSON machine config or TypeScript `createMachine(...)` source. Docstream reads the machine structure and draws a statechart with Pele. Actions and guards are never executed. Initial states, nested states, event transitions, delayed transitions, and final states appear in the diagram.
 
+Use a `capnp` fence for a workerd config, or `{% embed url="config.capnp" %}` for a file of one, and it's drawn as the Cloudflare services it runs, on a read-only [CloudflareDiagram](#/cloudflare-diagram), with what isn't one of them listed under it and the source a press away. The diagram and its catalog load when the first one's on a page. Cap'n Proto that isn't a workerd config stays code. The editor draws one beside its source, and its slash menu has a "workerd config".
+
 Use a `tscircuit` fence for a TSX circuit such as `circuit.add(<board>...</board>)`. The source sits beside an isolated [tscircuit RunFrame](https://github.com/tscircuit/runframe) with schematic, PCB, and 3D views. The hosted circuit runtime requires a network connection. Plain `tsx` fences remain code examples.
 
 {% demo src="docstream/diagrams" %}

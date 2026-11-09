@@ -21,5 +21,6 @@ export const aliases = [
 const ui = JSON.parse(readFileSync(`${ROOT}/packages/ui/package.json`, 'utf8'));
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 export const docstreamAliases = Object.entries(ui.exports)
-  .filter(([key, value]) => /^\.\/docstream(-editor)?(\/|$)/.test(key) && value && typeof value === 'object' && value['@org/source'])
+  // And the Cloudflare entry, which docstream's capnp fence loads by the package's name.
+  .filter(([key, value]) => /^\.\/(docstream(-editor)?(\/|$)|cloudflare$)/.test(key) && value && typeof value === 'object' && value['@org/source'])
   .map(([key, value]) => ({ find: new RegExp(`^${escape(`@brett_lamy/ui${key.slice(1)}`)}$`), replacement: resolve(ROOT, 'packages/ui', value['@org/source']) }));

@@ -1268,3 +1268,8 @@
 /* Keep rendered diagrams out of the editable selection and fill their split-grid cell. */
 .gb-code .gb-diagram-result { min-width: 0; display: flex; }
 .gb-diagram-result > .docs-split-pane { flex: 1; min-width: 0; }
+
+/* A workerd config's services need the card's width, so its board goes under the source, not beside it. */
+.gb-code-capnp .docs-split-grid { grid-template-columns: minmax(0, 1fr); }
+.gb-code-capnp .gb-diagram-result { flex-direction: column; }
+.gb-code-capnp .gb-diagram-result > .docs-capnp-board { flex: none; }

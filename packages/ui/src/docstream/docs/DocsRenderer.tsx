@@ -35,6 +35,7 @@ import { isStrudelFile, isStrudelLanguage } from "../strudel/url"
 import { OpenApiOperation } from "../openapi/OpenApiOperation"
 import { Mermaid } from "./Mermaid"
 import { XStateDiagram, isXStateLanguage } from "../xstate"
+import { CapnpDiagram, CapnpEmbed, isCapnpLanguage, isCapnpUrl, isWorkerdConfig } from "../capnp"
 import { TsCircuit, isTsCircuitLanguage } from "../tscircuit"
 import { HighlightedCode } from "./HighlightedCode"
 import { CitationSources, InlineReference } from "./reference"
@@ -378,6 +379,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
     }
     case "code":
       if (isXStateLanguage(block.language)) return <XStateDiagram code={block.code} />
+      if (isCapnpLanguage(block.language) && isWorkerdConfig(block.code)) return <CapnpDiagram code={block.code} {...(block.title ? { title: block.title } : {})} />
       if (isTsCircuitLanguage(block.language)) return <TsCircuit code={block.code} title={block.title ?? undefined} />
       if (isTuiCodeBlock(block) && tui.options !== false) {
         return <TuiPreview {...tui.options} code={block.code} language={block.language ?? undefined} title={block.title ?? tui.options?.title} isStreaming={tui.isStreaming || block.closingFence === ""} />
@@ -466,6 +468,9 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       }
       if (isStlUrl(block.url)) {
         return <AssetStl url={block.url} {...(block.title ? { title: block.title } : {})} />
+      }
+      if (isCapnpUrl(block.url)) {
+        return <CapnpEmbed url={block.url} {...(block.title ? { title: block.title } : {})} />
       }
       if (isStrudelFile(block.url)) {
         return <AssetStrudel url={block.url} {...(block.title ? { title: block.title } : {})} />

@@ -8180,6 +8180,25 @@
       ]
     },
     {
+      "name": "cloudflare-workerd",
+      "type": "registry:lib",
+      "title": "Cloudflare Workerd",
+      "description": "Cloudflare Workerd — part of BL UI's library (lib/cloudflare-workerd.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/cloudflare-services.json",
+        "https://blamy.github.io/ui/r/cloudflare-system.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cloudflare-workerd.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-workerd.ts"
+        }
+      ]
+    },
+    {
       "name": "cloudflare-wrangler",
       "type": "registry:lib",
       "title": "Cloudflare Wrangler",
