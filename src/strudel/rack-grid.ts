@@ -19,7 +19,7 @@ import { clamp } from "@ui-sdk/core/number"
 
 export type RackGridSize = { w: number; h?: number }
 export type RackGridSizes = Record<string, RackGridSize>
-export type RackGridSizesChangeReason = "drag" | "handle-key"
+export type RackGridSizesChangeReason = "drag" | "handle-key" | "imperative"
 
 export type RackGridOptions = {
   /** The modules' keys, in order. */
@@ -99,6 +99,24 @@ export const rackGrid = definePrimitive({
 
     return {
       reorder,
+      /** Moves a module to `index` in the order, counting from 0, as a drop would. Returns whether it moved. */
+      move(key: string, index: number) {
+        const { order } = context.store.get()
+        if (!order.includes(key)) return false
+        return reorder.move(key, clamp(Math.round(index), 0, order.length - 1))
+      },
+      /** Sets a module's width in twelfths and/or its minimum height in px, and commits it. Returns whether it changed. */
+      resize(key: string, size: Partial<RackGridSize>) {
+        if (!context.store.get().order.includes(key)) return false
+        // Bounded as the corner's keys bound it (`minHeight` is the least a drag gives).
+        const next: Partial<RackGridSize> = {
+          ...(size.w === undefined ? {} : { w: clamp(size.w, 1, 12) }),
+          ...(size.h === undefined ? {} : { h: Math.max(0, size.h) }),
+        }
+        if (!setSize(key, next, { reason: "imperative" })) return false
+        commit("sizes", context.store.get().sizes, { reason: "imperative" })
+        return true
+      },
       resizeStart(event: PointerEvent, key: string, el: HTMLElement) {
         const item = context.element("item", key)
         const root = context.element("root")
@@ -177,6 +195,10 @@ export const rackGrid = definePrimitive({
       bind: (el, part) => part.api.reorder.bind(el, part),
     }),
     grip: slot<HandleProps, { moving: boolean }>({
+      role: "button",
+      focus: "native",
+      press: { none: "Space and Enter pick the module up and drop it, in createReorder's keydown." },
+      keys: [" ", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "Escape"],
       props: { value: { kind: "string", from: "item", required: true } },
       state: (state, { api, key }) => ({ moving: api.reorder.moving(state, key) }),
       attrs: (state, { api, key }) => ({
@@ -192,6 +214,10 @@ export const rackGrid = definePrimitive({
       },
     }),
     corner: slot<HandleProps, { resizing: boolean }>({
+      role: "button",
+      focus: "native",
+      press: { none: "A press does nothing: the corner resizes by a drag or the arrow keys." },
+      keys: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"],
       props: { value: { kind: "string", from: "item", required: true } },
       state: (state, { key }) => ({ resizing: state.resizing === key }),
       attrs: (state, { key }) => ({
@@ -208,5 +234,5 @@ export const rackGrid = definePrimitive({
       },
     }),
   }),
+  agent: { actions: ["move", "resize"] },
 })
-

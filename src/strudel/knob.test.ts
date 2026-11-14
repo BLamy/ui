@@ -130,4 +130,18 @@ describe("knob primitive", () => {
     expect(html).toContain('aria-valuetext="440 Hz"')
     expect(html).toContain('data-slot="knob-dial"')
   })
+
+  // checkDirection expects Left and Right to mirror; a knob is a vertical control, and UI SDK's number keys flip them
+  // only on a horizontal one (as its vertical Slider does), so right to left Right still turns it up.
+  it("right to left, Right still turns it up and Left down: a vertical control doesn't mirror", async () => {
+    const view = mount(knob, { defaultValue: 0.5 }, `<root dir="rtl"><dial aria-label="Cutoff"></dial><value></value></root>`)
+    try {
+      await view.keys("Tab", "ArrowRight")
+      expect(view.state.value).toBeCloseTo(0.55)
+      await view.keys("ArrowLeft", "ArrowLeft")
+      expect(view.state.value).toBeCloseTo(0.45)
+    } finally {
+      view.unmount()
+    }
+  })
 })

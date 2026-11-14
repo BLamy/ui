@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
-import { checkServer, mount } from "@ui-sdk/core/testing"
+import { checkDirection, checkServer, mount } from "@ui-sdk/core/testing"
+import { createAgent } from "@ui-sdk/core/agent"
 import { describe, expect, it } from "vitest"
 import { rackGrid, type RackGridSizes } from "./rack-grid"
 
@@ -164,5 +165,47 @@ describe("rack-grid primitive", () => {
     expect(html).toContain('role="list"')
     expect(html.match(/role="listitem"/g)).toHaveLength(3)
     expect(html.match(/aria-pressed="false"/g)).toHaveLength(3)
+  })
+
+  it("its agent actions move and resize a module through the same change and commit, as `imperative`", async () => {
+    const orders: string[][] = []
+    const commits: RackGridSizes[] = []
+    const view = mount(rackGrid, { defaultOrder: ORDER, label, onOrderChange: (order) => orders.push(order), onSizesCommit: (sizes) => commits.push(sizes) }, MARKUP)
+    try {
+      expect(view.api.move("bass", 0)).toBe(true)
+      expect(view.state.order).toEqual(["bass", "master", "drums"])
+      expect(orders).toEqual([["bass", "master", "drums"]])
+      expect(view.changes.at(-1)).toMatchObject({ key: "order", reason: "imperative" })
+      // Past the end lands at the end; an unknown module moves nothing.
+      expect(view.api.move("bass", 99)).toBe(true)
+      expect(view.state.order).toEqual(["master", "drums", "bass"])
+      expect(view.api.move("nope", 0)).toBe(false)
+      expect(view.api.resize("drums", { w: 20, h: -10 })).toBe(true)
+      expect(view.state.sizes.drums).toEqual({ w: 12, h: 0 })
+      expect(view.changes.at(-1)).toMatchObject({ key: "sizes", reason: "imperative" })
+      expect(commits).toEqual([{ drums: { w: 12, h: 0 } }])
+      expect(view.api.resize("drums", { w: 12 })).toBe(false)
+      // An agent finds the grid by its name and calls the same actions.
+      const agent = createAgent()
+      const entry = agent.snapshot().find((e) => e.label === "Modules")
+      expect(entry?.actions).toEqual(expect.arrayContaining(["move", "resize"]))
+      const result = await agent.act({ steps: [{ ref: "Modules", action: "move", args: ["master", 2] }] })
+      expect(result.ok, result.error?.message).toBe(true)
+      expect(view.state.order).toEqual(["drums", "bass", "master"])
+    } finally {
+      view.unmount()
+    }
+  })
+
+  it("the corner is a button that declares its arrow keys, and both directions work", async () => {
+    const view = mount(rackGrid, { defaultOrder: ORDER, label }, MARKUP)
+    try {
+      for (const corner of corners(view.root)) expect(corner.tagName).toBe("BUTTON")
+    } finally {
+      view.unmount()
+    }
+    // The corners alone, so the first tab stop is one whose Left and Right mean narrower and wider.
+    const cornersOnly = `<root aria-label="Modules">${["master", "drums"].map((key) => `<item value="${key}" span="6">${names[key]}<corner as="button" aria-label="Resize ${names[key]}"></corner></item>`).join("")}</root>`
+    await checkDirection(rackGrid, { defaultOrder: ["master", "drums"], label }, cornersOnly)
   })
 })
