@@ -11,8 +11,8 @@ const LABEL: Record<Step, string> = {
 }
 
 // A string child is wrapped in TextMorph, so each new label slides the shared
-// letters and the button springs to its new width. `isPending` keeps the
-// button focused but swallows presses while the request is in flight.
+// letters and the button springs to its new width. Returning a Promise from
+// `onClick` keeps the button pending (focused, ignoring presses) until it settles.
 export default function LabelMorph() {
   const [step, setStep] = useState<Step>('continue')
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -27,8 +27,14 @@ export default function LabelMorph() {
     if (step === 'continue') setStep('confirm')
     else if (step === 'confirm') {
       setStep('paying')
-      timer.current = setTimeout(() => setStep('done'), 1600)
+      return new Promise<void>((resolve) => {
+        timer.current = setTimeout(() => {
+          setStep('done')
+          resolve()
+        }, 1600)
+      })
     }
+    return undefined
   }
 
   return (
@@ -42,13 +48,12 @@ export default function LabelMorph() {
       <div className="flex items-center justify-between gap-3">
         <Button
           variant={step === 'done' ? 'secondary' : 'default'}
-          isPending={step === 'paying'}
-          isDisabled={step === 'done'}
-          onPress={press}
+          disabled={step === 'done'}
+          onClick={press}
         >
           {LABEL[step]}
         </Button>
-        <Button variant="link" onPress={() => setStep('continue')}>
+        <Button variant="link" onClick={() => setStep('continue')}>
           Start over
         </Button>
       </div>

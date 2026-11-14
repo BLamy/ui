@@ -23,7 +23,7 @@ export default function MillionRows() {
     <div className="flex w-full max-w-[760px] flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         {[100_000, 1_000_000].map((n) => (
-          <Button key={n} variant="secondary" size="sm" onPress={() => { setLast(null); setRows(makeRows(n)) }}>
+          <Button key={n} variant="secondary" size="sm" onClick={() => { setLast(null); setRows(makeRows(n)) }}>
             {n.toLocaleString()} rows
           </Button>
         ))}
@@ -31,7 +31,7 @@ export default function MillionRows() {
           {last ? `Last sort: ${last.rows.toLocaleString()} rows on the ${last.ranOn.toUpperCase()} in ${last.ms.toFixed(1)} ms` : rows ? 'Click a number column’s arrows to sort it' : 'Nothing is generated until you ask'}
         </span>
       </div>
-      {rows ? <Spreadsheet aria-label="Orders" value={rows} onChange={setRows} onSort={setLast} className="h-[420px]" /> : null}
+      {rows ? <Spreadsheet aria-label="Orders" value={rows} onValueChange={setRows} onSort={setLast} className="h-[420px]" /> : null}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 # Calendar
 
-A month grid for picking a day, and its range twin for picking a start and an end. They are react-aria's `Calendar` and `RangeCalendar` drawn as iOS: round day cells, a tint-filled selection and, for a range, a soft band joining its two ends. Use a calendar when the date is the whole interface (booking, scheduling); put it behind a button with [DatePicker](https://blamy.github.io/ui/#/date-picker) when it is one field among others, and use a [DateField](https://blamy.github.io/ui/#/date-field) when people know the date and only need to type it.
+A month grid for picking a day, several days, or a start and an end. It is UI SDK's `Calendar` drawn as iOS: round day cells, a tint-filled selection and, for a range, a soft band joining its two ends. Use a calendar when the date is the whole interface (booking, scheduling); put it behind a button with [DatePicker](https://blamy.github.io/ui/#/date-picker) when it is one field among others, and use a [DateField](https://blamy.github.io/ui/#/date-field) when people know the date and only need to type it.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -9,7 +9,7 @@ A month grid for picking a day, and its range twin for picking a start and an en
 Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import { Calendar, RangeCalendar } from '@/components/ui/calendar'
+import { Calendar } from '@/components/ui/calendar'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -20,117 +20,166 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Calendar, RangeCalendar } from '@brett_lamy/ui'
+import { Calendar } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
 
-## Values come from @internationalized/date
+The parts a calendar is built from come from the same module (`@/components/ui/calendar`, or the package root): `CalendarHeader`, `CalendarHeading`, `CalendarPrevious`, `CalendarNext`, `CalendarMonthSelect`, `CalendarYearSelect`, `CalendarGrid`, `CalendarWeekdays`, `CalendarWeekday`, `CalendarWeeks` and `CalendarDay`, with `createCalendarController`.
 
-A calendar does not use `Date`. Its value is a `DateValue` from `@internationalized/date` (a `CalendarDate`, a `CalendarDateTime` or a `ZonedDateTime`), so there are no time-zone off-by-one days and non-Gregorian calendars work. Build one with `parseDate('2026-09-09')` or `new CalendarDate(2026, 9, 9)`, and read it with `value.toString()` (ISO) or `value.toDate(timeZone)`. A range is `{ start, end }`. The shadcn registry item installs `@internationalized/date` as an npm dependency; with the npm package it is already one.
+## Dates are ISO strings
+
+A calendar does not use `Date`. A date is a string such as `"2026-09-09"`: a calendar day with no time and no time zone, the same value `<input type="date">` submits, so there are no off-by-one days and nothing to parse. A month is `"2026-09"`. Strings in this form sort in date order, so `start < end` compares them. What `value` holds depends on `mode`:
+
+| `mode` | `value` |
+| --- | --- |
+| `single` (default) | A date, or `null`. |
+| `multiple` | A sorted array of dates. |
+| `range` | `[start, end]`, or `null`. |
+
+No date library is needed. For arithmetic and labels use the helpers in `@ui-sdk/core/date`, which is installed with the calendar: `todayDate()`, `addDays`, `addMonths`, `daysBetween`, `weekday`, `formatDate`, and `toISODate` to bring in a `Date` or any `{ year, month, day }` object. Dates are always Gregorian; a locale's own year system (Buddhist, Japanese era) can still appear in the labels.
 
 ## Anatomy
 
-`Calendar` renders a header and the month grid for you. Give it children to compose your own from `CalendarHeader` and `CalendarGrid`; the cells inside the grid are `CalendarCell`s.
+`Calendar` renders a header and a grid per month for you. Give it children to compose your own from its parts.
 
 ```tsx
-<Calendar aria-label="Appointment date" defaultValue={parseDate('2026-09-09')} />
+<Calendar defaultValue="2026-09-09" />
 
-<RangeCalendar aria-label="Stay" visibleMonths={2} />
+<Calendar mode="range" months={2} />
 ```
 
 ```tsx
-<Calendar aria-label="Appointment date">
+<Calendar>
   <CalendarHeader />
   <CalendarGrid />
 </Calendar>
 ```
 
-A calendar needs a name: pass `aria-label` or `aria-labelledby` (the visible month is appended to it for screen readers).
+`CalendarHeader` holds `CalendarPrevious`, `CalendarHeading` and `CalendarNext`; `CalendarGrid` holds `CalendarWeekdays` (a `CalendarWeekday` per column) and `CalendarWeeks` (a `CalendarDay` per date). Each grid is named by its month, so the calendar needs no label of its own.
 
 ## A single day
 
-`value` and `onChange` work on `DateValue`s (`null` is "nothing selected"); `defaultValue` leaves it uncontrolled. Without a value the calendar opens on today's month; `defaultFocusedValue` (or `focusedValue` / `onFocusChange` to control it) decides which month it opens on and which day takes the first Tab. `variant="card"` sits it on its own filled panel; the default `plain` has no surface, for use inside a popover or a sheet.
+`value` and `onValueChange(value, details)` control the selection (`null` is "nothing selected"); `defaultValue` leaves it uncontrolled. `details.reason` says why it changed (`item-press`, or `imperative` from a controller) and `details.cancel()` keeps the old value. `deselectable` lets a second press on the selected day clear it. Without a value the calendar opens on today's month; `defaultMonth` (or `month` and `onMonthChange` to control it) decides which month it shows. `variant="card"` sits it on its own filled panel; the default `plain` has no surface, for use inside a popup or a sheet.
 
 {% demo src="calendar/basic" %}
 
-## Ranges
+## Ranges and several days
 
-`RangeCalendar` takes a `{ start, end }` value. The first press sets the anchor and the second sets the other end, in either order; the days between are joined by a band, half a cell at each end, and a one-day range shows no band. Escape cancels a range that is half chosen. `allowsNonContiguousRanges` lets the range span unavailable days.
+`mode="range"` takes a `[start, end]` value. The first press sets the start and the second sets the end; a press before the start becomes the new start. Moving the pointer or the focus previews the range, and the value changes once, when both ends are chosen. The days between are joined by a band, half a cell at each end, and a one-day range shows no band. Escape drops a range that is half chosen. `minDays` and `maxDays` bound its length (both ends count), and `allowUnavailable` lets it span unavailable days. `onAnchorChange` reports the start while the end is still being picked.
 
 {% demo src="calendar/range" %}
 
+`mode="multiple"` toggles each day on its own; its value is an array, kept sorted.
+
 ## Minimum, maximum and unavailable days
 
-`minValue` and `maxValue` dim every day outside them and stop the previous and next buttons at the edge. `isDateUnavailable` is a function from a date to a boolean for rules the range cannot say (weekends, holidays, booked days): those days are struck through in red and cannot be picked, but they stay focusable, so keyboard users can still land on them and hear why. If the selected value is outside the bounds or on an unavailable day the calendar is `isInvalid`. `isDisabled` dims the whole calendar and `isReadOnly` keeps the selection but blocks changes.
+`min` and `max` dim every day outside them, stop the arrow keys there and stop the previous and next buttons at their months. `unavailable` is for rules a range cannot say (weekends, holidays, booked days). It is data: a date, `{ from, to }`, `{ weekday: [0, 6] }` (0 is Sunday), `{ before }`, `{ after }`, a function of the date, or an array of these. Unavailable days are struck through in red and cannot be picked, but they stay focusable, so keyboard users can still land on them and hear why. `disabled` dims the whole calendar and takes it out of the tab order; `readOnly` lets people move through the dates but not change the selection.
 
 {% demo src="calendar/min-max" %}
 
 {% demo src="calendar/unavailable" %}
 
-`@internationalized/date` has the helpers these rules want: `isWeekend(date, locale)`, `isSameDay`, `today(timeZone)`, `getDayOfWeek`.
-
 ## More than one month
 
-`visibleMonths` shows one to three months side by side, on both calendars. The previous and next buttons move by that many months (`pageBehavior="single"` moves by one). The grids sit in a row, so give the calendar room or let it scroll.
+`months` shows that many months side by side, each in its own grid, and the arrow keys cross from one to the next. The previous and next buttons move by one month; `pageBy="page"` moves by all the months on show. The grids sit in a row, so give the calendar room or let it scroll. `fixedWeeks` gives every month six rows so the height never changes, and `showOutsideDays` fills the edges with the days of the months around (hidden by default here: each grid shows its own month only).
 
 {% demo src="calendar/two-months" %}
 
-## Locale and week start
+## Month and year selects
 
-Month names, weekday headers, number systems, the first day of the week and right-to-left layout all follow the locale. Set it for a subtree with react-aria's `I18nProvider locale="de-DE"` (the demos pin `en-US` so they read the same for everyone); `firstDayOfWeek="mon"` overrides just the week start. Other calendar systems work through the value: a `CalendarDate` made with `new CalendarDate(new JapaneseCalendar(), …)` shows that calendar.
+For a date far from today (a birthday), put `CalendarMonthSelect` and `CalendarYearSelect` in the header. They are native selects that jump straight to a month; the years run from `min` to `max`, or ten either side of the year on show. Keep a `CalendarHeading` in the header, visually hidden if you like, so the grids stay named.
+
+```tsx
+<Calendar min="1950-01-01" max="2026-12-31">
+  <CalendarHeader>
+    <CalendarHeading className="sr-only" />
+    <CalendarMonthSelect className="flex-1" />
+    <CalendarYearSelect />
+  </CalendarHeader>
+  <CalendarGrid />
+</Calendar>
+```
+
+## Locale, week start and today
+
+Month names, weekday headers, the full date each day is named by and the first day of the week follow `locale`. Leave it out and the calendar reads the page's `lang` once it has mounted, then the browser's language; the first render (on the server too) is English, so the two always match. The demos pin `en-US` so they read the same for everyone. `weekStartsOn` overrides the week start (0 is Sunday), and `weekdayFormat` and `monthFormat` take `narrow`, `short` or `long`. In a right-to-left page the left and right arrow keys follow the order on screen.
+
+Today is read on the client and gets `aria-current="date"`; `timeZone` says which zone decides what day that is, and `today` pins it (a fixed date in a test or a screenshot).
+
+## From outside
+
+`createCalendarController()` returns a controller to pass as `controller`: `setValue`, `setMonth`, `previous`, `next` and `focus(date)`, which turns to the date's month first. Every write method returns `false` when the change was canceled or the calendar is disabled.
+
+```tsx
+const [calendar] = useState(() => createCalendarController())
+
+<Button onClick={() => { calendar.setValue('2026-12-25'); calendar.focus('2026-12-25') }}>Christmas</Button>
+<Calendar controller={calendar} />
+```
 
 ## Accessibility
 
-The calendar is a `group` containing a `grid` per month with row and column headers, and each day is a `gridcell` whose accessible name is its full date ("Wednesday, September 9, 2026"), plus "selected", "today" or "unavailable" where they apply. A visually hidden status announces the visible month when it changes. Focus is a single tab stop (roving) in the grid, and the previous and next buttons are labelled by locale.
+Each month is a `grid` named by its month, with `columnheader`s named by the full weekday, and each day is a `gridcell` whose accessible name is its full date ("Wednesday, September 9, 2026"), with `aria-selected`, `aria-disabled` and `aria-current="date"` where they apply. A grid that selects several days or a range is `aria-multiselectable`. The heading is a polite live region, so the month is announced when it changes. The grid is a single tab stop: the selected day when it is on show, otherwise today, otherwise the first day that can be picked. The previous and next buttons are named "Previous month" and "Next month"; pass `aria-label` to name them in another language.
 
 | Key | Action |
 | --- | --- |
-| Arrow Left / Right | Previous / next day (swapped in right-to-left locales). |
+| Arrow Left / Right | Previous / next day (following the page's direction). |
 | Arrow Up / Down | Same weekday, previous / next week. |
+| Home / End | First / last day of the week. |
 | Page Up / Page Down | Same day, previous / next month. |
 | Shift + Page Up / Page Down | Same day, previous / next year. |
-| Home / End | First / last day of the visible month. |
-| Enter or Space | Select the focused day (in a range: set the anchor, then the other end). |
-| Escape | Cancel a range that has an anchor but no end yet. |
+| Enter or Space | Select the focused day (in a range: the start, then the end). |
+| Escape | Cancel a range that has a start but no end yet. |
 
-State is not conveyed by color alone: unavailable days are struck through, today is bold, and each state is in the cell's accessible name. Keyboard focus shows a ring on the day (`data-focus-visible`).
+State is not conveyed by color alone: unavailable days are struck through, today is bold, and each state is an ARIA attribute on the cell. Keyboard focus shows a ring on the day.
 
 ## Props
 
 ### Calendar
 
-The root is react-aria's `Calendar`; every prop passes through, with `className` (a string or a function) merged after the variant classes. `RangeCalendar` takes the same, with a `{ start, end }` value.
+The root is UI SDK's `Calendar`; every prop passes through, with `className` (a string or a function of the state) merged after the variant classes. `value`, `defaultValue` and `onValueChange` are typed by `mode`.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `value` / `defaultValue` / `onChange` | — | The selected `DateValue` (a range for `RangeCalendar`); `null` clears it. |
-| `focusedValue` / `defaultFocusedValue` / `onFocusChange` | today | The date that has keyboard focus, and so the month on show. |
-| `minValue` / `maxValue` | — | Earliest and latest selectable day. |
-| `isDateUnavailable` | — | `(date) => boolean`: days that cannot be picked. |
-| `isDisabled` / `isReadOnly` / `isInvalid` | `false` | State. |
-| `visibleMonths` | `1` | `1`, `2` or `3` months side by side. |
+| `mode` | `single` | `single`, `multiple` or `range`. |
+| `value` / `defaultValue` / `onValueChange` | — | The selection, in the shape of the `mode`. The callback gets `(value, details)`. |
+| `month` / `defaultMonth` / `onMonthChange` | the value's month, else today's | The first month on show, as `"2026-09"`. |
+| `min` / `max` | — | Earliest and latest day that can be picked. |
+| `unavailable` | — | Days that cannot be picked: dates, spans, weekdays, a function, or an array of these. |
+| `disabled` / `readOnly` | `false` | State. |
+| `deselectable` | `false` | In `single` mode, a second press on the selected day clears it. |
+| `months` | `1` | How many months to show side by side. |
+| `pageBy` | `month` | `month` turns one month at a time · `page` turns all the months on show. |
+| `minDays` / `maxDays` / `allowUnavailable` | — | In `range` mode: the shortest and longest range, and whether it may span unavailable days. |
+| `locale` | the page's | Language of the names and labels. |
+| `weekStartsOn` | the locale's | First day of the week, 0 for Sunday. |
+| `weekdayFormat` / `monthFormat` | `short` / `long` | `narrow`, `short` or `long`. |
+| `fixedWeeks` | `false` | Six rows in every month. |
+| `showOutsideDays` | `false` | Show the days of the months around at the edges. |
+| `today` / `timeZone` | today in the browser's zone | The day marked as today. |
+| `onFocusedChange` / `onAnchorChange` | — | The day focus moves to, and a range's start while it is being picked. |
+| `controller` | — | From `createCalendarController()`. |
 | `variant` | `plain` | `plain` no surface · `card` a filled panel with padding. |
-| `pageBehavior` | `visible` | `visible` pages by the months on show · `single` by one month. |
-| `firstDayOfWeek` | locale's | `sun` … `sat`. |
-| `autoFocus` | `false` | Focus the selected (or focused) day on mount. |
-| `errorMessage` | — | Message for an invalid value. |
-| `aria-label` / `aria-labelledby` | — | The calendar's name (required, unless you label it with a heading). |
-| `children` | header and grids | Replace the layout with `CalendarHeader` and `CalendarGrid`s. |
+| `children` | header and grids | Replace the layout with your own parts. |
 
-`RangeCalendar` also takes `allowsNonContiguousRanges`.
-
-### CalendarHeader, CalendarGrid and CalendarCell
+### Parts
 
 | Part | Notes |
 | --- | --- |
-| `CalendarHeader` | A `<header>` with the previous and next buttons around the month and year heading. Takes the props of a `<header>`. Must sit inside a calendar. |
-| `CalendarGrid` | One month: the weekday row and its days. `offset={{ months: 1 }}` shows the following month (what `visibleMonths` does for you); `weekdayStyle` is `narrow`, `short` or `long`. |
-| `CalendarCell` | One day, given its `date`. In a `RangeCalendar` it draws the band; today is tinted. Its render props and `data-` attributes are react-aria's. |
+| `CalendarHeader` | A `<header>` with the previous and next buttons around the heading. Give it children to lay out your own. |
+| `CalendarPrevious` / `CalendarNext` | The step buttons. Disabled at the month of `min` / `max`. |
+| `CalendarHeading` | The months on show ("September 2026", "September – October 2026"). |
+| `CalendarMonthSelect` / `CalendarYearSelect` | Native selects that jump to a month or a year. |
+| `CalendarGrid` | One month: the weekday row and its days. `offset={1}` shows the following month (what `months` does for you). |
+| `CalendarWeekdays` / `CalendarWeekday` | The header row and one column header. `CalendarWeekdays` takes a function of the column's index as children. |
+| `CalendarWeeks` / `CalendarDay` | The week rows and one day, given its date as `value`. `CalendarWeeks` takes a function of the cell as children; a day's children replace its number and can be a function of its state. |
+
+Every part takes `className` (a string or a function of its state) and `render` to change its element.
 
 ## Styling
 
-Slots: `calendar` (`range-calendar` for the range), `calendar-header`, `calendar-grid`, `calendar-cell`. The root carries `data-disabled` and `data-invalid`. A day carries `data-selected`, `data-hovered`, `data-pressed`, `data-focus-visible`, `data-disabled`, `data-unavailable`, `data-outside-month` and, in a range, `data-selection-start` and `data-selection-end`; the circle is drawn off those through a `group/cell`, so changing a state's look is a class edit. Inside a popover, the calendar uses the [Popover](https://blamy.github.io/ui/#/popover)'s surface; inside a [ThemeScope](https://blamy.github.io/ui/#/theming) it follows the scope.
+Slots: `calendar`, `calendar-header`, `calendar-heading`, `calendar-previous`, `calendar-next`, `calendar-month-select`, `calendar-year-select`, `calendar-grid`, `calendar-weekdays`, `calendar-weekday`, `calendar-week`, `calendar-day`. The root carries `data-mode`, `data-disabled` and `data-readonly`. A day carries `data-value`, `data-selected`, `data-today`, `data-outside`, `data-disabled`, `data-unavailable` and, in a range, `data-range-start`, `data-range-middle`, `data-range-end` and `data-preview` (a range still being picked); hover and keyboard focus are the native `:hover` and `:focus-visible`. The circle inside a day reads them through a `group/day` (and the fill and today's tint from the day's state), so changing a state's look is a class edit. Inside a popup the calendar sits on the popup's surface; inside a [ThemeScope](https://blamy.github.io/ui/#/theming) it follows the scope.
 
 ## cva recipes
 

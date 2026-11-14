@@ -1,6 +1,7 @@
 'use client';
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useLayoutEffect,
@@ -11,14 +12,25 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, animate, motion } from 'framer-motion';
-import { collectSlots, defineSlot, useContainerWidth } from '@/lib/container';
+import { animate } from 'framer-motion';
+import type { SizeClass } from '@/lib/size-class';
+import { collectSlots, defineSlot, SizeClassProvider, useSizeClass } from '@/lib/container';
 import { springs } from '@/lib/motion';
-import { useControllableState } from '@/lib/controllable-state';
+import { usePresence } from '@/lib/presence';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
+import { useControllableChange } from '@/lib/controllable-state';
 import { useAppearance } from '@/lib/theme';
 import { ChatColumn, ChatColumnComposer, ChatColumnTranscript } from '@/components/ui/chat-column';
 import { cn } from '@/lib/utils';
-import { FloatingChat, glassScopeProps, type FloatingChatFabPosition, type FloatingChatProps } from '@/components/ui/floating-chat';
+import {
+  FloatingChat,
+  glassScopeProps,
+  type FloatingChatFabPosition,
+  type FloatingChatMinimizedChangeDetails,
+  type FloatingChatOpenChangeDetails,
+  type FloatingChatOpenChangeReason,
+  type FloatingChatProps,
+} from '@/components/ui/floating-chat';
 import { sheetToneProps } from '@/components/ui/floating-sheet';
 import { cva } from 'class-variance-authority';
 import { ChatHostContext, ComposerPortal, createOutletStore, useAttachHost, usePersistentHost } from '@/lib/persistent-host';
@@ -26,12 +38,14 @@ import { ChatHostContext, ComposerPortal, createOutletStore, useAttachHost, useP
 export type ArtifactChatLayout = 'split' | 'floating';
 
 export interface ArtifactChatContainerContextValue {
-  width: number;
+  /** The container's own size class (`useSizeClass`, `compact` below `breakpoint`). */
+  sizeClass: SizeClass;
   /** The resolved presentation: docked chat column or the floating glass chat. */
   layout: ArtifactChatLayout;
   /** True when the floating layout is active. */
   compact: boolean;
   chatOpen: boolean;
+  /** Opens or closes the floating chat from code (`onChatOpenChange` hears reason `imperative`). */
   setChatOpen: (open: boolean) => void;
   composing: boolean;
   setComposing: (composing: boolean) => void;
@@ -80,7 +94,9 @@ export interface ArtifactChatContainerProps {
    * artifacts); `split` always docks it.
    */
   layout?: 'auto' | ArtifactChatLayout;
-  /** Switches from the side-by-side layout to the floating composer at this container width. */
+  /** Switches from the side-by-side layout to the floating composer below this container width: the container's
+   *  size class is `compact` under it (`data-size-class` on the root, and the size-class scope popups inside
+   *  follow). */
   breakpoint?: number;
   /** Width of the docked chat column. */
   chatWidth?: number | string;
@@ -89,7 +105,8 @@ export interface ArtifactChatContainerProps {
   /** Controlled state for the floating full-chat drawer. */
   chatOpen?: boolean;
   defaultChatOpen?: boolean;
-  onChatOpenChange?: (open: boolean) => void;
+  /** The floating chat opening or closing, with FloatingChat's details (`reason`, `event`, `source`, `cancel()`). */
+  onChatOpenChange?: (open: boolean, details: FloatingChatOpenChangeDetails) => void;
   /** Collapses the floating composer into a tappable working status. */
   working?: boolean;
   workingLabel?: ReactNode;
@@ -102,7 +119,8 @@ export interface ArtifactChatContainerProps {
   /** Controlled fold of the floating chat into its FAB (dragging below rest folds it; the FAB unfolds it). */
   minimized?: boolean;
   defaultMinimized?: boolean;
-  onMinimizedChange?: (minimized: boolean) => void;
+  /** The floating chat folding into its FAB or unfolding, with FloatingChat's details. */
+  onMinimizedChange?: (minimized: boolean, details: FloatingChatMinimizedChangeDetails) => void;
   /** Transcript height that stays visible above the floating composer while the chat is closed. */
   peek?: number;
   /** Floating surface style: glass over the content, or an opaque card. */
@@ -117,8 +135,8 @@ export interface ArtifactChatContainerProps {
   style?: CSSProperties;
 }
 
-/* Composition: useContainerWidth resolves the layout; split renders ChatColumn beside the content,
-   floating renders the content full-bleed under a FloatingChat. */
+/* Composition: the container's own size class (useSizeClass, provided to what it holds) resolves the layout; split renders
+   ChatColumn beside the content, floating renders the content full-bleed under a FloatingChat. */
 export function ArtifactChatContainer({
   layout: requestedLayout = 'auto',
   breakpoint = 760,
@@ -142,19 +160,33 @@ export function ArtifactChatContainer({
   className,
   style,
 }: ArtifactChatContainerProps) {
-  const [rootRef, width] = useContainerWidth();
+  // Its own box's size class, starting from the enclosing scope's until measured.
+  const [rootRef, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: { medium: breakpoint, regular: Math.max(breakpoint + 1, 1024) } });
+  // The first layout has painted: a layout before it is where the container starts, not a switch to animate.
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let b = 0;
+    const a = requestAnimationFrame(() => {
+      b = requestAnimationFrame(() => setReady(true));
+    });
+    return () => {
+      cancelAnimationFrame(a);
+      cancelAnimationFrame(b);
+    };
+  }, []);
   const ambient = useAppearance();
   const tone: NonNullable<FloatingChatProps['tone']> = toneProp ?? ambient ?? 'auto';
   const toneProps = sheetToneProps(tone);
   const glassScope = glassScopeProps(tone);
   const contentRef = useRef<HTMLElement>(null);
-  const [chatOpen, setChatOpen] = useControllableState(controlledChatOpen, defaultChatOpen, onChatOpenChange);
+  // The consumer hears every change first, with its reason, and may cancel it.
+  const [chatOpen, changeChatOpen] = useControllableChange<boolean, FloatingChatOpenChangeReason>(controlledChatOpen, defaultChatOpen, onChatOpenChange);
+  const setChatOpen = (open: boolean) => changeChatOpen(open);
   const [composing, setComposing] = useState(!working);
   const layout: ArtifactChatLayout =
-    requestedLayout === 'auto' ? (width < breakpoint ? 'floating' : 'split') : requestedLayout;
+    requestedLayout === 'auto' ? (sizeClass === 'compact' ? 'floating' : 'split') : requestedLayout;
   const compact = layout === 'floating';
   const right = chatSide === 'right';
-  const edge = right ? 1 : -1;
 
   useEffect(() => {
     setComposing(!working);
@@ -174,12 +206,18 @@ export function ArtifactChatContainer({
   const hostCtx = useMemo(() => ({ outlet, composerDock: setComposerDock, chatDock: setChatDock }), [outlet]);
   useAttachHost(composerHost, composerDock);
   useAttachHost(chatHost, chatDock);
+  // The column's docks claim the shared parts when it mounts; a column that is leaving keeps quiet, so the
+  // floating chat's docks keep them.
+  const columnChatDock = useCallback((el: HTMLElement | null) => { if (el) setChatDock(el); }, []);
+  const columnComposerDock = useCallback((el: HTMLElement | null) => { if (el) setComposerDock(el); }, []);
 
   const contentRef2 = useRef<HTMLElement | null>(null);
   const shift = useRef<{ layout: boolean; composer: DOMRect | null; content: DOMRect | null } | null>(null);
   const lastCompact = useRef(compact);
-  // The column slides in only when the layout switches to it, not on first paint.
-  const [switched, setSwitched] = useState(false);
+  // The column slides in only when the layout switches to it, and out toward its own edge (data-starting-style and
+  // data-ending-style); until the first layout has painted it comes and goes at once, and the composer stays put.
+  const column = usePresence<HTMLDivElement>(!compact, { instant: !ready });
+  if (!ready) lastCompact.current = compact;
   if (lastCompact.current !== compact && !shift.current && typeof window !== 'undefined') {
     const composerEl = composerHost?.querySelector('[data-slot="composer"]');
     shift.current = {
@@ -189,13 +227,12 @@ export function ArtifactChatContainer({
     };
   }
   useLayoutEffect(() => {
-    if (lastCompact.current !== compact) setSwitched(true);
     lastCompact.current = compact;
     const snap = shift.current;
     // Wait until the new layout's composer dock has been attached.
     if (!snap || snap.layout !== compact || !composerDock?.isConnected || composerHost?.parentNode !== composerDock) return;
     shift.current = null;
-    if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (prefersReducedMotion()) return;
     const composerEl = composerHost?.querySelector<HTMLElement>('[data-slot="composer"]');
     if (snap.composer && composerEl) {
       const to = composerEl.getBoundingClientRect();
@@ -227,7 +264,7 @@ export function ArtifactChatContainer({
   }, [compact, composerDock]);
 
   const value: ArtifactChatContainerContextValue = {
-    width,
+    sizeClass,
     layout,
     compact,
     chatOpen,
@@ -238,89 +275,91 @@ export function ArtifactChatContainer({
 
   return (
     <ArtifactChatContainerContext.Provider value={value}>
-      <div
-        ref={rootRef}
-        data-slot="artifact-chat-container"
-        data-layout={compact ? 'compact' : 'split'}
-        // light/dark: the bl-theme's `sheet` scope in that appearance; `auto` leaves the host's theme alone.
-        data-tone={tone === 'auto' ? undefined : tone}
-        data-theme-scope={toneProps['data-theme-scope']}
-        data-chat-side={chatSide}
-        className={cn(artifactChatContainerVariants({ layout, chatSide }), toneProps.className, className)}
-        style={{
-          '--ck-artifact-chat-width': typeof chatWidth === 'number' ? `${chatWidth}px` : chatWidth,
-          ...style,
-        } as CSSProperties}
-      >
-        {/* The column (split) — its composer and transcript are docks for the shared ones. */}
-        <AnimatePresence mode="popLayout" initial={false}>
-          {!compact ? (
-            <motion.div
-              key="column"
+      <SizeClassProvider value={sizeClass}>
+        <div
+          ref={rootRef}
+          data-slot="artifact-chat-container"
+          data-layout={compact ? 'compact' : 'split'}
+          // light/dark: the bl-theme's `sheet` scope in that appearance; `auto` leaves the host's theme alone.
+          data-tone={tone === 'auto' ? undefined : tone}
+          data-theme-scope={toneProps['data-theme-scope']}
+          data-chat-side={chatSide}
+          className={cn(artifactChatContainerVariants({ layout, chatSide }), toneProps.className, className)}
+          style={{
+            '--ck-artifact-chat-width': typeof chatWidth === 'number' ? `${chatWidth}px` : chatWidth,
+            ...style,
+          } as CSSProperties}
+        >
+          {/* The column (split) — its composer and transcript are docks for the shared ones. */}
+          {column.mounted ? (
+            <div
+              ref={column.ref}
               data-slot="artifact-chat-column"
-              className={cn('z-2 flex min-h-0 min-w-0', right && 'col-start-2 row-start-1')}
-              // It slides in from, and back out toward, its own edge.
-              initial={switched ? { x: 32 * edge, opacity: 0 } : false}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 48 * edge, opacity: 0 }}
-              transition={springs.smooth}
+              className={cn(
+                'z-2 flex min-h-0 min-w-0 transition-[translate,opacity] duration-spring-smooth ease-spring-smooth data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none',
+                right
+                  ? 'col-start-2 row-start-1 data-starting-style:translate-x-8 data-ending-style:translate-x-12'
+                  : 'data-starting-style:-translate-x-8 data-ending-style:-translate-x-12',
+                // Leaving, it's out of the flow over the full-bleed content.
+                column.leaving && cn('absolute inset-y-0 w-(--ck-artifact-chat-width)', right ? 'right-0' : 'left-0'),
+              )}
             >
               <ChatColumn className={cn('flex-1', right && 'border-r-0 border-l')}>
                 <ChatColumnTranscript>
-                  <div ref={setChatDock} data-slot="artifact-chat-transcript-dock" className="flex h-full min-h-0 min-w-0 flex-col" />
+                  <div ref={columnChatDock} data-slot="artifact-chat-transcript-dock" className="flex h-full min-h-0 min-w-0 flex-col" />
                 </ChatColumnTranscript>
                 <ChatColumnComposer>
                   {/* The embedded Workbench Composer paints with the bl-theme's `glass` scope. */}
                   <div
-                    ref={setComposerDock}
+                    ref={columnComposerDock}
                     data-slot="artifact-chat-composer-dock"
                     data-theme-scope={glassScope['data-theme-scope']}
                     className={cn('min-w-0', glassScope.className)}
                   />
                 </ChatColumnComposer>
               </ChatColumn>
-            </motion.div>
+            </div>
           ) : null}
-        </AnimatePresence>
-        {/* The artifact stays mounted across layouts (same position in the tree). */}
-        <main
-          ref={(el) => {
-            contentRef.current = el;
-            contentRef2.current = el;
-          }}
-          data-slot="artifact-chat-content"
-          className={cn(contentClass, compact ? 'absolute inset-0 pb-0' : cn('relative', right && 'col-start-1 row-start-1'))}
-        >
-          {slots.content}
-        </main>
-        {compact ? (
-          <ChatHostContext.Provider value={hostCtx}>
-            <FloatingChat
-              open={chatOpen}
-              onOpenChange={setChatOpen}
-              working={working}
-              workingLabel={workingLabel}
-              onAdd={onAdd}
-              composing={composing}
-              onComposingChange={setComposing}
-              hideOnScroll={hideOnScroll}
-              scrollRef={contentRef}
-              fabPosition={fabPosition}
-              minimized={minimized}
-              defaultMinimized={defaultMinimized}
-              onMinimizedChange={onMinimizedChange}
-              peek={peek}
-              appearance={appearance}
-              tone={tone}
-            />
-          </ChatHostContext.Provider>
-        ) : null}
-        {/* Rendered once; they live in whichever dock the layout provides. */}
-        <ComposerPortal store={outlet} host={composerHost}>
-          {slots.composer}
-        </ComposerPortal>
-        {chatHost ? createPortal(slots.chat, chatHost) : null}
-      </div>
+          {/* The artifact stays mounted across layouts (same position in the tree). */}
+          <main
+            ref={(el) => {
+              contentRef.current = el;
+              contentRef2.current = el;
+            }}
+            data-slot="artifact-chat-content"
+            className={cn(contentClass, compact ? 'absolute inset-0 pb-0' : cn('relative', right && 'col-start-1 row-start-1'))}
+          >
+            {slots.content}
+          </main>
+          {compact ? (
+            <ChatHostContext.Provider value={hostCtx}>
+              <FloatingChat
+                open={chatOpen}
+                onOpenChange={(open, details) => { if (!changeChatOpen(open, details)) details.cancel(); }}
+                working={working}
+                workingLabel={workingLabel}
+                onAdd={onAdd}
+                composing={composing}
+                onComposingChange={setComposing}
+                hideOnScroll={hideOnScroll}
+                scrollRef={contentRef}
+                fabPosition={fabPosition}
+                minimized={minimized}
+                defaultMinimized={defaultMinimized}
+                onMinimizedChange={onMinimizedChange}
+                peek={peek}
+                appearance={appearance}
+                tone={tone}
+              />
+            </ChatHostContext.Provider>
+          ) : null}
+          {/* Rendered once; they live in whichever dock the layout provides. */}
+          <ComposerPortal store={outlet} host={composerHost}>
+            {slots.composer}
+          </ComposerPortal>
+          {chatHost ? createPortal(slots.chat, chatHost) : null}
+        </div>
+      </SizeClassProvider>
     </ArtifactChatContainerContext.Provider>
   );
 }

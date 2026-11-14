@@ -3,7 +3,8 @@ import {
   useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState,
   type ComponentProps, type KeyboardEvent, type ReactNode, type Ref,
 } from 'react';
-import { TextArea as AriaTextArea } from 'react-aria-components';
+import { createInputHistory, createLocalStorage } from '@ui-sdk/core';
+import { Textarea, createInputController, type TextareaOptions } from '@ui-sdk/react/textarea';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
@@ -12,14 +13,16 @@ import { cn } from '@/lib/utils';
 import { sqlSpans, type SqlSpan } from '@/lib/sql-lex';
 import type { SqlError } from '@/lib/pglite-core';
 
-/* ══ SqlEditor — a SQL box on react-aria's TextArea ══
-   A plain <textarea> sits over a highlighted copy of its own text, so selection, IME, undo, spell-check off,
+/* ══ SqlEditor — a SQL box on UI SDK's Textarea ══
+   A native <textarea> sits over a highlighted copy of its own text, so selection, IME, undo, spell-check off,
    accessibility and mobile keyboards are the browser's and nothing heavy (no CodeMirror / Monaco, ~1 MB) ships.
    Highlighting is lib/sql-lex: keywords, types, functions, strings (incl. $$ bodies), numbers and comments, computed
    synchronously. An `error` with a position underlines the offending token.
 
-   ⌘/Ctrl + Enter runs the selection, or everything when nothing is selected. ⌥↑ / ⌥↓ step through `history` (Esc
-   brings your draft back). Tab keeps its job of moving focus (indenting would trap keyboard users).
+   ⌘ + Enter (Ctrl + Enter off Apple platforms: the Textarea's `mod+enter` submit shortcut) runs the selection, or
+   everything when nothing is selected. ↑ on the first line and ↓ on the last step through `history` with UI SDK's
+   `createInputHistory`, like a terminal: ↓ past the newest brings your draft back. Tab keeps its job of moving
+   focus (indenting would trap keyboard users).
    `ref` exposes `focus()` and `insert(text)` (at the cursor), which is how SchemaTree pastes a table name in. */
 
 export const sqlEditorVariants = cva(
@@ -45,22 +48,25 @@ export interface SqlEditorHandle {
   insert: (text: string) => void;
 }
 
-export interface SqlEditorProps extends Omit<ComponentProps<'div'>, 'children' | 'onChange' | 'defaultValue' | 'ref'>, VariantProps<typeof sqlEditorVariants> {
+export interface SqlEditorProps extends Omit<ComponentProps<'div'>, 'children' | 'defaultValue' | 'ref'>, VariantProps<typeof sqlEditorVariants> {
   value?: string;
   defaultValue?: string;
-  onChange?: (value: string) => void;
+  /** Every change to the text, with the Textarea's `details`: typing is `input-change`; a history step and
+      `insert()` are `imperative`. Canceling a history step leaves the text and the arrow key to the browser. */
+  onValueChange?: TextareaOptions['onValueChange'];
   /** ⌘/Ctrl + Enter, or the Run button. Receives the selection, or the whole text. */
   onRun?: (sql: string) => void;
-  isRunning?: boolean;
-  /** Earlier statements, newest first (see `useSqlHistory`); ⌥↑ / ⌥↓ steps through them. */
+  /** A statement is running: Run is disabled and reads "Running…". */
+  running?: boolean;
+  /** Earlier statements, newest first (see `useSqlHistory`); ↑ on the first line and ↓ on the last step through them. */
   history?: readonly string[];
   /** Underlines `error.position` in the text. */
   error?: Pick<SqlError, 'position'> | null;
   /** Highlight SQL (default true; skipped past 200k characters). */
   highlight?: boolean;
   placeholder?: string;
-  isDisabled?: boolean;
-  isReadOnly?: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
   autoFocus?: boolean;
   /** Extra controls in the footer, before Run. */
   actions?: ReactNode;
@@ -110,17 +116,17 @@ function segmentsOf(code: string, spans: readonly SqlSpan[], errorAt: number | n
 }
 
 export function SqlEditor({
-  value: valueProp, defaultValue = '', onChange, onRun, isRunning = false, history, error, highlight = true, placeholder,
-  isDisabled, isReadOnly, autoFocus, actions, footer = true, runLabel = 'Run', size, className, style, ref,
+  value: valueProp, defaultValue = '', onValueChange, onRun, running = false, history, error, highlight = true, placeholder,
+  disabled, readOnly, autoFocus, actions, footer = true, runLabel = 'Run', size, className, style, ref,
   'aria-label': ariaLabel = 'SQL', ...props
 }: SqlEditorProps) {
   const [inner, setInner] = useState(defaultValue);
   const controlled = valueProp !== undefined;
   const value = controlled ? valueProp : inner;
-  const setValue = useCallback((v: string) => {
-    if (!controlled) setInner(v);
-    onChange?.(v);
-  }, [controlled, onChange]);
+  // Writes from here (a history step, `insert`) go through the Textarea's controller, so they reach
+  // `onValueChange` like typing does.
+  const [input] = useState(createInputController);
+  const setValue = useCallback((v: string) => { input.setValue(v); }, [input]);
 
   const areaRef = useRef<HTMLTextAreaElement>(null);
   const layerRef = useRef<HTMLPreElement>(null);
@@ -145,37 +151,29 @@ export function SqlEditor({
     },
   }), [setValue]);
 
-  // History: ⌥↑ goes back, ⌥↓ forward, Esc returns to the draft.
-  const cursor = useRef(-1);
-  const draft = useRef('');
-  const step = (dir: 1 | -1) => {
-    if (!history?.length) return;
-    const next = cursor.current + dir;
-    if (next < -1 || next >= history.length) return;
-    if (cursor.current === -1) draft.current = value;
-    cursor.current = next;
-    setValue(next === -1 ? draft.current : history[next]);
-  };
+  // History: ArrowUp on the first line goes back, ArrowDown on the last goes forward and past the newest returns
+  // the draft. `createInputHistory` takes the entries oldest first and leaves modified, composing, selecting,
+  // read-only and expanded-popup key presses alone.
+  const historyRef = useRef(history);
+  useEffect(() => { historyRef.current = history; }, [history]);
+  const [recall] = useState(() => createInputHistory<string>({
+    entries: () => (historyRef.current ? [...historyRef.current].reverse() : undefined),
+    read: () => areaRef.current?.value ?? '',
+    // Textarea's reasons have no `history-key` yet (gaps/r2-leaf.md), so a step is the controller's `imperative`,
+    // which takes no event. `setValue` reports false for an unchanged value too, which is still a step.
+    write: (v) => input.setValue(v) || areaRef.current?.value === v,
+  }));
 
   const run = () => {
     const a = areaRef.current;
-    if (!a || isRunning || !onRun) return;
+    if (!a || running || !onRun) return;
     const selected = a.selectionStart !== a.selectionEnd ? a.value.slice(a.selectionStart, a.selectionEnd) : '';
     const sql = (selected || a.value).trim();
     if (sql) onRun(sql);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-      e.preventDefault();
-      run();
-    } else if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-      e.preventDefault();
-      step(e.key === 'ArrowUp' ? 1 : -1);
-    } else if (e.key === 'Escape' && cursor.current !== -1) {
-      cursor.current = -1;
-      setValue(draft.current);
-    }
+    recall.keydown(e.nativeEvent);
   };
 
   const spans = useMemo(() => (highlight && value.length <= HIGHLIGHT_LIMIT ? sqlSpans(value) : []), [highlight, value]);
@@ -185,8 +183,8 @@ export function SqlEditor({
   return (
     <div
       data-slot="sql-editor"
-      data-disabled={isDisabled || undefined}
-      data-running={isRunning || undefined}
+      data-disabled={disabled || undefined}
+      data-running={running || undefined}
       className={cn(sqlEditorVariants({ size }), className)}
       style={style}
       {...props}
@@ -202,20 +200,23 @@ export function SqlEditor({
           {segments.map((s, i) => (s.className ? <span key={i} className={s.className}>{s.text}</span> : s.text))}
           {'\n'}
         </pre>
-        <AriaTextArea
+        <Textarea
           ref={areaRef}
-          data-slot="sql-editor-input"
+          controller={input}
           aria-label={ariaLabel}
           value={value}
-          onChange={(e) => {
-            cursor.current = -1;
-            setValue(e.target.value);
+          onValueChange={(next, details) => {
+            onValueChange?.(next, details);
+            if (details.canceled) return;
+            if (!controlled) setInner(next);
           }}
+          submitShortcut="mod+enter"
+          onSubmit={run}
           onKeyDown={onKeyDown}
           onScroll={syncScroll}
           placeholder={placeholder}
-          disabled={isDisabled}
-          readOnly={isReadOnly}
+          disabled={disabled}
+          readOnly={readOnly}
           autoFocus={autoFocus}
           spellCheck={false}
           autoCapitalize="off"
@@ -230,16 +231,23 @@ export function SqlEditor({
       </div>
 
       {footer ? (
-        <div data-slot="sql-editor-footer" className="flex shrink-0 items-center gap-2 px-2 py-1.5 shadow-hairline-t">
-          <KbdGroup className="hidden min-w-0 flex-1 text-caption text-foreground/65 sm:inline-flex">
-            <Kbd>⌘</Kbd><Kbd>↵</Kbd>
-            <span className="truncate">runs the selection, or everything{history?.length ? ' · ⌥↑ history' : ''}</span>
+        // The footer is its own container: the hint shows once the editor (not the window) has room for it.
+        <div data-slot="sql-editor-footer" className="@container/sql-footer flex shrink-0 items-center gap-2 px-2 py-1.5 shadow-hairline-t">
+          <KbdGroup className="hidden min-w-0 flex-1 text-caption text-foreground/65 @md/sql-footer:inline-flex">
+            <Kbd keys="mod+enter" />
+            <span className="truncate">runs the selection, or everything</span>
+            {history?.length ? (
+              <>
+                <Kbd keys="arrowup" />
+                <span className="truncate">history</span>
+              </>
+            ) : null}
           </KbdGroup>
-          <span className="flex-1 sm:hidden" />
+          <span className="flex-1 @md/sql-footer:hidden" />
           {actions}
           {/* Ink on paper rather than white on the accent blue: 3.7:1 fails WCAG AA for a button this size. */}
-          <Button size="sm" className="bg-foreground text-background" isDisabled={isDisabled || isRunning || !onRun || !value.trim()} onPress={run}>
-            {isRunning ? 'Running…' : runLabel}
+          <Button size="sm" className="bg-foreground text-background" disabled={disabled || running || !onRun || !value.trim()} onClick={run}>
+            {running ? 'Running…' : runLabel}
           </Button>
         </div>
       ) : null}
@@ -257,39 +265,47 @@ export interface SqlHistory {
   clear: () => void;
 }
 
-/** Statements you ran, newest first. Pass a `key` to keep them in localStorage across reloads (read after mount, so it is SSR safe). */
+const parseEntries = (raw: string | null, max: number): string[] => {
+  if (!raw) return [];
+  try {
+    const value: unknown = JSON.parse(raw);
+    return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string').slice(0, max) : [];
+  } catch {
+    return []; // a corrupt value: start empty
+  }
+};
+
+/** Statements you ran, newest first. Pass a `key` to keep them in localStorage (UI SDK's `createLocalStorage`): they
+    last across reloads and follow other tabs' runs. Read after mount, so it is SSR safe. */
 export function useSqlHistory(key?: string, max = 50): SqlHistory {
+  const storage = useMemo(() => (key ? createLocalStorage(key) : undefined), [key]);
   const [entries, setEntries] = useState<string[]>([]);
+  // The newest list, for writes that land before React re-renders (two runs in one tick).
+  const latest = useRef<string[]>([]);
   useEffect(() => {
-    if (!key) return;
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) setEntries((JSON.parse(raw) as string[]).slice(0, max));
-    } catch {
-      /* private mode or a corrupt value: start empty */
-    }
-  }, [key, max]);
-  const persist = useCallback((next: string[]) => {
-    if (!key) return;
-    try {
-      localStorage.setItem(key, JSON.stringify(next));
-    } catch {
-      /* quota or private mode */
-    }
-  }, [key]);
+    if (!storage) return;
+    const load = (raw: string | null) => {
+      const next = parseEntries(raw, max);
+      if (JSON.stringify(next) === JSON.stringify(latest.current)) return;
+      latest.current = next;
+      setEntries(next);
+    };
+    load(storage.get());
+    return storage.subscribe(load);
+  }, [storage, max]);
+  const commit = useCallback((next: string[]) => {
+    latest.current = next;
+    setEntries(next);
+    if (!storage) return;
+    if (next.length) storage.set(JSON.stringify(next));
+    else storage.remove();
+  }, [storage]);
   const push = useCallback((sql: string) => {
     const s = sql.trim();
-    if (!s) return;
-    setEntries((prev) => {
-      if (prev[0] === s) return prev;
-      const next = [s, ...prev.filter((p) => p !== s)].slice(0, max);
-      persist(next);
-      return next;
-    });
-  }, [max, persist]);
-  const clear = useCallback(() => {
-    setEntries([]);
-    persist([]);
-  }, [persist]);
+    const prev = latest.current;
+    if (!s || prev[0] === s) return;
+    commit([s, ...prev.filter((p) => p !== s)].slice(0, max));
+  }, [max, commit]);
+  const clear = useCallback(() => commit([]), [commit]);
   return { entries, push, clear };
 }

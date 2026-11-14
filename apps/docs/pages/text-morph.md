@@ -34,7 +34,7 @@ Pass the text as a single string child; changing it runs the morph. At rest it r
 ```tsx
 <h2><TextMorph>{step === 0 ? 'Continue' : 'Confirm'}</TextMorph></h2>
 
-<Button onPress={next}>{label}</Button>   {/* morphs on its own */}
+<Button onClick={next}>{label}</Button>   {/* morphs on its own */}
 ```
 
 ## Good to know

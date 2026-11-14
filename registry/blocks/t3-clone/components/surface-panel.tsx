@@ -21,7 +21,7 @@ export function SurfacePanel({ threadKey, workspace }: { threadKey: string; work
             size="icon-sm"
             aria-label="Switch surface"
             title="Switch surface"
-            onPress={() => onSurface(null)}
+            onClick={() => onSurface(null)}
           >
             <Icon name="chevron-down-wide" size={15} sw={1.7} />
           </Button>

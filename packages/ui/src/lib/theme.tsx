@@ -1,6 +1,7 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
-import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
+import { bindSizeClass, type SizeClass } from '@/lib/size-class';
+import { SizeClassProvider } from '@/lib/container';
 import { cn, BARH } from '@/lib/utils';
 import { THEME_VARS, type ThemeVar } from '@/lib/tokens.generated';
 
@@ -92,10 +93,10 @@ export function themeScopeProps({ scope, appearance, tint, vars }: { scope?: The
 }
 
 /* ── The scope an overlay opened inside should wear ──
-   Popovers, menus, dialogs and tooltips render in a portal (BLProvider's root, else <body>), outside the scope's DOM,
-   so CSS inheritance no longer reaches them. ThemeScope publishes its scope here and the overlay primitives spread
-   `useThemeScopeProps()` onto their root — the overlay gets the same `data-theme-scope`, appearance class, tint and
-   vars as the surface that opened it. Nothing is applied outside a scope. */
+   Popovers, menus, dialogs and tooltips render into their layer host (BLProvider's root, see `useLayerHost`), outside
+   the scope's DOM, so CSS inheritance no longer reaches them. ThemeScope publishes its scope here and the overlay
+   primitives spread `useThemeScopeProps()` onto their popup — it gets the same `data-theme-scope`, appearance class,
+   tint and vars as the surface that opened it. Nothing is applied outside a scope. */
 export interface ThemeScopeState { scope?: ThemeScopeName; appearance?: Appearance; tint?: string; vars?: ThemeVars }
 export const ThemeScopeContext = createContext<ThemeScopeState | null>(null);
 
@@ -105,6 +106,15 @@ export function useThemeScopeProps(): { 'data-theme-scope'?: string; className?:
   if (!state) return {};
   const p = themeScopeProps(state);
   return { 'data-theme-scope': p['data-theme-scope'], className: p.className || undefined, style: p.style };
+}
+
+/** A UI SDK part's `style`: an object, or a function of the part's state. */
+export type StyleProp<State> = CSSProperties | ((state: State) => CSSProperties | undefined) | undefined;
+
+/** Puts a scope's variables under a UI SDK part's own `style`, which may be a function of the part's state. */
+export function scopeStyle<State>(scope: CSSProperties | undefined, style: StyleProp<State>): StyleProp<State> {
+  if (!scope) return style;
+  return typeof style === 'function' ? (state) => ({ ...scope, ...style(state) }) : { ...scope, ...style };
 }
 
 /** The resolved theme variables (and color-scheme) at an element, as a style object. */
@@ -152,6 +162,22 @@ export function ThemeScope({ scope, appearance: appearanceProp, tint, vars, clas
   );
 }
 
+/* ══ Layer host ══
+   A popup (dialog, sheet, popover, menu, tooltip, toast) belongs to the app it opened in, not to the page: an app
+   shown in a phone frame or a window keeps its dialogs, their scrim and their scroll lock inside that frame.
+   BLProvider's root is that host. It publishes the element here, and every popup renders into it through UI SDK's
+   `container` prop, set on the popup's root so that its backdrop follows its content: `const host = useLayerHost()`,
+   then `<SdkDialog container={container ?? host}>`. Outside a BLProvider there is no host, and a popup renders in
+   place, in the browser's top layer. */
+const LayerHostContext = createContext<HTMLElement | undefined>(undefined);
+
+/** The element popups opened below should render into (UI SDK's `container`): the nearest BLProvider's root, or
+    `undefined` outside one and until that root has mounted. */
+export function useLayerHost(): HTMLElement | undefined {
+  return useContext(LayerHostContext);
+}
+
+
 export interface BLProviderProps {
   /** Defaults to the ambient `AppearanceProvider` value; without one the provider inherits the page's appearance
       (shadcn's `.dark` on an ancestor, else light). */
@@ -169,27 +195,45 @@ export function BLProvider({ dark: darkProp, tint, safeTop, children, className,
   const appearance = useAppearance();
   const dark = darkProp ?? (appearance ? appearance === 'dark' : undefined);
   const safe = safeTop === true ? 59 : typeof safeTop === 'number' ? safeTop : 0;
-  /* react-aria overlays (Popover, Modal, Tooltip) portal into this root instead of document.body, so they
-     inherit the theme variables, font and color scheme. null until mounted → overlays wait one commit. */
+  /* Popups render into this root (see `useLayerHost`), so they stay inside it and inherit its theme variables,
+     font and color scheme. null until mounted: a popup open on the first render moves in one commit later. The
+     root is a layer host (UI SDK's `data-layer-host`, with the `contain: layout` it needs), written in the markup
+     so it is there before any popup inside binds: popups stay in its box instead of the browser's top layer, a
+     modal one makes only the rest of the root inert, and the page keeps its scroll.
+     The root is also a size-class scope: it measures its own box (`bindSizeClass`), writes `data-size-class`, and
+     provides the class to everything inside, so `presentation="auto"` in a phone frame is a sheet on a desktop.
+     Until it is measured (and on the server) there is no class, and "auto" falls back to UI SDK's own rule. */
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
-  const getContainer = useCallback(() => root, [root]);
+  const [sizeClass, setSizeClass] = useState<SizeClass | undefined>(undefined);
+  const rootRef = useCallback((el: HTMLDivElement) => {
+    setRoot(el);
+    const stop = bindSizeClass(el, { onChange: setSizeClass });
+    return () => {
+      stop();
+      setSizeClass(undefined);
+    };
+  }, []);
   return (
     <div
-      ref={setRoot}
+      ref={rootRef}
       data-slot="bl-provider"
+      data-layer-host=""
+      data-size-class={sizeClass}
       className={cn(
-        'relative h-full w-full overflow-hidden bg-muted font-sans text-foreground select-none transition-[background] duration-spring-smooth ease-spring-smooth',
+        'relative h-full w-full overflow-hidden bg-muted font-sans [contain:layout] text-foreground select-none transition-[background] duration-spring-smooth ease-spring-smooth',
         themeScopeClass(dark === undefined ? undefined : dark ? 'dark' : 'light'),
         className,
       )}
       style={{ ...tintVars(tint), '--bl-safe-top': safe + 'px', ...style } as CSSProperties}
     >
-      {/* Overlays portal into this root and inherit its theme from it, so a ThemeScope outside (a docs page's light
+      {/* Popups render into this root and inherit its theme from it, so a ThemeScope outside (a docs page's light
           scope around a dark block) must not dress them as well. */}
       <ThemeScopeContext.Provider value={null}>
-        <UNSAFE_PortalProvider getContainer={getContainer}>
-          <BLSafeCtx.Provider value={safe}>{children}</BLSafeCtx.Provider>
-        </UNSAFE_PortalProvider>
+        <LayerHostContext.Provider value={root ?? undefined}>
+          <SizeClassProvider value={sizeClass}>
+            <BLSafeCtx.Provider value={safe}>{children}</BLSafeCtx.Provider>
+          </SizeClassProvider>
+        </LayerHostContext.Provider>
       </ThemeScopeContext.Provider>
       {safe ? (
         <div

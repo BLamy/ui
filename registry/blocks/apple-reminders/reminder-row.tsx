@@ -4,10 +4,12 @@
 import { useState, type CSSProperties } from 'react';
 import { TASK_STATES } from '@brett_lamy/docstream/gitbook';
 import { TASK_STATE_ICONS } from '@brett_lamy/docstream/tasks';
-import { ContextMenu, ContextMenuContent } from '@/components/ui/context-menu';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@ui-sdk/react/checkbox';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
+import { ContextMenu, ContextMenuContent, ContextMenuRadioGroup, ContextMenuRadioItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { HoverCardHeader } from '@/components/ui/hover-card';
 import { Chevron } from '@/components/ui/icon-swap';
+import { PlainButton } from '@/components/ui/plain-button';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { SYSTEM, dueLabel, stateOf, type Reminder, type RList } from './data';
@@ -50,9 +52,9 @@ export function ListPreview({ list: l, items }: { list: RList; items: Reminder[]
   );
 }
 
-/** The circle: a ring that fills with the list color on the bouncy spring when completed. The other docstream task
-    states (in progress, blocked, parked, …) show their icon in the list color. With `onState`, right-click (or
-    long-press, or the menu key) opens every state. */
+/** The circle: UI SDK's Checkbox drawn as a ring that fills with the list color on the bouncy spring when completed.
+    The other docstream task states (in progress, blocked, parked, …) are its mixed state and show their icon in the
+    list color. With `onState`, right-click (or long-press, or the menu key) opens every state. */
 export function CheckCircle({ done, state = done ? 'verified' : 'pending', color, label, size = 24, onToggle, onState }: {
   done: boolean; state?: TaskState; color: string; label: string; size?: number; onToggle: () => void; onState?: (state: TaskState) => void;
 }) {
@@ -60,7 +62,7 @@ export function CheckCircle({ done, state = done ? 'verified' : 'pending', color
   const marked = state !== 'pending' && state !== 'verified';
   const StateIcon = TASK_STATE_ICONS[state];
   const circle = (
-    <button type="button" role="checkbox" aria-checked={marked ? 'mixed' : done} aria-label={`${label} (${meta.label})`} onClick={onToggle}
+    <Checkbox checked={marked ? 'indeterminate' : done} onCheckedChange={() => onToggle()} aria-label={`${label} (${meta.label})`}
       aria-haspopup={onState ? 'menu' : undefined} title={onState ? `${meta.label} — right-click for every state` : undefined}
       className={cn('bl-btn relative grid shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 transition-[scale,box-shadow] duration-spring-snappy ease-spring-snappy active:scale-[.86] motion-reduce:transition-none',
         marked ? '' : done ? 'shadow-[inset_0_0_0_1.6px_var(--list-color)]' : 'shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))]')}
@@ -68,18 +70,19 @@ export function CheckCircle({ done, state = done ? 'verified' : 'pending', color
       <span aria-hidden="true" className={cn('rounded-full bg-(--list-color) transition-[scale,opacity] duration-spring-bouncy ease-spring-bouncy motion-reduce:transition-none', done ? 'scale-100 opacity-100' : 'scale-0 opacity-0')}
         style={{ width: size - 9, height: size - 9 }} />
       {marked ? <StateIcon aria-hidden="true" data-state-icon={state} className="absolute text-(--list-color)" size={size - 2} strokeWidth={2} /> : null}
-    </button>
+    </Checkbox>
   );
   if (!onState) return circle;
   return (
-    <ContextMenu className="grid shrink-0">
-      {circle}
-      <ContextMenuContent aria-label="Task state" selectionMode="single" selectedKeys={[state]}
-        onAction={(key) => onState(String(key) as TaskState)}>
-        {TASK_STATES.map((s) => {
-          const ItemIcon = TASK_STATE_ICONS[s.id];
-          return <DropdownMenuItem key={s.id} id={s.id} textValue={s.label} icon={<ItemIcon aria-hidden="true" size={19} strokeWidth={1.8} />}>{s.label}</DropdownMenuItem>;
-        })}
+    <ContextMenu>
+      <ContextMenuTrigger className="grid shrink-0">{circle}</ContextMenuTrigger>
+      <ContextMenuContent aria-label="Task state">
+        <ContextMenuRadioGroup value={state} onValueChange={(value) => onState(value as TaskState)}>
+          {TASK_STATES.map((s) => {
+            const ItemIcon = TASK_STATE_ICONS[s.id];
+            return <ContextMenuRadioItem key={s.id} closeOnSelect value={s.id} label={s.label} icon={<ItemIcon aria-hidden="true" size={19} strokeWidth={1.8} />}>{s.label}</ContextMenuRadioItem>;
+          })}
+        </ContextMenuRadioGroup>
       </ContextMenuContent>
     </ContextMenu>
   );
@@ -108,11 +111,11 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
                 {r.title}
               </div>
               {r.flagged ? <Icon name="flag-fill" size={16} className="mt-0.5" style={{ color: SYSTEM.orange }} /> : null}
-              <button type="button" aria-label={`Details for “${r.title}”`} onClick={() => api.openDetails(r.id)}
+              <PlainButton aria-label={`Details for “${r.title}”`} onClick={() => api.openDetails(r.id)}
                 className={cn('bl-btn -my-0.5 grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-primary transition-opacity duration-150',
                   phone ? 'opacity-100' : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100')}>
                 <Icon name="info" size={22} weight="light" />
-              </button>
+              </PlainButton>
             </div>
             {r.source ? <div className="mt-0.5 truncate text-footnote text-muted-foreground" title={`${r.source.path}, line ${r.source.line + 1}`}>
               {r.state && r.state !== 'pending' && r.state !== 'verified' ? `${TASK_STATES.find((t) => t.id === r.state)?.label} · ` : ''}{r.source.path.split('/').slice(1).join('/')}
@@ -130,25 +133,25 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
               </span>
             ) : null}
             {subs.length ? (
-              <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)}
-                className="bl-btn mt-1 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-muted-foreground">
-                {subsDone} of {subs.length} subtasks
-                <Chevron direction={open ? 'down' : 'right'} size={13} sw={2.6} />
-              </button>
+              <Collapsible open={open} onOpenChange={setOpen}>
+                <CollapsibleTrigger
+                  className="bl-btn mt-1 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-muted-foreground">
+                  {subsDone} of {subs.length} subtasks
+                  <Chevron direction={open ? 'down' : 'right'} size={13} sw={2.6} />
+                </CollapsibleTrigger>
+                <CollapsiblePanel className="h-(--collapsible-panel-height) overflow-clip transition-[height,opacity] duration-spring-tray ease-spring-tray data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0 motion-reduce:transition-none">
+                  <div className="flex flex-col gap-2.5 pt-2.5">
+                    {subs.map((s) => (
+                      <div key={s.id} className="flex items-center gap-2.5">
+                        <CheckCircle size={20} done={!!s.done} state={stateOf(s)} color={color} label={`Subtask “${s.title}”`}
+                          onToggle={() => api.toggleSubtask(r.id, s.id)} onState={(state) => api.setState(s.id, state)} />
+                        <span className={cn('text-callout', s.done && 'text-muted-foreground')}>{s.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsiblePanel>
+              </Collapsible>
             ) : null}
-            <div className={cn('grid transition-[grid-template-rows,opacity] duration-spring-tray ease-spring-tray', open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0')}>
-              <div className="min-h-0 overflow-hidden" inert={!open || undefined}>
-                <div className="flex flex-col gap-2.5 pt-2.5">
-                  {subs.map((s) => (
-                    <div key={s.id} className="flex items-center gap-2.5">
-                      <CheckCircle size={20} done={!!s.done} state={stateOf(s)} color={color} label={`Subtask “${s.title}”`}
-                        onToggle={() => api.toggleSubtask(r.id, s.id)} onState={(state) => api.setState(s.id, state)} />
-                      <span className={cn('text-callout', s.done && 'text-muted-foreground')}>{s.title}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

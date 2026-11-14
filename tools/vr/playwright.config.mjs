@@ -6,10 +6,11 @@ const GPU = /syntaxhighlighting|syntax-highlighting|code-editor|codeeditor-read-
 const GPU_USE = { channel: 'chromium', launchOptions: { args: ['--enable-unsafe-webgpu'] } };
 
 /* Visual regression for every Storybook story. Baselines are local (gitignored): take them on a clean
-   checkout with `pnpm vr:update`, then run `pnpm vr` after a change. Needs Storybook on :6006. */
+   checkout with `pnpm vr:update`, then run `pnpm vr` after a change. Needs Storybook on :6006
+   (or wherever `STORYBOOK_URL` points). */
 export default defineConfig({
   testDir: '.',
-  // `--project stories` needs Storybook on :6006; `--project docs` needs the docs dev server on :4417.
+  // `--project stories` needs Storybook on :6006 (override with STORYBOOK_URL); `--project docs` needs the docs dev server on :4417.
   // CodeEditor in the page lexes on WebGPU (gpu-lexer). Playwright's default headless shell has no WebGPU adapter,
   // so screens that show highlighted code run in full Chromium (`channel: 'chromium'`, new headless), which gets
   // the Metal adapter on macOS (--enable-unsafe-webgpu turns on SwiftShader where there is no GPU). Everything

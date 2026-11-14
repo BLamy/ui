@@ -50,7 +50,7 @@ import { ModelPicker } from '@/components/blocks/t3-clone/components/workbench/m
     <ComposerBumpContent><DevServerLog /></ComposerBumpContent>
     <ComposerBumpHandle>
       <ComposerText className="flex-1">● Monitoring</ComposerText>
-      <ComposerButton variant="pill" onPress={stopServer}>Stop</ComposerButton>
+      <ComposerButton variant="pill" onClick={stopServer}>Stop</ComposerButton>
     </ComposerBumpHandle>
   </ComposerBump>
   <ComposerCard size="lg">
@@ -86,27 +86,27 @@ import { ModelPicker } from '@/components/blocks/t3-clone/components/workbench/m
 
 | Part | Role |
 | --- | --- |
-| `Composer` | Root and state. `value` / `defaultValue` / `onValueChange` (Markdown), `attachments` / `defaultAttachments` / `onAttachmentsChange`, `expanded` / `defaultExpanded` / `onExpandedChange`, `streaming`, `onStop`, `onSubmit(markdown, attachments)`, `annotator` (see *Image annotation* below), and the file rules `acceptedFileTypes`, `maxFileSize`, `maxFiles`, `onDropFiles(files, source)`, `onFilesRejected(rejections)` (see *Files and drop* below). Parts read it with `useComposer()` (`send`, `stop`, `canSend`, `attachFiles(files, { source, point })`, `removeAttachment`, `annotate`, …). |
-| `ComposerCard` | The bordered surface (`size="default"` 15px corners, `size="lg"` 22px). Its addons order themselves, so they can be written in any order. It is a react-aria drop zone for files (`dropZone={false}` opts out; `dropLabel` retitles the overlay). |
+| `Composer` | Root and state. `value` / `defaultValue` / `onValueChange(markdown, details)` (reason `input-change`, `send` or `imperative`), `attachments` / `defaultAttachments` / `onAttachmentsChange(attachments, details)` (reason `picker`, `drop`, `paste`, `remove`, `annotate`, `send` or `imperative`), `expanded` / `defaultExpanded` / `onExpandedChange(expanded, details)` (`press` or `imperative`). Each callback runs before the state moves, and `details.cancel()` keeps an uncontrolled value as it was. A send empties the draft first (`send` on both, with the click or key behind it): canceling either refuses the send, so nothing reaches `onSubmit` or the queue and the editor keeps the draft. A queue that refuses the draft (`onItemsChange` reason `queue`) leaves it in the composer the same way. `streaming`, `onStop`, `onSubmit(markdown, attachments)`, `annotator` (see *Image annotation* below), and the file rules `acceptedFileTypes`, `maxFileSize`, `maxFiles`, `onDropFiles(files, source)`, `onFilesRejected(rejections)` (see *Files and drop* below). Parts read it with `useComposer()` (`send(event?)`, `stop`, `canSend`, `attachFiles(files, { source, point, event })`, `removeAttachment(id, given?)`, `setValue(markdown, given?)`, `annotate`, …; the setters take an optional `{ reason, event }` for the details). |
+| `ComposerCard` | The bordered surface (`size="default"` 15px corners, `size="lg"` 22px). Its addons order themselves, so they can be written in any order. It is a drop zone for files, UI SDK's `FileInputDropzone`: drops on it and pastes while focus is inside it attach (`dropZone={false}` opts out; `dropLabel` retitles the overlay). |
 | `ComposerAddon` | `align="block-start" \| "block-end" \| "inline-start" \| "inline-end"` — a row above/below the input or a column beside it. `ComposerFooter` is the block-end row. |
 | `ComposerInput` | The Docstream WYSIWYG editor (slash menu, Markdown paste, image chips). |
 | `ComposerAttachments` | The tile strip (block-start): image thumbnails (click to annotate, or preview with `annotator={null}`), a video's first frame, code's first lines, a glyph with name and size for other files (click to open). ✕, or Backspace / Delete on a focused tile, removes one. |
-| `ComposerButton` | `variant="ghost" \| "pill" \| "primary" \| "destructive"`, plus `tint`. `ComposerPillLabel` draws icon + label + chevron. |
-| `ComposerSelect` | An option pill that opens a react-aria `Menu`. `options: { id, label, short?, description? }[]`. |
+| `ComposerButton` | UI SDK's `Button` (`onClick`, `disabled`) with `variant="ghost" \| "pill" \| "primary" \| "destructive"`, plus `tint`. `ComposerPillLabel` draws icon + label + chevron. |
+| `ComposerSelect` | An option pill that opens a menu of radio items (UI SDK's `Menu`, in the palette of the surface it opened from). `options: { id, label, short?, description? }[]`, `value` / `defaultValue` / `onValueChange(id, details)`. Its rows are `ComposerMenuItem`s (`menuitemradio`, a tick on the chosen one). |
 | `ComposerSend` / `ComposerStop` | Send circle, disabled while empty. It morphs into the stop control while `streaming` (`morph={false}` keeps it; pair it with `<ComposerStop variant="solid" />`). |
-| `ComposerAdd` | The "+" button: a react-aria `FileTrigger` → attachments. `acceptedFileTypes` (defaults to the Composer's), `allowsMultiple` (default `true`), `acceptDirectory`, `defaultCamera`, `icon`, `label`. |
-| `ComposerAttach` | The paperclip: `ComposerAdd` with a clip glyph (its old `accept="image/*"` string still works). |
-| `ComposerExpand` | Toggles the tall drafting mode; sits in the card's top-right corner. |
-| `ComposerSeparator`, `ComposerSpacer`, `ComposerText` | Footer rule, flex spacer, muted text with an icon. |
+| `ComposerAdd` | The "+" button: UI SDK's `FileInputTrigger`, which opens the file picker → attachments. `acceptedFileTypes` (defaults to the Composer's), `multiple` (default `true`), `directory`, `capture` (`"user"`, `"environment"` or `true`), `icon`, `label`. |
+| `ComposerAttach` | The paperclip: `ComposerAdd` with a clip glyph. |
+| `ComposerExpand` | Toggles the tall drafting mode (UI SDK's `Toggle`, `aria-pressed`); sits in the card's top-right corner. |
+| `ComposerSeparator`, `ComposerSpacer`, `ComposerText` | Footer rule (the kit's vertical [Separator](https://blamy.github.io/ui/#/separator), on UI SDK's), flex spacer, muted text with an icon. |
 | `ComposerBump` | A strip attached above (`side="top"`, tucked behind the card) or below the card. `variant="attached" \| "detached" \| "flush"`. Bumps lay out by `side` wherever they are placed. |
-| `ComposerBumpHandle` / `ComposerBumpContent` | With `draggable`, the handle pulls the content open one-to-one with the pointer; release snaps open or closed; a tap toggles, Escape closes. `open` / `onOpenChange`, `peek`, `maxReveal` or `bounds`, `minimizable`, and `onProgressChange({ progress, reveal, minimize, dragging })` let a host drive a sheet from it. |
+| `ComposerBumpHandle` / `ComposerBumpContent` | With `draggable`, the handle pulls the content open one-to-one with the pointer (UI SDK's `bindDrag`); a release projects its speed to snap open or closed, and the content transitions there on the `tray` spring; a tap on the row or the grip toggles, and Escape closes (an open bump is a layer in UI SDK's stack, so a menu opened from it closes first). `open` / `defaultOpen` / `onOpenChange(open, details)` (reason `press`, `drag`, `escape-key` or `imperative`), `peek`, `maxReveal` or `bounds`, `minimizable` with `onMinimizedChange(minimized, details)` (`drag` or `press`), and `onProgressChange({ progress, reveal, minimize, dragging, settling })` let a host drive a sheet from it: while `settling`, the bump's own CSS transition is carrying it to rest, so a host's CSS should transition too. |
 | `ComposerOutlet` | Lets an ancestor add parts to the Composer inside it, or wrap its card. `ArtifactChatContainer` uses it to hang its transcript off a draggable top bump. |
 | `ComposerOptions` / `ComposerOptionsOutlet` | Wrap the option pills in `ComposerOptions`; while the composer is `compact` they move (same elements, menus keep their state) into the `ComposerOptionsOutlet`, usually in the bottom bump. |
 | `ComposerFab` | The round button a composer folds into (`collapsed="fab"`); `FloatingChat` reuses it for its minimized chat. |
 
 ## Compact, FAB, and scroll-linked collapse
 
-`collapsed` (`'none' | 'compact' | 'fab'`, with `defaultCollapsed` / `onCollapsedChange`) folds the same composition — and it is the *same* composition throughout: the card is one element that springs between shapes, never a second copy cross-fading in. **Compact** is a single-row pill in the style of T3 Code: the editor on the left, the footer's attach / stop / send inline on the right, and the `ComposerOptions` pills moved into the bottom bump — `📁 Local checkout | Claude Opus 5.5 | Medium · 1M | Full access … main`. **FAB** folds everything into a round button: the card itself shrinks into the circle (its content fading, the bumps folding away) and grows back out of it; tapping it restores the composer and focuses the editor. Going compact, the option pills fly from the footer into the bottom bump as the same elements.
+`collapsed` (`'none' | 'compact' | 'fab'`, with `defaultCollapsed` / `onCollapsedChange(collapsed, details)`, reason `scroll`, `press` for the FAB, or `imperative`) folds the same composition — and it is the *same* composition throughout: the card is one element that springs between shapes, never a second copy cross-fading in. **Compact** is a single-row pill in the style of T3 Code: the editor on the left, the footer's attach / stop / send inline on the right, and the `ComposerOptions` pills moved into the bottom bump — `📁 Local checkout | Claude Opus 5.5 | Medium · 1M | Full access … main`. **FAB** folds everything into a round button: the card itself shrinks into the circle (its content fading, the bumps folding away) and grows back out of it; tapping it restores the composer and focuses the editor. Going compact, the option pills fly from the footer into the bottom bump as the same elements.
 
 ```tsx
 <Composer collapseOnScroll={scrollerRef} collapseTo="fab">
@@ -142,13 +142,13 @@ import { ModelPicker } from '@/components/blocks/t3-clone/components/workbench/m
 
 ## Files and drop
 
-Files come in three ways, and all three go through the same door: the **`ComposerAdd`** "+" button (react-aria `FileTrigger`), a **drop** on the card (the card is a react-aria drop target), or a **paste** into the text. Images chip into the draft where they land — at the drop point when you drop onto the text, else at the caret — and can be annotated as before. Every other file becomes a tile in `ComposerAttachments`:
+Files come in three ways, and all three go through the same door: the **`ComposerAdd`** "+" button (UI SDK's `FileInputTrigger`), a **drop** on the card (the card is UI SDK's `FileInputDropzone`), or a **paste** into the text or anywhere in the card. Images chip into the draft where they land — at the drop point when you drop onto the text, else at the caret — and can be annotated as before. Every other file becomes a tile in `ComposerAttachments`:
 
 - **Video** — its first frame, captured on a canvas (a glyph if the browser can't decode it).
 - **Text and code** — its first lines, in mono.
 - **PDF, audio, archives, anything else** — a glyph in the kind's colour with the name, extension and size.
 
-While files hover the card, a tinted wash and ring spring in over it with the "+" lifting into place, and fold away when they leave or land. Only file drags reach the drop zone, so dragging text inside the editor works as before. Keyboard users reach a hidden drop target after the card's controls: focusing it shows the overlay, and react-aria's keyboard drag and drop and ⌘V paste work there; a live region announces what was attached.
+While files hover the card, a tinted wash and ring spring in over it with the "+" lifting into place, and fold away when they leave or land. Only file drags reach the drop zone, so dragging text inside the editor works as before; dropped folders are read recursively. Keyboard users attach with the "+" button, or paste (⌘V) with focus anywhere in the card. What was attached is announced through UI SDK's live region.
 
 ```tsx
 <Composer
@@ -170,7 +170,7 @@ While files hover the card, a tinted wash and ring spring in over it with the "+
 </Composer>
 ```
 
-- `acceptedFileTypes` takes MIME types, wildcards and extensions, as an `<input accept>` does; the picker offers only those, and drops or pastes of anything else are turned away. Files over `maxFileSize`, or past `maxFiles`, are turned away too — with a warning toast on the nearest `Toaster` (mount one), or through `onFilesRejected(rejections)` instead.
+- `acceptedFileTypes` takes MIME types, wildcards and extensions, as an `<input accept>` does; the picker offers only those, and drops or pastes of anything else are turned away. Files over `maxFileSize`, or past `maxFiles`, are turned away too — with a warning toast on the nearest toast queue (mount a `ToastRegion`), or through `onFilesRejected(rejections)` instead.
 - `onDropFiles(files, source)` sees every batch that passed (`source` is `picker`, `drop`, `paste` or `api`): return `false` to take the files yourself, or an array to attach those instead.
 - Each attachment is `{ id, name, size, type, kind, file, src, preview?, excerpt? }` — `kind` is `image | video | audio | pdf | text | archive | other`, and `file` is the original `File` for uploading. Images keep a data URL in `src`; other files get an object URL, revoked when the attachment is removed or the Composer unmounts (files handed to `onSubmit` stay valid until then).
 - Only images chip into the editor (the chip is an image preview); other files live in the tile strip.
@@ -213,7 +213,23 @@ function StampAnnotator({ children }: ComposerAnnotatorProps) {
 }
 ```
 
-`AnnotateLightbox` takes the same `annotator` prop when you open it yourself.
+`AnnotateLightbox` takes the same `annotator` prop when you open it yourself. It is UI SDK's Dialog, with its open API: `open` / `defaultOpen` / `onOpenChange(open, details)` / `onOpenChangeComplete(open)`. `details.reason` says why it closed (`close-press` for Cancel or Close, `escape-key`, `outside-press`, or `action` after Save) and `details.returnValue` is `"cancel"` or `"save"`; `details.cancel()` keeps it open. `onSave(dataUrl, details)` receives the flattened PNG before it closes (`details.source` says how Save was pressed). `origin` names the element the image flies out of and back into.
+
+```tsx
+const [open, setOpen] = useState(false)
+
+<AnnotateLightbox
+  src={shot}
+  open={open}
+  onOpenChange={(next, details) => {
+    if (!next && details.reason === 'outside-press' && dirty) details.cancel()
+    else setOpen(next)
+  }}
+  onSave={(png) => setShot(png)}
+/>
+```
+
+It renders into the layer host, so in a framed app it covers the frame, and the image is sized from the lightbox's own box (container units), never from the viewport.
 
 ## ModelPicker
 
@@ -224,7 +240,7 @@ import { ModelPicker } from '@/components/blocks/t3-clone/components/workbench/m
 import { WORKBENCH_MODELS, WORKBENCH_PROVIDERS } from '@/components/blocks/t3-clone/components/workbench/models'
 ```
 
-Search across every model; a vertical provider rail (favorites first) switches the list; rows show the name, a `NEW` badge, the provider, a `⌘N` shortcut and a favorite star; **Legacy models** opens a submenu. Arrow keys, typeahead, and ⌘1…⌘9 work while it is open. It is built on react-aria `DialogTrigger`, `SearchField`, vertical `Tabs`, `GridList`, and `SubmenuTrigger`, and it reads the Workbench palette off its trigger, so it matches light and dark surfaces.
+Search across every model; a vertical provider rail (favorites first) switches the list; rows show the name, a `NEW` badge, the provider, a `⌘N` shortcut and a favorite star; **Legacy models** opens a submenu. Arrow keys, typeahead, and ⌘1…⌘9 work while it is open. It is built from UI SDK parts (a `Popover` holding a `Command` for the search field and the model list, a vertical single-select `ToggleGroup` for the provider rail, and a menu for legacy models), and it reads the Workbench palette off its trigger, so it matches light and dark surfaces. Its props follow the UI SDK shape, each callback with cancelable change details: `value` / `defaultValue` / `onValueChange(id, details)` (reason `item-press` or `shortcut`), `favorites` / `defaultFavorites` / `onFavoritesChange(ids, details)` (`star-press` or `shortcut`), and `open` / `defaultOpen` / `onOpenChange(open, details)` with the Popover's own reasons (a pick closes it with `imperative`, a ⌘N pick with `shortcut`).
 
 ```tsx
 <ModelPicker
@@ -239,7 +255,7 @@ Search across every model; a vertical provider rail (favorites first) switches t
     { id: 'anthropic', name: 'Anthropic', icon: <AnthropicGlyph /> },
     …
   ]}
-  value={model} onChange={setModel}
+  value={model} onValueChange={setModel}
   favorites={favorites} onFavoritesChange={setFavorites}
 />
 ```
@@ -298,7 +314,7 @@ import { ComposerQueue } from '@/components/ui/composer/composer-cards'
 </Composer>
 ```
 
-With a queue mounted, `ComposerSend` stays a send arrow ("Queue message") while there is a draft during a reply, and is the stop control otherwise. Pair it with a `ComposerStop` if stopping should always be one press away. The oldest message sits against the composer, since it goes in next, and newer ones stack outwards. `items` / `defaultItems` / `onItemsChange` make the queue controlled (`{ id, markdown, attachments }[]`). `autoSend={false}` leaves sending to the card's **Send now**, and `renderItem(item, { edit, sendNow, remove })` draws your own card. `useComposer()` also exposes `submit(markdown, attachments)` (sends without touching the draft) and `canQueue`.
+With a queue mounted, `ComposerSend` stays a send arrow ("Queue message") while there is a draft during a reply, and is the stop control otherwise. Pair it with a `ComposerStop` if stopping should always be one press away. The oldest message sits against the composer, since it goes in next, and newer ones stack outwards. `items` / `defaultItems` / `onItemsChange(items, details)` make the queue controlled (`{ id, markdown, attachments }[]`; reason `queue`, `send`, `edit`, `remove` or `imperative`; `details.cancel()` keeps a card). When a card leaves while it holds focus, focus moves to the same button on the next card, else the one before it, else the editor; **Edit** moves focus to the editor. `autoSend={false}` leaves sending to the card's **Send now**, and `renderItem(item, { edit, sendNow, remove })` draws your own card (pass the click's event, `actions.remove(event.nativeEvent)`, so the details carry its source). `useComposer()` also exposes `submit(markdown, attachments)` (sends without touching the draft) and `canQueue`.
 
 ## Empty state
 
@@ -315,9 +331,9 @@ Every state change moves rather than swaps, after Benji Taylor's [Family Values]
 - **Annotate** zooms the image out of the thumbnail or chip you pressed and, on Cancel or Save, back into it.
 - **Option pills** morph their label by the letters old and new share; menu ticks pop in.
 - **Cards** morph out of the composer (or out of a bump) and sink back into it, their outline necking in and pinching off like liquid (see [Morphing cards](https://blamy.github.io/ui/#/composer)).
-- **Draggable bumps** follow the finger, then settle on a spring that keeps the release velocity — a flick opens or closes them.
+- **Draggable bumps** follow the finger; a release projects its speed to pick a rest (a flick opens or closes them), and the body transitions there on the `tray` spring. `settling` lasts exactly as long as that transition: the bump waits for it (UI SDK's `animateIn` reports when it ends) rather than timing it.
 
-`prefers-reduced-motion` turns movement into instant changes.
+Parts that come and go (the stop button, the strip, each tile, the send/stop glyph, the cards) stay mounted through their exit with the kit's presence hooks (`usePresence`, `usePresenceList` in `lib/presence`, on UI SDK's `animateIn` / `animateOut`): their motion is CSS on `data-starting-style` / `data-ending-style`. framer-motion is left for the shape morph and the FLIP of controls changing place. `prefers-reduced-motion` turns movement into instant changes.
 
 ## Live examples
 
@@ -350,7 +366,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/composer/composer`. Base classes:
 
 ```text
-[ pressable, 'z-3 grid size-[52px] cursor-pointer place-items-center rounded-[50%] border border-border bg-card p-0 text-foreground shadow-[0_10px_30px_-8px_color-mix(in_srgb,black_45%,transparent),0_2px_8px_color-mix(in_srgb,black_14%,transparent)] outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60', ]
+[ pressable, 'z-3 grid size-[52px] cursor-pointer place-items-center rounded-[50%] border border-border bg-card p-0 text-foreground shadow-[0_10px_30px_-8px_color-mix(in_srgb,black_45%,transparent),0_2px_8px_color-mix(in_srgb,black_14%,transparent)] outline-none focus-visible:ring-2 focus-visible:ring-primary/60', ]
 ```
 
 No variants.
@@ -392,7 +408,7 @@ box-border flex min-w-0 items-center gap-[5px]
 Defined in `@/components/ui/composer/composer`. Base classes:
 
 ```text
-cn(pressable, 'flex shrink-0 cursor-pointer items-center justify-center border-0 font-sans outline-none data-disabled:cursor-default data-disabled:opacity-35 data-focus-visible:ring-2 data-focus-visible:ring-primary/60')
+cn(pressable, 'flex shrink-0 cursor-pointer items-center justify-center border-0 font-sans outline-none data-disabled:cursor-default data-disabled:opacity-35 focus-visible:ring-2 focus-visible:ring-primary/60')
 ```
 
 **`variant`** — default `ghost`
@@ -426,7 +442,7 @@ cn(pressable, 'flex shrink-0 cursor-pointer items-center justify-center border-0
 Defined in `@/components/ui/composer/composer`. Base classes:
 
 ```text
-relative flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-[7px] text-footnote text-foreground outline-none data-focused:bg-secondary data-pressed:bg-secondary-strong data-disabled:cursor-default data-disabled:opacity-40
+relative flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-[7px] text-footnote text-foreground outline-none data-highlighted:bg-secondary active:not-data-disabled:bg-secondary-strong data-disabled:cursor-default data-disabled:opacity-40
 ```
 
 No variants.

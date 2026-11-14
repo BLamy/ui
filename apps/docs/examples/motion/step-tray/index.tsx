@@ -104,15 +104,15 @@ export default function SendTray() {
             variant="secondary"
             size="lg"
             aria-label="Back"
-            isDisabled={step === 0}
-            onPress={() => setStep(step - 1)}
+            disabled={step === 0}
+            onClick={() => setStep(step - 1)}
           >
             <Icon name="chevL" size={18} sw={2.6} />
           </Button>
           <Button
             size="lg"
             className="flex-1"
-            onPress={() => setStep(last ? 0 : step + 1)}
+            onClick={() => setStep(last ? 0 : step + 1)}
           >
             {last ? 'Confirm' : 'Continue'}
           </Button>

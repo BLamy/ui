@@ -54,7 +54,7 @@ export default function Amount() {
             variant="secondary"
             size="lg"
             aria-label={k === '⌫' ? 'Delete' : k}
-            onPress={() => press(k)}
+            onClick={() => press(k)}
           >
             {k === '⌫' ? <Icon name="chevL" size={20} sw={2.4} /> : k}
           </Button>

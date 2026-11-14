@@ -35,7 +35,7 @@ const all = (
       </ProgressRing>
       <ProgressRing aria-label="Warning" size="lg" value={80} tone="warning" />
       <ProgressRing aria-label="Destructive" size="lg" value={95} tone="destructive" />
-      <ProgressRing aria-label="Loading" size="lg" isIndeterminate />
+      <ProgressRing aria-label="Loading" size="lg" />
     </div>
     <Caption>Countdown</Caption>
     <div className={row}>
@@ -69,8 +69,8 @@ function Stepper() {
     <div className="flex items-center gap-5">
       <ProgressRing aria-label="Progress" size="xl" value={v} showValue />
       <div className="flex gap-2">
-        <Button variant="secondary" onPress={() => setV((x) => Math.max(0, x - 15))}>−15</Button>
-        <Button variant="secondary" onPress={() => setV((x) => Math.min(100, x + 15))}>+15</Button>
+        <Button variant="secondary" onClick={() => setV((x) => Math.max(0, x - 15))}>−15</Button>
+        <Button variant="secondary" onClick={() => setV((x) => Math.min(100, x + 15))}>+15</Button>
       </div>
     </div>
   );
@@ -86,7 +86,7 @@ function Live() {
     <div className="flex items-center gap-4">
       <span className="text-[22px] font-medium tabular-nums">482 913</span>
       <CountdownRing remaining={remaining} />
-      <Button variant="secondary" size="sm" onPress={() => setRunning((r) => !r)}>{running ? 'Pause' : 'Start'}</Button>
+      <Button variant="secondary" size="sm" onClick={() => setRunning((r) => !r)}>{running ? 'Pause' : 'Start'}</Button>
     </div>
   );
 }

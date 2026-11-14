@@ -2,13 +2,14 @@
    scrub by dragging their label (⇧ ×10, ⌥ ×0.1), text that commits on Return or when you leave it, expressions
    checked as you type (with their value at design time), colors from the theme or anywhere, symbols, and a toggle
    that turns any prop into a binding. A scrub is one undo step: `onBegin` once, then live changes. */
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
-import { parseColor } from 'react-aria-components';
-import { ColorArea, ColorSlider } from '@/components/ui/color-picker';
-import { ColorField, ColorFieldGroup, ColorFieldInput, ColorFieldSwatch } from '@/components/ui/color-field';
-import { PlainButton } from '@/components/ui/plain-button';
-import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Segmented } from '@/components/ui/segmented';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { bindDrag, dragThreshold, type BindDragOptions } from '@ui-sdk/core';
+import { formatColor, parseColor } from '@ui-sdk/core/color';
+import { ColorPicker, ColorPickerArea, ColorPickerSlider } from '@/components/ui/color-picker';
+import { ColorFieldGroup, ColorFieldInput, ColorFieldSwatch } from '@/components/ui/color-field';
+import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ICON_NAMES, Icon } from '@/lib/icon';
@@ -44,20 +45,35 @@ export function Field({ label, children, hint, htmlFor, wide }: { label: ReactNo
 }
 
 /** A round add button for a section header. */
-export function AddButton({ label, onPress }: { label: string; onPress: () => void }) {
+export function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <PlainButton aria-label={label} title={label} onPress={onPress} className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary hover:text-foreground data-focus-visible:ring-2 data-focus-visible:ring-ring">
+    <PlainButton aria-label={label} title={label} onClick={onClick} className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
       <Icon name="plus" size={14} sw={2.3} />
     </PlainButton>
   );
 }
 
-export function IconAction({ icon, label, onPress, className, tone }: { icon: string; label: string; onPress: () => void; className?: string; tone?: 'danger' }) {
+export function IconAction({ icon, label, onClick, className, tone }: { icon: string; label: string; onClick: () => void; className?: string; tone?: 'danger' }) {
   return (
-    <PlainButton aria-label={label} title={label} onPress={onPress} className={cn('grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring', tone === 'danger' ? 'hover:text-destructive' : 'hover:text-foreground', className)}>
+    <PlainButton aria-label={label} title={label} onClick={onClick} className={cn('grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring', tone === 'danger' ? 'hover:text-destructive' : 'hover:text-foreground', className)}>
       <Icon name={icon} size={13} sw={2.2} />
     </PlainButton>
   );
+}
+
+/** A pointer drag on UI SDK's `bindDrag`, one at a time: `start` from a pointerdown follows that pointer (with
+    capture, on the document too) until it lifts; a drag still running when the component unmounts stops. */
+export function usePointerDrag() {
+  const stop = useRef<(() => void) | null>(null);
+  useEffect(() => () => stop.current?.(), []);
+  return useCallback((el: Element, down: PointerEvent | globalThis.PointerEvent, options: BindDragOptions) => {
+    stop.current?.();
+    const { onEnd } = options;
+    stop.current = bindDrag(el as HTMLElement, 'nativeEvent' in down ? down.nativeEvent : down, {
+      ...options,
+      onEnd: (event, canceled) => { stop.current = null; onEnd(event, canceled); },
+    });
+  }, []);
 }
 
 const inputBox = 'h-7 w-full min-w-0 rounded-md border-0 bg-secondary px-2 text-footnote text-foreground outline-none select-text placeholder:text-tertiary-foreground focus:bg-background focus:shadow-[inset_0_0_0_1.5px_var(--primary)]';
@@ -89,7 +105,7 @@ export function NumberInput({ label, value, onChange, onBegin, min = -Infinity, 
   const id = useId();
   const [text, setText] = useState<string | null>(null);
   const clamp = (v: number) => Math.max(min, Math.min(max, v));
-  const s = useRef<{ x: number; v: number; moved: boolean } | null>(null);
+  const drag = usePointerDrag();
   const shown = text ?? String(roundTo(value, step));
 
   const commit = (t: string) => {
@@ -107,25 +123,25 @@ export function NumberInput({ label, value, onChange, onBegin, min = -Infinity, 
       onChange(clamp(roundTo(value + k, step)), false);
     }
   };
+  // A scrub: past the drag threshold the pointer locks (where the browser allows), so it can travel without limit.
   const down = (e: PointerEvent<HTMLSpanElement>) => {
     if (e.button !== 0) return;
     e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    s.current = { x: e.clientX, v: value, moved: false };
+    const from = value;
+    let dx = 0;
+    drag(e.currentTarget, e, {
+      threshold: dragThreshold,
+      lock: true,
+      cancelOnEscape: true,
+      onStart: () => { onBegin?.(); },
+      onMove: ({ movementX, event }) => {
+        dx += movementX;
+        const k = event.shiftKey ? 10 : event.altKey ? 0.1 : 1;
+        onChange(clamp(roundTo(from + Math.round(dx / 2) * step * k, step)), true);
+      },
+      onEnd: (_, canceled) => { if (canceled) onChange(from, true); },
+    });
   };
-  const move = (e: PointerEvent<HTMLSpanElement>) => {
-    const st = s.current;
-    if (!st) return;
-    const dx = e.clientX - st.x;
-    if (!st.moved) {
-      if (Math.abs(dx) < 2) return;
-      st.moved = true;
-      onBegin?.();
-    }
-    const k = e.shiftKey ? 10 : e.altKey ? 0.1 : 1;
-    onChange(clamp(roundTo(st.v + Math.round(dx / 2) * step * k, step)), true);
-  };
-  const up = () => { s.current = null; };
 
   return (
     <div className={cn('flex min-w-0 items-center gap-1.5', className)}>
@@ -133,9 +149,6 @@ export function NumberInput({ label, value, onChange, onBegin, min = -Infinity, 
         <span
           aria-hidden="true"
           onPointerDown={down}
-          onPointerMove={move}
-          onPointerUp={up}
-          onPointerCancel={up}
           title={`Drag to change ${label}`}
           className="w-[84px] shrink-0 cursor-ew-resize touch-none truncate text-caption text-muted-foreground select-none hover:text-foreground"
         >
@@ -276,18 +289,24 @@ export function ExprInput({ value, onCommit, names, scope, label, placeholder, s
 /* ── Choices ── */
 
 export function SwitchInput({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) {
-  return <Switch checked={value} onChange={onChange} aria-label={label} className="scale-[.8] origin-left" />;
+  return <Switch checked={value} onCheckedChange={onChange} aria-label={label} className="scale-[.8] origin-left" />;
 }
 
 /** Segmented for a few short options, a menu for more. */
 export function ChoiceInput({ value, options, onChange, label }: { value: string; options: readonly { id: string; label: string }[]; onChange: (v: string) => void; label: string }) {
   const short = options.length <= 3 && options.every((o) => o.label.length <= 9);
-  if (short) return <Segmented aria-label={label} value={value} onChange={onChange} options={[...options]} className="[&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption" />;
+  if (short) {
+    return (
+      <Segmented aria-label={label} value={value} onValueChange={(v) => v != null && onChange(v)} className="[&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption">
+        {options.map((o) => <SegmentedItem key={o.id} value={o.id}>{o.label}</SegmentedItem>)}
+      </Segmented>
+    );
+  }
   return (
-    <Select aria-label={label} selectedKey={value} onSelectionChange={(k) => k != null && onChange(String(k))}>
-      <SelectTrigger size="sm" className="h-7 w-full rounded-md bg-secondary px-2 text-footnote" />
+    <Select value={value} onValueChange={(v) => v != null && onChange(v)}>
+      <SelectTrigger aria-label={label} size="sm" className="h-7 w-full rounded-md bg-secondary px-2 text-footnote" />
       <SelectContent>
-        {options.map((o) => <SelectItem key={o.id} id={o.id}>{o.label}</SelectItem>)}
+        {options.map((o) => <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>)}
       </SelectContent>
     </Select>
   );
@@ -300,7 +319,8 @@ const CUSTOM_START = '#0A84FF';
 const FALLBACK_HEX = '#000000';
 
 const toHex = (c: string) => {
-  try { return parseColor(c).toString('hex'); } catch { return FALLBACK_HEX; }
+  const parsed = parseColor(c);
+  return parsed ? formatColor(parsed, 'hex') : FALLBACK_HEX;
 };
 
 /** A color: a theme color (follows light and dark), an iOS system color, or any color from the picker. */
@@ -309,23 +329,23 @@ export function ColorInput({ value, onChange, label, allowNone = true }: { value
   const text = !value ? 'None' : theme ? theme.label : value.toUpperCase();
   const custom = value && !value.startsWith('$') ? value : null;
   return (
-    <PopoverTrigger>
-      <PlainButton aria-label={`${label}: ${text}`} className="flex h-7 w-full min-w-0 cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-1.5 text-left text-footnote text-foreground outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+    <Popover>
+      <PopoverTrigger aria-label={`${label}: ${text}`} className="flex h-7 w-full min-w-0 cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-1.5 text-left text-footnote text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
         <span className={cn('size-[18px] shrink-0 rounded-[5px] shadow-hairline', !value && 'bg-[linear-gradient(135deg,transparent_45%,var(--destructive)_45%,var(--destructive)_55%,transparent_55%)]')} style={value ? { background: cssColor(value) } : undefined} />
         <span className="truncate">{text}</span>
-      </PlainButton>
-      <PopoverContent placement="left top" aria-label={label} className="w-64 p-0">
+      </PopoverTrigger>
+      <PopoverContent side="left" align="start" className="w-64 p-0">
         <div className="flex flex-col gap-3 p-3">
           <div>
             <div className="mb-1.5 text-caption2 font-semibold tracking-wide text-muted-foreground uppercase">Theme</div>
             <div className="grid grid-cols-6 gap-1.5">
               {allowNone ? (
-                <PlainButton aria-label="None" title="None" onPress={() => onChange(null)} className={cn('relative size-7 cursor-pointer overflow-hidden rounded-md border-0 bg-background p-0 shadow-hairline outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring', !value && 'ring-2 ring-primary')}>
+                <PlainButton aria-label="None" title="None" onClick={() => onChange(null)} className={cn('relative size-7 cursor-pointer overflow-hidden rounded-md border-0 bg-background p-0 shadow-hairline outline-none focus-visible:ring-2 focus-visible:ring-ring', !value && 'ring-2 ring-primary')}>
                   <span aria-hidden="true" className="absolute inset-x-[-4px] top-1/2 h-0.5 -rotate-45 bg-destructive" />
                 </PlainButton>
               ) : null}
               {THEME_COLORS.map((t) => (
-                <PlainButton key={t.id} aria-label={t.label} title={t.label} onPress={() => onChange(t.id)} className={cn('size-7 cursor-pointer rounded-md border-0 p-0 shadow-hairline outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring', value === t.id && 'ring-2 ring-primary ring-offset-1 ring-offset-popover')} style={{ background: cssColor(t.id) }} />
+                <PlainButton key={t.id} aria-label={t.label} title={t.label} onClick={() => onChange(t.id)} className={cn('size-7 cursor-pointer rounded-md border-0 p-0 shadow-hairline outline-none focus-visible:ring-2 focus-visible:ring-ring', value === t.id && 'ring-2 ring-primary ring-offset-1 ring-offset-popover')} style={{ background: cssColor(t.id) }} />
               ))}
             </div>
           </div>
@@ -333,32 +353,31 @@ export function ColorInput({ value, onChange, label, allowNone = true }: { value
             <div className="mb-1.5 text-caption2 font-semibold tracking-wide text-muted-foreground uppercase">System</div>
             <div className="grid grid-cols-6 gap-1.5">
               {SYSTEM_COLORS.map((c) => (
-                <PlainButton key={c} aria-label={c} title={c} onPress={() => onChange(c)} className={cn('size-7 cursor-pointer rounded-md border-0 p-0 outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring', value?.toUpperCase() === c && 'ring-2 ring-primary ring-offset-1 ring-offset-popover')} style={{ background: c }} />
+                <PlainButton key={c} aria-label={c} title={c} onClick={() => onChange(c)} className={cn('size-7 cursor-pointer rounded-md border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-ring', value?.toUpperCase() === c && 'ring-2 ring-primary ring-offset-1 ring-offset-popover')} style={{ background: c }} />
               ))}
             </div>
           </div>
           <CustomColor value={custom ?? CUSTOM_START} onChange={onChange} />
         </div>
       </PopoverContent>
-    </PopoverTrigger>
+    </Popover>
   );
 }
 
+/** The custom picker: an area, a hue slider and a hex field, in HSV so the hue holds while the color is grey. */
 function CustomColor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [c, setC] = useState(() => parseColor(toHex(value)).toFormat('hsb'));
-  const set = (next: typeof c) => { setC(next); onChange(next.toString('hex')); };
+  const [c, setC] = useState(() => toHex(value));
+  const set = (next: string) => { setC(next); onChange(next); };
   return (
-    <div className="flex flex-col gap-2">
+    <ColorPicker aria-label="Custom color" space="hsv" format="hex" value={c} onValueChange={set} className="flex flex-col gap-2">
       <div className="text-caption2 font-semibold tracking-wide text-muted-foreground uppercase">Custom</div>
-      <ColorArea value={c} onChange={set} className="h-28 w-full" />
-      <ColorSlider colorSpace="hsb" channel="hue" value={c} onChange={set} aria-label="Hue" />
-      <ColorField aria-label="Hex color" value={c} onChange={(v) => v && set(v.toFormat('hsb'))}>
-        <ColorFieldGroup size="sm">
-          <ColorFieldSwatch className="size-5" />
-          <ColorFieldInput />
-        </ColorFieldGroup>
-      </ColorField>
-    </div>
+      <ColorPickerArea className="h-28 w-full" />
+      <ColorPickerSlider channel="hue" aria-label="Hue" />
+      <ColorFieldGroup size="sm">
+        <ColorFieldSwatch className="size-5" />
+        <ColorFieldInput aria-label="Hex color" />
+      </ColorFieldGroup>
+    </ColorPicker>
   );
 }
 
@@ -368,33 +387,31 @@ export function IconInput({ value, onChange, label, allowNone = true }: { value:
   const [q, setQ] = useState('');
   const names = useMemo(() => ICON_NAMES.filter((n) => n.includes(q.trim().toLowerCase())), [q]);
   return (
-    <PopoverTrigger>
-      <PlainButton aria-label={`${label}: ${value ?? 'none'}`} className="flex h-7 w-full min-w-0 cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-1.5 text-left text-footnote text-foreground outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+    <Popover>
+      <PopoverTrigger aria-label={`${label}: ${value ?? 'none'}`} className="flex h-7 w-full min-w-0 cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-1.5 text-left text-footnote text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
         <span className="grid size-[18px] shrink-0 place-items-center text-primary">{value ? <Icon name={value} size={16} sw={1.9} /> : <Icon name="minus" size={12} sw={2} className="text-muted-foreground" />}</span>
         <span className="truncate">{value ?? 'None'}</span>
-      </PlainButton>
-      <PopoverContent placement="left top" aria-label={label} className="w-72 p-0">
-        {({ close }) => (
-          <div className="flex flex-col">
-            <div className="p-2">
-              <input autoFocus aria-label="Filter symbols" placeholder="Filter symbols" value={q} onChange={(e) => setQ(e.target.value)} className={inputBox} />
-            </div>
-            <div className="grid max-h-64 grid-cols-7 gap-0.5 overflow-y-auto p-2 pt-0">
-              {allowNone ? (
-                <PlainButton aria-label="No symbol" title="None" onPress={() => { onChange(null); close(); }} className="grid aspect-square cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring">
-                  <Icon name="minus" size={14} sw={2} />
-                </PlainButton>
-              ) : null}
-              {names.map((n) => (
-                <PlainButton key={n} aria-label={n} title={n} onPress={() => { onChange(n); close(); }} className={cn('grid aspect-square cursor-pointer place-items-center rounded-md border-0 bg-transparent text-foreground outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring', n === value && 'bg-primary/14 text-primary')}>
-                  <Icon name={n} size={18} sw={1.8} />
-                </PlainButton>
-              ))}
-            </div>
+      </PopoverTrigger>
+      <PopoverContent side="left" align="start" className="w-72 p-0">
+        <div className="flex flex-col">
+          <div className="p-2">
+            <input autoFocus aria-label="Filter symbols" placeholder="Filter symbols" value={q} onChange={(e) => setQ(e.target.value)} className={inputBox} />
           </div>
-        )}
+          <div className="grid max-h-64 grid-cols-7 gap-0.5 overflow-y-auto p-2 pt-0">
+            {allowNone ? (
+              <PopoverClose aria-label="No symbol" title="None" onClick={() => onChange(null)} className="grid aspect-square cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
+                <Icon name="minus" size={14} sw={2} />
+              </PopoverClose>
+            ) : null}
+            {names.map((n) => (
+              <PopoverClose key={n} aria-label={n} title={n} onClick={() => onChange(n)} className={cn('grid aspect-square cursor-pointer place-items-center rounded-md border-0 bg-transparent text-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring', n === value && 'bg-primary/14 text-primary')}>
+                <Icon name={n} size={18} sw={1.8} />
+              </PopoverClose>
+            ))}
+          </div>
+        </div>
       </PopoverContent>
-    </PopoverTrigger>
+    </Popover>
   );
 }
 
@@ -403,18 +420,18 @@ export function IconInput({ value, onChange, label, allowNone = true }: { value:
 /** The ƒ toggle beside a prop: bound (an expression) or a literal. */
 export function BindToggle({ bound, onToggle, label }: { bound: boolean; onToggle: () => void; label: string }) {
   return (
-    <PlainButton
+    <PlainToggleButton
       aria-label={bound ? `Unbind ${label}` : `Bind ${label} to an expression`}
       title={bound ? 'Bound to an expression: press to use a value instead' : 'Bind to state, props or context (an expression)'}
-      aria-pressed={bound}
-      onPress={onToggle}
+      pressed={bound}
+      onPressedChange={onToggle}
       className={cn(
-        'grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 font-mono text-caption italic outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring',
+        'grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 font-mono text-caption italic outline-none focus-visible:ring-2 focus-visible:ring-ring',
         bound ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground',
       )}
     >
       ƒ
-    </PlainButton>
+    </PlainToggleButton>
   );
 }
 

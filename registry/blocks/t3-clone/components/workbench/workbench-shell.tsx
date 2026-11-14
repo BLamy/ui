@@ -1,44 +1,43 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { ToggleButtonGroup } from 'react-aria-components';
-import { AdaptivePane, type AdaptivePaneMode } from '@/components/ui/adaptive-pane';
+import { Resizable, ResizableHandle, ResizablePanel } from '@ui-sdk/react/resizable';
+import { ToggleGroup, type ToggleGroupValueChangeReason } from '@ui-sdk/react/toggle';
+import type { ChangeDetails } from '@ui-sdk/core';
+import { AdaptivePane, type AdaptivePanePresentation } from '@/components/ui/adaptive-pane';
 import { FloatingSheet } from '@/components/ui/floating-sheet';
 import { PlainToggleButton as ToggleButton } from '@/components/ui/plain-button';
 import { useWorkbenchAppearance, WorkbenchAppearanceProvider } from '@/components/ui/workbench-theme';
-import { useContainerWidth } from '@/lib/container';
+import { SizeClassProvider, useSizeClass, type SizeClass } from '@/lib/container';
 import { Icon, type IconName } from '@/lib/icon';
 import { type Appearance, themeScopeProps, ThemeScope } from '@/lib/theme';
 import { cn, pressable } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 
 
 /* ══ WorkbenchShell — a thin layout root and the parts that compose an IDE-style agent workspace ══
 
    <WorkbenchShell>                      grid root: measures itself, owns region state, provides context
      <WorkbenchSidebar/>                 left column ⇄ EdgeDrawer (compact)          — AdaptivePane
-     <WorkbenchMain>                     centre column
+     <WorkbenchMain>                     centre column: a vertical Resizable
        <WorkbenchHeader/>                title bar: triggers, title, actions
-       …content…
+       <WorkbenchContent/>               the resizable panel above the dock
        <WorkbenchDock/>                  resizable bottom dock ⇄ FloatingSheet (compact)
      </WorkbenchMain>
      <WorkbenchPanel/>                   right column ⇄ drawer (medium) ⇄ cover (fullscreen / compact page)
      <WorkbenchTabBar/>                  bottom tab bar, compact only
    </WorkbenchShell>
 
-   Each part renders in place and decides its own presentation from the shell's width class, so the root
-   never inspects its children. Parts that need to escape their column (the sidebar drawer, the compact
+   Each part renders in place and decides its own presentation from the shell's size class (compact below
+   760px, regular from 1120px, measured on the shell's own box), so the root never inspects its children. Parts that need to escape their column (the sidebar drawer, the compact
    dock sheet, the panel cover) are positioned against the root grid. */
 
-/** Width class thresholds, measured on the shell's own box. */
-export function workbenchWidthClass(w: number): WorkbenchWidthClass {
-  return w < 760 ? 'compact' : w < 1120 ? 'medium' : 'regular';
-}
-export type WorkbenchWidthClass = 'regular' | 'medium' | 'compact';
+/** The size-class breakpoints of a shell, on its own box. */
+export const workbenchBreakpoints = { medium: 760, regular: 1120 } as const;
+export type WorkbenchSizeClass = SizeClass;
 
 export interface WorkbenchShellContextValue {
-  /** measured shell width */
-  width: number;
-  widthClass: WorkbenchWidthClass;
+  /** the shell's size class (`data-size-class` on the root) */
+  sizeClass: WorkbenchSizeClass;
   compact: boolean;
   appearance: Appearance;
   /** column visible (regular/medium) or drawer open (compact) */
@@ -101,10 +100,9 @@ export function WorkbenchShell({
   className,
   style,
 }: WorkbenchShellProps) {
-  const [rootRef, width] = useContainerWidth();
+  const [rootRef, sizeClass] = useSizeClass({ breakpoints: workbenchBreakpoints });
   const appearance = useWorkbenchAppearance(appearanceProp);
-  const widthClass = workbenchWidthClass(width);
-  const compact = widthClass === 'compact';
+  const compact = sizeClass === 'compact';
   // Wide and compact presentations keep separate state, so crossing the breakpoint never pops a drawer open.
   const [sideColumn, setSideColumn] = useState(defaultSidebarOpen);
   const [sideDrawer, setSideDrawer] = useState(false);
@@ -115,8 +113,8 @@ export function WorkbenchShell({
   const [panelFullscreen, setPanelFullscreen] = useState(defaultPanelFullscreen);
 
   const sidebarOpen = compact ? sideDrawer : sideColumn;
-  const dockOpen = dockPref ?? widthClass === 'regular';
-  const panelOpen = compact ? panelPage : (panelPref ?? widthClass === 'regular');
+  const dockOpen = dockPref ?? sizeClass === 'regular';
+  const panelOpen = compact ? panelPage : (panelPref ?? sizeClass === 'regular');
   const setSidebarOpen = (open: boolean) => (compact ? setSideDrawer(open) : setSideColumn(open));
   const setPanelOpen = (open: boolean) => {
     if (compact) return setPanelPage(open);
@@ -124,8 +122,7 @@ export function WorkbenchShell({
     if (!open) setPanelFullscreen(false);
   };
   const ctx: WorkbenchShellContextValue = {
-    width,
-    widthClass,
+    sizeClass,
     compact,
     appearance,
     sidebarOpen,
@@ -149,16 +146,20 @@ export function WorkbenchShell({
         <div
           ref={rootRef}
           data-slot="workbench-shell"
-          data-width-class={widthClass}
           data-theme-scope={scope['data-theme-scope']}
+          // A layer host (in the markup, with `contain: layout`): the palette, drawers and menus opened in the shell
+          // stay in its box, so in a framed page their scrim covers the shell, not the page.
+          data-layer-host=""
           className={cn(
-            'relative grid h-full w-full grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-background font-sans text-foreground antialiased',
+            // An inline-size container, so the panel column can size itself from the shell (`cqw`).
+            '@container relative grid [contain:layout] h-full w-full grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-background font-sans text-foreground antialiased',
             scope.className,
             className,
           )}
           style={{ ...scope.style, ...style }}
         >
-          {children}
+          {/* A size-class scope: popups inside resolve `presentation="auto"` from the shell's own box. */}
+          <SizeClassProvider value={sizeClass}>{children}</SizeClassProvider>
         </div>
       </WorkbenchShellContext.Provider>
     </WorkbenchAppearanceProvider>
@@ -183,17 +184,18 @@ export function WorkbenchSidebar({ width = 242, drawerWidth = 280, children }: W
   const shell = useOptionalWorkbenchShell();
   if (!shell) return <>{children}</>;
   const { compact, sidebarOpen, setSidebarOpen, appearance } = shell;
-  const mode: AdaptivePaneMode = compact ? 'drawer' : sidebarOpen ? 'column' : 'hidden';
+  const presentation: AdaptivePanePresentation = compact ? 'drawer' : sidebarOpen ? 'column' : 'hidden';
   return (
     <AdaptivePane
-      mode={mode}
+      presentation={presentation}
       side="left"
+      aria-label="Sidebar"
       open={compact && sidebarOpen}
-      onClose={() => setSidebarOpen(false)}
+      onOpenChange={(open) => setSidebarOpen(open)}
       columnWidth={width}
       columnStyle={{ gridColumn: 1, gridRow: 1, borderRight: '1px solid var(--border)' }}
       drawerWidth={drawerWidth}
-      maxWidth="84%"
+      drawerMaxWidth="84%"
       zIndex={80}
       {...(appearance === 'light' ? LIGHT_DRAWER : null)}
     >
@@ -204,34 +206,51 @@ export function WorkbenchSidebar({ width = 242, drawerWidth = 280, children }: W
 
 interface TriggerProps {
   /** overrides the default action */
-  onPress?: () => void;
+  onClick?: () => void;
   className?: string;
   style?: React.CSSProperties;
 }
-/** Sidebar toggle in the header: a hamburger that opens the drawer at compact width. */
-export function WorkbenchSidebarTrigger({ onPress, className, style }: TriggerProps) {
-  const shell = useOptionalWorkbenchShell();
-  const compact = !!shell?.compact;
+/* A header toggle: UI SDK's Toggle (`aria-pressed`) in the quiet icon-button look, filled while pressed. */
+const headerToggle = buttonVariants({ variant: 'quiet', size: 'icon-sm' });
+function HeaderToggle({ label, pressed, onPressedChange, className, style, children }: { label: string; pressed: boolean; onPressedChange: (pressed: boolean) => void; className?: string; style?: React.CSSProperties; children: React.ReactNode }) {
   return (
-    <Button
-      variant="quiet"
-      size="icon-sm"
-      active={!compact && shell ? !shell.sidebarOpen : false}
-      aria-label={compact ? 'Menu' : 'Toggle sidebar'}
-      title={compact ? 'Menu' : 'Toggle sidebar'}
+    <ToggleButton
+      aria-label={label}
+      title={label}
+      pressed={pressed}
+      onPressedChange={(next) => onPressedChange(next)}
+      className={cn(headerToggle, className)}
+      style={style}
+    >
+      {children}
+    </ToggleButton>
+  );
+}
+
+/** Sidebar control in the header: a hamburger that opens the drawer at compact width, else a "Hide sidebar" toggle. */
+export function WorkbenchSidebarTrigger({ onClick, className, style }: TriggerProps) {
+  const shell = useOptionalWorkbenchShell();
+  if (shell?.compact) {
+    return (
+      <Button variant="quiet" size="icon-sm" aria-label="Menu" title="Menu" className={className} style={style} onClick={onClick ?? (() => shell.setSidebarOpen(true))}>
+        <Icon name="line-3-horizontal" size={18} sw={1.7} />
+      </Button>
+    );
+  }
+  return (
+    <HeaderToggle
+      label="Hide sidebar"
+      pressed={shell ? !shell.sidebarOpen : false}
+      onPressedChange={(hidden) => (onClick ? onClick() : shell?.setSidebarOpen(!hidden))}
       className={className}
       style={style}
-      onPress={() => {
-        if (onPress) onPress();
-        else shell?.toggleSidebar();
-      }}
     >
-      <Icon name={compact ? 'line-3-horizontal' : 'sidebar-left'} size={18} sw={1.7} />
-    </Button>
+      <Icon name="sidebar-left" size={18} sw={1.7} />
+    </HeaderToggle>
   );
 }
 /** Closes the compact sidebar drawer; renders nothing at wider widths. */
-export function WorkbenchSidebarClose({ onPress, className, style }: TriggerProps) {
+export function WorkbenchSidebarClose({ onClick, className, style }: TriggerProps) {
   const shell = useOptionalWorkbenchShell();
   if (!shell?.compact) return null;
   return (
@@ -242,7 +261,7 @@ export function WorkbenchSidebarClose({ onPress, className, style }: TriggerProp
       title="Close sidebar"
       className={cn('ml-auto', className)}
       style={style}
-      onPress={onPress ?? (() => shell.setSidebarOpen(false))}
+      onClick={onClick ?? (() => shell.setSidebarOpen(false))}
     >
       <Icon name="xmark-large" size={18} sw={1.7} />
     </Button>
@@ -250,16 +269,43 @@ export function WorkbenchSidebarClose({ onPress, className, style }: TriggerProp
 }
 
 /* ── Main ── */
+/* The dock's sized box, so the main column can read its height in px when a resize ends. Set only inside a
+   WorkbenchMain, which is the group the dock resizes in. */
+const WorkbenchMainContext = React.createContext<React.RefObject<HTMLDivElement | null> | null>(null);
+
+/**
+ * The centre column: header, then `WorkbenchContent`, then `WorkbenchDock`. It is a vertical UI SDK Resizable, so
+ * the dock's top edge is a real separator between the content and the dock (drag it, or focus it and use the arrow
+ * keys, Home and End).
+ */
 export function WorkbenchMain({ className, style, children }: { className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {
+  const shell = useOptionalWorkbenchShell();
+  const dockRef = React.useRef<HTMLDivElement | null>(null);
   return (
-    <div
-      data-slot="workbench-main"
-      // not positioned: the compact dock sheet inside it covers the whole shell
-      className={cn('col-start-2 row-start-1 flex min-h-0 min-w-0 flex-col bg-background', className)}
-      style={style}
-    >
+    <WorkbenchMainContext value={dockRef}>
+      <Resizable
+        orientation="vertical"
+        // Remember the height the dock was left at, so closing and reopening it keeps it.
+        onLayoutCommit={() => {
+          const height = Math.round(dockRef.current?.getBoundingClientRect().height ?? 0);
+          if (height > 0) shell?.setDockHeight(height);
+        }}
+        // not positioned: the compact dock sheet inside it covers the whole shell
+        className={cn('col-start-2 row-start-1 min-h-0 min-w-0 bg-background', className)}
+        style={style}
+      >
+        {children}
+      </Resizable>
+    </WorkbenchMainContext>
+  );
+}
+
+/** The resizable region between the header and the dock (a conversation, an editor). */
+export function WorkbenchContent({ className, style, children }: { className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {
+  return (
+    <ResizablePanel className={cn('flex min-h-0 min-w-0 flex-col', className)} style={style}>
       {children}
-    </div>
+    </ResizablePanel>
   );
 }
 
@@ -301,17 +347,16 @@ export function WorkbenchActions({ className, children }: { className?: string; 
   );
 }
 /** A header icon button that thumps like the rest of the chrome. */
-export function WorkbenchAction({ icon, label, onPress, active, className }: { icon: IconName | (string & {}); label: string; onPress?: () => void; active?: boolean; className?: string }) {
+export function WorkbenchAction({ icon, label, onClick, className }: { icon: IconName | (string & {}); label: string; onClick?: () => void; className?: string }) {
   return (
     <Button
       variant="quiet"
       size="icon-sm"
-      active={active}
       aria-label={label}
       title={label}
       className={className}
-      onPress={() => {
-        onPress?.();
+      onClick={() => {
+        onClick?.();
       }}
     >
       <Icon name={icon} size={18} sw={1.7} />
@@ -331,15 +376,14 @@ export interface WorkbenchDockProps {
 }
 /**
  * The bottom dock (a terminal, logs, a console). Inline and resizable from its top edge at regular and
- * medium widths; at compact width the same children move into a dismissible FloatingSheet over the whole shell.
- * Place it last inside `WorkbenchMain`. Outside a shell it renders inline with its own height.
+ * medium widths (a UI SDK ResizablePanel after `WorkbenchContent`, `minHeight`–`maxHeight` px); at compact width
+ * the same children move into a dismissible FloatingSheet over the whole shell. Place it last inside
+ * `WorkbenchMain`. Outside one it renders inline with its own height.
  */
 export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight = 520, className, style, children }: WorkbenchDockProps) {
   const shell = useOptionalWorkbenchShell();
-  const [ownH, setOwnH] = useState(190);
-  const h = shell ? shell.dockHeight : ownH;
-  const setH = shell ? shell.setDockHeight : setOwnH;
-  const drag = React.useRef<{ y0: number; h0: number } | null>(null);
+  const dockRef = React.useContext(WorkbenchMainContext);
+  const h = shell ? shell.dockHeight : 190;
   if (shell?.compact) {
     const lowest = Math.min(...snaps);
     const highest = Math.max(...snaps);
@@ -353,7 +397,9 @@ export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight
           radius={16}
           dismissible
           visible={shell.dockOpen}
-          onDismiss={() => shell.setDockOpen(false)}
+          onVisibleChange={(visible) => {
+            if (!visible) shell.setDockOpen(false);
+          }}
           peek={`${lowest * 100}%`}
           detents={middle.map((f) => `${f * 100}%` as const)}
           topGap={`${(1 - highest) * 100}%`}
@@ -372,60 +418,48 @@ export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight
     );
   }
   if (shell && !shell.dockOpen) return null;
-  const up = () => {
-    drag.current = null;
-  };
+  // The dock is a `terminal` theme scope: dark in both appearances.
+  const dockClass = cn('dark scheme-dark relative flex shrink-0 flex-col border-t border-border bg-background text-foreground', className);
+  if (!dockRef) {
+    // On its own (no WorkbenchMain around it) the dock is inline at its own height.
+    return (
+      <div data-slot="workbench-dock" data-theme-scope="terminal" className={cn('h-(--dock-h)', dockClass)} style={{ '--dock-h': h + 'px', ...style } as React.CSSProperties}>
+        {children}
+      </div>
+    );
+  }
   return (
-    <div
-      data-slot="workbench-dock"
-      data-theme-scope="terminal"
-      className={cn('dark scheme-dark relative flex h-(--dock-h) shrink-0 flex-col border-t border-border bg-background text-foreground', className)}
-      // the dock height is user-resized at runtime
-      style={{ '--dock-h': h + 'px', ...style } as React.CSSProperties}
-    >
-      <div
-        data-slot="workbench-dock-resize"
-        role="separator"
-        aria-orientation="horizontal"
+    <>
+      {/* UI SDK's separator: a zero-height line with a 10px (24px on touch) hit area, over the dock's own border. */}
+      <ResizableHandle
         aria-label="Resize dock"
-        onPointerDown={(e) => {
-          drag.current = { y0: e.clientY, h0: h };
-          e.currentTarget.setPointerCapture(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          if (drag.current) setH(Math.min(maxHeight, Math.max(minHeight, drag.current.h0 - (e.clientY - drag.current.y0))));
-        }}
-        onPointerUp={up}
-        onPointerCancel={up}
-        className="absolute -top-[3px] right-0 left-0 z-2 h-[7px] cursor-ns-resize touch-none"
+        className="relative z-2 h-0 outline-none after:absolute after:inset-x-0 after:-top-[3px] after:h-[7px] focus-visible:after:bg-ring/45"
       />
-      {children}
-    </div>
+      <ResizablePanel defaultSize={`${h}px`} minSize={`${minHeight}px`} maxSize={`${maxHeight}px`} className="flex min-h-0 flex-col">
+        <div ref={dockRef} data-slot="workbench-dock" data-theme-scope="terminal" className={cn('h-full', dockClass)} style={style}>
+          {children}
+        </div>
+      </ResizablePanel>
+    </>
   );
 }
-/** Header toggle for the dock. */
-export function WorkbenchDockTrigger({ onPress, className, style }: TriggerProps) {
+/** Header toggle for the dock, pressed while it shows. */
+export function WorkbenchDockTrigger({ onClick, className, style }: TriggerProps) {
   const shell = useOptionalWorkbenchShell();
   return (
-    <Button
-      variant="quiet"
-      size="icon-sm"
-      active={!!shell?.dockOpen}
-      aria-label="Toggle terminal"
-      title="Toggle terminal"
+    <HeaderToggle
+      label="Terminal"
+      pressed={!!shell?.dockOpen}
+      onPressedChange={(open) => (onClick ? onClick() : shell?.setDockOpen(open))}
       className={className}
       style={style}
-      onPress={() => {
-        if (onPress) onPress();
-        else shell?.toggleDock();
-      }}
     >
       <Icon name="panel-bottom" size={18} sw={1.7} />
-    </Button>
+    </HeaderToggle>
   );
 }
 /** Closes the dock (inline or sheet). */
-export function WorkbenchDockClose({ icon = 'bin', label = 'Close terminal', size = 15, onPress, className }: TriggerProps & { icon?: IconName | (string & {}); label?: string; size?: number }) {
+export function WorkbenchDockClose({ icon = 'bin', label = 'Close terminal', size = 15, onClick, className }: TriggerProps & { icon?: IconName | (string & {}); label?: string; size?: number }) {
   const shell = useOptionalWorkbenchShell();
   return (
     <Button
@@ -434,8 +468,8 @@ export function WorkbenchDockClose({ icon = 'bin', label = 'Close terminal', siz
       aria-label={label}
       title={label}
       className={className}
-      onPress={() => {
-        if (onPress) onPress();
+      onClick={() => {
+        if (onClick) onClick();
         else shell?.setDockOpen(false);
       }}
     >
@@ -463,16 +497,17 @@ export function WorkbenchPanel({ className, style, children }: WorkbenchPanelPro
     </div>
   );
   if (!shell) return body;
-  const { compact, widthClass, width, panelOpen, panelFullscreen, setPanelOpen, appearance } = shell;
+  const { compact, sizeClass, panelOpen, panelFullscreen, setPanelOpen, appearance } = shell;
   const light = appearance === 'light';
-  const mode: AdaptivePaneMode = compact || panelFullscreen ? (panelOpen ? 'cover' : 'hidden') : widthClass === 'medium' ? 'drawer' : panelOpen ? 'column' : 'hidden';
+  const mode: AdaptivePanePresentation = compact || panelFullscreen ? (panelOpen ? 'cover' : 'hidden') : sizeClass === 'medium' ? 'drawer' : panelOpen ? 'column' : 'hidden';
   const pane = (
     <AdaptivePane
-      mode={mode}
+      presentation={mode}
       side="right"
+      aria-label="Panel"
       open={panelOpen}
-      onClose={() => setPanelOpen(false)}
-      columnWidth={`clamp(300px, ${width * 0.32}px, 420px)`}
+      onOpenChange={(open) => setPanelOpen(open)}
+      columnWidth="clamp(300px, 32cqw, 420px)"
       columnStyle={{ gridColumn: 3, gridRow: 1, borderLeft: '1px solid var(--border)' }}
       drawerWidth="min(420px, 94%)"
       zIndex={mode === 'cover' ? 60 : 58}
@@ -487,25 +522,19 @@ export function WorkbenchPanel({ className, style, children }: WorkbenchPanelPro
   return mode === 'cover' ? <div className="relative z-60 col-span-full row-start-1">{pane}</div> : pane;
 }
 /** Header toggle for the panel; hidden at compact width, where the tab bar switches views. */
-export function WorkbenchPanelTrigger({ onPress, className, style }: TriggerProps) {
+export function WorkbenchPanelTrigger({ onClick, className, style }: TriggerProps) {
   const shell = useOptionalWorkbenchShell();
   if (shell?.compact) return null;
   return (
-    <Button
-      variant="quiet"
-      size="icon-sm"
-      active={!!shell?.panelOpen}
-      aria-label="Toggle right panel"
-      title="Toggle right panel"
+    <HeaderToggle
+      label="Right panel"
+      pressed={!!shell?.panelOpen}
+      onPressedChange={(open) => (onClick ? onClick() : shell?.setPanelOpen(open))}
       className={className}
       style={style}
-      onPress={() => {
-        if (onPress) onPress();
-        else shell?.togglePanel();
-      }}
     >
       <Icon name="sidebar-right" size={18} sw={1.7} />
-    </Button>
+    </HeaderToggle>
   );
 }
 export function WorkbenchPanelHeader({ className, style, children }: { className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {
@@ -528,30 +557,20 @@ export function WorkbenchPanelTitle({ icon, className, children }: { icon?: Icon
     </div>
   );
 }
-/** Promotes the panel to cover the shell; hidden at compact width. `active`/`onPress` for use outside a shell. */
-export function WorkbenchPanelFullscreen({ active, onPress, className }: TriggerProps & { active?: boolean }) {
+/** Promotes the panel to cover the shell (a toggle, pressed while it does); hidden at compact width.
+    `pressed`/`onClick` for use outside a shell. */
+export function WorkbenchPanelFullscreen({ pressed, onClick, className }: TriggerProps & { pressed?: boolean }) {
   const shell = useOptionalWorkbenchShell();
   if (shell?.compact) return null;
-  const full = active ?? !!shell?.panelFullscreen;
+  const full = pressed ?? !!shell?.panelFullscreen;
   return (
-    <Button
-      variant="quiet"
-      size="icon-sm"
-      active={full}
-      aria-label={full ? 'Exit full screen' : 'Full screen'}
-      title={full ? 'Exit full screen' : 'Full screen'}
-      className={className}
-      onPress={() => {
-        if (onPress) onPress();
-        else shell?.setPanelFullscreen(!full);
-      }}
-    >
+    <HeaderToggle label="Full screen" pressed={full} onPressedChange={(next) => (onClick ? onClick() : shell?.setPanelFullscreen(next))} className={className}>
       <Icon name={full ? 'arrows-collapse' : 'arrows-expand'} size={16} sw={1.7} />
-    </Button>
+    </HeaderToggle>
   );
 }
 /** Closes the panel (and leaves fullscreen); on compact width returns to the main view. */
-export function WorkbenchPanelClose({ onPress, className }: TriggerProps) {
+export function WorkbenchPanelClose({ onClick, className }: TriggerProps) {
   const shell = useOptionalWorkbenchShell();
   return (
     <Button
@@ -560,8 +579,8 @@ export function WorkbenchPanelClose({ onPress, className }: TriggerProps) {
       aria-label="Close panel"
       title="Close panel"
       className={className}
-      onPress={() => {
-        if (onPress) onPress();
+      onClick={() => {
+        if (onClick) onClick();
         else shell?.setPanelOpen(false);
       }}
     >
@@ -571,16 +590,13 @@ export function WorkbenchPanelClose({ onPress, className }: TriggerProps) {
 }
 
 /* ── Tab bar (compact) ── */
-interface TabBarContextValue {
-  mainTab: string;
-  onValueChange?: (id: string) => void;
-}
-const TabBarContext = React.createContext<TabBarContextValue>({ mainTab: 'chat' });
-
+export type WorkbenchTabBarValueChangeDetails = ChangeDetails<ToggleGroupValueChangeReason>;
 export interface WorkbenchTabBarProps {
   /** the panel's current view (e.g. the open surface); selected while the panel page shows */
   value?: string | null;
-  onValueChange?: (id: string) => void;
+  /** Runs before the view changes, with the ToggleGroup's details (`item-press`); `details.cancel()` keeps the
+      current one. */
+  onValueChange?: (id: string, details: WorkbenchTabBarValueChangeDetails) => void;
   /** id of the tab that shows the main column. Default `'chat'`. */
   mainTab?: string;
   className?: string;
@@ -588,7 +604,7 @@ export interface WorkbenchTabBarProps {
   children?: React.ReactNode;
 }
 /**
- * Compact-width view switcher: a single-select ToggleButtonGroup under the shell. The `mainTab` shows the
+ * Compact-width view switcher: a single-select ToggleGroup (UI SDK) under the shell. The `mainTab` shows the
  * main column; any other tab opens the panel page and reports its id through `onValueChange`.
  * Renders only at compact width inside a shell (always, on its own).
  */
@@ -597,35 +613,31 @@ export function WorkbenchTabBar({ value, onValueChange, mainTab = 'chat', classN
   if (shell && !shell.compact) return null;
   const selected = shell && !shell.panelOpen ? mainTab : (value ?? '');
   return (
-    <TabBarContext.Provider value={{ mainTab, onValueChange }}>
-      <ToggleButtonGroup
-        data-slot="workbench-tab-bar"
-        aria-label="Views"
-        selectionMode="single"
-        selectedKeys={selected ? [selected] : []}
-        className={cn('col-span-full row-start-2 flex shrink-0 border-t border-border bg-sidebar', className)}
-        style={style}
-      >
-        {children}
-      </ToggleButtonGroup>
-    </TabBarContext.Provider>
+    <ToggleGroup
+      aria-label="Views"
+      value={selected ? [selected] : []}
+      deselectable={false}
+      onValueChange={([id], details) => {
+        if (!id) return;
+        // In a shell the main tab just closes the panel page; on its own every tab reports its id.
+        if (id !== mainTab || !shell) onValueChange?.(id, details);
+        if (!details.canceled) shell?.setPanelOpen(id !== mainTab);
+      }}
+      className={cn('col-span-full row-start-2 flex shrink-0 border-t border-border bg-sidebar', className)}
+      style={style}
+    >
+      {children}
+    </ToggleGroup>
   );
 }
-export function WorkbenchTab({ id, icon, className, children }: { id: string; icon: IconName | (string & {}); className?: string; children?: React.ReactNode }) {
-  const shell = useOptionalWorkbenchShell();
-  const { mainTab, onValueChange } = React.useContext(TabBarContext);
+export function WorkbenchTab({ value, icon, className, children }: { value: string; icon: IconName | (string & {}); className?: string; children?: React.ReactNode }) {
   return (
     <ToggleButton
-      id={id}
+      value={value}
       className={cn(
-        pressable, 'flex min-h-[50px] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-[3px] border-0 bg-transparent pt-[7px] pb-1.5 text-tertiary-foreground data-selected:text-primary',
+        pressable, 'flex min-h-[50px] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-[3px] border-0 bg-transparent pt-[7px] pb-1.5 text-tertiary-foreground data-pressed:text-primary',
         className,
       )}
-      onPress={() => {
-        // In a shell the main tab just closes the panel page; on its own every tab reports its id.
-        if (id !== mainTab || !shell) onValueChange?.(id);
-        shell?.setPanelOpen(id !== mainTab);
-      }}
     >
       <Icon name={icon} size={20} sw={1.8} />
       <span className="text-[9.5px] font-semibold tracking-[.2px]">{children}</span>

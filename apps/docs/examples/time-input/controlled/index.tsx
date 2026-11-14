@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { TimeInput } from '@/components/ui/time-input'
 
-// `onValueChange` fires on every keystroke with `pending: true` (what a
-// controlled `value` follows), then once more with the parse when it settles.
-// Read `result` only when `pending` is false.
+// `value` makes the text controlled: follow it with `onValueChange`, as on any
+// Input. `onParseChange` fires on every keystroke with `pending: true`, then
+// once more with the parse when it settles. Read `result` only when `pending`
+// is false.
 export default function Controlled() {
   const [text, setText] = useState('tomorrow at 3pm')
   const [start, setStart] = useState<string | null>(null)
@@ -12,8 +13,8 @@ export default function Controlled() {
       <TimeInput
         label="Reminder"
         value={text}
-        onValueChange={({ text, result, pending }) => {
-          setText(text)
+        onValueChange={setText}
+        onParseChange={({ result, pending }) => {
           if (!pending) setStart(result?.occurrences[0]?.start ?? null)
         }}
         reference="2026-09-09T12:00:00+06:00"

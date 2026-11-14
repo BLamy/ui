@@ -105,7 +105,7 @@ test.describe('an input method', () => {
     expect(await value(page)).toBe(before.replace('function', 'function日本'));
     const reported = await changes(page);
     expect(reported.length).toBe(1);
-    expect(reported[0]).toMatchObject({ text: '日本', origin: 'composition', from: { line: 1, column: 8 } });
+    expect(reported[0]).toMatchObject({ text: '日本', reason: 'composition', from: { line: 1, column: 8 } });
     // And it carries on as normal text, and goes back as one step.
     await page.keyboard.type('x');
     expect((await value(page)).startsWith('function日本x greet')).toBe(true);
@@ -150,7 +150,7 @@ test.describe('paste, cut and copy', () => {
     await caretAt(page, 5, 0);
     await page.keyboard.press(`${mod}+v`);
     expect((await value(page)).endsWith('}\n\none\ntwo\nthreegreet("world");')).toBe(true);
-    await expect.poll(async () => (await changes(page)).at(-1)?.origin).toBe('paste');
+    await expect.poll(async () => (await changes(page)).at(-1)?.reason).toBe('paste');
     await setSelection(page, [1, 0], [3, 1]);
     await page.keyboard.press(`${mod}+v`);
     expect((await value(page)).startsWith('one\ntwo\nthree\n\none')).toBe(true);
@@ -166,7 +166,7 @@ test.describe('paste, cut and copy', () => {
     await page.keyboard.press(`${mod}+x`);
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('return');
     expect((await value(page)).includes('return')).toBe(false);
-    expect((await changes(page)).at(-1).origin).toBe('cut');
+    expect((await changes(page)).at(-1).reason).toBe('cut');
   });
 
   test('copies the whole selection however little of it is on screen', async ({ page }) => {
@@ -207,7 +207,7 @@ test.describe('undo and redo', () => {
     expect(await value(page)).toBe('one');
     await page.keyboard.press(`${mod}+Shift+z`);
     expect(await value(page)).toBe('one two');
-    expect((await changes(page)).at(-1).origin).toBe('redo');
+    expect((await changes(page)).at(-1).reason).toBe('redo');
   });
 
   test('moving the caret starts a new step, and undo puts the caret back', async ({ page }) => {
@@ -289,7 +289,7 @@ test.describe('keys', () => {
     await caretAt(page, 1, 0);
     await page.keyboard.press('Escape');
     await page.keyboard.press('Tab');
-    await expect(page.locator('[data-slot="code-editor-gutter-cell"][data-gutter="breakpoint"]').first()).toBeFocused();
+    await expect(page.locator('[data-code-editor-cell="breakpoint"]').first()).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.locator('[data-testid="after"]')).toBeFocused();
   });
@@ -436,7 +436,7 @@ test.describe('line counts changing', () => {
     await page.keyboard.press('Enter');
     expect(await lineText(page, 4)).toBe('const line3 = 3;');
     await expect(page.locator('[data-slot="code-editor-gutter-row"][data-line="4"]')).toContainText('4');
-    expect((await changes(page)).at(-1)).toMatchObject({ origin: 'newline', from: { line: 3, column: 0 }, to: { line: 3, column: 0 }, newTo: { line: 4, column: 0 } });
+    expect((await changes(page)).at(-1)).toMatchObject({ reason: 'newline', from: { line: 3, column: 0 }, to: { line: 3, column: 0 }, newTo: { line: 4, column: 0 } });
   });
 
   test('colors follow a comment opened and closed above', async ({ page }) => {
@@ -566,7 +566,7 @@ test.describe('the mouse', () => {
   test('a press in a gutter button stays there, and it can do its job', async ({ page }) => {
     await open(page, 'gutters=1');
     await caretAt(page, 1, 0);
-    const button = page.locator('[data-slot="code-editor-gutter-cell"][data-gutter="breakpoint"]').nth(2);
+    const button = page.locator('[data-code-editor-cell="breakpoint"]').nth(2);
     await button.click();
     await expect(button).toBeFocused();
   });

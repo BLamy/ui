@@ -4,23 +4,23 @@ import { parseDiffFromFile, type CodeViewItem } from '@pierre/diffs';
 import type { TreeNode } from '@/components/ui/tree';
 import type { WorktreeDiff } from './types';
 
-/** Paths as nested nodes: folders are `dir:`-prefixed, files keep their path as id. */
+/** Paths as nested nodes: folders are `dir:`-prefixed, files keep their path as value. */
 export function treeOf(files: { path: string; dimmed?: boolean }[]): TreeNode[] {
   type Folder = { node: TreeNode & { children: TreeNode[] }; folders: Map<string, Folder> };
-  const root: Folder = { node: { id: 'dir:', name: '', children: [] }, folders: new Map() };
+  const root: Folder = { node: { value: 'dir:', label: '', children: [] }, folders: new Map() };
   for (const f of files) {
     const parts = f.path.split('/');
     let at = root;
     parts.slice(0, -1).forEach((name, i) => {
       let next = at.folders.get(name);
       if (!next) {
-        next = { node: { id: `dir:${parts.slice(0, i + 1).join('/')}`, name, children: [] }, folders: new Map() };
+        next = { node: { value: `dir:${parts.slice(0, i + 1).join('/')}`, label: name, children: [] }, folders: new Map() };
         at.folders.set(name, next);
         at.node.children.push(next.node);
       }
       at = next;
     });
-    at.node.children.push({ id: f.path, name: parts[parts.length - 1], dimmed: f.dimmed });
+    at.node.children.push({ value: f.path, label: parts[parts.length - 1], dimmed: f.dimmed });
   }
   return root.node.children;
 }

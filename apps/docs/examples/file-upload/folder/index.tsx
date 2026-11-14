@@ -20,12 +20,12 @@ function mockUpload(_file: File, { signal, onProgress }: UploadContext) {
   })
 }
 
-// `acceptDirectory` lets people drop a folder or choose one with the button.
-// The folder is flattened into its files, each keeping its relative path.
+// `directory` makes the button choose a folder (drops take folders anyway).
+// The folder is flattened into its files, each keeping its path inside it.
 export default function Folder() {
   return (
     <div className="mx-auto w-full max-w-md">
-      <FileUpload acceptDirectory upload={mockUpload} />
+      <FileUpload directory upload={mockUpload} />
     </div>
   )
 }

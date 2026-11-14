@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ProgressStepper, type ProgressStep } from '@/components/ui/progress-stepper'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Switch } from '@/components/ui/switch'
 import { Icon } from '@/lib/icon'
 
@@ -32,8 +32,8 @@ export default function Order() {
         <Button
           variant="secondary"
           size="sm"
-          isDisabled={current === 0}
-          onPress={() => setCurrent((c) => c - 1)}
+          disabled={current === 0}
+          onClick={() => setCurrent((c) => c - 1)}
         >
           Back
         </Button>
@@ -42,28 +42,23 @@ export default function Order() {
         </span>
         <Button
           size="sm"
-          isDisabled={current === steps.length}
-          onPress={() => setCurrent((c) => c + 1)}
+          disabled={current === steps.length}
+          onClick={() => setCurrent((c) => c + 1)}
         >
           Next
         </Button>
       </div>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-footnote">
-        <Segmented
-          aria-label="Variant"
-          value={variant}
-          onChange={(v) => setVariant(v as 'bars' | 'line')}
-          options={[
-            { id: 'bars', label: 'bars' },
-            { id: 'line', label: 'line' },
-          ]}
-        />
+        <Segmented aria-label="Variant" value={variant} onValueChange={(v) => v && setVariant(v as 'bars' | 'line')}>
+          <SegmentedItem value="bars">bars</SegmentedItem>
+          <SegmentedItem value="line">line</SegmentedItem>
+        </Segmented>
         <label className="flex items-center gap-2">
-          <Switch checked={labels} onChange={setLabels} aria-label="Labels" />
+          <Switch checked={labels} onCheckedChange={setLabels} aria-label="Labels" />
           labels
         </label>
         <label className="flex items-center gap-2">
-          <Switch checked={animated} onChange={setAnimated} aria-label="Animated" />
+          <Switch checked={animated} onCheckedChange={setAnimated} aria-label="Animated" />
           animated
         </label>
       </div>

@@ -1,23 +1,26 @@
 {
   "name": "disclosure",
   "title": "Disclosure",
-  "description": "Expandable sections on react-aria: a Disclosure with a trigger and an animated panel, grouped into an accordion (also exported under shadcn's Accordion names).",
+  "description": "Expandable sections on UI SDK: a Disclosure (Collapsible) with a trigger and an animated panel, and a DisclosureGroup (Accordion) of them.",
   "page": "disclosure",
   "exports": [
     "Disclosure",
-    "DisclosureGroup",
     "DisclosureTrigger",
     "DisclosurePanel",
+    "DisclosureGroup",
+    "DisclosureGroupItem",
+    "DisclosureGroupHeader",
+    "DisclosureGroupTrigger",
+    "DisclosureGroupPanel",
     "disclosureGroupVariants",
-    "Accordion",
-    "AccordionItem",
-    "AccordionTrigger",
-    "AccordionContent"
+    "createCollapsibleController",
+    "createAccordionController"
   ],
   "imports": [
-    "Accordion",
-    "AccordionItem",
-    "AccordionTrigger",
-    "AccordionContent"
+    "DisclosureGroup",
+    "DisclosureGroupItem",
+    "DisclosureGroupHeader",
+    "DisclosureGroupTrigger",
+    "DisclosureGroupPanel"
   ]
 }

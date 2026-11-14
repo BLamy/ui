@@ -1,5 +1,6 @@
 'use client';
-import { useCallback, useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentProps, type ReactNode, type Ref } from 'react';
+import { announce } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,14 +8,15 @@ import { ResultTable } from '@/components/ui/result-table';
 import { SchemaTree } from '@/components/ui/schema-tree';
 import { SqlEditor, useSqlHistory, type SqlEditorHandle } from '@/components/ui/sql-editor';
 import { Spinner } from '@/components/ui/spinner';
-import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs';
 import { PGliteError, DataDirVersionError, identifier, runSql, type RunOutcome, type SqlError } from '@/lib/pglite-core';
 import { useDatabaseStatus } from '@/lib/pglite';
 import { useSchema } from '@/lib/pglite-schema';
 import { downloadFile, pickFile } from '@/lib/pglite-files';
 import { exportDatabase, importDatabase, type ExportFormat } from '@/lib/pglite-transfer';
-import { formatBytes } from '@/lib/format-bytes';
+import { formatFileSize } from '@ui-sdk/core/file-input';
 import { formatDuration } from '@/lib/sql-format';
+import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { cn } from '@/lib/utils';
 
 /* ══ SqlConsole — a database workbench in one component ══
@@ -23,13 +25,16 @@ import { cn } from '@/lib/utils';
    with several statements runs through `exec`, so each gets its own result; one that fails shows the error with the
    line, a caret under the column, the SQLSTATE and Postgres's hint, and — because a script is one implicit
    transaction — says that none of it was applied. The header shows the Postgres and PGlite versions and exports /
-   imports: a SQL dump (portable) or the data directory (same Postgres version only). */
+   imports: a SQL dump (portable) or the data directory (same Postgres version only). The `split` layout follows
+   the console's own width (its size class, on `data-size-class`): schema beside the editor from `medium` up, one
+   column when compact, whatever the viewport. Progress and outcomes are read out through UI SDK's `announce()`. */
 
 export const sqlConsoleVariants = cva('flex min-h-0 min-w-0 flex-col gap-3 text-foreground', {
   variants: {
     layout: {
-      /** Schema beside the editor from the `md` breakpoint up. */
-      split: 'md:grid md:grid-cols-[minmax(11rem,16rem)_minmax(0,1fr)] md:items-start',
+      /** Schema beside the editor when the console's own box is medium or regular (`data-size-class`). */
+      split:
+        'data-[size-class=medium]:grid data-[size-class=medium]:grid-cols-[minmax(11rem,16rem)_minmax(0,1fr)] data-[size-class=medium]:items-start data-[size-class=regular]:grid data-[size-class=regular]:grid-cols-[minmax(11rem,16rem)_minmax(0,1fr)] data-[size-class=regular]:items-start',
       /** Everything in one column. */
       stacked: '',
     },
@@ -93,8 +98,16 @@ function ErrorPanel({ title, error, sql, children }: { title: string; error: Sql
 }
 
 export function SqlConsole({
-  defaultValue = '', historyKey, sidebar = true, transfer = true, onRun, headerActions, resultMaxHeight = '18rem', autoRun = false, timing = true, layout, className, ...props
+  defaultValue = '', historyKey, sidebar = true, transfer = true, onRun, headerActions, resultMaxHeight = '18rem', autoRun = false, timing = true, layout, className, ref, ...props
 }: SqlConsoleProps) {
+  const [sizeRef, sizeClass] = useSizeClass();
+  const root = useRef<HTMLDivElement | null>(null);
+  const setRoot = useCallback((el: HTMLDivElement | null) => {
+    root.current = el;
+    sizeRef(el);
+    assignRef(ref, el);
+  }, [sizeRef, ref]);
+  const say = useCallback((text: string) => announce(text, { doc: root.current?.ownerDocument }), []);
   const { status, db, info, error: openError, retry, invalidate } = useDatabaseStatus();
   const { schema, isLoading: schemaLoading } = useSchema();
   const history = useSqlHistory(historyKey);
@@ -125,7 +138,7 @@ export function SqlConsole({
       downloadFile(out.file);
       setNotice({
         tone: 'ok',
-        text: `Exported ${out.file.name} (${formatBytes(out.bytes)}) from Postgres ${out.postgresVersion}.`,
+        text: `Exported ${out.file.name} (${formatFileSize(out.bytes)}) from Postgres ${out.postgresVersion}.`,
         detail: format === 'datadir' ? `This archive restores only into Postgres ${out.postgresMajor}. Keep a SQL export as the portable backup.` : undefined,
       });
     } catch (e) {
@@ -163,6 +176,20 @@ export function SqlConsole({
 
   const ready = status === 'ready' && !!db;
 
+  // Status lines stay visible; screen readers hear them once, when they change.
+  useEffect(() => {
+    if (status === 'loading') say('Starting PostgreSQL…');
+  }, [status, say]);
+  useEffect(() => {
+    if (notice?.tone === 'ok') say(notice.detail ? `${notice.text} ${notice.detail}` : notice.text);
+  }, [notice, say]);
+  useEffect(() => {
+    if (!last || last.outcome.error) return;
+    const count = last.outcome.results.length;
+    if (count === 0) say('Nothing to run.');
+    else say(timing && count > 1 ? `${count} statements in ${formatDuration(last.outcome.durationMs)}` : count === 1 ? '1 result' : `${count} results`);
+  }, [last, timing, say]);
+
   const ran = useRef(false);
   useEffect(() => {
     if (autoRun && ready && !ran.current && defaultValue.trim()) {
@@ -172,133 +199,140 @@ export function SqlConsole({
   }, [autoRun, ready, run, defaultValue]);
 
   return (
-    <div data-slot="sql-console" data-status={status} className={cn(sqlConsoleVariants({ layout }), className)} {...props}>
-      <header data-slot="sql-console-header" className="flex flex-wrap items-center gap-2 md:col-span-2">
-        {ready && info ? (
-          <>
-            <Badge variant="secondary" title={`PGlite ${info.pgliteVersion ?? ''}`}>PostgreSQL {info.serverVersion}</Badge>
-            <Badge variant="secondary" title={info.worker ? 'Running in a Web Worker' : 'Running on the main thread'}>{info.dataDir}{info.worker ? ' · worker' : ''}</Badge>
-            {info.kind === 'memory' ? <span className="text-caption text-foreground/65">Gone when you reload</span> : null}
-          </>
-        ) : status === 'loading' ? (
-          <span role="status" className="flex items-center gap-2 text-footnote text-foreground/65"><Spinner spin size={14} /> Starting PostgreSQL…</span>
-        ) : null}
-        <span className="flex-1" />
-        {headerActions}
-        {transfer && ready ? (
-          <>
-            <Button size="sm" variant="secondary" onPress={() => void doExport('sql')}>Export SQL</Button>
-            <Button size="sm" variant="secondary" onPress={() => void doExport('datadir')}>Export data dir</Button>
-            <Button size="sm" variant="secondary" onPress={() => void doImport()}>Import…</Button>
-          </>
-        ) : null}
-      </header>
+    <SizeClassProvider value={sizeClass}>
+      <div ref={setRoot} data-slot="sql-console" data-status={status} className={cn(sqlConsoleVariants({ layout }), className)} {...props}>
+        <header data-slot="sql-console-header" className="flex flex-wrap items-center gap-2 col-span-2">
+          {ready && info ? (
+            <>
+              <Badge variant="secondary" title={`PGlite ${info.pgliteVersion ?? ''}`}>PostgreSQL {info.serverVersion}</Badge>
+              <Badge variant="secondary" title={info.worker ? 'Running in a Web Worker' : 'Running on the main thread'}>{info.dataDir}{info.worker ? ' · worker' : ''}</Badge>
+              {info.kind === 'memory' ? <span className="text-caption text-foreground/65">Gone when you reload</span> : null}
+            </>
+          ) : status === 'loading' ? (
+            <span className="flex items-center gap-2 text-footnote text-foreground/65"><Spinner spin size={14} /> Starting PostgreSQL…</span>
+          ) : null}
+          <span className="flex-1" />
+          {headerActions}
+          {transfer && ready ? (
+            <>
+              <Button size="sm" variant="secondary" onClick={() => void doExport('sql')}>Export SQL</Button>
+              <Button size="sm" variant="secondary" onClick={() => void doExport('datadir')}>Export data dir</Button>
+              <Button size="sm" variant="secondary" onClick={() => void doImport()}>Import…</Button>
+            </>
+          ) : null}
+        </header>
 
-      {notice ? (
-        notice.tone === 'error' ? (
-          <div className="md:col-span-2">
-            <ErrorPanel title="Could not finish" error={{ message: notice.text }} />
+        {notice ? (
+          notice.tone === 'error' ? (
+            <div className="col-span-2">
+              <ErrorPanel title="Could not finish" error={{ message: notice.text }} />
+            </div>
+          ) : (
+            <p data-slot="sql-console-notice" className="text-footnote text-foreground/65 col-span-2">
+              {notice.text}
+              {notice.detail ? ` ${notice.detail}` : ''}
+            </p>
+          )
+        ) : null}
+
+        {status === 'error' && openError ? (
+          <div className="col-span-2">
+            <ErrorPanel title={openError instanceof DataDirVersionError ? 'This database was made by a different Postgres version' : 'Could not open the database'} error={{ message: openError.message, code: openError instanceof PGliteError ? openError.code : undefined }}>
+              <div className="mt-2"><Button size="sm" variant="secondary" onClick={retry}>Try again</Button></div>
+            </ErrorPanel>
           </div>
         ) : (
-          <p role="status" data-slot="sql-console-notice" className="text-footnote text-foreground/65 md:col-span-2">
-            {notice.text}
-            {notice.detail ? ` ${notice.detail}` : ''}
-          </p>
-        )
-      ) : null}
-
-      {status === 'error' && openError ? (
-        <div className="md:col-span-2">
-          <ErrorPanel title={openError instanceof DataDirVersionError ? 'This database was made by a different Postgres version' : 'Could not open the database'} error={{ message: openError.message, code: openError instanceof PGliteError ? openError.code : undefined }}>
-            <div className="mt-2"><Button size="sm" variant="secondary" onPress={retry}>Try again</Button></div>
-          </ErrorPanel>
-        </div>
-      ) : (
-        <>
-          {sidebar ? (
-            <aside data-slot="sql-console-sidebar" className="flex min-h-0 min-w-0 flex-col gap-2">
-              <Tabs variant="segmented" className="gap-2">
-                <TabList aria-label="Sidebar">
-                  <Tab id="schema">Schema</Tab>
-                  <Tab id="history">History{history.entries.length ? ` (${history.entries.length})` : ''}</Tab>
-                </TabList>
-                <TabPanel id="schema" className="flex h-80 flex-col">
-                  <SchemaTree
-                    schema={schema}
-                    isLoading={schemaLoading || !ready}
-                    variant="card"
-                    className="flex-1"
-                    onSelectTable={(t) => insertTable(t.schema, t.name)}
-                  />
-                </TabPanel>
-                <TabPanel id="history" className="max-h-80 overflow-y-auto">
-                  {history.entries.length ? (
-                    <ul className="m-0 flex list-none flex-col gap-1 p-0">
-                      {history.entries.map((h) => (
-                        <li key={h}>
-                          <Button variant="ghost" size="sm" className="h-auto w-full justify-start px-2 py-1.5 text-start font-mono text-caption font-normal whitespace-normal break-all" onPress={() => { setValue(h); editor.current?.focus(); }}>
-                            <span className="line-clamp-3">{h}</span>
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="px-2 py-4 text-center text-footnote text-foreground/65">Statements you run appear here.</p>
-                  )}
-                </TabPanel>
-              </Tabs>
-            </aside>
-          ) : null}
-
-          <section className="flex min-h-0 min-w-0 flex-col gap-3">
-            <SqlEditor
-              ref={editor}
-              value={value}
-              onChange={setValue}
-              onRun={(sql) => void run(sql)}
-              isRunning={running}
-              isDisabled={!ready}
-              history={history.entries}
-              error={last?.outcome.error && last.sql === value.trim() ? last.outcome.error : null}
-              placeholder="select now();"
-              aria-label="SQL"
-            />
-
-            {last?.outcome.error ? (
-              <ErrorPanel title="Query failed" error={last.outcome.error} sql={last.sql}>
-                {last.outcome.statementCount > 1 && !/\b(begin|start\s+transaction)\b/i.test(last.sql) ? (
-                  <p className="mt-1.5 text-foreground/65">The script ran as one transaction, so none of its {last.outcome.statementCount} statements were applied.</p>
-                ) : null}
-              </ErrorPanel>
-            ) : null}
-
-            {last && !last.outcome.error ? (
-              <div data-slot="sql-console-results" className="flex flex-col gap-3">
-                {last.outcome.results.length === 0 ? <p role="status" className="text-footnote text-foreground/65">Nothing to run.</p> : null}
-                {last.outcome.results.map((r, i) => (
-                  <figure key={i} className="m-0 flex min-w-0 flex-col gap-1">
-                    {last.outcome.results.length > 1 || r.statement ? (
-                      <figcaption className="truncate font-mono text-caption text-foreground/65" title={r.statement}>
-                        {last.outcome.results.length > 1 ? `${i + 1}. ` : ''}{r.statement ?? r.command}
-                      </figcaption>
-                    ) : null}
-                    <ResultTable
-                      result={r}
-                      durationMs={timing && last.outcome.results.length === 1 ? last.outcome.durationMs : undefined}
-                      maxHeight={resultMaxHeight}
-                      aria-label={`Result ${i + 1}`}
-                      resizable
+          <>
+            {sidebar ? (
+              <aside data-slot="sql-console-sidebar" className="flex min-h-0 min-w-0 flex-col gap-2">
+                <Tabs variant="segmented" defaultValue="schema" className="gap-2">
+                  <TabsList aria-label="Sidebar">
+                    <TabsTab value="schema">Schema</TabsTab>
+                    <TabsTab value="history">History{history.entries.length ? ` (${history.entries.length})` : ''}</TabsTab>
+                  </TabsList>
+                  <TabsPanel value="schema" className="flex h-80 flex-col">
+                    <SchemaTree
+                      schema={schema}
+                      loading={schemaLoading || !ready}
+                      variant="card"
+                      className="flex-1"
+                      onAction={(_id, { table, column }) => { if (!column) insertTable(table.schema, table.name); }}
                     />
-                  </figure>
-                ))}
-                {timing && last.outcome.results.length > 1 ? (
-                  <p role="status" className="text-caption text-foreground/65">{last.outcome.results.length} statements in {formatDuration(last.outcome.durationMs)}</p>
-                ) : null}
-              </div>
+                  </TabsPanel>
+                  <TabsPanel value="history" className="max-h-80 overflow-y-auto">
+                    {history.entries.length ? (
+                      <ul className="m-0 flex list-none flex-col gap-1 p-0">
+                        {history.entries.map((h) => (
+                          <li key={h}>
+                            <Button variant="ghost" size="sm" className="h-auto w-full justify-start px-2 py-1.5 text-start font-mono text-caption font-normal whitespace-normal break-all" onClick={() => { setValue(h); editor.current?.focus(); }}>
+                              <span className="line-clamp-3">{h}</span>
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="px-2 py-4 text-center text-footnote text-foreground/65">Statements you run appear here.</p>
+                    )}
+                  </TabsPanel>
+                </Tabs>
+              </aside>
             ) : null}
-          </section>
-        </>
-      )}
-    </div>
+
+            <section className="flex min-h-0 min-w-0 flex-col gap-3">
+              <SqlEditor
+                ref={editor}
+                value={value}
+                onValueChange={setValue}
+                onRun={(sql) => void run(sql)}
+                running={running}
+                disabled={!ready}
+                history={history.entries}
+                error={last?.outcome.error && last.sql === value.trim() ? last.outcome.error : null}
+                placeholder="select now();"
+                aria-label="SQL"
+              />
+
+              {last?.outcome.error ? (
+                <ErrorPanel title="Query failed" error={last.outcome.error} sql={last.sql}>
+                  {last.outcome.statementCount > 1 && !/\b(begin|start\s+transaction)\b/i.test(last.sql) ? (
+                    <p className="mt-1.5 text-foreground/65">The script ran as one transaction, so none of its {last.outcome.statementCount} statements were applied.</p>
+                  ) : null}
+                </ErrorPanel>
+              ) : null}
+
+              {last && !last.outcome.error ? (
+                <div data-slot="sql-console-results" className="flex flex-col gap-3">
+                  {last.outcome.results.length === 0 ? <p className="text-footnote text-foreground/65">Nothing to run.</p> : null}
+                  {last.outcome.results.map((r, i) => (
+                    <figure key={i} className="m-0 flex min-w-0 flex-col gap-1">
+                      {last.outcome.results.length > 1 || r.statement ? (
+                        <figcaption className="truncate font-mono text-caption text-foreground/65" title={r.statement}>
+                          {last.outcome.results.length > 1 ? `${i + 1}. ` : ''}{r.statement ?? r.command}
+                        </figcaption>
+                      ) : null}
+                      <ResultTable
+                        result={r}
+                        durationMs={timing && last.outcome.results.length === 1 ? last.outcome.durationMs : undefined}
+                        maxHeight={resultMaxHeight}
+                        aria-label={`Result ${i + 1}`}
+                        resizable
+                      />
+                    </figure>
+                  ))}
+                  {timing && last.outcome.results.length > 1 ? (
+                    <p className="text-caption text-foreground/65">{last.outcome.results.length} statements in {formatDuration(last.outcome.durationMs)}</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </section>
+          </>
+        )}
+      </div>
+    </SizeClassProvider>
   );
+}
+
+function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
+  if (typeof ref === 'function') ref(value);
+  else if (ref) ref.current = value;
 }

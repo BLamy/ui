@@ -1,9 +1,10 @@
 /* @brett_lamy/ui, as the library: every app-facing component under its export name and in its docs section, with
    its registry description, its real props and their real values (`variant="secondary"`), its events, and its
    compound parts as children or slots. Each renders the kit's own component, so the canvas and the preview are the
-   kit itself, and the code generator writes the same JSX. */
-import { parseDate } from '@internationalized/date';
-import { parseColor, type Key } from 'react-aria-components';
+   kit itself, and the code generator writes the same JSX: 6.0's, on UI SDK (`onClick`, `value` / `onValueChange`,
+   a root with named parts, dates and colors as strings). */
+import { cloneElement, createContext, use, type ComponentType, type ReactElement, type ReactNode } from 'react';
+import { mergeProps } from '@ui-sdk/react/primitive';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Avatar, AvatarGroup, type AvatarStatus } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -13,26 +14,27 @@ import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ColorPicker, ColorPickerContent, ColorPickerTrigger } from '@/components/ui/color-picker';
-import { ComboBox, ComboBoxContent, ComboBoxInput, ComboBoxItem } from '@/components/ui/combobox';
-import { DateField, DateInput } from '@/components/ui/date-field';
+import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxList } from '@/components/ui/combobox';
+import { DateField } from '@/components/ui/date-field';
 import { DatePicker, DatePickerContent, DatePickerField } from '@/components/ui/date-picker';
 import { Disclosure, DisclosurePanel, DisclosureTrigger } from '@/components/ui/disclosure';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Kbd } from '@/components/ui/kbd';
 import { Label } from '@/components/ui/label';
 import { List, ListRow, ListSection } from '@/components/ui/list';
 import { NowPlayingBars } from '@/components/ui/now-playing-bars';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Progress } from '@/components/ui/progress';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import { ProgressStepper } from '@/components/ui/progress-stepper';
 import { QRSvg } from '@/components/ui/qr-svg';
 import { Radio, RadioGroup } from '@/components/ui/radio-group';
 import { SearchField } from '@/components/ui/search-field';
-import { Segmented } from '@/components/ui/segmented';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
+import { Select, SelectContent, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
@@ -40,13 +42,12 @@ import { Spinner, spinnerAnimations, type SpinnerAnimation } from '@/components/
 import { Switch } from '@/components/ui/switch';
 import { CodeEditor } from '@/components/ui/code-editor';
 import { TabBar } from '@/components/ui/tab-bar';
-import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs';
-import { FieldDescription, FieldError, TextField } from '@/components/ui/text-field';
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { TextMorph } from '@/components/ui/text-morph';
 import { Toggle } from '@/components/ui/toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Tooltip, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Icon } from '@/lib/icon';
 import { springs, type SpringName } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -55,22 +56,66 @@ import { NavStackHost, SceneRefHost, SplitViewHost, TabViewHost } from './hosts'
 import { itemsOf, num, q, str, textClass, textStyleOptions, values, type CodeArgs, type ComponentSpec, type ItemEntry } from './spec';
 
 const pick = <T extends string>(v: unknown, options: readonly T[], d: T): T => (options.includes(v as T) ? (v as T) : d);
-const date = (v: unknown) => {
-  try { return v ? parseDate(String(v)) : null; } catch { return null; }
-};
+
+/* ── Triggers in a slot ──
+   A Popover's or Tooltip's trigger part has to be the control people focus. When its slot holds one Button, the
+   part renders through that Button (`render` with a function hands the part's props to it, and the Button takes
+   them from context); anything else sits inside a plain <button> the part renders. The code generator writes the
+   same shapes (`codegen.ts`, `CodeArgs.trigger`). */
+const TriggerPropsContext = createContext<Record<string, unknown> | null>(null);
+
+type TriggerPart = ComponentType<{ render?: unknown; children?: ReactNode }>;
+
+function SlotTrigger({ part: Part, nodes, children }: { part: TriggerPart; nodes: readonly Node[] | undefined; children: ReactNode }) {
+  if (nodes?.length === 1 && nodes[0].type === 'Button') {
+    return (
+      <Part render={({ children: inner, ...props }: Record<string, unknown> & { children?: ReactNode }) => (
+        <TriggerPropsContext value={props}>{inner}</TriggerPropsContext>
+      )}>
+        {children}
+      </Part>
+    );
+  }
+  return <Part render={<button type="button" className="inline-flex max-w-full cursor-default border-0 bg-transparent p-0 text-left text-inherit outline-none focus-visible:ring-2 focus-visible:ring-ring" />}>{children}</Part>;
+}
+
+/** A Button that is a trigger part's element when one hands it its props. */
+function TriggerButton({ children }: { children: ReactElement<Record<string, unknown>> }) {
+  const trigger = use(TriggerPropsContext);
+  const el = trigger ? cloneElement(children, mergeProps(trigger, children.props)) : children;
+  // What the Button holds is not the trigger.
+  return trigger ? <TriggerPropsContext value={null}>{el}</TriggerPropsContext> : el;
+}
+/** An ISO date (`2026-10-04`), or null. */
+const date = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) ? v : null);
 /** What a color picker starts on: the system blue. */
 const START_COLOR = '#0A84FF';
-const color = (v: unknown) => {
-  try { return parseColor(String(v || START_COLOR)); } catch { return parseColor(START_COLOR); }
-};
 const leaf = (type: string, props: Record<string, unknown> = {}, patch: Partial<Node> = {}): Node => ({ id: newId(), type, props: props as Node['props'], ...patch });
+/** A comma list's entries as UI SDK's data items (`{ value, label }`). */
+const dataItems = (v: unknown) => itemsOf(v).map((it) => ({ value: it.id, label: it.label }));
 
 const BUTTON_VARIANTS = ['default', 'secondary', 'ghost', 'destructive', 'link', 'quiet'] as const;
 const BUTTON_SIZES = ['default', 'sm', 'lg', 'pill', 'icon', 'icon-sm'] as const;
 const SPINNERS = spinnerAnimations.map((a) => a.id);
+const SIDES = ['top', 'bottom', 'left', 'right'] as const;
+const ALIGNS = ['start', 'center', 'end'] as const;
+
+/** A labelled control in the canvas and preview: in a Field with its FieldLabel when it has a label. */
+function Labelled({ label, children }: { label: unknown; children: ReactNode }) {
+  if (!label) return <>{children}</>;
+  return (
+    <Field className="min-w-0">
+      <FieldLabel variant="field">{str(label)}</FieldLabel>
+      {children}
+    </Field>
+  );
+}
 
 /* ── Code: the JSX a component's `code` writes ── */
 
+const nest = (s: string) => s.split('\n').join('\n  ');
+/** Indents a block by two spaces, every line. */
+const indent2 = (s: string) => s.split('\n').map((l) => `  ${l}`).join('\n');
 /** A list prop as items: its literal items, each written by `each`, or its bound list mapped by `each` at run time. */
 const listCode = (g: CodeArgs, name: string, each: (it: ItemEntry | null, v: string) => string, join = ', ') => {
   const items = g.list(name);
@@ -78,21 +123,21 @@ const listCode = (g: CodeArgs, name: string, each: (it: ItemEntry | null, v: str
 };
 /** An item's field, literal or read at run time from a bound list's entry `v` (a string, or an object). */
 const field = (it: ItemEntry | null, v: string, f: 'id' | 'label' | 'icon') => (it ? (it[f] == null ? 'undefined' : q(String(it[f]))) : f === 'icon' ? `${v}.icon` : `(${v}.${f} ?? ${v})`);
+/** A list prop as UI SDK's data items: `[{ value: 'day', label: 'Day' }]`, or the bound list mapped to them. */
+const itemsCode = (g: CodeArgs, name: string) => {
+  const items = g.list(name);
+  return items
+    ? `[${items.map((it) => `{ value: ${q(it.id)}, label: ${q(it.label)} }`).join(', ')}]`
+    : `${g.expr(name)}.map((it) => ({ value: it.id ?? it, label: it.label ?? it }))`;
+};
 /** The part of the kit a component's parts come from: imports them. */
 const parts = (g: CodeArgs, module: string, ...names: string[]) => names.forEach((n) => g.use(module, n));
-/** A Label from a text prop, when it has one. */
-const labelCode = (g: CodeArgs) => {
+/** A control in a Field with its FieldLabel, when it has a label (`extra`: more of the Field's parts after it). */
+const fieldCode = (g: CodeArgs, control: string, attrs = '', extra: string[] = []) => {
   const t = g.text('label');
-  if (!t) return '';
-  g.use('@/components/ui/label', 'Label');
-  return `\n  <Label variant="field">${t}</Label>`;
-};
-const toKey = (v: string) => `String(${v})`;
-const toIso = (v: string) => `${v}.toString()`;
-/** A date prop as a DateValue. */
-const dateCode = (g: CodeArgs, name: string) => {
-  g.use('@internationalized/date', 'parseDate');
-  return `parseDate(${g.expr(name)})`;
+  if (!t && !attrs && !extra.length) return control;
+  parts(g, '@/components/ui/field', 'Field', ...(t ? ['FieldLabel'] : []));
+  return `<Field${attrs}>${t ? `\n  <FieldLabel variant="field">${t}</FieldLabel>` : ''}\n  ${nest(control)}${extra.map((x) => `\n  ${x}`).join('')}\n</Field>`;
 };
 
 const text = (name = 'children', d = '', label?: string) => ({ name, label, control: { kind: 'text' as const }, default: d });
@@ -101,419 +146,444 @@ export const KIT: Record<string, ComponentSpec> = {
   /* ── Buttons and toggles ── */
   Button: {
     type: 'Button', title: 'Button', section: 'Buttons and toggles', source: 'kit', icon: 'circle-fill',
-    description: 'The labelled action button: a react-aria Button with default, secondary, ghost, destructive and link variants, five sizes including the full-width iOS pill, a press that sinks on a spring, and a text label that morphs into the next one.',
+    description: "The labelled action button: UI SDK's Button with default, secondary, ghost, destructive and link variants, five sizes including the full-width iOS pill, a press that sinks on a spring, and a text label that morphs into the next one.",
     module: '@/components/ui/button', tag: 'Button', focusable: true,
     props: [
       text('children', 'Button'),
       { name: 'variant', control: { kind: 'enum', options: values(...BUTTON_VARIANTS) }, default: 'default' },
       { name: 'size', control: { kind: 'enum', options: values(...BUTTON_SIZES) }, default: 'default' },
-      { name: 'isDisabled', control: { kind: 'boolean' }, default: false },
+      { name: 'disabled', control: { kind: 'boolean' }, default: false },
       { name: 'icon', control: { kind: 'icon' }, default: null, part: '<Icon> child', help: 'An Icon before the label' },
     ],
-    events: [{ name: 'onPress', label: 'onPress' }],
+    events: [{ name: 'onClick', label: 'onClick' }],
     layout: { width: 'fit' },
     render: ({ p, on }) => {
       const size = pick(p.size, BUTTON_SIZES, 'default');
       const label = str(p.children);
       return (
-        <Button variant={pick(p.variant, BUTTON_VARIANTS, 'default')} size={size} isDisabled={!!p.isDisabled} onPress={() => on.onPress?.()} aria-label={size.startsWith('icon') ? label : undefined} className="max-w-full">
-          {p.icon ? <Icon name={str(p.icon)} size={size === 'sm' || size === 'icon-sm' ? 15 : 18} sw={2.1} /> : null}
-          {size.startsWith('icon') ? null : label}
-        </Button>
+        <TriggerButton>
+          <Button variant={pick(p.variant, BUTTON_VARIANTS, 'default')} size={size} disabled={!!p.disabled} onClick={() => on.onClick?.()} aria-label={size.startsWith('icon') ? label : undefined} className="max-w-full">
+            {p.icon ? <Icon name={str(p.icon)} size={size === 'sm' || size === 'icon-sm' ? 15 : 18} sw={2.1} /> : null}
+            {size.startsWith('icon') ? null : label}
+          </Button>
+        </TriggerButton>
       );
     },
   },
   Toggle: {
     type: 'Toggle', title: 'Toggle', section: 'Buttons and toggles', source: 'kit', icon: 'switch-2',
-    description: "Two-state button on react-aria's ToggleButton: tinted when on, in default, filled and outline variants.",
+    description: "Two-state button on UI SDK's Toggle: tinted when on, in default, filled and outline variants.",
     module: '@/components/ui/toggle', tag: 'Toggle', focusable: true,
     props: [
       text('children', 'Mute'),
-      { name: 'isSelected', control: { kind: 'boolean' }, default: false, twoWay: 'onChange' },
+      { name: 'pressed', control: { kind: 'boolean' }, default: false, twoWay: 'onPressedChange' },
       { name: 'variant', control: { kind: 'enum', options: values('default', 'filled', 'outline') }, default: 'filled' },
       { name: 'size', control: { kind: 'enum', options: values('sm', 'default', 'lg') }, default: 'default' },
       { name: 'icon', control: { kind: 'icon' }, default: 'bell', part: '<Icon> child' },
-      { name: 'isDisabled', control: { kind: 'boolean' }, default: false },
+      { name: 'disabled', control: { kind: 'boolean' }, default: false },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'isSelected' }],
+    events: [{ name: 'onPressedChange', label: 'onPressedChange', value: 'pressed' }],
     layout: { width: 'fit' },
     render: ({ p, on }) => (
-      <Toggle isSelected={!!p.isSelected} onChange={(v) => on.onChange?.(v)} variant={pick(p.variant, ['default', 'filled', 'outline'] as const, 'filled')} size={pick(p.size, ['sm', 'default', 'lg'] as const, 'default')} isDisabled={!!p.isDisabled} aria-label={str(p.children) || 'Toggle'}>
+      <Toggle pressed={!!p.pressed} onPressedChange={(v) => on.onPressedChange?.(v)} variant={pick(p.variant, ['default', 'filled', 'outline'] as const, 'filled')} size={pick(p.size, ['sm', 'default', 'lg'] as const, 'default')} disabled={!!p.disabled} aria-label={str(p.children) || 'Toggle'}>
         {p.icon ? <Icon name={str(p.icon)} size={16} sw={2} /> : null}
         {str(p.children)}
       </Toggle>
     ),
+    code: (g) => {
+      g.use('@/components/ui/toggle', 'Toggle');
+      const icon = g.attr('icon', 'name');
+      if (icon) g.use('@/lib/icon', 'Icon');
+      const label = g.text('children');
+      return `<Toggle pressed={${g.expr('pressed')}}${g.on('onPressedChange')}${g.attr('variant')}${g.attr('size')}${g.attr('disabled')}${label ? '' : ' aria-label="Toggle"'}>${icon ? `<Icon${icon} size={16} sw={2} />` : ''}${label}</Toggle>`;
+    },
   },
   ToggleGroup: {
     type: 'ToggleGroup', title: 'ToggleGroup', section: 'Buttons and toggles', source: 'kit', icon: 'rectangle-split',
-    description: 'react-aria ToggleButtonGroup with single or multiple selection, roving arrow-key focus, and filled, outline and default looks.',
+    description: "UI SDK's ToggleGroup with single or multiple selection, roving arrow-key focus, and filled, outline and default looks.",
     module: '@/components/ui/toggle-group', tag: 'ToggleGroup', uses: ['@/components/ui/toggle-group|ToggleGroupItem'], focusable: true,
     props: [
       { name: 'items', control: { kind: 'items' }, default: 'List, Grid, Board', part: '<ToggleGroupItem>s' },
-      { name: 'selectedKeys', label: 'selected', control: { kind: 'text' }, default: 'Grid', twoWay: 'onSelectionChange', help: 'An item, or several separated by commas' },
-      { name: 'selectionMode', control: { kind: 'enum', options: values('single', 'multiple') }, default: 'single' },
+      { name: 'value', label: 'pressed', control: { kind: 'text' }, default: 'Grid', twoWay: 'onValueChange', help: 'An item, or several separated by commas' },
+      { name: 'multiple', control: { kind: 'boolean' }, default: false },
       { name: 'variant', control: { kind: 'enum', options: values('default', 'filled', 'outline') }, default: 'filled' },
       { name: 'aria-label', control: { kind: 'text' }, default: 'View' },
     ],
-    events: [{ name: 'onSelectionChange', label: 'onSelectionChange', value: 'the selected items, comma-separated' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the pressed items, comma-separated' }],
     layout: { width: 'fit' },
     render: ({ p, on }) => {
-      const single = p.selectionMode !== 'multiple';
-      const sel = Array.isArray(p.selectedKeys) ? (p.selectedKeys as Key[]).map(String) : str(p.selectedKeys).split(',').map((s) => s.trim()).filter(Boolean);
+      const multiple = !!p.multiple;
+      const sel = Array.isArray(p.value) ? p.value.map(String) : str(p.value).split(',').map((s) => s.trim()).filter(Boolean);
       return (
         <ToggleGroup
           aria-label={str(p['aria-label'], 'Options')}
-          selectionMode={single ? 'single' : 'multiple'}
-          disallowEmptySelection={single}
+          multiple={multiple}
+          deselectable={multiple}
           variant={pick(p.variant, ['default', 'filled', 'outline'] as const, 'filled')}
-          selectedKeys={new Set(sel)}
-          onSelectionChange={(keys) => on.onSelectionChange?.([...(keys as Set<Key>)].map(String).join(', '))}
+          value={sel}
+          onValueChange={(v) => on.onValueChange?.(v.join(', '))}
         >
           {itemsOf(p.items).map((it) => (
-            <ToggleGroupItem key={it.id} id={it.id} aria-label={it.icon ? it.label : undefined}>{it.icon ? <Icon name={it.icon} size={16} sw={2} /> : it.label}</ToggleGroupItem>
+            <ToggleGroupItem key={it.id} value={it.id} aria-label={it.icon ? it.label : undefined}>{it.icon ? <Icon name={it.icon} size={16} sw={2} /> : it.label}</ToggleGroupItem>
           ))}
         </ToggleGroup>
       );
     },
     code: (g) => {
       parts(g, '@/components/ui/toggle-group', 'ToggleGroup', 'ToggleGroupItem');
-      const single = g.expr('selectionMode') !== "'multiple'";
-      const items = listCode(g, 'items', (it, v) => `<ToggleGroupItem key=${it ? q(it.id) : `{${field(it, v, 'id')}}`} id={${field(it, v, 'id')}}>{${field(it, v, 'label')}}</ToggleGroupItem>`, '\n  ');
-      return `<ToggleGroup aria-label={${g.expr('aria-label')}}${single ? '' : ' selectionMode="multiple"'}${g.attr('variant')} selectedKeys={new Set(String(${g.expr('selectedKeys')}).split(', '))}${g.on('onSelectionChange', (v) => `[...${v}].map(String).join(', ')`)}>\n  ${items}\n</ToggleGroup>`;
+      const multiple = g.expr('multiple') === 'true';
+      const items = listCode(g, 'items', (it, v) => `<ToggleGroupItem key=${it ? q(it.id) : `{${field(it, v, 'id')}}`} value={${field(it, v, 'id')}}>{${field(it, v, 'label')}}</ToggleGroupItem>`, '\n  ');
+      return `<ToggleGroup aria-label={${g.expr('aria-label')}}${multiple ? ' multiple' : ' deselectable={false}'}${g.attr('variant')} value={String(${g.expr('value')}).split(', ')}${g.on('onValueChange', (v) => `${v}.join(', ')`)}>\n  ${items}\n</ToggleGroup>`;
     },
   },
 
   /* ── Forms and inputs ── */
-  TextField: {
-    type: 'TextField', title: 'TextField', section: 'Forms and inputs', source: 'kit', icon: 'square-pencil',
-    description: "react-aria's TextField restyled: the wrapper that links a Label, an Input or Textarea, a FieldDescription and a FieldError, and runs validation.",
-    module: '@/components/ui/text-field', tag: 'TextField', focusable: true,
-    uses: ['@/components/ui/label|Label', '@/components/ui/input|Input', '@/components/ui/text-field|FieldDescription'],
+  Field: {
+    type: 'Field', title: 'Field', section: 'Forms and inputs', source: 'kit', icon: 'square-pencil',
+    description: "UI SDK's Field restyled: it links a FieldLabel, an Input or Textarea, a FieldDescription and a FieldError, and shows the control's validity. The value is on the control.",
+    module: '@/components/ui/field', tag: 'Field', focusable: true,
+    uses: ['@/components/ui/field|FieldLabel', '@/components/ui/input|Input', '@/components/ui/field|FieldDescription'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Label', part: '<Label variant="field">' },
+      { name: 'label', control: { kind: 'text' }, default: 'Label', part: '<FieldLabel variant="field">' },
       { name: 'placeholder', control: { kind: 'text' }, default: '', part: '<Input placeholder>' },
-      { name: 'value', control: { kind: 'text' }, default: '', twoWay: 'onChange' },
-      { name: 'type', control: { kind: 'enum', options: values('text', 'email', 'password', 'tel', 'url', 'search') }, default: 'text' },
+      { name: 'value', control: { kind: 'text' }, default: '', twoWay: 'onValueChange', part: '<Input value>' },
+      { name: 'type', control: { kind: 'enum', options: values('text', 'email', 'password', 'tel', 'url', 'search') }, default: 'text', part: '<Input type>' },
       { name: 'description', control: { kind: 'text' }, default: '', part: '<FieldDescription>' },
-      { name: 'errorMessage', control: { kind: 'text' }, default: '', part: '<FieldError>', help: 'Shown while isInvalid' },
+      { name: 'errorMessage', control: { kind: 'text' }, default: '', part: '<FieldError>', help: 'Shown while invalid' },
       { name: 'multiline', control: { kind: 'boolean' }, default: false, part: '<Textarea> for <Input>' },
-      { name: 'isRequired', control: { kind: 'boolean' }, default: false },
-      { name: 'isInvalid', control: { kind: 'boolean' }, default: false },
-      { name: 'isDisabled', control: { kind: 'boolean' }, default: false },
+      { name: 'required', control: { kind: 'boolean' }, default: false, part: '<Input required>' },
+      { name: 'invalid', control: { kind: 'boolean' }, default: false },
+      { name: 'disabled', control: { kind: 'boolean' }, default: false },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'the text' }, { name: 'onSubmit', label: 'onSubmit (Return)', value: 'the text' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the text' }, { name: 'onSubmit', label: 'onSubmit (Return)', value: 'the text' }],
     layout: { width: 'fill' },
-    render: ({ p, on }) => (
-      <TextField
-        value={str(p.value)}
-        onChange={(v) => on.onChange?.(v)}
-        type={str(p.type, 'text')}
-        isRequired={!!p.isRequired}
-        isInvalid={!!p.isInvalid}
-        isDisabled={!!p.isDisabled}
-        aria-label={p.label ? undefined : str(p.placeholder, 'Text field')}
-        className="min-w-0"
-      >
-        {p.label ? <Label variant="field">{str(p.label)}</Label> : null}
-        {p.multiline
-          ? <Textarea placeholder={str(p.placeholder)} onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) on.onSubmit?.(str(p.value)); }} />
-          : <Input placeholder={str(p.placeholder)} onKeyDown={(e) => { if (e.key === 'Enter') on.onSubmit?.(str(p.value)); }} />}
-        {p.description ? <FieldDescription>{str(p.description)}</FieldDescription> : null}
-        {p.errorMessage ? <FieldError>{str(p.errorMessage)}</FieldError> : null}
-      </TextField>
-    ),
+    render: ({ p, on }) => {
+      const name = p.label ? undefined : str(p.placeholder, 'Text field');
+      return (
+        <Field invalid={p.invalid ? true : undefined} disabled={!!p.disabled} className="min-w-0">
+          {p.label ? <FieldLabel variant="field">{str(p.label)}</FieldLabel> : null}
+          {p.multiline
+            ? <Textarea value={str(p.value)} onValueChange={(v) => on.onValueChange?.(v)} required={!!p.required} placeholder={str(p.placeholder)} aria-label={name} submitShortcut="mod+enter" onSubmit={(v) => on.onSubmit?.(v)} />
+            : <Input type={str(p.type, 'text')} value={str(p.value)} onValueChange={(v) => on.onValueChange?.(v)} required={!!p.required} placeholder={str(p.placeholder)} aria-label={name} onKeyDown={(e) => { if (e.key === 'Enter') on.onSubmit?.(str(p.value)); }} />}
+          {p.description ? <FieldDescription>{str(p.description)}</FieldDescription> : null}
+          {p.errorMessage ? <FieldError>{str(p.errorMessage)}</FieldError> : null}
+        </Field>
+      );
+    },
     code: (g) => {
-      g.use('@/components/ui/text-field', 'TextField');
+      parts(g, '@/components/ui/field', 'Field');
       const multiline = g.expr('multiline') === 'true';
       const input = multiline ? 'Textarea' : 'Input';
       g.use(`@/components/ui/${multiline ? 'textarea' : 'input'}`, input);
       const submit = g.handler('onSubmit');
-      const keys = submit ? ` onKeyDown={(e) => { if (e.key === 'Enter'${multiline ? ' && (e.metaKey || e.ctrlKey)' : ''}) (${submit})(${g.expr('value')}); }}` : '';
+      const keys = !submit ? '' : multiline ? ` submitShortcut="mod+enter" onSubmit={${submit}}` : ` onKeyDown={(e) => { if (e.key === 'Enter') (${submit})(${g.expr('value')}); }}`;
       const extra: string[] = [];
-      if (g.text('description')) { g.use('@/components/ui/text-field', 'FieldDescription'); extra.push(`<FieldDescription>${g.text('description')}</FieldDescription>`); }
-      if (g.text('errorMessage')) { g.use('@/components/ui/text-field', 'FieldError'); extra.push(`<FieldError>${g.text('errorMessage')}</FieldError>`); }
-      return `<TextField value={${g.expr('value')}}${g.on('onChange')}${g.attr('type')}${g.attr('isRequired')}${g.attr('isInvalid')}${g.attr('isDisabled')}>${labelCode(g)}\n  <${input}${g.attr('placeholder')}${keys} />${extra.map((x) => `\n  ${x}`).join('')}\n</TextField>`;
+      if (g.text('description')) { g.use('@/components/ui/field', 'FieldDescription'); extra.push(`<FieldDescription>${g.text('description')}</FieldDescription>`); }
+      if (g.text('errorMessage')) { g.use('@/components/ui/field', 'FieldError'); extra.push(`<FieldError>${g.text('errorMessage')}</FieldError>`); }
+      const label = g.text('label');
+      if (label) g.use('@/components/ui/field', 'FieldLabel');
+      const invalid = g.attr('invalid');
+      const control = `<${input}${multiline ? '' : g.attr('type')} value={${g.expr('value')}}${g.on('onValueChange')}${g.attr('required')}${g.attr('placeholder')}${keys} />`;
+      return `<Field${invalid ? ` invalid={${g.expr('invalid')} || undefined}` : ''}${g.attr('disabled')}>${label ? `\n  <FieldLabel variant="field">${label}</FieldLabel>` : ''}\n  ${control}${extra.map((x) => `\n  ${x}`).join('')}\n</Field>`;
     },
   },
   SearchField: {
     type: 'SearchField', title: 'SearchField', section: 'Forms and inputs', source: 'kit', icon: 'magnifyingglass',
-    description: "iOS search field on react-aria's SearchField: magnifier, clear button, Esc to clear, controlled or uncontrolled.",
+    description: "iOS search field on UI SDK's Input: magnifier, clear button, Esc to clear, controlled or uncontrolled.",
     module: '@/components/ui/search-field', tag: 'SearchField', focusable: true,
     props: [
-      { name: 'value', control: { kind: 'text' }, default: '', twoWay: 'onChange' },
+      { name: 'value', control: { kind: 'text' }, default: '', twoWay: 'onValueChange' },
       { name: 'placeholder', control: { kind: 'text' }, default: 'Search' },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'the query' }, { name: 'onSubmit', label: 'onSubmit', value: 'the query' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the query' }, { name: 'onSubmit', label: 'onSubmit', value: 'the query' }],
     layout: { width: 'fill' },
-    render: ({ p, on }) => <SearchField value={str(p.value)} onChange={(v) => on.onChange?.(v)} onSubmit={(v) => on.onSubmit?.(v)} placeholder={str(p.placeholder, 'Search')} />,
+    render: ({ p, on }) => <SearchField value={str(p.value)} onValueChange={(v) => on.onValueChange?.(v)} onSubmit={(v) => on.onSubmit?.(v)} placeholder={str(p.placeholder, 'Search')} aria-label={str(p.placeholder, 'Search')} />,
   },
   Checkbox: {
     type: 'Checkbox', title: 'Checkbox', section: 'Forms and inputs', source: 'kit', icon: 'checkmark-circle',
-    description: 'react-aria Checkbox and CheckboxGroup with a round iOS selection mark (or a square one), a drawn-on tick and an indeterminate state.',
-    module: '@/components/ui/checkbox', tag: 'Checkbox', focusable: true,
+    description: "UI SDK's Checkbox and CheckboxGroup with a round iOS selection mark (or a square one), a drawn-on tick and an indeterminate state. A Label around it and its text presses it.",
+    module: '@/components/ui/checkbox', tag: 'Checkbox', focusable: true, uses: ['@/components/ui/label|Label'],
     props: [
-      text('children', 'Remember me'),
-      { name: 'isSelected', control: { kind: 'boolean' }, default: false, twoWay: 'onChange' },
+      { name: 'children', control: { kind: 'text' }, default: 'Remember me', part: '<Label variant="control"> text' },
+      { name: 'checked', control: { kind: 'boolean' }, default: false, twoWay: 'onCheckedChange' },
       { name: 'shape', control: { kind: 'enum', options: values('circle', 'square') }, default: 'circle' },
-      { name: 'isIndeterminate', control: { kind: 'boolean' }, default: false },
-      { name: 'isDisabled', control: { kind: 'boolean' }, default: false },
+      { name: 'indeterminate', control: { kind: 'boolean' }, default: false, part: 'checked="indeterminate"' },
+      { name: 'disabled', control: { kind: 'boolean' }, default: false },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'isSelected' }],
+    events: [{ name: 'onCheckedChange', label: 'onCheckedChange', value: 'checked' }],
     layout: { width: 'fit' },
     render: ({ p, on }) => (
-      <Checkbox isSelected={!!p.isSelected} onChange={(v) => on.onChange?.(v)} shape={pick(p.shape, ['circle', 'square'] as const, 'circle')} isIndeterminate={!!p.isIndeterminate} isDisabled={!!p.isDisabled}>{str(p.children)}</Checkbox>
+      <Label variant="control">
+        <Checkbox checked={p.indeterminate ? 'indeterminate' : !!p.checked} onCheckedChange={(v) => on.onCheckedChange?.(v === true)} shape={pick(p.shape, ['circle', 'square'] as const, 'circle')} disabled={!!p.disabled} />
+        {str(p.children)}
+      </Label>
     ),
+    code: (g) => {
+      g.use('@/components/ui/checkbox', 'Checkbox');
+      g.use('@/components/ui/label', 'Label');
+      const checked = g.expr('indeterminate') === 'true' ? '"indeterminate"' : `{${g.expr('checked')}}`;
+      return `<Label variant="control">\n  <Checkbox checked=${checked}${g.on('onCheckedChange')}${g.attr('shape')}${g.attr('disabled')} />\n  ${g.text('children')}\n</Label>`;
+    },
   },
   RadioGroup: {
     type: 'RadioGroup', title: 'RadioGroup', section: 'Forms and inputs', source: 'kit', icon: 'circle',
-    description: 'react-aria RadioGroup and Radio: round radios with arrow-key selection, vertical or horizontal.',
-    module: '@/components/ui/radio-group', tag: 'RadioGroup', focusable: true, uses: ['@/components/ui/radio-group|Radio', '@/components/ui/label|Label'],
+    description: "UI SDK's RadioGroup and Radio: round radios with arrow-key selection, vertical or horizontal, each in a Label with its text.",
+    module: '@/components/ui/radio-group', tag: 'RadioGroup', focusable: true, uses: ['@/components/ui/radio-group|Radio', '@/components/ui/label|Label', '@/components/ui/field|FieldLabel'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Plan', part: '<Label variant="field">' },
+      { name: 'label', control: { kind: 'text' }, default: 'Plan', part: '<FieldLabel variant="field">' },
       { name: 'items', control: { kind: 'items' }, default: 'Free, Pro, Team', part: '<Radio>s' },
-      { name: 'value', control: { kind: 'text' }, default: 'Pro', twoWay: 'onChange' },
+      { name: 'value', control: { kind: 'text' }, default: 'Pro', twoWay: 'onValueChange' },
       { name: 'orientation', control: { kind: 'enum', options: values('vertical', 'horizontal') }, default: 'vertical' },
-      { name: 'isDisabled', control: { kind: 'boolean' }, default: false },
+      { name: 'disabled', control: { kind: 'boolean' }, default: false },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'the chosen value' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the chosen value' }],
     layout: { width: 'fill' },
-    render: ({ p, on }) => {
-      const radios = itemsOf(p.items).map((it) => <Radio key={it.id} value={it.id}>{it.label}</Radio>);
-      return (
-        <RadioGroup value={str(p.value)} onChange={(v) => on.onChange?.(v)} orientation={p.orientation === 'horizontal' ? 'horizontal' : 'vertical'} isDisabled={!!p.isDisabled} aria-label={p.label ? undefined : 'Options'}>
-          {p.label ? <Label variant="field">{str(p.label)}</Label> : null}
-          {p.orientation === 'horizontal' ? <div className="flex flex-wrap gap-5">{radios}</div> : radios}
+    render: ({ p, on }) => (
+      <Labelled label={p.label}>
+        <RadioGroup value={str(p.value)} onValueChange={(v) => on.onValueChange?.(v)} orientation={p.orientation === 'horizontal' ? 'horizontal' : 'vertical'} disabled={!!p.disabled} aria-label={p.label ? undefined : 'Options'}>
+          {itemsOf(p.items).map((it) => <Label key={it.id} variant="control"><Radio value={it.id} />{it.label}</Label>)}
         </RadioGroup>
-      );
-    },
+      </Labelled>
+    ),
     code: (g) => {
       parts(g, '@/components/ui/radio-group', 'RadioGroup', 'Radio');
-      const radios = listCode(g, 'items', (it, v) => `<Radio key=${it ? q(it.id) : `{${field(it, v, 'id')}}`} value={${field(it, v, 'id')}}>{${field(it, v, 'label')}}</Radio>`, '\n  ');
-      return `<RadioGroup value={${g.expr('value')}}${g.on('onChange')}${g.attr('orientation')}${g.attr('isDisabled')}>${labelCode(g)}\n  ${radios}\n</RadioGroup>`;
+      g.use('@/components/ui/label', 'Label');
+      const radios = listCode(g, 'items', (it, v) => `<Label key=${it ? q(it.id) : `{${field(it, v, 'id')}}`} variant="control"><Radio value={${field(it, v, 'id')}} />{${field(it, v, 'label')}}</Label>`, '\n  ');
+      const named = g.text('label') ? '' : ' aria-label="Options"';
+      return fieldCode(g, `<RadioGroup${named} value={${g.expr('value')}}${g.on('onValueChange')}${g.attr('orientation')}${g.attr('disabled')}>\n  ${radios}\n</RadioGroup>`);
     },
   },
   Switch: {
     type: 'Switch', title: 'Switch', section: 'Forms and inputs', source: 'kit', icon: 'switch-2',
-    description: "iOS switch on react-aria's Switch: a 51 by 31 track, a thumb that springs across and stretches while pressed.",
+    description: "iOS switch on UI SDK's Switch: a 51 by 31 track, a thumb that springs across and stretches while pressed. Name it, or put it in a ListRow, which names it.",
     module: '@/components/ui/switch', tag: 'Switch', focusable: true,
     props: [
-      { name: 'checked', control: { kind: 'boolean' }, default: true, twoWay: 'onChange' },
+      { name: 'checked', control: { kind: 'boolean' }, default: true, twoWay: 'onCheckedChange' },
       { name: 'aria-label', control: { kind: 'text' }, default: 'Toggle' },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'checked' }],
+    events: [{ name: 'onCheckedChange', label: 'onCheckedChange', value: 'checked' }],
     layout: { width: 'fit' },
-    render: ({ p, on }) => <Switch checked={!!p.checked} onChange={(v) => on.onChange?.(v)} aria-label={str(p['aria-label'], 'Toggle')} />,
+    render: ({ p, on }) => <Switch checked={!!p.checked} onCheckedChange={(v) => on.onCheckedChange?.(v)} aria-label={str(p['aria-label'], 'Toggle')} />,
   },
   Slider: {
     type: 'Slider', title: 'Slider', section: 'Forms and inputs', source: 'kit', icon: 'sliders',
-    description: 'react-aria Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, plus on-dark and on-light tones and a small scrubber size.',
+    description: "UI SDK's Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, plus on-dark and on-light tones and a small scrubber size.",
     module: '@/components/ui/slider', tag: 'Slider', focusable: true,
     props: [
       { name: 'label', control: { kind: 'text' }, default: 'Volume' },
-      { name: 'value', control: { kind: 'number' }, default: 50, twoWay: 'onChange' },
-      { name: 'minValue', control: { kind: 'number' }, default: 0 },
-      { name: 'maxValue', control: { kind: 'number' }, default: 100 },
+      { name: 'value', control: { kind: 'number' }, default: 50, twoWay: 'onValueChange' },
+      { name: 'min', control: { kind: 'number' }, default: 0 },
+      { name: 'max', control: { kind: 'number' }, default: 100 },
       { name: 'step', control: { kind: 'number', min: 0.01 }, default: 1 },
       { name: 'showValue', control: { kind: 'boolean' }, default: true },
       { name: 'size', control: { kind: 'enum', options: values('default', 'sm') }, default: 'default' },
       { name: 'tone', control: { kind: 'enum', options: values('default', 'onDark', 'onLight') }, default: 'default' },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'the value' }, { name: 'onChangeEnd', label: 'onChangeEnd', value: 'the value' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the value' }, { name: 'onValueCommit', label: 'onValueCommit', value: 'the value' }],
     layout: { width: 'fill' },
     render: ({ p, on }) => (
-      <Slider
+      <Slider<number>
         label={p.label ? str(p.label) : undefined}
         aria-label={p.label ? undefined : 'Slider'}
         showValue={!!p.showValue}
         value={num(p.value)}
-        minValue={num(p.minValue)}
-        maxValue={num(p.maxValue, 100)}
+        min={num(p.min)}
+        max={num(p.max, 100)}
         step={num(p.step, 1) || 1}
         size={pick(p.size, ['default', 'sm'] as const, 'default')}
         tone={pick(p.tone, ['default', 'onDark', 'onLight'] as const, 'default')}
-        onChange={(v) => on.onChange?.(v)}
-        onChangeEnd={(v) => on.onChangeEnd?.(v)}
+        onValueChange={(v) => on.onValueChange?.(v)}
+        onValueCommit={(v) => on.onValueCommit?.(v)}
       />
     ),
   },
   Segmented: {
     type: 'Segmented', title: 'Segmented', section: 'Forms and inputs', source: 'kit', icon: 'rectangle-split',
-    description: 'The iOS segmented control: a radio group whose selected card slides between segments.',
-    module: '@/components/ui/segmented', tag: 'Segmented', focusable: true,
+    description: "The iOS segmented control on UI SDK's SegmentedControl: a radio group whose selected card slides between segments.",
+    module: '@/components/ui/segmented', tag: 'Segmented', focusable: true, uses: ['@/components/ui/segmented|SegmentedItem'],
     props: [
-      { name: 'options', control: { kind: 'items' }, default: 'Day, Week, Month' },
-      { name: 'value', control: { kind: 'text' }, default: 'Day', twoWay: 'onChange' },
+      { name: 'items', control: { kind: 'items' }, default: 'Day, Week, Month', part: '<SegmentedItem>s' },
+      { name: 'value', control: { kind: 'text' }, default: 'Day', twoWay: 'onValueChange' },
       { name: 'aria-label', control: { kind: 'text' }, default: 'Range' },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'the option' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the segment' }],
     layout: { width: 'fill' },
     render: ({ p, on }) => {
-      const options = itemsOf(p.options);
-      return <Segmented aria-label={str(p['aria-label'], 'Options')} options={options.map((o) => ({ id: o.id, label: o.label }))} value={str(p.value, options[0]?.id ?? '')} onChange={(v) => on.onChange?.(v)} />;
+      const items = itemsOf(p.items);
+      return (
+        <Segmented aria-label={str(p['aria-label'], 'Options')} value={str(p.value, items[0]?.id ?? '')} onValueChange={(v) => v != null && on.onValueChange?.(v)}>
+          {items.map((it) => <SegmentedItem key={it.id} value={it.id}>{it.label}</SegmentedItem>)}
+        </Segmented>
+      );
     },
     code: (g) => {
-      g.use('@/components/ui/segmented', 'Segmented');
-      const items = g.list('options');
-      const options = items ? `[${items.map((o) => `{ id: ${q(o.id)}, label: ${q(o.label)} }`).join(', ')}]` : `${g.expr('options')}.map((o) => ({ id: o.id ?? o, label: o.label ?? o }))`;
-      return `<Segmented aria-label={${g.expr('aria-label')}} options={${options}} value={${g.expr('value')}}${g.on('onChange')} />`;
+      parts(g, '@/components/ui/segmented', 'Segmented', 'SegmentedItem');
+      const items = listCode(g, 'items', (it, v) => `<SegmentedItem key=${it ? q(it.id) : `{${field(it, v, 'id')}}`} value={${field(it, v, 'id')}}>{${field(it, v, 'label')}}</SegmentedItem>`, '\n  ');
+      return `<Segmented aria-label={${g.expr('aria-label')}} value={${g.expr('value')}}${g.on('onValueChange')}>\n  ${items}\n</Segmented>`;
     },
   },
   Select: {
     type: 'Select', title: 'Select', section: 'Forms and inputs', source: 'kit', icon: 'chevron-up-down',
-    description: "A pop-up button that opens a list of options: react-aria's Select with a filled or plain trigger, sectioned items and typeahead on the closed button.",
+    description: "A pop-up button that opens a list of options: UI SDK's Select with a filled or plain trigger, grouped items and typeahead on the closed button, in a Field with its label.",
     module: '@/components/ui/select', tag: 'Select', focusable: true,
-    uses: ['@/components/ui/label|Label', '@/components/ui/select|SelectTrigger', '@/components/ui/select|SelectContent', '@/components/ui/select|SelectItem'],
+    uses: ['@/components/ui/field|FieldLabel', '@/components/ui/select|SelectTrigger', '@/components/ui/select|SelectContent'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Repeat', part: '<Label variant="field">' },
-      { name: 'items', control: { kind: 'items' }, default: 'Never, Every day, Every week, Every month', part: '<SelectItem>s' },
-      { name: 'value', control: { kind: 'text' }, default: 'Every week', twoWay: 'onChange' },
+      { name: 'label', control: { kind: 'text' }, default: 'Repeat', part: '<FieldLabel variant="field">' },
+      { name: 'items', control: { kind: 'items' }, default: 'Never, Every day, Every week, Every month', part: 'items' },
+      { name: 'value', control: { kind: 'text' }, default: 'Every week', twoWay: 'onValueChange' },
       { name: 'placeholder', control: { kind: 'text' }, default: 'Choose…' },
       { name: 'size', control: { kind: 'enum', options: values('default', 'sm') }, default: 'default', part: '<SelectTrigger size>' },
       { name: 'variant', control: { kind: 'enum', options: values('default', 'plain') }, default: 'default', part: '<SelectTrigger variant>' },
-      { name: 'isDisabled', control: { kind: 'boolean' }, default: false },
+      { name: 'disabled', control: { kind: 'boolean' }, default: false },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'the chosen item' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the chosen item' }],
     layout: { width: 'fill' },
     render: ({ p, on }) => (
-      <Select value={str(p.value) || null} onChange={(k) => on.onChange?.(k == null ? null : String(k))} placeholder={str(p.placeholder)} isDisabled={!!p.isDisabled} aria-label={p.label ? undefined : 'Select'}>
-        {p.label ? <Label variant="field">{str(p.label)}</Label> : null}
-        <SelectTrigger size={pick(p.size, ['default', 'sm'] as const, 'default')} variant={pick(p.variant, ['default', 'plain'] as const, 'default')} />
-        <SelectContent>
-          {itemsOf(p.items).map((it) => <SelectItem key={it.id} id={it.id}>{it.label}</SelectItem>)}
-        </SelectContent>
-      </Select>
+      <Labelled label={p.label}>
+        <Select items={dataItems(p.items)} value={str(p.value) || null} onValueChange={(v) => on.onValueChange?.(v)} placeholder={str(p.placeholder)} disabled={!!p.disabled}>
+          <SelectTrigger aria-label={p.label ? undefined : 'Select'} size={pick(p.size, ['default', 'sm'] as const, 'default')} variant={pick(p.variant, ['default', 'plain'] as const, 'default')} />
+          <SelectContent />
+        </Select>
+      </Labelled>
     ),
     code: (g) => {
-      parts(g, '@/components/ui/select', 'Select', 'SelectTrigger', 'SelectContent', 'SelectItem');
-      const items = listCode(g, 'items', (it, v) => `<SelectItem key=${it ? q(it.id) : `{${field(it, v, 'id')}}`} id={${field(it, v, 'id')}}>{${field(it, v, 'label')}}</SelectItem>`, '\n    ');
-      return `<Select value={${g.expr('value')}}${g.on('onChange', toKey)}${g.attr('placeholder')}${g.attr('isDisabled')}>${labelCode(g)}\n  <SelectTrigger${g.attr('size')}${g.attr('variant')} />\n  <SelectContent>\n    ${items}\n  </SelectContent>\n</Select>`;
+      parts(g, '@/components/ui/select', 'Select', 'SelectTrigger', 'SelectContent');
+      return fieldCode(g, `<Select items={${itemsCode(g, 'items')}} value={${g.expr('value')} || null}${g.on('onValueChange')}${g.attr('placeholder')}${g.attr('disabled')}>\n  <SelectTrigger${g.attr('size')}${g.attr('variant')} />\n  <SelectContent />\n</Select>`);
     },
   },
-  ComboBox: {
-    type: 'ComboBox', title: 'ComboBox', section: 'Forms and inputs', source: 'kit', icon: 'magnifier',
-    description: 'A filterable text field with a suggestion list: type to narrow the options, arrow keys to move, Enter to commit, with optional custom values.',
-    module: '@/components/ui/combobox', tag: 'ComboBox', focusable: true,
-    uses: ['@/components/ui/label|Label', '@/components/ui/combobox|ComboBoxInput', '@/components/ui/combobox|ComboBoxContent', '@/components/ui/combobox|ComboBoxItem'],
+  Combobox: {
+    type: 'Combobox', title: 'Combobox', section: 'Forms and inputs', source: 'kit', icon: 'magnifier',
+    description: "UI SDK's Combobox: a text field with a suggestion list. Type to narrow the options, arrow keys to move, Enter to commit, in a Field with its label.",
+    module: '@/components/ui/combobox', tag: 'Combobox', focusable: true,
+    uses: ['@/components/ui/field|FieldLabel', '@/components/ui/combobox|ComboboxInput', '@/components/ui/combobox|ComboboxContent', '@/components/ui/combobox|ComboboxList'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Assignee', part: '<Label variant="field">' },
-      { name: 'items', control: { kind: 'items' }, default: 'Ana Torres, Kim Park, Lee Chen, Maya Okafor', part: '<ComboBoxItem>s' },
-      { name: 'value', control: { kind: 'text' }, default: '', twoWay: 'onChange' },
-      { name: 'placeholder', control: { kind: 'text' }, default: 'Search the team', part: '<ComboBoxInput placeholder>' },
+      { name: 'label', control: { kind: 'text' }, default: 'Assignee', part: '<FieldLabel variant="field">' },
+      { name: 'items', control: { kind: 'items' }, default: 'Ana Torres, Kim Park, Lee Chen, Maya Okafor', part: 'items' },
+      { name: 'value', control: { kind: 'text' }, default: '', twoWay: 'onValueChange' },
+      { name: 'placeholder', control: { kind: 'text' }, default: 'Search the team', part: '<ComboboxInput placeholder>' },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'the chosen item' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the chosen item' }],
     layout: { width: 'fill' },
     render: ({ p, on }) => (
-      <ComboBox value={str(p.value) || null} onChange={(k) => on.onChange?.(k == null ? null : String(k))} aria-label={p.label ? undefined : 'Choose'} menuTrigger="focus">
-        {p.label ? <Label variant="field">{str(p.label)}</Label> : null}
-        <ComboBoxInput placeholder={str(p.placeholder)} />
-        <ComboBoxContent>
-          {itemsOf(p.items).map((it) => <ComboBoxItem key={it.id} id={it.id} textValue={it.label}>{it.label}</ComboBoxItem>)}
-        </ComboBoxContent>
-      </ComboBox>
+      <Labelled label={p.label}>
+        <Combobox items={dataItems(p.items)} value={str(p.value) || null} onValueChange={(v) => on.onValueChange?.(v)}>
+          <ComboboxInput placeholder={str(p.placeholder)} aria-label={p.label ? undefined : 'Choose'} />
+          <ComboboxContent>
+            <ComboboxEmpty>No matches.</ComboboxEmpty>
+            <ComboboxList />
+          </ComboboxContent>
+        </Combobox>
+      </Labelled>
     ),
     code: (g) => {
-      parts(g, '@/components/ui/combobox', 'ComboBox', 'ComboBoxInput', 'ComboBoxContent', 'ComboBoxItem');
-      const items = listCode(g, 'items', (it, v) => `<ComboBoxItem key=${it ? q(it.id) : `{${field(it, v, 'id')}}`} id={${field(it, v, 'id')}}>{${field(it, v, 'label')}}</ComboBoxItem>`, '\n    ');
-      return `<ComboBox value={${g.expr('value')} || null}${g.on('onChange', toKey)} menuTrigger="focus">${labelCode(g)}\n  <ComboBoxInput${g.attr('placeholder')} />\n  <ComboBoxContent>\n    ${items}\n  </ComboBoxContent>\n</ComboBox>`;
+      parts(g, '@/components/ui/combobox', 'Combobox', 'ComboboxInput', 'ComboboxContent', 'ComboboxEmpty', 'ComboboxList');
+      return fieldCode(g, `<Combobox items={${itemsCode(g, 'items')}} value={${g.expr('value')} || null}${g.on('onValueChange')}>\n  <ComboboxInput${g.attr('placeholder')} />\n  <ComboboxContent>\n    <ComboboxEmpty>No matches.</ComboboxEmpty>\n    <ComboboxList />\n  </ComboboxContent>\n</Combobox>`);
     },
   },
   DateField: {
     type: 'DateField', title: 'DateField', section: 'Forms and inputs', source: 'kit', icon: 'calendar',
-    description: "Segmented date and time fields: react-aria's DateField and TimeField, each part of the value its own spin-button, in the filled iOS field with a Label, description and error wired in.",
-    module: '@/components/ui/date-field', tag: 'DateField', focusable: true, uses: ['@/components/ui/label|Label', '@/components/ui/date-field|DateInput'],
+    description: "Segmented date and time fields: UI SDK's Date Input and Time Input, each part of the value its own spin button, in the filled iOS field. Values are ISO strings; a Field gives it a label, description and error.",
+    module: '@/components/ui/date-field', tag: 'DateField', focusable: true, uses: ['@/components/ui/field|FieldLabel'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Birthday', part: '<Label variant="field">' },
-      { name: 'value', control: { kind: 'date' }, default: '2026-10-04', twoWay: 'onChange', help: 'An ISO date; parseDate() in code' },
-      { name: 'size', control: { kind: 'enum', options: values('default', 'sm', 'lg') }, default: 'default', part: '<DateInput size>' },
-      { name: 'isDisabled', control: { kind: 'boolean' }, default: false },
+      { name: 'label', control: { kind: 'text' }, default: 'Birthday', part: '<FieldLabel variant="field">' },
+      { name: 'value', control: { kind: 'date' }, default: '2026-10-04', twoWay: 'onValueChange', help: 'An ISO date' },
+      { name: 'size', control: { kind: 'enum', options: values('default', 'sm', 'lg') }, default: 'default' },
+      { name: 'disabled', control: { kind: 'boolean' }, default: false },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'the date (YYYY-MM-DD)' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the date (YYYY-MM-DD)' }],
     layout: { width: 'fill' },
     render: ({ p, on }) => (
-      <DateField value={date(p.value)} onChange={(v) => on.onChange?.(v ? v.toString() : null)} isDisabled={!!p.isDisabled} aria-label={p.label ? undefined : 'Date'}>
-        {p.label ? <Label variant="field">{str(p.label)}</Label> : null}
-        <DateInput size={pick(p.size, ['default', 'sm', 'lg'] as const, 'default')} />
-      </DateField>
+      <Labelled label={p.label}>
+        <DateField value={date(p.value)} onValueChange={(v) => on.onValueChange?.(v)} size={pick(p.size, ['default', 'sm', 'lg'] as const, 'default')} disabled={!!p.disabled} aria-label={p.label ? undefined : 'Date'} />
+      </Labelled>
     ),
     code: (g) => {
-      parts(g, '@/components/ui/date-field', 'DateField', 'DateInput');
-      return `<DateField value={${dateCode(g, 'value')}}${g.on('onChange', (v) => `${v}?.toString() ?? ''`)}${g.attr('isDisabled')}>${labelCode(g)}\n  <DateInput${g.attr('size')} />\n</DateField>`;
+      g.use('@/components/ui/date-field', 'DateField');
+      return fieldCode(g, `<DateField value={${g.expr('value')}}${g.on('onValueChange')}${g.attr('size')}${g.attr('disabled')} />`);
     },
   },
   DatePicker: {
     type: 'DatePicker', title: 'DatePicker', section: 'Forms and inputs', source: 'kit', icon: 'calendar-fill',
-    description: "A date field with a calendar button that opens a Calendar in a popover, and the same for a range: react-aria's DatePicker and DateRangePicker, composed from a field and a content part.",
+    description: "A date field with a calendar button that opens a Calendar in a popover, for one date or a range (`mode=\"range\"`): UI SDK's Date Picker, composed from a field and a content part.",
     module: '@/components/ui/date-picker', tag: 'DatePicker', focusable: true,
-    uses: ['@/components/ui/label|Label', '@/components/ui/date-picker|DatePickerField', '@/components/ui/date-picker|DatePickerContent'],
+    uses: ['@/components/ui/field|FieldLabel', '@/components/ui/date-picker|DatePickerField', '@/components/ui/date-picker|DatePickerContent'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Date', part: '<Label variant="field">' },
-      { name: 'value', control: { kind: 'date' }, default: '2026-10-04', twoWay: 'onChange' },
+      { name: 'label', control: { kind: 'text' }, default: 'Date', part: '<FieldLabel variant="field">' },
+      { name: 'value', control: { kind: 'date' }, default: '2026-10-04', twoWay: 'onValueChange' },
       { name: 'size', control: { kind: 'enum', options: values('default', 'sm', 'lg') }, default: 'default', part: '<DatePickerField size>' },
-      { name: 'isDisabled', control: { kind: 'boolean' }, default: false },
+      { name: 'disabled', control: { kind: 'boolean' }, default: false },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'the date (YYYY-MM-DD)' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the date (YYYY-MM-DD)' }],
     layout: { width: 'fill' },
     render: ({ p, on }) => (
-      <DatePicker value={date(p.value)} onChange={(v) => on.onChange?.(v ? v.toString() : null)} isDisabled={!!p.isDisabled} aria-label={p.label ? undefined : 'Date'}>
-        {p.label ? <Label variant="field">{str(p.label)}</Label> : null}
-        <DatePickerField size={pick(p.size, ['default', 'sm', 'lg'] as const, 'default')} />
-        <DatePickerContent />
-      </DatePicker>
+      <Labelled label={p.label}>
+        <DatePicker value={date(p.value)} onValueChange={(v) => on.onValueChange?.(v)} disabled={!!p.disabled} aria-label={p.label ? undefined : 'Date'}>
+          <DatePickerField size={pick(p.size, ['default', 'sm', 'lg'] as const, 'default')} />
+          <DatePickerContent />
+        </DatePicker>
+      </Labelled>
     ),
     code: (g) => {
       parts(g, '@/components/ui/date-picker', 'DatePicker', 'DatePickerField', 'DatePickerContent');
-      return `<DatePicker value={${dateCode(g, 'value')}}${g.on('onChange', (v) => `${v}?.toString() ?? ''`)}${g.attr('isDisabled')}>${labelCode(g)}\n  <DatePickerField${g.attr('size')} />\n  <DatePickerContent />\n</DatePicker>`;
+      return fieldCode(g, `<DatePicker value={${g.expr('value')}}${g.on('onValueChange')}${g.attr('disabled')}>\n  <DatePickerField${g.attr('size')} />\n  <DatePickerContent />\n</DatePicker>`);
     },
   },
   Calendar: {
     type: 'Calendar', title: 'Calendar', section: 'Forms and inputs', source: 'kit', icon: 'calendar',
-    description: "A month calendar and a range calendar: react-aria's Calendar and RangeCalendar with keyboard navigation, locale week starts, min/max and unavailable dates, drawn as iOS round day cells with a soft band joining a range.",
+    description: "A month calendar, for a date, a range or several dates: UI SDK's Calendar with keyboard navigation, locale week starts, min/max and unavailable dates, drawn as iOS round day cells with a soft band joining a range.",
     module: '@/components/ui/calendar', tag: 'Calendar', focusable: true,
     props: [
-      { name: 'value', control: { kind: 'date' }, default: '2026-10-04', twoWay: 'onChange' },
+      { name: 'value', control: { kind: 'date' }, default: '2026-10-04', twoWay: 'onValueChange' },
       { name: 'variant', control: { kind: 'enum', options: values('plain', 'card') }, default: 'card' },
       { name: 'aria-label', control: { kind: 'text' }, default: 'Date' },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'the date (YYYY-MM-DD)' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the date (YYYY-MM-DD)' }],
     layout: { width: 'fit' },
     render: ({ p, on }) => (
-      <Calendar aria-label={str(p['aria-label'], 'Date')} variant={pick(p.variant, ['plain', 'card'] as const, 'card')} value={date(p.value)} onChange={(v) => on.onChange?.(v.toString())} />
+      <Calendar aria-label={str(p['aria-label'], 'Date')} variant={pick(p.variant, ['plain', 'card'] as const, 'card')} value={date(p.value)} onValueChange={(v) => on.onValueChange?.(v)} />
     ),
     code: (g) => {
       g.use('@/components/ui/calendar', 'Calendar');
-      return `<Calendar aria-label={${g.expr('aria-label')}}${g.attr('variant')} value={${dateCode(g, 'value')}}${g.on('onChange', toIso)} />`;
+      return `<Calendar aria-label={${g.expr('aria-label')}}${g.attr('variant')} value={${g.expr('value')}}${g.on('onValueChange')} />`;
     },
   },
   ColorPicker: {
     type: 'ColorPicker', title: 'ColorPicker', section: 'Forms and inputs', source: 'kit', icon: 'drop',
-    description: 'Color editing parts on react-aria: a ColorArea, ColorSliders, preset swatches, and a popover that composes them with a hex field behind a trigger that shows the current color.',
+    description: "UI SDK's Color Picker: an area, sliders, preset swatches and a hex field, composed in a popover behind a trigger that shows the current color. Colors are CSS strings.",
     module: '@/components/ui/color-picker', tag: 'ColorPicker', focusable: true,
-    uses: ['@/components/ui/popover|PopoverTrigger', '@/components/ui/color-picker|ColorPickerTrigger', '@/components/ui/color-picker|ColorPickerContent'],
+    uses: ['@/components/ui/popover|Popover', '@/components/ui/color-picker|ColorPickerTrigger', '@/components/ui/color-picker|ColorPickerContent'],
     props: [
-      { name: 'value', control: { kind: 'text' }, default: START_COLOR, twoWay: 'onChange', help: 'A hex color' },
+      { name: 'value', control: { kind: 'text' }, default: START_COLOR, twoWay: 'onValueChange', help: 'A hex color' },
+      { name: 'aria-label', control: { kind: 'text' }, default: 'Color' },
       { name: 'size', control: { kind: 'enum', options: values('sm', 'default', 'lg') }, default: 'default', part: '<ColorPickerTrigger size>' },
       { name: 'showValue', control: { kind: 'boolean' }, default: true, part: '<ColorPickerTrigger showValue>' },
     ],
-    events: [{ name: 'onChange', label: 'onChange', value: 'the color (hex)' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the color (hex)' }],
     layout: { width: 'fill' },
     render: ({ p, on }) => (
-      <ColorPicker value={color(p.value)} onChange={(c) => on.onChange?.(c.toString('hex'))}>
-        <PopoverTrigger>
+      <ColorPicker aria-label={str(p['aria-label'], 'Color')} value={str(p.value) || START_COLOR} onValueChange={(c) => on.onValueChange?.(c)}>
+        <Popover>
           <ColorPickerTrigger size={pick(p.size, ['sm', 'default', 'lg'] as const, 'default')} showValue={!!p.showValue} />
           <ColorPickerContent />
-        </PopoverTrigger>
+        </Popover>
       </ColorPicker>
     ),
+    code: (g) => {
+      parts(g, '@/components/ui/color-picker', 'ColorPicker', 'ColorPickerTrigger', 'ColorPickerContent');
+      g.use('@/components/ui/popover', 'Popover');
+      const hide = g.expr('showValue') === 'false' ? ' showValue={false}' : '';
+      return `<ColorPicker aria-label={${g.expr('aria-label')}} value={${g.expr('value')}}${g.on('onValueChange')}>\n  <Popover>\n    <ColorPickerTrigger${g.attr('size')}${hide} />\n    <ColorPickerContent />\n  </Popover>\n</ColorPicker>`;
+    },
   },
 
   /* ── Menus and overlays ── */
   DropdownMenu: {
     type: 'DropdownMenu', title: 'DropdownMenu', section: 'Menus and overlays', source: 'kit', icon: 'ellipsis-circle',
-    description: 'An iOS pull-down menu: rows with trailing icons, descriptions and shortcuts, section bands, selectable items and submenus.',
+    description: "An iOS pull-down menu on UI SDK's Menu: rows with trailing icons, descriptions and shortcuts, group bands, checkbox and radio items and submenus. Its trigger renders as a Button.",
     module: '@/components/ui/dropdown-menu', tag: 'DropdownMenu', focusable: true,
-    uses: ['@/components/ui/button|Button', '@/components/ui/dropdown-menu|DropdownMenuContent', '@/components/ui/dropdown-menu|DropdownMenuItem'],
+    uses: ['@/components/ui/button|Button', '@/components/ui/dropdown-menu|DropdownMenuTrigger', '@/components/ui/dropdown-menu|DropdownMenuContent', '@/components/ui/dropdown-menu|DropdownMenuItem'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Sort', part: '<Button> trigger' },
+      { name: 'label', control: { kind: 'text' }, default: 'Sort', part: '<DropdownMenuTrigger render={<Button />}>' },
       { name: 'variant', control: { kind: 'enum', options: values(...BUTTON_VARIANTS) }, default: 'secondary', part: '<Button variant>' },
       { name: 'size', control: { kind: 'enum', options: values(...BUTTON_SIZES) }, default: 'sm', part: '<Button size>' },
       { name: 'icon', control: { kind: 'icon' }, default: 'chevron-down', part: '<Icon> in the trigger' },
@@ -524,76 +594,89 @@ export const KIT: Record<string, ComponentSpec> = {
     render: ({ p, on }) => {
       const size = pick(p.size, BUTTON_SIZES, 'sm');
       return (
-        <DropdownMenu>
-          <Button variant={pick(p.variant, BUTTON_VARIANTS, 'secondary')} size={size} aria-label={size.startsWith('icon') ? str(p.label) : undefined}>
+        <DropdownMenu onAction={(v) => on.onAction?.(v)}>
+          <DropdownMenuTrigger render={<Button variant={pick(p.variant, BUTTON_VARIANTS, 'secondary')} size={size} aria-label={size.startsWith('icon') ? str(p.label) : undefined} />}>
             {size.startsWith('icon') ? null : str(p.label)}
             {p.icon ? <Icon name={str(p.icon)} size={14} sw={2.2} /> : null}
-          </Button>
-          <DropdownMenuContent onAction={(k) => on.onAction?.(String(k))}>
-            {itemsOf(p.items).map((it) => <DropdownMenuItem key={it.id} id={it.id} icon={it.icon ? <Icon name={it.icon} size={16} sw={2} /> : undefined}>{it.label}</DropdownMenuItem>)}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {itemsOf(p.items).map((it) => <DropdownMenuItem key={it.id} value={it.id} icon={it.icon ? <Icon name={it.icon} size={16} sw={2} /> : undefined}>{it.label}</DropdownMenuItem>)}
           </DropdownMenuContent>
         </DropdownMenu>
       );
     },
     code: (g) => {
-      parts(g, '@/components/ui/dropdown-menu', 'DropdownMenu', 'DropdownMenuContent', 'DropdownMenuItem');
+      parts(g, '@/components/ui/dropdown-menu', 'DropdownMenu', 'DropdownMenuTrigger', 'DropdownMenuContent', 'DropdownMenuItem');
       g.use('@/components/ui/button', 'Button');
       g.use('@/lib/icon', 'Icon');
       const items = listCode(g, 'items', (it, v) => {
         const icon = field(it, v, 'icon');
-        return `<DropdownMenuItem key=${it ? q(it.id) : `{${field(it, v, 'id')}}`} id={${field(it, v, 'id')}}${icon === 'undefined' ? '' : ` icon={<Icon name={${icon}} size={16} sw={2} />}`}>{${field(it, v, 'label')}}</DropdownMenuItem>`;
+        return `<DropdownMenuItem key=${it ? q(it.id) : `{${field(it, v, 'id')}}`} value={${field(it, v, 'id')}}${icon === 'undefined' ? '' : ` icon={<Icon name={${icon}} size={16} sw={2} />}`}>{${field(it, v, 'label')}}</DropdownMenuItem>`;
       }, '\n    ');
       const icon = g.attr('icon', 'name');
-      return `<DropdownMenu>\n  <Button${g.attr('variant')}${g.attr('size')}>{${g.expr('label')}}${icon ? `<Icon${icon} size={14} sw={2.2} />` : ''}</Button>\n  <DropdownMenuContent${g.on('onAction', toKey)}>\n    ${items}\n  </DropdownMenuContent>\n</DropdownMenu>`;
+      return `<DropdownMenu${g.on('onAction')}>\n  <DropdownMenuTrigger render={<Button${g.attr('variant')}${g.attr('size')} />}>{${g.expr('label')}}${icon ? `<Icon${icon} size={14} sw={2.2} />` : ''}</DropdownMenuTrigger>\n  <DropdownMenuContent>\n    ${items}\n  </DropdownMenuContent>\n</DropdownMenu>`;
     },
   },
   Tooltip: {
     type: 'Tooltip', title: 'Tooltip', section: 'Menus and overlays', source: 'kit', icon: 'text-bubble',
-    description: 'A small inverted label that names a control on hover or keyboard focus, with a warm-up delay and an arrow toward the trigger; touch never opens it.',
-    module: '@/components/ui/tooltip', tag: 'TooltipTrigger', uses: ['@/components/ui/tooltip|Tooltip'], container: 'component',
+    description: "A small inverted label that names a control on hover or keyboard focus, with a warm-up delay and an arrow toward the trigger; touch never opens it. UI SDK's Tooltip: a root, a trigger part around the control and the content.",
+    module: '@/components/ui/tooltip', tag: 'Tooltip', uses: ['@/components/ui/tooltip|TooltipTrigger', '@/components/ui/tooltip|TooltipContent'], container: 'component',
     props: [
-      { name: 'text', control: { kind: 'text' }, default: 'Add a plant', part: '<Tooltip> children' },
-      { name: 'placement', control: { kind: 'enum', options: values('top', 'bottom', 'left', 'right') }, default: 'top', part: '<Tooltip placement>' },
+      { name: 'text', control: { kind: 'text' }, default: 'Add a plant', part: '<TooltipContent> children' },
+      { name: 'side', control: { kind: 'enum', options: values(...SIDES) }, default: 'top', part: '<TooltipContent side>' },
     ],
     events: [],
     layout: { axis: 'vertical', width: 'fit' },
-    make: () => ({ children: [leaf('Button', { children: 'Hover me', variant: 'secondary', size: 'default', isDisabled: false, icon: null }, { layout: { width: 'fit' } })] }),
-    render: ({ p, children }) => (
-      <TooltipTrigger>
-        {children}
-        <Tooltip placement={pick(p.placement, ['top', 'bottom', 'left', 'right'] as const, 'top')}>{str(p.text)}</Tooltip>
-      </TooltipTrigger>
+    make: () => ({ children: [leaf('Button', { children: 'Hover me', variant: 'secondary', size: 'default', disabled: false, icon: null }, { layout: { width: 'fit' } })] }),
+    render: ({ node, p, children }) => (
+      <Tooltip>
+        <SlotTrigger part={TooltipTrigger as TriggerPart} nodes={node.children}>{children}</SlotTrigger>
+        <TooltipContent side={pick(p.side, SIDES, 'top')}>{str(p.text)}</TooltipContent>
+      </Tooltip>
     ),
+    code: (g) => {
+      parts(g, '@/components/ui/tooltip', 'Tooltip', 'TooltipTrigger', 'TooltipContent');
+      return `<Tooltip>\n${indent2(g.trigger('TooltipTrigger'))}\n  <TooltipContent${g.attr('side')}>${g.text('text')}</TooltipContent>\n</Tooltip>`;
+    },
   },
   Popover: {
     type: 'Popover', title: 'Popover', section: 'Menus and overlays', source: 'kit', icon: 'bubble',
-    description: 'A floating panel anchored to a trigger: Popover is the styled surface, PopoverContent a padded dialog for arbitrary content, PopoverTrigger opens it.',
-    module: '@/components/ui/popover', tag: 'PopoverTrigger', uses: ['@/components/ui/popover|PopoverContent'], container: 'component',
+    description: "A floating panel anchored to a trigger, on UI SDK's Popover: a root, a PopoverTrigger that is (or holds) what opens it, and PopoverContent, a padded panel for arbitrary content, named by its trigger or by a PopoverTitle.",
+    module: '@/components/ui/popover', tag: 'Popover', uses: ['@/components/ui/popover|PopoverTrigger', '@/components/ui/popover|PopoverContent'], container: 'component',
     slots: [{ name: 'trigger', label: 'Trigger' }],
     props: [
-      { name: 'placement', control: { kind: 'enum', options: values('bottom', 'top', 'left', 'right', 'bottom start', 'bottom end') }, default: 'bottom', part: '<PopoverContent placement>' },
-      { name: 'aria-label', control: { kind: 'text' }, default: 'Details', part: '<PopoverContent aria-label>' },
+      { name: 'side', control: { kind: 'enum', options: values(...SIDES) }, default: 'bottom', part: '<PopoverContent side>' },
+      { name: 'align', control: { kind: 'enum', options: values(...ALIGNS) }, default: 'center', part: '<PopoverContent align>' },
+      { name: 'title', control: { kind: 'text' }, default: '', part: '<PopoverTitle> children', help: 'A heading that names the popover (else its trigger names it)' },
     ],
     events: [],
     layout: { axis: 'vertical', gap: 8, width: 'fit' },
     make: () => ({
-      slots: { trigger: [leaf('Button', { children: 'Details', variant: 'secondary', size: 'sm', isDisabled: false, icon: null }, { layout: { width: 'fit' } })] },
+      slots: { trigger: [leaf('Button', { children: 'Details', variant: 'secondary', size: 'sm', disabled: false, icon: null }, { layout: { width: 'fit' } })] },
       children: [leaf('Text', { children: 'Popover content: anything you put here.', textStyle: 'subhead', weight: 'default', color: null, align: 'left', lines: 0 }, { layout: { width: 'fill' } })],
     }),
-    render: ({ p, children, slots, box }) => (
-      <PopoverTrigger>
-        {slots.trigger}
-        <PopoverContent placement={str(p.placement, 'bottom') as 'bottom'} aria-label={str(p['aria-label'], 'Details')}>
+    render: ({ node, p, children, slots, box }) => (
+      <Popover>
+        <SlotTrigger part={PopoverTrigger as TriggerPart} nodes={node.slots?.trigger}>{slots.trigger}</SlotTrigger>
+        <PopoverContent side={pick(p.side, SIDES, 'bottom')} align={pick(p.align, ALIGNS, 'center')}>
+          {p.title ? <PopoverTitle>{str(p.title)}</PopoverTitle> : null}
           <div style={box}>{children}</div>
         </PopoverContent>
-      </PopoverTrigger>
+      </Popover>
     ),
+    code: (g) => {
+      parts(g, '@/components/ui/popover', 'Popover', 'PopoverTrigger', 'PopoverContent');
+      const title = g.text('title');
+      if (title) g.use('@/components/ui/popover', 'PopoverTitle');
+      const content = [...(title ? [`<PopoverTitle>${title}</PopoverTitle>`] : []), ...g.children].map((k) => nest(nest(k))).join('\n    ');
+      return `<Popover>\n${indent2(g.trigger('PopoverTrigger', 'trigger'))}\n  <PopoverContent${g.attr('side')}${g.attr('align')}>\n    ${content}\n  </PopoverContent>\n</Popover>`;
+    },
   },
 
   /* ── Feedback and status ── */
   Progress: {
     type: 'Progress', title: 'Progress', section: 'Feedback and status', source: 'kit', icon: 'line-3-horizontal',
-    description: "iOS progress bar on react-aria's ProgressBar: a label, a springing fill with a rolling percentage, three sizes, tones and an indeterminate sliding bar.",
+    description: "iOS progress bar on UI SDK's Progress: a label, a springing fill with a rolling percentage, three sizes, tones and an indeterminate sliding bar (no value).",
     module: '@/components/ui/progress', tag: 'Progress',
     props: [
       { name: 'value', control: { kind: 'number', min: 0, max: 100, step: 1 }, default: 60 },
@@ -601,14 +684,19 @@ export const KIT: Record<string, ComponentSpec> = {
       { name: 'showValue', control: { kind: 'boolean' }, default: true },
       { name: 'size', control: { kind: 'enum', options: values('sm', 'default', 'lg') }, default: 'default' },
       { name: 'tone', control: { kind: 'enum', options: values('default', 'success', 'destructive') }, default: 'default' },
-      { name: 'isIndeterminate', control: { kind: 'boolean' }, default: false },
+      { name: 'indeterminate', control: { kind: 'boolean' }, default: false, part: 'value={null}' },
     ],
     events: [],
     layout: { width: 'fill' },
     render: ({ p }) => (
-      <Progress value={num(p.value)} label={p.label ? str(p.label) : undefined} aria-label={p.label ? undefined : 'Progress'} showValue={!!p.showValue} isIndeterminate={!!p.isIndeterminate}
+      <Progress value={p.indeterminate ? null : num(p.value)} label={p.label ? str(p.label) : undefined} aria-label={p.label ? undefined : 'Progress'} showValue={!!p.showValue}
         size={pick(p.size, ['sm', 'default', 'lg'] as const, 'default')} tone={pick(p.tone, ['default', 'success', 'destructive'] as const, 'default')} />
     ),
+    code: (g) => {
+      g.use('@/components/ui/progress', 'Progress');
+      const value = g.expr('indeterminate') === 'true' ? 'null' : g.expr('value');
+      return `<Progress value={${value}}${g.attr('label')}${g.expr('showValue') === 'true' ? ' showValue' : ''}${g.attr('size')}${g.attr('tone')} />`;
+    },
   },
   ProgressRing: {
     type: 'ProgressRing', title: 'ProgressRing', section: 'Feedback and status', source: 'kit', icon: 'circle',
@@ -619,13 +707,18 @@ export const KIT: Record<string, ComponentSpec> = {
       { name: 'size', control: { kind: 'number', min: 16, max: 200, step: 1, unit: 'px' }, default: 56 },
       { name: 'showValue', control: { kind: 'boolean' }, default: true },
       { name: 'tone', control: { kind: 'enum', options: values('default', 'success', 'warning', 'destructive') }, default: 'default' },
-      { name: 'isIndeterminate', control: { kind: 'boolean' }, default: false },
+      { name: 'indeterminate', control: { kind: 'boolean' }, default: false, part: 'value={null}' },
     ],
     events: [],
     layout: { width: 'fit' },
     render: ({ p }) => (
-      <ProgressRing value={num(p.value)} size={num(p.size, 56)} showValue={!!p.showValue} isIndeterminate={!!p.isIndeterminate} tone={pick(p.tone, ['default', 'success', 'warning', 'destructive'] as const, 'default')} aria-label="Progress" />
+      <ProgressRing value={p.indeterminate ? null : num(p.value)} size={num(p.size, 56)} showValue={!!p.showValue} tone={pick(p.tone, ['default', 'success', 'warning', 'destructive'] as const, 'default')} aria-label="Progress" />
     ),
+    code: (g) => {
+      g.use('@/components/ui/progress-ring', 'ProgressRing');
+      const value = g.expr('indeterminate') === 'true' ? 'null' : g.expr('value');
+      return `<ProgressRing value={${value}} size={${g.expr('size')}}${g.expr('showValue') === 'true' ? ' showValue' : ''}${g.attr('tone')} aria-label="Progress" />`;
+    },
   },
   ProgressStepper: {
     type: 'ProgressStepper', title: 'ProgressStepper', section: 'Feedback and status', source: 'kit', icon: 'checklist',
@@ -735,7 +828,7 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   ListRow: {
     type: 'ListRow', title: 'ListRow', section: 'Lists and content', source: 'kit', icon: 'line-3-horizontal', focusable: true,
-    description: 'A row: a title, a subtitle, a trailing value and an accessory (chevron or check), with a leading view; swipe actions; pressable when it has an onPress.',
+    description: 'A row: a title, a subtitle, a trailing value and an accessory (chevron or check), with a leading view; swipe actions; pressable when it has an onClick.',
     module: '@/components/ui/list', tag: 'ListRow',
     slots: [{ name: 'leading', label: 'leading' }, { name: 'accessory', label: 'accessory (a control)' }],
     props: [
@@ -746,7 +839,7 @@ export const KIT: Record<string, ComponentSpec> = {
       { name: 'checked', control: { kind: 'boolean' }, default: false },
       { name: 'destructive', control: { kind: 'boolean' }, default: false },
     ],
-    events: [{ name: 'onPress', label: 'onPress' }],
+    events: [{ name: 'onClick', label: 'onClick' }],
     layout: { width: 'fill' },
     wrapperClass: '[&:last-child_[data-slot=list-row-content]]:[box-shadow:none]',
     render: ({ p, on, wired, slots }) => (
@@ -758,7 +851,7 @@ export const KIT: Record<string, ComponentSpec> = {
         checked={!!p.checked}
         destructive={!!p.destructive}
         leading={slots.leading}
-        onPress={wired('onPress') ? () => on.onPress?.() : undefined}
+        onClick={wired('onClick') ? () => on.onClick?.() : undefined}
       />
     ),
   },
@@ -845,18 +938,18 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   Disclosure: {
     type: 'Disclosure', title: 'Disclosure', section: 'Lists and content', source: 'kit', icon: 'chevron-down',
-    description: 'Expandable sections on react-aria: a Disclosure with a trigger and an animated panel, grouped into an accordion.',
+    description: "Expandable sections on UI SDK's Collapsible and Accordion: a Disclosure with a trigger and an animated panel, grouped into an accordion.",
     module: '@/components/ui/disclosure', tag: 'Disclosure', container: 'component', focusable: true,
     uses: ['@/components/ui/disclosure|DisclosureTrigger', '@/components/ui/disclosure|DisclosurePanel'],
     props: [
       { name: 'title', control: { kind: 'text' }, default: 'When am I billed?', part: '<DisclosureTrigger>' },
-      { name: 'isExpanded', control: { kind: 'boolean' }, default: true, twoWay: 'onExpandedChange' },
+      { name: 'open', control: { kind: 'boolean' }, default: true, twoWay: 'onOpenChange' },
     ],
-    events: [{ name: 'onExpandedChange', label: 'onExpandedChange', value: 'isExpanded' }],
+    events: [{ name: 'onOpenChange', label: 'onOpenChange', value: 'open' }],
     layout: { axis: 'vertical', gap: 8, width: 'fill' },
     make: () => ({ children: [leaf('Text', { children: 'On the same day each month you subscribed.', textStyle: 'subhead', weight: 'default', color: '$muted-foreground', align: 'left', lines: 0 }, { layout: { width: 'fill' } })] }),
     render: ({ p, on, children, box }) => (
-      <Disclosure isExpanded={!!p.isExpanded} onExpandedChange={(v) => on.onExpandedChange?.(v)}>
+      <Disclosure open={!!p.open} onOpenChange={(v) => on.onOpenChange?.(v)}>
         <DisclosureTrigger>{str(p.title)}</DisclosureTrigger>
         <DisclosurePanel><div style={box}>{children}</div></DisclosurePanel>
       </Disclosure>
@@ -876,7 +969,7 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   Kbd: {
     type: 'Kbd', title: 'Kbd', section: 'Lists and content', source: 'kit', icon: 'keyboard',
-    description: "A keycap for keyboard shortcuts, with a group wrapper for chords; inside a menu item it becomes the item's shortcut.",
+    description: "A keycap for keyboard shortcuts, with a group wrapper for chords; `keys=\"mod+k\"` draws a shortcut for the platform (in a menu, use the item's `shortcut`).",
     module: '@/components/ui/kbd', tag: 'Kbd',
     props: [text('children', '⌘K')], events: [], layout: { width: 'fit' },
     render: ({ p }) => <Kbd>{str(p.children)}</Kbd>,
@@ -928,15 +1021,15 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   TabView: {
     type: 'TabView', title: 'TabView', section: 'Navigation and layout', source: 'kit', icon: 'square-on-square',
-    description: 'A compositional tab container on react-aria’s Tabs: the iOS tab bar at the bottom on a narrow screen and a side rail on a wide one, one panel per child (an embedded scene, usually a NavigationStack). Each tab keeps its state while another shows.',
+    description: 'A compositional tab container on UI SDK’s Tabs: the iOS tab bar at the bottom on a compact screen and a side rail on a wider one, one panel per child (an embedded scene, usually a NavigationStack). Each tab keeps its state while another shows.',
     module: '@/components/ui/tab-view', tag: 'TabView', container: 'component', screen: true,
     uses: ['@/components/ui/tab-view|TabViewBar', '@/components/ui/tab-view|TabViewList', '@/components/ui/tab-view|TabViewTab', '@/components/ui/tab-view|TabViewPanels', '@/components/ui/tab-view|TabViewPanel'],
     props: [
       { name: 'tabs', control: { kind: 'items', icons: true }, default: 'First:star, Second:circle', part: '<TabViewTab>s', help: 'One per child, in order: Title:icon' },
-      { name: 'selectedKey', label: 'selected', control: { kind: 'text' }, default: 'First', twoWay: 'onSelectionChange' },
-      { name: 'placement', control: { kind: 'enum', options: values('auto', 'bottom', 'start', 'top') }, default: 'auto', help: 'auto: a tab bar along the bottom when narrow, a side rail when wide (≥ 700px), measured from its own width' },
+      { name: 'value', label: 'selected', control: { kind: 'text' }, default: 'First', twoWay: 'onValueChange' },
+      { name: 'placement', control: { kind: 'enum', options: values('auto', 'bottom', 'start', 'top') }, default: 'auto', help: 'auto: a tab bar along the bottom when compact, a side rail from 700px, from its own size class' },
     ],
-    events: [{ name: 'onSelectionChange', label: 'onSelectionChange', value: 'the tab' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the tab' }],
     layout: { axis: 'vertical', width: 'fill', height: 'fill' },
     render: (r) => <TabViewHost r={r} />,
   },
@@ -947,7 +1040,7 @@ export const KIT: Record<string, ComponentSpec> = {
     uses: ['@/components/ui/split-view|SplitViewSidebar', '@/components/ui/split-view|SplitViewSupplementary', '@/components/ui/split-view|SplitViewDetail'],
     slots: [{ name: 'sidebar', label: 'sidebar' }, { name: 'supplementary', label: 'supplementary' }, { name: 'detail', label: 'detail' }],
     props: [
-      { name: 'widthClass', control: { kind: 'enum', options: values('auto', 'compact', 'medium', 'regular') }, default: 'auto', help: 'auto: measured from its own width' },
+      { name: 'sizeClass', control: { kind: 'enum', options: values('auto', 'compact', 'medium', 'regular') }, default: 'auto', help: 'auto: from its own width' },
       { name: 'sidebarBehavior', control: { kind: 'enum', options: values('auto', 'tile', 'overlay', 'displace') }, default: 'auto' },
     ],
     events: [],
@@ -962,49 +1055,49 @@ export const KIT: Record<string, ComponentSpec> = {
       { name: 'items', control: { kind: 'items', icons: true }, default: 'Home:house, Garden, Monstera' },
       { name: 'size', control: { kind: 'enum', options: values('sm', 'default', 'lg') }, default: 'default' },
     ],
-    events: [{ name: 'onPress', label: 'onPress (an item)', value: 'the item' }],
+    events: [{ name: 'onClick', label: 'onClick (an item)', value: 'the item' }],
     layout: { width: 'fill' },
     render: ({ p, on, wired }) => (
       <Breadcrumb size={pick(p.size, ['sm', 'default', 'lg'] as const, 'default')} items={itemsOf(p.items).map((it, i, all) => ({
-        id: it.id, label: it.label, icon: it.icon, ...(i < all.length - 1 && wired('onPress') ? { onPress: () => on.onPress?.(it.id) } : null),
+        id: it.id, label: it.label, icon: it.icon, ...(i < all.length - 1 && wired('onClick') ? { onClick: () => on.onClick?.(it.id) } : null),
       }))} />
     ),
     code: (g) => {
       g.use('@/components/ui/breadcrumb', 'Breadcrumb');
-      const press = g.handler('onPress');
+      const press = g.handler('onClick');
       const items = g.list('items');
       const list = items
-        ? `[${items.map((it, i) => `{ id: ${q(it.id)}, label: ${q(it.label)}${it.icon ? `, icon: ${q(it.icon)}` : ''}${press && i < items.length - 1 ? `, onPress: () => (${press})(${q(it.id)})` : ''} }`).join(', ')}]`
+        ? `[${items.map((it, i) => `{ id: ${q(it.id)}, label: ${q(it.label)}${it.icon ? `, icon: ${q(it.icon)}` : ''}${press && i < items.length - 1 ? `, onClick: () => (${press})(${q(it.id)})` : ''} }`).join(', ')}]`
         : g.expr('items');
       return `<Breadcrumb${g.attr('size')} items={${list}} />`;
     },
   },
   Tabs: {
     type: 'Tabs', title: 'Tabs', section: 'Navigation and layout', source: 'kit', icon: 'rectangle-split',
-    description: 'Tabs on react-aria with a sliding selection indicator and directional panels, in an iOS segmented look or a tinted underline. Each child is the panel of the tab at its place.',
+    description: "UI SDK's Tabs with a sliding selection indicator and directional panels, in an iOS segmented look or a tinted underline. Each child is the panel of the tab at its place.",
     module: '@/components/ui/tabs', tag: 'Tabs', container: 'component', focusable: true,
-    uses: ['@/components/ui/tabs|TabList', '@/components/ui/tabs|Tab', '@/components/ui/tabs|TabPanel'],
+    uses: ['@/components/ui/tabs|TabsList', '@/components/ui/tabs|TabsTab', '@/components/ui/tabs|TabsPanel'],
     props: [
-      { name: 'tabs', control: { kind: 'items' }, default: 'Plan, Build, Review', part: '<Tab>s' },
-      { name: 'selectedKey', label: 'selected', control: { kind: 'text' }, default: 'Plan', twoWay: 'onSelectionChange' },
+      { name: 'tabs', control: { kind: 'items' }, default: 'Plan, Build, Review', part: '<TabsTab>s' },
+      { name: 'value', label: 'selected', control: { kind: 'text' }, default: 'Plan', twoWay: 'onValueChange' },
       { name: 'variant', control: { kind: 'enum', options: values('segmented', 'underline') }, default: 'segmented' },
     ],
-    events: [{ name: 'onSelectionChange', label: 'onSelectionChange', value: 'the tab' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the tab' }],
     layout: { axis: 'vertical', width: 'fill' },
     make: () => ({ children: ['Plan', 'Build', 'Review'].map((t) => leaf('Stack', {}, { layout: { axis: 'vertical', gap: 8, padding: 4, width: 'fill' }, children: [leaf('Text', { children: `${t} panel`, textStyle: 'subhead', weight: 'default', color: '$muted-foreground', align: 'left', lines: 0 }, { layout: { width: 'fill' } })] })) }),
     render: ({ p, on, childList }) => {
       const tabs = itemsOf(p.tabs);
       return (
-        <Tabs variant={pick(p.variant, ['segmented', 'underline'] as const, 'segmented')} selectedKey={str(p.selectedKey, tabs[0]?.id)} onSelectionChange={(k) => on.onSelectionChange?.(String(k))}>
-          <TabList aria-label="Tabs">{tabs.map((t) => <Tab key={t.id} id={t.id}>{t.label}</Tab>)}</TabList>
-          {tabs.map((t, i) => <TabPanel key={t.id} id={t.id}>{childList[i] ?? null}</TabPanel>)}
+        <Tabs variant={pick(p.variant, ['segmented', 'underline'] as const, 'segmented')} value={str(p.value, tabs[0]?.id)} onValueChange={(k) => k != null && on.onValueChange?.(k)}>
+          <TabsList aria-label="Tabs">{tabs.map((t) => <TabsTab key={t.id} value={t.id}>{t.label}</TabsTab>)}</TabsList>
+          {tabs.map((t, i) => <TabsPanel key={t.id} value={t.id}>{childList[i] ?? null}</TabsPanel>)}
         </Tabs>
       );
     },
     code: (g) => {
-      parts(g, '@/components/ui/tabs', 'Tabs', 'TabList', 'Tab', 'TabPanel');
+      parts(g, '@/components/ui/tabs', 'Tabs', 'TabsList', 'TabsTab', 'TabsPanel');
       const tabs = g.list('tabs') ?? [];
-      return `<Tabs${g.attr('variant')} selectedKey={${g.expr('selectedKey')}}${g.on('onSelectionChange', toKey)}>\n  <TabList aria-label="Tabs">\n${tabs.map((t) => `    <Tab id=${JSON.stringify(t.id)}>${t.label}</Tab>`).join('\n')}\n  </TabList>\n${tabs.map((t, i) => `  <TabPanel id=${JSON.stringify(t.id)}>\n${(g.children[i] ?? '').split('\n').map((l) => `    ${l}`).join('\n')}\n  </TabPanel>`).join('\n')}\n</Tabs>`;
+      return `<Tabs${g.attr('variant')} value={${g.expr('value')}}${g.on('onValueChange')}>\n  <TabsList aria-label="Tabs">\n${tabs.map((t) => `    <TabsTab value=${JSON.stringify(t.id)}>${t.label}</TabsTab>`).join('\n')}\n  </TabsList>\n${tabs.map((t, i) => `  <TabsPanel value=${JSON.stringify(t.id)}>\n${(g.children[i] ?? '').split('\n').map((l) => `    ${l}`).join('\n')}\n  </TabsPanel>`).join('\n')}\n</Tabs>`;
     },
   },
   TabBar: {
@@ -1013,17 +1106,17 @@ export const KIT: Record<string, ComponentSpec> = {
     module: '@/components/ui/tab-bar', tag: 'TabBar',
     props: [
       { name: 'items', control: { kind: 'items', icons: true }, default: 'Garden:flower, Calendar:calendar, Settings:gear' },
-      { name: 'selected', control: { kind: 'text' }, default: 'Garden', twoWay: 'onSelect' },
+      { name: 'value', label: 'selected', control: { kind: 'text' }, default: 'Garden', twoWay: 'onValueChange' },
     ],
-    events: [{ name: 'onSelect', label: 'onSelect', value: 'the tab' }],
+    events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the tab' }],
     render: ({ p, on }) => (
-      <TabBar items={itemsOf(p.items).map((it) => ({ id: it.id, title: it.label, icon: it.icon ?? 'circle' }))} selected={str(p.selected)} onSelect={(id) => on.onSelect?.(id)} hideOnScroll={false} />
+      <TabBar items={itemsOf(p.items).map((it) => ({ value: it.id, title: it.label, icon: it.icon ?? 'circle' }))} value={str(p.value)} onValueChange={(v) => on.onValueChange?.(v)} hideOnScroll={false} />
     ),
     code: (g) => {
       g.use('@/components/ui/tab-bar', 'TabBar');
       const items = g.list('items');
-      const list = items ? `[${items.map((it) => `{ id: ${q(it.id)}, title: ${q(it.label)}, icon: ${q(it.icon ?? 'circle')} }`).join(', ')}]` : g.expr('items');
-      return `<TabBar items={${list}} selected={${g.expr('selected')}}${g.on('onSelect')} />`;
+      const list = items ? `[${items.map((it) => `{ value: ${q(it.id)}, title: ${q(it.label)}, icon: ${q(it.icon ?? 'circle')} }`).join(', ')}]` : g.expr('items');
+      return `<TabBar items={${list}} value={${g.expr('value')}}${g.on('onValueChange')} />`;
     },
   },
 

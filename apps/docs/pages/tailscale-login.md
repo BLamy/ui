@@ -199,7 +199,7 @@ interface TailscaleClient {
 
 {% demo src="tailscale-login/states" %}
 
-A react-aria `Button`. By state: **Sign in with Tailscale** (idle, signed out), **Signing in…** / **Connecting…** / **Waiting for approval…** with a spinner (a press cancels; `aria-busy` is set and the accessible name says so), **Sign out of Tailscale** (connected), **Try again** (error). Props: `variant` (`default`, `outline`, `secondary`), `size` (`default`, `sm`, `lg`, `pill`), `labels`, `onSignIn` / `onCancel` / `onSignOut` to replace the defaults, `status` to drive it without a provider, `tailscale`, `className`. `data-slot="tailscale-login-button"` and `data-status`.
+A UI SDK `Button`. By state: **Sign in with Tailscale** (idle, signed out), **Signing in…** / **Connecting…** / **Waiting for approval…** with a spinner (a press cancels; `aria-busy` is set and the accessible name says so), **Sign out of Tailscale** (connected), **Try again** (error). Props: `variant` (`default`, `outline`, `secondary`), `size` (`default`, `sm`, `lg`, `pill`), `labels`, `onSignIn` / `onCancel` / `onSignOut` to replace the defaults, `status` to drive it without a provider, `tailscale`, `className`, and the Button's own props (`disabled`, `render`…). `data-slot="button"` (UI SDK's) and `data-status`.
 
 ### TailscaleStatusBadge
 
@@ -247,7 +247,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/tailscale-login-button`. Base classes:
 
 ```text
-box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] font-semibold whitespace-nowrap outline-none transition-[scale,background-color,opacity] duration-spring-snappy ease-spring-snappy data-pressed:scale-[.97] motion-reduce:transition-none data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-offset-2 data-disabled:cursor-default data-disabled:opacity-40
+box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] font-semibold whitespace-nowrap outline-none transition-[scale,background-color,opacity] duration-spring-snappy ease-spring-snappy active:not-data-disabled:scale-[.97] motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-disabled:cursor-default data-disabled:opacity-40
 ```
 
 **`variant`** — default `default`
@@ -255,7 +255,7 @@ box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `bg-foreground text-background` |
-| `outline` | `bg-background text-foreground shadow-hairline data-hovered:bg-secondary` |
+| `outline` | `bg-background text-foreground shadow-hairline hover:not-data-disabled:bg-secondary` |
 | `secondary` | `bg-secondary text-secondary-foreground` |
 
 **`size`** — default `default`

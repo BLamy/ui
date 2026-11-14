@@ -17,7 +17,7 @@ function CrmSidebar() {
       label={label}
       badge={badge}
       active={page === label}
-      onPress={() => setPage(label)}
+      onClick={() => setPage(label)}
     />
   )
   return (

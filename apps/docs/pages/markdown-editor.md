@@ -67,7 +67,15 @@ A controlled editor beside a `MarkdownView` of the same value. Every edit serial
 
 ### In a form
 
-`name` submits the Markdown with the form through a hidden input. `aria-labelledby`, `aria-describedby` and `invalid` go on the editable element, so a `Label` and help text are read with the field.
+`name` submits the Markdown with the form through a hidden input. `aria-labelledby`, `aria-describedby` and `invalid` go on the editable element, so a `Label` and help text are read with the field. Inside a UI SDK `Field` it is the field's control: `FieldLabel` names it, `FieldDescription` and `FieldError` describe it, and the field's `name`, `disabled` and `invalid` apply.
+
+```tsx
+<Field name="notes">
+  <FieldLabel>Notes</FieldLabel>
+  <MarkdownEditor />
+  <FieldDescription>Markdown is fine.</FieldDescription>
+</Field>
+```
 
 {% demo src="markdown-editor/issue-form" %}
 
@@ -89,7 +97,7 @@ Fences labelled `xstate` or `tscircuit` use the same source-and-preview cards as
 | --- | --- | --- | --- |
 | `value` | `string` | — | Markdown (controlled). |
 | `defaultValue` | `string` | `''` | Initial Markdown (uncontrolled). |
-| `onValueChange` | `(markdown) => void` | — | Called with serialized Markdown on every edit. |
+| `onValueChange` | `(markdown, details) => void` | — | Called with serialized Markdown on every edit. `details.reason` is `input-change` (typing, paste, a toolbar or "/" command) or `imperative` (the ref's `setMarkdown`, `insertMarkdown`, `clear`), with `event` and `source`; `details.cancel()` puts the document back. |
 | `onSubmit` | `(markdown) => void` | — | ⌘/Ctrl+Enter. |
 | `placeholder` | `string` | — | Shown while the document is empty. |
 | `variant` | `'default' \| 'ghost' \| 'card'` | `'default'` | Filled field, no chrome, or a raised card. |
@@ -121,7 +129,7 @@ Fences labelled `xstate` or `tscircuit` use the same source-and-preview cards as
 
 ## Theming
 
-The editor follows the surrounding `--bl-*` tokens, so it matches light and dark wherever `BLProvider` or the docs' `AppearanceProvider` put it. It maps them onto the shadcn names the Docstream stylesheet reads (`--card`, `--muted`, `--border`, `--accent`, `--primary`…), the same way `MarkdownView` does. The slash menu and the chip hover card render on `<body>`, and they take the tokens of the editor that opened them.
+The editor follows the surrounding `--bl-*` tokens, so it matches light and dark wherever `BLProvider` or the docs' `AppearanceProvider` put it. It maps them onto the shadcn names the Docstream stylesheet reads (`--card`, `--muted`, `--border`, `--accent`, `--primary`…), the same way `MarkdownView` does. The slash menu, the link popover and the chip hover card render in place in the browser's top layer, so they inherit the editor's tokens; inside a `BLProvider` they stay within its frame (its layer host).
 
 The wrapper has `data-slot="markdown-editor"` and `data-variant`, plus `data-readonly`, `data-disabled` and `data-invalid` for state styling. The editor inside keeps Docstream's `gb`, `gb-toolbar` and `gb-content` classes for overrides.
 
@@ -138,7 +146,7 @@ The Docstream editor's stylesheet ships inside `@brett_lamy/ui/styles.css` in a 
     title: 'text-[28px] leading-[1.2] font-bold tracking-[-.4px] mb-2',
     checklist: 'pl-0',
     checklistItem: 'gap-2.5 items-start',
-    checkbox: 'appearance-none m-0 size-[21px] rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground)] checked:bg-primary checked:shadow-none',
+    checkbox: 'appearance-none m-0 size-[21px] rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground)] data-checked:bg-primary data-checked:shadow-none',
     tableHeader: 'bg-transparent font-semibold px-3 py-2',
     tableCell: 'px-3 py-2',
   }}

@@ -1,15 +1,15 @@
 /* The board's surface: what Freeform does on the core Canvas. The canvas owns navigation (pan, pinch, wheel and
    keyboard zoom, the background); this owns every other pointer and key — items never take events; it hits them by
    geometry — so selection, move, resize, rotate, connect, draw and erase are one state machine (`Gesture`) instead of
-   handlers spread over a dozen elements. Items render in the canvas's board layer, scaled by the camera. Resting the
+   handlers spread over a dozen elements. Items render in the canvas's board layer, scaled by the view. Resting the
    pointer on a picture or a link (Select tool, no gesture) opens a hover card about it, found by the same hit test and
    anchored to a box laid over the item; any press, pan or zoom closes it. */
-import { useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PencilPoint, PencilTool } from '@/components/ui/pencilkit/constants';
 import { StrokePath } from '@/components/ui/pencilkit/stroke-path';
-import { Canvas, CanvasFrame, CanvasGuides, CanvasHandles, CanvasMarquee, CanvasMiniMap, type CanvasPointerInfo } from '@/components/ui/canvas';
-import { HoverCard, useHoverCard } from '@/components/ui/hover-card';
-import { dist, handleCursor, intersects, rectOf, resizeFrame, rotateFrame, snapMove, toBoard, toScreen, unionRect, type Camera, type Guide, type HandleId, type Pt, type Rect } from '@/lib/canvas-math';
+import { Canvas, CanvasFrame, CanvasGuides, CanvasHandles, CanvasMarquee, CanvasMiniMap, type CanvasController, type CanvasPointerInfo, type CanvasViewportChangeDetails } from '@/components/ui/canvas';
+import { HoverCard, HoverCardContent, createHoverCardController } from '@/components/ui/hover-card';
+import { dist, handleCursor, intersects, rectOf, resizeFrame, rotateFrame, snapMove, toBoard, toScreen, unionRect, type Guide, type Viewport, type HandleId, type Pt, type Rect } from '@/lib/canvas-math';
 import { anchorPoint, boundsOf, connectorGeometry, hitItem, nearestAnchor, strokeFrame } from './geometry';
 import { moveItem, scaleItem, selectionFrame } from './handles';
 import { Connector, ItemPreview, ItemView } from './items';
@@ -20,8 +20,10 @@ export type Tool = 'select' | 'hand' | 'draw' | 'connector';
 export interface DrawSettings { tool: PencilTool; ink: string; width: number }
 
 interface Props {
-  camera: Camera;
-  onCameraChange: (camera: Camera) => void;
+  viewport: Viewport;
+  onViewportChange: (viewport: Viewport, details: CanvasViewportChangeDetails) => void;
+  /** The editor's zoom buttons drive the canvas through it. */
+  controller: CanvasController;
   tool: Tool;
   setTool: (t: Tool) => void;
   draw: DrawSettings;
@@ -49,8 +51,11 @@ interface Ui {
 }
 
 const HIT_PX = 11;
+/** The kit's HoverCard delays: rest this long to open, and it lingers this long after the pointer leaves. */
+const PEEK_OPEN_DELAY = 600;
+const PEEK_CLOSE_DELAY = 300;
 
-export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, editing, setEditing }: Props) {
+export function BoardSurface({ viewport, onViewportChange, controller, tool, setTool, draw, editing, setEditing }: Props) {
   const f = useFreeform();
   const { items, byId, selection, selected, board } = f;
   const g = useRef<Gesture | null>(null);
@@ -58,13 +63,21 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
   const [, redraw] = useState(0);
   const [ui, setUi] = useState<Ui>({ marquee: null, guides: [], anchors: null, cursor: 'default' });
   const [preview, setPreview] = useState<ConnectorItem | null>(null);
-  const z = camera.z;
-  // The picture or link being previewed, and whether the pointer is on it now (the card outlives it by its close delay).
+  const z = viewport.zoom;
+  // The picture or link being previewed, and whether the pointer is on it now (the card outlives it by its close
+  // delay). Items are hit-tested, not elements, so the canvas drives one card through its controller, with the
+  // kit's hover delays: it opens after the pointer rests, moves along from item to item, and closes a moment after
+  // the pointer leaves both the item and the card.
   const [peek, setPeek] = useState<string | null>(null);
   const peekOver = useRef(false);
   const peekBox = useRef<HTMLSpanElement>(null);
-  const card = useHoverCard<HTMLSpanElement>();
-  const unpeek = () => { peekOver.current = false; card.close(); };
+  const [card] = useState(() => createHoverCardController<string>());
+  const peekTimer = useRef<number | undefined>(undefined);
+  const later = (ms: number, run: () => void) => { window.clearTimeout(peekTimer.current); peekTimer.current = window.setTimeout(run, ms); };
+  const showPeek = (id: string, ms: number) => later(ms, () => { if (peekBox.current) void card.open({ anchor: peekBox.current, payload: id }); });
+  const hidePeek = () => later(PEEK_CLOSE_DELAY, () => card.close());
+  const unpeek = () => { peekOver.current = false; window.clearTimeout(peekTimer.current); card.close(); };
+  useEffect(() => () => window.clearTimeout(peekTimer.current), []);
 
   const sel = useMemo(() => selectionFrame(selected, byId, z), [selected, byId, z]);
   const patchUi = (p: Partial<Ui>) => setUi((u) => ({ ...u, ...p }));
@@ -74,7 +87,7 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
     for (let i = items.length - 1; i >= 0; i--) if (hitItem(p, items[i], byId, tol)) return items[i];
     return null;
   };
-  const handleAt = (s: Pt) => sel.handles.find((h) => dist(toScreen(camera, h.pt), s) <= HIT_PX);
+  const handleAt = (s: Pt) => sel.handles.find((h) => dist(toScreen(viewport, h.pt), s) <= HIT_PX);
 
   /* ── Text ── */
   const setText = (id: string, text: string) => {
@@ -101,7 +114,7 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
   };
 
   /* ── Pointer (the canvas has already taken pan and pinch) ── */
-  const onPointerDown = (e: ReactPointerEvent, { screen: s, board: p }: CanvasPointerInfo) => {
+  const onPointerDown = (e: PointerEvent, { screen: s, board: p }: CanvasPointerInfo) => {
     unpeek();
     if (editing) setEditing(null);
 
@@ -151,7 +164,7 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
     g.current = { k: 'marquee', start: p, base: e.shiftKey ? selection : [] };
   };
 
-  const onPointerMove = (e: ReactPointerEvent, { screen: s, board: p }: CanvasPointerInfo) => {
+  const onPointerMove = (e: PointerEvent, { screen: s, board: p }: CanvasPointerInfo) => {
     const gs = g.current;
 
     if (!gs) {
@@ -166,13 +179,16 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
       setUi((u) => (u.cursor === cursor && u.anchors?.id === anchors?.id ? u : { ...u, cursor, anchors: anchors ? { id: anchors.id, side: anchors.side } : null }));
       const over = tool === 'select' && !editing ? hitAt(p) : null;
       const peekable = over && (over.kind === 'image' || over.kind === 'link') ? over.id : null;
-      if (peekable && (peekable !== peek || !peekOver.current)) {
-        if (peekable !== peek) { card.close(); setPeek(peekable); }
+      if (peekable && e.pointerType !== 'touch' && (peekable !== peek || !peekOver.current)) {
         peekOver.current = true;
-        card.triggerProps.onPointerEnter(e);
+        // An open card follows the pointer to the next item at once (after its anchor box has moved there).
+        const open = card.isOpen();
+        if (peekable !== peek) setPeek(peekable);
+        if (open) showPeek(peekable, 0);
+        else showPeek(peekable, PEEK_OPEN_DELAY);
       } else if (!peekable && peekOver.current) {
         peekOver.current = false;
-        card.triggerProps.onPointerLeave(e);
+        hidePeek();
       }
       return;
     }
@@ -262,11 +278,11 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
       case 'draw': {
         const st = live.current;
         if (!st) break;
-        const ne = e.nativeEvent;
-        const box = e.currentTarget.getBoundingClientRect();
-        const evs: { clientX: number; clientY: number; pressure: number }[] = ne.getCoalescedEvents ? ne.getCoalescedEvents() : [e];
+        // The canvas's corner on screen, from where this move is in it.
+        const left = e.clientX - s.x, top = e.clientY - s.y;
+        const evs: { clientX: number; clientY: number; pressure: number }[] = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
         for (const ev of evs) {
-          const q = toBoard(camera, ev.clientX - box.left, ev.clientY - box.top);
+          const q = toBoard(viewport, ev.clientX - left, ev.clientY - top);
           st.points.push([q.x, q.y, ev.pressure > 0 ? ev.pressure : 0.5]);
         }
         redraw((n) => n + 1);
@@ -299,7 +315,7 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
       redraw((n) => n + 1);
     }
     if (gs.k === 'connect') {
-      const far = dist(toScreen(camera, endXY(gs.from)), toScreen(camera, endXY(gs.to))) > 12;
+      const far = dist(toScreen(viewport, endXY(gs.from)), toScreen(viewport, endXY(gs.to))) > 12;
       setPreview(null);
       if (far || (isAttached(gs.from) && isAttached(gs.to) && gs.from.id !== gs.to.id)) {
         const both = isAttached(gs.from) && isAttached(gs.to);
@@ -329,7 +345,7 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
   };
 
   /* ── Keys (Space and the zoom keys are the canvas's) ── */
-  const onKeyDown = (e: ReactKeyboardEvent) => {
+  const onKeyDown = (e: KeyboardEvent) => {
     const mod = e.metaKey || e.ctrlKey;
     const key = e.key.toLowerCase();
     const ids = selection;
@@ -366,10 +382,11 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
 
   return (
     // The canvas reports moves only inside it: leaving it is leaving the previewed item too.
-    <div className="contents" onPointerLeave={(e) => { if (peekOver.current) { peekOver.current = false; card.triggerProps.onPointerLeave(e); } }}>
+    <div className="contents" onPointerLeave={() => { if (peekOver.current) { peekOver.current = false; hidePeek(); } }}>
       <Canvas
-        camera={camera}
-        onCameraChange={onCameraChange}
+        viewport={viewport}
+        onViewportChange={onViewportChange}
+        controller={controller}
         background={board?.background ?? 'dots'}
         panning={tool === 'hand'}
         fit={fit}
@@ -419,9 +436,18 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
           <span ref={peekBox} aria-hidden="true" className="pointer-events-none absolute"
             style={{ left: peekItem.x, top: peekItem.y, width: peekItem.w, height: peekItem.h, transform: peekItem.rot ? `rotate(${peekItem.rot}deg)` : undefined }} />
         ) : null}
-        {peekItem && (peekItem.kind === 'image' || peekItem.kind === 'link') ? (
-          <HoverCard {...card.cardProps} triggerRef={peekBox} placement="end top" className="w-64"><ItemPreview item={peekItem} /></HoverCard>
-        ) : null}
+        <HoverCard controller={card} onOpenChange={(open) => { if (!open) peekOver.current = false; }}>
+          <HoverCardContent<string>
+            side="end" align="start" className="w-64"
+            onPointerEnter={() => window.clearTimeout(peekTimer.current)}
+            onPointerLeave={hidePeek}
+          >
+            {({ payload }) => {
+              const it = payload ? byId.get(payload) : undefined;
+              return it && (it.kind === 'image' || it.kind === 'link') ? <ItemPreview item={it} /> : null;
+            }}
+          </HoverCardContent>
+        </HoverCard>
       </Canvas>
     </div>
   );

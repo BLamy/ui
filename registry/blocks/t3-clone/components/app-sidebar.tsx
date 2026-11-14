@@ -72,7 +72,7 @@ export function AppSidebar({ state }: { state: ThreadsState }) {
       status={t.messages.some((m) => m.live) ? 'running' : 'idle'}
       meta={t.age}
       preview={<ThreadCard thread={t} />}
-      onPress={() => state.select(t.id)}
+      onClick={() => state.select(t.id)}
     >
       {t.title}
     </ThreadItem>
@@ -85,15 +85,15 @@ export function AppSidebar({ state }: { state: ThreadsState }) {
         <WorkbenchSidebarClose />
       </ThreadSidebarHeader>
       <ThreadSidebarToolbar>
-        <ThreadSearch value={query} onChange={setQuery} />
-        <ThreadNewButton onPress={state.newThread} />
+        <ThreadSearch value={query} onValueChange={setQuery} />
+        <ThreadNewButton onClick={state.newThread} />
       </ThreadSidebarToolbar>
       <ProjectSwitcher />
       <ThreadList>
         {active.length > 0 && <ThreadGroup label="Active">{active.map(item)}</ThreadGroup>}
         <ThreadGroup label="Settled" collapsible>
           {shown.map(item)}
-          {settled.length > shown.length && <ThreadShowMore count={settled.length - shown.length} onPress={() => setShowAll(true)} />}
+          {settled.length > shown.length && <ThreadShowMore count={settled.length - shown.length} onClick={() => setShowAll(true)} />}
         </ThreadGroup>
       </ThreadList>
       <ThreadSidebarFooter>

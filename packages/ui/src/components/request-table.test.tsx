@@ -2,11 +2,37 @@
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { RequestLink, RequestTable, type RequestColumn, type RequestTableHandle } from '@/components/ui/request-table';
+import { RequestLink, RequestTable, createRequestTableController, type RequestColumn } from '@/components/ui/request-table';
 import type { RowId } from '@/lib/log-list-model';
 import type { RequestRow } from '@/lib/request-table-model';
 
-afterEach(cleanup);
+declare global { var __UI_SDK_STRICT__: boolean | undefined }
+globalThis.__UI_SDK_STRICT__ = true;
+// happy-dom lays nothing out. The table is `tableWidth` wide (regular, unless a test narrows it), and the ResizeObservers
+// watching it hear about a new width from `resizeTable`.
+let tableWidth = 1024;
+const isTable = (el: Element) => el.getAttribute('data-slot') === 'request-table';
+Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get(this: HTMLElement) { return isTable(this) ? tableWidth : 0; } });
+const watching = new Map<ResizeObserver, { callback: ResizeObserverCallback; targets: Set<Element> }>();
+class TestResizeObserver {
+  constructor(callback: ResizeObserverCallback) { watching.set(this as unknown as ResizeObserver, { callback, targets: new Set() }); }
+  observe(target: Element) { watching.get(this as unknown as ResizeObserver)?.targets.add(target); }
+  unobserve(target: Element) { watching.get(this as unknown as ResizeObserver)?.targets.delete(target); }
+  disconnect() { watching.delete(this as unknown as ResizeObserver); }
+}
+window.ResizeObserver = TestResizeObserver as unknown as typeof ResizeObserver;
+const resizeTable = (width: number) => act(() => {
+  tableWidth = width;
+  for (const [observer, { callback, targets }] of watching) {
+    const entries = [...targets].filter(isTable).map((target) => ({ target }) as ResizeObserverEntry);
+    if (entries.length) callback(entries, observer);
+  }
+});
+afterEach(() => {
+  cleanup();
+  tableWidth = 1024;
+});
+const tick = () => act(() => new Promise<void>((resolve) => setTimeout(resolve, 0)));
 
 const makeRows = (count: number): RequestRow[] => Array.from({ length: count }, (_, i) => ({
   id: `r${i}`, url: `https://a.com/api/thing/${i}?v=1`, method: i % 2 ? 'POST' : 'GET', status: i === 3 ? 500 : 200, type: 'fetch', size: 1000 + i, time: i * 100, duration: 50 + (count - i),
@@ -16,7 +42,8 @@ const grid = () => screen.getByRole('grid');
 const row = (index: number) => document.querySelector<HTMLElement>(`[data-slot=request-table-row][data-index="${index}"]`) as HTMLElement;
 const allRows = () => [...document.querySelectorAll<HTMLElement>('[data-slot=request-table-row]')];
 const column = (id: string) => document.querySelector<HTMLElement>(`[role=columnheader][data-column="${id}"]`) as HTMLElement;
-const line = () => document.querySelector('[data-slot=request-table-playhead] [class*=request-playhead]') as HTMLElement;
+/** The playhead's line is placed by the grid's `--request-playhead`. */
+const line = () => grid();
 const firstName = () => row(0).querySelector('[data-slot=request-table-name]')?.textContent;
 
 describe('RequestTable', () => {
@@ -26,6 +53,7 @@ describe('RequestTable', () => {
     expect(root.getAttribute('data-slot')).toBe('request-table');
     expect(root.classList.contains('my-table')).toBe(true);
     expect(root.style.height).toBe('300px');
+    expect(root.getAttribute('data-rows')).toBe('10000');
     expect(grid().getAttribute('aria-label')).toBe('Network');
     expect(grid().getAttribute('aria-rowcount')).toBe('10001');
     expect(allRows().length).toBeGreaterThan(5);
@@ -42,7 +70,7 @@ describe('RequestTable', () => {
     expect(row(3).querySelector('[data-column=status]')?.textContent).toBe('500');
     expect(row(3).hasAttribute('data-failed')).toBe(true);
     expect(row(0).hasAttribute('data-failed')).toBe(false);
-    expect(row(3).querySelector('[data-column=size]')?.textContent).toBe('1003 B');
+    expect(row(3).querySelector('[data-column=size]')?.textContent).toBe('1 kB');
     expect(row(3).querySelector('[data-column=duration]')?.textContent).toBe('52 ms');
   });
 
@@ -89,14 +117,13 @@ describe('the playhead', () => {
 
   it('has none without one', () => {
     render(<RequestTable rows={makeRows(5)} />);
-    expect(screen.getByRole('grid').closest('[data-slot=request-table]')?.hasAttribute('data-playhead')).toBe(false);
+    expect(grid().hasAttribute('data-playhead')).toBe(false);
     expect(allRows().some((el) => el.hasAttribute('data-future'))).toBe(false);
   });
 
   it('draws a line at its share of the range and dims rows sent after it', () => {
     render(<RequestTable rows={makeRows(11)} timeRange={[0, 1000]} playhead={250} />);
-    const root = document.querySelector<HTMLElement>('[data-slot=request-table]') as HTMLElement;
-    expect(root.hasAttribute('data-playhead')).toBe(true);
+    expect(grid().hasAttribute('data-playhead')).toBe(true);
     expect(line().style.getPropertyValue('--request-playhead')).toBe('0.25');
     expect(row(2).hasAttribute('data-future')).toBe(false);
     expect(row(3).hasAttribute('data-future')).toBe(true);
@@ -108,22 +135,21 @@ describe('the playhead', () => {
     const rows = makeRows(100);
     const { rerender } = render(<RequestTable rows={rows} columns={columns} timeRange={[0, 10_000]} playhead={100} />);
     renders.mockClear();
-    for (const playhead of [500, 900, 2000, 5000]) rerender(<RequestTable rows={rows} columns={columns} timeRange={[0, 10_000]} playhead={playhead} onRowPress={() => {}} />);
+    for (const playhead of [500, 900, 2000, 5000]) rerender(<RequestTable rows={rows} columns={columns} timeRange={[0, 10_000]} playhead={playhead} onAction={() => {}} />);
     expect(renders).not.toHaveBeenCalled();
     expect(row(5).hasAttribute('data-future')).toBe(false);
     expect(line().style.getPropertyValue('--request-playhead')).toBe('0.5');
   });
 
-  it('moves with no React at all through the handle, and hides off the range', () => {
-    const ref = { current: null as RequestTableHandle | null };
-    render(<RequestTable ref={ref} rows={makeRows(11)} timeRange={[0, 1000]} />);
-    const root = document.querySelector<HTMLElement>('[data-slot=request-table]') as HTMLElement;
-    act(() => { ref.current?.setPlayhead(500); });
+  it('moves with no React at all through the controller, and hides off the range', () => {
+    const controller = createRequestTableController();
+    render(<RequestTable controller={controller} rows={makeRows(11)} timeRange={[0, 1000]} />);
+    act(() => { controller.setPlayhead(500); });
     expect(line().style.getPropertyValue('--request-playhead')).toBe('0.5');
     expect(row(6).hasAttribute('data-future')).toBe(true);
-    act(() => { ref.current?.setPlayhead(5000); });
-    expect(root.hasAttribute('data-playhead')).toBe(false);
-    act(() => { ref.current?.setPlayhead(null); });
+    act(() => { controller.setPlayhead(5000); });
+    expect(grid().hasAttribute('data-playhead')).toBe(false);
+    act(() => { controller.setPlayhead(null); });
     expect(row(6).hasAttribute('data-future')).toBe(false);
   });
 
@@ -141,26 +167,41 @@ describe('sorting', () => {
     render(<RequestTable rows={makeRows(5)} onSortChange={onSortChange} />);
     expect(column('duration').getAttribute('aria-sort')).toBe('none');
     expect(firstName()).toBe('0?v=1');
-    const press = () => fireEvent.click(within(column('duration')).getByRole('button'));
+    const press = () => fireEvent.click(column('duration'));
     press();
     // Duration falls as the index rises, so ascending puts the last row first.
     expect(column('duration').getAttribute('aria-sort')).toBe('ascending');
-    expect(onSortChange).toHaveBeenLastCalledWith({ column: 'duration', direction: 'ascending' });
+    expect(onSortChange).toHaveBeenLastCalledWith({ column: 'duration', direction: 'ascending' }, expect.objectContaining({ reason: 'trigger-press' }));
     expect(firstName()).toBe('4?v=1');
     press();
     expect(column('duration').getAttribute('aria-sort')).toBe('descending');
     expect(firstName()).toBe('0?v=1');
     press();
     expect(column('duration').getAttribute('aria-sort')).toBe('none');
-    expect(onSortChange).toHaveBeenLastCalledWith(null);
+    expect(onSortChange).toHaveBeenLastCalledWith(null, expect.objectContaining({ reason: 'trigger-press' }));
   });
 
   it('is the parent\'s when controlled', () => {
     const { rerender } = render(<RequestTable rows={makeRows(5)} sort={null} />);
-    fireEvent.click(within(column('duration')).getByRole('button'));
+    fireEvent.click(column('duration'));
     expect(column('duration').getAttribute('aria-sort')).toBe('none');
     rerender(<RequestTable rows={makeRows(5)} sort={{ column: 'duration', direction: 'ascending' }} />);
     expect(firstName()).toBe('4?v=1');
+  });
+
+  it('each header and edge is its own part, keyed by its column id with no DOM id', () => {
+    const onSortChange = vi.fn();
+    const onColumnWidthsChange = vi.fn();
+    render(<RequestTable rows={makeRows(5)} onSortChange={onSortChange} onColumnWidthsChange={onColumnWidthsChange} />);
+    // Every header shares one slot: a press sorts by the header pressed, not by the last one rendered.
+    for (const id of ['method', 'duration', 'status']) {
+      fireEvent.click(column(id));
+      expect(onSortChange).toHaveBeenLastCalledWith({ column: id, direction: 'ascending' }, expect.anything());
+    }
+    const edge = within(column('method')).getByRole('separator');
+    act(() => { edge.focus(); fireEvent.keyDown(edge, { key: 'ArrowRight' }); });
+    expect(Object.keys(onColumnWidthsChange.mock.lastCall?.[0] ?? {})).toEqual(['method']);
+    expect(document.querySelectorAll('[role=columnheader][id], [role=separator][id]').length).toBe(0);
   });
 
   it('a column can sort by a value of its own, or not at all', () => {
@@ -170,85 +211,209 @@ describe('sorting', () => {
       { id: 'plain', title: 'Plain', render: (r) => r.method },
     ];
     render(<RequestTable rows={rows} columns={columns} />);
-    expect(within(column('plain')).queryByRole('button')).toBeNull();
+    fireEvent.click(column('plain'));
     expect(column('plain').getAttribute('aria-sort')).toBeNull();
-    fireEvent.click(within(column('mine')).getByRole('button'));
+    fireEvent.click(column('mine'));
     expect(row(0).querySelector('[data-column=mine]')?.textContent).toBe('GET');
     expect(row(1).querySelector('[data-column=mine]')?.textContent).toBe('POST');
   });
 });
 
 describe('press, selection and links', () => {
-  it('a press selects and calls onRowPress', () => {
-    const onRowPress = vi.fn();
-    const onSelectionChange = vi.fn();
+  it('a press selects and calls onAction', () => {
+    const onAction = vi.fn();
+    const onValueChange = vi.fn();
     const rows = makeRows(5);
-    render(<RequestTable rows={rows} onRowPress={onRowPress} onSelectionChange={onSelectionChange} />);
+    render(<RequestTable rows={rows} onAction={onAction} onValueChange={onValueChange} />);
     fireEvent.click(row(2).querySelector('[data-column=method]') as Element);
-    expect(onRowPress).toHaveBeenCalledWith(rows[2], 2);
-    expect(onSelectionChange).toHaveBeenCalledWith('r2');
+    expect(onAction).toHaveBeenCalledWith('r2', expect.objectContaining({ reason: 'item-press', row: rows[2], index: 2 }));
+    expect(onValueChange).toHaveBeenCalledWith('r2', expect.objectContaining({ reason: 'item-press' }));
     expect(row(2).hasAttribute('data-selected')).toBe(true);
     expect(row(2).getAttribute('aria-selected')).toBe('true');
   });
 
   it('a link goes to the other end of the call: selected, in view, and not a press of its own row', () => {
-    const onRowPress = vi.fn();
+    const onAction = vi.fn();
     const rows = makeRows(3000);
     function Host() {
       const [selected, setSelected] = useState<RowId | null>(null);
       return (
         <RequestTable
           rows={rows}
-          selectedId={selected}
-          onSelectionChange={setSelected}
-          onRowPress={onRowPress}
-          renderLink={(row) => (row.id === 'r1' ? <RequestLink onPress={() => setSelected('r2000')}>Server function</RequestLink> : null)}
+          value={selected}
+          onValueChange={setSelected}
+          onAction={onAction}
+          renderLink={(row) => (row.id === 'r1' ? <RequestLink onClick={() => setSelected('r2000')}>Server function</RequestLink> : null)}
         />
       );
     }
     render(<Host />);
     fireEvent.click(screen.getByRole('button', { name: 'Server function' }));
-    expect(onRowPress).not.toHaveBeenCalled();
+    expect(onAction).not.toHaveBeenCalled();
     expect(row(2000).hasAttribute('data-selected')).toBe(true);
     expect(grid().scrollTop).toBeGreaterThan(40_000);
   });
 });
 
 describe('keyboard', () => {
-  it('moves through the rows and presses', () => {
-    const onRowPress = vi.fn();
-    const rows = makeRows(100);
-    render(<RequestTable rows={rows} onRowPress={onRowPress} />);
-    const el = grid();
-    const active = () => document.getElementById(el.getAttribute('aria-activedescendant') ?? '');
-    fireEvent.focus(el);
-    expect(active()?.getAttribute('data-index')).toBe('0');
-    fireEvent.keyDown(el, { key: 'ArrowDown' });
-    expect(active()?.getAttribute('data-index')).toBe('1');
-    fireEvent.keyDown(el, { key: 'Enter' });
-    expect(onRowPress).toHaveBeenCalledWith(rows[1], 1);
-    fireEvent.keyDown(el, { key: 'End' });
-    expect(active()?.getAttribute('data-index')).toBe('99');
+  const press = (key: string, init: KeyboardEventInit = {}) => act(() => { fireEvent.keyDown(document.activeElement as Element, { key, ...init }); });
+  /** Tabs into the grid, as the keyboard does. */
+  const tabIn = () => act(() => {
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    grid().focus();
   });
 
-  it('goes up into the headers, which sort and resize from the keyboard', () => {
+  it('is one tab stop that moves through the rows and presses', async () => {
+    const onAction = vi.fn();
+    const rows = makeRows(100);
+    render(<RequestTable rows={rows} onAction={onAction} />);
+    expect(grid().getAttribute('tabindex')).toBe('0');
+    tabIn();
+    expect(document.activeElement).toBe(row(0));
+    expect(row(0).getAttribute('tabindex')).toBe('0');
+    expect(grid().getAttribute('tabindex')).toBe('-1');
+    press('ArrowDown');
+    expect(document.activeElement).toBe(row(1));
+    expect(row(0).getAttribute('tabindex')).toBe('-1');
+    press('Enter');
+    expect(onAction).toHaveBeenCalledWith('r1', expect.objectContaining({ reason: 'item-press', row: rows[1], index: 1 }));
+    expect(row(1).getAttribute('aria-selected')).toBe('true');
+    // A far row renders first, and takes focus when it's there.
+    await act(async () => { fireEvent.keyDown(document.activeElement as Element, { key: 'End' }); });
+    await tick();
+    expect(document.activeElement?.getAttribute('data-index')).toBe('99');
+    await act(async () => { fireEvent.keyDown(document.activeElement as Element, { key: 'Home' }); });
+    await tick();
+    expect(document.activeElement).toBe(row(0));
+  });
+
+  it('goes up into the headers, which move, sort and resize from the keyboard', () => {
     const onColumnWidthsChange = vi.fn();
     render(<RequestTable rows={makeRows(5)} onColumnWidthsChange={onColumnWidthsChange} />);
-    const el = grid();
-    const active = () => document.getElementById(el.getAttribute('aria-activedescendant') ?? '');
-    fireEvent.focus(el);
-    fireEvent.keyDown(el, { key: 'ArrowUp' });
-    expect(active()?.getAttribute('role')).toBe('columnheader');
-    expect(active()?.getAttribute('data-column')).toBe('name');
-    fireEvent.keyDown(el, { key: 'ArrowRight' });
-    expect(active()?.getAttribute('data-column')).toBe('method');
-    fireEvent.keyDown(el, { key: 'Enter' });
+    tabIn();
+    press('ArrowUp');
+    expect(document.activeElement).toBe(column('name'));
+    press('ArrowRight');
+    expect(document.activeElement).toBe(column('method'));
+    press('Enter');
     expect(column('method').getAttribute('aria-sort')).toBe('ascending');
-    fireEvent.keyDown(el, { key: 'ArrowRight', altKey: true });
-    expect(onColumnWidthsChange).toHaveBeenCalled();
-    expect(onColumnWidthsChange.mock.lastCall?.[0].method).toBeGreaterThan(0);
-    fireEvent.keyDown(el, { key: 'ArrowDown' });
-    expect(active()?.getAttribute('role')).toBe('row');
+    press('ArrowRight', { altKey: true });
+    expect(onColumnWidthsChange).toHaveBeenCalledWith(expect.objectContaining({ method: expect.any(Number) }), expect.objectContaining({ reason: 'resize-key' }));
+    press('ArrowDown');
+    expect(document.activeElement?.getAttribute('role')).toBe('row');
+    press('ArrowUp');
+    expect(document.activeElement).toBe(column('method'));
+    press('Escape');
+    expect(document.activeElement?.getAttribute('role')).toBe('row');
+  });
+
+  it('a column edge is a separator that keys and a double press resize', () => {
+    const onColumnWidthsChange = vi.fn();
+    render(<RequestTable rows={makeRows(5)} defaultColumnWidths={{ method: 80 }} onColumnWidthsChange={onColumnWidthsChange} />);
+    const edge = within(column('method')).getByRole('separator', { name: 'Resize Method' });
+    expect(edge.getAttribute('aria-valuenow')).toBe('80');
+    // A pointer puts focus on the edge; the keyboard can't Tab to it.
+    act(() => { fireEvent.pointerDown(edge, { pointerType: 'mouse' }); fireEvent.pointerUp(edge, { pointerType: 'mouse' }); edge.focus(); });
+    press('ArrowRight');
+    expect(onColumnWidthsChange).toHaveBeenLastCalledWith({ method: 92 }, expect.objectContaining({ reason: 'resize-key' }));
+    expect(edge.getAttribute('aria-valuenow')).toBe('92');
+    expect(column('method').getAttribute('aria-sort')).toBe('none');
+    act(() => { fireEvent.doubleClick(edge); });
+    expect(onColumnWidthsChange).toHaveBeenLastCalledWith({}, expect.objectContaining({ reason: 'handle-press' }));
+  });
+
+  it('a column edge has a value before any width is set: the width its header shows', () => {
+    const spy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 96.6, 20));
+    render(<RequestTable rows={makeRows(5)} />);
+    const edges = screen.getAllByRole('separator');
+    expect(edges.length).toBeGreaterThan(1);
+    expect(edges.map((e) => e.getAttribute('aria-valuenow'))).toEqual(edges.map(() => '97'));
+    spy.mockRestore();
+  });
+
+  it('Tab from a row goes through its links, and Escape comes back', () => {
+    render(<RequestTable rows={makeRows(5)} renderLink={(r) => (r.id === 'r0' ? <RequestLink onClick={() => {}}>Server</RequestLink> : null)} />);
+    tabIn();
+    const link = screen.getByRole('button', { name: 'Server' });
+    act(() => { link.focus(); });
+    press('Escape');
+    expect(document.activeElement).toBe(row(0));
+  });
+});
+
+describe('its own size class', () => {
+  const root = () => document.querySelector('[data-slot=request-table]') as HTMLElement;
+  const headers = () => [...document.querySelectorAll('[role=columnheader][data-column]')].map((el) => el.getAttribute('data-column'));
+
+  it('follows the table\'s width, not the window\'s: columns go below regular, rows stack when compact', () => {
+    render(<RequestTable rows={makeRows(5)} />);
+    expect(root().getAttribute('data-size-class')).toBe('regular');
+    expect(headers()).toEqual(['name', 'method', 'status', 'type', 'size', 'duration', 'waterfall']);
+    resizeTable(600);
+    expect(root().getAttribute('data-size-class')).toBe('medium');
+    expect(headers()).toEqual(['name', 'method', 'status', 'duration', 'waterfall']);
+    expect(grid().getAttribute('aria-colcount')).toBe('5');
+    expect(row(0).querySelector('[data-column=type]')).toBeNull();
+    expect(root().getAttribute('data-layout')).toBe('table');
+    resizeTable(400);
+    expect(root().getAttribute('data-layout')).toBe('stacked');
+    expect(headers()).toEqual([]);
+    expect(screen.getByRole('button', { name: 'Sort by' })).toBeTruthy();
+    expect(grid().style.getPropertyValue('--request-row')).toBe('46px');
+    resizeTable(900);
+    expect(root().getAttribute('data-layout')).toBe('table');
+    expect(headers()).toContain('type');
+    expect(grid().style.getPropertyValue('--request-row')).toBe('26px');
+  });
+
+  it('takes breakpoints of its own, and a fixed layout ignores them', () => {
+    const { rerender } = render(<RequestTable rows={makeRows(5)} breakpoints={{ medium: 700, regular: 1200 }} />);
+    expect(root().getAttribute('data-size-class')).toBe('medium');
+    expect(headers()).not.toContain('type');
+    resizeTable(650);
+    expect(root().getAttribute('data-layout')).toBe('stacked');
+    rerender(<RequestTable rows={makeRows(5)} breakpoints={{ medium: 600, regular: 1200 }} />);
+    expect(root().getAttribute('data-layout')).toBe('table');
+    rerender(<RequestTable rows={makeRows(5)} breakpoints={{ medium: 600, regular: 1200 }} layout="stacked" />);
+    expect(root().getAttribute('data-layout')).toBe('stacked');
+  });
+
+  it('keeps the selection and the row at the top through a change of layout', () => {
+    render(<RequestTable rows={makeRows(500)} defaultValue="r40" />);
+    expect(row(40).getAttribute('aria-selected')).toBe('true');
+    resizeTable(400);
+    expect(row(40).getAttribute('aria-selected')).toBe('true');
+    expect(row(40).hasAttribute('data-selected')).toBe(true);
+  });
+});
+
+describe('rows given as they come', () => {
+  it('sorts new rows by the sort it already has', () => {
+    const sort = { column: 'duration', direction: 'ascending' } as const;
+    const { rerender } = render(<RequestTable rows={makeRows(3)} defaultSort={sort} />);
+    // `duration` is 50 + (count - i): the last row is the quickest.
+    expect(firstName()).toBe('2?v=1');
+    rerender(<RequestTable rows={makeRows(6)} defaultSort={sort} />);
+    expect(firstName()).toBe('5?v=1');
+    expect(grid().getAttribute('aria-rowcount')).toBe('7');
+  });
+
+  it('a controlled sort sorts on the parent\'s say, not before', () => {
+    const onSortChange = vi.fn();
+    const { rerender } = render(<RequestTable rows={makeRows(3)} sort={null} onSortChange={onSortChange} />);
+    fireEvent.click(column('duration'));
+    expect(onSortChange).toHaveBeenLastCalledWith({ column: 'duration', direction: 'ascending' }, expect.objectContaining({ reason: 'trigger-press' }));
+    expect(firstName()).toBe('0?v=1');
+    rerender(<RequestTable rows={makeRows(3)} sort={{ column: 'duration', direction: 'ascending' }} onSortChange={onSortChange} />);
+    expect(firstName()).toBe('2?v=1');
+    expect(column('duration').getAttribute('aria-sort')).toBe('ascending');
+  });
+
+  it('a canceled sort keeps the order', () => {
+    render(<RequestTable rows={makeRows(3)} onSortChange={(_sort, details) => details.cancel()} />);
+    fireEvent.click(column('duration'));
+    expect(firstName()).toBe('0?v=1');
+    expect(column('duration').getAttribute('aria-sort')).toBe('none');
   });
 });
 

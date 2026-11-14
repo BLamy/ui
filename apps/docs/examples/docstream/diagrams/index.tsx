@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { MarkdownView } from '@/components/ui/markdown-view'
-import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
 
 const examples = {
   xstate: '```xstate\n' + `import { createMachine } from "xstate"
@@ -34,16 +34,16 @@ export default function DiagramExamples() {
   return (
     <div style={{ minWidth: 0 }}>
       <div role="group" aria-label="Diagram example" style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <Button size="sm" variant={kind === 'xstate' ? 'default' : 'secondary'} aria-pressed={kind === 'xstate'} onPress={() => setKind('xstate')}>XState</Button>
-        <Button size="sm" variant={kind === 'tscircuit' ? 'default' : 'secondary'} aria-pressed={kind === 'tscircuit'} onPress={() => setKind('tscircuit')}>tscircuit</Button>
+        <Button size="sm" variant={kind === 'xstate' ? 'default' : 'secondary'} aria-pressed={kind === 'xstate'} onClick={() => setKind('xstate')}>XState</Button>
+        <Button size="sm" variant={kind === 'tscircuit' ? 'default' : 'secondary'} aria-pressed={kind === 'tscircuit'} onClick={() => setKind('tscircuit')}>tscircuit</Button>
       </div>
-      <Tabs selectedKey={mode} onSelectionChange={(key) => setMode(String(key))}>
-        <TabList aria-label="Diagram mode">
-          <Tab id="editor">Live editor</Tab>
-          <Tab id="preview">MarkdownView</Tab>
-        </TabList>
-        <TabPanel id="editor">
-          <p style={{ color: 'var(--muted-foreground)', fontSize: 13, marginBlock: '12px' }}>
+      <Tabs value={mode} onValueChange={(v) => v && setMode(v)}>
+        <TabsList aria-label="Diagram mode">
+          <TabsTab value="editor">Live editor</TabsTab>
+          <TabsTab value="preview">MarkdownView</TabsTab>
+        </TabsList>
+        <TabsPanel value="editor">
+          <p style={{ color: 'color-mix(in oklab, var(--foreground) 70%, transparent)', fontSize: 13, marginBlock: '12px' }}>
             {kind === 'xstate' ? 'Rename a state or event and watch the statechart update.' : 'Change the resistance or component position to redraw the circuit. The hosted runtime needs a network connection.'}
           </p>
           <MarkdownEditor
@@ -53,8 +53,8 @@ export default function DiagramExamples() {
             onValueChange={(value) => setDocuments((current) => ({ ...current, [kind]: value }))}
             minHeight={420}
           />
-        </TabPanel>
-        <TabPanel id="preview"><MarkdownView markdown={markdown} /></TabPanel>
+        </TabsPanel>
+        <TabsPanel value="preview"><MarkdownView markdown={markdown} /></TabsPanel>
       </Tabs>
     </div>
   )

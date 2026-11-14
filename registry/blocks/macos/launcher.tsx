@@ -2,7 +2,10 @@
    on wide bars (clipboard, snippets, emoji, files), and a footer whose legend follows the page's keys. */
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { ContentSwap } from '@/components/ui/animated-height';
-import { CommandEmpty, CommandFooter, CommandInput, CommandList, CommandMenu, useCommandActive, useCommandMenu, type CommandLegendItem, type CommandMenuApi } from '@/components/ui/command-menu';
+import {
+  CommandMenu, CommandMenuEmpty, CommandMenuFooter, CommandMenuInput, CommandMenuList, useCommandMenu, useCommandMenuValue,
+  type CommandMenuController, type CommandMenuLegendItem,
+} from '@/components/ui/command-menu';
 import { IconSwap } from '@/components/ui/icon-swap';
 import { TextMorph } from '@/components/ui/text-morph';
 import { Icon } from '@/lib/icon';
@@ -22,8 +25,8 @@ export interface LauncherProps {
   listHeight: number;
   autoFocus?: boolean;
   onClose: () => void;
-  /** The menu's API, so the desktop can reset it. */
-  menuRef?: React.Ref<CommandMenuApi | null>;
+  /** The menu's controller, so the desktop can reset it. */
+  controller?: CommandMenuController;
 }
 
 type PreviewKind = 'clip' | 'snippet' | 'emoji' | 'file';
@@ -38,21 +41,17 @@ function pageApp(page: string) {
   return APPS.find((a) => a.page === page) ?? null;
 }
 
-export function Launcher({ initialPages, initialQuery = '', width, listHeight, autoFocus = true, onClose, menuRef }: LauncherProps) {
+export function Launcher({ initialPages, initialQuery = '', width, listHeight, autoFocus = true, onClose, controller }: LauncherProps) {
   const [query, setQuery] = useState(initialQuery);
   const { dark } = useAlfred();
   const wide = width >= 600;
   return (
     <CommandMenu
-      variant="inline"
       aria-label="Alfred"
       query={query}
       onQueryChange={setQuery}
       defaultPages={initialPages}
-      menuRef={menuRef}
-      // The best match leads, whichever group it is in (an app, a file, a snippet, a calculation).
-      ranking="global"
-      onOpenChange={(open) => { if (!open) onClose(); }}
+      controller={controller}
       className={cn(
         // A translucent card over the wallpaper: the surface var feeds the card and the sticky headings alike.
         'rounded-[20px] backdrop-blur-3xl backdrop-saturate-[1.8]',
@@ -63,22 +62,31 @@ export function Launcher({ initialPages, initialQuery = '', width, listHeight, a
         '[&_[data-slot=command-input-wrapper]]:h-[68px] [&_[data-slot=command-input-wrapper]]:gap-3 [&_[data-slot=command-input-wrapper]]:px-5',
         '[&_[data-slot=command-page-title]]:h-7 [&_[data-slot=command-page-title]]:rounded-lg [&_[data-slot=command-page-title]]:bg-primary/14 [&_[data-slot=command-page-title]]:px-2.5 [&_[data-slot=command-page-title]]:text-detail [&_[data-slot=command-page-title]]:text-primary',
         // Rows: app-sized icons, a tinted selection.
-        '[&_[data-slot=command-item-icon]]:size-8 [&_[data-slot=command-item][data-active]]:bg-primary/14 [&_[data-slot=command-item]]:rounded-[11px]',
+        '[&_[data-slot=command-item-icon]]:size-8 [&_[data-slot=command-item][data-highlighted]]:bg-primary/14 [&_[data-slot=command-item]]:rounded-[11px]',
         // Small caps headings. They scroll with their rows (stickyHeadings={false}): a sticky band would stack a
         // second translucent layer on the card.
-        '[&_[data-slot=command-group-heading]]:text-[11.5px] [&_[data-slot=command-group-heading]]:font-semibold [&_[data-slot=command-group-heading]]:tracking-wide [&_[data-slot=command-group-heading]]:uppercase',
+        '[&_[data-slot=command-group-label]]:text-[11.5px] [&_[data-slot=command-group-label]]:font-semibold [&_[data-slot=command-group-label]]:tracking-wide [&_[data-slot=command-group-label]]:uppercase',
       )}
     >
-      <CommandInput placeholder="Search apps, files and snippets — or type math" className="text-[24px] font-light tracking-[-0.01em]" autoFocus={autoFocus} trailing={<InputTile />} />
+      <Input autoFocus={autoFocus} onClose={onClose} />
       <Body wide={wide} width={width} listHeight={listHeight} />
       <Footer wide={wide} />
     </CommandMenu>
   );
 }
 
+/** The big field. Escape clears the search, then goes back a page; on the first page with nothing typed it hides the bar. */
+function Input({ autoFocus, onClose }: { autoFocus: boolean; onClose: () => void }) {
+  const { query, pages } = useCommandMenu();
+  return (
+    <CommandMenuInput placeholder="Search apps, files and snippets — or type math" className="text-[24px] font-light tracking-[-0.01em]" autoFocus={autoFocus} trailing={<InputTile />}
+      onKeyDown={(e) => { if (e.key === 'Escape' && !query && !pages.length) { e.preventDefault(); onClose(); } }} />
+  );
+}
+
 function InputTile() {
   const { page } = useCommandMenu();
-  const app = pageApp(page);
+  const app = pageApp(page ?? 'root');
   return (
     <span className="grid size-9 shrink-0 place-items-center">
       <IconSwap id={app?.page ?? 'alfred'}>
@@ -89,7 +97,7 @@ function InputTile() {
 }
 
 function Body({ wide, width, listHeight }: { wide: boolean; width: number; listHeight: number }) {
-  const { page } = useCommandMenu();
+  const page = useCommandMenu().page ?? 'root';
   const kind = previewKind(page);
   const preview = wide && kind;
   // The emoji grid fills the list column: ~52px cells.
@@ -98,16 +106,13 @@ function Body({ wide, width, listHeight }: { wide: boolean; width: number; listH
   return (
     <div className="flex min-h-0 border-t border-border/70">
       <div className="min-w-0 flex-1" style={{ '--alfred-list-min': `${Math.min(300, listHeight)}px` } as CSSProperties}>
-        <CommandList maxHeight={listHeight} stickyHeadings={false} className={preview ? 'min-h-(--alfred-list-min)' : undefined}>
-          {(p) => (
-            <>
-              <CommandEmpty>
-                <span className="flex flex-col items-center gap-2"><Hat size={34} className="text-tertiary-foreground" />No results — try the web search</span>
-              </CommandEmpty>
-              {renderPage(p, columns)}
-            </>
-          )}
-        </CommandList>
+        <CommandMenuEmpty>
+          <span className="flex flex-col items-center gap-2"><Hat size={34} className="text-tertiary-foreground" />No results — try the web search</span>
+        </CommandMenuEmpty>
+        {/* The room the desktop leaves is measured, so the list's height is a runtime value. */}
+        <CommandMenuList stickyHeadings={false} className={preview ? 'min-h-(--alfred-list-min)' : undefined} style={{ maxHeight: listHeight }}>
+          {renderPage(page, columns)}
+        </CommandMenuList>
       </div>
       {preview ? (
         <aside data-slot="alfred-preview" className="relative w-[42%] shrink-0 animate-bl-fade-in border-l border-border/70">
@@ -121,7 +126,7 @@ function Body({ wide, width, listHeight }: { wide: boolean; width: number; listH
 /* ── Preview pane ── */
 
 function Preview({ kind }: { kind: PreviewKind }) {
-  const active = useCommandActive();
+  const active = useCommandMenuValue();
   return (
     <ContentSwap id={active ?? 'none'} className="h-full [&>*]:h-full">
       <div className="flex h-full flex-col p-4">
@@ -230,10 +235,10 @@ function FilePreview({ name }: { name: string }) {
 
 /* ── Footer ── */
 
-const k = (keys: ReactNode[], label: string): CommandLegendItem => ({ keys, label });
+const k = (keys: ReactNode[], label: string): CommandMenuLegendItem => ({ keys, label });
 const arrows = [<Icon key="u" name="arrow-up" size={12} sw={2.2} />, <Icon key="d" name="arrow-down" size={12} sw={2.2} />];
 
-function legendFor(page: string, depth: number): CommandLegendItem[] {
+function legendFor(page: string, depth: number): CommandMenuLegendItem[] {
   const back = depth > 0 ? [k(['⌫'], 'Back')] : [];
   if (page === 'root') return [k(arrows, 'Navigate'), k(['↵'], 'Open'), k(['⌘', '1–9'], 'Quick select'), k(['esc'], 'Hide')];
   if (page === 'calc') return [k(['↵'], 'Copy result'), k(['⇥'], 'Use result'), ...back];
@@ -245,17 +250,17 @@ function legendFor(page: string, depth: number): CommandLegendItem[] {
 }
 
 function Footer({ wide }: { wide: boolean }) {
-  const { page, depth } = useCommandMenu();
-  const legend = legendFor(page, depth);
+  const { page, pages } = useCommandMenu();
+  const legend = legendFor(page ?? 'root', pages.length);
   return (
-    <CommandFooter legend={wide ? legend : legend.slice(0, 2)} className="[--command-surface:transparent] bg-transparent">
-      <FooterStatus page={page} />
-    </CommandFooter>
+    <CommandMenuFooter legend={wide ? legend : legend.slice(0, 2)} className="[--command-surface:transparent] bg-transparent">
+      <FooterStatus page={page ?? 'root'} />
+    </CommandMenuFooter>
   );
 }
 
 function FooterStatus({ page }: { page: string }) {
-  const active = useCommandActive();
+  const active = useCommandMenuValue();
   const { clips, history } = useAlfred();
   let text = 'Alfred';
   if (page === 'emoji') { const em = ALL_EMOJI.find((x) => x.name === active); text = em ? `${em.char} ${em.name}` : 'Emoji'; }

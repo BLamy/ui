@@ -10,7 +10,7 @@ function EditorRail() {
       label={label}
       badge={badge}
       active={panel === label}
-      onPress={() => setPanel(label)}
+      onClick={() => setPanel(label)}
     />
   )
   return (

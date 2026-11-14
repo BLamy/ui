@@ -36,7 +36,7 @@ export default function Chronology() {
             <Button
               variant="ghost"
               size="sm"
-              onPress={() => player.current?.seek(m.time)}
+              onClick={() => player.current?.seek(m.time)}
               style={{
                 width: '100%',
                 justifyContent: 'flex-start',

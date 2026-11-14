@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StrictMode, createRef, useState } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ListRow } from '@/components/ui/list';
@@ -38,8 +38,16 @@ function manualFrames() {
 }
 
 const slider = () => screen.getByRole('slider');
+/** A real WheelEvent (UI SDK checks a `wheel` reason's event), with the modifiers and coordinates happy-dom's leaves out. */
+function wheelEvent(init: WheelEventInit) {
+  const event = new WheelEvent('wheel', { bubbles: true, cancelable: true });
+  const fields = { deltaX: 0, deltaY: 0, deltaMode: 0, clientX: 360, clientY: 300, ctrlKey: false, metaKey: false, shiftKey: false, ...init };
+  for (const [key, value] of Object.entries(fields)) Object.defineProperty(event, key, { value });
+  return event;
+}
+/** A mouse: moves while pressed carry the main button in `buttons`, as a real drag does. */
 const pointer = (type: 'pointerDown' | 'pointerMove' | 'pointerUp' | 'pointerCancel', x: number, y: number, init: Partial<PointerEventInit> = {}) =>
-  fireEvent[type](slider(), { pointerId: 1, pointerType: 'mouse', button: 0, clientX: x, clientY: y, ...init });
+  fireEvent[type](slider(), { pointerId: 1, pointerType: 'mouse', button: 0, buttons: type === 'pointerMove' ? 1 : 0, clientX: x, clientY: y, ...init });
 /** A position by how far out from the rail's inner edge and how far down it. */
 const atRail = (pull: number, along: number) => [346 - pull, along] as const;
 
@@ -47,6 +55,9 @@ function rail(props: Partial<TraceTimelineProps<string>> = {}) {
   return <TraceTimeline range={RANGE} stops={STOPS} orientation="vertical" {...props} />;
 }
 
+beforeAll(() => {
+  (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
+});
 beforeEach(() => layOut());
 afterEach(() => {
   cleanup();
@@ -103,17 +114,22 @@ describe('ARIA', () => {
 describe('keyboard', () => {
   function setup(props: Partial<TraceTimelineProps<string>> = {}) {
     const onValueChange = vi.fn();
+    const onValueCommit = vi.fn();
     const onViewChange = vi.fn();
-    render(rail({ defaultValue: 1_500_000, onValueChange, onViewChange, ...props }));
-    return { onValueChange, onViewChange, key: (key: string, init = {}) => fireEvent.keyDown(slider(), { key, ...init }), now: () => Number(slider().getAttribute('aria-valuenow')) };
+    render(rail({ defaultValue: 1_500_000, onValueChange, onValueCommit, onViewChange, ...props }));
+    return { onValueChange, onValueCommit, onViewChange, key: (key: string, init = {}) => fireEvent.keyDown(slider(), { key, ...init }), now: () => Number(slider().getAttribute('aria-valuenow')) };
   }
   const PIXEL = RANGE.end / LENGTH;
 
   it('nudges a pixel with the arrows by default, ten with shift', () => {
-    const { key, now, onValueChange } = setup();
+    const { key, now, onValueChange, onValueCommit } = setup();
     key('ArrowDown');
     expect(now()).toBeCloseTo(1_500_000 + PIXEL, 3);
-    expect(onValueChange.mock.calls[0][1]).toEqual({ phase: 'end', stop: null });
+    expect(onValueChange.mock.calls[0][1]).toMatchObject({ reason: 'step-key', stop: null });
+    // A key is a whole interaction: one change, one commit.
+    expect(onValueCommit).toHaveBeenCalledTimes(1);
+    expect(onValueCommit.mock.calls[0][0]).toBeCloseTo(1_500_000 + PIXEL, 3);
+    expect(onValueCommit.mock.calls[0][1]).toMatchObject({ reason: 'step-key', stop: null });
     key('ArrowUp');
     expect(now()).toBeCloseTo(1_500_000, 3);
     key('ArrowRight', { shiftKey: true });
@@ -146,7 +162,7 @@ describe('keyboard', () => {
     key('PageDown');
     expect(now()).toBe(1_800_000);
     expect(onValueChange.mock.calls[0][1].stop.key).toBe('b');
-    expect(onValueChange.mock.calls[0][1].phase).toBe('end');
+    expect(onValueChange.mock.calls[0][1].reason).toBe('step-key');
     key('PageDown');
     expect(now()).toBe(3_000_000);
     key('PageDown');
@@ -267,7 +283,7 @@ describe('controlled and uncontrolled', () => {
     const onViewChange = vi.fn();
     const { rerender } = render(rail({ defaultView: { start: 0, end: 1000 }, onViewChange }));
     rerender(rail({ range: { start: 0, end: 5000 }, defaultView: { start: 0, end: 1000 }, onViewChange }));
-    expect(onViewChange).toHaveBeenLastCalledWith({ start: 0, end: 5000 });
+    expect(onViewChange).toHaveBeenLastCalledWith({ start: 0, end: 5000 }, expect.objectContaining({ reason: 'range-change', source: 'programmatic' }));
   });
 
   it('sees an inline view with the same numbers as the same view', () => {
@@ -396,31 +412,76 @@ describe('the rail', () => {
 describe('scrubbing', () => {
   const PIXEL = RANGE.end / LENGTH;
 
-  it('jumps on the press, reports moves at most once a frame, and ends on release', () => {
+  it('jumps on the press, reports moves at most once a frame, and commits on release', () => {
     const frame = manualFrames();
     const onValueChange = vi.fn();
-    render(rail({ stops: [], onValueChange, defaultValue: 0 }));
+    const onValueCommit = vi.fn();
+    render(rail({ stops: [], onValueChange, onValueCommit, defaultValue: 0 }));
     pointer('pointerDown', 360, 200);
     expect(onValueChange).toHaveBeenCalledTimes(1);
     expect(onValueChange.mock.lastCall?.[0]).toBeCloseTo(200 * PIXEL, 3);
-    expect(onValueChange.mock.lastCall?.[1]).toEqual({ phase: 'start', stop: null });
+    expect(onValueChange.mock.lastCall?.[1]).toMatchObject({ reason: 'track-press', stop: null });
     // Many events in one frame: one report.
     for (let y = 201; y < 260; y++) pointer('pointerMove', 360, y);
     expect(onValueChange).toHaveBeenCalledTimes(1);
     frame();
     expect(onValueChange).toHaveBeenCalledTimes(2);
     expect(onValueChange.mock.lastCall?.[0]).toBeCloseTo(259 * PIXEL, 3);
-    expect(onValueChange.mock.lastCall?.[1].phase).toBe('move');
+    expect(onValueChange.mock.lastCall?.[1].reason).toBe('drag');
     // A frame with nothing new: no report.
     frame();
     expect(onValueChange).toHaveBeenCalledTimes(2);
+    expect(onValueCommit).not.toHaveBeenCalled();
+    // The release takes in the move still waiting for its frame, then where it lifted.
     pointer('pointerMove', 360, 300);
     pointer('pointerUp', 360, 310);
-    expect(onValueChange).toHaveBeenCalledTimes(3);
     expect(onValueChange.mock.lastCall?.[0]).toBeCloseTo(310 * PIXEL, 3);
-    expect(onValueChange.mock.lastCall?.[1].phase).toBe('end');
+    expect(onValueChange.mock.lastCall?.[1].reason).toBe('drag');
+    expect(onValueCommit).toHaveBeenCalledTimes(1);
+    expect(onValueCommit.mock.lastCall?.[0]).toBeCloseTo(310 * PIXEL, 3);
+    expect(onValueCommit.mock.lastCall?.[1]).toMatchObject({ reason: 'drag', stop: null });
+    const calls = onValueChange.mock.calls.length;
     frame();
-    expect(onValueChange).toHaveBeenCalledTimes(3);
+    pointer('pointerMove', 360, 400, { buttons: 0 });
+    frame();
+    expect(onValueChange).toHaveBeenCalledTimes(calls);
+  });
+
+  it('puts the playhead back where the scrub began when Escape is pressed', () => {
+    const frame = manualFrames();
+    const onValueChange = vi.fn();
+    const onValueCommit = vi.fn();
+    render(rail({ stops: [], onValueChange, onValueCommit, defaultValue: 1_000_000 }));
+    pointer('pointerDown', 360, 200);
+    pointer('pointerMove', 360, 260);
+    frame();
+    expect(Number(slider().getAttribute('aria-valuenow'))).toBeCloseTo(260 * PIXEL, 3);
+    fireEvent.keyDown(slider(), { key: 'Escape' });
+    expect(slider().getAttribute('aria-valuenow')).toBe('1000000');
+    expect(onValueChange.mock.lastCall?.[1].reason).toBe('escape-key');
+    expect(onValueCommit).toHaveBeenCalledTimes(1);
+    expect(onValueCommit.mock.lastCall?.[0]).toBe(1_000_000);
+    expect(document.querySelector('[data-slot=trace-timeline-card]')).toBeNull();
+    // The release that follows changes nothing more.
+    pointer('pointerMove', 360, 300);
+    pointer('pointerUp', 360, 300);
+    frame();
+    expect(slider().getAttribute('aria-valuenow')).toBe('1000000');
+  });
+
+  it('keeps the playhead where it is when the host cancels the change', () => {
+    render(rail({ stops: [], defaultValue: 1_000_000, onValueChange: (_t, details) => details.cancel() }));
+    pointer('pointerDown', 360, 200);
+    pointer('pointerUp', 360, 200);
+    fireEvent.keyDown(slider(), { key: 'End' });
+    expect(slider().getAttribute('aria-valuenow')).toBe('1000000');
+  });
+
+  it('lets a host take a press for itself', () => {
+    const onValueChange = vi.fn();
+    render(rail({ stops: [], onValueChange, onPointerDown: (e) => e.preventDefault() }));
+    pointer('pointerDown', 360, 200);
+    expect(onValueChange).not.toHaveBeenCalled();
   });
 
   it('snaps softly to a stop within about 6 px, and reports the stop', () => {
@@ -489,8 +550,8 @@ describe('scrubbing', () => {
     frame();
     const at = Number(slider().getAttribute('aria-valuenow'));
     // Ctrl and wheel while still pressed: twice as close, and the playhead stays.
-    const wheelEvent = Object.assign(new Event('wheel', { bubbles: true, cancelable: true }), { deltaX: 0, deltaY: Math.log(0.5) * 100, deltaMode: 0, clientX: 360, clientY: 300, ctrlKey: true, metaKey: false, shiftKey: false });
-    act(() => { slider().dispatchEvent(wheelEvent); });
+    const zoom = wheelEvent({ deltaY: Math.log(0.5) * 100, ctrlKey: true });
+    act(() => { slider().dispatchEvent(zoom); });
     frame();
     expect(Number(slider().getAttribute('aria-valuenow'))).toBe(at);
     pointer('pointerMove', 360, 310);
@@ -510,7 +571,7 @@ describe('scrubbing', () => {
     expect(onValueChange.mock.lastCall?.[0]).toBe(600_000);
     // Zoomed in around the pointer, those 5 px would be more than the snap's reach.
     for (let i = 0; i < 4; i++) {
-      const event = Object.assign(new Event('wheel', { bubbles: true, cancelable: true }), { deltaX: 0, deltaY: -50, deltaMode: 0, clientX: 360, clientY: 105, ctrlKey: true, metaKey: false, shiftKey: false });
+      const event = wheelEvent({ deltaY: -50, clientY: 105, ctrlKey: true });
       act(() => { slider().dispatchEvent(event); });
     }
     frame();
@@ -530,14 +591,17 @@ describe('scrubbing', () => {
 
   it('ends on a cancel, at the last position', () => {
     const onValueChange = vi.fn();
-    render(rail({ stops: [], onValueChange }));
+    const onValueCommit = vi.fn();
+    render(rail({ stops: [], onValueChange, onValueCommit }));
     pointer('pointerDown', 360, 200);
     pointer('pointerCancel', 360, 400);
-    expect(onValueChange.mock.lastCall?.[1].phase).toBe('end');
-    expect(onValueChange.mock.lastCall?.[0]).toBeCloseTo(200 * PIXEL, 3);
+    expect(onValueChange).toHaveBeenCalledTimes(1);
+    expect(onValueCommit).toHaveBeenCalledTimes(1);
+    expect(onValueCommit.mock.lastCall?.[0]).toBeCloseTo(200 * PIXEL, 3);
+    expect(onValueCommit.mock.lastCall?.[1].reason).toBe('track-press');
     // A lost capture after that changes nothing.
     fireEvent.lostPointerCapture(slider(), { pointerId: 1 });
-    expect(onValueChange).toHaveBeenCalledTimes(2);
+    expect(onValueChange).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -553,12 +617,13 @@ describe('pinch, wheel and double press', () => {
     const frame = manualFrames();
     const onValueChange = vi.fn();
     const onViewChange = vi.fn();
-    render(rail({ stops: [], value: 1_000_000, onValueChange, onViewChange }));
+    render(rail({ stops: [], defaultValue: 1_000_000, onValueChange, onViewChange }));
     touch('pointerDown', 1, 250);
-    expect(onValueChange.mock.lastCall?.[1].phase).toBe('start');
+    expect(onValueChange.mock.lastCall?.[1]).toMatchObject({ reason: 'track-press' });
     touch('pointerDown', 2, 350);
     expect(onValueChange.mock.lastCall?.[0]).toBe(1_000_000);
-    expect(onValueChange.mock.lastCall?.[1]).toEqual({ phase: 'end', stop: null });
+    expect(slider().getAttribute('aria-valuenow')).toBe('1000000');
+    expect(onValueChange.mock.lastCall?.[1]).toMatchObject({ reason: 'drag', stop: null });
     const calls = onValueChange.mock.calls.length;
     // Spread to twice the separation, around the same midpoint: half the span, and what was there stays there.
     touch('pointerMove', 1, 200);
@@ -575,9 +640,8 @@ describe('pinch, wheel and double press', () => {
     expect(onValueChange.mock.calls.length).toBe(calls);
   });
 
-  // happy-dom's WheelEvent leaves out the modifiers and coordinates.
   const wheel = (init: WheelEventInit) => {
-    const event = Object.assign(new Event('wheel', { bubbles: true, cancelable: true }), { deltaX: 0, deltaY: 0, deltaMode: 0, clientX: 360, clientY: 300, ctrlKey: false, metaKey: false, shiftKey: false, ...init });
+    const event = wheelEvent(init);
     act(() => { slider().dispatchEvent(event); });
     return event;
   };
@@ -630,7 +694,7 @@ describe('pinch, wheel and double press', () => {
     pointer('pointerUp', 360, 300);
     pointer('pointerDown', 360, 301);
     pointer('pointerUp', 360, 301);
-    expect(onViewChange).toHaveBeenLastCalledWith({ start: 0, end: 3_600_000 });
+    expect(onViewChange).toHaveBeenLastCalledWith({ start: 0, end: 3_600_000 }, expect.objectContaining({ reason: 'double-press' }));
     cleanup();
     layOut({ width: 664, height: 200 });
     const stripView = vi.fn();
@@ -666,10 +730,11 @@ describe('the strip', () => {
 
   it('seeks on a press and drag in the plot, and only picks rows in the gutter', () => {
     const onValueChange = vi.fn();
-    const onSelectThread = vi.fn();
-    render(rail({ orientation: 'horizontal', lanes, stops: [], onValueChange, onSelectThread, focusedLane: 'a' }));
+    const onSelectedThreadChange = vi.fn();
+    render(rail({ orientation: 'horizontal', lanes, stops: [], onValueChange, onSelectedThreadChange, focusedLane: 'a' }));
     pointer('pointerDown', 10, rowsAt.threadOneA);
-    expect(onSelectThread).toHaveBeenCalledWith(1, 'a');
+    expect(onSelectedThreadChange).toHaveBeenCalledWith(1, expect.objectContaining({ reason: 'item-press', lane: 'a' }));
+    expect(onSelectedThreadChange.mock.lastCall?.[1].event.type).toBe('pointerdown');
     expect(onValueChange).not.toHaveBeenCalled();
     pointer('pointerUp', 10, rowsAt.threadOneA);
     pointer('pointerDown', 64 + 300, rowsAt.threadOneA);
@@ -678,26 +743,55 @@ describe('the strip', () => {
   });
 
   it('focuses a lane when one of its rows is pressed', () => {
-    const onFocusLane = vi.fn();
-    render(rail({ orientation: 'horizontal', lanes, stops: [], onFocusLane, focusedLane: 'a' }));
+    const onFocusedLaneChange = vi.fn();
+    render(rail({ orientation: 'horizontal', lanes, stops: [], onFocusedLaneChange, focusedLane: 'a' }));
     pointer('pointerDown', 200, rowsAt.titleA);
     pointer('pointerUp', 200, rowsAt.titleA);
-    expect(onFocusLane).not.toHaveBeenCalled();
+    expect(onFocusedLaneChange).not.toHaveBeenCalled();
     pointer('pointerDown', 200, rowsAt.titleB);
     pointer('pointerUp', 200, rowsAt.titleB);
-    expect(onFocusLane).toHaveBeenCalledWith('b');
+    expect(onFocusedLaneChange).toHaveBeenCalledWith('b', expect.objectContaining({ reason: 'item-press' }));
+  });
+
+  it('holds the lane, thread and request itself when uncontrolled, and a canceled pick keeps them', () => {
+    const onFocusedLaneChange = vi.fn((_lane: string, details: { cancel: () => void }) => details.cancel());
+    const onSelectedThreadChange = vi.fn();
+    render(rail({ orientation: 'horizontal', lanes, stops: [], defaultFocusedLane: 'a', onFocusedLaneChange, onSelectedThreadChange }));
+    // Lane b refused: a press on its title doesn't focus it, so the press on lane a's thread is still in the focused lane.
+    pointer('pointerDown', 200, rowsAt.titleB);
+    pointer('pointerUp', 200, rowsAt.titleB);
+    expect(onFocusedLaneChange).toHaveBeenCalledTimes(1);
+    pointer('pointerDown', 10, rowsAt.threadOneA);
+    pointer('pointerUp', 10, rowsAt.threadOneA);
+    expect(onFocusedLaneChange).toHaveBeenCalledTimes(1);
+    expect(onSelectedThreadChange).toHaveBeenCalledTimes(1);
+    // The same thread again is no change.
+    pointer('pointerDown', 10, rowsAt.threadOneA);
+    pointer('pointerUp', 10, rowsAt.threadOneA);
+    expect(onSelectedThreadChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets a controlled host refuse a pick by not passing it back', () => {
+    const onSelectedRequestChange = vi.fn();
+    render(rail({ orientation: 'horizontal', lanes, stops: [], requests: [{ id: 'r', time: 1_800_000, from: 1_900_000, to: 2_000_000 }], selectedRequest: null, onSelectedRequestChange }));
+    pointer('pointerDown', 64 + 300 + 5, rowsAt.request);
+    pointer('pointerUp', 64 + 300 + 5, rowsAt.request);
+    pointer('pointerDown', 64 + 300 + 5, rowsAt.request);
+    pointer('pointerUp', 64 + 300 + 5, rowsAt.request);
+    // Still null, so the second press asks again.
+    expect(onSelectedRequestChange).toHaveBeenCalledTimes(2);
   });
 
   it('selects a request near a press in its row', () => {
-    const onSelectRequest = vi.fn();
-    render(rail({ orientation: 'horizontal', lanes, stops: [], requests: [{ id: 'r', time: 1_800_000, from: 1_900_000, to: 2_000_000 }], onSelectRequest }));
+    const onSelectedRequestChange = vi.fn();
+    render(rail({ orientation: 'horizontal', lanes, stops: [], requests: [{ id: 'r', time: 1_800_000, from: 1_900_000, to: 2_000_000 }], onSelectedRequestChange }));
     pointer('pointerDown', 64 + 300 + 5, rowsAt.request);
     pointer('pointerUp', 64 + 300 + 5, rowsAt.request);
-    expect(onSelectRequest).toHaveBeenCalledWith('r');
-    onSelectRequest.mockClear();
+    expect(onSelectedRequestChange).toHaveBeenCalledWith('r', expect.objectContaining({ reason: 'item-press', source: 'programmatic' }));
+    onSelectedRequestChange.mockClear();
     pointer('pointerDown', 64 + 100, rowsAt.request);
     pointer('pointerUp', 64 + 100, rowsAt.request);
-    expect(onSelectRequest).not.toHaveBeenCalled();
+    expect(onSelectedRequestChange).not.toHaveBeenCalled();
   });
 
   it('snaps to a stop only in the stops row, and shows its card there', () => {
@@ -842,11 +936,92 @@ describe('the handle', () => {
     expect(times).toHaveLength(LENGTH);
     expect(times[300]).toBeCloseTo(300_000, 3);
     act(() => handle.fit());
-    expect(onViewChange).toHaveBeenLastCalledWith({ start: 0, end: 3_600_000 });
+    expect(onViewChange).toHaveBeenLastCalledWith({ start: 0, end: 3_600_000 }, expect.objectContaining({ reason: 'imperative' }));
     act(() => handle.setView({ start: 1000, end: 2000 }));
-    expect(onViewChange).toHaveBeenLastCalledWith({ start: 1000, end: 2000 });
+    expect(onViewChange).toHaveBeenLastCalledWith({ start: 1000, end: 2000 }, expect.objectContaining({ reason: 'imperative' }));
     expect(() => handle.redraw()).not.toThrow();
     handle.focus();
     expect(document.activeElement).toBe(slider());
+  });
+});
+
+describe('the view, in the primitive', () => {
+  const span = (v: TraceRange) => v.end - v.start;
+
+  it('says why the view moved: zoom keys, the wheel, a scrub past the edge and the playhead leaving it', () => {
+    const frame = manualFrames();
+    const onViewChange = vi.fn();
+    const { rerender } = render(rail({ stops: [], defaultValue: 1_500_000, defaultView: { start: 600_000, end: 2_400_000 }, onViewChange }));
+    fireEvent.keyDown(slider(), { key: '+' });
+    expect(onViewChange.mock.lastCall?.[1]).toMatchObject({ reason: 'zoom-key', source: 'programmatic' });
+    expect(onViewChange.mock.lastCall?.[1].event.key).toBe('+');
+    fireEvent.keyDown(slider(), { key: '0' });
+    expect(onViewChange).toHaveBeenLastCalledWith({ start: 0, end: 3_600_000 }, expect.objectContaining({ reason: 'zoom-key' }));
+    act(() => { slider().dispatchEvent(wheelEvent({ deltaY: -30, ctrlKey: true })); });
+    expect(onViewChange.mock.lastCall?.[1]).toMatchObject({ reason: 'wheel' });
+    expect(onViewChange.mock.lastCall?.[1].event).toBeInstanceOf(WheelEvent);
+    // A scrub past the bottom of a zoomed rail pans the view along with it.
+    pointer('pointerDown', 360, 300);
+    pointer('pointerMove', 360, 700);
+    frame();
+    expect(onViewChange.mock.lastCall?.[1]).toMatchObject({ reason: 'drag' });
+    expect(onViewChange.mock.lastCall?.[1].event.type).toBe('pointermove');
+    pointer('pointerUp', 360, 700);
+    // The playhead set from outside, past the view: it follows.
+    rerender(rail({ stops: [], value: 100, defaultView: { start: 600_000, end: 2_400_000 }, onViewChange }));
+    expect(onViewChange.mock.lastCall?.[1]).toMatchObject({ reason: 'playhead', source: 'programmatic' });
+    expect((onViewChange.mock.lastCall?.[0] as TraceRange).start).toBe(0);
+  });
+
+  it('keeps the view when the change is canceled, and the next one starts from where it is', () => {
+    const onViewChange = vi.fn((_view: TraceRange, details: { cancel: () => void }) => details.cancel());
+    const ref = createRef<TraceTimelineHandle>();
+    render(rail({ ref, stops: [], defaultView: { start: 0, end: 600_000 }, onViewChange }));
+    fireEvent.keyDown(slider(), { key: '0' });
+    fireEvent.keyDown(slider(), { key: '0' });
+    // Still zoomed, so the second fit asked again with the same window.
+    expect(onViewChange).toHaveBeenCalledTimes(2);
+    expect(onViewChange.mock.calls[1][0]).toEqual({ start: 0, end: 3_600_000 });
+    onViewChange.mockImplementation(() => {});
+    act(() => ref.current?.setView({ start: 1000, end: 2000 }));
+    expect(onViewChange).toHaveBeenLastCalledWith({ start: 1000, end: 2000 }, expect.objectContaining({ reason: 'imperative' }));
+  });
+
+  it('is the host\'s to keep when controlled: a view not passed back stays out', () => {
+    const asked: TraceRange[] = [];
+    function Host() {
+      const [view] = useState<TraceRange>({ start: 0, end: 600_000 });
+      return rail({ stops: [], view, onViewChange: (v) => asked.push(v) });
+    }
+    render(<Host />);
+    fireEvent.keyDown(slider(), { key: '-' });
+    fireEvent.keyDown(slider(), { key: '-' });
+    // Both asked for twice the span the host still holds.
+    expect(asked.map(span)).toEqual([1_200_000, 1_200_000]);
+  });
+
+  it('follows a controlled view the host passes back', () => {
+    const asked: TraceRange[] = [];
+    function Host() {
+      const [view, setView] = useState<TraceRange>({ start: 0, end: 600_000 });
+      return rail({ stops: [], view, onViewChange: (v) => { asked.push(v); setView(v); } });
+    }
+    render(<Host />);
+    fireEvent.keyDown(slider(), { key: '-' });
+    fireEvent.keyDown(slider(), { key: '-' });
+    expect(asked.map(span)).toEqual([1_200_000, 2_400_000]);
+  });
+});
+
+describe('colours', () => {
+  it('reads the theme again when the kit\'s appearance changes', async () => {
+    const { AppearanceProvider } = await import('@/lib/theme');
+    const read = vi.spyOn(window, 'getComputedStyle');
+    const { rerender } = render(<AppearanceProvider value="light">{rail()}</AppearanceProvider>);
+    const before = read.mock.calls.length;
+    rerender(<AppearanceProvider value="light">{rail()}</AppearanceProvider>);
+    expect(read.mock.calls.length).toBe(before);
+    rerender(<AppearanceProvider value="dark">{rail()}</AppearanceProvider>);
+    expect(read.mock.calls.length).toBeGreaterThan(before);
   });
 });

@@ -50,7 +50,7 @@ export function ProjectPage({ project: p }: { project: Project }) {
           <span>Last run {relativeTime(p.lastRun)}</span>
         </div>
 
-        <TabView placement="top" selectedKey={qa.tab} onSelectionChange={(k) => qa.setTab(k as ProjectTab)}>
+        <TabView<ProjectTab> placement="top" value={qa.tab} onValueChange={(t) => { if (t) qa.setTab(t); }}>
           <div className="sticky top-0 z-20 border-b border-border bg-bar backdrop-blur-xl backdrop-saturate-150">
             <TabViewBar variant="plain" className={cn(wrap, 'overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden')}>
               <TabViewList aria-label="Project" className="flex gap-1">
@@ -59,6 +59,7 @@ export function ProjectPage({ project: p }: { project: Project }) {
                     count={t.id === 'bugs' ? open : t.id === 'runs' ? runs : undefined}
                     alert={t.id === 'bugs' && open > 0} />
                 ))}
+                <TabViewIndicator className="inset-x-2 -bottom-px z-1 h-[2px] rounded-full bg-primary" />
               </TabViewList>
             </TabViewBar>
           </div>
@@ -85,13 +86,12 @@ function Panel({ tab, project }: { tab: ProjectTab; project: Project }) {
 
 function UnderlineTab({ id, label, icon, count, alert }: { id: string; label: string; icon: string; count?: number; alert?: boolean }) {
   return (
-    <TabViewTab id={id} textValue={label} className="group relative flex shrink-0 cursor-pointer items-center py-1.5 outline-none">
-      <span className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13.5px] font-medium text-muted-foreground transition-[color,background-color] group-data-hovered:bg-secondary! group-data-hovered:text-foreground group-data-selected:text-foreground group-data-focus-visible:ring-2 group-data-focus-visible:ring-ring">
+    <TabViewTab value={id} className="group relative flex shrink-0 cursor-pointer items-center py-1.5 outline-none">
+      <span className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13.5px] font-medium text-muted-foreground transition-[color,background-color] group-hover:bg-secondary! group-hover:text-foreground group-data-selected:text-foreground group-focus-visible:ring-2 group-focus-visible:ring-ring">
         <Icon name={icon} size={15} sw={2} />
         <span className="whitespace-nowrap">{label}</span>
         {count != null ? <Count n={count} alert={alert} /> : null}
       </span>
-      <TabViewIndicator className="inset-x-2 -bottom-px z-1 h-[2px] rounded-full bg-primary" />
     </TabViewTab>
   );
 }

@@ -1,42 +1,30 @@
 /* ══ Canvas math — the geometry behind an infinite, pannable, zoomable surface ══
    Everything is plain functions on plain data, so it works with any item model. Board units are px at 100% zoom.
-   - the camera: a screen point is `board * z + (x, y)`;
+   Panning, zooming, fitting and revealing are UI SDK's `createViewport` (the canvas primitive); what is here is what it
+   doesn't do:
+   - points between a `Viewport` and the canvas's own pixels, as pure functions, for render-time math on a viewport you
+     hold (a screen point is `board * zoom + (x, y)`);
    - frames: a rectangle that may be turned about its center (`rot`, degrees), with corners, hit tests and bounds;
    - handles: where the eight resize handles and the rotate handle sit on a frame, and what dragging them does;
    - snapping: alignment guides for a box being moved among others. */
+import type { Viewport } from '@ui-sdk/core';
+
+export type { Viewport };
 
 export interface Pt { x: number; y: number }
 export interface Rect { x: number; y: number; w: number; h: number }
 /** A rectangle with a rotation (degrees, about its center): the position, size and turn of an item. */
 export interface Frame extends Rect { rot: number }
 
-/* ── The camera ── */
-
-export interface Camera { x: number; y: number; z: number }
-
-export const MIN_ZOOM = 0.02;
-export const MAX_ZOOM = 4;
 /** The smallest a frame can be resized to. */
 export const MIN_SIZE = 24;
 
-export const clampZoom = (z: number) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z));
+/* ── Points ── */
 
-export const toBoard = (c: Camera, sx: number, sy: number): Pt => ({ x: (sx - c.x) / c.z, y: (sy - c.y) / c.z });
-export const toScreen = (c: Camera, p: Pt): Pt => ({ x: p.x * c.z + c.x, y: p.y * c.z + c.y });
-
-/** Zoom by `factor`, keeping the board point under the screen point (sx, sy) where it is. */
-export function zoomAt(c: Camera, factor: number, sx: number, sy: number): Camera {
-  const z = clampZoom(c.z * factor);
-  const k = z / c.z;
-  return { z, x: sx - (sx - c.x) * k, y: sy - (sy - c.y) * k };
-}
-
-/** A camera that shows `r` centered in a view of `size`, with `pad` px of air, zoomed in no further than 100%. */
-export function fitCamera(r: Rect | null, size: { width: number; height: number }, pad = 72): Camera {
-  if (!r || r.w <= 0 || r.h <= 0) return { x: size.width / 2, y: size.height / 2, z: 1 };
-  const z = clampZoom(Math.min(1, (size.width - pad * 2) / r.w, (size.height - pad * 2) / r.h));
-  return { z, x: size.width / 2 - (r.x + r.w / 2) * z, y: size.height / 2 - (r.y + r.h / 2) * z };
-}
+/** A point in the canvas's own pixels (from its top-left corner), in board units. */
+export const toBoard = (v: Viewport, sx: number, sy: number): Pt => ({ x: (sx - v.x) / v.zoom, y: (sy - v.y) / v.zoom });
+/** A board point in the canvas's own pixels. */
+export const toScreen = (v: Viewport, p: Pt): Pt => ({ x: p.x * v.zoom + v.x, y: p.y * v.zoom + v.y });
 
 /* ── Frames ── */
 

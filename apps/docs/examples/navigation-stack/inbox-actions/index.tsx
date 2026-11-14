@@ -1,7 +1,15 @@
 import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { List, ListRow, ListSection } from '@/components/ui/list'
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import {
+  NavigationStack,
+  NavigationStackBar,
+  NavigationStackContent,
+  NavigationStackLeading,
+  NavigationStackPage,
+  NavigationStackTitle,
+  NavigationStackTrailing,
+} from '@/components/ui/navigation-stack'
 import { Icon } from '@/lib/icon'
 
 const seed = [
@@ -23,86 +31,93 @@ function InboxWithActions() {
       ...m,
     ])
   }
-  const screens: Screen[] = [
-    {
-      key: 'inbox',
-      title: 'Inbox',
-      hideChromeOnScroll: false,
-      onRefresh: refresh, // pull down to refresh
-      leading: (
-        <Button variant="link" style={{ padding: '0 10px' }}>
-          Edit
-        </Button>
-      ),
-      trailing: (
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="New message"
-          onPress={() => setComposing(true)}
-        >
-          <Icon name="compose" size={22} style={{ color: 'var(--primary)' }} />
-        </Button>
-      ),
-      content: (
-        <List>
-          <ListSection footer="Pull down to check for new mail.">
-            {mail.map((m, i) => (
-              <ListRow
-                key={m.id}
-                title={m.from}
-                subtitle={m.subject}
-                divider={i < mail.length - 1}
-                onPress={() => {}}
-              />
-            ))}
-          </ListSection>
-        </List>
-      ),
-    },
-  ]
-  if (composing)
-    screens.push({
-      key: 'compose',
-      title: 'New Message',
-      hideChromeOnScroll: false,
-      trailing: (
-        <Button
-          size="sm"
-          style={{ marginRight: 8 }}
-          onPress={() => setComposing(false)}
-        >
-          Send
-        </Button>
-      ),
-      content: (
-        <div style={{ padding: '4px 16px', fontSize: 16 }}>
-          <div
-            style={{
-              padding: '10px 0',
-              borderBottom: '1px solid var(--border)',
-              color: 'var(--muted-foreground)',
-            }}
-          >
-            To: Design team
-          </div>
-          <div
-            style={{
-              padding: '10px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            Subject: Friday demo
-          </div>
-          <p style={{ color: 'var(--muted-foreground)' }}>
-            Send pops the screen by clearing the state that pushed it.
-          </p>
-        </div>
-      ),
-    })
   return (
     <div style={{ position: 'relative', height: 400 }}>
-      <NavigationStack screens={screens} onPop={() => setComposing(false)} />
+      <NavigationStack
+        pages={composing ? ['inbox', 'compose'] : ['inbox']}
+        onPagesChange={(pages) => setComposing(pages.includes('compose'))}
+      >
+        <NavigationStackPage value="inbox">
+          <NavigationStackBar hideOnScroll={false}>
+            <NavigationStackLeading>
+              <Button variant="link" style={{ padding: '0 10px' }}>
+                Edit
+              </Button>
+            </NavigationStackLeading>
+            <NavigationStackTitle>Inbox</NavigationStackTitle>
+            <NavigationStackTrailing>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="New message"
+                onClick={() => setComposing(true)}
+              >
+                <Icon
+                  name="compose"
+                  size={22}
+                  style={{ color: 'var(--primary)' }}
+                />
+              </Button>
+            </NavigationStackTrailing>
+          </NavigationStackBar>
+          {/* Pull down to refresh (touch). */}
+          <NavigationStackContent onRefresh={refresh}>
+            <List>
+              <ListSection footer="Pull down to check for new mail.">
+                {mail.map((m, i) => (
+                  <ListRow
+                    key={m.id}
+                    title={m.from}
+                    subtitle={m.subject}
+                    divider={i < mail.length - 1}
+                    onClick={() => {}}
+                  />
+                ))}
+              </ListSection>
+            </List>
+          </NavigationStackContent>
+        </NavigationStackPage>
+        {composing ? (
+          <NavigationStackPage value="compose">
+            <NavigationStackBar hideOnScroll={false}>
+              <NavigationStackTitle>New Message</NavigationStackTitle>
+              <NavigationStackTrailing>
+                <Button
+                  size="sm"
+                  style={{ marginRight: 8 }}
+                  onClick={() => setComposing(false)}
+                >
+                  Send
+                </Button>
+              </NavigationStackTrailing>
+            </NavigationStackBar>
+            <NavigationStackContent>
+              <div style={{ padding: '4px 16px', fontSize: 16 }}>
+                <div
+                  style={{
+                    padding: '10px 0',
+                    borderBottom: '1px solid var(--border)',
+                    color: 'var(--muted-foreground)',
+                  }}
+                >
+                  To: Design team
+                </div>
+                <div
+                  style={{
+                    padding: '10px 0',
+                    borderBottom: '1px solid var(--border)',
+                  }}
+                >
+                  Subject: Friday demo
+                </div>
+                <p style={{ color: 'var(--muted-foreground)' }}>
+                  Send pops the page by clearing the state that pushed it.
+                </p>
+              </div>
+            </NavigationStackContent>
+          </NavigationStackPage>
+        ) : null}
+      </NavigationStack>
     </div>
   )
 }

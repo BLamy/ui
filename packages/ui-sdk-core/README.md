@@ -1,8 +1,10 @@
 # @brett_lamy/ui-sdk-core
 
 The BL fork of [`@ui-sdk/core`](https://ui-sdk.dev), built from [BLamy/ui-sdk](https://github.com/BLamy/ui-sdk).
-It is upstream UI SDK plus the small set of behaviors `@brett_lamy/ui` is built on (size classes, edge
-swipes, navigation stacks, back navigation, pull to refresh). Each addition is written to be proposed upstream.
+It is upstream UI SDK plus the one thing `@brett_lamy/ui` cannot build from its public API: layer hosts
+(an element with `data-layer-host` keeps the popups rendered inside it out of the top layer, placed against its
+box and modal to it alone), `active` on `bindLayer`, and two exported kernel types. Each is written to be
+proposed upstream.
 
 Install it under upstream's name, so imports read like the UI SDK docs:
 

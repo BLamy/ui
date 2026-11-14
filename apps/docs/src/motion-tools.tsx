@@ -5,8 +5,10 @@ import { useEffect, useState } from 'react';
    carry a slowed demo. Nothing is installed until a speed other than 1× is chosen.
 
    The kit's motion comes from two engines, and each is slowed its own way:
-   - framer-motion springs (title flights, sheets, morphs) read `performance.now()` once per frame, so the tool swaps in
-     a clock that runs at the chosen fraction of real time. It is re-anchored on every change, so time never jumps.
+   - JS springs (framer-motion's morphs, the kit's title flights and UI SDK's sheets on `solveSpring`) read
+     `performance.now()` or the `requestAnimationFrame` timestamp once per frame, so the tool swaps in a clock that runs
+     at the chosen fraction of real time, and hands frame callbacks that clock's time. It is re-anchored on every
+     change, so time never jumps.
    - CSS transitions and animations (the `--ease-spring-*` curves, `animate-bl-*`) are Web Animations: each one gets the
      chosen speed as its `playbackRate` as it starts, and the running ones are updated when the speed changes.
    "Reduce motion" answers `matchMedia('(prefers-reduced-motion: reduce)')`, which is what the kit's JS checks. CSS
@@ -27,6 +29,9 @@ function installClock() {
   realNow = performance.now.bind(performance);
   anchorReal = anchorFake = realNow();
   performance.now = () => anchorFake + (realNow() - anchorReal) * scale;
+  // Frame callbacks get the same clock as their timestamp (the real one is the frame's start on the real clock).
+  const realFrame = window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame = (callback) => realFrame(() => callback(performance.now()));
   // Animations that start later, in any element.
   for (const type of ['transitionrun', 'animationstart'] as const) {
     document.addEventListener(type, (e) => {

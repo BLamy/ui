@@ -15,7 +15,7 @@ export default function Media() {
     <div className="mx-auto grid max-w-sm gap-4">
       <div className="grid gap-4 rounded-card bg-linear-to-br from-primary to-[#101014] p-5 text-white">
         <div className="grid gap-1.5">
-          <Slider aria-label="Playback position" tone="onDark" size="sm" maxValue={length} value={pos} onChange={(v) => setPos(v as number)} />
+          <Slider aria-label="Playback position" tone="onDark" size="sm" max={length} value={pos} onValueChange={setPos} />
           <div className="flex justify-between text-caption2 tabular-nums opacity-70">
             <span>{fmt(pos)}</span>
             <span>-{fmt(length - pos)}</span>

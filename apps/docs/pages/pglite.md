@@ -124,7 +124,7 @@ Browsers may evict "best effort" storage under disk pressure. `usePersistenceSup
 
 ```tsx
 const { indexedDB, opfs, locks, persisted, estimate, persist } = usePersistenceSupport()
-// <Button onPress={persist}>Keep my data</Button>
+// <Button onClick={persist}>Keep my data</Button>
 // estimate: { usage, quota } in bytes
 ```
 

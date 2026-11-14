@@ -1,10 +1,20 @@
 import { useState, type ReactNode } from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Credenza } from '@/components/ui/credenza'
+import {
+  Credenza,
+  CredenzaBack,
+  CredenzaBackdrop,
+  CredenzaClose,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaView,
+} from '@/components/ui/credenza'
 import { ListRow } from '@/components/ui/list'
 import { QRSvg } from '@/components/ui/qr-svg'
 import { Icon } from '@/lib/icon'
+import { BLProvider } from '@/lib/theme'
 
 const recipients = [
   { f: 'Maya', l: 'Lindqvist' },
@@ -27,7 +37,7 @@ function ShareSheet() {
     >
       <Button
         variant="secondary"
-        onPress={() => {
+        onClick={() => {
           setCopied(false)
           setView('share')
         }}
@@ -35,75 +45,92 @@ function ShareSheet() {
         <Icon name="share" size={18} /> Share album
       </Button>
       <Credenza
-        compact
+        presentation="sheet"
         open={view !== null}
+        onOpenChange={(open) => {
+          if (!open) setView(null)
+        }}
         view={view ?? 'share'}
-        title={view === 'qr' ? 'Scan to open' : 'Summer 2026'}
-        canBack={view === 'qr'}
-        onBack={() => setView('share')}
-        onClose={() => setView(null)}
       >
-        {view === 'qr' ? (
-          <div
-            style={{
-              display: 'grid',
-              placeItems: 'center',
-              padding: '10px 0 26px',
-            }}
-          >
-            <QRSvg seed="https://example.com/albums/summer-2026" size={168} />
-          </div>
-        ) : (
-          <div style={{ padding: '4px 8px 10px' }}>
-            <div
-              style={{
-                display: 'flex',
-                gap: 14,
-                padding: '6px 10px 14px',
-                overflowX: 'auto',
-              }}
-            >
-              {recipients.map((p) => (
-                <button
-                  key={p.f}
-                  type="button"
-                  onClick={() => setView(null)}
+        <CredenzaBackdrop />
+        <CredenzaContent>
+          <CredenzaHeader>
+            <CredenzaBack
+              hidden={view !== 'qr'}
+              onClick={() => setView('share')}
+            />
+            <CredenzaTitle>
+              {view === 'qr' ? 'Scan to open' : 'Summer 2026'}
+            </CredenzaTitle>
+            <CredenzaClose />
+          </CredenzaHeader>
+          <CredenzaView>
+            {view === 'qr' ? (
+              <div
+                style={{
+                  display: 'grid',
+                  placeItems: 'center',
+                  padding: '10px 0 26px',
+                }}
+              >
+                <QRSvg
+                  value="https://example.com/albums/summer-2026"
+                  size={168}
+                />
+              </div>
+            ) : (
+              <div style={{ padding: '4px 8px 10px' }}>
+                <div
                   style={{
-                    border: 0,
-                    background: 'none',
-                    padding: 0,
-                    font: 'inherit',
-                    color: 'inherit',
-                    cursor: 'pointer',
-                    textAlign: 'center',
+                    display: 'flex',
+                    gap: 14,
+                    padding: '6px 10px 14px',
+                    overflowX: 'auto',
                   }}
                 >
-                  <Avatar c={p} size={52} />
-                  <div style={{ fontSize: 11.5, marginTop: 5 }}>{p.f}</div>
-                </button>
-              ))}
-            </div>
-            <ListRow
-              leading={<Icon name="link" size={20} />}
-              title={copied ? 'Copied' : 'Copy Link'}
-              onPress={() => {
-                setCopied(true)
-              }}
-            />
-            <ListRow
-              leading={<Icon name="layers" size={20} />}
-              title="Show QR Code"
-              accessory="chevron"
-              onPress={() => setView('qr')}
-            />
-            <ListRow
-              leading={<Icon name="mail" size={20} />}
-              title="Email"
-              divider={false}
-              onPress={() => setView(null)}
-            />
-          </div>
-        )}
+                  {recipients.map((p) => (
+                    <button
+                      key={p.f}
+                      type="button"
+                      onClick={() => setView(null)}
+                      style={{
+                        border: 0,
+                        background: 'none',
+                        padding: 0,
+                        font: 'inherit',
+                        color: 'inherit',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Avatar c={p} size={52} />
+                      <div style={{ fontSize: 11.5, marginTop: 5 }}>{p.f}</div>
+                    </button>
+                  ))}
+                </div>
+                <ListRow
+                  leading={<Icon name="link" size={20} />}
+                  title={copied ? 'Copied' : 'Copy Link'}
+                  onClick={() => {
+                    setCopied(true)
+                  }}
+                />
+                <ListRow
+                  leading={<Icon name="layers" size={20} />}
+                  title="Show QR Code"
+                  accessory="chevron"
+                  onClick={() => setView('qr')}
+                />
+                <ListRow
+                  leading={<Icon name="mail" size={20} />}
+                  title="Email"
+                  divider={false}
+                  onClick={() => setView(null)}
+                />
+              </div>
+            )}
+          </CredenzaView>
+        </CredenzaContent>
       </Credenza>
     </div>
   )
@@ -135,7 +162,9 @@ function Window({
         isolation: 'isolate',
       }}
     >
-      {children}
+      {/* Popups render into BLProvider's root: the Credenza and its scrim stay
+          inside this window. */}
+      <BLProvider>{children}</BLProvider>
     </div>
   )
 }

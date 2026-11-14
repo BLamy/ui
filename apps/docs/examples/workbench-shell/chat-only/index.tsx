@@ -4,7 +4,7 @@ import { SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSecti
 import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 import { Icon } from '@/lib/icon'
 import { stripAttachmentRefs, WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
-import { useWorkbenchShell, WorkbenchHeader, WorkbenchMain, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarClose, WorkbenchSidebarTrigger, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
+import { useWorkbenchShell, WorkbenchContent, WorkbenchHeader, WorkbenchMain, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarClose, WorkbenchSidebarTrigger, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
 
 const RECENT = [
   'Onboarding checklist',
@@ -90,7 +90,7 @@ function Threads({
               icon={<Icon name="bubble-left" size={15} sw={1.8} />}
               label={t}
               active={t === current}
-              onPress={() => {
+              onClick={() => {
                 onPick(t)
                 if (shell.compact) shell.setSidebarOpen(false)
               }}
@@ -143,26 +143,28 @@ function ChatOnly() {
             <WorkbenchSidebarTrigger />
             <WorkbenchTitle>{current}</WorkbenchTitle>
           </WorkbenchHeader>
-          <Conversation>
-            <ConversationMessages threadKey={current}>
-              {messages.map((m) =>
-                m.role === 'user' ? (
-                  <UserMessage key={m.id}>{m.text}</UserMessage>
-                ) : (
-                  <AssistantMessage key={m.id}>
-                    <MessageMarkdown markdown={m.text} />
-                  </AssistantMessage>
-                ),
-              )}
-            </ConversationMessages>
-            <ConversationComposer>
-              <WorkbenchComposer
-                options={false}
-                checkout={false}
-                onSubmit={(md) => send(stripAttachmentRefs(md))}
-              />
-            </ConversationComposer>
-          </Conversation>
+          <WorkbenchContent>
+            <Conversation>
+              <ConversationMessages threadKey={current}>
+                {messages.map((m) =>
+                  m.role === 'user' ? (
+                    <UserMessage key={m.id}>{m.text}</UserMessage>
+                  ) : (
+                    <AssistantMessage key={m.id}>
+                      <MessageMarkdown markdown={m.text} />
+                    </AssistantMessage>
+                  ),
+                )}
+              </ConversationMessages>
+              <ConversationComposer>
+                <WorkbenchComposer
+                  options={false}
+                  checkout={false}
+                  onSubmit={(md) => send(stripAttachmentRefs(md))}
+                />
+              </ConversationComposer>
+            </Conversation>
+          </WorkbenchContent>
         </WorkbenchMain>
       </WorkbenchShell>
     </Scaled>

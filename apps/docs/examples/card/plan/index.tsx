@@ -60,16 +60,16 @@ export default function Plan() {
         <CardFooter>
           <Button
             size="sm"
-            isDisabled={plan === 'Business'}
-            onPress={() => setPlan('Business')}
+            disabled={plan === 'Business'}
+            onClick={() => setPlan('Business')}
           >
             {plan === 'Business' ? 'Current plan' : 'Upgrade'}
           </Button>
           <Button
             size="sm"
             variant="ghost"
-            isDisabled={plan === 'Team'}
-            onPress={() => setPlan('Team')}
+            disabled={plan === 'Team'}
+            onClick={() => setPlan('Team')}
           >
             Downgrade
           </Button>

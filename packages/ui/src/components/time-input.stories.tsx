@@ -42,7 +42,7 @@ export const WrongWithoutWarning: Story = {
 
 export const DayFirst: Story = { args: { label: 'Day first', dateOrder: 'DMY', defaultValue: 'dinner on 3/4' } };
 
-export const Invalid: Story = { args: { isInvalid: true, errorMessage: 'Pick a time in the future.', defaultValue: 'yesterday at noon' } };
+export const Invalid: Story = { args: { invalid: true, error: 'Pick a time in the future.', defaultValue: 'yesterday at noon' } };
 
 export const BadTimeZone: Story = { args: { timeZone: 'Not/AZone', defaultValue: 'tomorrow', description: undefined } };
 
@@ -50,7 +50,7 @@ export const Plain: Story = { args: { variant: 'plain', defaultValue: 'every oth
 
 export const Large: Story = { args: { size: 'lg', defaultValue: 'tomorrow at 3pm' } };
 
-export const Disabled: Story = { args: { isDisabled: true, defaultValue: 'tomorrow at 3pm' } };
+export const Disabled: Story = { args: { disabled: true, defaultValue: 'tomorrow at 3pm' } };
 
 export const Dark: Story = {
   decorators: [(Story) => <Pad w={440} dark><Story /></Pad>],

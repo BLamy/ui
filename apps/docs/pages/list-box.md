@@ -1,6 +1,6 @@
-# ListBox
+# Listbox
 
-A keyboard-navigable list of options with single or multiple selection. It is react-aria's `ListBox` in two looks: `inset`, the default, is an iOS inset-grouped list — rounded card, hairline dividers, a trailing checkmark — for choosing in a settings screen or a sheet; `popup` is the compact list inside the [Select](https://blamy.github.io/ui/#/select) and [ComboBox](https://blamy.github.io/ui/#/combobox) popovers, with the checkmark leading and a rounded highlight. Reach for ListBox when the options are always visible; use [List](https://blamy.github.io/ui/#/lists) rows for navigation and content, and [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) when choosing runs an action.
+A keyboard-navigable list of options with single or multiple selection. It is UI SDK's `Listbox` in two looks: `inset`, the default, is an iOS inset-grouped list — rounded card, hairline dividers, a trailing checkmark — for choosing in a settings screen or a sheet; `popup` is the compact list inside the [Select](https://blamy.github.io/ui/#/select) and [Combobox](https://blamy.github.io/ui/#/combobox) popups, with the checkmark leading and a rounded highlight. Reach for Listbox when the options are always visible; use [List](https://blamy.github.io/ui/#/lists) rows for navigation and content, and [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) when choosing runs an action.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -9,7 +9,7 @@ A keyboard-navigable list of options with single or multiple selection. It is re
 Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import { ListBox, ListBoxItem } from '@/components/ui/list-box'
+import { Listbox, ListboxItem } from '@/components/ui/list-box'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -20,91 +20,100 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { ListBox, ListBoxItem } from '@brett_lamy/ui'
+import { Listbox, ListboxItem } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
 
 ## Single selection
 
-Set `selectionMode="single"` and control it with `selectedKeys` and `onSelectionChange` (a `Set` of ids) or `defaultSelectedKeys`. `disallowEmptySelection` stops a press on the selected row from clearing it. Without a `selectionMode` nothing is selectable: rows highlight, no checkmark column is drawn, and `onAction` tells you which row was pressed. A row's `isDisabled` dims it and skips it.
+Control the choice with `value` and `onValueChange(value, details)`, or leave it to the list with `defaultValue`. The value is the chosen item's `value`, or `null` when nothing is chosen. Pressing the selected row keeps it selected; add `deselectable` to let a press clear a single selection. An item's `disabled` dims it and keeps it from being chosen.
 
 {% demo src="list-box/single" %}
 
 ```tsx
-<ListBox
-  aria-label="Ringtone"
-  selectionMode="single"
-  disallowEmptySelection
-  selectedKeys={selected}
-  onSelectionChange={setSelected}
->
-  <ListBoxItem id="Reflection">Reflection</ListBoxItem>
-  <ListBoxItem id="Apex">Apex</ListBoxItem>
-</ListBox>
+<Listbox aria-label="Ringtone" value={tone} onValueChange={setTone}>
+  <ListboxItem value="Reflection">Reflection</ListboxItem>
+  <ListboxItem value="Apex">Apex</ListboxItem>
+</Listbox>
 ```
+
+`value` / `defaultValue` / `onValueChange(value, details)` hold the choice; `details.reason` says why (`item-press`, `list-navigation`, …) and `details.cancel()` refuses it. In a single list the arrow keys select as they move; `activation="manual"` makes them only move, and a press, Space or Enter selects. The selection cannot be emptied by default (`deselectable` lets a press on the selected option clear it).
+
+Options can be data too: `<Listbox items={['Reflection', 'Apex']} />` draws the same rows (strings, `{ value, label, disabled }`, `{ type: 'group', label, items }`, `{ type: 'separator' }`).
 
 ## Multiple selection, icons, popup variant
 
-`selectionMode="multiple"` lets every row toggle. Items take an `icon` (tinted with the primary color in `inset`, muted in `popup`) and a `description` line. The same parts with `variant="popup"` are what Select and ComboBox render, which is useful for an always-open filter list; `ListBoxItem` follows its list's variant, or takes its own.
+`multiple` makes the value a list and lets every row toggle; the arrows move without selecting, Space toggles and Shift selects a range. Items take an `icon` (tinted with the primary color in `inset`, muted in `popup`) and a `description` line. The same parts with `variant="popup"` are what Select and Combobox render, which is useful for an always-open filter list; `ListboxItem` follows its list's variant, or takes its own.
 
 {% demo src="list-box/multiple" %}
 
-## Sections
+## Groups
 
-`ListBoxSection title="…"` groups rows under a small header (with `ListBoxHeader` if you want the header on its own); sections after the first are separated by a hairline. Dynamic collections take `items` and a render function, like the other react-aria lists; `renderEmptyState` covers an empty one.
+`ListboxGroup` with a `ListboxGroupLabel` groups rows under a small header; groups after the first are separated by a hairline, and `ListboxSeparator` draws one anywhere.
 
 ```tsx
-<ListBox aria-label="Timezone" variant="popup" selectionMode="single">
-  <ListBoxSection title="Americas">
-    <ListBoxItem id="pt">Pacific Time</ListBoxItem>
-  </ListBoxSection>
-  <ListBoxSection title="Europe">
-    <ListBoxItem id="cet">Central European Time</ListBoxItem>
-  </ListBoxSection>
-</ListBox>
+<Listbox aria-label="Time zone" variant="popup">
+  <ListboxGroup>
+    <ListboxGroupLabel>Americas</ListboxGroupLabel>
+    <ListboxItem value="pt">Pacific Time</ListboxItem>
+  </ListboxGroup>
+  <ListboxGroup>
+    <ListboxGroupLabel>Europe</ListboxGroupLabel>
+    <ListboxItem value="cet">Central European Time</ListboxItem>
+  </ListboxGroup>
+</Listbox>
 ```
+
+## Lists of actions
+
+A Listbox always selects. For a list whose rows run something, use a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) or [CommandMenu](https://blamy.github.io/ui/#/command-menu); for a list that reports a press but keeps nothing selected, pass `value={null}` with `activation="manual"` and act in `onValueChange`. To open a row on Enter or a double click beside a selection, handle `onKeyDown` / `onDoubleClick` on the item.
 
 ## Accessibility
 
-react-aria renders a `listbox` of `option`s with `aria-selected` and, for multiple selection, `aria-multiselectable`. The list is one tab stop: arrows move focus, Home/End jump, typing a letter jumps to a matching row, Space or Enter toggles, and Shift+arrows or Ctrl/Cmd+A extend a multiple selection. The list needs a name — `aria-label` or `aria-labelledby`. Items made of non-text children need a `textValue` for typeahead; for plain string children it is taken from the text.
+UI SDK renders a `listbox` of `option`s with `aria-selected` and, with `multiple`, `aria-multiselectable`. The list is one tab stop, on the selected option: arrows move, Home/End jump, typing a letter jumps to a matching row (by its label, not its description). The list needs a name — `aria-label` or `aria-labelledby`. Options made of non-text children need a `label` for typeahead; for plain string children it is taken from the text. A disabled option stays reachable with the arrows but cannot be selected.
 
 ## Props
 
-### ListBox
+### Listbox
+
+UI SDK's `Listbox` props, plus `variant`.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `inset` | `inset` iOS grouped card · `popup` compact popover list. |
-| `selectionMode` | `none` | `none` · `single` · `multiple`. |
-| `selectedKeys` / `defaultSelectedKeys` / `onSelectionChange` | — | Selected ids as a `Set` (or `'all'`). |
-| `disallowEmptySelection` | `false` | Keep at least one selected. |
-| `items` / `renderEmptyState` | — | Dynamic collection; empty message. |
-| `onAction` | — | Called with an id when a row is pressed (for lists without selection). |
-| `className` | — | Merged onto the list (may be a function). |
+| `variant` | `inset` | `inset` iOS grouped card · `popup` compact popup list. |
+| `value` / `defaultValue` / `onValueChange` | `null` (`[]` with `multiple`) | The selected value(s); `onValueChange(value, details)`. |
+| `multiple` | `false` | Several values. |
+| `activation` | `automatic` | `manual`: the arrows move without selecting. |
+| `deselectable` | `false` | A press on the selected option clears it. |
+| `items` | — | Options as data. |
+| `orientation` / `loop` | `vertical` / — | Arrow-key direction and wrapping. |
+| `disabled` / `readOnly` / `required` / `name` | — | State and a hidden form input. |
+| `controller` | — | `createListboxController()`: drive it from outside. |
+| `className` | — | Merged onto the list (may be a function of its state). |
 
-### ListBoxItem
+### ListboxItem
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `id` | — | The key. |
+| `value` | — | What the list's value becomes. |
+| `label` | string children | Typeahead text. |
 | `icon` | — | Leading icon or avatar. |
 | `description` | — | Secondary line (footnote, muted), truncated. |
 | `variant` | the list's | `inset` or `popup`, overriding the list. |
-| `textValue` | string children | Typeahead and accessible text. |
-| `isDisabled` | `false` | 40% opacity, not focusable. |
+| `disabled` | `false` | 40% opacity, cannot be selected. |
 
-`ListBoxSection` takes `title`; `ListBoxHeader` is the header element.
+`ListboxGroup`, `ListboxGroupLabel` and `ListboxSeparator` take the props of the element they render.
 
 ## Styling
 
-Slots: `list-box` (with `data-variant`), `list-box-item`, `list-box-section`, `list-box-header`. Rows expose react-aria's states: `data-hovered`, `data-pressed`, `data-focused`, `data-focus-visible`, `data-selected`, `data-disabled`. The popup list scrolls past 320px (or the visual viewport's height, if less). `listBoxVariants` and `listBoxItemVariants` are the recipes; nest the list inside a `Card` or sheet, or restyle with `className` (for example `bg-muted` on a card-colored surface).
+The list carries UI SDK's `listbox` slot (with our `data-variant`), options `listbox-item`, then `listbox-group`, `listbox-group-label`, `listbox-separator`. Options expose `data-highlighted` (the active option), `data-selected` and `data-disabled`; hover is `:hover`, a press `:active`, keyboard focus `:focus-visible`. The popup list scrolls past 320px (or the room its popup has, if less). `listboxVariants` and `listboxItemVariants` are the recipes; nest the list inside a `Card` or sheet, or restyle with `className` (for example `bg-muted` on a card-colored surface).
 
 ## cva recipes
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
 
-### `listBoxVariants`
+### `listboxVariants`
 
 Defined in `@/components/ui/list-box`. Base classes:
 
@@ -116,10 +125,10 @@ outline-none
 
 | Value | Adds |
 | --- | --- |
-| `inset` (default) | `overflow-hidden rounded-panel bg-card data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45` |
-| `popup` | `bl-scroll box-border max-h-[min(320px,var(--visual-viewport-height,320px))] overflow-y-auto p-1.5` |
+| `inset` (default) | `overflow-hidden rounded-panel bg-card focus-visible:ring-[3px] focus-visible:ring-ring/45` |
+| `popup` | `bl-scroll box-border max-h-[min(320px,var(--available-height,320px))] overflow-y-auto p-1.5` |
 
-### `listBoxItemVariants`
+### `listboxItemVariants`
 
 Defined in `@/components/ui/list-box`. Base classes:
 
@@ -132,4 +141,4 @@ bl-btn group/item relative box-border flex cursor-pointer items-center gap-2.5 t
 | Value | Adds |
 | --- | --- |
 | `inset` (default) | `[ 'min-h-11 px-4 py-[11px] text-body leading-[22px]', 'after:pointer-events-none after:absolute after:right-0 after:bottom-0 after:left-4 a…` |
-| `popup` | `[ 'min-h-9 rounded-lg py-[7px] pr-3 pl-2 text-subhead leading-5', 'data-focused:bg-accent data-pressed:bg-secondary-strong', ]` |
+| `popup` | `[ 'min-h-9 rounded-lg py-[7px] pr-3 pl-2 text-subhead leading-5', 'data-highlighted:bg-accent active:not-data-disabled:bg-secondary-strong …` |

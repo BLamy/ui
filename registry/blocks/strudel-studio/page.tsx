@@ -5,15 +5,16 @@
    the syntax tree previews its tracks and patterns the same way. */
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Segmented } from '@/components/ui/segmented';
+import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger, createHoverCardController } from '@/components/ui/hover-card';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { StrudelRack } from '@/components/ui/strudel-rack';
 import { playStrudel, stopStrudel, updateStrudel } from '@/components/ui/strudel-player';
 import { parseStrudel, StrudelSyntaxError, type StrudelSong } from '@/components/ui/strudel-syntax';
-import { Tabs, TabList, Tab, TabPanel } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs';
 import { Icon } from '@/lib/icon';
 import { BLProvider } from '@/lib/theme';
 import { cn } from '@/lib/utils';
+import { Textarea } from '@ui-sdk/react/textarea';
 import { SONGS, type StudioSong } from './songs';
 import { SyntaxTree } from './syntax-tree';
 
@@ -55,6 +56,8 @@ export default function StrudelStudio({ initialSong = 'night-drive' }: StrudelSt
   const [playable, setPlayable] = useState(code);
   const [status, setStatus] = useState<'idle' | 'loading' | 'playing'>('idle');
   const [error, setError] = useState<string | null>(null);
+  // One hover card for the song switcher, moving along its segments.
+  const [songPeek] = useState(() => createHoverCardController<string>());
 
   const parsed = useMemo((): { song: StrudelSong; error?: never } | { song?: never; error: string } => {
     try {
@@ -92,10 +95,11 @@ export default function StrudelStudio({ initialSong = 'night-drive' }: StrudelSt
   };
 
   return (
-    <BLProvider dark className="bg-background">
+    // BLProvider's root measures the block's own box: its size class (regular from 1024px) splits the panes.
+    <BLProvider dark className="group/studio bg-background">
       <div className="flex h-full min-h-[640px] w-full flex-col text-foreground">
         <header className="flex flex-wrap items-center gap-3 border-b border-white/10 px-4 py-3">
-          <Button onPress={toggle} aria-label={status === 'idle' ? 'Play' : 'Stop'} className="min-w-24">
+          <Button onClick={toggle} aria-label={status === 'idle' ? 'Play' : 'Stop'} className="min-w-24">
             <Icon name={status === 'idle' ? 'play' : status === 'loading' ? 'arrow-clockwise' : 'stop'} size={16} />
             {status === 'idle' ? 'Play' : status === 'loading' ? 'Loading' : 'Stop'}
           </Button>
@@ -103,42 +107,48 @@ export default function StrudelStudio({ initialSong = 'night-drive' }: StrudelSt
           <Segmented
             aria-label="Song"
             className="ms-auto"
-            options={SONGS.map((s) => ({
-              id: s.id,
-              label: (
-                <HoverCardTrigger>
-                  <span>{s.title}</span>
-                  <HoverCard placement="bottom end" className="w-64"><SongCard song={s} code={codes[s.id] ?? ''} /></HoverCard>
-                </HoverCardTrigger>
-              ),
-            }))}
             value={songId}
-            onChange={(id) => {
+            onValueChange={(id) => {
+              if (!id) return;
               setSongId(id);
               setPlayable(codes[id] ?? '');
             }}
-          />
+          >
+            {SONGS.map((s) => (
+              <HoverCardTrigger key={s.id} controller={songPeek} payload={s.id} render={<SegmentedItem value={s.id} />}>
+                {s.title}
+              </HoverCardTrigger>
+            ))}
+          </Segmented>
+          <HoverCard controller={songPeek}>
+            <HoverCardContent<string> side="bottom" align="end" className="w-64">
+              {({ payload }) => {
+                const song = SONGS.find((s) => s.id === payload);
+                return song ? <SongCard song={song} code={codes[song.id] ?? ''} /> : null;
+              }}
+            </HoverCardContent>
+          </HoverCard>
         </header>
         {error ? <p role="alert" className="px-4 pt-2 text-sm text-destructive">{error}</p> : null}
-        <div className="grid min-h-0 flex-1 gap-4 p-4 lg:grid-cols-[minmax(300px,380px)_1fr]">
-          <Tabs className="min-h-0">
-            <TabList aria-label="Source">
-              <Tab id="code">Code</Tab>
-              <Tab id="tree">Syntax tree</Tab>
-            </TabList>
-            <TabPanel id="code" className="min-h-0">
-              <textarea
+        <div className="grid min-h-0 flex-1 gap-4 p-4 group-data-[size-class=regular]/studio:grid-cols-[minmax(300px,380px)_1fr]">
+          <Tabs defaultValue="code" className="min-h-0">
+            <TabsList aria-label="Source">
+              <TabsTab value="code">Code</TabsTab>
+              <TabsTab value="tree">Syntax tree</TabsTab>
+            </TabsList>
+            <TabsPanel value="code" className="min-h-0">
+              <Textarea
                 aria-label="Strudel code"
                 spellCheck={false}
                 wrap="off"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onValueChange={setCode}
                 className="h-full min-h-[320px] w-full resize-none rounded-lg border border-white/10 bg-black/60 p-3 font-mono text-xs leading-relaxed text-success outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
-            </TabPanel>
-            <TabPanel id="tree" className="max-h-[560px] overflow-auto rounded-lg border border-white/10 p-2">
+            </TabsPanel>
+            <TabsPanel value="tree" className="max-h-[560px] overflow-auto rounded-lg border border-white/10 p-2">
               {parsed.song ? <SyntaxTree song={parsed.song} /> : <p className="text-sm text-destructive">{parsed.error}</p>}
-            </TabPanel>
+            </TabsPanel>
           </Tabs>
           <div className="min-w-0 overflow-auto">
             <StrudelRack key={songId} code={code} onChange={setCode} onPlayableChange={setPlayable} layout="grid" persistKey={`strudel-studio:${songId}`} />

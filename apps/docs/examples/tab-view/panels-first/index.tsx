@@ -11,13 +11,13 @@ const sections = [
 ]
 
 // The panels are written first and the bar is nested inside a header after
-// them. TabView renders the panels after the tablist internally (react-aria
-// needs the tab ids first), so the order you write doesn't matter.
+// them. Tabs and panels find each other wherever they sit, so the order you
+// write doesn't matter; here the header is laid out above the panels by hand.
 export default function PanelsFirst() {
   return (
     <TabView
       placement="top"
-      defaultSelectedKey="recents"
+      defaultValue="recents"
       style={{
         position: 'relative',
         height: 240,
@@ -29,7 +29,7 @@ export default function PanelsFirst() {
     >
       <TabViewPanels style={{ order: 2 }}>
         {sections.map((s) => (
-          <TabViewPanel key={s.id} id={s.id}>
+          <TabViewPanel key={s.id} value={s.id}>
             <div style={{ padding: 24 }}>
               <div
                 style={{
@@ -73,28 +73,25 @@ export default function PanelsFirst() {
             {sections.map((s) => (
               <TabViewTab
                 key={s.id}
-                id={s.id}
-                textValue={s.title}
+                value={s.id}
                 style={{ position: 'relative', padding: '8px 12px' }}
               >
-                {({ isSelected }) => (
-                  <>
-                    <span
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 600,
-                        color: isSelected
-                          ? 'var(--primary)'
-                          : 'var(--tertiary-foreground)',
-                      }}
-                    >
-                      {s.title}
-                    </span>
-                    <TabViewIndicator />
-                  </>
+                {({ selected }) => (
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: selected
+                        ? 'var(--primary)'
+                        : 'var(--tertiary-foreground)',
+                    }}
+                  >
+                    {s.title}
+                  </span>
                 )}
               </TabViewTab>
             ))}
+            <TabViewIndicator />
           </TabViewList>
         </TabViewBar>
       </header>

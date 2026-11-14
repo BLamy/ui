@@ -7,7 +7,7 @@ const col = (name: string, type: string, o: Partial<SchemaColumn> = {}): SchemaC
 })
 
 // SchemaTree takes the result of useSchema() / loadSchema(); a literal works
-// for a static picture. Enter (or a click) on a table calls onSelectTable.
+// for a static picture. Enter (or a click) on a table or column calls onAction.
 const authors = {
   schema: 'public', name: 'authors', kind: 'table' as const, comment: null, rowCount: 4,
   columns: [col('id', 'integer', { nullable: false, isPrimaryKey: true }), col('name', 'text', { nullable: false }), col('born', 'date')],
@@ -32,7 +32,7 @@ export default function Tree() {
   const [picked, setPicked] = useState<SchemaTable | null>(null)
   return (
     <div className="mx-auto grid w-full max-w-sm gap-3">
-      <SchemaTree schema={schema} variant="card" defaultExpandAll onSelectTable={setPicked} />
+      <SchemaTree schema={schema} variant="card" defaultExpandAll onAction={(_id, { table, column }) => { if (!column) setPicked(table) }} />
       <p role="status" className="text-caption text-foreground/65">
         {picked ? `select * from ${picked.name} limit 100;` : 'Press Enter on a table.'}
       </p>

@@ -22,12 +22,12 @@ export const Variants: Story = {
       <Button variant="link">Link</Button>
       <Button size="sm">Small</Button>
       <Button size="lg">Large</Button>
-      <Button isDisabled>Disabled</Button>
+      <Button disabled>Disabled</Button>
     </div>
   ),
 };
 
-/** `size="pill"` — the full-width iOS action pill (was `PillButton`; its soft tone is `variant="secondary"`). */
+/** `size="pill"` — the full-width iOS action pill; its soft tone is `variant="secondary"`. */
 export const Pill: Story = {
   render: () => (
     <div className="flex flex-col gap-2.5">
@@ -59,9 +59,29 @@ export const PressCounter: Story = {
     const [n, setN] = useState(0);
     return (
       <div className="flex items-center gap-4">
-        <Button data-testid="press" onPress={() => setN((v) => v + 1)}>Press</Button>
+        <Button data-testid="press" onClick={() => setN((v) => v + 1)}>Press</Button>
         <span data-testid="count" className="text-[15px] text-foreground">Pressed {n}</span>
       </div>
     );
   },
+};
+
+/** Return a Promise from `onClick` and the button is pending until it settles: it keeps focus, ignores presses and
+    carries `data-pending`. */
+export const Pending: Story = {
+  render: () => (
+    <Button onClick={() => new Promise((resolve) => setTimeout(resolve, 1500))} pendingAnnouncement="Saving">
+      Save
+    </Button>
+  ),
+};
+
+/** `render` makes it a link with the button's look. */
+export const AsLink: Story = {
+  render: () => (
+    <div className="flex items-center gap-3">
+      <Button render={<a href="#docs" />}>Get started</Button>
+      <Button variant="link" render={<a href="#changelog" />}>Changelog</Button>
+    </div>
+  ),
 };

@@ -21,7 +21,7 @@ export default function LivePreview() {
     <ThemeScope className="mx-auto grid max-w-md gap-5">
       <div className="grid gap-1.5">
         <Label variant="field" className="text-foreground/70">Headline</Label>
-        <FontPicker value={font} onChange={setFont} onPreview={setPreview} aria-label="Headline font" />
+        <FontPicker value={font} onValueChange={setFont} onPreview={setPreview} aria-label="Headline font" />
       </div>
       <div className="grid gap-2">
         <h2 className="m-0 text-[32px] leading-[1.1] font-bold tracking-tight text-balance" style={{ fontFamily: fontStack(shown) }}>

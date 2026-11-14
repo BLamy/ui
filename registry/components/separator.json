@@ -1,7 +1,7 @@
 {
   "name": "separator",
   "title": "Separator",
-  "description": "A hairline rule, horizontal or vertical, with an inset option that indents like an iOS list separator.",
+  "description": "A hairline rule on UI SDK's Separator, horizontal or vertical, decorative or announced, with an inset option that indents like an iOS list separator.",
   "page": "separator",
   "exports": [
     "Separator",
@@ -9,5 +9,8 @@
   ],
   "imports": [
     "Separator"
+  ],
+  "types": [
+    "SeparatorProps"
   ]
 }

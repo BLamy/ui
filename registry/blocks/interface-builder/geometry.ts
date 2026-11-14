@@ -1,7 +1,7 @@
-/* The storyboard's geometry: where every rendered node is (measured once per change, in board units, so camera
+/* The storyboard's geometry: where every rendered node is (measured once per change, in board units, so view
    moves don't invalidate it), which scene is under a point, and the paths of the segue arrows. Which node is under
    the pointer, and where a dragged component lands, are pick.ts's: the browser's own hit-testing answers those. */
-import type { Camera, Pt, Rect } from '@/lib/canvas-math';
+import type { Pt, Rect, Viewport } from '@/lib/canvas-math';
 import type { Device, Doc, Node, Scene } from './model';
 import { walk, type Place } from './tree';
 
@@ -33,17 +33,17 @@ export interface Measured {
 export const EMPTY_MEASURE: Measured = { nodes: new Map(), hits: [], slotHits: [] };
 
 /** A client rect in board units, for a storyboard whose box is `base`. */
-export const toBoardRect = (r: DOMRect, base: DOMRect, camera: Camera): Rect => ({
-  x: (r.left - base.left - camera.x) / camera.z,
-  y: (r.top - base.top - camera.y) / camera.z,
-  w: r.width / camera.z,
-  h: r.height / camera.z,
+export const toBoardRect = (r: DOMRect, base: DOMRect, view: Viewport): Rect => ({
+  x: (r.left - base.left - view.x) / view.zoom,
+  y: (r.top - base.top - view.y) / view.zoom,
+  w: r.width / view.zoom,
+  h: r.height / view.zoom,
 });
 
 const frameOf = (el: Element) => el.closest('[data-ib-scene-frame]')?.getAttribute('data-ib-scene-frame') ?? null;
 
-/** Reads every node's box under `root`, converted to board units with `camera`. */
-export function measure(root: HTMLElement, camera: Camera): Measured {
+/** Reads every node's box under `root`, converted to board units with the canvas's `view`. */
+export function measure(root: HTMLElement, view: Viewport): Measured {
   const base = root.getBoundingClientRect();
   const nodes = new Map<string, Rect[]>();
   const hits: Hit[] = [];
@@ -58,13 +58,13 @@ export function measure(root: HTMLElement, camera: Camera): Measured {
     // A box that takes no space (a TabBar placing itself): measure what it draws.
     if (!r.width && !r.height && el.firstElementChild) r = el.firstElementChild.getBoundingClientRect();
     if (!r.width && !r.height) return;
-    const rect = toBoardRect(r, base, camera);
+    const rect = toBoardRect(r, base, view);
     nodes.set(id, [...(nodes.get(id) ?? []), rect]);
     hits.push({ id, rect, frame, k });
   });
   const slotHits: SlotHit[] = [];
   root.querySelectorAll<HTMLElement>('[data-ib-slot]').forEach((el) => {
-    slotHits.push({ key: el.dataset.ibSlot!, rect: toBoardRect(el.getBoundingClientRect(), base, camera), frame: frameOf(el) });
+    slotHits.push({ key: el.dataset.ibSlot!, rect: toBoardRect(el.getBoundingClientRect(), base, view), frame: frameOf(el) });
   });
   return { nodes, hits, slotHits };
 }

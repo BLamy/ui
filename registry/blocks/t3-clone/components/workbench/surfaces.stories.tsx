@@ -56,12 +56,12 @@ function PanelDemo({ initial, full: initialFull = false, compact }: { initial: S
           size="icon-sm"
           aria-label="Switch surface"
           title="Switch surface"
-          onPress={() => setKind(null)}
+          onClick={() => setKind(null)}
         >
           <Icon name="chevron-down-wide" size={15} sw={1.7} />
         </Button> : null}
-        {!compact ? <WorkbenchPanelFullscreen active={full} onPress={() => setFull(!full)} /> : null}
-        <WorkbenchPanelClose onPress={() => setKind(null)} />
+        {!compact ? <WorkbenchPanelFullscreen pressed={full} onClick={() => setFull(!full)} /> : null}
+        <WorkbenchPanelClose onClick={() => setKind(null)} />
       </WorkbenchPanelHeader>
       {kind === 'browser' ? (
         <SurfaceBrowser url="http://localhost:3000">
@@ -104,11 +104,11 @@ function TabBarDemo() {
     <WorkbenchTheme style={{ minHeight: 200, display: 'grid', placeItems: 'center' }}>
       <div style={{ width: 390, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         <WorkbenchTabBar value={active} onValueChange={setActive}>
-          <WorkbenchTab id="chat" icon="bubble-left">
+          <WorkbenchTab value="chat" icon="bubble-left">
             Chat
           </WorkbenchTab>
           {SURFACES.map((s) => (
-            <WorkbenchTab key={s.k} id={s.k} icon={s.icon}>
+            <WorkbenchTab key={s.k} value={s.k} icon={s.icon}>
               {s.name}
             </WorkbenchTab>
           ))}

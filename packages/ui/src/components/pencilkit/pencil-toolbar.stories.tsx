@@ -36,11 +36,11 @@ export const FullToolbar: Story = {
     return (
       <Frame>
         <PencilToolbar>
-          <ToolPicker value={tool} onChange={setTool} />
+          <ToolPicker value={tool} onValueChange={(v) => setTool(v)} />
           <PencilToolbarDivider />
-          <InkPicker value={ink} onChange={setInk} />
+          <InkPicker value={ink} onValueChange={(v) => setInk(v)} />
           <PencilToolbarDivider />
-          <WidthPicker value={wi} onChange={setWi} />
+          <WidthPicker value={wi} onValueChange={(v) => setWi(v)} />
           <PencilToolbarDivider />
           <PencilActions canUndo canRedo />
         </PencilToolbar>
@@ -57,11 +57,11 @@ export const FullToolbarDark: Story = {
     return (
       <Frame dark>
         <PencilToolbar>
-          <ToolPicker value={tool} onChange={setTool} />
+          <ToolPicker value={tool} onValueChange={(v) => setTool(v)} />
           <PencilToolbarDivider />
-          <InkPicker value={ink} onChange={setInk} />
+          <InkPicker value={ink} onValueChange={(v) => setInk(v)} />
           <PencilToolbarDivider />
-          <WidthPicker value={wi} onChange={setWi} />
+          <WidthPicker value={wi} onValueChange={(v) => setWi(v)} />
           <PencilToolbarDivider />
           <PencilActions canUndo={false} canRedo={false} />
         </PencilToolbar>
@@ -76,7 +76,7 @@ export const ToolPickerOnly: Story = {
     return (
       <Frame>
         <PencilToolbar>
-          <ToolPicker value={tool} onChange={setTool} />
+          <ToolPicker value={tool} onValueChange={(v) => setTool(v)} />
         </PencilToolbar>
       </Frame>
     );
@@ -90,9 +90,9 @@ export const InkAndWidth: Story = {
     return (
       <Frame>
         <PencilToolbar>
-          <InkPicker value={ink} onChange={setInk} />
+          <InkPicker value={ink} onValueChange={(v) => setInk(v)} />
           <PencilToolbarDivider />
-          <WidthPicker value={wi} onChange={setWi} />
+          <WidthPicker value={wi} onValueChange={(v) => setWi(v)} />
         </PencilToolbar>
       </Frame>
     );

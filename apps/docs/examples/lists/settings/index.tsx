@@ -38,7 +38,7 @@ function SettingsList() {
               <Switch
                 aria-label="Airplane Mode"
                 checked={airplane}
-                onChange={setAirplane}
+                onCheckedChange={setAirplane}
               />
             }
           />
@@ -47,7 +47,7 @@ function SettingsList() {
             title="Wi-Fi"
             trailing={value(airplane ? 'Off' : 'Home')}
             accessory="chevron"
-            onPress={() => {}}
+            onClick={() => {}}
           />
           <ListRow
             leading={<Tile icon="link" color="#0A84FF" />}
@@ -55,7 +55,7 @@ function SettingsList() {
             trailing={value('On')}
             accessory="chevron"
             divider={false}
-            onPress={() => {}}
+            onClick={() => {}}
           />
         </ListSection>
         <ListSection
@@ -65,13 +65,13 @@ function SettingsList() {
             leading={<Tile icon="bell" color="#FF3B30" />}
             title="Notifications"
             accessory="chevron"
-            onPress={() => {}}
+            onClick={() => {}}
           />
           <ListRow
             leading={<Tile icon="wave" color="#FF2D55" />}
             title="Sounds"
             accessory="chevron"
-            onPress={() => {}}
+            onClick={() => {}}
           />
           <ListRow
             leading={<Tile icon="moon" color="#5E5CE6" />}
@@ -81,7 +81,7 @@ function SettingsList() {
               <Switch
                 aria-label="Do Not Disturb"
                 checked={dnd}
-                onChange={setDnd}
+                onCheckedChange={setDnd}
               />
             }
           />

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { EditBar } from '@/components/ui/edit-bar'
 import { Button } from '@/components/ui/button'
 
@@ -28,29 +29,29 @@ export default function SelectMode() {
         <ul className="m-0 list-none p-0">
           {photos.map((p) => (
             <li key={p.id} className="px-5 shadow-hairline-b">
-              <Checkbox
-                shape="circle"
-                className="w-full py-3"
-                isSelected={selected.has(p.id)}
-                onChange={(on) =>
-                  setSelected((s) => {
-                    const n = new Set(s)
-                    if (on) n.add(p.id)
-                    else n.delete(p.id)
-                    return n
-                  })
-                }
-              >
+              <Label variant="control" className="w-full py-3">
+                <Checkbox
+                  shape="circle"
+                  checked={selected.has(p.id)}
+                  onCheckedChange={(on) =>
+                    setSelected((s) => {
+                      const n = new Set(s)
+                      if (on) n.add(p.id)
+                      else n.delete(p.id)
+                      return n
+                    })
+                  }
+                />
                 <span className="flex-1 text-body">{p.name}</span>
                 {p.fav && <span className="text-footnote text-warning">Favorite</span>}
-              </Checkbox>
+              </Label>
             </li>
           ))}
         </ul>
         {photos.length === 0 && (
           <div className="grid justify-items-center gap-3 p-10 text-muted-foreground">
             No photos left
-            <Button size="sm" variant="secondary" onPress={() => setPhotos(initial)}>
+            <Button size="sm" variant="secondary" onClick={() => setPhotos(initial)}>
               Restore
             </Button>
           </div>

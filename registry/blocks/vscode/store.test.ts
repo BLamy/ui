@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TerminalHandle } from '@/components/ui/terminal';
-import type { WorkspaceImperativeHandle } from '@/components/ui/workspace';
+import { workspaceTabsets, type TabNode, type WorkspaceAction, type WorkspaceController, type WorkspaceLayoutCommitDetails } from '@/components/ui/workspace';
 import { createMemoryRuntime } from './memory-runtime';
 import type { RuntimeTerminal, VSCodeRuntime } from './runtime';
-import { VSCodeStore, type TabData, type VSCodeModel } from './store';
+import { VSCodeStore, type TabData, type VSCodeLayout } from './store';
 
 const FILES = {
   'index.js': 'console.log(1)\n',
@@ -11,49 +11,49 @@ const FILES = {
   'src/a.js': 'a\n',
 };
 
-/* The little of a Workspace the store uses. */
-function fakeWorkspace(store: VSCodeStore) {
-  const model = structuredClone(store.model) as VSCodeModel;
-  const tabsets = () => {
-    const out: Array<Extract<VSCodeModel['root'], { type: 'tabset' }>> = [];
-    const walk = (node: VSCodeModel['root']) => {
-      if (node.type === 'tabset') out.push(node);
-      else node.children.forEach(walk);
-    };
-    walk(model.root);
-    return out;
+/* The little of a Workspace the store uses, in the shape of its controller. */
+function fakeWorkspace() {
+  let store: VSCodeStore | null = null;
+  let layout: VSCodeLayout | null = null;
+  const tabsets = () => (layout ? workspaceTabsets(layout) : []);
+  const changed = (action: WorkspaceAction) => {
+    if (store && layout) store.onLayoutCommit(structuredClone(layout), { action, reason: 'imperative' } as WorkspaceLayoutCommitDetails);
+    return true;
   };
-  const changed = (reason: 'add' | 'close' | 'select' | 'update') => store.onModelChanged(structuredClone(model), { reason } as never);
   const handle = {
-    getModel: () => structuredClone(model),
+    getLayout: () => structuredClone(layout),
     getActiveTabsetId: () => 'editors',
-    addTab(tab: Parameters<WorkspaceImperativeHandle<TabData>['addTab']>[0], options: { tabsetId?: string } = {}) {
+    addTab(tab: TabNode<TabData>, options: { tabsetId?: string } = {}) {
       const target = tabsets().find((t) => t.id === options.tabsetId) ?? tabsets()[0];
       target.tabs.push(tab);
       target.selectedId = tab.id;
-      changed('add');
-      return true;
+      return changed('add');
     },
     closeTab(id: string) {
       for (const tabset of tabsets()) tabset.tabs = tabset.tabs.filter((tab) => tab.id !== id);
-      changed('close');
+      return changed('close');
     },
     selectTab(id: string) {
       for (const tabset of tabsets()) if (tabset.tabs.some((tab) => tab.id === id)) tabset.selectedId = id;
-      changed('select');
+      return changed('select');
     },
     updateTab(id: string, update: { title?: string; data?: TabData }) {
       for (const tabset of tabsets()) for (const tab of tabset.tabs) if (tab.id === id) Object.assign(tab, update);
-      changed('update');
+      return changed('update');
     },
-    moveTab: vi.fn(),
-    maximizeTabset: vi.fn(),
-    restoreTabset: vi.fn(),
-    setModel: vi.fn(),
-  } as unknown as WorkspaceImperativeHandle<TabData>;
-  store.attachWorkspace(handle);
+    moveTab: vi.fn(() => true),
+    maximizeTabset: vi.fn(() => true),
+    restoreTabset: vi.fn(() => true),
+    setLayout: vi.fn(() => true),
+  } as unknown as WorkspaceController<TabData>;
+  /** What a mounted Workspace does: starts from the store's layout and reports to it. */
+  const mount = (target: VSCodeStore) => {
+    store = target;
+    layout = structuredClone(target.layout) as VSCodeLayout;
+    target.workspaceMounted(true);
+  };
   const tabs = () => tabsets().flatMap((tabset) => tabset.tabs);
-  return { handle, tabs };
+  return { handle, mount, tabs };
 }
 
 const flush = async () => {
@@ -85,8 +85,9 @@ afterEach(() => {
 });
 
 async function setup(runtime: VSCodeRuntime = createMemoryRuntime({ files: FILES })) {
-  const store = new VSCodeStore(runtime);
-  const workspace = fakeWorkspace(store);
+  const workspace = fakeWorkspace();
+  const store = new VSCodeStore(runtime, { workspace: workspace.handle });
+  workspace.mount(store);
   store.mount();
   await flush();
   return { store, workspace, runtime };
@@ -95,7 +96,7 @@ async function setup(runtime: VSCodeRuntime = createMemoryRuntime({ files: FILES
 describe('files', () => {
   it('shows what the runtime lists, and opens a first file', async () => {
     const { store, workspace } = await setup();
-    expect(store.tree().map((node) => node.name).sort()).toEqual(['index.js', 'package.json', 'src']);
+    expect(store.tree().map((node) => node.label).sort()).toEqual(['index.js', 'package.json', 'src']);
     expect(store.activePath).toBe('/project/index.js');
     expect(store.text('/project/index.js')).toBe('console.log(1)\n');
     expect(workspace.tabs().map((tab) => tab.title)).toContain('index.js');
@@ -104,7 +105,7 @@ describe('files', () => {
   it('takes its root from the runtime', async () => {
     const { store } = await setup(createMemoryRuntime({ root: '/home/me/work', files: { 'a.js': '' } }));
     expect(store.root).toBe('/home/me/work');
-    expect(store.tree()[0].id).toBe('/home/me/work/a.js');
+    expect(store.tree()[0].value).toBe('/home/me/work/a.js');
   });
 
   it('saves edits after a moment, and shows them at once', async () => {
@@ -145,7 +146,7 @@ describe('files', () => {
     const { store, workspace } = await setup(runtime);
     runtime.writeFromOutside('/project/lib/new.js', '');
     await flush();
-    expect(store.tree().map((node) => node.name)).toContain('lib');
+    expect(store.tree().map((node) => node.label)).toContain('lib');
     runtime.removeFromOutside('/project/index.js');
     await flush();
     expect(store.exists('/project/index.js')).toBe(false);

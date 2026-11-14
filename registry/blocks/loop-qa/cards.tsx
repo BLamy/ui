@@ -2,9 +2,11 @@
    status, the summary, expected vs actual, where it was found); a run link previews the run (its RunCard: progress,
    passed / failed / bugs); a project in the sidebar previews the project (URL, schedule, last run, open bugs by
    severity and the trend); a member's initials preview the person and the projects they're on. Each only previews
-   what pressing the reference opens, so touch, which never shows them, loses nothing. */
-import type { ReactNode } from 'react';
-import { HoverCard, HoverCardHeader, HoverCardTrigger, type HoverCardProps } from '@/components/ui/hover-card';
+   what pressing the reference opens, so touch, which never shows them, loses nothing.
+   The reference is the hover card's trigger: pass it as `render` (`render={<Pressable onClick={…} />}`), or a
+   named `<span aria-label>` for one that only previews. */
+import type { ReactElement, ReactNode } from 'react';
+import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger, type HoverCardContentProps } from '@/components/ui/hover-card';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { isOpen } from './agent';
@@ -13,15 +15,25 @@ import { Avatar, EnvBadge, KindLabel, SeverityBadge, SeverityBar, Sparkline, Sta
 import { RunCard } from './runs';
 import { useLoopQA } from './state';
 
-/** A trigger with its card; `className` goes on the trigger's wrapper (`flex w-full` for a row). */
-function Preview({ card, className, placement = 'bottom start', cardClassName, contentClassName, children }: {
-  card: ReactNode; className?: string; placement?: HoverCardProps['placement']; cardClassName?: string; contentClassName?: string; children: ReactNode;
-}) {
+type Side = HoverCardContentProps['side'];
+type Align = HoverCardContentProps['align'];
+
+/** Where a reference's card opens and what the reference is. */
+export interface PreviewProps {
+  side?: Side;
+  align?: Align;
+  /** The reference element (a Pressable, a Button, a named span); `children` become its children. */
+  render: ReactElement<Record<string, unknown>>;
+  children?: ReactNode;
+}
+
+/** A reference and its card. */
+function Preview({ card, side = 'bottom', align = 'start', cardClassName, render, children }: PreviewProps & { card: ReactNode; cardClassName?: string }) {
   return (
-    <HoverCardTrigger className={className}>
-      {children}
-      <HoverCard placement={placement} className={cardClassName} contentClassName={contentClassName}>{card}</HoverCard>
-    </HoverCardTrigger>
+    <HoverCard>
+      <HoverCardTrigger render={render}>{children}</HoverCardTrigger>
+      <HoverCardContent side={side} align={align} className={cardClassName}>{card}</HoverCardContent>
+    </HoverCard>
   );
 }
 
@@ -49,19 +61,14 @@ export function BugCard({ bug: b }: { bug: Bug }) {
 }
 
 /** A bug reference (a row, an id button) that previews the bug. */
-export function BugPreview({ bug, className, placement, children }: { bug: Bug; className?: string; placement?: HoverCardProps['placement']; children: ReactNode }) {
-  return <Preview card={<BugCard bug={bug} />} className={className} placement={placement} cardClassName="w-80">{children}</Preview>;
+export function BugPreview({ bug, ...props }: PreviewProps & { bug: Bug }) {
+  return <Preview card={<BugCard bug={bug} />} cardClassName="w-80" {...props} />;
 }
 
 /* ── Run ── the run's own RunCard, edge to edge in the hover card. */
 
-export function RunPreview({ runId, className, placement, children }: { runId: string; className?: string; placement?: HoverCardProps['placement']; children: ReactNode }) {
-  return (
-    <Preview className={className} placement={placement} cardClassName="w-80" contentClassName="p-0"
-      card={<RunCard runId={runId} compact className="rounded-card border-0 bg-transparent" />}>
-      {children}
-    </Preview>
-  );
+export function RunPreview({ runId, ...props }: PreviewProps & { runId: string }) {
+  return <Preview cardClassName="w-80 p-0" card={<RunCard runId={runId} compact className="rounded-card border-0 bg-transparent" />} {...props} />;
 }
 
 /* ── Project ── */
@@ -93,10 +100,6 @@ export function ProjectCard({ project: p }: { project: Project }) {
   );
 }
 
-export function ProjectPreview({ project, className, children }: { project: Project; className?: string; children: ReactNode }) {
-  return <Preview card={<ProjectCard project={project} />} className={className} placement="right top">{children}</Preview>;
-}
-
 /* ── Member ── */
 
 export function MemberCard({ initials, tone = 0 }: { initials: string; tone?: number }) {
@@ -124,6 +127,7 @@ export function MemberCard({ initials, tone = 0 }: { initials: string; tone?: nu
   );
 }
 
-export function MemberPreview({ initials, tone, className, children }: { initials: string; tone?: number; className?: string; children: ReactNode }) {
-  return <Preview card={<MemberCard initials={initials} tone={tone} />} className={className} cardClassName="w-64">{children}</Preview>;
+/** A member's initials that preview the person; `render` is the drawn initials (a span, named by the member). */
+export function MemberPreview({ initials, tone, ...props }: PreviewProps & { initials: string; tone?: number }) {
+  return <Preview card={<MemberCard initials={initials} tone={tone} />} cardClassName="w-64" {...props} />;
 }

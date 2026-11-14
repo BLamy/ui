@@ -7,13 +7,13 @@ import { cn } from '@/lib/utils';
 import type { PullRequest, Worktree } from './types';
 
 /** A tinted, borderless toolbar button: a glyph, or a text label like "Edit". */
-export function BarButton({ label, children, onPress, isDisabled, className }: {
-  label: string; children?: ReactNode; onPress?: () => void; isDisabled?: boolean; className?: string;
+export function BarButton({ label, children, onClick, disabled, className }: {
+  label: string; children?: ReactNode; onClick?: () => void; disabled?: boolean; className?: string;
 }) {
   const text = children == null;
   return (
-    <Button variant="ghost" aria-label={label} onPress={onPress} isDisabled={isDisabled}
-      className={cn('h-9 rounded-ctl text-primary data-hovered:bg-secondary', text ? 'px-2.5 text-body font-normal' : 'w-10 px-0', className)}>
+    <Button variant="ghost" aria-label={label} onClick={onClick} disabled={disabled}
+      className={cn('h-9 rounded-ctl text-primary hover:bg-secondary', text ? 'px-2.5 text-body font-normal' : 'w-10 px-0', className)}>
       {children ?? label}
     </Button>
   );

@@ -85,7 +85,7 @@ export default function CommentBox() {
               ⌘↵ to post · {attachments.length} attachment
               {attachments.length === 1 ? '' : 's'}
             </span>
-            <Button size="sm" isDisabled={!markdown.trim()} onPress={post}>
+            <Button size="sm" disabled={!markdown.trim()} onClick={post}>
               Comment
             </Button>
           </div>

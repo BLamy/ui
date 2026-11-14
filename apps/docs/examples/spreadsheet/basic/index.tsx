@@ -16,5 +16,5 @@ Part cooling fan,Delta,14,6.80,2026-05-03
 // A small table: double-click or type to edit, drag to select (the sum shows below), click a column's arrows to sort.
 export default function Basic() {
   const [rows, setRows] = useState(() => parseCsv(CSV).rows)
-  return <Spreadsheet aria-label="Parts" value={rows} onChange={setRows} className="h-[340px] w-full max-w-[720px]" />
+  return <Spreadsheet aria-label="Parts" value={rows} onValueChange={setRows} className="h-[340px] w-full max-w-[720px]" />
 }

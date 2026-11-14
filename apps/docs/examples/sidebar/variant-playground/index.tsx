@@ -35,11 +35,11 @@ function SidebarVariants() {
         }}
       >
         {variants.map((v) => (
-          <Chip key={v} active={variant === v} onPress={() => setVariant(v)}>
+          <Chip key={v} active={variant === v} onClick={() => setVariant(v)}>
             {v}
           </Chip>
         ))}
-        <Chip active={narrow} onPress={() => setNarrow((n) => !n)}>
+        <Chip active={narrow} onClick={() => setNarrow((n) => !n)}>
           narrow container
         </Chip>
       </div>
@@ -111,7 +111,7 @@ function Nav({ variant }: { variant: SidebarVariant }) {
       label={label}
       badge={badge}
       active={page === label}
-      onPress={() => setPage(label)}
+      onClick={() => setPage(label)}
     />
   )
   return (
@@ -138,17 +138,17 @@ function Nav({ variant }: { variant: SidebarVariant }) {
 
 function Chip({
   active,
-  onPress,
+  onClick,
   children,
 }: {
   active: boolean
-  onPress: () => void
+  onClick: () => void
   children: string
 }) {
   return (
     <button
       type="button"
-      onClick={onPress}
+      onClick={onClick}
       style={{
         cursor: 'pointer',
         border: 0,

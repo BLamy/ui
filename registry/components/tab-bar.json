@@ -1,7 +1,7 @@
 {
   "name": "tab-bar",
   "title": "TabBar",
-  "description": "The iOS bottom tab bar in one component: icons over labels, a sliding indicator, hiding on scroll.",
+  "description": "The iOS bottom tab bar in one component: icons over labels on a blurred bar, hiding on scroll.",
   "page": "tab-bar",
   "exports": [
     "TabBar"

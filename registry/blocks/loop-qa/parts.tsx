@@ -1,11 +1,11 @@
 /* Loop QA's visual vocabulary: the palette, the mark, status badges (severity, bug status, run status,
    environment), the site thumbnails on project cards, sparklines and severity bars, stat tiles and panels. */
-import type { CSSProperties, ReactNode } from 'react';
+import type { ComponentProps, CSSProperties, ReactElement, ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { Spinner } from '@/components/ui/spinner';
-import { TooltipTrigger, Tooltip } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import {
@@ -280,8 +280,8 @@ export function SectionLabel({ children, count, className }: { children: ReactNo
   );
 }
 
-export function StatTile({ label, value, icon, foot, children, onPress, className }: {
-  label: string; value?: number; icon: string; foot?: ReactNode; children?: ReactNode; onPress?: () => void; className?: string;
+export function StatTile({ label, value, icon, foot, children, onClick, className }: {
+  label: string; value?: number; icon: string; foot?: ReactNode; children?: ReactNode; onClick?: () => void; className?: string;
 }) {
   const body = (
     <>
@@ -295,8 +295,8 @@ export function StatTile({ label, value, icon, foot, children, onPress, classNam
     </>
   );
   const cls = cn('flex min-h-[124px] flex-col rounded-card border border-border bg-card p-4 text-left', className);
-  return onPress ? (
-    <Pressable onPress={onPress} className={cn(cls, 'items-stretch justify-start gap-0 whitespace-normal cursor-pointer outline-none transition-[scale,background-color] duration-spring-snappy ease-spring-snappy data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-[.985] data-focus-visible:ring-2 data-focus-visible:ring-ring motion-reduce:transition-none')}>
+  return onClick ? (
+    <Pressable onClick={onClick} className={cn(cls, 'items-stretch justify-start gap-0 whitespace-normal cursor-pointer outline-none transition-[scale,background-color] duration-spring-snappy ease-spring-snappy hover:bg-muted! active:not-aria-expanded:not-data-disabled:scale-[.985] focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none')}>
       {body}
     </Pressable>
   ) : <div className={cls}>{body}</div>;
@@ -308,23 +308,27 @@ export function Pressable({ className, ...props }: Omit<ButtonProps, 'variant' |
   return <Button variant={null} size={null} className={cn('m-0 border-0 bg-transparent p-0 text-left text-inherit [font:inherit]', className)} {...props} />;
 }
 
-/** Icon button for bars and headers, with a tooltip. */
-export function BarButton({ label, icon, children, className, ...props }: Omit<ButtonProps, 'children' | 'className' | 'variant' | 'size'> & { label: string; icon?: string; children?: ReactNode; className?: string }) {
+/** Icon button for bars and headers, with a tooltip. `render` makes it another popup's trigger as well
+ *  (`render={<DropdownMenuTrigger />}`, `render={<PopoverTrigger />}`): the button opens that popup and keeps its
+ *  tooltip. A disabled one stays focusable (aria-disabled), so keyboard users still reach its tooltip. */
+export function BarButton({ label, icon, children, className, render, ...props }: Omit<ComponentProps<typeof TooltipTrigger>, 'children' | 'className' | 'render'> & {
+  label: string; icon?: string; children?: ReactNode; className?: string; render?: ReactElement<Record<string, unknown>>;
+}) {
   return (
-    <TooltipTrigger delay={600}>
-      <Pressable aria-label={label} {...props}
-        className={cn('inline-grid size-8 shrink-0 cursor-pointer place-items-center rounded-[9px] border-0 bg-transparent p-0 text-muted-foreground outline-none transition-[background-color,color,scale] duration-spring-snappy ease-spring-snappy  data-hovered:text-foreground data-pressed:not-aria-expanded:scale-95 data-focus-visible:ring-2 data-focus-visible:ring-ring data-disabled:opacity-40 motion-reduce:transition-none', className)}>
+    <Tooltip delay={600}>
+      <TooltipTrigger render={render ?? <Pressable focusableWhenDisabled />} aria-label={label} {...props}
+        className={cn('m-0 inline-grid size-8 shrink-0 cursor-pointer place-items-center rounded-[9px] border-0 bg-transparent p-0 [font:inherit] text-muted-foreground outline-none transition-[background-color,color,scale] duration-spring-snappy ease-spring-snappy hover:text-foreground active:not-aria-expanded:not-data-disabled:scale-95 focus-visible:ring-2 focus-visible:ring-ring data-disabled:opacity-40 motion-reduce:transition-none', className)}>
         {children ?? <Icon name={icon!} size={17} sw={1.9} />}
-      </Pressable>
-      <Tooltip placement="bottom">{label}</Tooltip>
-    </TooltipTrigger>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
   );
 }
 
-export function Avatar({ initials, className, tone = 0 }: { initials: string; className?: string; tone?: number }) {
+export function Avatar({ initials, className, tone = 0, ...props }: Omit<ComponentProps<'span'>, 'children'> & { initials: string; tone?: number }) {
   const tones = ['bg-primary text-primary-foreground', 'bg-(--lq-info) text-white', 'bg-success text-white', 'bg-warning text-white'];
   return (
-    <span className={cn('inline-grid size-7 shrink-0 place-items-center rounded-full text-caption2 font-semibold ring-2 ring-background', tones[tone % tones.length], className)}>
+    <span {...props} className={cn('inline-grid size-7 shrink-0 place-items-center rounded-full text-caption2 font-semibold ring-2 ring-background', tones[tone % tones.length], className)}>
       {initials}
     </span>
   );

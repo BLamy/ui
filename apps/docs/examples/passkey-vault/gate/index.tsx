@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
-import { TextField } from '@/components/ui/text-field'
 import { VaultGate, VaultStatusBadge } from '@/components/ui/vault-gate'
 import { BLProvider } from '@/lib/theme'
 import { VaultProvider, useEncryptedState, useVault } from '@/lib/vault-react'
@@ -17,14 +16,14 @@ function Notes() {
     <div className="grid content-start gap-3 p-4">
       <div className="flex items-center justify-between gap-2">
         <VaultStatusBadge />
-        <Button variant="secondary" size="sm" onPress={() => vault.lock()}>
+        <Button variant="secondary" size="sm" onClick={() => vault.lock()}>
           Lock
         </Button>
       </div>
-      <TextField value={note} onChange={(text) => void setNote(text)} isDisabled={meta.status !== 'ready'}>
-        <Label variant="field" className="text-foreground/70">Private note</Label>
-        <Textarea size="lg" placeholder="Reload the page, then unlock to read this again." />
-      </TextField>
+      <Field disabled={meta.status !== 'ready'}>
+        <FieldLabel variant="field" className="text-foreground/70">Private note</FieldLabel>
+        <Textarea size="lg" value={note} onValueChange={(text) => void setNote(text)} placeholder="Reload the page, then unlock to read this again." />
+      </Field>
     </div>
   )
 }

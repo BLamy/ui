@@ -1,9 +1,16 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { Toaster, createToastQueue, useToast } from '@/components/ui/toast'
+import { ToastRegion, createToaster, type Toaster } from '@/components/ui/toast'
+import { BLProvider } from '@/lib/theme'
 
-function Controls() {
-  const toast = useToast()
+type Queue = Toaster<ReactNode>
+
+const upload = () =>
+  new Promise<string>((resolve) => {
+    setTimeout(() => resolve('3 photos · 12 MB'), 1600)
+  })
+
+function Controls({ toast }: { toast: Queue }) {
   return (
     <div
       style={{
@@ -16,10 +23,10 @@ function Controls() {
     >
       <Button
         variant="secondary"
-        onPress={() =>
+        onClick={() =>
           toast('Message sent', {
             description: 'Delivered to Amelia.',
-            icon: 'paperplane',
+            data: { icon: 'paperplane' },
           })
         }
       >
@@ -27,7 +34,7 @@ function Controls() {
       </Button>
       <Button
         variant="secondary"
-        onPress={() =>
+        onClick={() =>
           toast('Note moved to Trash', {
             action: {
               label: 'Undo',
@@ -40,24 +47,23 @@ function Controls() {
       </Button>
       <Button
         variant="secondary"
-        onPress={() => {
-          const id = toast.loading('Uploading 3 photos…')
-          setTimeout(
-            () =>
-              toast.update(id, {
-                title: 'Uploaded',
-                description: '3 photos · 12 MB',
-                tone: 'success',
-              }),
-            1600,
-          )
-        }}
+        onClick={() =>
+          // One toast: a spinner while the promise runs, then its result.
+          toast.promise(upload, {
+            loading: 'Uploading 3 photos…',
+            success: (summary: string) => ({
+              title: 'Uploaded',
+              description: summary,
+            }),
+            error: 'Couldn’t upload',
+          })
+        }
       >
         Loading → done
       </Button>
       <Button
         variant="secondary"
-        onPress={() =>
+        onClick={() =>
           toast.error('Couldn’t connect', {
             description: 'Check your connection and try again.',
           })
@@ -70,24 +76,25 @@ function Controls() {
 }
 
 export default function Banners() {
-  const [queue] = useState(() => createToastQueue())
+  // A queue of its own. Its region renders into the BLProvider around it, so
+  // the demo's banners stay in the demo.
+  const [toaster] = useState(() => createToaster())
   return (
-    <div
-      style={{
-        position: 'relative',
-        height: 380,
-        display: 'grid',
-        placeItems: 'end center',
-        padding: 24,
-        boxSizing: 'border-box',
-        overflow: 'hidden',
-        borderRadius: 14,
-        background: 'var(--background)',
-      }}
-    >
-      <Toaster queue={queue} placement="top" inline offset={16}>
-        <Controls />
-      </Toaster>
+    <div style={{ height: 380, overflow: 'hidden', borderRadius: 14 }}>
+      <BLProvider className="bg-background">
+        <div
+          style={{
+            height: '100%',
+            display: 'grid',
+            placeItems: 'end center',
+            padding: 24,
+            boxSizing: 'border-box',
+          }}
+        >
+          <Controls toast={toaster} />
+        </div>
+        <ToastRegion toaster={toaster} side="top" offset={16} />
+      </BLProvider>
     </div>
   )
 }

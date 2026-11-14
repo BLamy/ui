@@ -37,7 +37,7 @@ const rows: RequestRow[] = [
   { id: 2, url: 'https://shop.example.com/api/checkout', method: 'POST', status: 500, type: 'fetch', size: 420, time: 180, duration: 240 },
 ]
 
-<RequestTable aria-label="Requests" rows={rows} playhead={time} onRowPress={(row) => seek(row.time)} className="h-96" />
+<RequestTable aria-label="Requests" rows={rows} playhead={time} onAction={(id, { row }) => seek(row.time)} className="h-96" />
 ```
 
 {% demo src="request-table/waterfall" %}
@@ -46,20 +46,28 @@ const rows: RequestRow[] = [
 
 Every bar sits on one time range: `timeRange`, or by default from the first request to the last answer. Give it the recording's own range if rows come and go with a playhead, or every bar moves when they do. `tone` colors a bar (`primary`, `success`, `warning`, `danger`, `accent` or `neutral`), and a failed request is `danger` unless it says otherwise. A `pending` request runs on to the end of the range.
 
-`playhead` draws a line on the range and dims the requests sent after it, whatever order the rows are sorted in. It's one element over the whole table, and moving it writes that element's position and a few attributes and renders nothing, so it can change on every frame. The handle's `setPlayhead(time)` does the same with no React at all, for a clock's every tick.
+`playhead` draws a line on the range and dims the requests sent after it, whatever order the rows are sorted in. It's one element over the whole table, and moving it writes that element's position and a few attributes and renders nothing, so it can change on every frame. The controller's `setPlayhead(time)` does the same with no React at all, for a clock's every tick:
+
+```tsx
+const [table] = useState(createRequestTableController)
+
+useEffect(() => clock.subscribe(() => table.setPlayhead(clock.getState().time * 1000)), [clock, table])
+
+<RequestTable controller={table} rows={rows} />
+```
 
 ## Both ends of a call
 
-`renderLink` puts links at the end of a row's name (at the end of its second line in two-line rows), for the other end of the call: the server function that answered a request, or the code that made it. `RequestLink` is small enough for a row, and a press on it isn't a press of the row. Setting `selectedId` to the other row selects it and brings it into view.
+`renderLink` puts links at the end of a row's name (at the end of its second line in two-line rows), for the other end of the call: the server function that answered a request, or the code that made it. `RequestLink` is small enough for a row, and a press on it isn't a press of the row. Setting `value` to the other row's id selects it and brings it into view.
 
 {% demo src="request-table/pair" %}
 
 ```tsx
 const renderLink = useCallback((row: Row) => (
-  <RequestLink onPress={() => setSelected(row.other)}>{row.otherLabel}</RequestLink>
+  <RequestLink onClick={() => setSelected(row.other)}>{row.otherLabel}</RequestLink>
 ), [])
 
-<RequestTable rows={rows} selectedId={selected} onSelectionChange={setSelected} renderLink={renderLink} />
+<RequestTable rows={rows} value={selected} onValueChange={setSelected} renderLink={renderLink} />
 ```
 
 ## Columns
@@ -75,13 +83,13 @@ const columns: RequestColumn<Row>[] = [
 <RequestTable rows={rows} columns={[...columns, 'status', 'duration', 'waterfall']} />
 ```
 
-Dragging a header's edge resizes its column, and double-clicking the edge puts it back. It only writes a CSS variable, so no rows render. `columnWidths` and `onColumnWidthsChange` are there to save what the user chose. Wider than the table, the columns scroll sideways. `type` and `size` have a `hideBelow`, so they go first as the table narrows.
+Dragging a header's edge resizes its column, and double-clicking the edge puts it back. While it drags it only writes a CSS variable, so no rows render, and it asks for the new width once, on release. `columnWidths` and `onColumnWidthsChange(widths, details)` are there to save what the user chose; `details.reason` is `drag`, `resize-key`, `handle-press` (the double click) or `imperative`. Wider than the table, the columns scroll sideways. `type` and `size` have `hideBelow: 'regular'`, so they go first as the table narrows.
 
-Pressing a header sorts: ascending, descending, then back to the rows' own order. Rows with nothing in that column stay at the end both ways. A column of your own sorts by its field of the same name, or by its `sortValue`, and with a `render` and no `sortValue` it doesn't sort at all. A new sort goes to the selected row, or else the top.
+Pressing a header sorts: ascending, descending, then back to the rows' own order. Rows with nothing in that column stay at the end both ways. A column of your own sorts by its field of the same name, or by its `sortValue`, and with a `render` and no `sortValue` it doesn't sort at all. A new sort goes to the selected row, or else the top. `onSortChange(sort, details)` has `details.reason`: `trigger-press` for a header, `item-press` for the sort menu, `imperative` for the controller.
 
 ## Narrow windows
 
-Under `stackBelow`, 480 px by default, it becomes two-line rows: the name, then status, method, duration and any links, with a small waterfall beside them. It's the table's own width that decides and not the viewport's, so a side panel gets it too. Sorting moves into a menu. `layout="table"` or `layout="stacked"` holds it to one. The row at the top of the view and the selection stay as they are when it changes.
+The table has a size class of its own, from its own width and not the viewport's, so a side panel gets it too. It's written on the root as `data-size-class`, for your styles. Compact, under 480 px, it becomes two-line rows: the name, then status, method, duration and any links, with a small waterfall beside them, and sorting moves into a menu. Medium, under 760 px, leaves out the columns with `hideBelow: 'regular'`. `breakpoints={{ medium, regular }}` moves those widths, and `layout="table"` or `layout="stacked"` holds it to one layout. The row at the top of the view and the selection stay as they are when it changes.
 
 {% demo src="request-table/narrow" %}
 
@@ -89,17 +97,19 @@ Under `stackBelow`, 480 px by default, it becomes two-line rows: the name, then 
 
 | Key | Effect |
 | --- | --- |
-| `↑` `↓` | Move the active row. `↑` from the first row goes up to the headers. |
-| `Page Up` `Page Down` `Home` `End` | Move a screen, or to the first or last row. |
+| `↑` `↓` | Move the active row. `↑` from the first row goes up to the headers, `↓` from a header back to the rows. |
+| `Page Up` `Page Down` `Home` `End` | Move a screen, or to the first or last row. On the headers, `Home` and `End` go to the first or last. |
 | `Enter` `Space` | Press the active row, or sort by the active header. |
 | `←` `→` | Scroll sideways. On the headers, move between them. |
 | `⌥←` `⌥→` | On a header, narrow or widen its column. With `⇧`, by more. |
 | `Tab` | Go through the active row's links, then out of the table. |
-| `Esc` | From a link, back to the table. On the headers, back to the rows. |
+| `Esc` | From a link, back to its row. On the headers, back to the rows. |
 
 ## Accessibility
 
-It's an ARIA grid with one tab stop, and the active row or header is `aria-activedescendant`, as in [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet), so focus can't be lost when a row scrolls out and unmounts. `aria-rowcount` gives the full length, each row has `aria-rowindex`, and a sorted column has `aria-sort`. Sort buttons, links and the sort menu are react-aria's, and a column's edge is a `separator` you can drag with a mouse or a finger. A row isn't a react-aria element, for scale: a press on one is the grid's own click, so touch, mouse and a screen reader's click all reach it.
+It's an ARIA grid with one tab stop, built on [UI SDK](https://ui-sdk.dev)'s virtualizer, grid focus and resize: focus is on the active row or header itself, and the active row stays rendered while it has focus, so it can't be lost when the rows around it scroll out and unmount. A key that moves to a row that isn't rendered yet scrolls it in first. `aria-rowcount` gives the full length, each row has `aria-rowindex`, and a sorted column has `aria-sort`. Links are UI SDK buttons, the sort menu is [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu), and a column's edge is a `separator` you can drag with a mouse or a finger, or move with `←` `→` once it has focus. A press on a row is the row's own click, so touch, mouse and a screen reader's click all reach it.
+
+UI SDK's [Waterfall](https://ui-sdk.dev) draws a trace's spans as a tree of rows on a time axis; RequestTable is a flat, sortable table of requests with a waterfall column, so it places its bars with `requestBar` and leaves Waterfall to traces.
 
 ## Props
 
@@ -111,13 +121,14 @@ It's an ARIA grid with one tab stop, and the active row or header is `aria-activ
 | `columns` | all but `url` | Which columns, in order. |
 | `timeRange` | first request to last answer | The waterfall's range. |
 | `playhead` | none | The playhead's time, in ms. |
-| `selectedId` / `defaultSelectedId` / `onSelectionChange` | none | The selected row. A new one that's out of view is scrolled to. |
-| `onRowPress` | none | A press, or Enter or Space on the active row. |
+| `value` / `defaultValue` / `onValueChange` | none | The selected row's id, or `null`. A new one that's out of view is scrolled to. `details.reason` is `item-press` or `imperative`. |
+| `onAction` | none | `(id, details)`: a press, or Enter or Space on the active row, with `details.row` and `details.index`. |
 | `renderLink` | none | Links to the other end of a call, in the row. Must be stable. |
 | `sort` / `defaultSort` / `onSortChange` | none | `{ column, direction }`, or `null` for the rows' own order. |
-| `columnWidths` / `defaultColumnWidths` / `onColumnWidthsChange` | their own sizes | Widths dragged so far, by column id. |
+| `columnWidths` / `defaultColumnWidths` / `onColumnWidthsChange` | their own sizes | Widths set so far, by column id. |
+| `controller` | none | `createRequestTableController()`, to drive it from outside. |
 | `layout` | `auto` | `auto`, `table` or `stacked`. |
-| `stackBelow` | `480` | Own width, in px, under which `auto` stacks. |
+| `breakpoints` | `{ medium: 480, regular: 760 }` | Where the table's own size classes start, in px. `auto` stacks while it's compact. |
 | `density` | `compact` | `comfortable` for touch. |
 | `emptyState` / `footer` | "No requests" / none | Shown with no rows, and after the last row. |
 
@@ -143,18 +154,21 @@ It's an ARIA grid with one tab stop, and the active row or header is `aria-activ
 | `id` / `title` / `label` | Which one, its header, and its name in words when `title` isn't a string. |
 | `width` / `flex` | A fixed width in px, or a share of the spare width. |
 | `minWidth` / `maxWidth` | How far a resize can go. |
-| `hideBelow` | Hidden when the table is narrower than this. |
+| `hideBelow` | `'regular'` (or `'medium'`): hidden while the table's size class is below that one. |
 | `align` | `start` or `end`. |
 | `render` | The cell. Must be stable. |
 | `sortable` / `sortValue` | Whether it sorts, and by what. |
 
-### The handle
+### The controller
+
+`createRequestTableController()` makes one; pass it as `controller`.
 
 | Method | Effect |
 | --- | --- |
-| `focus()` | Focuses the table. |
-| `scrollToId(id, align?)` | Scrolls to a row: `center` by default, or `start`, `end`, `nearest`. |
-| `setPlayhead(time)` | Moves the playhead with no React. The prop takes over when it next changes. |
+| `focus()` | Focuses the active row, or the row focus would start on. |
+| `scrollToId(id, { align? })` | Scrolls to a row: `center` by default, or `start`, `end`, `auto` (only if it's out of view). |
+| `setPlayhead(time)` | Moves the playhead with no React. The `playhead` prop takes over when it next changes. |
+| `setValue(id)` / `setSort(sort)` / `setColumnWidths(widths)` | Selects a row, sorts, or sets the widths, as code (`reason: 'imperative'`). |
 
 ### Helpers
 
@@ -162,7 +176,7 @@ It's an ARIA grid with one tab stop, and the active row or header is `aria-activ
 
 ## Styling
 
-The root is `data-slot="request-table"`, with `data-layout` of `table` or `stacked`, inside it `request-table-grid`, `request-table-header`, `request-table-rows`, `request-table-playhead`, `request-table-empty` and `request-table-footer`. A header is `request-table-column`, with `request-table-resizer`, and the stacked header has `request-table-sort`. A row is `request-table-row`, with `data-failed` and `data-pending`, and has `request-table-name`, `request-table-links`, `request-table-waterfall` and `request-table-bar`; a link is `request-table-link`. It takes its colors from the theme, on the surface [ResultTable](https://blamy.github.io/ui/#/result-table) and Spreadsheet use.
+The root is `data-slot="request-table"`, with `data-layout` of `table` or `stacked`, inside it `request-table-grid` (with `data-playhead` while the playhead is on the range), `request-table-head` around `request-table-header`, `request-table-rows`, `request-table-playhead`, `request-table-empty` and `request-table-footer`. A header is `request-table-column`, with `data-active` and `request-table-resizer` (`data-dragging` while it drags), and the stacked header has `request-table-heading`s, one with the sort menu. A row is `request-table-row`, with `data-selected`, `data-active`, `data-future`, `data-failed` and `data-pending`, its cells are `request-table-cell`, and it has `request-table-name`, `request-table-links`, `request-table-waterfall` and `request-table-bar`; a link is `request-table-link`. It takes its colors from the theme, on the surface [ResultTable](https://blamy.github.io/ui/#/result-table) and Spreadsheet use.
 
 ## cva recipes
 
@@ -173,7 +187,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/request-table`. Base classes:
 
 ```text
-group/table relative flex h-full max-h-dvh w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground after:pointer-events-none after:absolute after:inset-0 after:z-3 after:rounded-[inherit] after:shadow-hairline after:content-['']
+group/table relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground after:pointer-events-none after:absolute after:inset-0 after:z-3 after:rounded-[inherit] after:shadow-hairline after:content-['']
 ```
 
 **`density`** — default `compact`

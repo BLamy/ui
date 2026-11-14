@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CodeViewItem } from '@pierre/diffs';
 import { CodeView, type CodeViewHandle } from '@pierre/diffs/react';
-import { Segmented } from '@/components/ui/segmented';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { SplitViewDetail, SplitViewHeader, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { useAppearance } from '@/lib/theme';
@@ -54,7 +54,7 @@ function FileBody({ w, path, text }: { w: Worktree; path: string; text: string }
 export function DetailColumn({ atlas }: { atlas: AtlasState }) {
   const s = useSplitView();
   const w = atlas.selected;
-  const wide = s.widthClass === 'regular';
+  const wide = s.sizeClass === 'regular';
   const [diffStyle, setDiffStyle] = useState<'unified' | 'split'>('unified');
   const files = atlas.view === 'files';
   const name = atlas.filePath?.split('/').pop();
@@ -79,8 +79,10 @@ export function DetailColumn({ atlas }: { atlas: AtlasState }) {
     <SplitViewDetail aria-label={files ? 'File' : 'Diff'}>
       <SplitViewHeader title={files ? name : w ? 'Changes' : undefined}
         trailing={w && !files && wide ? (
-          <Segmented aria-label="Diff layout" className="mr-1 w-[150px]" value={diffStyle} onChange={(v) => setDiffStyle(v as 'unified' | 'split')}
-            options={[{ id: 'unified', label: 'Unified' }, { id: 'split', label: 'Split' }]} />
+          <Segmented<'unified' | 'split'> aria-label="Diff layout" className="mr-1 w-[150px]" value={diffStyle} onValueChange={(v) => { if (v) setDiffStyle(v); }}>
+            <SegmentedItem value="unified">Unified</SegmentedItem>
+            <SegmentedItem value="split">Split</SegmentedItem>
+          </Segmented>
         ) : null} />
       {body ?? (w ? null : atlas.scanned && atlas.all.length === 0 ? null
         : <Placeholder icon="doc" title="No Worktree Selected" detail="Pick a worktree to browse its files or see what it changes against main." />)}

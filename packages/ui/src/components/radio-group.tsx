@@ -1,16 +1,24 @@
 'use client';
+import type { ComponentProps } from 'react';
 import {
-  Radio as AriaRadio, type RadioProps as AriaRadioProps,
-  RadioGroup as AriaRadioGroup, type RadioGroupProps as AriaRadioGroupProps,
-  composeRenderProps,
-} from 'react-aria-components';
+  Radio as SdkRadio, RadioGroup as SdkRadioGroup, RadioIndicator as SdkRadioIndicator,
+} from '@ui-sdk/react/radio';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { cx } from '@/lib/utils';
 
-/* ══ RadioGroup — generic round radios on react-aria's RadioGroup (arrows move + select).
-   For the iOS segmented look use <Segmented>. ══ */
+/* ══ RadioGroup — round radios on UI SDK's RadioGroup (one tab stop; arrows move and select) ══
+   `value` / `defaultValue` / `onValueChange(value, details)`, `disabled`, `readOnly`, `required`, and `name` to
+   submit with a form. Each Radio is the circle (a button with the `radio` role); wrap it and its text in a Label:
+
+   <RadioGroup aria-label="Billing" defaultValue="monthly">
+     <Label variant="control"><Radio value="monthly" />Monthly</Label>
+     <Label variant="control"><Radio value="yearly" />Yearly</Label>
+   </RadioGroup>
+
+   For the iOS segmented look use <Segmented>. */
 export const radioGroupVariants = cva('group flex', {
   variants: {
+    /** How the radios are laid out. Arrow keys on both axes move between them either way. */
     orientation: {
       vertical: 'flex-col gap-3',
       horizontal: 'flex-row flex-wrap gap-5',
@@ -19,45 +27,38 @@ export const radioGroupVariants = cva('group flex', {
   defaultVariants: { orientation: 'vertical' },
 });
 
-export interface RadioGroupProps extends AriaRadioGroupProps {}
+export type RadioGroupProps<T extends string = string> = ComponentProps<typeof SdkRadioGroup<T>> & VariantProps<typeof radioGroupVariants>;
 
-export function RadioGroup({ className, orientation = 'vertical', ...props }: RadioGroupProps) {
-  return (
-    <AriaRadioGroup
-      data-slot="radio-group"
-      orientation={orientation}
-      className={composeRenderProps(className, (cls) => cn(radioGroupVariants({ orientation }), cls))}
-      {...props}
-    />
-  );
+export function RadioGroup<T extends string = string>({ className, orientation, ...props }: RadioGroupProps<T>) {
+  return <SdkRadioGroup<T> className={cx(radioGroupVariants({ orientation }), className)} {...props} />;
 }
 
+/** The circle. Checked, its border thickens to a ring around the dot (the RadioIndicator fills what is left). */
 export const radioVariants = cva(
   [
-    'box-border size-[22px] shrink-0 rounded-full border-[1.5px] border-tertiary-foreground bg-transparent',
+    'box-border grid size-[22px] shrink-0 cursor-pointer rounded-full border-[1.5px] border-tertiary-foreground bg-transparent p-0 outline-none',
     'transition-[border-width,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
-    'group-data-selected:border-[7px] group-data-selected:border-primary group-data-selected:bg-white',
-    'group-data-pressed:scale-90 group-data-focus-visible:ring-[3px] group-data-focus-visible:ring-ring/45',
-    'group-data-invalid:border-destructive',
+    'data-checked:border-[7px] data-checked:border-primary',
+    'active:not-data-disabled:scale-90 focus-visible:ring-[3px] focus-visible:ring-ring/45',
+    // Invalid: the radio itself (`aria-invalid`, which a Field writes on its control) or the group around it.
+    'aria-invalid:border-destructive group-aria-invalid:border-destructive',
+    'data-disabled:cursor-default data-disabled:opacity-40',
   ],
 );
 
-export interface RadioProps extends AriaRadioProps, VariantProps<typeof radioVariants> {}
+export type RadioProps = ComponentProps<typeof SdkRadio> & VariantProps<typeof radioVariants>;
 
 export function Radio({ className, children, ...props }: RadioProps) {
   return (
-    <AriaRadio
-      data-slot="radio"
-      className={composeRenderProps(className, (cls) =>
-        cn('group relative inline-flex cursor-pointer items-center gap-3 text-body text-foreground outline-none data-disabled:cursor-default data-disabled:opacity-40', cls))}
-      {...props}
-    >
-      {composeRenderProps(children, (kids) => (
-        <>
-          <span data-slot="radio-indicator" className={radioVariants()} />
-          {kids}
-        </>
-      ))}
-    </AriaRadio>
+    <SdkRadio className={cx(radioVariants(), className)} {...props}>
+      {children ?? <RadioIndicator />}
+    </SdkRadio>
   );
 }
+
+/** The dot inside the checked radio. */
+export function RadioIndicator({ className, ...props }: ComponentProps<typeof SdkRadioIndicator>) {
+  return <SdkRadioIndicator className={cx('block size-full rounded-full bg-white', className)} {...props} />;
+}
+
+export { createRadioGroupController } from '@ui-sdk/react/radio';

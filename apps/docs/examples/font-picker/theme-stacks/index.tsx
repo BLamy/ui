@@ -20,11 +20,11 @@ export default function ThemeStacks() {
     <ThemeScope className="mx-auto grid max-w-md gap-4">
       <div className="grid gap-1.5">
         <Label variant="field" className="text-foreground/70">Text</Label>
-        <FontStackPicker aria-label="Text fonts" value={sans} onChange={setSans} onPreview={setPreviewSans} placeholder="System font" />
+        <FontStackPicker aria-label="Text fonts" value={sans} onValueChange={setSans} onPreview={setPreviewSans} placeholder="System font" />
       </div>
       <div className="grid gap-1.5">
         <Label variant="field" className="text-foreground/70">Code</Label>
-        <FontStackPicker aria-label="Code fonts" value={mono} onChange={setMono} onPreview={setPreviewMono} defaultCategory="monospace" placeholder="System monospace" />
+        <FontStackPicker aria-label="Code fonts" value={mono} onValueChange={setMono} onPreview={setPreviewMono} defaultCategory="monospace" placeholder="System monospace" />
       </div>
       <div className="grid gap-2 rounded-card bg-card p-5 shadow-hairline" style={{ fontFamily: fontStack(shownSans) }}>
         <p className="m-0 text-title font-semibold">Ship it on Friday</p>

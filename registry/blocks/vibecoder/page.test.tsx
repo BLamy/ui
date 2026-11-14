@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
+import { MotionGlobalConfig } from 'framer-motion';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createVault } from '@/lib/vault';
 import { memoryStorage } from '@/lib/vault-storage';
@@ -16,6 +17,10 @@ import {
 } from '../apple-passwords/page';
 import Vibecoder from './page';
 
+declare global { var __UI_SDK_STRICT__: boolean | undefined }
+globalThis.__UI_SDK_STRICT__ = true;
+MotionGlobalConfig.skipAnimations = true;
+
 const element = document.createElement('div');
 vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
 document.body.append(element);
@@ -25,9 +30,15 @@ afterEach(async () => {
   element.remove();
   vi.unstubAllGlobals();
 });
+/** A button's text as it reads, without the letters a TextMorph animates (hidden from assistive tech). */
+const label = (node: Element) => {
+  const copy = node.cloneNode(true) as Element;
+  copy.querySelectorAll('[aria-hidden="true"]').forEach((hidden) => hidden.remove());
+  return copy.textContent;
+};
 const button = (name: string) =>
   Array.from(element.querySelectorAll('button')).find(
-    (node) => node.textContent === name,
+    (node) => label(node) === name,
   );
 
 it('loads both saved connections after refreshing and unlocking the shared Passwords keychain', async () => {

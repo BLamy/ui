@@ -55,9 +55,9 @@ useEffect(() => clock.setDuration(timelineDuration(timeline)), [clock, timeline]
 
 ## The playback clock
 
-`usePlaybackClock()` makes a clock that lives as long as the component, and `createPlayback()` makes one outside React. It has `play`, `pause`, `toggle`, `seek(t)`, `step(seconds)`, `setDuration`, `setRate`, `setLoop` and `setScrubbing`. While playing it advances on animation frames and stops at the end, or loops. It is a small external store: `subscribe` hears every tick, which is how a playhead moves without re-rendering, and `usePlaybackState(clock, (s) => s.playing)` re-renders a component only when the part it selects changes. Its methods work detached (`onPress={clock.toggle}`).
+`usePlaybackClock()` makes a clock that lives as long as the component, and `createPlayback()` makes one outside React. It has `play`, `pause`, `toggle`, `seek(t)`, `step(seconds)`, `setDuration`, `setRate`, `setLoop` and `setScrubbing`. While playing it advances on animation frames and stops at the end, or loops. It is a small external store: `subscribe` hears every tick, which is how a playhead moves without re-rendering, and `usePlaybackState(clock, (s) => s.playing)` re-renders a component only when the part it selects changes. Its methods work detached (`onClick={clock.toggle}`).
 
-`PlaybackControls` has go to start, previous frame, play/pause, next frame, go to end and the timecode. `PlaybackTimecode` is the timecode alone: `HH:MM:SS:FF` with `fps`, else `M:SS.t`.
+`PlaybackControls` has go to start, previous frame, play/pause, next frame, go to end and the timecode. It is a UI SDK Toolbar named "Playback": one Tab stop, ←/→ between the buttons, Home/End to the first and last. `PlaybackTimecode` is the timecode alone: `HH:MM:SS:FF` with `fps`, else `M:SS.t`.
 
 ## How close is it to the render
 

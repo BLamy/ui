@@ -1,6 +1,6 @@
 # AdaptivePane
 
-One region, four presentations. A shell measures itself and picks a mode; the pane renders the same children as a docked column, an edge drawer, a cover over the host, or nothing. It is the building block behind the navigation of [ChatShell](https://blamy.github.io/ui/#/chat-shell) and the sidebar and surface panel of [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell), the shells that ship in the `discord-clone` and `t3-clone` [blocks](https://blamy.github.io/ui/#/blocks).
+One region, four presentations. A shell measures itself and picks a presentation; the pane renders the same children as a docked column, an edge drawer, a cover over the host, or nothing, and they stay mounted through every switch (fields, scroll subscriptions and selection carry over). It is the building block behind the navigation of [ChatShell](https://blamy.github.io/ui/#/chat-shell) and the sidebar and surface panel of [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell), the shells that ship in the `discord-clone` and `t3-clone` [blocks](https://blamy.github.io/ui/#/blocks).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -38,9 +38,9 @@ function Shell({ nav, children }) {
       style={{ position: 'relative', display: 'flex', height: '100%' }}
     >
       <AdaptivePane
-        mode={width < 760 ? 'drawer' : 'column'}
+        presentation={width < 760 ? 'drawer' : 'column'}
         open={open}
-        onClose={() => setOpen(false)}
+        onOpenChange={setOpen}
         columnWidth={240}
         drawerWidth={280}
       >
@@ -52,20 +52,22 @@ function Shell({ nav, children }) {
 }
 ```
 
-## Modes
+## Presentations
 
-| Mode | Renders |
+| `presentation` | Renders |
 | --- | --- |
-| `column` | A fixed-width flex child beside its siblings (`columnWidth`, `columnStyle`). |
-| `drawer` | A scrim and panel sliding in from `side` over the host (`open`, `onClose`, `drawerWidth`, `zIndex`, `scrimClassName`, `scrim`, `shadow`, `className`, `style`). |
+| `column` | A fixed-width flex or grid child beside its siblings (`columnWidth`, `columnClassName`, `columnStyle`). |
+| `drawer` | UI SDK's Drawer from `side` over the positioned host (`open` / `defaultOpen` / `onOpenChange(open, details)`, `drawerWidth`, `drawerMaxWidth`, `zIndex`, `backdropClassName`, `scrim`, `shadow`, `swipe`, `aria-label`, `className`, `style`). Escape, a press on the scrim and a swipe toward its edge close it (`details.reason` is `escape-key`, `outside-press` or `swipe`), and focus stays inside while it is open. |
 | `cover` | Fills the positioned host at `zIndex` — full-screen panels and compact pages. |
-| `hidden` | Nothing. |
+| `hidden` | Nothing on screen; the children stay mounted, off the page. |
+
+`side` is the host's edge the pane belongs to: UI SDK's logical `start` (the default) or `end`, which follow the reading direction (so under `dir="rtl"` a `start` drawer comes from the right, and its separator and swipe strip move with it), or a physical `left` or `right`.
 
 ## Resizing and gestures
 
-`resizable` puts a divider on the inner edge of a `column` or a `drawer`: drag it, or focus it and use the arrow keys (Shift for bigger steps), Home and End; double-click or Enter resets to the default width. `minWidth` (default 160) and a numeric `maxWidth` bound it, and a column never takes the last 240px of its host (a drawer, the last 48px). `onResize(width, mode)` reports each change (`width` is `undefined` once reset).
+`resizable` puts a separator on the inner edge of a `column` or a `drawer` (UI SDK's `createResize`): drag it, or focus it and use the arrow keys (16px, Shift for 48px), Home and End; Enter or a double-click returns to the host's width. The separator is one tab stop with `aria-valuenow`, `aria-valuemin` and `aria-valuemax` (the window-splitter pattern); while it drags, the pane has `data-dragging` and only its `--adaptive-pane-w` variable changes, so the content doesn't re-render. `minWidth` (default 160) and `maxWidth` (px) bound it, and a column never takes the last 240px of its host (a drawer, the last 48px). The widths are kept per presentation in `widths` / `defaultWidths`, and `onWidthsChange(widths, details)` reports each settled change (a drag on release, every key) with `details.reason` `drag`, `resize-key` or `size-reset`; an unset width means the host's applies.
 
-A drawer moves like a NavigationStack screen: it opens and closes on the `smooth` spring, and dragging its panel toward its edge follows the finger and closes past the stack's commit distance or flick (`swipe={false}` turns that off). Give `onOpen` and a thin strip along the host's edge opens the drawer with a drag from the edge. That strip sits where a NavigationStack's back swipe starts, so use it on the side a stack in the host doesn't.
+A drawer is UI SDK's Drawer: dragging its panel toward its edge follows the finger and closes it past a distance or on a flick (`reason: 'swipe'`). `swipe={false}` turns only that off: the panel no longer follows a drag (UI SDK's `data-drawer-no-drag` on it), while Escape and the scrim still close it. `swipeToOpen` adds a thin strip along the host's edge that opens a closed drawer with a swipe (`bindEdgeSwipe` on the host, `reason: 'swipe'`): it opens past a third of the host's width, or sooner with a flick, so a short nudge in the strip does nothing. That strip sits where a NavigationStack's back swipe starts, so use it on the side a stack in the host doesn't.
 
 ## Container utilities
 
@@ -79,7 +81,7 @@ The shells share two more primitives, in `@/lib/container` (`@brett_lamy/ui` on 
 
 ## Live example
 
-Pick a mode, or open a second pane as a right drawer:
+Pick a presentation, or open a second pane as a right drawer:
 
 {% demo src="adaptive-pane/pane-modes" %}
 
@@ -99,6 +101,6 @@ The detail is a trailing column when there is room and covers the list when ther
 
 ### Reader outline
 
-The mode doesn't have to come from the width. Here the reader chooses: docked outline, a drawer, or hidden for focus.
+The presentation doesn't have to come from the width. Here the reader chooses: docked outline, a drawer, or hidden for focus.
 
 {% demo src="adaptive-pane/reader-outline" %}

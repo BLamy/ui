@@ -18,7 +18,7 @@ export default function DebugToolbarDemo() {
   return (
     <div className="flex flex-col items-center gap-3 py-5">
       <DebugToolbar onAction={setLastAction} />
-      <p className="min-h-5 text-caption text-muted-foreground" aria-live="polite">
+      <p className="min-h-5 text-caption text-foreground/70" aria-live="polite">
         {lastAction ? `Last action: ${LABELS[lastAction]}` : 'Choose a debugger action'}
       </p>
       <div className="w-full border-t border-border pt-5">

@@ -80,11 +80,11 @@ export default function AnnotateScreenshot() {
         <PencilToolbar>
           <ToolPicker
             value={tool}
-            onChange={setTool}
+            onValueChange={setTool}
             tools={['marker', 'pen', 'eraser']}
           />
           <PencilToolbarDivider />
-          <InkPicker value={ink} onChange={setInk} inks={highlighters} />
+          <InkPicker value={ink} onValueChange={setInk} inks={highlighters} />
           <PencilToolbarDivider />
           <PencilActions
             onUndo={history.undo}

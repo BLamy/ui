@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
+import { Select, SelectContent, SelectTrigger } from '@/components/ui/select'
 import { ThemeScope } from '@/lib/theme'
 
 const repeats = ['Never', 'Every day', 'Every week', 'Every 2 weeks', 'Every month']
@@ -13,33 +13,28 @@ function Row({ label, value, onChange, options }: {
   options: string[]
 }) {
   return (
-    <Select
-      aria-label={label}
-      value={value}
-      onChange={(key) => onChange(String(key))}
-      className="min-h-11 flex-row items-center justify-between gap-2 border-b border-border last:border-b-0"
-    >
+    <div className="flex min-h-11 flex-row items-center justify-between gap-2 border-b border-border last:border-b-0">
       <span className="text-body text-foreground" aria-hidden="true">{label}</span>
-      <SelectTrigger variant="plain" />
-      <SelectContent placement="bottom end">
-        {options.map((o) => <SelectItem key={o} id={o}>{o}</SelectItem>)}
-      </SelectContent>
-    </Select>
+      <Select items={options} value={value} onValueChange={(next) => { if (next !== null) onChange(next) }}>
+        <SelectTrigger aria-label={label} variant="plain" />
+        <SelectContent align="end" />
+      </Select>
+    </div>
   )
 }
 
 // `variant="plain"` is the iOS pop-up button: no fill, a muted value at the
-// trailing edge of a grouped-list row. The row is the Select's own root.
+// trailing edge of a grouped-list row. The list opens toward that edge.
 export default function SettingsRows() {
   const [repeat, setRepeat] = useState('Every week')
   const [alert, setAlert] = useState('1 hour before')
-  // The ThemeScope is only here so the portalled overlay wears this demo's
-  // light / dark appearance; in an app, BLProvider or your root class does it.
+  // The ThemeScope is only here so the overlay wears this demo's light / dark
+  // appearance; in an app, BLProvider or your root class does it.
   return (
     <ThemeScope className="mx-auto max-w-sm">
       <Card className="px-4">
-      <Row label="Repeat" value={repeat} onChange={setRepeat} options={repeats} />
-      <Row label="Alert" value={alert} onChange={setAlert} options={alerts} />
+        <Row label="Repeat" value={repeat} onChange={setRepeat} options={repeats} />
+        <Row label="Alert" value={alert} onChange={setAlert} options={alerts} />
       </Card>
     </ThemeScope>
   )

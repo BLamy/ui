@@ -36,7 +36,7 @@ export default function Grid() {
 
   return (
     <div style={{ width: '100%', display: 'grid', gap: 12 }}>
-      <Button variant="secondary" onPress={toggle} style={{ justifySelf: 'start' }}>{playing ? 'Stop' : 'Play'}</Button>
+      <Button variant="secondary" onClick={toggle} style={{ justifySelf: 'start' }}>{playing ? 'Stop' : 'Play'}</Button>
       <StrudelRack code={code} onChange={setCode} onPlayableChange={setPlayable} layout="grid" />
       <pre style={{ margin: 0, fontSize: 12, whiteSpace: 'pre-wrap' }}>{code}</pre>
     </div>

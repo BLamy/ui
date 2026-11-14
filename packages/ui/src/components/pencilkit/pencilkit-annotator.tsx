@@ -20,9 +20,9 @@ export function PencilKitAnnotator({ children }: ComposerAnnotatorProps) {
     canvas: <PencilCanvas tool={tool} ink={PK_INKS[ink]} strokes={history.strokes} onStrokesChange={history.onStrokesChange} />,
     toolbar: (
       <PencilToolbar className="relative bottom-auto left-auto mx-auto translate-x-0 shadow-none">
-        <ToolPicker value={tool} onChange={setTool} />
+        <ToolPicker value={tool} onValueChange={setTool} />
         <PencilToolbarDivider />
-        <InkPicker value={ink} onChange={setInk} />
+        <InkPicker value={ink} onValueChange={setInk} />
         <PencilToolbarDivider />
         <PencilActions
           onUndo={history.undo}

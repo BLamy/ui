@@ -1,47 +1,48 @@
 'use client';
 import {
-  memo, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState,
-  type ComponentProps, type CSSProperties, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent as ReactMouseEvent, type ReactElement, type ReactNode, type Ref,
+  createContext, memo, useContext, useMemo, useSyncExternalStore,
+  type ComponentProps, type CSSProperties, type ReactElement, type ReactNode,
 } from 'react';
-import { mergeProps, useFocusRing, useMove } from 'react-aria';
-import { Button as AriaButton, type ButtonProps as AriaButtonProps, composeRenderProps } from 'react-aria-components';
+import type { ChangeDetails, VirtualItem } from '@ui-sdk/core';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { createParts, usePart, usePrimitive, type PartProps, type PrimitiveHandle } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { useControllableState } from '@/lib/controllable-state';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Icon } from '@/lib/icon';
-import { rowKeyTarget, type RowId, type RowRange } from '@/lib/log-list-model';
-import { RowWindow, isRowPress, tabThroughGrid, type RowAlign } from '@/lib/log-list-window';
+import type { RowId } from '@/lib/log-list-model';
 import {
-  clampColumnWidth, columnTemplate, isRequestFailed, nextRequestSort, playheadShare, requestBar, requestDisplayName, requestDurationText,
-  requestSizeText, requestSortValue, requestStatusText, requestTimeRange, requestTone, sortRequests,
+  isRequestFailed, requestBar, requestDisplayName, requestDurationText, requestSizeText, requestStatusText,
+  requestTimeRange, requestTone,
   type RequestColumnSize, type RequestRow, type RequestSort, type RequestSortValue, type RequestTimeRange,
 } from '@/lib/request-table-model';
+import {
+  requestTable, type RequestTableActionDetails, type RequestTableBreakpoints, type RequestTableColumnWidthsChangeReason,
+  type RequestTableController, type RequestTableOptions, type RequestTableSortChangeReason, type RequestTableValueChangeReason,
+} from '@/lib/request-table-primitive';
 import { formatDuration } from '@/lib/sql-format';
-import { cn } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 
 /* ══ RequestTable — a network pane: 10,000 requests, a waterfall and a playhead ══
-   <RequestTable rows={rows} playhead={t} selectedId={id} onRowPress={(row) => seek(row.time)} />
+   <RequestTable rows={rows} playhead={t} value={id} onAction={(id, { row }) => seek(row.time)} />
 
    Rows are plain data. Columns are configurable, resizable by dragging an edge and sort when pressed. The waterfall's bars
    share one time range, and the optional playhead is a line across it with the rows after it dimmed: it writes one
    element's position and a few attributes and renders nothing, so it can follow a playhead on every frame. `renderLink`
    gives each row a place for links to the other end of the call, which `RequestLink` draws.
 
-   Under 480 px of its own width (not the viewport's, so a side panel gets it too) it becomes two-line rows: the name, then
-   status, method and duration, with a small waterfall beside them and sorting in a menu.
+   It has a size class of its own (not the viewport's, so a side panel gets it too). Compact, under 480 px, it becomes
+   two-line rows: the name, then status, method and duration, with a small waterfall beside them and sorting in a menu.
+   Under 760 px, regular, the columns with `hideBelow: 'regular'` (`type` and `size`) go.
 
-   What it's built on: ResultTable pages its rows and Spreadsheet is a matrix of strings, and react-aria's Table on a
-   Virtualizer took 400 ms to add one row to 10,000, which a list that grows with a playhead can't pay. So it shares
-   LogList's RowWindow, with rows of a fixed height, and is a grid in the way Spreadsheet is: one tab stop, with ↑ ↓ Home End
-   and Page Up/Down on the rows, Enter or Space to press one, Tab into the active row's links and on out; ↑ from the first
-   row reaches the headers, where ← → move, Enter sorts and ⌥← ⌥→ resize. ← → on a row scroll sideways. A row's press is the
-   grid's own click, as on LogList; sort buttons, links and the menu are react-aria's. */
+   It's the request-table primitive (lib/request-table-primitive), built from UI SDK's virtualizer, grid focus and
+   resize: a grid with one tab stop, where ↑ ↓ Home End and Page Up/Down move between rows, Enter or Space presses one,
+   ← → scroll sideways, and Tab goes through the row's links and on out; ↑ from the first row reaches the headers, where
+   ← → move, Enter sorts and ⌥← ⌥→ resize. */
 
 export const requestTableVariants = cva(
   // The hairline is drawn over the content, so the header's fill and a row's tint don't hide it.
-  "group/table relative flex h-full max-h-dvh w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground after:pointer-events-none after:absolute after:inset-0 after:z-3 after:rounded-[inherit] after:shadow-hairline after:content-['']",
+  "group/table relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground after:pointer-events-none after:absolute after:inset-0 after:z-3 after:rounded-[inherit] after:shadow-hairline after:content-['']",
   {
     variants: {
       /** Row height: `compact` (default, 26 px) packs the most in; `comfortable` (34 px) suits touch. */
@@ -56,7 +57,6 @@ const ROW_HEIGHT = {
   comfortable: { table: 34, stacked: 54 },
 } as const;
 const HEADER_HEIGHT = 28;
-const OVERSCAN = 360;
 
 export type RequestColumnId = 'name' | 'url' | 'method' | 'status' | 'type' | 'size' | 'duration' | 'waterfall';
 
@@ -74,14 +74,14 @@ export interface RequestColumn<T extends RequestRow = RequestRow> extends Reques
   label?: string;
 }
 
-/** The built-in columns. `type` and `size` go first when the table is narrow. */
+/** The built-in columns. `type` and `size` go first when the table is narrow: below its regular size class. */
 export const REQUEST_COLUMNS: Record<RequestColumnId, RequestColumn> = {
   name: { id: 'name', title: 'Name', flex: 3, minWidth: 160 },
   url: { id: 'url', title: 'URL', flex: 3, minWidth: 200 },
   method: { id: 'method', title: 'Method', width: 66, minWidth: 48 },
   status: { id: 'status', title: 'Status', width: 76, minWidth: 48 },
-  type: { id: 'type', title: 'Type', width: 72, minWidth: 48, hideBelow: 760 },
-  size: { id: 'size', title: 'Size', width: 72, minWidth: 48, align: 'end', hideBelow: 640 },
+  type: { id: 'type', title: 'Type', width: 72, minWidth: 48, hideBelow: 'regular' },
+  size: { id: 'size', title: 'Size', width: 72, minWidth: 48, align: 'end', hideBelow: 'regular' },
   duration: { id: 'duration', title: 'Time', width: 72, minWidth: 48, align: 'end' },
   waterfall: { id: 'waterfall', title: 'Waterfall', label: 'Start time', flex: 2, minWidth: 120 },
 };
@@ -99,7 +99,7 @@ const ROW_LAYERS = [
   "before:absolute before:inset-0 before:-z-1 before:content-[''] hover:before:bg-foreground/4 active:before:bg-foreground/8",
   "after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60 after:content-['']",
   'data-selected:before:bg-primary/16',
-  'group-data-focus-visible/grid:data-active:ring-2 group-data-focus-visible/grid:data-active:ring-ring group-data-focus-visible/grid:data-active:ring-inset',
+  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
 ].join(' ');
 const ROW_CLASS = `${ROW_LAYERS} grid grid-cols-(--request-cols) items-center data-future:*:opacity-45`;
 const STACKED_ROW_CLASS = `${ROW_LAYERS} flex items-center gap-2 px-2 data-future:*:opacity-45`;
@@ -116,35 +116,30 @@ const WATERFALL_CELL_CLASS = 'relative mx-2 h-full min-w-0';
 // Beside both lines rather than in the second, so the one playhead line goes through every row without crossing a name or a link.
 const STACKED_WATERFALL_CLASS = 'relative h-3 w-24 shrink-0 rounded-sm bg-secondary';
 
-interface CellAttributes {
-  role?: string;
-  'aria-colindex'?: number;
-  'data-column'?: string;
-}
-
-export interface RequestLinkProps extends AriaButtonProps {
+export type RequestLinkProps = ComponentProps<typeof SdkButton> & {
   /** An Icon name after the text. Default `arrow-right`; null for none. */
   icon?: 'arrow-right' | 'arrow-up-right' | null;
-}
+};
 
-/** A link to the other end of a call, for `renderLink`: small enough for a row, and a press on it doesn't press the row. */
+/** A link to the other end of a call, for `renderLink`: UI SDK's Button, small enough for a row, and a press on it
+ *  doesn't press the row. */
 export function RequestLink({ icon = 'arrow-right', className, children, ...props }: RequestLinkProps) {
   return (
-    <AriaButton
+    <SdkButton
       data-slot="request-table-link"
-      className={composeRenderProps(className, (cls) => cn(
-        'inline-flex h-[18px] max-w-40 shrink-0 cursor-pointer items-center gap-0.5 rounded-md border-0 bg-primary/10 px-1.5 [font-family:inherit] text-caption2 font-medium whitespace-nowrap text-primary outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring data-hovered:bg-primary/16 data-pressed:bg-primary/24',
-        cls,
-      ))}
+      className={cx(
+        'inline-flex h-[18px] max-w-40 shrink-0 cursor-pointer items-center gap-0.5 rounded-md border-0 bg-primary/10 px-1.5 [font-family:inherit] text-caption2 font-medium whitespace-nowrap text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-primary/16 active:bg-primary/24',
+        className,
+      )}
       {...props}
     >
-      {composeRenderProps(children, (kids) => (
+      {(state) => (
         <>
-          <span className="min-w-0 truncate">{kids}</span>
+          <span className="min-w-0 truncate">{typeof children === 'function' ? children(state) : children}</span>
           {icon ? <Icon name={icon} size={10} sw={2.4} /> : null}
         </>
-      ))}
-    </AriaButton>
+      )}
+    </SdkButton>
   );
 }
 
@@ -152,10 +147,25 @@ interface Column<T extends RequestRow> extends RequestColumn<T> {
   sortable: boolean;
 }
 
-function waterfall(row: RequestRow, range: RequestTimeRange, className: string, cell?: CellAttributes, key?: string) {
+type RequestTableHandle = PrimitiveHandle<typeof requestTable>;
+
+const parts = createParts(requestTable, {
+  grid: 'div', head: 'div', header: 'div', column: 'div', resizer: 'div', heading: 'span', rows: 'div', cell: 'div', waterfall: 'div',
+  playhead: 'div', empty: 'div', footer: 'div',
+});
+
+const HandleContext = createContext<RequestTableHandle | null>(null);
+
+function useRequestTable(): RequestTableHandle {
+  const handle = useContext(HandleContext);
+  if (!handle) throw new Error('RequestTable parts must be inside a RequestTable');
+  return handle;
+}
+
+function Waterfall({ row, range, className, col }: { row: RequestRow; range: RequestTimeRange; className: string; col: number }) {
   const bar = requestBar(row, range);
   return (
-    <div key={key} {...cell} data-slot="request-table-waterfall" className={className}>
+    <parts.Waterfall col={col} data-column={col ? 'waterfall' : undefined} className={className}>
       {bar ? (
         <div
           data-slot="request-table-bar"
@@ -165,7 +175,7 @@ function waterfall(row: RequestRow, range: RequestTimeRange, className: string, 
           style={{ '--bar-left': `${bar.left}%`, '--bar-width': `${bar.width}%` } as CSSProperties}
         />
       ) : null}
-    </div>
+    </parts.Waterfall>
   );
 }
 
@@ -177,60 +187,52 @@ function links(content: ReactNode) {
 }
 
 function cellFor<T extends RequestRow>(column: Column<T>, at: number, row: T, range: RequestTimeRange, renderLink: ((row: T) => ReactNode) | undefined) {
-  const cell: CellAttributes = { role: 'gridcell', 'aria-colindex': at + 1, 'data-column': column.id };
+  const col = at + 1;
   const text = column.align === 'end' ? CELL_END_CLASS : CELL_CLASS;
-  if (column.render) return <div key={column.id} {...cell} className={text}>{column.render(row)}</div>;
+  const cell = (className: string, content: ReactNode) => (
+    <parts.Cell key={column.id} col={col} data-column={column.id} className={className}>{content}</parts.Cell>
+  );
+  if (column.render) return cell(text, column.render(row));
   switch (column.id) {
     case 'name':
     case 'url':
-      return (
-        <div key={column.id} {...cell} className="flex min-w-0 items-center gap-1.5 px-2">
+      return cell('flex min-w-0 items-center gap-1.5 px-2', (
+        <>
           <span data-slot="request-table-name" title={nameTitle(row)} className={NAME_CLASS}>
             {column.id === 'url' ? row.url : requestDisplayName(row)}
           </span>
           {links(renderLink?.(row))}
-        </div>
-      );
-    case 'method': return <div key={column.id} {...cell} className={METHOD_CLASS}>{row.method}</div>;
-    case 'status': return <div key={column.id} {...cell} className={STATUS_CELL_CLASS}>{requestStatusText(row)}</div>;
-    case 'type': return <div key={column.id} {...cell} className={METHOD_CLASS}>{row.type}</div>;
-    case 'size': return <div key={column.id} {...cell} className={SIZE_CLASS}>{requestSizeText(row)}</div>;
-    case 'duration': return <div key={column.id} {...cell} className={CELL_END_CLASS}>{requestDurationText(row)}</div>;
-    case 'waterfall': return waterfall(row, range, WATERFALL_CELL_CLASS, cell, column.id);
-    default: return <div key={column.id} {...cell} className={text}>{String((row as unknown as Record<string, unknown>)[column.id] ?? '')}</div>;
+        </>
+      ));
+    case 'method': return cell(METHOD_CLASS, row.method);
+    case 'status': return cell(STATUS_CELL_CLASS, requestStatusText(row));
+    case 'type': return cell(METHOD_CLASS, row.type);
+    case 'size': return cell(SIZE_CLASS, requestSizeText(row));
+    case 'duration': return cell(CELL_END_CLASS, requestDurationText(row));
+    case 'waterfall': return <Waterfall key={column.id} row={row} range={range} className={WATERFALL_CELL_CLASS} col={col} />;
+    default: return cell(text, String((row as unknown as Record<string, unknown>)[column.id] ?? ''));
   }
 }
 
 interface RowViewProps<T extends RequestRow> {
   row: T;
   index: number;
-  domId: string;
-  selected: boolean;
-  active: boolean;
+  start: number;
   stacked: boolean;
   columns: readonly Column<T>[];
   range: RequestTimeRange;
   renderLink: ((row: T) => ReactNode) | undefined;
 }
 
-function RowViewInner<T extends RequestRow>({ row, index, domId, selected, active, stacked, columns, range, renderLink }: RowViewProps<T>) {
-  const shared = {
-    role: 'row',
-    id: domId,
-    'aria-rowindex': index + 2,
-    'aria-selected': selected,
-    'data-slot': 'request-table-row',
-    'data-index': index,
-    'data-selected': selected || undefined,
-    'data-active': active || undefined,
-    'data-failed': isRequestFailed(row) || undefined,
-    'data-pending': row.pending || undefined,
-  };
-  if (stacked) {
-    const has = (id: string) => columns.some((column) => column.id === id);
-    return (
-      <div {...shared} className={STACKED_ROW_CLASS}>
-        <div role="gridcell" className="flex min-w-0 flex-1 flex-col gap-1">
+function RowViewInner<T extends RequestRow>({ row, index, start, stacked, columns, range, renderLink }: RowViewProps<T>) {
+  const has = (id: string) => columns.some((column) => column.id === id);
+  return usePart(requestTable, 'row', { id: String(index), index, value: row.id, time: row.time ?? null }, {
+    ...({ 'data-failed': isRequestFailed(row) || undefined, 'data-pending': row.pending || undefined } as object),
+    className: stacked ? STACKED_ROW_CLASS : ROW_CLASS,
+    style: { transform: `translateY(${start}px)` },
+    children: stacked ? (
+      <>
+        <parts.Cell col={0} className="flex min-w-0 flex-1 flex-col gap-1">
           <span data-slot="request-table-name" title={nameTitle(row)} className={`${NAME_CLASS} leading-[18px]`}>{requestDisplayName(row)}</span>
           <div className="flex h-[18px] min-w-0 items-center gap-2 text-caption2 whitespace-nowrap">
             {has('status') ? <span className={STATUS_CLASS}>{requestStatusText(row)}</span> : null}
@@ -238,135 +240,78 @@ function RowViewInner<T extends RequestRow>({ row, index, domId, selected, activ
             {has('duration') ? <span className="tabular-nums">{requestDurationText(row)}</span> : null}
             {links(renderLink?.(row))}
           </div>
-        </div>
-        {has('waterfall') ? waterfall(row, range, STACKED_WATERFALL_CLASS, { role: 'gridcell' }) : null}
-      </div>
-    );
-  }
-  return <div {...shared} className={ROW_CLASS}>{columns.map((column, at) => cellFor(column, at, row, range, renderLink))}</div>;
+        </parts.Cell>
+        {has('waterfall') ? <Waterfall row={row} range={range} className={STACKED_WATERFALL_CLASS} col={0} /> : null}
+      </>
+    ) : columns.map((column, at) => cellFor(column, at, row, range, renderLink)),
+  }, 'div');
 }
 
 const RowView = memo(RowViewInner) as typeof RowViewInner;
 
-function ColumnHeader<T extends RequestRow>({ column, index, domId, sort, active, width, span, onSort, onWidth }: {
-  column: Column<T>; index: number; domId: string; sort: RequestSort | null; active: boolean; width: number | undefined; span: number;
-  onSort: (id: string) => void; onWidth: (column: Column<T>, width: number) => void;
-}) {
-  const cell = useRef<HTMLDivElement>(null);
-  const dragged = useRef(0);
-  const { moveProps } = useMove({
-    onMoveStart() { dragged.current = cell.current?.getBoundingClientRect().width ?? width ?? 80; },
-    onMove(e) {
-      dragged.current += e.deltaX;
-      onWidth(column, clampColumnWidth(column, dragged.current));
-    },
-  });
+/** A column's words, for the sort menu and screen readers. */
+function columnName(column: RequestColumn<never>): string {
+  return column.label ?? (typeof column.title === 'string' ? column.title : column.id);
+}
+
+function ColumnHeader<T extends RequestRow>({ column, index, sort, span }: { column: Column<T>; index: number; sort: RequestSort | null; span: number }) {
   const sorted = sort?.column === column.id ? sort.direction : null;
-  const isWaterfall = column.id === 'waterfall';
-  const title = (
-    <>
+  return (
+    <parts.Column
+      value={column.id}
+      index={index}
+      sortable={column.sortable}
+      className={cn(
+        'group/column relative flex h-(--request-header) min-w-0 items-center gap-1 px-2 text-caption font-semibold whitespace-nowrap text-foreground/65 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+        column.sortable && 'hover:text-foreground',
+        column.align === 'end' && 'justify-end',
+      )}
+    >
       <span className="min-w-0 truncate">{column.title ?? column.label ?? column.id}</span>
       {sorted ? <Icon name={sorted === 'ascending' ? 'arrow-up' : 'arrow-down'} size={10} sw={2.6} className="shrink-0 text-foreground" /> : null}
-      {isWaterfall && span > 0 ? <span data-slot="request-table-span" className="ms-auto shrink-0 font-normal tabular-nums">{formatDuration(span)}</span> : null}
-    </>
-  );
-  return (
-    <div
-      ref={cell}
-      id={domId}
-      role="columnheader"
-      aria-colindex={index + 1}
-      aria-sort={sorted ?? (column.sortable ? 'none' : undefined)}
-      data-slot="request-table-column"
-      data-column={column.id}
-      data-active={active || undefined}
-      className="group/column relative flex h-(--request-header) min-w-0 items-center text-caption font-semibold whitespace-nowrap text-foreground/65 outline-none group-data-focus-visible/grid:data-active:ring-2 group-data-focus-visible/grid:data-active:ring-ring group-data-focus-visible/grid:data-active:ring-inset"
-    >
-      {column.sortable ? (
-        <AriaButton
-          excludeFromTabOrder
-          preventFocusOnPress
-          onPress={() => onSort(column.id)}
-          className={cn(
-            'flex h-full min-w-0 flex-1 cursor-default items-center gap-1 border-0 bg-transparent px-2 [font-family:inherit] text-caption font-semibold text-foreground/65 outline-none data-hovered:text-foreground',
-            column.align === 'end' && 'justify-end',
-          )}
-        >
-          {title}
-        </AriaButton>
-      ) : <div className={cn('flex min-w-0 flex-1 items-center gap-1 px-2', column.align === 'end' && 'justify-end')}>{title}</div>}
-      <div
-        {...mergeProps(moveProps, { onDoubleClick: () => onWidth(column, -1) })}
-        role="separator"
-        aria-orientation="vertical"
-        aria-label={`Resize ${typeof column.title === 'string' ? column.title : columnName(column as never)}`}
-        aria-valuenow={width}
-        data-slot="request-table-resizer"
-        className="absolute inset-y-0 -end-1 z-1 w-2 cursor-col-resize touch-none after:absolute after:inset-y-1.5 after:start-[3.5px] after:w-px after:bg-border after:content-[''] hover:after:bg-primary"
+      {column.id === 'waterfall' && span > 0 ? <span data-slot="request-table-span" className="ms-auto shrink-0 font-normal tabular-nums">{formatDuration(span)}</span> : null}
+      {/* A column's edge, which a drag, the arrow keys or a double press resizes. */}
+      <parts.Resizer
+        value={column.id}
+        aria-label={`Resize ${columnName(column as never)}`}
+        className="absolute inset-y-0 -end-1 z-1 w-2 cursor-col-resize touch-none after:absolute after:inset-y-1.5 after:start-[3.5px] after:w-px after:bg-border after:content-[''] hover:after:bg-primary data-dragging:after:bg-primary"
       />
-    </div>
+    </parts.Column>
   );
 }
 
-/** What the table does outside React: the playhead's line and which rows are after it. There's one line, over the whole
- *  table, so a tick writes a single element's position and restyles nothing else. A variable on the table for every row's
- *  own piece of a line was measured at 3.6 ms a frame in style recalculation alone. */
-class RequestPlayhead<T extends RequestRow> {
-  readonly win = new RowWindow<T>({ estimate: ROW_HEIGHT.compact.table, measure: false, overscan: OVERSCAN });
-  root: HTMLElement | null = null;
-  line: HTMLElement | null = null;
-  time: number | null = null;
-  range: RequestTimeRange = [0, 1];
-  private drawnHeight = -1;
+/** The sort menu's item for no sort. A column can't have this id, or not by accident. */
+const ORIGINAL_ORDER = '$original-order';
 
-  constructor() {
-    this.win.insetTop = HEADER_HEIGHT;
-    this.win.decorate = this.decorate;
-    this.win.onLayout = () => {
-      const height = this.win.height;
-      if (height === this.drawnHeight || !this.root) return;
-      this.drawnHeight = height;
-      this.root.style.setProperty('--request-view', `${height}px`);
-    };
-  }
-
-  private decorate = (el: HTMLElement, index: number) => {
-    const started = this.win.rows[index]?.time;
-    el.toggleAttribute('data-future', this.time !== null && started !== undefined && started > this.time);
-  };
-
-  setLine = (el: HTMLElement | null) => {
-    this.line = el;
-    if (el) this.drawLine();
-  };
-
-  private drawLine(): void {
-    const share = playheadShare(this.time, this.range);
-    this.root?.toggleAttribute('data-playhead', share !== null);
-    if (share !== null) this.line?.style.setProperty('--request-playhead', String(share));
-  }
-
-  /** Moves the line and dims the rows after it, in the DOM alone. */
-  set(time: number | null, range: RequestTimeRange = this.range): void {
-    const changed = time !== this.time;
-    this.time = time;
-    this.range = range;
-    this.drawLine();
-    if (changed) this.win.decorateAll();
-  }
-}
-
-export interface RequestTableHandle {
-  /** Focuses the table. */
-  focus: () => void;
-  /** Scrolls to a row by id. `center` by default; `nearest` moves only if it's out of view. */
-  scrollToId: (id: RowId, align?: RowAlign) => void;
-  /** Moves the playhead with no React at all, for a clock's every tick. The `playhead` prop takes over when it next changes. */
-  setPlayhead: (time: number | null) => void;
+function SortMenu<T extends RequestRow>({ columns, allColumns, sort }: { columns: readonly Column<T>[]; allColumns: readonly Column<T>[]; sort: RequestSort | null }) {
+  const { api } = useRequestTable();
+  const sortable = columns.filter((column) => column.sortable);
+  if (!sortable.length) return null;
+  const sortedColumn = sort ? allColumns.find((column) => column.id === sort.column) : undefined;
+  const arrow = sort ? <Icon name={sort.direction === 'ascending' ? 'arrow-up' : 'arrow-down'} size={12} sw={2.4} /> : null;
+  return (
+    <parts.Heading className="flex items-center">
+      <DropdownMenu onAction={(id, { event }) => { api.internal.sortBy(id === ORIGINAL_ORDER ? null : id, { reason: 'item-press', event }); }}>
+        <DropdownMenuTrigger
+          aria-label="Sort by"
+          render={<Button variant="quiet" size="sm" className="h-6 gap-1 rounded-md px-1.5 text-caption font-medium" />}
+        >
+          <span>{sortedColumn ? columnName(sortedColumn as never) : 'Sort'}</span>
+          {sort ? <Icon name={sort.direction === 'ascending' ? 'arrow-up' : 'arrow-down'} size={10} sw={2.6} /> : <Icon name="chevron-up-down" size={12} sw={2} />}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent aria-label="Sort by" side="bottom" align="end">
+          <DropdownMenuItem value={ORIGINAL_ORDER}>Original order</DropdownMenuItem>
+          {sortable.map((column) => (
+            <DropdownMenuItem key={column.id} value={column.id} icon={sort?.column === column.id ? arrow : undefined}>{columnName(column as never)}</DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </parts.Heading>
+  );
 }
 
 export interface RequestTableProps<T extends RequestRow = RequestRow>
-  extends Omit<ComponentProps<'div'>, 'children' | 'ref'>, VariantProps<typeof requestTableVariants> {
+  extends Omit<PartProps<'div'>, 'children' | 'defaultValue'>, VariantProps<typeof requestTableVariants> {
   rows: readonly T[];
   /** Which columns, in order: a built-in's id, or a column of your own (with a built-in's `id` to adjust that one). */
   columns?: readonly (RequestColumnId | RequestColumn<T>)[];
@@ -375,301 +320,132 @@ export interface RequestTableProps<T extends RequestRow = RequestRow>
   timeRange?: RequestTimeRange;
   /** The playhead's time, in ms: a line on the waterfall, and the rows sent after it dimmed. */
   playhead?: number | null;
-  /** The selected row, controlled; `null` for none. A new value that's out of view is scrolled to. */
-  selectedId?: RowId | null;
-  defaultSelectedId?: RowId | null;
-  onSelectionChange?: (id: RowId | null) => void;
-  /** A press on a row (or Enter or Space on the active one). Not called for presses on its links. */
-  onRowPress?: (row: T, index: number) => void;
+  /** The selected row's id, controlled; `null` for none. A new value that's out of view is scrolled to. */
+  value?: RowId | null;
+  defaultValue?: RowId | null;
+  onValueChange?: (value: RowId | null, details: ChangeDetails<RequestTableValueChangeReason>) => void;
+  /** A press on a row (or Enter or Space on it), with the row in `details.row`. Not called for presses on its links. */
+  onAction?: (value: RowId, details: RequestTableActionDetails<T>) => void;
   /** Links to the other end of a call, usually `RequestLink`s, after the name (or the second line of a two-line row).
    *  Must be stable (`useCallback`). */
   renderLink?: (row: T) => ReactNode;
   /** The sort, controlled; `null` for the rows' own order. */
   sort?: RequestSort | null;
   defaultSort?: RequestSort | null;
-  onSortChange?: (sort: RequestSort | null) => void;
-  /** Widths dragged so far by column id, controlled. A column with none keeps its own size. */
+  onSortChange?: (sort: RequestSort | null, details: ChangeDetails<RequestTableSortChangeReason>) => void;
+  /** Widths set so far by column id, controlled. A column with none keeps its own size. */
   columnWidths?: Readonly<Record<string, number>>;
   defaultColumnWidths?: Readonly<Record<string, number>>;
-  onColumnWidthsChange?: (widths: Readonly<Record<string, number>>) => void;
-  /** `auto` (default) goes to two-line rows below `stackBelow`. `table` and `stacked` stay as they are. */
+  onColumnWidthsChange?: (widths: Readonly<Record<string, number>>, details: ChangeDetails<RequestTableColumnWidthsChangeReason>) => void;
+  /** `auto` (default) goes to two-line rows while the table is compact. `table` and `stacked` stay as they are. */
   layout?: 'auto' | 'table' | 'stacked';
-  /** The table's own width, in px, below which `auto` stacks. Default 480. */
-  stackBelow?: number;
+  /** Where the table's own size classes start, in px: `medium` (default 480) ends the two-line rows, `regular`
+   *  (default 760) shows the columns with `hideBelow: 'regular'`. */
+  breakpoints?: RequestTableBreakpoints;
   /** Shown when there are no rows. */
   emptyState?: ReactNode;
   /** Shown after the last row. */
   footer?: ReactNode;
+  /** Scrolls, selects, sorts and moves the playhead from outside: `createRequestTableController()`. */
+  controller?: RequestTableController;
   'aria-label'?: string;
-  ref?: Ref<RequestTableHandle>;
 }
 
-const EMPTY_RANGE: RowRange = { start: 0, end: 0 };
-
-interface RequestHandlers<T extends RequestRow> {
-  onRowPress: RequestTableProps<T>['onRowPress'];
-  onSelectionChange: RequestTableProps<T>['onSelectionChange'];
-  onSortChange: RequestTableProps<T>['onSortChange'];
-  onColumnWidthsChange: RequestTableProps<T>['onColumnWidthsChange'];
-}
-
-interface BodyProps<T extends RequestRow> extends Omit<RequestTableProps<T>, 'playhead' | 'timeRange' | 'onRowPress' | 'onSelectionChange' | 'onSortChange' | 'onColumnWidthsChange' | 'ref'> {
-  playhead: RequestPlayhead<T>;
-  handlers: { current: RequestHandlers<T> };
-  gridRef: { current: HTMLDivElement | null };
-  range: RequestTimeRange;
-}
-
-function BodyInner<T extends RequestRow>({
-  playhead, handlers, gridRef, range, rows, columns: columnsProp = DEFAULT_COLUMNS, selectedId, defaultSelectedId, renderLink,
-  sort: sortProp, defaultSort, columnWidths, defaultColumnWidths, layout = 'auto', stackBelow = 480, emptyState, footer,
-  density, className, style, onKeyDown, onFocus, 'aria-label': ariaLabel = 'Requests', ...props
-}: BodyProps<T>) {
-  const { win } = playhead;
-  const [mounted, setMounted] = useState(EMPTY_RANGE);
-  const [width, setWidth] = useState(0);
-  const root = useRef<HTMLDivElement>(null);
-  const sizer = useRef<HTMLDivElement>(null);
-  const baseId = useId();
-  const { isFocusVisible, focusProps } = useFocusRing();
-
-  const [selected, setSelected] = useControllableState<RowId | null>(selectedId, defaultSelectedId ?? null, (id) => handlers.current.onSelectionChange?.(id));
-  const [sort, setSort] = useControllableState<RequestSort | null>(sortProp, defaultSort ?? null, (next) => handlers.current.onSortChange?.(next));
-  const [widths, setWidths] = useControllableState<Readonly<Record<string, number>>>(columnWidths, defaultColumnWidths ?? NO_WIDTHS, (next) => handlers.current.onColumnWidthsChange?.(next));
-  const [activeId, setActiveId] = useState<RowId | null>(null);
-  const [headerAt, setHeaderColumn] = useState<number | null>(null);
-
-  const stacked = layout === 'stacked' || (layout === 'auto' && width > 0 && width < stackBelow);
-  // Two-line rows have no column headers to be on.
-  const headerColumn = stacked ? null : headerAt;
-  const rowHeight = ROW_HEIGHT[density ?? 'compact'][stacked ? 'stacked' : 'table'];
-
+/** The columns as given, each filled in from the built-in of the same id. */
+function useColumns<T extends RequestRow>(columnsProp: readonly (RequestColumnId | RequestColumn<T>)[]): readonly Column<T>[] {
   // A list of ids is the same list whenever it says the same thing, so writing one inline doesn't re-render the rows.
-  const columnsKey = columnsProp.every((column) => typeof column === 'string') ? columnsProp.join() : columnsProp;
-  const allColumns = useMemo<readonly Column<T>[]>(() => columnsProp.map((column) => {
+  const key = columnsProp.every((column) => typeof column === 'string') ? columnsProp.join() : columnsProp;
+  // `key` stands for `columnsProp`.
+  return useMemo(() => columnsProp.map((column) => {
     const spec = typeof column === 'string' ? { id: column } : column;
     const builtIn = (REQUEST_COLUMNS as Record<string, RequestColumn | undefined>)[spec.id] as RequestColumn<T> | undefined;
     const merged = { ...builtIn, ...spec };
     return { ...merged, sortable: merged.sortable ?? (!merged.render || !!merged.sortValue) };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [columnsKey]);
-  // Only crossing a column's `hideBelow` changes this, so a drag of the window doesn't re-render rows until it does.
-  const shownKey = allColumns.filter((column) => !column.hideBelow || !width || width >= column.hideBelow).map((column) => column.id).join();
-  const columns = useMemo(() => {
-    const shown = new Set(shownKey.split(','));
-    return allColumns.filter((column) => shown.has(column.id));
-  }, [allColumns, shownKey]);
-  const { template, minWidth } = useMemo(() => columnTemplate(columns, widths), [columns, widths]);
+  }), [key]);
+}
 
-  const sorted = useMemo(() => {
-    const by = sort && allColumns.find((column) => column.id === sort.column)?.sortValue;
-    return sortRequests(rows, sort, by ?? requestSortValue);
-  }, [rows, sort, allColumns]);
+interface BodyProps<T extends RequestRow> {
+  handle: RequestTableHandle;
+  allColumns: readonly Column<T>[];
+  /** How many rows were given. */
+  total: number;
+  range: RequestTimeRange;
+  renderLink: ((row: T) => ReactNode) | undefined;
+  emptyState: ReactNode;
+  footer: ReactNode;
+  density: RequestTableProps['density'];
+  ariaLabel: string;
+  /** The root's own props: `className`, `style` and the rest. */
+  rootProps: Omit<PartProps<'div'>, 'children'>;
+}
 
-  useLayoutEffect(() => {
-    win.onRange = setMounted;
-    win.onWidth = (next) => setWidth(next);
-    playhead.root = root.current;
-    const scroller = gridRef.current;
-    if (!scroller || !sizer.current) return undefined;
-    const detach = win.attach(scroller, sizer.current);
-    setWidth(scroller.clientWidth);
-    return detach;
-  }, [win, gridRef, playhead]);
-  useLayoutEffect(() => { win.setFixedHeight(rowHeight); }, [win, rowHeight]);
-  useLayoutEffect(() => { win.setRows(sorted); }, [win, sorted]);
-  useLayoutEffect(() => { win.sync(); });
-  // A new sort starts from the selected row, or the top: holding on to whichever row happened to be at the top means nothing.
-  const lastSort = useRef(sort);
-  useLayoutEffect(() => {
-    if (lastSort.current === sort) return;
-    lastSort.current = sort;
-    const at = selected === null ? -1 : win.ids.indexOf(selected);
-    if (at >= 0) win.scrollToIndex(at, 'center', 'effect');
-    else win.scrollToIndex(0, 'start', 'effect');
-  }, [sort, selected, win]);
-  // A selection from outside (the other end of a call) comes into view. A press's row is in view already.
-  const lastSelected = useRef<RowId | null>(null);
-  useLayoutEffect(() => {
-    if (selected === lastSelected.current) return;
-    lastSelected.current = selected;
-    if (selected === null) return;
-    const at = win.ids.indexOf(selected);
-    if (at >= 0 && !win.isVisible(at)) win.scrollToIndex(at, 'center', 'effect');
-  }, [selected, win]);
+/** The table, rendered from what the root's state says: the rows in order, the columns its size class shows, the sort
+ *  and the layout. A moving playhead never reaches it. */
+function BodyInner<T extends RequestRow>({ handle, allColumns, total, range, renderLink, emptyState, footer, density, ariaLabel, rootProps }: BodyProps<T>) {
+  const { className, ...props } = rootProps;
+  return usePart(handle, 'root', {}, {
+    ...({ 'data-rows': total } as object),
+    ...props,
+    className: cx(requestTableVariants({ density }), className),
+    children: ({ sort, rows, columns, stacked }) => (
+      <HandleContext.Provider value={handle}>
+        <Table<T>
+          handle={handle}
+          allColumns={allColumns}
+          rows={rows as readonly T[]}
+          columns={columns as readonly Column<T>[]}
+          sort={sort}
+          stacked={stacked}
+          range={range}
+          renderLink={renderLink}
+          emptyState={emptyState}
+          footer={footer}
+          ariaLabel={ariaLabel}
+        />
+      </HandleContext.Provider>
+    ),
+  }, 'div');
+}
 
-  const domId = (index: number) => `${baseId}-${index}`;
-  const headerId = (index: number) => `${baseId}-h${index}`;
-  const activeIndex = activeId === null ? -1 : win.indexIn(sorted, activeId);
-  const selectedIndex = selected === null ? -1 : win.indexIn(sorted, selected);
-  const isMounted = (index: number) => index >= mounted.start && index < Math.min(mounted.end, sorted.length);
+interface TableProps<T extends RequestRow> extends Omit<BodyProps<T>, 'density' | 'rootProps' | 'total'> {
+  /** The rows in the order they show. */
+  rows: readonly T[];
+  /** The columns shown. */
+  columns: readonly Column<T>[];
+  sort: RequestSort | null;
+  stacked: boolean;
+}
 
-  const press = (index: number) => {
-    const row = sorted[index];
-    setActiveId(row.id);
-    setHeaderColumn(null);
-    setSelected(row.id);
-    handlers.current.onRowPress?.(row, index);
-  };
+function TableInner<T extends RequestRow>({
+  handle, allColumns, rows, columns, sort, stacked, range, renderLink, emptyState, footer, ariaLabel,
+}: TableProps<T>) {
+  const { api } = handle;
+  const { virtual } = api.internal.rows;
+  const items = useSyncExternalStore<readonly VirtualItem[]>(virtual.subscribe, virtual.items, virtual.items);
 
-  const onClick = (e: ReactMouseEvent<HTMLDivElement>) => {
-    const index = win.indexFrom(e.target);
-    if (index >= 0 && isRowPress(e)) press(index);
-  };
-
-  const startRow = () => {
-    if (selectedIndex >= 0 && win.isVisible(selectedIndex)) return selectedIndex;
-    return win.heights.indexAt(win.scrollTop);
-  };
-
-  const onHeaderKey = (e: ReactKeyboardEvent<HTMLDivElement>, at: number) => {
-    const column = columns[at];
-    switch (e.key) {
-      case 'ArrowLeft':
-      case 'ArrowRight': {
-        const direction = e.key === 'ArrowLeft' ? -1 : 1;
-        if (e.altKey) {
-          const now = gridRef.current?.querySelector<HTMLElement>(`[role=columnheader][data-column="${column.id}"]`)?.getBoundingClientRect().width ?? 80;
-          setColumnWidth(widths, setWidths, column.id, clampColumnWidth(column, now + direction * (e.shiftKey ? 48 : 12)));
-        } else setHeaderColumn(Math.max(0, Math.min(columns.length - 1, at + direction)));
-        break;
-      }
-      case 'Escape': setHeaderColumn(null); break;
-      case 'Home': setHeaderColumn(0); break;
-      case 'End': setHeaderColumn(columns.length - 1); break;
-      case 'Enter':
-      case ' ':
-        if (column.sortable) setSort(nextRequestSort(sort, column.id));
-        break;
-      case 'ArrowDown':
-        if (sorted.length) {
-          setHeaderColumn(null);
-          const to = activeIndex >= 0 ? activeIndex : startRow();
-          setActiveId(sorted[to].id);
-          win.scrollToIndex(to);
-        }
-        break;
-      default:
-        return;
-    }
-    e.preventDefault();
-  };
-
-  const onGridKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
-    onKeyDown?.(e);
-    if (e.defaultPrevented) return;
-    if (e.key === 'Tab') {
-      tabThroughGrid(e, headerColumn === null && activeIndex >= 0 ? win.elementAt(activeIndex) : undefined);
-      return;
-    }
-    const grid = e.currentTarget;
-    if (e.target !== grid) {
-      if (e.key === 'Escape') { grid.focus(); e.preventDefault(); }
-      return;
-    }
-    if (headerColumn !== null) { onHeaderKey(e, Math.min(headerColumn, columns.length - 1)); return; }
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      win.scrollLeftBy(e.key === 'ArrowLeft' ? -48 : 48);
-      e.preventDefault();
-      return;
-    }
-    if (!sorted.length) {
-      if (e.key === 'ArrowUp' && !stacked) { setHeaderColumn(0); e.preventDefault(); }
-      return;
-    }
-    const from = activeIndex >= 0 ? activeIndex : startRow();
-    if (e.key === 'Enter' || e.key === ' ') {
-      press(from);
-      e.preventDefault();
-      return;
-    }
-    if (e.key === 'ArrowUp' && from === 0 && activeIndex === 0 && !stacked) {
-      setHeaderColumn(0);
-      e.preventDefault();
-      return;
-    }
-    const to = activeIndex < 0 && (e.key === 'ArrowDown' || e.key === 'ArrowUp')
-      ? from
-      : rowKeyTarget(e.key, from, sorted.length, (direction) => win.heights.indexAt(win.heights.offsetOf(from) + direction * win.view));
-    if (to === null) return;
-    e.preventDefault();
-    setActiveId(sorted[to].id);
-    win.scrollToIndex(to);
-  };
-
-  const onGridFocus = (e: ReactFocusEvent<HTMLDivElement>) => {
-    focusProps.onFocus?.(e);
-    onFocus?.(e);
-    if (e.target === e.currentTarget && activeId === null && headerColumn === null && sorted.length) setActiveId(sorted[startRow()].id);
-  };
-
-  // Its own element, so a new range of rows doesn't render the headers again: only what's in this list does.
-  const count = rows.length;
-  const span = count ? range[1] - range[0] : 0;
-  const header = useMemo(() => {
-    if (stacked) {
-      const sortable = columns.filter((column) => column.sortable);
-      const sortedColumn = sort ? allColumns.find((column) => column.id === sort.column) : undefined;
-      return (
-        <div role="row" aria-rowindex={1} data-slot="request-table-header" className="flex h-(--request-header) items-center justify-between gap-2 bg-secondary ps-2 pe-1 text-caption text-foreground/65 shadow-hairline-b">
-          <span role="columnheader" className="tabular-nums">{count.toLocaleString('en-US')} {count === 1 ? 'request' : 'requests'}</span>
-          {sortable.length ? (
-            <span role="columnheader" className="flex items-center">
-              <DropdownMenu>
-                <Button variant="quiet" size="sm" aria-label="Sort by" data-slot="request-table-sort" className="h-6 gap-1 rounded-md px-1.5 text-caption font-medium">
-                  <span>{sortedColumn ? columnName(sortedColumn as never) : 'Sort'}</span>
-                  {sort ? <Icon name={sort.direction === 'ascending' ? 'arrow-up' : 'arrow-down'} size={10} sw={2.6} /> : <Icon name="chevron-up-down" size={12} sw={2} />}
-                </Button>
-                <DropdownMenuContent
-                  aria-label="Sort by"
-                  placement="bottom end"
-                  selectionMode="single"
-                  selectedKeys={[sort?.column ?? ORIGINAL_ORDER]}
-                  onAction={(id) => setSort(id === ORIGINAL_ORDER ? null : nextRequestSort(sort, String(id)))}
-                >
-                  <DropdownMenuItem id={ORIGINAL_ORDER}>Original order</DropdownMenuItem>
-                  {sortable.map((column) => <DropdownMenuItem key={column.id} id={column.id}>{columnName(column as never)}</DropdownMenuItem>)}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </span>
-          ) : null}
-        </div>
-      );
-    }
-    return (
-      <div role="row" aria-rowindex={1} data-slot="request-table-header" className="grid h-(--request-header) grid-cols-(--request-cols) bg-secondary shadow-hairline-b">
-        {columns.map((column, i) => (
-          <ColumnHeader<T>
-            key={column.id}
-            column={column}
-            index={i}
-            domId={`${baseId}-h${i}`}
-            sort={sort}
-            active={headerColumn === i}
-            width={widths[column.id]}
-            span={span}
-            onSort={(id) => setSort(nextRequestSort(sort, id))}
-            onWidth={(which, next) => setColumnWidth(widths, setWidths, which.id, next)}
-          />
-        ))}
-      </div>
-    );
-    // Its setters are read fresh from the controllable state, and change with the values listed.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stacked, columns, allColumns, sort, headerColumn, widths, span, count, baseId]);
+  const span = rows.length ? range[1] - range[0] : 0;
+  const waterfallAt = columns.findIndex((column) => column.id === 'waterfall');
+  const header = useMemo(() => (stacked ? (
+    <parts.Header className="flex h-(--request-header) items-center justify-between gap-2 bg-secondary ps-2 pe-1 text-caption text-foreground/65 shadow-hairline-b">
+      <parts.Heading className="tabular-nums">{rows.length.toLocaleString('en-US')} {rows.length === 1 ? 'request' : 'requests'}</parts.Heading>
+      <SortMenu<T> columns={columns} allColumns={allColumns} sort={sort} />
+    </parts.Header>
+  ) : (
+    <parts.Header className="grid h-(--request-header) grid-cols-(--request-cols) bg-secondary shadow-hairline-b">
+      {columns.map((column, i) => <ColumnHeader<T> key={column.id} column={column} index={i} sort={sort} span={span} />)}
+    </parts.Header>
+  )), [stacked, columns, allColumns, sort, span, rows.length]);
 
   const rowEls: ReactElement[] = [];
-  for (let i = mounted.start; i < Math.min(mounted.end, sorted.length); i++) {
-    const row = sorted[i];
+  for (const item of items) {
+    const row = rows[item.index];
+    if (!row) continue;
     rowEls.push(
       <RowView<T>
-        key={row.id}
+        key={item.index}
         row={row}
-        index={i}
-        domId={domId(i)}
-        selected={row.id === selected}
-        active={row.id === activeId && headerColumn === null}
+        index={item.index}
+        start={item.start}
         stacked={stacked}
         columns={columns}
         range={range}
@@ -679,98 +455,68 @@ function BodyInner<T extends RequestRow>({
   }
 
   return (
-    <div
-      ref={root}
-      data-slot="request-table"
-      data-rows={rows.length}
-      data-layout={stacked ? 'stacked' : 'table'}
-      className={cn(requestTableVariants({ density }), className)}
-      style={{
-        '--request-cols': template,
-        '--request-min-width': `${stacked ? 0 : minWidth}px`,
-        '--request-row': `${rowHeight}px`,
-        '--request-header': `${HEADER_HEIGHT}px`,
-        ...style,
-      } as CSSProperties}
-      {...props}
+    <parts.Grid
+      aria-label={ariaLabel}
+      aria-colcount={stacked ? undefined : columns.length}
+      className="group/grid bl-scroll relative min-h-0 flex-1 overflow-auto overscroll-contain outline-none [overflow-anchor:none]"
     >
-      <div
-        ref={gridRef}
-        role="grid"
-        tabIndex={0}
-        aria-label={ariaLabel}
-        aria-rowcount={sorted.length + 1}
-        aria-colcount={stacked ? undefined : columns.length}
-        aria-activedescendant={headerColumn !== null ? headerId(headerColumn) : activeIndex >= 0 && isMounted(activeIndex) ? domId(activeIndex) : undefined}
-        data-slot="request-table-grid"
-        data-focus-visible={isFocusVisible || undefined}
-        onClick={onClick}
-        onKeyDown={onGridKeyDown}
-        onFocus={onGridFocus}
-        onBlur={focusProps.onBlur}
-        className="group/grid bl-scroll relative min-h-0 flex-1 overflow-auto overscroll-contain outline-none [overflow-anchor:none]"
-      >
-        <div className="min-h-full w-full min-w-(--request-min-width)">
-          {columns.some((column) => column.id === 'waterfall') ? (
-            <div aria-hidden="true" data-slot="request-table-playhead" className="pointer-events-none sticky top-0 z-3 hidden h-0 group-data-playhead/table:block">
-              <div className={cn('absolute inset-x-0', stacked ? 'top-(--request-header) flex h-[calc(var(--request-view)-var(--request-header))] justify-end pe-2' : 'top-0 grid h-(--request-view) grid-cols-(--request-cols)')}>
-                <div className={stacked ? 'relative w-24' : 'relative mx-2'} style={stacked ? undefined : { gridColumnStart: columns.findIndex((column) => column.id === 'waterfall') + 1 }}>
-                  <div ref={playhead.setLine} className="absolute inset-y-0 left-[calc(var(--request-playhead,0)*100%)] w-px bg-primary" />
-                </div>
+      <div className={cn('min-h-full w-full', !stacked && 'min-w-(--request-min-width)')}>
+        {waterfallAt >= 0 || (stacked && columns.some((column) => column.id === 'waterfall')) ? (
+          <parts.Playhead className="pointer-events-none sticky top-0 z-3 hidden h-0 group-data-playhead/grid:block">
+            <div className={cn('absolute inset-x-0', stacked ? 'top-(--request-header) flex h-[calc(var(--request-view)-var(--request-header))] justify-end pe-2' : 'top-0 grid h-(--request-view) grid-cols-(--request-cols)')}>
+              <div className={stacked ? 'relative w-24' : 'relative mx-2'} style={stacked ? undefined : { gridColumnStart: waterfallAt + 1 }}>
+                <div className="absolute inset-y-0 left-[calc(var(--request-playhead,0)*100%)] w-px bg-primary" />
               </div>
             </div>
-          ) : null}
-          <div role="rowgroup" className="sticky top-0 z-2 bg-card">
-            {header}
-          </div>
-          <div ref={sizer} role="rowgroup" data-slot="request-table-rows" className="relative w-full">
-            {rowEls}
-          </div>
-          {!sorted.length ? <div data-slot="request-table-empty" className="px-3 py-6 text-center text-footnote text-muted-foreground">{emptyState ?? 'No requests'}</div> : null}
-          {footer != null ? <div data-slot="request-table-footer" className="px-3 py-2 text-center text-caption text-muted-foreground">{footer}</div> : null}
-        </div>
+          </parts.Playhead>
+        ) : null}
+        <parts.Head className="sticky top-0 z-2 bg-card">{header}</parts.Head>
+        <parts.Rows className="relative w-full">{rowEls}</parts.Rows>
+        <parts.Empty className="px-3 py-6 text-center text-footnote text-muted-foreground">{emptyState ?? 'No requests'}</parts.Empty>
+        {footer != null ? <parts.Footer className="px-3 py-2 text-center text-caption text-muted-foreground">{footer}</parts.Footer> : null}
       </div>
-    </div>
+    </parts.Grid>
   );
 }
 
-const NO_WIDTHS: Readonly<Record<string, number>> = {};
-
-/** The sort menu's item for no sort. A column can't have this id, or not by accident. */
-const ORIGINAL_ORDER = '$original-order';
-
-/** A column's words, for the sort menu and screen readers. */
-function columnName(column: RequestColumn<never>): string {
-  return column.label ?? (typeof column.title === 'string' ? column.title : column.id);
-}
-
-/** A column's new width, or -1 to go back to its own size. */
-function setColumnWidth(widths: Readonly<Record<string, number>>, set: (next: Readonly<Record<string, number>>) => void, id: string, width: number) {
-  const next = { ...widths };
-  if (width < 0) delete next[id];
-  else next[id] = width;
-  set(next);
-}
-
+const Table = memo(TableInner) as typeof TableInner;
 const Body = memo(BodyInner) as typeof BodyInner;
 
 export function RequestTable<T extends RequestRow = RequestRow>({
-  playhead = null, timeRange, onRowPress, onSelectionChange, onSortChange, onColumnWidthsChange, ref, ...props
+  rows, columns: columnsProp = DEFAULT_COLUMNS, timeRange, playhead = null, value, defaultValue, onValueChange, onAction, sort,
+  defaultSort, onSortChange, columnWidths, defaultColumnWidths, onColumnWidthsChange, layout = 'auto', breakpoints, controller,
+  renderLink, emptyState, footer, density, 'aria-label': ariaLabel = 'Requests', ...rootProps
 }: RequestTableProps<T>) {
-  const [line] = useState(() => new RequestPlayhead<T>());
-  const grid = useRef<HTMLDivElement | null>(null);
-  const handlers = useRef<RequestHandlers<T>>({ onRowPress, onSelectionChange, onSortChange, onColumnWidthsChange });
-  useLayoutEffect(() => { handlers.current = { onRowPress, onSelectionChange, onSortChange, onColumnWidthsChange }; });
-  const { rows } = props;
+  const allColumns = useColumns(columnsProp);
   const from = timeRange?.[0];
   const to = timeRange?.[1];
   const range = useMemo<RequestTimeRange>(() => (from !== undefined && to !== undefined ? [from, to] : requestTimeRange(rows)), [from, to, rows]);
-  // As on LogList, this is why a moving playhead costs no rows: its prop stops here, in the shell.
-  useLayoutEffect(() => { line.set(playhead, range); }, [line, playhead, range]);
-  useImperativeHandle(ref, () => ({
-    focus: () => grid.current?.focus(),
-    scrollToId: (id, align = 'center') => line.win.scrollToIndex(line.win.ids.indexOf(id), align, 'micro'),
-    setPlayhead: (time) => line.set(time),
-  }), [line]);
-  return <Body<T> playhead={line} handlers={handlers} gridRef={grid} range={range} {...props} />;
+  // As on LogList, this is why a moving playhead costs no rows: its prop stops here, in the shell, as an option the
+  // primitive writes to the page.
+  const options: RequestTableOptions<T> = {
+    rows, columns: allColumns, playhead, value, defaultValue, onValueChange, onAction, sort, defaultSort, onSortChange, columnWidths,
+    defaultColumnWidths, onColumnWidthsChange, range, breakpoints, layout, controller, rowHeights: ROW_HEIGHT[density ?? 'compact'],
+    headerHeight: HEADER_HEIGHT,
+  };
+  const handle = usePrimitive(requestTable, options as unknown as RequestTableOptions);
+  return (
+    <Body<T>
+      handle={handle}
+      allColumns={allColumns}
+      total={rows.length}
+      range={range}
+      renderLink={renderLink}
+      emptyState={emptyState}
+      footer={footer}
+      density={density}
+      ariaLabel={ariaLabel}
+      rootProps={rootProps}
+    />
+  );
 }
+
+export {
+  createRequestTableController, type RequestTableActionDetails, type RequestTableBreakpoints, type RequestTableColumnWidthsChangeReason,
+  type RequestTableController,
+  type RequestTableSortChangeReason, type RequestTableValueChangeReason,
+} from '@/lib/request-table-primitive';

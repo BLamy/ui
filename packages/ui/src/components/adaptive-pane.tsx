@@ -1,158 +1,165 @@
 'use client';
-import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
-import { EdgeDrawer, type EdgeDrawerProps } from '@/components/ui/edge-drawer';
-import { navigationPush } from '@/components/ui/navigation-stack';
-import { useDrawerSwipe } from '@/lib/drawer-swipe';
+import { memo, useMemo, type CSSProperties, type ReactNode } from 'react';
+import { createParts, usePart, usePrimitive } from '@ui-sdk/react/primitive';
+import { EdgeDrawer, useKeptChildren, type EdgeDrawerProps } from '@/components/ui/edge-drawer';
+import {
+  adaptivePane,
+  type AdaptivePaneApi,
+  type AdaptivePaneOptions,
+  type AdaptivePanePresentation,
+  type AdaptivePaneSide,
+} from '@/lib/adaptive-pane-primitive';
 import { cn } from '@/lib/utils';
 
+export { createAdaptivePaneController } from '@/lib/adaptive-pane-primitive';
+export type {
+  AdaptivePaneController,
+  AdaptivePaneOpenChangeDetails,
+  AdaptivePaneOpenChangeReason,
+  AdaptivePanePresentation,
+  AdaptivePaneSide,
+  AdaptivePaneWidths,
+  AdaptivePaneWidthsChangeDetails,
+  AdaptivePaneWidthsChangeReason,
+} from '@/lib/adaptive-pane-primitive';
+
 /* ══ AdaptivePane — one region, four presentations ══
-   mode="column" docks it beside its siblings in a flex row, mode="drawer" moves the same children into an
-   EdgeDrawer over the host, mode="cover" fills the positioned host, mode="hidden" renders nothing.
-   The host decides the mode from its width; the children never change, so their state survives.
+   presentation="column" docks it beside its siblings in a flex row or grid, "drawer" moves the same children into
+   a drawer over the positioned host (UI SDK's Drawer: Escape, a scrim press and a swipe toward its edge close it),
+   "cover" fills the host, "hidden" takes it off screen. The host decides the presentation from its own width; the
+   children are rendered once and only move, so their state, focus and subscriptions survive every change.
 
-   A column or a drawer can be `resizable`: a divider on the edge it shares with the page drags its width, with
-   the keyboard (arrows, Home, End) and by double-click back to the default. A drawer moves like a NavigationStack
-   screen: it opens and closes on the `smooth` spring, drags shut by its panel with the stack's commit distance
-   and flick, and (when the host gives `onOpen`) drags open from a strip along its edge. */
+   A column or a drawer can be `resizable`: a separator on the edge it shares with the page drags its width, with
+   the keyboard (arrows, Shift+arrows, Home, End, Enter) and by double-click back to the host's width. */
 
-export type AdaptivePaneMode = 'column' | 'drawer' | 'cover' | 'hidden';
+const { Resizer, Edge } = createParts(adaptivePane, { resizer: 'div', edge: 'div' });
 
-export interface AdaptivePaneProps extends Omit<EdgeDrawerProps, 'open' | 'width'> {
-  mode: AdaptivePaneMode;
-  /** drawer visibility; ignored in the other modes */
-  open?: boolean;
+export interface AdaptivePaneProps
+  extends AdaptivePaneOptions,
+    Pick<EdgeDrawerProps, 'zIndex' | 'backdropClassName' | 'scrim' | 'shadow' | 'aria-label' | 'dismissible' | 'modal' | 'swipe'> {
   columnWidth?: number | string;
   drawerWidth?: number | string;
-  /** style of the docked column; `style` applies to the drawer panel */
+  /** Widest the drawer gets as CSS (`84%`); a number also caps a resize. */
+  maxWidth?: number;
+  /** CSS max-width for the drawer, like `84%`. */
+  drawerMaxWidth?: number | string;
+  /** Classes and style of the docked column (and the cover); `className` and `style` apply to the drawer panel. */
+  columnClassName?: string;
   columnStyle?: CSSProperties;
   /** A divider on the pane's inner edge that resizes the column or the drawer. */
   resizable?: boolean;
-  /** Narrowest a resized pane gets, px. Default 160. */
-  minWidth?: number;
-  /** Called as the pane is resized, with its new width, or `undefined` once it is reset to its default. A numeric
-   *  `maxWidth` also caps the resize; a column never takes the last 240px of its host, a drawer the last 48px. */
-  onResize?: (width: number | undefined, mode: 'column' | 'drawer') => void;
-  /** Drawer: drag the panel toward its edge to close it. Default true. */
-  swipe?: boolean;
-  /** Drawer: called when a drag from the host's edge opens it; giving it turns that edge strip on. */
-  onOpen?: () => void;
+  className?: string;
+  style?: CSSProperties;
   children?: ReactNode;
 }
 
-/** Width a resized pane leaves for what is beside it. */
-const KEEP = { column: 240, drawer: 48 } as const;
-const STEP = 16;
+const len = (v: number | string | undefined) => (typeof v === 'number' ? v + 'px' : v);
 
 export function AdaptivePane({
-  mode, open = false, columnWidth, drawerWidth, columnStyle, side = 'left', resizable = false, minWidth = 160, onResize,
-  swipe = true, onOpen, maxWidth, children, ...drawer
+  presentation, open, defaultOpen, onOpenChange, widths, defaultWidths, onWidthsChange, side = 'start', minWidth, maxWidth,
+  swipeToOpen, controller, columnWidth, drawerWidth, drawerMaxWidth, columnClassName, columnStyle, resizable = false,
+  zIndex, backdropClassName, scrim, shadow, 'aria-label': label, dismissible, modal, swipe, className, style, children,
 }: AdaptivePaneProps) {
-  // A width the user dragged to, per presentation; unset until then, so the host's own width applies.
-  const [sizes, setSizes] = useState<{ column?: number; drawer?: number }>({});
-  const panel = useRef<HTMLDivElement>(null);
-  const scrim = useRef<HTMLDivElement>(null);
-  const drag = useDrawerSwipe({
-    side, open, panel: () => panel.current, scrim: () => scrim.current,
-    commit: navigationPush.commit, flick: navigationPush.flick, onOpen, onClose: drawer.onClose,
-  });
-  const resizer = (m: 'column' | 'drawer') => resizable
-    ? <PaneResizer side={side} mode={m} minWidth={minWidth} maxWidth={maxWidth}
-        onResize={(w) => { setSizes((s) => ({ ...s, [m]: w })); onResize?.(w, m); }} />
-    : null;
-
-  if (mode === 'hidden') return null;
-  if (mode === 'cover') {
-    return <div data-slot="adaptive-pane" data-mode="cover" className="absolute inset-0" style={{ zIndex: drawer.zIndex }}>{children}</div>;
-  }
-  if (mode === 'drawer') {
-    return (
-      <>
-        <EdgeDrawer {...drawer} side={side} open={open} maxWidth={maxWidth} width={sizes.drawer ?? drawerWidth}
-          panelRef={panel} scrimRef={scrim} panelProps={swipe ? drag.panelProps : undefined}
-          className={cn('touch-pan-y duration-spring-smooth ease-spring-smooth', drawer.className)}>
-          {children}
-          {resizer('drawer')}
-        </EdgeDrawer>
-        {swipe && onOpen && !open ? (
-          <div data-slot="adaptive-pane-edge" aria-hidden="true" {...drag.edgeProps}
-            className={cn('absolute inset-y-0 z-(--adaptive-pane-z) w-4 touch-pan-y', side === 'left' ? 'left-0' : 'right-0')}
-            style={{ '--adaptive-pane-z': drawer.zIndex ?? 30 } as CSSProperties} />
-        ) : null}
-      </>
-    );
-  }
+  const handle = usePrimitive(adaptivePane, {
+    presentation, open, defaultOpen, onOpenChange, widths, defaultWidths, onWidthsChange, side, minWidth, maxWidth, swipeToOpen, controller,
+  } as AdaptivePaneOptions);
+  const { api } = handle;
+  const kept = useKeptChildren(children);
+  // The dock and the separator only change when the pane's own props do, so the presentation below can skip
+  // re-rendering while a resize drags (the width is a variable the root writes).
+  const dock = useMemo(() => <div ref={kept.dock} className="contents">{kept.inline}</div>, [kept.dock, kept.inline]);
+  const resizer = useMemo(() => (resizable ? <PaneResizer side={side} /> : null), [resizable, side]);
+  const body = (state: RootState) => (
+    <PaneBody presentation={state.presentation} side={state.side} open={state.open} dragging={state.dragging} api={api} dock={dock} resizer={resizer} columnWidth={columnWidth} drawerWidth={drawerWidth}
+      drawerMaxWidth={drawerMaxWidth ?? maxWidth} columnClassName={columnClassName} columnStyle={columnStyle} zIndex={zIndex}
+      backdropClassName={backdropClassName} scrim={scrim} shadow={shadow} label={label} dismissible={dismissible} modal={modal}
+      swipe={swipe} className={className} style={style} />
+  );
   return (
-    <div data-slot="adaptive-pane" data-mode="column" data-side={side} className={cn('min-h-0 shrink-0', resizable && 'relative')}
-      style={{ width: sizes.column ?? columnWidth, ...columnStyle }}>
-      {children}
-      {resizer('column')}
-    </div>
+    <>
+      {kept.portal}
+      {usePart(handle, 'root', {}, {
+        className: (state: RootState) => {
+          if (state.presentation === 'drawer') return 'contents';
+          if (state.presentation === 'cover') return cn('absolute inset-0 z-(--adaptive-pane-z)', columnClassName);
+          if (state.presentation === 'column') {
+            return cn('min-h-0 shrink-0 w-(--adaptive-pane-w)', resizable && 'relative', columnClassName);
+          }
+          return undefined;
+        },
+        // The host's widths; a resized width (the root's own `--adaptive-pane-w`) wins over them.
+        style: (state: RootState) => (
+          state.presentation === 'drawer'
+            ? { '--adaptive-pane-w': len(drawerWidth) }
+            : state.presentation === 'cover'
+              ? { '--adaptive-pane-z': zIndex, ...columnStyle }
+              : state.presentation === 'column'
+                ? { '--adaptive-pane-w': len(columnWidth), ...columnStyle }
+                : undefined
+        ) as CSSProperties | undefined,
+        children: body,
+      }, 'div')}
+    </>
   );
 }
 
-/** The divider on a pane's inner edge. It measures the pane (its parent) when a drag or key starts, so the host can
- *  give any CSS width and the first resize still begins from what is on screen. */
-function PaneResizer({ side, mode, minWidth, maxWidth, onResize }: {
-  side: 'left' | 'right';
-  mode: 'column' | 'drawer';
-  minWidth: number;
-  maxWidth?: number | string;
-  onResize: (width: number | undefined) => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ x0: number; w0: number } | null>(null);
-  const [now, setNow] = useState<number>();
-  const [active, setActive] = useState(false);
-  const [hot, setHot] = useState(false);
-  const [focused, setFocused] = useState(false);
-  // Dragging away from the pane's own edge widens it.
-  const grow = side === 'left' ? 1 : -1;
-  const pane = () => ref.current?.parentElement ?? null;
-  const limits = () => {
-    const room = (pane()?.parentElement?.clientWidth ?? Infinity) - KEEP[mode];
-    return { min: minWidth, max: Math.max(minWidth, Math.min(typeof maxWidth === 'number' ? maxWidth : Infinity, room)) };
-  };
-  const width = () => pane()?.getBoundingClientRect().width ?? minWidth;
-  const set = (w: number) => {
-    const { min, max } = limits();
-    const v = Math.round(Math.min(max, Math.max(min, w)));
-    setNow(v);
-    onResize(v);
-  };
-  const reset = () => { setNow(undefined); onResize(undefined); };
-  const end = () => { drag.current = null; setActive(false); };
-  const onKeyDown = (e: KeyboardEvent) => {
-    const step = (e.shiftKey ? 3 : 1) * STEP;
-    if (e.key === 'ArrowRight') set(width() + grow * step);
-    else if (e.key === 'ArrowLeft') set(width() - grow * step);
-    else if (e.key === 'Home') set(limits().min);
-    else if (e.key === 'End') set(limits().max);
-    else if (e.key === 'Enter') reset();
-    else return;
-    e.preventDefault();
-  };
+type RootState = { presentation: AdaptivePanePresentation; side: AdaptivePaneSide; open: boolean; dragging: boolean };
+
+type PaneBodyProps = RootState & Pick<AdaptivePaneProps, 'columnWidth' | 'drawerWidth' | 'drawerMaxWidth' | 'columnClassName' | 'columnStyle'
+  | 'zIndex' | 'backdropClassName' | 'scrim' | 'shadow' | 'dismissible' | 'modal' | 'swipe' | 'className' | 'style'> & {
+  api: AdaptivePaneApi;
+  dock: ReactNode;
+  resizer: ReactNode;
+  label?: string;
+};
+
+/** What the root holds in each presentation. Memoized: a resize drag changes only the root's width variable. */
+const PaneBody = memo(function PaneBody({
+  presentation, side, open, dragging, api, dock, resizer, drawerMaxWidth, zIndex, backdropClassName, scrim, shadow, label, dismissible, modal, swipe,
+  className, style,
+}: PaneBodyProps) {
+  if (presentation === 'drawer') {
+    return (
+      <>
+        <EdgeDrawer side={side} open={open} aria-label={label ?? 'Pane'} zIndex={zIndex} dismissible={dismissible} modal={modal}
+          swipe={swipe}
+          onOpenChange={(next, details) => { if (!api.setOpen(next, details)) details.cancel(); }}
+          width="var(--adaptive-pane-w)" maxWidth={drawerMaxWidth}
+          backdropClassName={backdropClassName} scrim={scrim} shadow={shadow}
+          className={cn('touch-pan-y', dragging && 'transition-none', className)} style={style}>
+          {dock}
+          {resizer}
+        </EdgeDrawer>
+        <Edge className={cn('absolute inset-y-0 z-(--adaptive-pane-z) w-4 touch-pan-y', edgeClass[side])}
+          style={{ '--adaptive-pane-z': zIndex ?? 30 } as CSSProperties} />
+      </>
+    );
+  }
+  if (presentation === 'cover') return dock;
+  if (presentation === 'column') return <>{dock}{resizer}</>;
+  return null;
+});
+
+/** The swipe strip, on the pane's own edge of the host. */
+const edgeClass: Record<AdaptivePaneSide, string> = { start: 'start-0', end: 'end-0', left: 'left-0', right: 'right-0' };
+/** The divider, over the pane's inner edge. */
+const resizerClass: Record<AdaptivePaneSide, string> = { start: '-end-[5px]', end: '-start-[5px]', left: '-right-[5px]', right: '-left-[5px]' };
+
+/** The divider on a pane's inner edge: a separator that measures the pane when a drag or key starts, so the host
+ *  can give any CSS width and the first resize still begins from what is on screen. */
+function PaneResizer({ side }: { side: AdaptivePaneSide }) {
   return (
-    <div ref={ref} role="separator" aria-orientation="vertical" aria-label="Resize pane" tabIndex={0}
-      data-slot="adaptive-pane-resizer" data-drawer-swipe="off"
-      aria-valuenow={now} aria-valuemin={minWidth} aria-valuemax={typeof maxWidth === 'number' ? maxWidth : undefined}
-      onPointerDown={(e: PointerEvent<HTMLDivElement>) => {
-        if (e.button) return;
-        drag.current = { x0: e.clientX, w0: width() };
-        setActive(true);
-        try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* no active pointer (synthetic input) */ }
-        e.preventDefault();
-      }}
-      onPointerMove={(e) => { if (drag.current) set(drag.current.w0 + grow * (e.clientX - drag.current.x0)); }}
-      onPointerUp={end} onPointerCancel={end}
-      onPointerEnter={() => setHot(true)} onPointerLeave={() => setHot(false)}
-      onFocus={(e) => setFocused(e.currentTarget.matches(':focus-visible'))} onBlur={() => setFocused(false)}
-      onKeyDown={onKeyDown} onDoubleClick={reset}
-      className={cn('absolute inset-y-0 z-40 w-[10px] cursor-col-resize touch-none outline-none', side === 'left' ? '-right-[5px]' : '-left-[5px]')}>
+    <Resizer aria-label="Resize pane"
+      className={cn(
+        'group/resizer absolute inset-y-0 z-40 w-[10px] cursor-col-resize touch-none outline-none',
+        resizerClass[side],
+      )}>
       <div className={cn(
-        'absolute inset-y-0 left-1/2 w-[3px] -translate-x-1/2 rounded-full bg-primary transition-[opacity,transform] duration-200',
-        focused || active || hot ? 'scale-y-100' : 'scale-y-[.96] opacity-0',
-        !(focused || active) && hot && 'opacity-45',
+        'absolute inset-y-0 left-1/2 w-[3px] -translate-x-1/2 scale-y-[.96] rounded-full bg-primary opacity-0 transition-[opacity,scale] duration-200',
+        'group-hover/resizer:scale-y-100 group-hover/resizer:opacity-45',
+        'group-focus-visible/resizer:scale-y-100 group-focus-visible/resizer:opacity-100',
+        'group-data-dragging/resizer:scale-y-100 group-data-dragging/resizer:opacity-100',
       )} />
-    </div>
+    </Resizer>
   );
 }

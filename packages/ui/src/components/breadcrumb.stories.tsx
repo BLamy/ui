@@ -19,11 +19,11 @@ const PATH: BreadcrumbItemData[] = [
   { id: 'home', label: 'Home', icon: 'house', href: '#home' },
   { id: 'projects', label: 'Projects', href: '#projects' },
   { id: 'design', label: 'Design system', href: '#design' },
-  { id: 'components', label: 'Components', onPress: go('components') },
+  { id: 'components', label: 'Components', onClick: go('components') },
   { id: 'breadcrumb', label: 'Breadcrumb' },
 ];
 
-/** Every item but the last is a link (`href`) or a button (`onPress`); the last is the current page. */
+/** Every item but the last is a link (`href`) or a button (`onClick`); the last is the current page. */
 export const Default: Story = { args: { items: PATH } };
 
 export const Sizes: Story = {
@@ -51,7 +51,7 @@ export const CustomSeparator: Story = {
 };
 
 const siblings = (current: string, ...labels: string[]) => ({
-  items: labels.map((label) => ({ id: label, label, icon: 'doc', onPress: go(label) })),
+  items: labels.map((label) => ({ id: label, label, icon: 'doc', onClick: go(label) })),
   selectedId: current,
 });
 
@@ -72,7 +72,7 @@ function CollapsingDemo() {
   const [width, setWidth] = useState(300);
   return (
     <div className="flex flex-col gap-4">
-      <Slider label="Frame width" showValue minValue={140} maxValue={520} step={4} value={width} onChange={setWidth} />
+      <Slider label="Frame width" showValue min={140} max={520} step={4} value={width} onValueChange={setWidth} />
       <div
         style={{ '--frame': `${width}px` } as CSSProperties}
         className="w-(--frame) max-w-full resize-x overflow-hidden rounded-card border border-border bg-card p-2"
@@ -89,7 +89,7 @@ export const CurrentPagePressable: Story = {
   args: {
     items: [
       ...PATH.slice(0, 2),
-      { id: 'report', label: 'Weekly report', onPress: go('reload report') },
+      { id: 'report', label: 'Weekly report', onClick: go('reload report') },
     ],
   },
 };

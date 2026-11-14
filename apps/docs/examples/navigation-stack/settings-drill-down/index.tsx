@@ -1,14 +1,34 @@
 import { useState, type ReactNode } from 'react'
 import { List, ListRow, ListSection } from '@/components/ui/list'
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import {
+  NavigationStack,
+  NavigationStackBar,
+  NavigationStackContent,
+  NavigationStackPage,
+  NavigationStackTitle,
+} from '@/components/ui/navigation-stack'
 import { Switch } from '@/components/ui/switch'
 import { Icon } from '@/lib/icon'
 
+/** A grouped page with a title, its bar pinned. */
+function Page({ value, title, children }: { value: string; title: string; children: ReactNode }) {
+  return (
+    <NavigationStackPage value={value} grouped>
+      <NavigationStackBar hideOnScroll={false}>
+        <NavigationStackTitle>{title}</NavigationStackTitle>
+      </NavigationStackBar>
+      <NavigationStackContent>{children}</NavigationStackContent>
+    </NavigationStackPage>
+  )
+}
+
 function SettingsDrillDown() {
-  // The path is the stack: push by appending, pop by dropping the last entry.
-  const [path, setPath] = useState<string[]>([])
+  // The pages are keys in state: rows push by appending one, and the stack's
+  // back button, Escape or an edge swipe hands back the shorter list. Every
+  // page is declared; the stack shows the ones in `pages`.
+  const [pages, setPages] = useState(['settings'])
   const [autoUpdate, setAutoUpdate] = useState(true)
-  const push = (key: string) => setPath((p) => [...p, key])
+  const push = (key: string) => setPages((p) => [...p, key])
   const detail = (label: string, value: string, last = false) => (
     <ListRow
       title={label}
@@ -16,79 +36,53 @@ function SettingsDrillDown() {
       trailing={<span style={{ color: 'var(--muted-foreground)' }}>{value}</span>}
     />
   )
-  const screens: Screen[] = [
-    {
-      key: 'settings',
-      title: 'Settings',
-      grouped: true,
-      hideChromeOnScroll: false,
-      content: (
-        <List inset>
-          <ListSection>
-            <ListRow
-              leading={<Icon name="gear" size={22} />}
-              title="General"
-              accessory="chevron"
-              onPress={() => push('general')}
-            />
-            <ListRow
-              leading={<Icon name="lock" size={22} />}
-              title="Privacy"
-              accessory="chevron"
-              divider={false}
-              onPress={() => push('privacy')}
-            />
-          </ListSection>
-        </List>
-      ),
-    },
-  ]
-  for (const key of path) {
-    if (key === 'general')
-      screens.push({
-        key,
-        title: 'General',
-        grouped: true,
-        hideChromeOnScroll: false,
-        content: (
+  return (
+    <div style={{ position: 'relative', height: 420 }}>
+      <NavigationStack pages={pages} onPagesChange={setPages}>
+        <Page value="settings" title="Settings">
+          <List inset>
+            <ListSection>
+              <ListRow
+                leading={<Icon name="gear" size={22} />}
+                title="General"
+                accessory="chevron"
+                onClick={() => push('general')}
+              />
+              <ListRow
+                leading={<Icon name="lock" size={22} />}
+                title="Privacy"
+                accessory="chevron"
+                divider={false}
+                onClick={() => push('privacy')}
+              />
+            </ListSection>
+          </List>
+        </Page>
+        <Page value="general" title="General">
           <List inset>
             <ListSection>
               <ListRow
                 title="About"
                 accessory="chevron"
-                onPress={() => push('about')}
+                onClick={() => push('about')}
               />
               <ListRow
                 title="Software Update"
                 accessory="chevron"
                 divider={false}
-                onPress={() => push('update')}
+                onClick={() => push('update')}
               />
             </ListSection>
           </List>
-        ),
-      })
-    if (key === 'privacy')
-      screens.push({
-        key,
-        title: 'Privacy',
-        grouped: true,
-        hideChromeOnScroll: false,
-        content: (
+        </Page>
+        <Page value="privacy" title="Privacy">
           <List inset>
             <ListSection footer="Apps must ask before they use your location.">
               {detail('Location Services', 'On', true)}
             </ListSection>
           </List>
-        ),
-      })
-    if (key === 'about')
-      screens.push({
-        key,
-        title: 'About',
-        grouped: true,
-        hideChromeOnScroll: false,
-        content: (
+        </Page>
+        <Page value="about" title="About">
           <List inset>
             <ListSection>
               {detail('Name', 'Ada’s iPhone')}
@@ -96,15 +90,8 @@ function SettingsDrillDown() {
               {detail('Model', 'iPhone 17 Pro', true)}
             </ListSection>
           </List>
-        ),
-      })
-    if (key === 'update')
-      screens.push({
-        key,
-        title: 'Software Update',
-        grouped: true,
-        hideChromeOnScroll: false,
-        content: (
+        </Page>
+        <Page value="update" title="Software Update">
           <List inset>
             <ListSection footer="Updates install overnight while charging.">
               <ListRow
@@ -114,21 +101,14 @@ function SettingsDrillDown() {
                   <Switch
                     aria-label="Automatic Updates"
                     checked={autoUpdate}
-                    onChange={setAutoUpdate}
+                    onCheckedChange={setAutoUpdate}
                   />
                 }
               />
             </ListSection>
           </List>
-        ),
-      })
-  }
-  return (
-    <div style={{ position: 'relative', height: 420 }}>
-      <NavigationStack
-        screens={screens}
-        onPop={() => setPath((p) => p.slice(0, -1))}
-      />
+        </Page>
+      </NavigationStack>
     </div>
   )
 }

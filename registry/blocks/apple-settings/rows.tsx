@@ -2,14 +2,17 @@
    dense macOS System Settings row on desktop. PaneView lays a pane's sections out; SearchResults lists hits.
    A saved password's row previews the sign-in on hover (never the password itself). */
 import { useState, type ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ListRow, ListSection, type ListRowProps } from '@/components/ui/list';
-import { Segmented } from '@/components/ui/segmented';
+import { PlainButton } from '@/components/ui/plain-button';
+import { RadioGroup } from '@/components/ui/radio-group';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { TextMorph } from '@/components/ui/text-morph';
+import { Collapsible, CollapsiblePanel } from '@ui-sdk/react/collapsible';
+import { Radio } from '@ui-sdk/react/radio';
 import { IC, Icon, type IconProps } from '@/lib/icon';
 import { type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -45,7 +48,7 @@ function WifiBars({ bars }: { bars: 1 | 2 | 3 }) {
 }
 
 /* ── Row chrome ── */
-type ShellProps = Pick<ListRowProps, 'title' | 'subtitle' | 'leading' | 'trailing' | 'accessory' | 'checked' | 'onPress' | 'center' | 'preview'> & { last?: boolean };
+type ShellProps = Pick<ListRowProps, 'title' | 'subtitle' | 'leading' | 'trailing' | 'accessory' | 'checked' | 'onClick' | 'center' | 'preview'> & { last?: boolean };
 
 /** macOS group rows get a hairline above every row but the first, inset like the system's. */
 const macSep = 'before:absolute before:inset-x-3 before:top-0 before:h-px before:bg-border first:before:hidden';
@@ -70,12 +73,15 @@ function Shell({ last, preview, ...p }: ShellProps) {
     </>
   );
   const cls = cn('relative flex min-h-[38px] w-full items-center gap-2.5 px-3 py-[7px] text-left text-footnote text-foreground', !preview && macSep);
-  const row = p.onPress ? (
-    <button type="button" onClick={p.onPress}
-      className={cn(cls, 'bl-btn cursor-pointer border-0 bg-transparent [font-family:inherit] transition-colors duration-150 hover:bg-secondary/60 active:bg-accent')}>{body}</button>
+  const row = p.onClick ? (
+    <PlainButton onClick={p.onClick}
+      className={cn(cls, 'bl-btn cursor-pointer border-0 bg-transparent [font-family:inherit] transition-colors duration-150 hover:bg-secondary/60 active:bg-accent')}>{body}</PlainButton>
   ) : <div className={cls}>{body}</div>;
   return preview ? (
-    <HoverCardTrigger className={cn('relative flex w-full', macSep)}>{row}<HoverCard placement="end top">{preview}</HoverCard></HoverCardTrigger>
+    <HoverCard>
+      <HoverCardTrigger render={<div className={cn('relative flex w-full', macSep)} />}>{row}</HoverCardTrigger>
+      <HoverCardContent side="right" align="start">{preview}</HoverCardContent>
+    </HoverCard>
   ) : row;
 }
 
@@ -93,21 +99,17 @@ const Detail = ({ children }: { children?: ReactNode }) =>
 /** macOS switches are the small control size. */
 const MAC_SWITCH = '-my-[6px] -ml-[19px] origin-right scale-[.62]';
 
-/** macOS pop-up button: the current value and ⌃⌄, a menu of the options. */
+/** macOS pop-up button: a Select showing the current value and ⌃⌄, named by its row's title. */
 function Popup({ id, title, options }: { id: string; title: string; options: string[] }) {
   const s = useSettings();
-  const cur = String(s.values[id]);
   return (
-    <DropdownMenu>
-      <Button variant="ghost" size="sm" aria-label={`${title}: ${cur}`}
-        className="-my-1 h-[26px] gap-1 rounded-md px-2 text-footnote font-normal text-foreground shadow-[0_1px_1px_black] ring-[.5px] shadow-black/6 ring-border">
-        {cur}<Icon name="chevron-up-down" size={12} weight="semibold" className="text-muted-foreground" />
-      </Button>
-      <DropdownMenuContent aria-label={title} placement="bottom end" selectionMode="single" selectedKeys={[cur]}
-        onSelectionChange={(k) => { if (k !== 'all' && k.size) s.set(id, String([...k][0])); }}>
-        {options.map((o) => <DropdownMenuItem key={o} id={o} className="min-h-8 py-1.5 text-footnote">{o}</DropdownMenuItem>)}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Select<string> value={String(s.values[id])} onValueChange={(o) => { if (o != null) s.set(id, o); }}>
+      <SelectTrigger aria-label={title}
+        className="-my-1 h-[26px] w-auto gap-1 rounded-md bg-transparent px-2 text-footnote font-normal text-foreground shadow-[0_1px_1px_black] ring-[.5px] shadow-black/6 ring-border [&>svg]:size-3 [&>svg]:text-muted-foreground [&>svg]:opacity-100" />
+      <SelectContent align="end">
+        {options.map((o) => <SelectItem key={o} value={o} className="min-h-8 py-1.5 text-footnote">{o}</SelectItem>)}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -132,35 +134,37 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
   switch (row.t) {
     case 'toggle':
       return <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} subtitle={row.subtitle} 
-        accessory={<Switch checked={!!v[row.id]} onChange={(x) => s.set(row.id, x)} aria-label={mac ? row.title : undefined} className={mac ? MAC_SWITCH : undefined} />} />;
+        accessory={<Switch checked={!!v[row.id]} onCheckedChange={(x) => s.set(row.id, x)} aria-label={mac ? row.title : undefined} className={mac ? MAC_SWITCH : undefined} />} />;
     case 'link': {
       const p = getPane(row.to);
       const value = typeof row.value === 'function' ? row.value(v) : row.value;
       const subtitle = row.subtitle ?? (row.to.startsWith('notif-') ? notifSummary(v, row.to) : undefined);
       return <Shell last={last} leading={row.icon ? tile(p?.glyph, p?.color) : undefined} title={row.title ?? p?.title} subtitle={subtitle}
-        trailing={<Detail>{value}</Detail>} accessory="chevron" onPress={() => s.open(row.to)} />;
+        trailing={<Detail>{value}</Detail>} accessory="chevron" onClick={() => s.open(row.to)} />;
     }
     case 'value':
       return <Shell last={last} title={row.title} trailing={<Detail>{row.value}</Detail>} />;
     case 'select':
       return s.layout === 'desktop'
         ? <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} trailing={<Popup id={row.id} title={row.title} options={row.options} />} />
-        : <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} trailing={<Detail>{String(v[row.id])}</Detail>} accessory="chevron" onPress={() => s.open('choose:' + row.id)} />;
+        : <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} trailing={<Detail>{String(v[row.id])}</Detail>} accessory="chevron" onClick={() => s.open('choose:' + row.id)} />;
     case 'option': {
       const on = v[row.id] === row.option;
-      return <Shell last={last} title={row.option} accessory="check" checked={on} onPress={() => { if (!on) s.set(row.id, row.option); }} />;
+      return <Shell last={last} title={row.option} accessory="check" checked={on} onClick={() => { if (!on) s.set(row.id, row.option); }} />;
     }
     case 'slider':
       return <Plain last={last}><SliderRow row={row} /></Plain>;
     case 'segmented':
       return (
         <Plain last={last}>
-          <Segmented aria-label="Display as" options={row.options.map((o) => ({ id: o, label: o }))} value={String(v[row.id])} onChange={(o) => s.set(row.id, o)} />
+          <Segmented aria-label="Display as" value={String(v[row.id])} onValueChange={(o) => { if (o) s.set(row.id, o); }}>
+            {row.options.map((o) => <SegmentedItem key={o} value={o}>{o}</SegmentedItem>)}
+          </Segmented>
         </Plain>
       );
     case 'network':
       return <Shell last={last} leading={<span className="w-[18px] shrink-0" />} title={row.name} trailing={<NetIcons secure={row.secure} bars={row.bars} />}
-        onPress={() => s.set('wifi.network', row.name)} />;
+        onClick={() => s.set('wifi.network', row.name)} />;
     case 'connected':
       return <Shell last={last} leading={<Icon name="check" size={18} weight="bold" className="text-primary" />} title={String(v['wifi.network'])}
         trailing={<NetIcons secure bars={3} />} />;
@@ -168,7 +172,7 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
       const on = !!v['bt.' + row.name];
       return <Shell last={last} leading={s.layout === 'desktop' ? <SettingsIcon glyph={row.glyph} size={18} className="text-muted-foreground" /> : undefined} title={row.name}
         trailing={<><Detail>{on ? 'Connected' : 'Not Connected'}</Detail><Icon name="info" size={21} weight="light" className="text-primary" /></>}
-        onPress={() => s.set('bt.' + row.name, !on)} />;
+        onClick={() => s.set('bt.' + row.name, !on)} />;
     }
     case 'action':
       return <Shell last={last} center={row.destructive && s.layout !== 'desktop'}
@@ -181,7 +185,7 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
       return <Plain last={last}><Meter row={row} /></Plain>;
     case 'login':
       return <Shell last={last} leading={<LetterTile site={row.site} color={row.color} size={s.layout === 'desktop' ? 22 : 32} />} title={row.site} subtitle={row.user}
-        accessory="chevron" onPress={() => s.open(row.to)} preview={<LoginPreview row={row} />} />;
+        accessory="chevron" onClick={() => s.open(row.to)} preview={<LoginPreview row={row} />} />;
     case 'secret':
       return <SecretRow title={row.title} value={row.value} last={last} />;
   }
@@ -197,7 +201,7 @@ function SliderRow({ row }: { row: Extract<Row, { t: 'slider' }> }) {
     <div className="flex items-center gap-2">
       {end(row.lo, false)}
       <Slider aria-label={row.id.includes('text') ? 'Text size' : row.id.includes('volume') ? 'Volume' : 'Brightness'} className="flex-1"
-        minValue={row.min ?? 0} maxValue={row.max ?? 100} step={row.step ?? 1} value={Number(s.values[row.id])} onChange={(x) => s.set(row.id, x as number)} />
+        min={row.min ?? 0} max={row.max ?? 100} step={row.step ?? 1} value={Number(s.values[row.id])} onValueChange={(x) => s.set(row.id, x)} />
       {end(row.hi, true)}
     </div>
   );
@@ -224,11 +228,12 @@ function AppearancePicker() {
   const s = useSettings();
   const opts: [Appearance, string][] = [['light', 'Light'], ['dark', 'Dark']];
   return (
-    <div role="radiogroup" aria-label="Appearance" className="flex justify-center gap-14 py-1">
+    <RadioGroup<Appearance> aria-label="Appearance" orientation="horizontal" className="flex-nowrap justify-center gap-14 py-1"
+      value={s.dark ? 'dark' : 'light'} onValueChange={(k) => { if (k) s.setAppearance(k); }}>
       {opts.map(([k, label]) => {
         const on = (k === 'dark') === s.dark;
         return (
-          <button key={k} type="button" role="radio" aria-checked={on} onClick={() => { if (!on) s.setAppearance(k); }}
+          <Radio key={k} value={k}
             className="bl-btn flex cursor-pointer flex-col items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-foreground">
             <PhoneThumb dark={k === 'dark'} />
             <span className={s.layout === 'desktop' ? 'text-footnote' : 'text-subhead'}>{label}</span>
@@ -236,10 +241,10 @@ function AppearancePicker() {
               on ? 'bg-primary' : 'shadow-[inset_0_0_0_1.5px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))]')}>
               {on ? <Icon name="check" size={14} sw={3} className="transition-[scale] duration-spring-snappy ease-spring-bouncy starting:scale-40" /> : null}
             </span>
-          </button>
+          </Radio>
         );
       })}
-    </div>
+    </RadioGroup>
   );
 }
 
@@ -305,19 +310,21 @@ function LoginPreview({ row }: { row: Extract<Row, { t: 'login' }> }) {
 function SecretRow({ title, value, last }: { title: string; value: string; last?: boolean }) {
   const [shown, setShown] = useState(false);
   return (
-    <Shell last={last} title={title} onPress={() => setShown((x) => !x)}
+    <Shell last={last} title={title} onClick={() => setShown((x) => !x)}
       trailing={<span className="text-muted-foreground tabular-nums"><TextMorph>{shown ? value : '••••••••••••'}</TextMorph></span>} />
   );
 }
 
 /* ── Sections and panes ── */
-/** Springs a section open or shut (Wi-Fi off hides the networks) instead of cutting. */
+/** Springs a section open or shut (Wi-Fi off hides the networks) instead of cutting: a Collapsible the section's
+    switch drives. */
 function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
   return (
-    <div inert={!open || undefined} className={cn('grid transition-[grid-template-rows,opacity] duration-spring-tray ease-spring-tray motion-reduce:transition-none',
-      open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0')}>
-      <div className="min-h-0 overflow-hidden">{children}</div>
-    </div>
+    <Collapsible open={open}>
+      <CollapsiblePanel className="h-(--collapsible-panel-height) overflow-clip transition-[height,opacity] duration-spring-tray ease-spring-tray data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0 motion-reduce:transition-none">
+        {children}
+      </CollapsiblePanel>
+    </Collapsible>
   );
 }
 
@@ -391,7 +398,7 @@ export function SearchResults({ onOpen }: { onOpen?: () => void }) {
         return (
           <Shell key={h.pane + h.title} last={i === hits.length - 1} title={h.title} subtitle={h.trail || undefined}
             leading={icon?.glyph && icon.color ? <Tile glyph={icon.glyph} color={icon.color} size={s.layout === 'desktop' ? 22 : 29} /> : undefined}
-            accessory={s.layout !== 'desktop' ? 'chevron' : undefined} onPress={() => { s.openPath(pathTo(h.pane)); onOpen?.(); }} />
+            accessory={s.layout !== 'desktop' ? 'chevron' : undefined} onClick={() => { s.openPath(pathTo(h.pane)); onOpen?.(); }} />
         );
       })}
     </Group>

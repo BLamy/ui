@@ -32,7 +32,7 @@ import { List, ListSection, ListRow } from '@brett_lamy/ui'
       leading={<Avatar c={c}/>}
       title={c.name} subtitle={c.role}
       accessory="chevron"          // or "check", or a control: <Switch/>, <Slider/>, <Button/>
-      onPress={open} onDelete={del}
+      onClick={open} onDelete={del}
       leadingActions={[{ label: 'Pin', icon: 'pin', onAction: pin }]}
       trailingActions={[{ label: 'Delete', icon: 'trash', destructive: true, onAction: del }]}
       edit={editing} checked={picked}
@@ -67,11 +67,12 @@ A `header` passed to `BLList` sticks to the top of the list itself and is measur
 
 ## Row behaviors
 
-- **Swipe actions**: `leadingActions` are revealed by swiping right, `trailingActions` by swiping left. A release springs open or shut from the finger's velocity; only one row stays open at a time.
+- **Swipe actions**: `leadingActions` are revealed by swiping right, `trailingActions` by swiping left (UI SDK's `createSwipeActions`). A release past half the actions keeps them open and a flick decides sooner; a press anywhere else closes an open row. Only one row on the page is open at a time: opening another (by swipe, key or controller) closes it.
 - **Full swipe**: past about half the row the outermost action (index 0) takes the whole strip. Turn it off with `fullSwipe={false}` (or limit it to `'leading'` / `'trailing'`).
 - **Edit mode** slides in radio checks.
-- **Pressable rows** (`onPress`) are real `<button>`s with arrow-key navigation and visible focus rings. The button sits beneath the row's content, so a control in the row is its sibling — never nested inside it.
-- **Rows without `onPress`** are plain containers. A `Switch` or `Slider` in `accessory` (or `trailing`) is named by the row title, and pressing the row's label flips its switch (`labelToggles={false}` opts out).
+- **Pressable rows** (`onClick`) are real `<button>`s (UI SDK's Button) with visible focus rings. The button sits beneath the row's content, so a control in the row is its sibling — never nested inside it.
+- **Roles**: a section is a `list` of `listitem`s. A list whose rows are *chosen* (a picker, a multi-select) is a [Listbox](https://blamy.github.io/ui/#/list-box), not rows with checks.
+- **Rows without `onClick`** are plain containers. A `Switch` or `Slider` in `accessory` (or `trailing`) is named by the row title, and pressing the row's label flips its switch (`labelToggles={false}` opts out).
 - **Previews**: `preview` is a [HoverCard](https://blamy.github.io/ui/#/hover-card)'s content about what the row stands for, opened beside the row while the pointer rests on it or keyboard focus is in it (never by touch).
 
 ## Swipe actions
@@ -92,19 +93,19 @@ A `header` passed to `BLList` sticks to the top of the list itself and is measur
 | `label` | `string` | Button text and accessible name |
 | `icon` | `string \| ReactNode` | A kit icon name, or any node; drawn above the label |
 | `tint` | `string` | Background; defaults to red when `destructive`, else the tint |
-| `destructive` | `boolean` | The row slides away and collapses before `onAction` runs |
-| `onAction` | `() => void` | Called on tap or full swipe |
+| `destructive` | `boolean` | The row slides away and collapses (its exit: `data-removing` with `data-ending-style`) before `onAction` runs |
+| `onAction` | `(details) => void` | Called on tap, full swipe or Delete; `details.reason` is `action-press`, `full-swipe` or `delete-key` |
 
 `onDelete` is still there: it adds a destructive **Delete** as the outermost trailing action.
 
-**Keyboard and assistive tech.** Focus a row and press → to reveal the trailing actions (← for the leading ones); focus moves to the buttons, Tab walks them, Esc closes. Delete runs the destructive action. The row describes its actions to screen readers and lists the shortcuts in `aria-keyshortcuts`. With reduced motion, rows move without springing.
+**Keyboard and assistive tech.** Focus a row and press ← to reveal the trailing actions (→ for the leading ones), the way a swipe would move the row; focus moves to the first button, the arrows walk them, heading back toward the row or Esc closes them. Delete runs the destructive action. Drive a row from outside with `controller={createListRowController()}` (`show('trailing')`, `close()`). The row describes its actions to screen readers and lists the shortcuts in `aria-keyshortcuts`. With reduced motion, rows move without springing.
 
 ## Animated sections
 
-`animate` on a section springs keyed rows in on insert, collapses them on remove and slides them when the order changes. `onReorder(from, to)` adds a grip to every row: drag it or focus it and press ↑ / ↓. It is called once per drop; reorder your array to match. Pass it only while reordering is allowed — the grips come and go with it.
+`animate` on a section grows keyed rows in on insert and collapses them on remove (UI SDK's `data-starting-style` / `data-ending-style`), and slides them when the order changes. `onOrderChange(order, details)` adds a grip to every row, on UI SDK's `createReorder`: drag it, or focus it, press Space, move it with ↑ / ↓ (Home / End) and press Space to drop (Esc puts it back); screen readers hear each step. It is called once per drop with the rows' keys in their new order, and `details.from` / `details.to`; reorder your array to match. Pass it only while reordering is allowed — the grips come and go with it.
 
 ```tsx
-<ListSection animate onReorder={editing ? (from, to) => setSongs(move(songs, from, to)) : undefined}>
+<ListSection animate onOrderChange={editing ? (_, { from, to }) => setSongs(move(songs, from, to)) : undefined}>
   {songs.map((s) => <ListRow key={s.id} title={s.title} />)}
 </ListSection>
 ```
@@ -127,7 +128,7 @@ Inset-grouped sections with coloured icon tiles in `leading`, a `Switch` or a va
 
 ### Contacts with an index
 
-A plain list with `sticky` letter headers in a bare scroller, so they stick at the very top. The A–Z `IndexBar` jumps to each section's `innerRef`.
+A plain list with `sticky` letter headers in a bare scroller, so they stick at the very top. The A–Z `IndexBar` jumps to each section's `ref`.
 
 {% demo src="lists/contacts" %}
 
@@ -139,7 +140,7 @@ Swipe right to mark read, left for Trash, Flag and More. A long swipe runs the o
 
 ### Rows with controls
 
-A `Switch`, `Slider` or `Button` as the `accessory`. Rows without `onPress` are containers, so tapping a label flips its switch; the Field Guide row is pressable *and* holds a button, as siblings.
+A `Switch`, `Slider` or `Button` as the `accessory`. Rows without `onClick` are containers, so tapping a label flips its switch; the Field Guide row is pressable *and* holds a button, as siblings.
 
 {% demo src="lists/control-rows" %}
 
@@ -151,7 +152,7 @@ A `Switch`, `Slider` or `Button` as the `accessory`. Rows without `onPress` are 
 
 ### Insert, remove and reorder
 
-`ListSection animate` with `onReorder` while editing. Add springs a song in at the top, swiping one away collapses it, and the grips drag (or move with ↑ / ↓).
+`ListSection animate` with `onOrderChange` while editing. Add grows a song in at the top, swiping one away collapses it, and the grips drag (or Space, ↑ / ↓, Space).
 
 {% demo src="lists/reorder" %}
 
@@ -263,8 +264,8 @@ Two ways to read a wave rail. With `preview`s, hovering a dash opens a card for 
 | Prop | Type | Notes |
 | --- | --- | --- |
 | `items` | `(K \| {key?: K, label?, preview?, caption?, dim?, level?, trailing?})[]` | `K` is `string \| number`; primitive items are shorthand stops |
-| `onJump` | `(key: K, item, index) => void` | Fired on pointer or keyboard commit without coercing the key |
-| `avail` / `onLetter` | `Set<string>` / `(letter) => void` | Used only by the alphabet fallback |
+| `onJump` | `(key: K, item, index, details) => void` | Fired on pointer or keyboard commit without coercing the key; `details.reason` is `drag`, `list-navigation`, `item-press` or `imperative` |
+| `avail` / `onLetter` | `Set<string>` / `(letter, details) => void` | Used only by the alphabet fallback |
 | `top` / `bottom` / `width` | `number \| string` / `number` | Rail sizing inside its positioned parent |
 | `label` | `string` | Accessible name for the listbox |
 | `variant` | `'default' \| 'wave'` | `wave` renders dashes that swell around the pointer, with a title + preview card |
@@ -297,7 +298,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/list`. Base classes:
 
 ```text
-[ // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row. 'relative box-border flex min-h-row w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-body leading-[normal] tracking-[normal] outline-none', 'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]', // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent). 'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]', ]
+[ // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row. 'relative z-1 box-border flex min-h-row w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-body leading-[normal] tracking-[normal] outline-none', 'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]', // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent). 'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]', // The swipe offset (`--swipe-x`, from UI SDK) moves the surface; it springs back unless a finger holds it. 'translate-x-(--swipe-x) transition-[translate] duration-spring-snappy ease-spring-snappy group-data-swiping/row:transition-none motion-reduce:transition-none', ]
 ```
 
 **`align`** — default `center`

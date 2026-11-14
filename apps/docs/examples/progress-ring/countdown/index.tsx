@@ -58,7 +58,7 @@ export default function Countdown() {
       <Button
         variant="secondary"
         size="sm"
-        onPress={() => setRunning((r) => !r)}
+        onClick={() => setRunning((r) => !r)}
       >
         {running ? 'Pause' : 'Start the clock'}
       </Button>

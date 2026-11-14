@@ -1,16 +1,22 @@
 {
   "name": "radio-group",
   "title": "RadioGroup",
-  "description": "react-aria RadioGroup and Radio: round radios with arrow-key selection, vertical or horizontal.",
+  "description": "UI SDK's RadioGroup and Radio: round radios with one tab stop and arrow-key selection, vertical or horizontal.",
   "page": "radio-group",
   "exports": [
     "RadioGroup",
     "Radio",
+    "RadioIndicator",
     "radioGroupVariants",
-    "radioVariants"
+    "radioVariants",
+    "createRadioGroupController"
   ],
   "imports": [
     "RadioGroup",
     "Radio"
+  ],
+  "types": [
+    "RadioGroupProps",
+    "RadioProps"
   ]
 }

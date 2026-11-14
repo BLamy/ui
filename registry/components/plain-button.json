@@ -1,7 +1,7 @@
 {
   "name": "plain-button",
   "title": "PlainButton",
-  "description": "React-aria buttons with no styling of their own, for surfaces that draw their own pressables; they keep the title tooltip that react-aria drops.",
+  "description": "UI SDK's Button and Toggle with no styling of their own, for surfaces that draw their own pressables (icon buttons, pills, rows).",
   "page": "plain-button",
   "exports": [
     "PlainButton",
@@ -10,5 +10,9 @@
   "imports": [
     "PlainButton",
     "PlainToggleButton"
+  ],
+  "types": [
+    "PlainButtonProps",
+    "PlainToggleButtonProps"
   ]
 }

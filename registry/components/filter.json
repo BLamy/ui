@@ -1,9 +1,11 @@
 {
   "name": "filter",
   "title": "Filter",
-  "description": "Linear-style filtering on react-aria: a Filter button (and F shortcut) opens a searchable list of fields, then a searchable multi-select of values; each filter is a chip with its own operator and value buttons, removable with ×, Backspace or Delete. One tab stop with arrow keys across the chips, polite announcements, match all/any and Clear all.",
+  "description": "Linear-style filtering on UI SDK: a Filter button (and F shortcut) opens a searchable Command of fields, then a searchable multi-select of values (an option search: the field keeps focus, the arrows move, Enter ticks); each filter is a chip with its own operator menu and value popover, removable with \u00d7, Backspace or Delete. One Toolbar tab stop with arrow keys across the chips, announcements through UI SDK's announce(), change details with reason, source, event and cancel(), match all/any and Clear all.",
   "page": "filter",
-  "files": ["components/filter.tsx"],
+  "files": [
+    "components/filter.tsx"
+  ],
   "exports": [
     "FilterBar",
     "FilterToolbar",
@@ -20,6 +22,22 @@
     "filterToolbarVariants",
     "filterChipVariants"
   ],
-  "imports": ["FilterBar", "FilterToolbar", "FilterMenu", "FilterList", "FilterChip"],
-  "types": ["FilterBarProps", "FilterChipProps", "FilterState", "UseFiltersOptions"]
+  "imports": [
+    "FilterBar",
+    "FilterToolbar",
+    "FilterMenu",
+    "FilterList",
+    "FilterChip"
+  ],
+  "types": [
+    "FilterBarProps",
+    "FilterChipProps",
+    "FilterState",
+    "UseFiltersOptions",
+    "FilterChangeDetails",
+    "FilterChangeReason",
+    "FilterMatchChangeDetails",
+    "FilterMatchChangeReason",
+    "FilterChangeOptions"
+  ]
 }

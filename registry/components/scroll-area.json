@@ -1,13 +1,22 @@
 {
   "name": "scroll-area",
   "title": "ScrollArea",
-  "description": "A scroll container with the kit's thin scrollbars, keyboard focusable, with native momentum kept.",
+  "description": "A scroll container on UI SDK's ScrollArea with the kit's thin scrollbars: native scrolling, overflow and edge state, optional overlay scrollbars and stick-to-end.",
   "page": "scroll-area",
   "exports": [
     "ScrollArea",
-    "scrollAreaVariants"
+    "ScrollAreaViewport",
+    "ScrollAreaContent",
+    "ScrollAreaScrollbar",
+    "ScrollAreaThumb",
+    "ScrollAreaCorner",
+    "ScrollAreaScrollToEnd",
+    "scrollAreaViewportVariants",
+    "createScrollAreaController"
   ],
   "imports": [
-    "ScrollArea"
+    "ScrollArea",
+    "ScrollAreaViewport",
+    "ScrollAreaContent"
   ]
 }

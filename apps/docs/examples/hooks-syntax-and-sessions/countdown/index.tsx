@@ -32,17 +32,17 @@ export default function Countdown() {
         <span id="cd-running" className="text-body text-foreground">
           Running
         </span>
-        <Switch aria-labelledby="cd-running" checked={running} onChange={setRunning} />
+        <Switch aria-labelledby="cd-running" checked={running} onCheckedChange={setRunning} />
       </div>
       <div className="flex items-center justify-between gap-4 rounded-card bg-card p-4 shadow-hairline">
         <span id="cd-loop" className="text-body text-foreground">
           Loop
         </span>
-        <Switch aria-labelledby="cd-loop" checked={loop} onChange={setLoop} />
+        <Switch aria-labelledby="cd-loop" checked={loop} onCheckedChange={setLoop} />
       </div>
       <Button
         variant="secondary"
-        onPress={() => {
+        onClick={() => {
           reset()
           setEnds(0)
         }}

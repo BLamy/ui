@@ -25,32 +25,28 @@ import { SideDrawer } from '@brett_lamy/ui'
 {% endtab %}
 {% endtabs %}
 
-| Mode | Presentation | Used when |
+| `presentation` | Shows as | Used when |
 | --- | --- | --- |
 | `fixed` | docked column beside the detail view | ≥1280px, room to spare |
-| `overlay` | sheet from the right edge + scrim | desktop / tablet |
-| `overlay`, compact | the whole host, pushed like a NavigationStack screen | phones (host < `compactBreakpoint`) |
+| `overlay` | sheet from the end edge + scrim (UI SDK's Drawer; the right, or the left under `dir="rtl"`) | desktop / tablet |
+| `push` | the whole host, pushed like a NavigationStack screen | phones |
+| `auto` (default) | `overlay`, or `push` while the host is narrower than `breakpoint` (520px) | let the host decide |
 
 ```jsx
 // extra-wide: docked
-<SideDrawer mode="fixed" open={act} title="Activity" width={318}>
+<SideDrawer presentation="fixed" open={act} onOpenChange={setAct} title="Activity" width={318}>
   <ActivityView c={contact}/>
 </SideDrawer>
 
-// desktop/tablet: overlay sheet
-<SideDrawer
-  mode="overlay" open={act} onClose={close} title="Activity" width={340}
->
-  <ActivityView c={contact}/>
-</SideDrawer>
-
-// phone: the same overlay, now a pushed page with a back button
-<SideDrawer mode="overlay" open={act} onClose={close} title="Activity" backLabel="Maya">
+// desktop/tablet: an overlay sheet; on a phone the same drawer is a pushed page with a back button
+<SideDrawer open={act} onOpenChange={setAct} title="Activity" width={340} backLabel="Maya">
   <ActivityView c={contact}/>
 </SideDrawer>
 ```
 
-The content component doesn't know which presentation it's in — the Contacts demo picks per width class. Inside a `NavigationStack` you can still push the content as a real screen instead. The Workbench's [WorkbenchPanel](https://blamy.github.io/ui/#/workbench-shell) follows the same philosophy on desktop scales.
+`onOpenChange(open, details)` hears every close with its reason: `close-press` (the close or back button), `escape-key`, `outside-press` (the scrim), `swipe` (the overlay toward its edge, or the push from the leading edge) and `back` (the platform back gesture while pushed). `details.cancel()` keeps it open. `defaultOpen` makes it uncontrolled, and `createSideDrawerController()` drives it from anywhere. The children stay mounted when the presentation changes, so a draft comment survives a resize from overlay to push.
+
+The content component doesn't know which presentation it's in: the demos below pick one per host size, or leave it to `auto`. Inside a `NavigationStack` you can still push the content as a real page (a `NavigationStackPage`) instead. The Workbench's [WorkbenchPanel](https://blamy.github.io/ui/#/workbench-shell) follows the same philosophy on desktop scales.
 
 ## Live example
 
@@ -60,32 +56,29 @@ The content component doesn't know which presentation it's in — the Contacts d
 
 ### Docked inspector
 
-`mode="fixed"` is a column in the layout that animates its width. The toolbar button toggles it and the inspector follows the selected file.
+`presentation="fixed"` is a column in the layout that animates its width. The toolbar button toggles it and the inspector follows the selected file.
 
 {% demo src="side-drawer/file-inspector" %}
 
 ### Comments over the page
 
-`mode="overlay"` slides over the content with a scrim; tapping the scrim or the close button calls `onClose`.
+`presentation="overlay"` slides over the content with a scrim (UI SDK's Drawer, contained in the host): the scrim, the close button, Escape and a swipe toward its edge call `onOpenChange(false, details)`, and focus stays in the drawer while it is open.
 
 {% demo src="side-drawer/comments" %}
 
 ### Pushed on a phone
 
-In a compact host an overlay drawer is not a floating card with a scrim gap: it is a page pushed on the navigation stack. By default that happens when the host is narrower than `compactBreakpoint` (520px); pass `compact` to decide yourself.
+In a compact host an overlay drawer is not a floating card with a scrim gap: it is a page pushed on the navigation stack. With `presentation="auto"` (the default) that happens when the host is narrower than `breakpoint` (520px), measured with the kit's size classes (`bindSizeClass`) on the drawer's own layer over the host, which is then the size-class scope of the drawer's content; pass `presentation="push"` to decide yourself.
 
 - It takes the host's full width, with a NavigationStack bar: a back button on the leading edge (`backLabel`, default "Back") and the title centred.
-- It slides in from the trailing edge on NavigationStack's own push: the same smooth spring, and the page underneath parallaxes to −28% of the host's width under a 12% dim (`navigationPush`, exported from the NavigationStack module, holds the shared numbers).
-- The back button, `Escape`, or a swipe from the left edge pops it. The swipe scrubs the panel, the parallax and the dim together, and commits past a third of the width or on a flick, settling on the tray spring, as NavigationStack's edge swipe does.
-- The page is everything **before** the drawer in its host, so put the drawer after the page and let the host clip (`overflow: hidden`). Reduced motion turns the slide off.
+- It slides in from the trailing edge on the smooth spring (`data-starting-style` / `data-ending-style`), and the page underneath parallaxes to −28% of its width under a 12% dim, as a NavigationStack screen does.
+- It is a two-page stack from the kit's `createStack` (`@/lib/stack`): the back button, `Escape`, the platform back, or a swipe from the leading edge (`bindEdgeSwipe`; the right edge in right-to-left text, where the panel enters from the left) pops it, and focus moves into the page on a push and back to what opened it on a pop. The swipe scrubs the panel (`data-swiping`, `--stack-progress`), the parallax and the dim together, and commits past a third of the width or on a flick; released, all three settle on the tray spring (`data-swipe-settling`).
+- The page under it opts in: put `sideDrawerPageClass` on it (a child of the same host, before the drawer) and let the host clip (`overflow: hidden`). The drawer never writes styles on your elements: it sets `--side-drawer-under` on the host (1 while pushed, 0 to 1 while a swipe scrubs), with `data-side-drawer-swiping` while the finger moves and `data-side-drawer-settling` until the release has settled, and the class translates the page from them. Style it yourself from the same variable if you need another motion. Reduced motion turns the slide off.
 
 ```tsx
 <div style={{ position: 'relative', overflow: 'hidden' }}>
-  <Article />
-  <SideDrawer
-    mode="overlay" open={open} onClose={close}
-    title="Comments" backLabel="Article"
-  >
+  <Article className={sideDrawerPageClass} />
+  <SideDrawer open={open} onOpenChange={setOpen} title="Comments" backLabel="Article">
     <Comments />
   </SideDrawer>
 </div>
@@ -97,7 +90,7 @@ Where this applies: `ChatShellPanel` (a thread panel) pushes on a phone. Leading
 
 ### One content, three presentations
 
-The host measures itself with `useContainerWidth` and picks docked, overlay, or a pushed `NavigationStack` screen. `Activity` never knows which one it is in. Switch widths in the header.
+The host measures itself with `useContainerWidth` and docks the drawer when it is wide; below that the drawer's `auto` presentation picks the overlay or the push from the host's size class. `Activity` never knows which one it is in, and stays mounted through every switch. Switch widths in the header.
 
 {% demo src="side-drawer/adaptive-activity" %}
 
@@ -113,9 +106,10 @@ Defined in `@/components/ui/side-drawer`. Base classes:
 (none)
 ```
 
-**`mode`**
+**`presentation`**
 
 | Value | Adds |
 | --- | --- |
 | `fixed` | `w-(--side-drawer-w) shrink-0 overflow-hidden bg-background transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none` |
-| `overlay` | `absolute inset-0 z-350 pointer-events-none` |
+| `overlay` | `pointer-events-none absolute inset-0 z-350` |
+| `push` | `pointer-events-none absolute inset-0 z-350` |

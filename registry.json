@@ -221,18 +221,6 @@
             "transform": "scale(.96)"
           }
         },
-        "@keyframes bl-alert-in": {
-          "from": {
-            "opacity": "0",
-            "transform": "scale(1.14)"
-          }
-        },
-        "@keyframes bl-alert-out": {
-          "to": {
-            "opacity": "0",
-            "transform": "scale(.98)"
-          }
-        },
         "@keyframes bl-sheet-in-bottom": {
           "from": {
             "transform": "translateY(100%)"
@@ -1992,11 +1980,11 @@
             "outline": "none",
             "transition": "background-color .15s,color .15s,opacity .15s"
           },
-          ".bl-syntax-copy[data-hovered]": {
+          ".bl-syntax-copy:hover": {
             "background": "var(--secondary)",
             "color": "var(--foreground)"
           },
-          ".bl-syntax-copy[data-focus-visible]": {
+          ".bl-syntax-copy:focus-visible": {
             "box-shadow": "0 0 0 2px var(--primary)"
           },
           ".bl-syntax-copy[data-copied]": {
@@ -2011,7 +1999,7 @@
             "box-shadow": "inset 0 0 0 1px var(--border)",
             "opacity": "0"
           },
-          ".bl-syntax:hover>.bl-syntax-copy-float,.bl-syntax-copy-float[data-focus-visible],.bl-syntax-copy-float[data-copied]": {
+          ".bl-syntax:hover>.bl-syntax-copy-float,.bl-syntax-copy-float:focus-visible,.bl-syntax-copy-float[data-copied]": {
             "opacity": "1"
           },
           "@media (hover:none)": {
@@ -2382,19 +2370,6 @@
             "transform": "rotate(360deg)"
           }
         },
-        "@keyframes wb-pop-in": {
-          "from": {
-            "opacity": "0",
-            "transform": "scale(.88)",
-            "filter": "blur(2px)"
-          }
-        },
-        "@keyframes wb-pop-out": {
-          "to": {
-            "opacity": "0",
-            "transform": "scale(.96)"
-          }
-        },
         ".wb-scroll": {
           "scrollbar-width": "thin",
           "scrollbar-color": "rgba(140,140,155,.3) transparent"
@@ -2716,15 +2691,6 @@
         ".wb-composer-doc.gb .gb-attachment:hover": {
           "border-color": "var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))"
         },
-        "body:has(:is([data-theme-scope=\"workbench\"].dark,[data-theme-scope=\"glass\"].dark) [data-slot=\"composer-input\"]:not([data-theme-scope=\"workbench\"].light *) .gb-attachment:is(:hover,:focus-visible)) .gb-attachment-card": {
-          "--border": "rgba(255,255,255,.12)",
-          "--card": "#1C1C23",
-          "--card-foreground": "#EDEDF2",
-          "--foreground": "#EDEDF2",
-          "--muted": "#101014",
-          "--muted-foreground": "#9C9CA6",
-          "box-shadow": "0 14px 40px rgba(0,0,0,.5)"
-        },
         ".wb-composer-doc-compact.gb": {
           "max-height": "44px",
           "padding-right": "4px"
@@ -2865,9 +2831,6 @@
           ".bl-mde .bl-mde-doc .ProseMirror p:is(.is-empty,.is-editor-empty):first-child::before": {
             "color": "var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))"
           },
-          ".bl-mde .bl-mde-doc .ProseMirror ul[data-type=\"taskList\"] input": {
-            "accent-color": "var(--primary)"
-          },
           ".bl-mde .bl-mde-doc .gb-toolbar": {
             "position": "static",
             "flex": "none",
@@ -2891,7 +2854,7 @@
             "background": "var(--accent)",
             "color": "var(--foreground)"
           },
-          ".bl-mde .bl-mde-doc .gb-tool-active": {
+          ".bl-mde .bl-mde-doc .gb-tool:is([data-pressed],[data-active],[data-open])": {
             "background": "var(--secondary-strong, var(--accent))",
             "color": "var(--foreground)"
           },
@@ -2910,15 +2873,15 @@
             "padding-right": "0",
             "margin-bottom": "8px"
           },
-          "[data-markdown-editor-portal] .slash-menu": {
+          ".bl-mde .slash-menu": {
             "border-radius": "12px",
-            "box-shadow": "0 12px 32px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.06)"
+            "box-shadow": "0 12px 32px light-dark(rgba(0,0,0,.16),transparent),0 2px 6px light-dark(rgba(0,0,0,.06),transparent),0 14px 40px light-dark(transparent,rgba(0,0,0,.5))"
           },
-          "[data-markdown-editor-portal] .slash-item": {
+          ".bl-mde .slash-item": {
             "border-radius": "8px"
           },
-          "[data-markdown-editor-portal][data-scheme=\"dark\"] .slash-menu,.gb-attachment-card[data-markdown-editor-portal][data-scheme=\"dark\"]": {
-            "box-shadow": "0 14px 40px rgba(0,0,0,.5)"
+          ":is(.bl-mde,.wb-composer-doc) .gb-attachment-card": {
+            "box-shadow": "0 12px 32px light-dark(rgba(0,0,0,.18),transparent),0 2px 6px light-dark(rgba(0,0,0,.08),transparent),0 14px 40px light-dark(transparent,rgba(0,0,0,.5))"
           }
         },
         ".gb .ProseMirror": {
@@ -3211,6 +3174,7 @@
           "--card-foreground": "#EDEDF2",
           "--secondary": "rgba(255, 255, 255, .06)",
           "--secondary-foreground": "#EDEDF2",
+          "--muted": "#101014",
           "--muted-foreground": "#9C9CA6",
           "--accent": "rgba(255, 255, 255, .06)",
           "--accent-foreground": "#EDEDF2",
@@ -3307,13 +3271,14 @@
       "name": "adaptive-pane",
       "type": "registry:ui",
       "title": "AdaptivePane",
-      "description": "One pane presented as a column, sheet or pushed page depending on the room it has.",
-      "dependencies": [],
+      "description": "One pane presented as a column, a drawer, a cover or hidden, chosen by its host, resizable, with its children kept mounted.",
+      "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/drawer-swipe.json",
+        "https://blamy.github.io/ui/r/adaptive-pane-primitive.json",
         "https://blamy.github.io/ui/r/edge-drawer.json",
-        "https://blamy.github.io/ui/r/navigation-stack.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -3326,7 +3291,8 @@
       "meta": {
         "page": "adaptive-pane",
         "exports": [
-          "AdaptivePane"
+          "AdaptivePane",
+          "createAdaptivePaneController"
         ]
       }
     },
@@ -3341,6 +3307,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/presence.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -3376,6 +3343,9 @@
         "https://blamy.github.io/ui/r/floating-sheet.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/persistent-host.json",
+        "https://blamy.github.io/ui/r/presence.json",
+        "https://blamy.github.io/ui/r/reduced-motion.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -3398,10 +3368,10 @@
       "name": "avatar",
       "type": "registry:ui",
       "title": "Avatar",
-      "description": "An avatar of initials on a name-derived gradient, an image, or a glyph, with a presence dot, plus an overlapping AvatarGroup whose menu lists everyone.",
+      "description": "An avatar on UI SDK's Avatar: initials on a name-derived gradient, an image, or a glyph, with a presence dot and an optional hover card, plus an overlapping AvatarGroup whose menu lists everyone.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3420,7 +3390,12 @@
         "page": "avatar",
         "exports": [
           "Avatar",
-          "AvatarGroup"
+          "AvatarImage",
+          "AvatarFallback",
+          "AvatarGroup",
+          "avatarVariants",
+          "avatarStatusVariants",
+          "avatarGroupVariants"
         ]
       }
     },
@@ -3457,11 +3432,12 @@
       "title": "Breadcrumb",
       "description": "The path to the current page: every item pressable, siblings in a menu like VS Code's, and the middle collapsing into a … menu when the trail does not fit.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/breadcrumb-primitive.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -3490,10 +3466,10 @@
       "name": "button",
       "type": "registry:ui",
       "title": "Button",
-      "description": "The labelled action button: a react-aria Button with default, secondary, ghost, destructive and link variants, five sizes including the full-width iOS pill, a press that sinks on a spring, and a text label that morphs into the next one.",
+      "description": "The labelled action button: UI SDK's Button with default, secondary, ghost, destructive, link and quiet variants, six sizes including the full-width iOS pill, a pending state while its onClick Promise runs, a press that sinks on a spring, and a text label that morphs into the next one.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3519,11 +3495,10 @@
       "name": "calendar",
       "type": "registry:ui",
       "title": "Calendar",
-      "description": "A month calendar and a range calendar: react-aria's Calendar and RangeCalendar with keyboard navigation, locale week starts, min/max and unavailable dates, drawn as iOS round day cells with a soft band joining a range.",
+      "description": "A month calendar that picks one date, several, or a range: UI SDK's Calendar with keyboard navigation, locale week starts, min/max and unavailable dates, drawn as iOS round day cells with a soft band joining a range. Dates are ISO strings.",
       "dependencies": [
-        "@internationalized/date@^3.12.4",
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3542,11 +3517,19 @@
         "page": "calendar",
         "exports": [
           "Calendar",
-          "RangeCalendar",
           "CalendarHeader",
+          "CalendarHeading",
+          "CalendarPrevious",
+          "CalendarNext",
+          "CalendarMonthSelect",
+          "CalendarYearSelect",
           "CalendarGrid",
-          "CalendarCell",
-          "calendarVariants"
+          "CalendarWeekdays",
+          "CalendarWeekday",
+          "CalendarWeeks",
+          "CalendarDay",
+          "calendarVariants",
+          "createCalendarController"
         ]
       }
     },
@@ -3571,18 +3554,19 @@
       "name": "call-stack",
       "type": "registry:ui",
       "title": "CallStack",
-      "description": "Frames as a debugger lists them: the top frame marked, runs of framework and library frames folded, async boundaries as labelled separators, short locations with the full path a press away. Virtualized, on react-aria's GridList.",
+      "description": "Frames as a debugger lists them: the top frame marked, runs of framework and library frames folded, async boundaries as labelled separators, short locations with the full path a press away. Virtualized, on UI SDK's Tree.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/call-stack-model.json",
         "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/use-virtual-rows.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -3607,11 +3591,15 @@
       "name": "canvas",
       "type": "registry:ui",
       "title": "Canvas",
-      "description": "An infinite, pannable, zoomable surface: scroll to pan, pinch or ⌘-scroll to zoom, Space to drag the view, a dotted or ruled background that follows the camera, and pointer events handed to you in board coordinates. With selection outlines, resize and rotate handles, a marquee, alignment guides and a minimap that keep their thickness at any zoom, and the frame math (hit tests, resize, rotate, snap) as plain functions.",
-      "dependencies": [],
+      "description": "An infinite, pannable, zoomable surface on UI SDK's viewport: scroll to pan, pinch or ⌘-scroll to zoom, Space to drag the view, zoom and arrow keys with announcements, focus and find in page brought into view, a controller to fit and zoom from outside, a dotted or ruled background that follows the view, and pointer events handed to you in board coordinates. With selection outlines, resize and rotate handles, a marquee, alignment guides and a minimap that keep their thickness at any zoom, and the frame math (hit tests, resize, rotate, snap) as plain functions.",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/canvas-primitive.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -3631,7 +3619,8 @@
           "CanvasMarquee",
           "CanvasGuides",
           "CanvasMiniMap",
-          "useCanvas"
+          "useCanvas",
+          "createCanvasController"
         ]
       }
     },
@@ -3723,10 +3712,10 @@
       "name": "checkbox",
       "type": "registry:ui",
       "title": "Checkbox",
-      "description": "react-aria Checkbox and CheckboxGroup with a round iOS selection mark (or a square one), a drawn-on tick and an indeterminate state.",
+      "description": "UI SDK's Checkbox and CheckboxGroup with a round iOS selection mark (or a square one), a drawn-on tick and an indeterminate state.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3743,8 +3732,11 @@
         "page": "checkbox",
         "exports": [
           "Checkbox",
+          "CheckboxIndicator",
           "CheckboxGroup",
-          "checkboxVariants"
+          "checkboxVariants",
+          "createCheckboxController",
+          "createCheckboxGroupController"
         ]
       }
     },
@@ -3796,13 +3788,17 @@
       "title": "CodeEditor",
       "description": "Code you can edit, and read-only code of any shape, with one API and two renderers: in the page for a snippet or inline code, and windowed for an editor or a source view, smooth on a megabyte line and on half a million lines, with gutters, a current line, markers, undo and input methods.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/change-details.json",
         "https://blamy.github.io/ui/r/code-editor-gpu.json",
         "https://blamy.github.io/ui/r/code-editor-model.json",
+        "https://blamy.github.io/ui/r/code-editor-primitive.json",
+        "https://blamy.github.io/ui/r/reduced-motion.json",
         "https://blamy.github.io/ui/r/syntax.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -3840,10 +3836,10 @@
       "name": "color-field",
       "type": "registry:ui",
       "title": "ColorField",
-      "description": "A text field that reads a hex color, or one channel of it, with an optional swatch; and ColorSwatch, a color chip over a checkerboard so transparency shows. React-aria's ColorField.",
+      "description": "A text field for a color on UI SDK's ColorPicker: it reads any CSS color on Enter or blur, or edits one channel as a number, beside a swatch of the color; and ColorSwatch, a color chip on its own.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3863,9 +3859,10 @@
           "ColorField",
           "ColorFieldGroup",
           "ColorFieldInput",
+          "ColorFieldChannelInput",
           "ColorFieldSwatch",
           "ColorSwatch",
-          "colorFieldGroupVariants"
+          "colorFieldVariants"
         ]
       }
     },
@@ -3873,14 +3870,16 @@
       "name": "color-picker",
       "type": "registry:ui",
       "title": "ColorPicker",
-      "description": "Color editing parts on react-aria: a ColorArea, ColorSliders, preset swatches, and a popover that composes them with a hex field behind a trigger that shows the current color.",
+      "description": "UI SDK's ColorPicker drawn as iOS: an area, channel sliders, preset swatches and an eye dropper that edit one CSS color, and a popover that composes them with a color field behind a trigger that shows the current color.",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/color-field.json",
+        "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -3898,27 +3897,34 @@
           "ColorPicker",
           "ColorPickerTrigger",
           "ColorPickerContent",
-          "ColorArea",
-          "ColorSlider",
-          "ColorThumb",
-          "ColorSwatchPicker",
-          "ColorSwatchPickerItem"
+          "ColorPickerArea",
+          "ColorPickerAreaThumb",
+          "ColorPickerAreaCanvas",
+          "ColorPickerSlider",
+          "ColorPickerSliderThumb",
+          "ColorPickerSwatches",
+          "ColorPickerSwatchItem",
+          "ColorPickerEyeDropper",
+          "createColorPickerController"
         ]
       }
     },
     {
       "name": "combobox",
       "type": "registry:ui",
-      "title": "ComboBox",
-      "description": "A filterable text field with a suggestion list: type to narrow the options, arrow keys to move, Enter to commit, with optional custom values.",
+      "title": "Combobox",
+      "description": "A filterable text field with a suggestion list: UI SDK's Combobox. Type to narrow the options (by label and keywords), arrow keys to move, Enter to choose, with options from data, an empty message and optional custom values.",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/list-box.json",
-        "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -3931,11 +3937,20 @@
       "meta": {
         "page": "combobox",
         "exports": [
-          "ComboBox",
-          "ComboBoxInput",
-          "ComboBoxContent",
-          "ComboBoxItem",
-          "ComboBoxSection"
+          "Combobox",
+          "ComboboxLabel",
+          "ComboboxInput",
+          "ComboboxContent",
+          "ComboboxList",
+          "ComboboxEmpty",
+          "ComboboxItem",
+          "ComboboxGroup",
+          "ComboboxGroupLabel",
+          "ComboboxSeparator",
+          "ComboboxChip",
+          "ComboboxChipRemove",
+          "ComboboxStatus",
+          "createComboboxController"
         ]
       }
     },
@@ -3943,19 +3958,19 @@
       "name": "command-menu",
       "type": "registry:ui",
       "title": "CommandMenu",
-      "description": "A cmdk-style command palette on react-aria: nested pages, fuzzy ranking with highlight, grid groups, ⌘1–9 and a keyboard legend.",
+      "description": "A command palette on UI SDK's Command: fuzzy search with matches in bold, nested pages with Back, shortcuts, grid groups, ⌘1–9, a keyboard legend, inline or in a ⌘K dialog.",
       "dependencies": [
-        "framer-motion@^13.1.0",
-        "react-aria@^3.51.0",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/kbd.json",
-        "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -3971,20 +3986,27 @@
         "page": "command-menu",
         "exports": [
           "CommandMenu",
-          "CommandInput",
-          "CommandList",
-          "CommandPage",
-          "CommandGroup",
-          "CommandItem",
-          "CommandEmpty",
-          "CommandSeparator",
-          "CommandFooter",
-          "CommandHighlight",
+          "CommandMenuInput",
+          "CommandMenuList",
+          "CommandMenuPage",
+          "CommandMenuGroup",
+          "CommandMenuGroupLabel",
+          "CommandMenuItem",
+          "CommandMenuItemIcon",
+          "CommandMenuItemText",
+          "CommandMenuItemDescription",
+          "CommandMenuShortcut",
+          "CommandMenuItems",
+          "CommandMenuEmpty",
+          "CommandMenuStatus",
+          "CommandMenuSeparator",
+          "CommandMenuFooter",
+          "CommandMenuDialog",
+          "CommandMenuDialogTrigger",
+          "CommandMenuDialogContent",
+          "createCommandMenuController",
           "useCommandMenu",
-          "useCommandActive",
-          "useHotkey",
-          "matchesHotkey",
-          "commandMatch"
+          "useCommandMenuValue"
         ]
       }
     },
@@ -3994,23 +4016,26 @@
       "title": "Composer",
       "description": "The Workbench prompt box as parts: card, Docstream editor, footer pills, draggable bumps, compact and FAB collapse.",
       "dependencies": [
-        "@brett_lamy/docstream-editor@1.34.4",
-        "@tiptap/core@3.30.5",
-        "@tiptap/pm@3.30.5",
+        "@brett_lamy/docstream-editor@2.0.0",
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1",
-        "framer-motion@^13.1.0",
-        "react-aria@^3.51.0",
-        "react-aria-components@^1.20.0"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/change-details.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/markdown-editor.json",
         "https://blamy.github.io/ui/r/morph-path.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/pencilkit.json",
         "https://blamy.github.io/ui/r/plain-button.json",
-        "https://blamy.github.io/ui/r/sheet-drag.json",
+        "https://blamy.github.io/ui/r/presence.json",
+        "https://blamy.github.io/ui/r/separator.json",
         "https://blamy.github.io/ui/r/text-morph.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/toast.json",
@@ -4086,13 +4111,13 @@
       "name": "context-menu",
       "type": "registry:ui",
       "title": "ContextMenu",
-      "description": "The DropdownMenu opened where you right-click, long-press or press the menu key: anchored at the pointer, keyboard-reachable, focus handed back.",
-      "dependencies": [],
+      "description": "The DropdownMenu opened where you right-click, long-press or press the menu key: UI SDK's context trigger, anchored at the pointer, keyboard-reachable, focus handed back to what had it.",
+      "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/dropdown-menu.json",
-        "https://blamy.github.io/ui/r/plain-button.json",
-        "https://blamy.github.io/ui/r/utils.json"
+        "https://blamy.github.io/ui/r/dropdown-menu.json"
       ],
       "files": [
         {
@@ -4105,13 +4130,19 @@
         "page": "context-menu",
         "exports": [
           "ContextMenu",
+          "ContextMenuTrigger",
           "ContextMenuContent",
           "ContextMenuItem",
-          "ContextMenuSection",
-          "ContextMenuLabel",
+          "ContextMenuCheckboxItem",
+          "ContextMenuRadioGroup",
+          "ContextMenuRadioItem",
+          "ContextMenuGroup",
+          "ContextMenuGroupLabel",
           "ContextMenuSeparator",
           "ContextMenuShortcut",
-          "ContextMenuSub"
+          "ContextMenuSub",
+          "ContextMenuSubTrigger",
+          "ContextMenuSubContent"
         ]
       }
     },
@@ -4121,6 +4152,7 @@
       "title": "Conversation",
       "description": "The parts of an agent thread: an empty state whose composer flies down to its dock when the first message arrives, then a MessageScroller of user and assistant turns with streaming markdown, a work log and tool calls.",
       "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
@@ -4130,6 +4162,8 @@
         "https://blamy.github.io/ui/r/message-scroller.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/presence.json",
+        "https://blamy.github.io/ui/r/reduced-motion.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -4163,16 +4197,20 @@
       "name": "credenza",
       "type": "registry:ui",
       "title": "Credenza",
-      "description": "A dialog on wide screens and a draggable tray on phones, from one composition.",
+      "description": "A dialog on wide screens and a draggable tray in a compact container, on UI SDK's Dialog: views morph the card's height and travel in the direction of the flow.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/presence.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -4185,7 +4223,17 @@
       "meta": {
         "page": "credenza",
         "exports": [
-          "Credenza"
+          "Credenza",
+          "CredenzaTrigger",
+          "CredenzaBackdrop",
+          "CredenzaContent",
+          "CredenzaHeader",
+          "CredenzaBack",
+          "CredenzaTitle",
+          "CredenzaClose",
+          "CredenzaView",
+          "createCredenzaController",
+          "credenzaVariants"
         ]
       }
     },
@@ -4195,17 +4243,18 @@
       "title": "CronEditor",
       "description": "Edit a 5-field cron expression with its meaning in view: per-field labels and validation, an English description, presets and the next runs in any time zone, all local. Where WebGPU is available, a plain-English box (gpu-cron) proposes an expression to review.",
       "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/cron.json",
+        "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/gpu-cron.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
-        "https://blamy.github.io/ui/r/label.json",
-        "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/toggle.json",
+        "https://blamy.github.io/ui/r/toggle-group.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -4255,10 +4304,10 @@
       "name": "date-field",
       "type": "registry:ui",
       "title": "DateField",
-      "description": "Segmented date and time fields: react-aria's DateField and TimeField, each part of the value its own spin-button, in the filled iOS field with a Label, description and error wired in.",
+      "description": "Segmented date and time fields: UI SDK's Date Input and Time Input, each part of the value its own spin-button input, in the filled iOS field. Values are ISO strings; a Field wires the label, description and error.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4276,10 +4325,12 @@
         "page": "date-field",
         "exports": [
           "DateField",
+          "DateFieldSegment",
           "TimeField",
-          "DateInput",
-          "DateSegment",
-          "dateInputVariants"
+          "TimeFieldSegment",
+          "dateFieldVariants",
+          "createDateFieldController",
+          "createTimeFieldController"
         ]
       }
     },
@@ -4287,18 +4338,20 @@
       "name": "date-picker",
       "type": "registry:ui",
       "title": "DatePicker",
-      "description": "A date field with a calendar button that opens a Calendar in a popover, and the same for a range: react-aria's DatePicker and DateRangePicker, composed from a field and a content part.",
+      "description": "A date input with a calendar button that opens a Calendar in a popup, for one date or a range: UI SDK's Date Picker, composed from a field, its input and trigger, and a content part that takes every Calendar part.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/calendar.json",
-        "https://blamy.github.io/ui/r/date-field.json",
+        "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -4313,11 +4366,14 @@
         "exports": [
           "DatePicker",
           "DatePickerField",
+          "DatePickerInput",
+          "DatePickerTrigger",
+          "DatePickerClear",
+          "DatePickerHint",
+          "DatePickerPreset",
           "DatePickerContent",
-          "DateRangePicker",
-          "DateRangePickerField",
-          "DateRangePickerContent",
-          "datePickerFieldVariants"
+          "datePickerFieldVariants",
+          "createDatePickerController"
         ]
       }
     },
@@ -4325,13 +4381,14 @@
       "name": "dialog",
       "type": "registry:ui",
       "title": "Dialog",
-      "description": "A modal dialog on react-aria: the centered iOS alert card or a general dialog with header, scrolling body and footer actions.",
+      "description": "Modal dialogs on UI SDK: Dialog, a card with a header, a scrolling body and footer actions that can present as a bottom sheet, and AlertDialog, the centered iOS alert that waits for an answer.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/theme.json",
@@ -4347,19 +4404,30 @@
       "meta": {
         "page": "dialog",
         "exports": [
+          "Dialog",
           "DialogTrigger",
+          "DialogBackdrop",
           "DialogContent",
           "DialogHeader",
           "DialogTitle",
           "DialogDescription",
           "DialogBody",
           "DialogFooter",
-          "DialogAction",
           "DialogClose",
-          "Dialog",
           "dialogVariants",
-          "dialogActionVariants",
-          "dialogOverlayClass"
+          "createDialogController",
+          "AlertDialog",
+          "AlertDialogTrigger",
+          "AlertDialogBackdrop",
+          "AlertDialogContent",
+          "AlertDialogHeader",
+          "AlertDialogTitle",
+          "AlertDialogDescription",
+          "AlertDialogFooter",
+          "AlertDialogClose",
+          "alertDialogCloseVariants",
+          "createAlertDialogController",
+          "createConfirm"
         ]
       }
     },
@@ -4367,10 +4435,10 @@
       "name": "disclosure",
       "type": "registry:ui",
       "title": "Disclosure",
-      "description": "Expandable sections on react-aria: a Disclosure with a trigger and an animated panel, grouped into an accordion (also exported under shadcn's Accordion names).",
+      "description": "Expandable sections on UI SDK: a Disclosure (Collapsible) with a trigger and an animated panel, and a DisclosureGroup (Accordion) of them.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4388,14 +4456,16 @@
         "page": "disclosure",
         "exports": [
           "Disclosure",
-          "DisclosureGroup",
           "DisclosureTrigger",
           "DisclosurePanel",
+          "DisclosureGroup",
+          "DisclosureGroupItem",
+          "DisclosureGroupHeader",
+          "DisclosureGroupTrigger",
+          "DisclosureGroupPanel",
           "disclosureGroupVariants",
-          "Accordion",
-          "AccordionItem",
-          "AccordionTrigger",
-          "AccordionContent"
+          "createCollapsibleController",
+          "createAccordionController"
         ]
       }
     },
@@ -4403,15 +4473,17 @@
       "name": "dropdown-menu",
       "type": "registry:ui",
       "title": "DropdownMenu",
-      "description": "An iOS pull-down menu: rows with trailing icons, descriptions and shortcuts, section bands, selectable items and submenus.",
+      "description": "UI SDK's Menu drawn as an iOS pull-down menu: rows with trailing icons, descriptions and platform shortcuts, group bands, checkbox and radio items, submenus, menus from data, and a sheet on small touch screens.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -4425,14 +4497,22 @@
         "page": "dropdown-menu",
         "exports": [
           "DropdownMenu",
+          "DropdownMenuTrigger",
           "DropdownMenuContent",
           "DropdownMenuItem",
-          "DropdownMenuSection",
-          "DropdownMenuLabel",
+          "DropdownMenuCheckboxItem",
+          "DropdownMenuRadioGroup",
+          "DropdownMenuRadioItem",
+          "DropdownMenuGroup",
+          "DropdownMenuGroupLabel",
           "DropdownMenuSeparator",
           "DropdownMenuShortcut",
           "DropdownMenuSub",
-          "dropdownMenuItemVariants"
+          "DropdownMenuSubTrigger",
+          "DropdownMenuSubContent",
+          "DropdownMenuItems",
+          "dropdownMenuItemVariants",
+          "createMenuController"
         ]
       }
     },
@@ -4442,7 +4522,7 @@
       "title": "EditBar",
       "description": "The bottom action bar of an iOS list in edit mode: Favorite, a selection count and Delete.",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4520,19 +4600,54 @@
       }
     },
     {
+      "name": "field",
+      "type": "registry:ui",
+      "title": "Field",
+      "description": "UI SDK's Field restyled: the wrapper that links a FieldLabel, a control (Input, Textarea, Select, Checkbox, Switch, RadioGroup), a FieldDescription and a FieldError, names the control and shows validation; plus FieldSet, FieldLegend and FieldGroup for iOS-style grouped sections.",
+      "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/field.tsx"
+        }
+      ],
+      "meta": {
+        "page": "field",
+        "exports": [
+          "Field",
+          "FieldLabel",
+          "FieldDescription",
+          "FieldError",
+          "FieldSet",
+          "FieldLegend",
+          "FieldGroup",
+          "FieldControl",
+          "useFieldControl"
+        ]
+      }
+    },
+    {
       "name": "file-upload",
       "type": "registry:ui",
       "title": "FileUpload",
-      "description": "Pick, drop or paste files on react-aria's FileTrigger and DropZone: a styled drop zone, a file list with previews, progress, retry and remove, validation with per-file reasons, folder drops, and a concurrency-limited upload queue with an XHR adapter that reports real progress.",
+      "description": "Pick, drop or paste files on UI SDK's FileInput: a styled drop zone and Browse button, a file list with previews, progress, retry and remove (one Tab stop, Delete removes), rejected files listed with their reasons, folder drops, and a concurrency-limited upload queue with an XHR adapter that reports real progress.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria@^3.51.0",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
-        "https://blamy.github.io/ui/r/format-bytes.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/progress.json",
         "https://blamy.github.io/ui/r/use-file-upload.json",
@@ -4588,8 +4703,9 @@
       "title": "FilterInput",
       "description": "A natural-language box for Filter: type a sentence and see the chips it would create — what was understood, what was dropped, what was assumed — then press Enter to apply. Runs gpu-query, a 29,597-parameter tagger, in the browser on the CPU; a feasibility-spike model, so the preview is the point.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4599,6 +4715,7 @@
         "https://blamy.github.io/ui/r/filter-query.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/search-field-primitive.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -4656,19 +4773,23 @@
       "name": "filter",
       "type": "registry:ui",
       "title": "Filter",
-      "description": "Linear-style filtering on react-aria: a Filter button (and F shortcut) opens a searchable list of fields, then a searchable multi-select of values; each filter is a chip with its own operator and value buttons, removable with ×, Backspace or Delete. One tab stop with arrow keys across the chips, polite announcements, match all/any and Clear all.",
+      "description": "Linear-style filtering on UI SDK: a Filter button (and F shortcut) opens a searchable Command of fields, then a searchable multi-select of values (an option search: the field keeps focus, the arrows move, Enter ticks); each filter is a chip with its own operator menu and value popover, removable with ×, Backspace or Delete. One Toolbar tab stop with arrow keys across the chips, announcements through UI SDK's announce(), change details with reason, source, event and cancel(), match all/any and Clear all.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria@^3.51.0",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/change-details.json",
         "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/filter-model.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/list-box.json",
+        "https://blamy.github.io/ui/r/option-search-primitive.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/segmented.json",
@@ -4707,8 +4828,9 @@
       "title": "FloatingChat",
       "description": "A Composer that floats over any positioned host, with the transcript on a draggable top bump that grows over a scrim and folds into a FAB.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4719,7 +4841,6 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/persistent-host.json",
-        "https://blamy.github.io/ui/r/scroll-hidden.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -4742,18 +4863,17 @@
       "name": "floating-sheet",
       "type": "registry:ui",
       "title": "FloatingSheet",
-      "description": "A floating card that grows into the full page along one drag, over a map or canvas.",
+      "description": "A floating card that grows into the full page along one drag, over a map or canvas: UI SDK's Drawer with snap points, modal only above its peek, folding into a FAB.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/container.json",
-        "https://blamy.github.io/ui/r/controllable-state.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/scroll-hidden.json",
-        "https://blamy.github.io/ui/r/sheet-drag.json",
+        "https://blamy.github.io/ui/r/scroll-edge.json",
+        "https://blamy.github.io/ui/r/sheet.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -4768,7 +4888,8 @@
         "page": "floating-sheet",
         "exports": [
           "FloatingSheet",
-          "useFloatingSheet"
+          "useFloatingSheet",
+          "useHideOnScroll"
         ]
       }
     },
@@ -4776,17 +4897,21 @@
       "name": "font-picker",
       "type": "registry:ui",
       "title": "FontPicker",
-      "description": "Google Fonts families picked the way a design tool picks them: a searchable, category-filtered list of the most popular families, each drawn in its own face (only its name's glyphs are fetched, only while on screen), that previews the hovered family on your text. FontPicker holds one family, FontStackPicker a font stack as reorderable chips, FontList is the list alone; useGoogleFont and fontStack load and set a family without a picker.",
+      "description": "Google Fonts families picked the way a design tool picks them: a searchable, category-filtered list of the most popular families (a UI SDK Command, virtualized), each drawn in its own face (only its name's glyphs are fetched, only while on screen), that previews the highlighted family on your text. FontPicker holds one family, FontStackPicker a font stack as chips you reorder by their handle (drag, or Space and the arrows) or remove, FontList is the list alone; useGoogleFont and fontStack load and set a family without a picker.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/change-details.json",
+        "https://blamy.github.io/ui/r/font-stack-primitive.json",
         "https://blamy.github.io/ui/r/google-fonts.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/list-box.json",
         "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/use-virtual-rows.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -4812,10 +4937,8 @@
       "name": "form",
       "type": "registry:ui",
       "title": "Form",
-      "description": "react-aria Form with native constraint validation and server-error mapping, plus FormSection for iOS-style grouped fields.",
-      "dependencies": [
-        "react-aria-components@^1.20.0"
-      ],
+      "description": "A native form as a vertical stack of fields: UI SDK controls submit under their names and validate with the browser's constraints, and each Field shows its own error.",
+      "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -4830,8 +4953,7 @@
       "meta": {
         "page": "form",
         "exports": [
-          "Form",
-          "FormSection"
+          "Form"
         ]
       }
     },
@@ -4901,9 +5023,9 @@
       "name": "hover-card",
       "type": "registry:ui",
       "title": "Hover Card",
-      "description": "A card that previews what a trigger points at (a person, link, file or commit) while the pointer rests on it or keyboard focus lands on it; the pointer can move into it, one is open at a time, and touch never opens it.",
+      "description": "A card that previews what a trigger points at (a person, link, file or commit) while the pointer rests on it or keyboard focus stays on it, on UI SDK's Hover Card; the pointer can move into it, one card can serve many triggers, and touch never opens it.",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4923,8 +5045,10 @@
         "exports": [
           "HoverCard",
           "HoverCardTrigger",
+          "HoverCardContent",
+          "HoverCardArrow",
           "HoverCardHeader",
-          "useHoverCard"
+          "createHoverCardController"
         ]
       }
     },
@@ -4940,6 +5064,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/presence.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -5008,10 +5133,12 @@
       "title": "IndexBar",
       "description": "A jump rail for long scrollers: the UIKit A-Z index, custom stops with previews, or a Dock-style wave of dashes with an outline panel.",
       "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/index-bar-primitive.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -5034,10 +5161,10 @@
       "name": "input",
       "type": "registry:ui",
       "title": "Input",
-      "description": "iOS filled text input on react-aria's Input: three sizes, a primary focus ring, and red invalid and dimmed disabled states; inside a TextField it is wired to its label, description and error.",
+      "description": "iOS filled text input on UI SDK's Input: three sizes, a primary focus ring, red invalid and dimmed disabled states, onValueChange with a reason and cancel, and a controller; inside a Field it is wired to its label, description and error.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -5055,7 +5182,8 @@
         "page": "input",
         "exports": [
           "Input",
-          "inputVariants"
+          "inputVariants",
+          "createInputController"
         ]
       }
     },
@@ -5063,9 +5191,9 @@
       "name": "kbd",
       "type": "registry:ui",
       "title": "Kbd",
-      "description": "A keycap for keyboard shortcuts, with a group wrapper for chords; inside a menu item it becomes the item's shortcut.",
+      "description": "A keycap for keyboard shortcuts, with a group wrapper for chords; `keys` shows a UI SDK shortcut string for the reader's platform (⌘K or Ctrl+K).",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -5090,10 +5218,10 @@
       "name": "label",
       "type": "registry:ui",
       "title": "Label",
-      "description": "A field label built on react-aria's Label, which wires itself to the field it sits in, in a default and an iOS grouped-form variant.",
+      "description": "UI SDK's Label, a native label that names any control (by htmlFor or by wrapping it), in default, iOS grouped-form and control-row variants.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -5117,11 +5245,11 @@
     {
       "name": "list-box",
       "type": "registry:ui",
-      "title": "ListBox",
-      "description": "A keyboard-navigable list with single or multiple selection: an iOS inset-grouped list with trailing checks, or the compact popup list used inside Select and ComboBox.",
+      "title": "Listbox",
+      "description": "UI SDK's Listbox with single or multiple selection: an iOS inset-grouped list with trailing checks, or the compact popup list Select and Combobox draw. Groups, separators and options from data.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -5138,12 +5266,14 @@
       "meta": {
         "page": "list-box",
         "exports": [
-          "ListBox",
-          "ListBoxItem",
-          "ListBoxSection",
-          "ListBoxHeader",
-          "listBoxVariants",
-          "listBoxItemVariants"
+          "Listbox",
+          "ListboxItem",
+          "ListboxGroup",
+          "ListboxGroupLabel",
+          "ListboxSeparator",
+          "listboxVariants",
+          "listboxItemVariants",
+          "createListboxController"
         ]
       }
     },
@@ -5151,8 +5281,9 @@
       "name": "list",
       "type": "registry:ui",
       "title": "List",
-      "description": "Inset-grouped and plain lists with rows, sections, swipe actions and an A-Z IndexBar.",
+      "description": "Inset-grouped and plain lists on UI SDK: sections that are lists of rows (grow in, collapse out, reorder by a grip with createReorder), rows with swipe actions and full swipe (createSwipeActions), edit mode and a hover preview, and an A-Z IndexBar.",
       "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1",
         "framer-motion@^13.1.0"
       ],
@@ -5160,7 +5291,10 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/list-primitive.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/presence.json",
         "https://blamy.github.io/ui/r/row-label.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -5177,7 +5311,9 @@
         "exports": [
           "List",
           "ListSection",
-          "ListRow"
+          "ListRow",
+          "listRowVariants",
+          "createListRowController"
         ]
       }
     },
@@ -5185,7 +5321,7 @@
       "name": "log-list-model",
       "type": "registry:lib",
       "title": "LogList logic",
-      "description": "LogList's logic as plain functions, and the row window it and RequestTable share: measured heights, anchoring and scrolling far beyond what the DOM could hold.",
+      "description": "LogList's logic as plain functions: levels and their counts, a row's text and time, and what LogList and RequestTable share for their rows: how a list changed, rows by id, and how a followed marker scrolls.",
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -5195,11 +5331,6 @@
           "path": "packages/ui/src/lib/log-list-model.ts",
           "type": "registry:lib",
           "target": "lib/log-list-model.ts"
-        },
-        {
-          "path": "packages/ui/src/lib/log-list-window.ts",
-          "type": "registry:lib",
-          "target": "lib/log-list-window.ts"
         }
       ]
     },
@@ -5207,17 +5338,18 @@
       "name": "log-list",
       "type": "registry:ui",
       "title": "LogList",
-      "description": "A virtualized log: levels, times, sources and rich messages in rows of any height, a you-are-here marker that dims what comes after it and moves without re-rendering, following with a way back, keyboard navigation and copying. Stays smooth at 100,000 rows.",
+      "description": "A virtualized log on UI SDK's virtualizer, grid focus and stick-to-bottom: levels, times, sources and rich messages in rows of any height, a you-are-here marker that dims what comes after it and moves without re-rendering, following with a way back, keyboard navigation and copying. Stays smooth at 100,000 rows.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria@^3.51.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
-        "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/log-list-model.json",
+        "https://blamy.github.io/ui/r/log-list-primitive.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -5233,7 +5365,8 @@
         "exports": [
           "LogList",
           "LogRowContent",
-          "logListVariants"
+          "logListVariants",
+          "createLogListController"
         ]
       }
     },
@@ -5243,12 +5376,15 @@
       "title": "MarkdownEditor",
       "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.4",
-        "@brett_lamy/docstream-editor@1.34.4",
+        "@brett_lamy/docstream@2.0.0",
+        "@brett_lamy/docstream-editor@2.0.0",
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/change-details.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -5274,7 +5410,7 @@
       "title": "MarkdownView",
       "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.4"
+        "@brett_lamy/docstream@2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -5302,13 +5438,12 @@
       "title": "MessageScroller",
       "description": "A chat transcript scroller anchored to the newest message, with streaming-aware autoscroll.",
       "dependencies": [
-        "framer-motion@^13.1.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/message-scroller-primitive.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -5331,6 +5466,7 @@
       "title": "Morph",
       "description": "Shared-element transitions: one element springs between two layouts (mini player → full player), drag-to-dismiss friendly, reduced-motion aware.",
       "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
@@ -5364,7 +5500,8 @@
         "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/reduced-motion.json"
       ],
       "files": [
         {
@@ -5379,7 +5516,6 @@
           "springs",
           "springCss",
           "fades",
-          "useMotion",
           "useReducedMotion",
           "useSpringTransition",
           "TextMorph",
@@ -5396,19 +5532,19 @@
       "name": "navigation-stack",
       "type": "registry:ui",
       "title": "NavigationStack",
-      "description": "A controlled push/pop stack with large titles and edge-swipe back.",
+      "description": "iOS's navigation controller as composable parts, on a UI SDK primitive: pages pushed and popped by key, with large titles that collapse into the bar, a back button that names the page behind and a title that flies into it, a bar that rides away on scroll, pull to refresh, and Escape, platform back and edge-swipe pops that go to the innermost stack first.",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/back-history.json",
-        "https://blamy.github.io/ui/r/edge-swipe.json",
+        "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/pull-to-refresh.json",
+        "https://blamy.github.io/ui/r/navigation-stack-primitive.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/stack.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/title-flight.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -5424,7 +5560,17 @@
         "page": "navigation-stack",
         "exports": [
           "NavigationStack",
-          "ScreenWrap"
+          "NavigationStackPage",
+          "NavigationStackBar",
+          "NavigationStackTitle",
+          "NavigationStackBack",
+          "NavigationStackLeading",
+          "NavigationStackTrailing",
+          "NavigationStackContent",
+          "NavigationStackLargeTitle",
+          "NavigationStackSubheader",
+          "createNavigationStackController",
+          "useNavigationStack"
         ]
       }
     },
@@ -5506,12 +5652,14 @@
       "title": "ObjectTree",
       "description": "Values as a debugger shows them: scopes in collapsible sections, lazy children with loading and failed states, DevTools-style previews, getters, ranges for large collections, keyboard navigation and copying. Takes plain data, and any JSON-like value.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/grid-behaviors.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/object-tree-model.json",
         "https://blamy.github.io/ui/r/object-tree-value.json",
@@ -5519,6 +5667,7 @@
         "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/use-virtual-rows.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -5635,13 +5784,16 @@
       "title": "PencilKit",
       "description": "Pressure-aware drawing (perfect-freehand) with the PencilKit tool picker, and the Composer image annotator.",
       "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1",
-        "perfect-freehand@^1.2.3",
-        "react-aria-components@^1.20.0"
+        "perfect-freehand@^1.2.3"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/change-details.json",
         "https://blamy.github.io/ui/r/composer.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -5790,9 +5942,9 @@
       "name": "plain-button",
       "type": "registry:ui",
       "title": "PlainButton",
-      "description": "React-aria buttons with no styling of their own, for surfaces that draw their own pressables; they keep the title tooltip that react-aria drops.",
+      "description": "UI SDK's Button and Toggle with no styling of their own, for surfaces that draw their own pressables (icon buttons, pills, rows).",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -5833,12 +5985,14 @@
       "name": "popover",
       "type": "registry:ui",
       "title": "Popover",
-      "description": "A floating panel anchored to a trigger: Popover is the styled surface, PopoverContent a padded dialog for arbitrary content, PopoverTrigger opens it.",
+      "description": "A floating panel anchored to its trigger, on UI SDK's Popover: a padded panel or a bare surface that flips to stay on screen, with a title, a description and an optional arrow; it can open on hover, serve many triggers through a controller, and become a bottom sheet in a compact container.",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -5855,7 +6009,13 @@
         "exports": [
           "Popover",
           "PopoverTrigger",
-          "PopoverContent"
+          "PopoverContent",
+          "PopoverArrow",
+          "PopoverTitle",
+          "PopoverDescription",
+          "PopoverClose",
+          "popoverContentVariants",
+          "createPopoverController"
         ]
       }
     },
@@ -5863,10 +6023,10 @@
       "name": "progress-ring",
       "type": "registry:ui",
       "title": "ProgressRing",
-      "description": "Circular progress: a determinate ring that springs to each value with a rolling percentage, and a CountdownRing that drains second by second and turns red near the end.",
+      "description": "Circular progress on UI SDK's Progress: a determinate ring that springs to each value with a rolling percentage, and a CountdownRing that drains second by second and turns red near the end.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -5885,7 +6045,9 @@
         "exports": [
           "ProgressRing",
           "CountdownRing",
-          "useCountdown"
+          "useCountdown",
+          "progressRingVariants",
+          "countdownRingLabelVariants"
         ]
       }
     },
@@ -5920,10 +6082,10 @@
       "name": "progress",
       "type": "registry:ui",
       "title": "Progress",
-      "description": "iOS progress bar on react-aria's ProgressBar: a label, a springing fill with a rolling percentage, three sizes, tones and an indeterminate sliding bar.",
+      "description": "iOS progress bar on UI SDK's Progress: a label, a springing fill with a rolling percentage, three sizes, tones and an indeterminate sliding bar.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -5941,6 +6103,10 @@
         "page": "progress",
         "exports": [
           "Progress",
+          "ProgressLabel",
+          "ProgressValue",
+          "ProgressTrack",
+          "ProgressIndicator",
           "progressVariants",
           "progressIndicatorVariants"
         ]
@@ -5975,10 +6141,10 @@
       "name": "radio-group",
       "type": "registry:ui",
       "title": "RadioGroup",
-      "description": "react-aria RadioGroup and Radio: round radios with arrow-key selection, vertical or horizontal.",
+      "description": "UI SDK's RadioGroup and Radio: round radios with one tab stop and arrow-key selection, vertical or horizontal.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -5996,8 +6162,10 @@
         "exports": [
           "RadioGroup",
           "Radio",
+          "RadioIndicator",
           "radioGroupVariants",
-          "radioVariants"
+          "radioVariants",
+          "createRadioGroupController"
         ]
       }
     },
@@ -6007,7 +6175,7 @@
       "title": "ReplayPreview",
       "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, Console and Network buttons that open a DevTools panel cut at the playhead (requests, failures, errors), a drawn cursor with click ripples, and a skeleton poster while the player loads.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.4"
+        "@brett_lamy/docstream@2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -6038,10 +6206,11 @@
       "type": "registry:lib",
       "title": "RequestTable logic",
       "description": "RequestTable's logic as plain functions: names, sizes, status text, tones, sorting and the time range rows cover.",
-      "dependencies": [],
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/format-bytes.json",
         "https://blamy.github.io/ui/r/log-list-model.json",
         "https://blamy.github.io/ui/r/sql-format.json"
       ],
@@ -6057,20 +6226,20 @@
       "name": "request-table",
       "type": "registry:ui",
       "title": "RequestTable",
-      "description": "A virtualized table of requests: resizable, sortable columns, a waterfall with a playhead that moves without re-rendering, links to the other end of a call, and two-line rows when its container is narrow. Stays smooth at 10,000 rows.",
+      "description": "A virtualized table of requests on UI SDK's virtualizer, grid focus and resize: resizable, sortable columns, a waterfall with a playhead that moves without re-rendering, links to the other end of a call, and a size class of its own (bindSizeClass) that hides columns and goes to two-line rows when it is narrow. Stays smooth at 10,000 rows.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria@^3.51.0",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
-        "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/log-list-model.json",
         "https://blamy.github.io/ui/r/request-table-model.json",
+        "https://blamy.github.io/ui/r/request-table-primitive.json",
         "https://blamy.github.io/ui/r/sql-format.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -6087,7 +6256,8 @@
           "RequestLink",
           "RequestTable",
           "REQUEST_COLUMNS",
-          "requestTableVariants"
+          "requestTableVariants",
+          "createRequestTableController"
         ]
       }
     },
@@ -6095,12 +6265,14 @@
       "name": "scroll-area",
       "type": "registry:ui",
       "title": "ScrollArea",
-      "description": "A scroll container with the kit's thin scrollbars, keyboard focusable, with native momentum kept.",
+      "description": "A scroll container on UI SDK's ScrollArea with the kit's thin scrollbars: native scrolling, overflow and edge state, optional overlay scrollbars and stick-to-end.",
       "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -6114,7 +6286,14 @@
         "page": "scroll-area",
         "exports": [
           "ScrollArea",
-          "scrollAreaVariants"
+          "ScrollAreaViewport",
+          "ScrollAreaContent",
+          "ScrollAreaScrollbar",
+          "ScrollAreaThumb",
+          "ScrollAreaCorner",
+          "ScrollAreaScrollToEnd",
+          "scrollAreaViewportVariants",
+          "createScrollAreaController"
         ]
       }
     },
@@ -6122,13 +6301,14 @@
       "name": "search-field",
       "type": "registry:ui",
       "title": "SearchField",
-      "description": "iOS search field on react-aria's SearchField: magnifier, clear button, Esc to clear, controlled or uncontrolled.",
+      "description": "iOS search field on UI SDK's Input, InputGroup and InputClear: magnifier, clear button, Esc to clear (only when there is a query), Enter to submit, controlled or uncontrolled.",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/search-field-primitive.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -6149,9 +6329,9 @@
       "name": "segmented",
       "type": "registry:ui",
       "title": "Segmented",
-      "description": "The iOS segmented control: a radio group whose selected card slides between segments.",
+      "description": "The iOS segmented control on UI SDK's SegmentedControl: one value, one tab stop, arrows move and select, and the selected card slides and resizes between segments.",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -6167,7 +6347,9 @@
       "meta": {
         "page": "segmented",
         "exports": [
-          "Segmented"
+          "Segmented",
+          "SegmentedItem",
+          "createSegmentedControlController"
         ]
       }
     },
@@ -6175,15 +6357,18 @@
       "name": "select",
       "type": "registry:ui",
       "title": "Select",
-      "description": "A pop-up button that opens a list of options: react-aria's Select with a filled or plain trigger, sectioned items and typeahead on the closed button.",
+      "description": "A pop-up button that opens a list of options: UI SDK's Select with a filled or plain trigger, groups, options from data, typeahead on the closed button, Field integration and a sheet on small touch screens.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/list-box.json",
-        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -6197,12 +6382,16 @@
         "page": "select",
         "exports": [
           "Select",
+          "SelectLabel",
           "SelectTrigger",
           "SelectValue",
           "SelectContent",
           "SelectItem",
-          "SelectSection",
-          "selectTriggerVariants"
+          "SelectGroup",
+          "SelectGroupLabel",
+          "SelectSeparator",
+          "selectTriggerVariants",
+          "createSelectController"
         ]
       }
     },
@@ -6210,10 +6399,10 @@
       "name": "separator",
       "type": "registry:ui",
       "title": "Separator",
-      "description": "A hairline rule, horizontal or vertical, with an inset option that indents like an iOS list separator.",
+      "description": "A hairline rule on UI SDK's Separator, horizontal or vertical, decorative or announced, with an inset option that indents like an iOS list separator.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -6238,15 +6427,17 @@
       "name": "sheet",
       "type": "registry:ui",
       "title": "Sheet",
-      "description": "A modal panel pinned to an edge: the iOS card sheet with a grabber at the bottom, side panels on the left and right, or a drop-down from the top.",
+      "description": "A modal panel pinned to an edge, on UI SDK's Drawer: the iOS card sheet with a grabber at the bottom, side panels on the left and right, or a drop-down from the top; it follows a drag, rests on snap points and springs away.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/animated-height.json",
         "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -6262,14 +6453,18 @@
         "page": "sheet",
         "exports": [
           "Sheet",
+          "SheetTrigger",
+          "SheetBackdrop",
           "SheetContent",
+          "SheetHandle",
           "SheetHeader",
           "SheetTitle",
           "SheetDescription",
           "SheetBody",
           "SheetFooter",
           "SheetClose",
-          "sheetVariants"
+          "sheetVariants",
+          "createSheetController"
         ]
       }
     },
@@ -6277,18 +6472,18 @@
       "name": "side-drawer",
       "type": "registry:ui",
       "title": "SideDrawer",
-      "description": "An inspector column: docked beside the content, or an overlay sheet with a scrim.",
+      "description": "An inspector panel: docked beside the content, an overlay drawer with a scrim, or a page pushed over a compact host that the page under it follows (sideDrawerPageClass).",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/edge-drawer.json",
-        "https://blamy.github.io/ui/r/edge-swipe.json",
         "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/navigation-stack.json",
+        "https://blamy.github.io/ui/r/side-drawer-primitive.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -6302,7 +6497,9 @@
       "meta": {
         "page": "side-drawer",
         "exports": [
-          "SideDrawer"
+          "SideDrawer",
+          "sideDrawerPageClass",
+          "createSideDrawerController"
         ]
       }
     },
@@ -6310,14 +6507,17 @@
       "name": "sidebar",
       "type": "registry:ui",
       "title": "Sidebar",
-      "description": "Docked, rail, floating or overlay navigation with workspace, search, sections and items.",
+      "description": "Docked, rail, floating or overlay navigation that becomes a contained drawer in a compact provider, with workspace, search, sections and items.",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/edge-drawer.json",
+        "https://blamy.github.io/ui/r/sidebar-primitive.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -6342,7 +6542,9 @@
           "SidebarTrigger",
           "SidebarInset",
           "SidebarNav",
-          "useSidebar"
+          "useSidebar",
+          "useSidebarCollapsed",
+          "createSidebarController"
         ]
       }
     },
@@ -6378,13 +6580,14 @@
       "name": "slider",
       "type": "registry:ui",
       "title": "Slider",
-      "description": "react-aria Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, plus on-dark and on-light tones and a small scrubber size.",
+      "description": "UI SDK Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, plus on-dark and on-light tones and a small scrubber size.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/row-label.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -6399,9 +6602,13 @@
         "page": "slider",
         "exports": [
           "Slider",
+          "SliderValue",
+          "SliderControl",
           "SliderTrack",
+          "SliderIndicator",
           "SliderThumb",
-          "sliderVariants"
+          "sliderVariants",
+          "createSliderController"
         ]
       }
     },
@@ -6435,20 +6642,19 @@
       "name": "split-view",
       "type": "registry:ui",
       "title": "SplitView",
-      "description": "An adaptive sidebar / supplementary / detail split that collapses by its own measured width.",
+      "description": "UISplitViewController as composable parts, on a UI SDK primitive: sidebar, supplementary and detail columns that tile, float the sidebar or collapse into a push/pop stack by the size class of their own box, with keyboard-resizable dividers, back, Escape and edge-swipe navigation, nested stacks, and columns that never remount.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "framer-motion@^13.1.0",
-        "react-aria@^3.51.0",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/animated-height.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
-        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/split-view-primitive.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -6472,9 +6678,14 @@
           "SplitViewEmpty",
           "useSplitView",
           "useSplitViewColumn",
+          "useSplitViewBack",
           "SplitViewSection",
           "SplitViewStack",
-          "useSplitViewStack"
+          "useSplitViewStack",
+          "createSplitViewController",
+          "createSplitViewStackController",
+          "splitViewItemVariants",
+          "splitViewSectionLabelVariants"
         ]
       }
     },
@@ -6505,16 +6716,17 @@
       "name": "spreadsheet",
       "type": "registry:ui",
       "title": "Spreadsheet",
-      "description": "A virtualized grid of string cells for CSV-sized and million-row data: an ARIA grid with keyboard navigation, range selection, in-place editing, tab-separated copy / cut / paste, undo and resizable columns. Sorting a number or date column is an exact 64-bit bitonic sort in a WebGPU compute shader, and number columns show histograms tallied on the GPU; both fall back to the CPU with the same answers. The status bar shows the selection's sum and average and which engine sorted.",
+      "description": "A virtualized grid of string cells for CSV-sized and million-row data, as one primitive on UI SDK's grid focus, cell range, inline edit, undo stack, resize and virtualizer: an ARIA grid with one tab stop, keyboard navigation, range selection with announcements, in-place editing, tab-separated copy / cut / paste, undo, resizable columns and a controller. Sorting a number or date column is an exact 64-bit bitonic sort in a WebGPU compute shader, and number columns show histograms tallied on the GPU; both fall back to the CPU with the same answers. The status bar shows the selection's sum and average and which engine sorted.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/csv.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/spreadsheet-model.json",
+        "https://blamy.github.io/ui/r/spreadsheet-primitive.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -6529,7 +6741,8 @@
         "exports": [
           "Spreadsheet",
           "spreadsheetVariants",
-          "columnName"
+          "columnName",
+          "createSpreadsheetController"
         ]
       }
     },
@@ -6537,20 +6750,22 @@
       "name": "sql-console",
       "type": "registry:ui",
       "title": "SqlConsole",
-      "description": "A SQL workbench for a PGlite database: a highlighted SqlEditor (⌘/Ctrl+Enter runs), a SchemaTree on react-aria's Tree, a ResultTable on react-aria's Table with type-aware cells and CSV / JSON copy, per-statement results, errors with line and caret, history, and SQL / data-directory export and import.",
+      "description": "A SQL workbench for a PGlite database: a highlighted SqlEditor (⌘/Ctrl+Enter runs), a SchemaTree on UI SDK's Tree, a ResultTable on UI SDK's grid focus with type-aware cells and CSV / JSON copy, per-statement results, errors with line and caret, history, and SQL / data-directory export and import.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/badge.json",
         "https://blamy.github.io/ui/r/button.json",
-        "https://blamy.github.io/ui/r/format-bytes.json",
+        "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/kbd.json",
         "https://blamy.github.io/ui/r/pglite.json",
         "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/result-table-primitive.json",
         "https://blamy.github.io/ui/r/skeleton.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/sql-format.json",
@@ -6602,7 +6817,7 @@
       "title": "StlViewer",
       "description": "A 3D preview of an .stl model, binary or ASCII: WebGL with no dependencies, drag to orbit, pinch or ⌘-scroll to zoom, double-click to reset, and the triangle count and size under it. The model takes the theme's primary color.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.4"
+        "@brett_lamy/docstream@2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -6629,7 +6844,7 @@
       "title": "StrudelPlayer",
       "description": "An audio player for a Strudel live-coded pattern, inline code or a .strudel file: play/stop, a scrolling piano roll, the code, and an equipment rack. Strudel runs in the page, loaded on the first play; one pattern plays at a time.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.4"
+        "@brett_lamy/docstream@2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -6661,7 +6876,7 @@
       "title": "StrudelRack",
       "description": "Studio hardware generated from Strudel code: a rack of devices, one per track, with mute/solo pads, a channel fader, synth and key LCDs, TR-style step keys for the mini-notation and LED-ring knobs for each effect. Every control edits the code in place. Knob, Fader and StepGrid are exported on their own.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.4"
+        "@brett_lamy/docstream@2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -6692,7 +6907,7 @@
       "title": "Strudel syntax tree",
       "description": "Strudel code as a syntax tree: the JavaScript (acorn) read as a song — tempo, tracks, method chains with typed arguments — every mini-notation string parsed with source ranges, and edits that rewrite only the characters they touch.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.4"
+        "@brett_lamy/docstream@2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -6725,9 +6940,9 @@
       "name": "switch",
       "type": "registry:ui",
       "title": "Switch",
-      "description": "iOS switch on react-aria's Switch: a 51 by 31 track, a thumb that springs across and stretches while pressed.",
+      "description": "The iOS switch on UI SDK's Switch: a 51 by 31 track, a SwitchThumb that springs across and stretches while pressed, labelled by its ListRow inside one.",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -6744,36 +6959,20 @@
       "meta": {
         "page": "switch",
         "exports": [
-          "Switch"
+          "Switch",
+          "SwitchThumb",
+          "createSwitchController"
         ]
       }
-    },
-    {
-      "name": "syntax-highlighting",
-      "type": "registry:ui",
-      "title": "SyntaxHighlighting",
-      "description": "The old names for CodeEditor's read-only parts, each calling CodeEditor with readOnly. Use CodeEditor in new code.",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/code-editor.json",
-        "https://blamy.github.io/ui/r/code-editor-model.json",
-        "https://blamy.github.io/ui/r/syntax.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/syntax-highlighting.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/syntax-highlighting.tsx"
-        }
-      ]
     },
     {
       "name": "tab-bar",
       "type": "registry:ui",
       "title": "TabBar",
-      "description": "The iOS bottom tab bar in one component: icons over labels, a sliding indicator, hiding on scroll.",
-      "dependencies": [],
+      "description": "The iOS bottom tab bar in one component: icons over labels on a blurred bar, hiding on scroll.",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/tab-view.json"
@@ -6796,14 +6995,16 @@
       "name": "tab-view",
       "type": "registry:ui",
       "title": "TabView",
-      "description": "Tabs as parts: a bar at any edge, sliding indicator, directional panels, swipe between panels.",
+      "description": "Tabs as parts, on UI SDK: a bar at any edge (iOS bar, rail, workspace rail or plain), a sliding indicator, directional panels.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/separator.json",
         "https://blamy.github.io/ui/r/tabs.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -6823,6 +7024,7 @@
           "TabViewList",
           "TabViewTab",
           "TabViewIndicator",
+          "TabViewPill",
           "TabViewSeparator",
           "TabViewAction",
           "TabViewHeader",
@@ -6838,15 +7040,14 @@
       "name": "tabs",
       "type": "registry:ui",
       "title": "Tabs",
-      "description": "Tabs on react-aria with a sliding selection indicator and directional panels, in an iOS segmented look or a tinted underline.",
+      "description": "Tabs on UI SDK with a sliding selection indicator and directional panels, in an iOS segmented look or a tinted underline.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -6860,11 +7061,14 @@
         "page": "tabs",
         "exports": [
           "Tabs",
-          "TabList",
-          "Tab",
-          "TabPanel",
+          "TabsList",
+          "TabsTab",
+          "TabsTabIcon",
+          "TabsPanel",
           "tabsListVariants",
-          "tabVariants"
+          "tabsTabVariants",
+          "tabsIndicatorVariants",
+          "createTabsController"
         ]
       }
     },
@@ -6911,10 +7115,10 @@
       "name": "tailscale-login-button",
       "type": "registry:ui",
       "title": "TailscaleLoginButton",
-      "description": "A \"Sign in with Tailscale\" button on react-aria's Button that follows the connection (sign in, signing in and cancel, connected and sign out, error and retry), and a status badge with the tailnet, the error, and the sign-in link when a popup is blocked.",
+      "description": "A \"Sign in with Tailscale\" button on UI SDK's Button that follows the connection (sign in, signing in and cancel, connected and sign out, error and retry), and a status badge with the tailnet, the error, and the sign-in link when a popup is blocked.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -6961,12 +7165,12 @@
       "title": "TailscaleMenu",
       "description": "The Tailscale connection as a menu, for a popover or a menu-bar extra: where you are connected (tailnet and this device), the exit node chooser and sign out, over useTailscale. The exit nodes read as a radio list or as a list of networks like macOS's Wi-Fi menu (a check for the one in use, a trailing glyph, Connecting…, offline devices dimmed, None at the top). The parts (TailscaleMenuSummary, TailscaleExitNodes) are exported to build your own.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/list-box.json",
         "https://blamy.github.io/ui/r/radio-group.json",
         "https://blamy.github.io/ui/r/spinner.json",
@@ -7123,34 +7327,6 @@
       }
     },
     {
-      "name": "text-field",
-      "type": "registry:ui",
-      "title": "TextField",
-      "description": "react-aria's TextField restyled: the wrapper that links a Label, an Input or Textarea, a FieldDescription and a FieldError, and runs validation.",
-      "dependencies": [
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/text-field.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/text-field.tsx"
-        }
-      ],
-      "meta": {
-        "page": "text-field",
-        "exports": [
-          "TextField",
-          "FieldDescription",
-          "FieldError"
-        ]
-      }
-    },
-    {
       "name": "text-morph",
       "type": "registry:ui",
       "title": "TextMorph",
@@ -7181,10 +7357,10 @@
       "name": "textarea",
       "type": "registry:ui",
       "title": "Textarea",
-      "description": "Multi-line sibling of Input on react-aria's TextArea, with three minimum heights and the same focus, invalid and disabled states.",
+      "description": "Multi-line sibling of Input on UI SDK's Textarea, with three minimum heights, the same focus, invalid and disabled states, auto resize and a submit shortcut.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -7210,12 +7386,12 @@
       "name": "theme",
       "type": "registry:lib",
       "title": "Theme",
-      "description": "BLProvider, ThemeScope and the appearance context: pick light/dark, a tint and a theme scope for a subtree. Colors are shadcn variables (see the bl-theme item for the iOS palette).",
-      "dependencies": [
-        "react-aria@^3.51.0"
-      ],
+      "description": "BLProvider, ThemeScope and the appearance context: pick light/dark, a tint and a theme scope for a subtree. BLProvider is also the layer host its popups stay inside (useLayerHost), and a size-class scope: it measures its own box and provides compact / medium / regular to everything inside, which presentation=\"auto\" popups follow. Colors are shadcn variables (see the bl-theme item for the iOS palette).",
+      "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/tokens.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -7234,7 +7410,8 @@
           "AppearanceProvider",
           "useAppearance",
           "useWorkbenchAppearance",
-          "readThemeVars"
+          "readThemeVars",
+          "useLayerHost"
         ]
       }
     },
@@ -7244,16 +7421,16 @@
       "title": "TimeInput",
       "description": "A text field that reads dates, times and recurrences written in English (\"every weekday at 9am\") with gpu-time, and previews what it understood: the recognised words, the resolved occurrences in a time zone, a Repeats chip and the parser's notes. Works on the CPU or the GPU; the package loads on first use.",
       "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/badge.json",
+        "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/gpu-time.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
-        "https://blamy.github.io/ui/r/label.json",
-        "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -7282,18 +7459,17 @@
       "name": "toast",
       "type": "registry:ui",
       "title": "Toast",
-      "description": "HUDs and banners on react-aria's toast region: the \"Copied\" pill that updates in place, banners that pile up like Sonner's and spread on hover, with actions, springs, auto-dismiss and announcements.",
+      "description": "Banners and HUDs on UI SDK's Toast: cards that pile up at an edge and spread on hover, the \"Copied\" pill that updates in place, with actions, promise toasts, swipe to dismiss, timers that pause on hover and focus, and announcements.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "framer-motion@^13.1.0",
-        "react-aria@^3.51.0",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -7306,14 +7482,22 @@
       "meta": {
         "page": "toast",
         "exports": [
-          "Toaster",
+          "ToastRegion",
+          "Toast",
+          "ToastIcon",
+          "ToastTitle",
+          "ToastDescription",
+          "ToastAction",
+          "ToastClose",
           "toast",
-          "useToast",
-          "createToastQueue",
-          "ToastQueue",
+          "createToaster",
+          "hud",
+          "createHud",
           "ToastProvider",
-          "toastApi",
-          "defaultToastQueue"
+          "useToast",
+          "toastRegionVariants",
+          "toastVariants",
+          "toastIconVariants"
         ]
       }
     },
@@ -7321,14 +7505,15 @@
       "name": "toggle-group",
       "type": "registry:ui",
       "title": "ToggleGroup",
-      "description": "react-aria ToggleButtonGroup with single or multiple selection, roving arrow-key focus, and filled, outline and default looks.",
+      "description": "UI SDK's ToggleGroup: toggles that share one value, single or multiple, one tab stop with arrow keys between them, in default, filled (a sliding pressed card) and outline looks.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/selection-indicator-primitive.json",
         "https://blamy.github.io/ui/r/toggle.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -7344,7 +7529,8 @@
         "exports": [
           "ToggleGroup",
           "ToggleGroupItem",
-          "toggleGroupVariants"
+          "toggleGroupVariants",
+          "createToggleGroupController"
         ]
       }
     },
@@ -7352,10 +7538,10 @@
       "name": "toggle",
       "type": "registry:ui",
       "title": "Toggle",
-      "description": "Two-state button on react-aria's ToggleButton: tinted when on, in default, filled and outline variants.",
+      "description": "UI SDK's Toggle, a button that stays pressed: tinted when on, in default, filled and outline variants, with ToggleIcon and a controller.",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -7372,7 +7558,9 @@
         "page": "toggle",
         "exports": [
           "Toggle",
-          "toggleVariants"
+          "ToggleIcon",
+          "toggleVariants",
+          "createToggleController"
         ]
       }
     },
@@ -7380,9 +7568,9 @@
       "name": "tooltip",
       "type": "registry:ui",
       "title": "Tooltip",
-      "description": "A small inverted label that names a control on hover or keyboard focus, with a warm-up delay and an arrow toward the trigger; touch never opens it.",
+      "description": "A small inverted label that names or describes a control on hover or keyboard focus, on UI SDK's Tooltip: a warm-up delay, an arrow toward the trigger, an optional shortcut hint; touch never opens it.",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -7401,7 +7589,11 @@
         "page": "tooltip",
         "exports": [
           "Tooltip",
-          "TooltipTrigger"
+          "TooltipTrigger",
+          "TooltipContent",
+          "TooltipArrow",
+          "TooltipShortcut",
+          "createTooltipController"
         ]
       }
     },
@@ -7431,14 +7623,16 @@
       "name": "trace-timeline",
       "type": "registry:ui",
       "title": "TraceTimeline",
-      "description": "A long session on one clock, drawn on a canvas at most one thing per device pixel: a strip with a ruler, diamonds, density with marks over it, thread activity fetched for the view, requests and several lanes, or the same timeline as a rail for narrow windows with stops as dashes that swell around the pointer, a scrub that slows as you pull away, and pinch and wheel zoom. A slider, with the keyboard that implies.",
+      "description": "A long session on one clock, drawn on a canvas at most one thing per device pixel: a strip with a ruler, diamonds, density with marks over it, thread activity fetched for the view, requests and several lanes, or the same timeline as a rail for narrow windows with stops as dashes that swell around the pointer, a scrub that slows as you pull away, and pinch and wheel zoom. A slider on UI SDK (its value with change and commit details, its keys, and a bindDrag scrub that Escape puts back), with the keyboard that implies; the view, the focused lane and the selected thread and request are the primitive's state too, each reported with UI SDK change details.",
       "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/controllable-state.json",
+        "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/trace-timeline-model.json",
+        "https://blamy.github.io/ui/r/trace-timeline-primitive.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -7460,16 +7654,20 @@
       "name": "tree",
       "type": "registry:ui",
       "title": "Tree",
-      "description": "A virtualized, keyboard-driven tree on Trees (@pierre/trees): indent guides, file-type icons, type-to-search, Git status, inline rename, drag and drop and a right-click menu per row. Takes nested items, so it fits any hierarchy, not only files.",
+      "description": "UI SDK's Tree with the kit's rows: compose it from parts, or hand it nested items and it draws them virtualized, with indent guides, file-type icons, search, Git status, rename in place, a context menu and a hover preview per row, and drag and drop. Fits any hierarchy, not only files.",
       "dependencies": [
-        "@pierre/trees@1.0.0-beta.6"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/context-menu.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/inline-edit-primitive.json",
         "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/use-virtual-rows.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -7483,6 +7681,16 @@
         "page": "tree",
         "exports": [
           "Tree",
+          "TreeItem",
+          "TreeItemLabel",
+          "TreeItemIndicator",
+          "TreeItemCheckbox",
+          "TreeGroup",
+          "treeVariants",
+          "treeRowVariants",
+          "createTreeController",
+          "treeFromPaths",
+          "visibleTreeRows",
           "TreeFolderIcon",
           "TreeFileIcon"
         ]
@@ -7492,19 +7700,29 @@
       "name": "use-file-upload",
       "type": "registry:lib",
       "title": "useFileUpload",
-      "description": "The file-upload logic without UI: a file list with validation (type, size, count, duplicates, your own rule), a concurrency-limited upload queue with abort, retry and controlled mode, an XMLHttpRequest adapter that reports real progress, and the pure helpers (formatBytes, matchesAccept, folder flattening).",
+      "description": "The file-upload logic behind FileUpload: the fileUpload primitive (definePrimitive) with rows for UI SDK's FileInput (queued, uploading, done, failed, and rejected with the reason in words, duplicates included), a concurrency-limited upload queue with abort, retry and controlled mode, a controller and agent actions (remove, retry, clear, uploadAll), the useFileUpload hook, an XMLHttpRequest adapter that reports real progress, and helpers (describeRules, rejectionMessage; sizes through UI SDK's formatFileSize).",
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/format-bytes.json"
+        "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "files": [
         {
           "path": "packages/ui/src/lib/file-upload-model.ts",
           "type": "registry:lib",
           "target": "lib/file-upload-model.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/file-upload-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/file-upload-primitive.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/use-file-upload.ts",
+          "type": "registry:lib",
+          "target": "lib/use-file-upload.ts"
         }
       ],
       "meta": {
@@ -7512,9 +7730,10 @@
         "exports": [
           "useFileUpload",
           "useFilePreview",
+          "fileUpload",
+          "createFileUploadController",
           "xhrUpload",
-          "formatBytes",
-          "matchesAccept"
+          "rejectionMessage"
         ]
       }
     },
@@ -7522,7 +7741,7 @@
       "name": "utils",
       "type": "registry:lib",
       "title": "Utilities",
-      "description": "BL UI's class-name helpers: cn (clsx + tailwind-merge that knows the token utilities), the pressable and brandTile class fragments, and the FONT, EASE and BARH constants.",
+      "description": "BL UI's class-name helpers: cn (clsx + tailwind-merge that knows the token utilities), the pressable and brandTile class fragments, and the FONT and BARH constants.",
       "dependencies": [
         "clsx@^2.1.1",
         "tailwind-merge@^3.6.0"
@@ -7545,8 +7764,7 @@
           "pressable",
           "brandTile",
           "FONT",
-          "BARH",
-          "EASE"
+          "BARH"
         ]
       }
     },
@@ -7554,8 +7772,10 @@
       "name": "video-preview",
       "type": "registry:ui",
       "title": "VideoPreview",
-      "description": "Plays a video timeline live, without rendering: the clips near the playhead as video, audio and image elements in their frames, with looks as CSS filters and fades as opacity and volume, following a shared playback clock (re-synced on drift, the next clip loaded ahead). With transport controls and a timecode.",
-      "dependencies": [],
+      "description": "Plays a video timeline live, without rendering: the clips near the playhead as video, audio and image elements in their frames, with looks as CSS filters and fades as opacity and volume, following a shared playback clock (re-synced on drift, the next clip loaded ahead). With transport controls (a UI SDK Toolbar) and a timecode.",
+      "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
@@ -7620,16 +7840,20 @@
       "name": "video-timeline",
       "type": "registry:ui",
       "title": "VideoTimeline",
-      "description": "A video editor's timeline: a ruler you scrub, lanes with headers (hide, mute, lock), clips you drag along a track, among a magnetic track's clips (which make room) or to another track, trim handles on both edges, a playhead, snapping to edges and the playhead, frame-accurate edits, pinch or ⌘-wheel zoom, keyboard nudging and drops from a media library. Controlled: one onChange per gesture, so each edit is one undo step.",
-      "dependencies": [],
+      "description": "A video editor's timeline on UI SDK: clips are spans (createSpans) you drag along a track, among a magnetic track's clips (which make room) or to another track, with trim handles on both edges, frame-accurate edits snapping to edges and the playhead, keyboard moves and trims with one Tab stop for the clips and announcements; a ruler that is UI SDK's Slider for the playhead; lane headers (hide, mute, lock); pinch or ⌘-wheel zoom and drops from a media library. value / onValueChange(value, details) once per gesture or key, so each edit is one undo step.",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/controllable-state.json",
+        "https://blamy.github.io/ui/r/change-details.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/playback.json",
         "https://blamy.github.io/ui/r/toggle.json",
         "https://blamy.github.io/ui/r/utils.json",
-        "https://blamy.github.io/ui/r/video-timeline-model.json"
+        "https://blamy.github.io/ui/r/video-timeline-model.json",
+        "https://blamy.github.io/ui/r/video-timeline-primitive.json"
       ],
       "files": [
         {
@@ -7659,6 +7883,7 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -7707,14 +7932,16 @@
       "name": "workspace",
       "type": "registry:ui",
       "title": "Workspace",
-      "description": "Dockable tabs and resizable pane groups, built on react-resizable-panels Workspace. Drag between groups, split at an edge and preserve mounted tab state.",
+      "description": "Dockable tabs in resizable tabsets, from a layout you can save: UI SDK's Resizable for the splits and its Tabs for each tabset, with tabs that move along a strip, to another tabset or onto an edge to split it, by pointer or keyboard, and keep their state as they go.",
       "dependencies": [
-        "react-resizable-panels@4.16.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/utils.json"
+        "https://blamy.github.io/ui/r/utils.json",
+        "https://blamy.github.io/ui/r/workspace-model.json",
+        "https://blamy.github.io/ui/r/workspace-primitive.json"
       ],
       "files": [
         {
@@ -7727,15 +7954,13 @@
         "page": "workspace",
         "exports": [
           "Workspace",
-          "WorkspaceTabCloseButton",
+          "WorkspaceTab",
+          "WorkspaceTabTrigger",
+          "WorkspaceTabClose",
           "WorkspaceToolbar",
-          "useWorkspaceRef",
-          "useWorkspaceCallbackRef",
-          "useParentWorkspace",
-          "useParentTab",
-          "useParentTabState",
-          "useParentTabset",
-          "useParentTabsetState"
+          "WorkspaceMaximize",
+          "createWorkspaceController",
+          "workspaceTabsets"
         ]
       }
     },
@@ -7744,7 +7969,9 @@
       "type": "registry:ui",
       "title": "Debug Toolbar",
       "description": "Debug Toolbar — part of BL UI's library (components/debug-toolbar.tsx).",
-      "dependencies": [],
+      "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
@@ -7764,10 +7991,13 @@
       "title": "Edge Drawer",
       "description": "Edge Drawer — part of BL UI's library (components/edge-drawer.tsx).",
       "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/sheet.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -7786,9 +8016,12 @@
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/open-code-browser.json",
         "https://blamy.github.io/ui/r/open-code-host.json",
         "https://blamy.github.io/ui/r/open-code-preview.json",
+        "https://blamy.github.io/ui/r/toggle-group.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -7805,20 +8038,20 @@
       "title": "Passkey Enroll Dialog",
       "description": "Passkey Enroll Dialog — part of BL UI's library (components/passkey-enroll-dialog.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria@^3.51.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/passkey-vault.json",
         "https://blamy.github.io/ui/r/spinner.json",
-        "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -7852,7 +8085,7 @@
       "title": "Tui Preview",
       "description": "Tui Preview — part of BL UI's library (components/tui-preview.tsx).",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.4"
+        "@brett_lamy/docstream@2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -7871,21 +8104,20 @@
       "title": "Vault Gate",
       "description": "Vault Gate — part of BL UI's library (components/vault-gate.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria@^3.51.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/badge.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
-        "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/passkey-enroll-dialog.json",
         "https://blamy.github.io/ui/r/passkey-vault.json",
         "https://blamy.github.io/ui/r/spinner.json",
-        "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -7893,6 +8125,26 @@
           "path": "packages/ui/src/components/vault-gate.tsx",
           "type": "registry:ui",
           "target": "components/ui/vault-gate.tsx"
+        }
+      ]
+    },
+    {
+      "name": "adaptive-pane-primitive",
+      "type": "registry:lib",
+      "title": "Adaptive Pane Primitive",
+      "description": "Adaptive Pane Primitive — part of BL UI's library (lib/adaptive-pane-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/edge-swipe.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/adaptive-pane-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/adaptive-pane-primitive.ts"
         }
       ]
     },
@@ -7914,19 +8166,38 @@
       ]
     },
     {
-      "name": "back-history",
+      "name": "back",
       "type": "registry:lib",
-      "title": "Back History",
-      "description": "Back History — part of BL UI's library (lib/back-history.ts).",
+      "title": "Back",
+      "description": "Back — part of BL UI's library (lib/back.ts).",
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "files": [
         {
-          "path": "packages/ui/src/lib/back-history.ts",
+          "path": "packages/ui/src/lib/back.ts",
           "type": "registry:lib",
-          "target": "lib/back-history.ts"
+          "target": "lib/back.ts"
+        }
+      ]
+    },
+    {
+      "name": "breadcrumb-primitive",
+      "type": "registry:lib",
+      "title": "Breadcrumb Primitive",
+      "description": "Breadcrumb Primitive — part of BL UI's library (lib/breadcrumb-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/breadcrumb-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/breadcrumb-primitive.ts"
         }
       ]
     },
@@ -7935,7 +8206,9 @@
       "type": "registry:lib",
       "title": "Canvas Math",
       "description": "Canvas Math — part of BL UI's library (lib/canvas-math.ts).",
-      "dependencies": [],
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
@@ -7948,13 +8221,72 @@
       ]
     },
     {
+      "name": "canvas-primitive",
+      "type": "registry:lib",
+      "title": "Canvas Primitive",
+      "description": "Canvas Primitive — part of BL UI's library (lib/canvas-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas-math.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/canvas-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/canvas-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "change-details",
+      "type": "registry:lib",
+      "title": "Change Details",
+      "description": "Change Details — part of BL UI's library (lib/change-details.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/change-details.ts",
+          "type": "registry:lib",
+          "target": "lib/change-details.ts"
+        }
+      ]
+    },
+    {
+      "name": "code-editor-primitive",
+      "type": "registry:lib",
+      "title": "Code Editor Primitive",
+      "description": "Code Editor Primitive — part of BL UI's library (lib/code-editor-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/code-editor-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/code-editor-primitive.ts"
+        }
+      ]
+    },
+    {
       "name": "container",
       "type": "registry:lib",
       "title": "Container",
       "description": "Container — part of BL UI's library (lib/container.ts).",
       "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/size-class.json"
       ],
       "files": [
         {
@@ -7969,9 +8301,12 @@
       "type": "registry:lib",
       "title": "Controllable State",
       "description": "Controllable State — part of BL UI's library (lib/controllable-state.ts).",
-      "dependencies": [],
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/change-details.json"
       ],
       "files": [
         {
@@ -8001,24 +8336,6 @@
       ]
     },
     {
-      "name": "drawer-swipe",
-      "type": "registry:lib",
-      "title": "Drawer Swipe",
-      "description": "Drawer Swipe — part of BL UI's library (lib/drawer-swipe.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/motion.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/drawer-swipe.ts",
-          "type": "registry:lib",
-          "target": "lib/drawer-swipe.ts"
-        }
-      ]
-    },
-    {
       "name": "durable-streams",
       "type": "registry:lib",
       "title": "Durable Streams",
@@ -8041,7 +8358,9 @@
       "type": "registry:lib",
       "title": "Edge Swipe",
       "description": "Edge Swipe — part of BL UI's library (lib/edge-swipe.ts).",
-      "dependencies": [],
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
@@ -8054,19 +8373,21 @@
       ]
     },
     {
-      "name": "format-bytes",
+      "name": "font-stack-primitive",
       "type": "registry:lib",
-      "title": "Format Bytes",
-      "description": "Format Bytes — part of BL UI's library (lib/format-bytes.ts).",
-      "dependencies": [],
+      "title": "Font Stack Primitive",
+      "description": "Font Stack Primitive — part of BL UI's library (lib/font-stack-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "files": [
         {
-          "path": "packages/ui/src/lib/format-bytes.ts",
+          "path": "packages/ui/src/lib/font-stack-primitive.ts",
           "type": "registry:lib",
-          "target": "lib/format-bytes.ts"
+          "target": "lib/font-stack-primitive.ts"
         }
       ]
     },
@@ -8131,6 +8452,125 @@
       ]
     },
     {
+      "name": "grid-behaviors",
+      "type": "registry:lib",
+      "title": "Grid Behaviors",
+      "description": "Grid Behaviors — part of BL UI's library (lib/grid-behaviors.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/log-list-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/grid-behaviors.ts",
+          "type": "registry:lib",
+          "target": "lib/grid-behaviors.ts"
+        }
+      ]
+    },
+    {
+      "name": "index-bar-primitive",
+      "type": "registry:lib",
+      "title": "Index Bar Primitive",
+      "description": "Index Bar Primitive — part of BL UI's library (lib/index-bar-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/index-bar-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/index-bar-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "inline-edit-primitive",
+      "type": "registry:lib",
+      "title": "Inline Edit Primitive",
+      "description": "Inline Edit Primitive — part of BL UI's library (lib/inline-edit-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/inline-edit-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/inline-edit-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "list-primitive",
+      "type": "registry:lib",
+      "title": "List Primitive",
+      "description": "List Primitive — part of BL UI's library (lib/list-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/list-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/list-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "log-list-primitive",
+      "type": "registry:lib",
+      "title": "Log List Primitive",
+      "description": "Log List Primitive — part of BL UI's library (lib/log-list-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/grid-behaviors.json",
+        "https://blamy.github.io/ui/r/log-list-model.json",
+        "https://blamy.github.io/ui/r/size-class.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/log-list-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/log-list-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "message-scroller-primitive",
+      "type": "registry:lib",
+      "title": "Message Scroller Primitive",
+      "description": "Message Scroller Primitive — part of BL UI's library (lib/message-scroller-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/reduced-motion.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/message-scroller-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/message-scroller-primitive.ts"
+        }
+      ]
+    },
+    {
       "name": "morph-path",
       "type": "registry:lib",
       "title": "Morph Path",
@@ -8144,6 +8584,31 @@
           "path": "packages/ui/src/lib/morph-path.ts",
           "type": "registry:lib",
           "target": "lib/morph-path.ts"
+        }
+      ]
+    },
+    {
+      "name": "navigation-stack-primitive",
+      "type": "registry:lib",
+      "title": "Navigation Stack Primitive",
+      "description": "Navigation Stack Primitive — part of BL UI's library (lib/navigation-stack-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/back.json",
+        "https://blamy.github.io/ui/r/edge-swipe.json",
+        "https://blamy.github.io/ui/r/pull-to-refresh.json",
+        "https://blamy.github.io/ui/r/scroll-edge.json",
+        "https://blamy.github.io/ui/r/size-class.json",
+        "https://blamy.github.io/ui/r/stack.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/navigation-stack-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/navigation-stack-primitive.ts"
         }
       ]
     },
@@ -8256,6 +8721,25 @@
       ]
     },
     {
+      "name": "option-search-primitive",
+      "type": "registry:lib",
+      "title": "Option Search Primitive",
+      "description": "Option Search Primitive — part of BL UI's library (lib/option-search-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/option-search-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/option-search-primitive.ts"
+        }
+      ]
+    },
+    {
       "name": "persistent-host",
       "type": "registry:lib",
       "title": "Persistent Host",
@@ -8291,6 +8775,25 @@
       ]
     },
     {
+      "name": "presence",
+      "type": "registry:lib",
+      "title": "Presence",
+      "description": "Presence — part of BL UI's library (lib/presence.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/presence.ts",
+          "type": "registry:lib",
+          "target": "lib/presence.ts"
+        }
+      ]
+    },
+    {
       "name": "primitives",
       "type": "registry:lib",
       "title": "Primitives",
@@ -8312,10 +8815,12 @@
       "type": "registry:lib",
       "title": "Pull To Refresh",
       "description": "Pull To Refresh — part of BL UI's library (lib/pull-to-refresh.ts).",
-      "dependencies": [],
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/motion.json"
+        "https://blamy.github.io/ui/r/reduced-motion.json"
       ],
       "files": [
         {
@@ -8343,6 +8848,66 @@
       ]
     },
     {
+      "name": "reduced-motion",
+      "type": "registry:lib",
+      "title": "Reduced Motion",
+      "description": "Reduced Motion — part of BL UI's library (lib/reduced-motion.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/reduced-motion.ts",
+          "type": "registry:lib",
+          "target": "lib/reduced-motion.ts"
+        }
+      ]
+    },
+    {
+      "name": "request-table-primitive",
+      "type": "registry:lib",
+      "title": "Request Table Primitive",
+      "description": "Request Table Primitive — part of BL UI's library (lib/request-table-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/grid-behaviors.json",
+        "https://blamy.github.io/ui/r/log-list-model.json",
+        "https://blamy.github.io/ui/r/request-table-model.json",
+        "https://blamy.github.io/ui/r/size-class.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/request-table-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/request-table-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "result-table-primitive",
+      "type": "registry:lib",
+      "title": "Result Table Primitive",
+      "description": "Result Table Primitive — part of BL UI's library (lib/result-table-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/grid-behaviors.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/result-table-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/result-table-primitive.ts"
+        }
+      ]
+    },
+    {
       "name": "row-label",
       "type": "registry:lib",
       "title": "Row Label",
@@ -8360,20 +8925,57 @@
       ]
     },
     {
-      "name": "scroll-hidden",
+      "name": "scroll-edge",
       "type": "registry:lib",
-      "title": "Scroll Hidden",
-      "description": "Scroll Hidden — part of BL UI's library (lib/scroll-hidden.ts).",
+      "title": "Scroll Edge",
+      "description": "Scroll Edge — part of BL UI's library (lib/scroll-edge.ts).",
       "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/theme.json"
+        "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "files": [
         {
-          "path": "packages/ui/src/lib/scroll-hidden.ts",
+          "path": "packages/ui/src/lib/scroll-edge.ts",
           "type": "registry:lib",
-          "target": "lib/scroll-hidden.ts"
+          "target": "lib/scroll-edge.ts"
+        }
+      ]
+    },
+    {
+      "name": "search-field-primitive",
+      "type": "registry:lib",
+      "title": "Search Field Primitive",
+      "description": "Search Field Primitive — part of BL UI's library (lib/search-field-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/search-field-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/search-field-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "selection-indicator-primitive",
+      "type": "registry:lib",
+      "title": "Selection Indicator Primitive",
+      "description": "Selection Indicator Primitive — part of BL UI's library (lib/selection-indicator-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/selection-indicator-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/selection-indicator-primitive.ts"
         }
       ]
     },
@@ -8399,22 +9001,107 @@
       ]
     },
     {
-      "name": "sheet-drag",
+      "name": "side-drawer-primitive",
       "type": "registry:lib",
-      "title": "Sheet Drag",
-      "description": "Sheet Drag — part of BL UI's library (lib/sheet-drag.ts).",
+      "title": "Side Drawer Primitive",
+      "description": "Side Drawer Primitive — part of BL UI's library (lib/side-drawer-primitive.ts).",
       "dependencies": [
-        "framer-motion@^13.1.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/motion.json"
+        "https://blamy.github.io/ui/r/back.json",
+        "https://blamy.github.io/ui/r/edge-swipe.json",
+        "https://blamy.github.io/ui/r/size-class.json",
+        "https://blamy.github.io/ui/r/stack.json"
       ],
       "files": [
         {
-          "path": "packages/ui/src/lib/sheet-drag.ts",
+          "path": "packages/ui/src/lib/side-drawer-primitive.ts",
           "type": "registry:lib",
-          "target": "lib/sheet-drag.ts"
+          "target": "lib/side-drawer-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "sidebar-primitive",
+      "type": "registry:lib",
+      "title": "Sidebar Primitive",
+      "description": "Sidebar Primitive — part of BL UI's library (lib/sidebar-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/size-class.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/sidebar-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/sidebar-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "size-class",
+      "type": "registry:lib",
+      "title": "Size Class",
+      "description": "Size Class — part of BL UI's library (lib/size-class.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/size-class.ts",
+          "type": "registry:lib",
+          "target": "lib/size-class.ts"
+        }
+      ]
+    },
+    {
+      "name": "split-view-primitive",
+      "type": "registry:lib",
+      "title": "Split View Primitive",
+      "description": "Split View Primitive — part of BL UI's library (lib/split-view-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/back.json",
+        "https://blamy.github.io/ui/r/edge-swipe.json",
+        "https://blamy.github.io/ui/r/scroll-edge.json",
+        "https://blamy.github.io/ui/r/size-class.json",
+        "https://blamy.github.io/ui/r/stack.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/split-view-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/split-view-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "spreadsheet-primitive",
+      "type": "registry:lib",
+      "title": "Spreadsheet Primitive",
+      "description": "Spreadsheet Primitive — part of BL UI's library (lib/spreadsheet-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/grid-behaviors.json",
+        "https://blamy.github.io/ui/r/spreadsheet-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/spreadsheet-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/spreadsheet-primitive.ts"
         }
       ]
     },
@@ -8449,6 +9136,25 @@
           "path": "packages/ui/src/lib/sql-lex.ts",
           "type": "registry:lib",
           "target": "lib/sql-lex.ts"
+        }
+      ]
+    },
+    {
+      "name": "stack",
+      "type": "registry:lib",
+      "title": "Stack",
+      "description": "Stack — part of BL UI's library (lib/stack.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/stack.ts",
+          "type": "registry:lib",
+          "target": "lib/stack.ts"
         }
       ]
     },
@@ -8495,11 +9201,12 @@
       "title": "Title Flight",
       "description": "Title Flight — part of BL UI's library (lib/title-flight.ts).",
       "dependencies": [
-        "framer-motion@^13.1.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/motion.json"
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/reduced-motion.json"
       ],
       "files": [
         {
@@ -8527,6 +9234,66 @@
       ]
     },
     {
+      "name": "trace-timeline-primitive",
+      "type": "registry:lib",
+      "title": "Trace Timeline Primitive",
+      "description": "Trace Timeline Primitive — part of BL UI's library (lib/trace-timeline-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/trace-timeline-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/trace-timeline-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/trace-timeline-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "use-virtual-rows",
+      "type": "registry:lib",
+      "title": "Use Virtual Rows",
+      "description": "Use Virtual Rows — part of BL UI's library (lib/use-virtual-rows.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/use-virtual-rows.ts",
+          "type": "registry:lib",
+          "target": "lib/use-virtual-rows.ts"
+        }
+      ]
+    },
+    {
+      "name": "video-timeline-primitive",
+      "type": "registry:lib",
+      "title": "Video Timeline Primitive",
+      "description": "Video Timeline Primitive — part of BL UI's library (lib/video-timeline-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/playback.json",
+        "https://blamy.github.io/ui/r/video-timeline-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/video-timeline-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/video-timeline-primitive.ts"
+        }
+      ]
+    },
+    {
       "name": "webgpu",
       "type": "registry:lib",
       "title": "Webgpu",
@@ -8544,19 +9311,58 @@
       ]
     },
     {
+      "name": "workspace-model",
+      "type": "registry:lib",
+      "title": "Workspace Model",
+      "description": "Workspace Model — part of BL UI's library (lib/workspace-model.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/workspace-model.ts",
+          "type": "registry:lib",
+          "target": "lib/workspace-model.ts"
+        }
+      ]
+    },
+    {
+      "name": "workspace-primitive",
+      "type": "registry:lib",
+      "title": "Workspace Primitive",
+      "description": "Workspace Primitive — part of BL UI's library (lib/workspace-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/workspace-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/workspace-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/workspace-primitive.ts"
+        }
+      ]
+    },
+    {
       "name": "apple-mail",
       "type": "registry:block",
       "title": "Apple Mail clone",
-      "description": "Apple Mail: Favorites, Smart Mailboxes and iCloud sections with rolling unread counts; a message list with unread dots, flags, attachments, previews and relative times; swipe actions (ListRow), edit mode, search and an unread filter; a message view with a quoted thread and reply, flag, move, archive and trash; and a compose sheet. One SplitView at every size: three tiled columns on desktop, an overlay sidebar on iPad, a stack with large titles and back buttons on iPhone. Composed from SplitView (sections, large titles), ListRow, Icon, SearchField, SheetContent, MarkdownEditor and DropdownMenu.",
+      "description": "Apple Mail: Favorites, Smart Mailboxes and iCloud sections with rolling unread counts; a message list with unread dots, flags, attachments, previews and relative times; swipe actions (ListRow), edit mode, search and an unread filter; a message view with a quoted thread and reply, flag, move, archive and trash; and a compose sheet. One SplitView at every size: three tiled columns on desktop, an overlay sidebar on iPad, a stack with large titles and back buttons on iPhone. Composed from SplitView (sections, large titles), ListRow, Icon, SearchField, Sheet, MarkdownEditor and DropdownMenu.",
       "categories": [
         "email",
         "productivity",
         "application"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "framer-motion@^13.1.0"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/animated-height.json",
         "https://blamy.github.io/ui/r/avatar.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
@@ -8567,6 +9373,7 @@
         "https://blamy.github.io/ui/r/markdown-editor.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/search-field.json",
         "https://blamy.github.io/ui/r/sheet.json",
         "https://blamy.github.io/ui/r/split-view.json",
@@ -8635,18 +9442,22 @@
         "media"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@1.34.4"
+        "@brett_lamy/docstream@2.0.0",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/morph.json",
         "https://blamy.github.io/ui/r/navigation-stack.json",
         "https://blamy.github.io/ui/r/now-playing-bars.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/slider.json",
         "https://blamy.github.io/ui/r/split-view.json",
         "https://blamy.github.io/ui/r/tab-view.json",
@@ -8711,9 +9522,8 @@
       ],
       "dependencies": [
         "use-fs@2.1.0",
-        "react-aria-components@^1.20.0",
-        "@agent-wasm/core@0.4.0",
-        "@brett_lamy/docstream@1.34.4",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "@brett_lamy/docstream@2.0.0",
         "@visual-json/react@0.4.0",
         "@visual-json/yaml@0.4.0"
       ],
@@ -8725,11 +9535,11 @@
         "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/csv.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/input.json",
-        "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/list.json",
         "https://blamy.github.io/ui/r/list-box.json",
         "https://blamy.github.io/ui/r/markdown-editor.json",
@@ -8740,8 +9550,8 @@
         "https://blamy.github.io/ui/r/spreadsheet.json",
         "https://blamy.github.io/ui/r/stl-viewer.json",
         "https://blamy.github.io/ui/r/syntax.json",
-        "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toggle.json",
         "https://blamy.github.io/ui/r/tree.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -8871,7 +9681,8 @@
         "security"
       ],
       "dependencies": [
-        "@agent-wasm/tailscale-connect@1.39.98-t02582083d"
+        "@agent-wasm/tailscale-connect@1.39.98-t02582083d",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -8886,6 +9697,7 @@
         "https://blamy.github.io/ui/r/number-morph.json",
         "https://blamy.github.io/ui/r/passkey-enroll-dialog.json",
         "https://blamy.github.io/ui/r/passkey-vault.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/progress-ring.json",
         "https://blamy.github.io/ui/r/qr-svg.json",
         "https://blamy.github.io/ui/r/search-field.json",
@@ -8987,7 +9799,8 @@
       ],
       "dependencies": [
         "use-fs@2.1.0",
-        "@brett_lamy/docstream@1.34.4"
+        "@brett_lamy/docstream@2.0.0",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -9001,6 +9814,7 @@
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/list.json",
         "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/search-field.json",
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/split-view.json",
@@ -9083,19 +9897,23 @@
         "application",
         "settings"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/animated-height.json",
         "https://blamy.github.io/ui/r/avatar.json",
         "https://blamy.github.io/ui/r/button.json",
-        "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/list.json",
         "https://blamy.github.io/ui/r/navigation-stack.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/radio-group.json",
         "https://blamy.github.io/ui/r/search-field.json",
         "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/select.json",
         "https://blamy.github.io/ui/r/slider.json",
         "https://blamy.github.io/ui/r/split-view.json",
         "https://blamy.github.io/ui/r/switch.json",
@@ -9151,7 +9969,8 @@
         "application"
       ],
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -9162,6 +9981,7 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/index-bar.json",
         "https://blamy.github.io/ui/r/markdown-editor.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/split-view.json",
         "https://blamy.github.io/ui/r/theme.json",
@@ -9240,17 +10060,20 @@
       ],
       "dependencies": [
         "class-variance-authority@^0.7.1",
-        "framer-motion@^13.1.0",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/floating-sheet.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/progress-stepper.json",
+        "https://blamy.github.io/ui/r/reduced-motion.json",
         "https://blamy.github.io/ui/r/theme.json",
-        "https://blamy.github.io/ui/r/utils.json"
+        "https://blamy.github.io/ui/r/utils.json",
+        "https://blamy.github.io/ui/r/map-chat.json"
       ],
       "files": [
         {
@@ -9278,19 +10101,23 @@
         "application"
       ],
       "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/adaptive-pane.json",
         "https://blamy.github.io/ui/r/avatar.json",
+        "https://blamy.github.io/ui/r/change-details.json",
         "https://blamy.github.io/ui/r/composer.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/markdown-view.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/side-drawer.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/tab-view.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -9416,6 +10243,7 @@
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/slider.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toggle-group.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -9514,7 +10342,9 @@
         "dashboard",
         "developer"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/avatar.json",
@@ -9531,6 +10361,7 @@
         "https://blamy.github.io/ui/r/list.json",
         "https://blamy.github.io/ui/r/markdown-view.json",
         "https://blamy.github.io/ui/r/navigation-stack.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/progress.json",
         "https://blamy.github.io/ui/r/search-field.json",
         "https://blamy.github.io/ui/r/segmented.json",
@@ -9539,6 +10370,7 @@
         "https://blamy.github.io/ui/r/tab-view.json",
         "https://blamy.github.io/ui/r/tailscale.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toggle-group.json",
         "https://blamy.github.io/ui/r/tree.json",
         "https://blamy.github.io/ui/r/utils.json",
         "https://blamy.github.io/ui/r/workbench-theme.json",
@@ -9637,12 +10469,13 @@
         "animation"
       ],
       "dependencies": [
-        "@internationalized/date@^3.12.4",
-        "framer-motion@^13.1.0",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/adaptive-pane.json",
         "https://blamy.github.io/ui/r/animated-height.json",
         "https://blamy.github.io/ui/r/avatar.json",
         "https://blamy.github.io/ui/r/badge.json",
@@ -9661,8 +10494,10 @@
         "https://blamy.github.io/ui/r/context-menu.json",
         "https://blamy.github.io/ui/r/date-field.json",
         "https://blamy.github.io/ui/r/date-picker.json",
+        "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/disclosure.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/font-picker.json",
         "https://blamy.github.io/ui/r/google-fonts.json",
         "https://blamy.github.io/ui/r/hover-card.json",
@@ -9677,6 +10512,7 @@
         "https://blamy.github.io/ui/r/number-morph.json",
         "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/presence.json",
         "https://blamy.github.io/ui/r/progress.json",
         "https://blamy.github.io/ui/r/progress-ring.json",
         "https://blamy.github.io/ui/r/progress-stepper.json",
@@ -9694,7 +10530,6 @@
         "https://blamy.github.io/ui/r/tab-bar.json",
         "https://blamy.github.io/ui/r/tab-view.json",
         "https://blamy.github.io/ui/r/tabs.json",
-        "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/text-morph.json",
         "https://blamy.github.io/ui/r/textarea.json",
         "https://blamy.github.io/ui/r/theme.json",
@@ -9852,6 +10687,11 @@
           "target": "components/blocks/interface-builder/player.tsx"
         },
         {
+          "path": "registry/blocks/interface-builder/point-pad.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/point-pad.ts"
+        },
+        {
           "path": "registry/blocks/interface-builder/previews.tsx",
           "type": "registry:component",
           "target": "components/blocks/interface-builder/previews.tsx"
@@ -9887,6 +10727,11 @@
           "target": "components/blocks/interface-builder/storyboard.tsx"
         },
         {
+          "path": "registry/blocks/interface-builder/timeline-bars.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/timeline-bars.ts"
+        },
+        {
           "path": "registry/blocks/interface-builder/timeline.tsx",
           "type": "registry:component",
           "target": "components/blocks/interface-builder/timeline.tsx"
@@ -9918,6 +10763,7 @@
         "command-menu"
       ],
       "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
@@ -9932,6 +10778,7 @@
         "https://blamy.github.io/ui/r/conversation.json",
         "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/filter.json",
         "https://blamy.github.io/ui/r/filter-input.json",
         "https://blamy.github.io/ui/r/filter-model.json",
@@ -9940,7 +10787,6 @@
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/kbd.json",
-        "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/list.json",
         "https://blamy.github.io/ui/r/markdown-view.json",
         "https://blamy.github.io/ui/r/morph.json",
@@ -9956,11 +10802,11 @@
         "https://blamy.github.io/ui/r/switch.json",
         "https://blamy.github.io/ui/r/tab-view.json",
         "https://blamy.github.io/ui/r/tabs.json",
-        "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/text-morph.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/toast.json",
         "https://blamy.github.io/ui/r/tooltip.json",
+        "https://blamy.github.io/ui/r/tree.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -10085,7 +10931,9 @@
         "command-menu"
       ],
       "dependencies": [
-        "@agent-wasm/core@0.4.0"
+        "@agent-wasm/core@0.4.0",
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -10094,6 +10942,7 @@
         "https://blamy.github.io/ui/r/command-menu.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/context-menu.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
@@ -10104,8 +10953,11 @@
         "https://blamy.github.io/ui/r/open-code-host.json",
         "https://blamy.github.io/ui/r/open-code-keychain.json",
         "https://blamy.github.io/ui/r/persistent-state.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/presence.json",
         "https://blamy.github.io/ui/r/session-recorder.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/switch.json",
         "https://blamy.github.io/ui/r/tailscale.json",
@@ -10213,21 +11065,26 @@
       "name": "map-chat",
       "type": "registry:block",
       "title": "Map chat",
-      "description": "An always-floating chat over a slippy map: the guide answers with tool calls that pan, zoom, pin and route the map (walking times, distances, saved trips). Composed from ArtifactChatContainer and a small tile-map renderer with its own geo maths, places and tool-planning agent. Needs network for the map tiles.",
+      "description": "An always-floating chat over a slippy map: the guide answers with tool calls that pan, zoom, pin and route the map (walking times, distances, saved trips). Composed from ArtifactChatContainer and a small tile-map renderer with its own geo maths, places and tool-planning agent; the map navigates on UI SDK's viewport (drag, pinch, scroll and Ctrl/⌘-scroll or pinch to zoom, and on the focused map the arrow keys pan, + and − zoom and 0 returns to the view). Needs network for the map tiles.",
       "categories": [
         "ai",
         "chat",
         "maps"
       ],
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/artifact-chat-container.json",
+        "https://blamy.github.io/ui/r/change-details.json",
         "https://blamy.github.io/ui/r/composer.json",
+        "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/markdown-view.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/reduced-motion.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -10246,6 +11103,11 @@
           "path": "registry/blocks/map-chat/tile-map.tsx",
           "type": "registry:component",
           "target": "components/blocks/map-chat/tile-map.tsx"
+        },
+        {
+          "path": "registry/blocks/map-chat/tile-map-primitive.ts",
+          "type": "registry:component",
+          "target": "components/blocks/map-chat/tile-map-primitive.ts"
         },
         {
           "path": "registry/blocks/map-chat/geo.ts",
@@ -10323,8 +11185,7 @@
         "application"
       ],
       "dependencies": [
-        "react-aria-components@^1.20.0",
-        "@brett_lamy/docstream@1.34.4"
+        "@brett_lamy/docstream@2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -10332,8 +11193,10 @@
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/file-upload.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/replay-preview.json",
         "https://blamy.github.io/ui/r/search-field.json",
@@ -10422,7 +11285,7 @@
         "forms"
       ],
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -10434,6 +11297,7 @@
         "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/disclosure.json",
+        "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/form.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
@@ -10448,7 +11312,6 @@
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/select.json",
         "https://blamy.github.io/ui/r/spinner.json",
-        "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -10512,22 +11375,25 @@
       "name": "safari",
       "type": "registry:block",
       "title": "Safari clone",
-      "description": "A browser that only browses through your tailnet. Opening it shows a gate: nothing works until Tailscale is connected (a saved session is restored without a prompt; signing out brings the gate back), and behind it the browser is inert. Then a tabbed Safari: back and forward with per-tab history, an address field with suggestions from your tailnet's devices and your history, reload and stop, a tab strip and a tab overview, a start page of your devices with a Tailscale report, and a popover (TailscaleMenu) to see or end the connection and choose the exit node. Pages run: Safari mounts the Tailscale request router with a proxyPath and opens each page in a frame at <your site>/__tailnet/<scheme>/<host>/<path>, where its service worker serves the document and routes every request the page makes (scripts, fetches, relative URLs, styles, images) through the tailnet; a script it injects keeps links and forms in the proxy and reports the address and title back, so history follows the page. The page runs on your origin (it can read your storage); cookies are not kept and WebSockets are not routed. Where no service worker can run, pages fall back to sealed documents (scripts removed, assets inlined). It uses the real Tailscale by default: Tailscale's own client as WebAssembly and its real sign-in page. A tailnet alone reaches your devices; for the public internet an exit node carries the traffic and the DNS lookups, and Safari picks one for you: opening a public address with none set selects the best online exit node (the one used last, else the first by name) and loads the page. The shield menu (TailscaleMenu) changes or clears it; choosing None is remembered, so a public address then explains why it fails, and Try Again turns an exit node back on (it also swaps an offline or failing exit node for another online one). With no online exit node it fails with an explanation. A simulated tailnet (data.ts) is there for stories and tests, never the default. Composed from TailscaleProvider, the Tailscale request router, TailscaleMenu, TailscaleLoginButton, Button, Popover, Spinner, Icon and BLProvider.",
+      "description": "A browser that only browses through your tailnet. Opening it shows a gate: nothing works until Tailscale is connected (a saved session is restored without a prompt; signing out brings the gate back), and behind it the browser is inert. Then a tabbed Safari: back and forward with per-tab history, an address field with suggestions from your tailnet's devices and your history, reload and stop, a tab strip and a tab overview, a start page of your devices with a Tailscale report, and a popover (TailscaleMenu) to see or end the connection and choose the exit node. Pages run: Safari mounts the Tailscale request router with a proxyPath and opens each page in a frame at <your site>/__tailnet/<scheme>/<host>/<path>, where its service worker serves the document and routes every request the page makes (scripts, fetches, relative URLs, styles, images) through the tailnet; a script it injects keeps links and forms in the proxy and reports the address and title back, so history follows the page. The page runs on your origin (it can read your storage); cookies are not kept and WebSockets are not routed. Where no service worker can run, pages fall back to sealed documents (scripts removed, assets inlined). It uses the real Tailscale by default: Tailscale's own client as WebAssembly and its real sign-in page. A tailnet alone reaches your devices; for the public internet an exit node carries the traffic and the DNS lookups, and Safari picks one for you: opening a public address with none set selects the best online exit node (the one used last, else the first by name) and loads the page. The shield menu (TailscaleMenu) changes or clears it; choosing None is remembered, so a public address then explains why it fails, and Try Again turns an exit node back on (it also swaps an offline or failing exit node for another online one). With no online exit node it fails with an explanation. A simulated tailnet (data.ts) is there for stories and tests, never the default. The address field is UI SDK’s Combobox. The gate is a modal Dialog contained in Safari's BLProvider (a layer host), and ⌘L, ⌘R, ⌘[ and ⌘] are shortcuts scoped to the focused browser. Composed from TailscaleProvider, the Tailscale request router, TailscaleMenu, TailscaleLoginButton, Button, Combobox, Dialog, Popover, Spinner, Icon and BLProvider.",
       "categories": [
         "browser",
         "network",
         "application"
       ],
       "dependencies": [
-        "@agent-wasm/tailscale-connect@1.39.98-t02582083d"
+        "@agent-wasm/tailscale-connect@1.39.98-t02582083d",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/combobox.json",
         "https://blamy.github.io/ui/r/container.json",
-        "https://blamy.github.io/ui/r/format-bytes.json",
+        "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/tailscale.json",
@@ -10600,22 +11466,25 @@
         "application"
       ],
       "dependencies": [
-        "react-aria@^3.51.0",
-        "react-aria-components@^1.20.0"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/avatar.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/list.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/search-field.json",
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/sidebar.json",
         "https://blamy.github.io/ui/r/split-view.json",
         "https://blamy.github.io/ui/r/switch.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toggle-group.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -10650,7 +11519,7 @@
         "audio"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@1.34.4"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -10701,24 +11570,30 @@
       "dependencies": [
         "@pierre/diffs@^1.3.6",
         "@pierre/trees@1.0.0-beta.6",
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1",
-        "framer-motion@^13.1.0",
-        "react-aria-components@^1.20.0"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/adaptive-pane.json",
         "https://blamy.github.io/ui/r/badge.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/change-details.json",
         "https://blamy.github.io/ui/r/command-menu.json",
         "https://blamy.github.io/ui/r/composer.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/conversation.json",
+        "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/floating-sheet.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/toast.json",
         "https://blamy.github.io/ui/r/utils.json",
@@ -10834,10 +11709,13 @@
         "application",
         "productivity"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/plain-button.json",
@@ -10846,6 +11724,7 @@
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/session-recorder.json",
         "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/split-view.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -10890,6 +11769,7 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/open-code.json",
@@ -10929,16 +11809,18 @@
         "application",
         "editor"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/adaptive-pane.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/ffmpeg.json",
         "https://blamy.github.io/ui/r/file-upload.json",
         "https://blamy.github.io/ui/r/filmstrip.json",
-        "https://blamy.github.io/ui/r/format-bytes.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
@@ -10947,7 +11829,6 @@
         "https://blamy.github.io/ui/r/slider.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/switch.json",
-        "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/textarea.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/toggle.json",
@@ -11021,8 +11902,7 @@
       ],
       "dependencies": [
         "@agent-wasm/core@0.4.0",
-        "@agent-wasm/tailscale-connect@1.39.98-t02582083d",
-        "react-aria-components@^1.20.0"
+        "@agent-wasm/tailscale-connect@1.39.98-t02582083d"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -11032,9 +11912,9 @@
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/context-menu.json",
         "https://blamy.github.io/ui/r/credenza.json",
+        "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
-        "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/open-code.json",
         "https://blamy.github.io/ui/r/open-code-host.json",
         "https://blamy.github.io/ui/r/plain-button.json",
@@ -11048,7 +11928,6 @@
         "https://blamy.github.io/ui/r/tailscale-menu.json",
         "https://blamy.github.io/ui/r/terminal.json",
         "https://blamy.github.io/ui/r/terminal-line.json",
-        "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/tree.json",
         "https://blamy.github.io/ui/r/utils.json",
@@ -11178,7 +12057,8 @@
       "dependencies": [
         "@pierre/diffs@^1.3.6",
         "isomorphic-git@^1.41.9",
-        "buffer@^6.0.3"
+        "buffer@^6.0.3",
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",

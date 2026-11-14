@@ -6,13 +6,13 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Button } from '@/components/ui/button';
 import { Disclosure, DisclosurePanel, DisclosureTrigger } from '@/components/ui/disclosure';
+import { Field } from '@/components/ui/field';
 import { Form } from '@/components/ui/form';
-import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { PlainButton } from '@/components/ui/plain-button';
 import { Spinner } from '@/components/ui/spinner';
-import { TextField } from '@/components/ui/text-field';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { MONEY_FORMAT, longDate, money, renewsOn } from './checkout';
@@ -32,14 +32,16 @@ export function OrderSummary() {
       <div className="flex items-center gap-3">
         <Logo size={44} />
         <div className="min-w-0 flex-1">
-          <HoverCardTrigger isDisabled={c.step === 'plan'}>
-            <div className="truncate text-callout font-semibold text-foreground">{PRODUCT.name} {q.plan.name}</div>
-            <HoverCard placement="bottom start"><PlanCard plan={q.plan} cycle={cycle} /></HoverCard>
-          </HoverCardTrigger>
+          <HoverCard disabled={c.step === 'plan'}>
+            <HoverCardTrigger render={<span aria-label={`${PRODUCT.name} ${q.plan.name}`} />} className="inline-flex max-w-full min-w-0">
+              <span className="truncate text-callout font-semibold text-foreground">{PRODUCT.name} {q.plan.name}</span>
+            </HoverCardTrigger>
+            <HoverCardContent side="bottom" align="start"><PlanCard plan={q.plan} cycle={cycle} /></HoverCardContent>
+          </HoverCard>
           <div className={cn('text-footnote', SOFT_INK)}>{seats} {seats === 1 ? 'seat' : 'seats'} · billed {yearly ? 'yearly' : 'monthly'}</div>
         </div>
         {c.step !== 'plan' ? (
-          <Button variant="link" size="sm" isDisabled={busy} onPress={() => c.goTo('plan')} className="h-auto px-0 text-link" aria-label="Change plan">Change</Button>
+          <Button variant="link" size="sm" disabled={busy} onClick={() => c.goTo('plan')} className="h-auto px-0 text-link" aria-label="Change plan">Change</Button>
         ) : null}
       </div>
 
@@ -52,7 +54,7 @@ export function OrderSummary() {
             Yearly billing saves you {money(q.annualSaving, true)} a year.
           </p>
         ) : (
-          <Button variant="link" size="sm" isDisabled={busy} onPress={() => c.setCycle('annual')} className="h-auto justify-start px-0 font-medium whitespace-normal text-link">
+          <Button variant="link" size="sm" disabled={busy} onClick={() => c.setCycle('annual')} className="h-auto justify-start px-0 font-medium whitespace-normal text-link">
             Switch to yearly and save {money(q.annualSaving, true)} a year
           </Button>
         )}
@@ -110,8 +112,8 @@ function PromoCode({ disabled }: { disabled: boolean }) {
           <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-secondary pr-1 pl-2.5 text-footnote font-semibold text-foreground">
             <Icon name="tag-fill" size={14} className="text-primary" />
             {q.promo.code}
-            <PlainButton aria-label={`Remove ${q.promo.code}`} isDisabled={disabled} onPress={() => { focusNext.current = 'add'; c.removePromo(); }}
-              className="bl-btn grid size-5 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-foreground/70 outline-none data-disabled:cursor-default data-disabled:opacity-40 data-focus-visible:ring-2 data-focus-visible:ring-ring data-hovered:bg-secondary-strong">
+            <PlainButton aria-label={`Remove ${q.promo.code}`} disabled={disabled} onClick={() => { focusNext.current = 'add'; c.removePromo(); }}
+              className="bl-btn grid size-5 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-foreground/70 outline-none data-disabled:cursor-default data-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-ring hover:not-data-disabled:bg-secondary-strong">
               <Icon name="xmark" size={11} sw={2.6} />
             </PlainButton>
           </span>
@@ -122,19 +124,20 @@ function PromoCode({ disabled }: { disabled: boolean }) {
     );
   } else if (!open) {
     body = (
-      <Button data-promo-focus="add" variant="link" size="sm" isDisabled={disabled} onPress={() => setOpen(true)} className="h-auto justify-start px-0 font-medium text-link">
+      <Button data-promo-focus="add" variant="link" size="sm" disabled={disabled} onClick={() => setOpen(true)} className="h-auto justify-start px-0 font-medium text-link">
         <Icon name="tag" size={16} /> Add promotion code
       </Button>
     );
   } else {
     body = (
-      <Form validationBehavior="aria" onSubmit={(e) => { e.preventDefault(); apply(); }} className="flex-row items-start gap-2">
-        <TextField aria-label="Promotion code" autoFocus value={code} isInvalid={!!error} isDisabled={disabled} className="min-w-0 flex-1"
-          onChange={(v) => { setCode(v); setError(null); }} onKeyDown={(e) => { if (e.key === 'Escape' && !code) { focusNext.current = 'add'; setOpen(false); } }}>
-          <Input size="sm" placeholder="Try LAUNCH20" autoComplete="off" className="h-9 uppercase placeholder:normal-case" />
+      <Form noValidate onSubmit={(e) => { e.preventDefault(); apply(); }} className="flex-row items-start gap-2">
+        <Field invalid={error ? true : undefined} disabled={disabled} className="min-w-0 flex-1">
+          <Input aria-label="Promotion code" autoFocus value={code} onValueChange={(v) => { setCode(v); setError(null); }}
+            onKeyDown={(e) => { if (e.key === 'Escape' && !code) { focusNext.current = 'add'; setOpen(false); } }}
+            size="sm" placeholder="Try LAUNCH20" autoComplete="off" className="h-9 uppercase placeholder:normal-case" />
           <ErrorText>{error}</ErrorText>
-        </TextField>
-        <Button type="submit" variant="secondary" isDisabled={disabled} className="w-[76px] shrink-0">
+        </Field>
+        <Button type="submit" variant="secondary" disabled={disabled} className="w-[76px] shrink-0">
           {checking ? <Spinner spin size={16} /> : 'Apply'}
         </Button>
       </Form>
@@ -156,14 +159,16 @@ export function SummaryDisclosure() {
   return (
     // The bar runs edge to edge; its contents line up with the form column below it.
     <div className="border-b border-border bg-muted">
-      <Disclosure isExpanded={open} onExpandedChange={setOpen} className="mx-auto max-w-[520px] px-5">
-        <DisclosureTrigger level={2} className="w-full gap-2 py-3 text-subhead">
-          <span className="flex items-center gap-2 font-medium text-link">
-            <Icon name="cart" size={18} />
-            {open ? 'Hide' : 'Show'} order summary
-          </span>
-          <NumberMorph value={c.quote.total / 100} format={MONEY_FORMAT} className="mr-1 ml-auto text-callout font-semibold text-foreground" />
-        </DisclosureTrigger>
+      <Disclosure open={open} onOpenChange={setOpen} className="mx-auto max-w-[520px] px-5">
+        <h2 className="m-0 flex">
+          <DisclosureTrigger className="w-full gap-2 py-3 text-subhead">
+            <span className="flex items-center gap-2 font-medium text-link">
+              <Icon name="cart" size={18} />
+              {open ? 'Hide' : 'Show'} order summary
+            </span>
+            <NumberMorph value={c.quote.total / 100} format={MONEY_FORMAT} className="mr-1 ml-auto text-callout font-semibold text-foreground" />
+          </DisclosureTrigger>
+        </h2>
         <DisclosurePanel>
           <div className="pt-2 pb-2">
             <OrderSummary />

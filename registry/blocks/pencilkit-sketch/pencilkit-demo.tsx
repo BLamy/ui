@@ -1,11 +1,11 @@
 /* The PencilKit sketch pad: dotted paper, the canvas, and the floating toolbar. Resting on a tool or a width in the
    toolbar (or tabbing to one) shows a brush preview in a hover card, the way drawing apps preview a brush before you
-   pick it: a sample stroke drawn by the real stroke renderer with that tool, in the current ink, at that width. The
-   pickers' buttons belong to the toolbar part, so one card per picker follows the button under the pointer (as a
-   Tree's row previews do). */
+   pick it: a sample stroke drawn by the real stroke renderer with that tool, in the current ink, at that width. Each
+   picker's buttons are triggers of one card (the pickers' `hoverCard`), which follows the button under the pointer or
+   keyboard focus with UI SDK's hover intent. */
 import * as React from 'react';
-import { useRef, useState } from 'react';
-import { HoverCard, HoverCardHeader, useHoverCard } from '@/components/ui/hover-card';
+import { useState } from 'react';
+import { HoverCard, HoverCardContent, HoverCardHeader, createHoverCardController } from '@/components/ui/hover-card';
 import { PK_INKS, PK_TOOL_ICONS, PK_W, type PencilDrawTool, type PencilPoint, type PencilStroke, type PencilTool } from '@/components/ui/pencilkit/constants';
 import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas';
 import { InkPicker, PencilActions, PencilToolbar, PencilToolbarDivider, ToolPicker, WidthPicker } from '@/components/ui/pencilkit/pencil-toolbar';
@@ -57,47 +57,6 @@ function BrushCard({ tool, ink, wi, strokes }: { tool: PencilTool; ink: string; 
   );
 }
 
-/** One hover card for a picker's buttons, following the one under the pointer or keyboard focus. `pick` names the
-    button's item from its aria-label. */
-function usePickerCard<K>(pick: (label: string) => K | null) {
-  const card = useHoverCard();
-  const button = useRef<HTMLElement | null>(null);
-  const [item, setItem] = useState<K | null>(null);
-  const at = (target: EventTarget) => {
-    const el = (target as Element).closest?.<HTMLElement>('button');
-    const k = el ? pick(el.getAttribute('aria-label') ?? '') : null;
-    return el && k != null ? { el, k } : null;
-  };
-  const show = (hit: { el: HTMLElement; k: K }) => {
-    button.current = hit.el;
-    setItem(() => hit.k);
-  };
-  const handlers = {
-    onPointerMove: (e: React.PointerEvent) => {
-      if (e.pointerType === 'touch') return;
-      const hit = at(e.target);
-      if (!hit) { button.current = null; card.triggerProps.onPointerLeave(e); return; }
-      if (hit.el === button.current) return;
-      card.close();
-      show(hit);
-      card.triggerProps.onPointerEnter(e);
-    },
-    onPointerLeave: (e: React.PointerEvent) => { button.current = null; card.triggerProps.onPointerLeave(e); },
-    onFocus: (e: React.FocusEvent) => {
-      const hit = at(e.target);
-      if (!hit || !(e.target as Element).matches(':focus-visible')) return;
-      show(hit);
-      card.open();
-    },
-    onBlur: card.triggerProps.onBlur,
-    // A press picks it: the card has said its piece.
-    onPointerDown: () => card.close(),
-  };
-  return { handlers, item, cardProps: { ...card.cardProps, triggerRef: button } };
-}
-
-const TOOLS: PencilTool[] = ['pen', 'marker', 'pencil', 'eraser'];
-
 export interface PencilKitDemoProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Dark paper. Wins over `appearance`. */
   dark?: boolean | 'true';
@@ -118,8 +77,9 @@ export function PencilKitDemo({ dark: darkProp, appearance, tint, defaultStrokes
   const [ink, setInk] = useState(dark ? 1 : 0);
   const [wi, setWi] = useState(1);
   const history = usePencilHistory(defaultStrokes);
-  const toolCard = usePickerCard((label) => TOOLS.find((t) => t === label) ?? null);
-  const widthCard = usePickerCard((label) => (/^Width (\d+)$/.test(label) ? Number(label.slice(6)) - 1 : null));
+  // One card per picker: each of its buttons is a trigger handing the card its tool or width.
+  const [toolCard] = useState(() => createHoverCardController<PencilTool>());
+  const [widthCard] = useState(() => createHoverCardController<number>());
   // The eraser has no stroke to show; a width previews the tool in hand (the pen, while erasing).
   const drawing: PencilDrawTool = tool === 'eraser' ? 'pen' : tool;
 
@@ -153,11 +113,11 @@ export function PencilKitDemo({ dark: darkProp, appearance, tint, defaultStrokes
         }
       >
         <PencilToolbar>
-          <ToolPicker value={tool} onChange={setTool} {...toolCard.handlers} />
+          <ToolPicker value={tool} onValueChange={setTool} hoverCard={toolCard} />
           <PencilToolbarDivider />
-          <InkPicker value={ink} onChange={setInk} />
+          <InkPicker value={ink} onValueChange={setInk} />
           <PencilToolbarDivider />
-          <WidthPicker value={wi} onChange={setWi} {...widthCard.handlers} />
+          <WidthPicker value={wi} onValueChange={setWi} hoverCard={widthCard} />
           <PencilToolbarDivider />
           <PencilActions
             onUndo={history.undo}
@@ -168,16 +128,16 @@ export function PencilKitDemo({ dark: darkProp, appearance, tint, defaultStrokes
           />
         </PencilToolbar>
       </PencilCanvas>
-      {toolCard.item != null ? (
-        <HoverCard {...toolCard.cardProps} placement="top" className="w-64">
-          <BrushCard tool={toolCard.item} ink={PK_INKS[ink]} wi={wi} strokes={history.strokes.length} />
-        </HoverCard>
-      ) : null}
-      {widthCard.item != null ? (
-        <HoverCard {...widthCard.cardProps} placement="top" className="w-64">
-          <BrushCard tool={drawing} ink={PK_INKS[ink]} wi={widthCard.item} strokes={history.strokes.length} />
-        </HoverCard>
-      ) : null}
+      <HoverCard controller={toolCard}>
+        <HoverCardContent<PencilTool> side="top" className="w-64">
+          {({ payload }) => (payload != null ? <BrushCard tool={payload} ink={PK_INKS[ink]} wi={wi} strokes={history.strokes.length} /> : null)}
+        </HoverCardContent>
+      </HoverCard>
+      <HoverCard controller={widthCard}>
+        <HoverCardContent<number> side="top" className="w-64">
+          {({ payload }) => (payload != null ? <BrushCard tool={drawing} ink={PK_INKS[ink]} wi={payload} strokes={history.strokes.length} /> : null)}
+        </HoverCardContent>
+      </HoverCard>
     </div>
   );
 }

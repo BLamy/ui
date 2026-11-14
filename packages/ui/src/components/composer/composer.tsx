@@ -5,34 +5,20 @@ import { createPortal } from 'react-dom';
 import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/docstream-editor/editor';
 import type { EditorAttachment } from '@brett_lamy/docstream-editor';
 import { cva, type VariantProps } from 'class-variance-authority';
-import {
-  Dialog,
-  FileTrigger,
-  Menu,
-  MenuItem,
-  MenuTrigger,
-  Modal,
-  ModalOverlay,
-  VisuallyHidden,
-  composeRenderProps,
-  useDrop,
-  type DropItem,
-  type Key,
-  type MenuItemProps,
-} from 'react-aria-components';
-import { useButton } from 'react-aria/useButton';
-import { useClipboard } from 'react-aria/useClipboard';
-import { useFocusRing } from 'react-aria/useFocusRing';
-import { mergeProps } from 'react-aria/mergeProps';
-import { Extension } from '@tiptap/core';
-import { Plugin } from '@tiptap/pm/state';
+import { animateIn, announce, bindDrag, bindLayer, createFocusRecovery, dragThreshold, type ChangeDetails, type FocusRecovery } from '@ui-sdk/core';
+import { createVelocityTracker, rubberBand } from '@ui-sdk/core/gesture';
+import { Dialog, DialogBackdrop, DialogClose, DialogContent, type DialogCloseActionDetails, type DialogOptions } from '@ui-sdk/react/dialog';
+import { FileInput, FileInputDropzone, FileInputTrigger, type FileInputValueChangeDetails, type FileRejection } from '@ui-sdk/react/file-input';
+import { MenuContent, MenuItemIndicator, MenuRadioItem } from '@ui-sdk/react/menu';
 import { PlainButton as Button, PlainToggleButton as ToggleButton, type PlainButtonProps as ButtonProps } from '@/components/ui/plain-button';
-import { cn, pressable } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuRadioGroup, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Separator, type SeparatorProps } from '@/components/ui/separator';
+import { cn, cx, pressable } from '@/lib/utils';
 import { Icon, type IconName } from '@/lib/icon';
-import { WbPopover } from '@/components/ui/composer/composer-popover';
+import { useSurfacePalette, wbPopoverSurface } from '@/components/ui/composer/composer-popover';
 import { looksLikeMarkdown, insertMarkdown } from '@/components/ui/markdown-editor';
 import { useComposerAnnotator, type ComposerAnnotator, type ComposerAnnotatorSurface } from '@/components/ui/composer/annotator';
-import { animate, AnimatePresence, motion } from 'framer-motion';
+import { animate } from 'framer-motion';
 import { useToast } from '@/components/ui/toast';
 import {
   acceptsFile,
@@ -47,9 +33,12 @@ import {
   type ComposerAttachmentKind,
 } from '@/components/ui/composer/composer-files';
 import { flipPlay, flipSnapshot, prefersReducedMotion, springs, type FlipSnapshot } from '@/lib/motion';
-import { useSheetDrag, type SheetDragState } from '@/lib/sheet-drag';
+import { useEnterExit, usePresence, usePresenceList, type PresenceEntry } from '@/lib/presence';
+import { IconSwap } from '@/components/ui/icon-swap';
 import { TextMorph } from '@/components/ui/text-morph';
-import { themeScopeProps } from '@/lib/theme';
+import { themeScopeProps, useLayerHost } from '@/lib/theme';
+import { changeDetails, type ChangeGiven } from '@/lib/change-details';
+import { useControllableChange } from '@/lib/controllable-state';
 
 /* ══ Composer — a compositional prompt box, in the spirit of shadcn's InputGroup ══
 
@@ -103,19 +92,38 @@ export interface ComposerAttachOptions {
   source?: ComposerFileSource;
   /** A viewport point (e.g. a drop's) — image chips land there when it is over the editor, else at the caret. */
   point?: { x: number; y: number };
+  /** The event behind it (a drop, a paste, a picker change), passed on in `onAttachmentsChange`'s details. */
+  event?: Event;
 }
+
+/* Why each of the Composer's values changed: the `reason` in its change details. */
+/** The draft: typed (`input-change`), cleared by a send, or set from code. */
+export type ComposerValueChangeReason = 'input-change' | 'send' | 'imperative';
+/** The attachments: files from the picker, a drop or a paste, one removed, an annotation saved, a send, or code. */
+export type ComposerAttachmentsChangeReason = 'picker' | 'drop' | 'paste' | 'remove' | 'annotate' | 'send' | 'imperative';
+/** The tall drafting mode: ComposerExpand pressed, or code. */
+export type ComposerExpandedChangeReason = 'press' | 'imperative';
+/** The collapse: the scroller moved, the FAB was pressed, or code. */
+export type ComposerCollapsedChangeReason = 'scroll' | 'press' | 'imperative';
+export type ComposerValueChangeDetails = ChangeDetails<ComposerValueChangeReason>;
+/** How a ComposerQueue takes a draft sent while a reply streams: `false` when its `onItemsChange` refused it. */
+type ComposerQueueTake = (markdown: string, attachments: ComposerAttachment[], event?: Event) => boolean;
+export type ComposerAttachmentsChangeDetails = ChangeDetails<ComposerAttachmentsChangeReason>;
+export type ComposerExpandedChangeDetails = ChangeDetails<ComposerExpandedChangeReason>;
+export type ComposerCollapsedChangeDetails = ChangeDetails<ComposerCollapsedChangeReason>;
 
 type ComposerEditor = NonNullable<Parameters<NonNullable<GitbookEditorProps['onEditorReady']>>[0]>;
 
 export interface ComposerContextValue {
   /** The draft as GitBook-flavored Markdown (attachment chips serialize as `![name](attachment:id)`). */
   value: string;
-  setValue: (markdown: string) => void;
+  /** Sets the draft (reason `imperative` unless given); `false` when the change was canceled or nothing changed. */
+  setValue: (markdown: string, given?: ChangeGiven<ComposerValueChangeReason>) => boolean;
   attachments: ComposerAttachment[];
-  addAttachment: (attachment: ComposerAttachment) => void;
-  /** Drops an attachment and its chip in the editor. */
-  removeAttachment: (id: string) => void;
-  updateAttachment: (id: string, patch: Partial<ComposerAttachment>) => void;
+  addAttachment: (attachment: ComposerAttachment, given?: ChangeGiven<ComposerAttachmentsChangeReason>) => boolean;
+  /** Drops an attachment and its chip in the editor (reason `remove` unless given). */
+  removeAttachment: (id: string, given?: ChangeGiven<ComposerAttachmentsChangeReason>) => boolean;
+  updateAttachment: (id: string, patch: Partial<ComposerAttachment>, given?: ChangeGiven<ComposerAttachmentsChangeReason>) => boolean;
   /**
    * Adds files as attachments, after the `acceptedFileTypes` / `maxFileSize` / `maxFiles` checks and the
    * `onDropFiles` hook. Images chip into the editor (at `point` when over it, else the caret); other files
@@ -125,18 +133,24 @@ export interface ComposerContextValue {
   /** The Composer's `acceptedFileTypes` (the add button and the drop zone use it). */
   acceptedFileTypes?: string[];
   expanded: boolean;
-  setExpanded: (expanded: boolean) => void;
+  setExpanded: (expanded: boolean, given?: ChangeGiven<ComposerExpandedChangeReason>) => boolean;
   streaming: boolean;
   /** Whether there is anything to send. */
   canSend: boolean;
-  send: () => void;
+  /**
+   * Sends the draft (into the ComposerQueue while a reply streams). Pass the click or key behind it, for the changes'
+   * details. A send empties the draft through `onValueChange('', { reason: 'send' })` and
+   * `onAttachmentsChange([], { reason: 'send' })` before anything goes out: canceling either one (or the queue's
+   * `onItemsChange`) refuses the send, and the draft stays as it was.
+   */
+  send: (event?: Event) => void;
   stop: () => void;
   /** Hands a message to `onSubmit` directly, bypassing the draft (a ComposerQueue feeding a queued message in). */
   submit: (markdown: string, attachments: ComposerAttachment[]) => void;
   /** A ComposerQueue is mounted: sending while streaming queues the draft instead of being held. */
   canQueue: boolean;
   /** @internal a ComposerQueue registers where queued drafts go. */
-  setQueue: (queue: ((markdown: string, attachments: ComposerAttachment[]) => void) | null) => void;
+  setQueue: (queue: ComposerQueueTake | null) => void;
   /** Opens the annotator for an attachment (a plain preview when the annotator is opted out). */
   annotate: (id: string) => void;
   /** An annotator is in effect (PencilKit by default, the `annotator` prop, a ComposerAnnotatorProvider, or `annotateCanvas`). */
@@ -150,13 +164,13 @@ export interface ComposerContextValue {
   renderCard?: (card: React.ReactNode) => React.ReactNode;
   /** How far the composer is collapsed: the full card, a single-row pill, or a FAB. */
   collapsed: ComposerCollapse;
-  setCollapsed: (collapsed: ComposerCollapse) => void;
+  setCollapsed: (collapsed: ComposerCollapse, given?: ChangeGiven<ComposerCollapsedChangeReason>) => boolean;
   /** @internal where ComposerOptions move to while compact. */
   optionsOutlet: HTMLElement | null;
   /** @internal */
   setOptionsOutlet: (el: HTMLElement | null) => void;
   /** @internal the FAB the card folds into, when this composer can fold. */
-  fab: { icon?: React.ReactNode; restore: () => void } | null;
+  fab: { icon?: React.ReactNode; restore: (event?: React.MouseEvent) => void } | null;
 }
 
 /** `none`: the full card · `compact`: one row, options in the bottom bump · `fab`: a floating button. */
@@ -199,15 +213,17 @@ export interface ComposerProps {
   /** Controlled draft Markdown. */
   value?: string;
   defaultValue?: string;
-  onValueChange?: (markdown: string) => void;
+  /** Called before the draft changes; `details.cancel()` keeps an uncontrolled draft as it was. */
+  onValueChange?: (markdown: string, details: ComposerValueChangeDetails) => void;
   /** Controlled attachments (pasted, dropped, or picked files). */
   attachments?: ComposerAttachment[];
   defaultAttachments?: ComposerAttachment[];
-  onAttachmentsChange?: (attachments: ComposerAttachment[]) => void;
+  /** Called before the attachments change (`details.reason` says how); `details.cancel()` keeps them as they were. */
+  onAttachmentsChange?: (attachments: ComposerAttachment[], details: ComposerAttachmentsChangeDetails) => void;
   /** Tall drafting mode. */
   expanded?: boolean;
   defaultExpanded?: boolean;
-  onExpandedChange?: (expanded: boolean) => void;
+  onExpandedChange?: (expanded: boolean, details: ComposerExpandedChangeDetails) => void;
   /** An agent is replying: send is held and ComposerSend becomes a stop control. */
   streaming?: boolean;
   onStop?: () => void;
@@ -240,7 +256,7 @@ export interface ComposerProps {
   /** Collapse state: the full card, a single-row `compact` pill, or a `fab`. */
   collapsed?: ComposerCollapse;
   defaultCollapsed?: ComposerCollapse;
-  onCollapsedChange?: (collapsed: ComposerCollapse) => void;
+  onCollapsedChange?: (collapsed: ComposerCollapse, details: ComposerCollapsedChangeDetails) => void;
   /**
    * A scroller beside the composer (a chat transcript). Scrolling away from its anchor (up, away from the
    * newest message, by default) collapses the composer to `compact`; with `collapseTo="fab"` a flick or a long
@@ -264,24 +280,6 @@ export interface ComposerProps {
   className?: string;
   style?: React.CSSProperties;
   ref?: React.Ref<HTMLDivElement>;
-}
-
-function useControllable<T>(value: T | undefined, initial: T, onChange?: (v: T) => void): [T, (v: T | ((p: T) => T)) => void] {
-  const [inner, setInner] = useState(initial);
-  const current = value !== undefined ? value : inner;
-  const latest = useRef(current);
-  latest.current = current;
-  const set = React.useCallback(
-    (next: T | ((p: T) => T)) => {
-      const v = typeof next === 'function' ? (next as (p: T) => T)(latest.current) : next;
-      latest.current = v;
-      if (value === undefined) setInner(v);
-      onChange?.(v);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [value === undefined, onChange],
-  );
-  return [current, set];
 }
 
 const newId = () => 'att-' + Math.random().toString(36).slice(2, 12);
@@ -330,12 +328,15 @@ export function Composer({
   const outlet = React.useContext(ComposerOutletContext);
   const contextAnnotator = useComposerAnnotator();
   const annotator = annotatorProp === undefined ? contextAnnotator : annotatorProp;
-  const [value, setValue] = useControllable(valueProp, defaultValue, onValueChange);
-  const [attachments, setAttachments] = useControllable(attachmentsProp, defaultAttachments, onAttachmentsChange);
-  const [expanded, setExpanded] = useControllable(expandedProp, defaultExpanded, onExpandedChange);
-  const [collapsed, setCollapsed] = useControllable<ComposerCollapse>(collapsedProp, defaultCollapsed, onCollapsedChange);
+  const [value, setValue] = useControllableChange<string, ComposerValueChangeReason>(valueProp, defaultValue, onValueChange);
+  const [attachments, setAttachments] = useControllableChange<ComposerAttachment[], ComposerAttachmentsChangeReason>(attachmentsProp, defaultAttachments, onAttachmentsChange);
+  const [expanded, setExpanded] = useControllableChange<boolean, ComposerExpandedChangeReason>(expandedProp, defaultExpanded, onExpandedChange);
+  const [collapsed, setCollapsed] = useControllableChange<ComposerCollapse, ComposerCollapsedChangeReason>(collapsedProp, defaultCollapsed, onCollapsedChange);
   const [editor, setEditor] = useState<ComposerEditor | null>(null);
+  // The attachment in the lightbox, and whether it is open: the lightbox stays until its exit has played.
   const [annotating, setAnnotating] = useState<string | null>(null);
+  const [annotateOpen, setAnnotateOpen] = useState(false);
+  const savedAnnotation = useRef<string | null>(null);
   const [optionsOutlet, setOptionsOutlet] = useState<HTMLElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const valueRef = useRef(value);
@@ -346,18 +347,36 @@ export function Composer({
   const canSend = !!(value.trim() || attachments.length);
 
   const addAttachment = React.useCallback(
-    (a: ComposerAttachment) => setAttachments((all) => (all.some((x) => x.id === a.id) ? all : [...all, a])),
+    (a: ComposerAttachment, given?: ChangeGiven<ComposerAttachmentsChangeReason>) =>
+      setAttachments((all) => (all.some((x) => x.id === a.id) ? all : [...all, a]), given),
     [setAttachments],
   );
   const updateAttachment = React.useCallback(
-    (id: string, patch: Partial<ComposerAttachment>) => setAttachments((all) => all.map((a) => (a.id === id ? { ...a, ...patch } : a))),
+    (id: string, patch: Partial<ComposerAttachment>, given?: ChangeGiven<ComposerAttachmentsChangeReason>) =>
+      setAttachments((all) => all.map((a) => (a.id === id ? { ...a, ...patch } : a)), given),
     [setAttachments],
   );
-  const removeAttachment = (id: string) => {
-    // Removing the chip reports back through onAttachmentRemove; drop it here too for attachments without a chip.
-    editor?.commands.removeAttachment(id);
-    setAttachments((all) => all.filter((a) => a.id !== id));
+  // A send clears the editor: the input and chip removals that clearing echoes back are part of the send.
+  const clearing = useRef(false);
+  // The chip being taken out with its attachment: the editor reports that removal back, and it's already done.
+  const unchipping = useRef<string | null>(null);
+  const removeAttachment = (id: string, given: ChangeGiven<ComposerAttachmentsChangeReason> = { reason: 'remove' }) => {
+    if (clearing.current || unchipping.current === id) return false;
+    // Asked first: a canceled removal keeps the tile and its chip.
+    const listed = attRef.current.some((a) => a.id === id);
+    if (listed && !setAttachments((all) => all.filter((a) => a.id !== id), given)) return false;
+    unchipping.current = id;
+    try {
+      editor?.commands.removeAttachment(id);
+    } finally {
+      unchipping.current = null;
+    }
+    return listed;
   };
+  const setDraft = React.useCallback(
+    (markdown: string, given?: ChangeGiven<ComposerValueChangeReason>) => (clearing.current ? false : setValue(markdown, given)),
+    [setValue],
+  );
 
   // ── files ──
   // Object URLs for non-image files: revoked once their attachment leaves the draft (removed, or replaced by a
@@ -384,7 +403,6 @@ export function Composer({
     [],
   );
   const toast = useToast();
-  const [announcement, setAnnouncement] = useState('');
   const rejectFiles = (rejections: ComposerFileRejection[]) => {
     if (!rejections.length) return;
     if (onFilesRejected) return onFilesRejected(rejections);
@@ -421,7 +439,7 @@ export function Composer({
     const chain = ed.chain().focus();
     (pos === undefined ? chain.insertContent(content) : chain.insertContentAt(pos, content)).run();
   };
-  const attachFiles = (incoming: File[], { source = 'api', point }: ComposerAttachOptions = {}) => {
+  const attachFiles = (incoming: File[], { source = 'api', point, event }: ComposerAttachOptions = {}) => {
     const rejected: ComposerFileRejection[] = [];
     let files = incoming.filter((file) => {
       if (!acceptsFile(file, acceptedFileTypes)) rejected.push({ file, reason: 'type' });
@@ -454,13 +472,16 @@ export function Composer({
       if (hit && editor.view.dom.contains(hit)) at = editor.view.posAtCoords({ left: point.x, top: point.y })?.pos;
     }
     insertChips(images, at);
-    setAnnouncement(`Attached ${files.length === 1 ? items[0].name : `${files.length} files`}.`);
+    // Screen readers hear what a drop, paste or pick attached.
+    announce(`Attached ${files.length === 1 ? items[0].name : `${files.length} files`}.`);
+    const given: ChangeGiven<ComposerAttachmentsChangeReason> = { reason: source === 'api' ? 'imperative' : source, event };
     for (const { file, kind, id, name } of items) {
       const base: ComposerAttachment = { id, name, size: file.size, type: file.type, kind, file };
       pendingFiles.current++;
       const settle = (a: ComposerAttachment) => {
         pendingFiles.current--;
-        addAttachment(a);
+        // A canceled image takes its chip back out of the editor.
+        if (!addAttachment(a, given) && kind === 'image' && !attRef.current.some((x) => x.id === id)) editor?.commands.removeAttachment(id);
       };
       if (kind === 'image') {
         readFileAsDataURL(file).then((src) => settle({ ...base, src }), () => settle(base));
@@ -477,9 +498,9 @@ export function Composer({
   };
 
   // A mounted ComposerQueue takes drafts sent while a reply streams.
-  const queueRef = useRef<((markdown: string, attachments: ComposerAttachment[]) => void) | null>(null);
+  const queueRef = useRef<ComposerQueueTake | null>(null);
   const [canQueue, setCanQueue] = useState(false);
-  const setQueue = React.useCallback((queue: ((markdown: string, attachments: ComposerAttachment[]) => void) | null) => {
+  const setQueue = React.useCallback((queue: ComposerQueueTake | null) => {
     queueRef.current = queue;
     setCanQueue(!!queue);
   }, []);
@@ -487,12 +508,28 @@ export function Composer({
   submitRef.current = onSubmit;
   const submit = React.useCallback((markdown: string, sent: ComposerAttachment[]) => submitRef.current?.(markdown, sent), []);
 
-  const send = () => {
+  const send = (event?: Event) => {
     if (!canSend) return;
     const queue = streaming ? queueRef.current : null;
     if (streaming && !queue) return;
-    const markdown = valueRef.current.trim();
+    const draft = valueRef.current;
+    const markdown = draft.trim();
     const sent = attRef.current;
+    // The draft empties first, as the send's own changes: a canceled one refuses the send, and what was already
+    // emptied comes back, so the draft, its attachments and the editor stay as they were.
+    if (draft && !setValue('', { reason: 'send', event })) return;
+    const putBack = () => {
+      if (draft) setValue(draft, { reason: 'imperative' });
+    };
+    if (sent.length && !setAttachments([], { reason: 'send', event })) {
+      putBack();
+      return;
+    }
+    if (queue && !queue(markdown, sent, event)) {
+      putBack();
+      if (sent.length) setAttachments(sent, { reason: 'imperative' });
+      return;
+    }
     // The receiver owns the sent files' URLs now; they stay valid until this Composer unmounts.
     for (const a of sent) {
       const url = objectUrls.current.get(a.id);
@@ -500,11 +537,13 @@ export function Composer({
       sentUrls.current.push(url);
       objectUrls.current.delete(a.id);
     }
-    setAttachments([]);
-    if (editor) editor.commands.clearContent(true);
-    setValue('');
-    if (queue) queue(markdown, sent);
-    else onSubmit?.(markdown, sent);
+    clearing.current = true;
+    try {
+      if (editor) editor.commands.clearContent(true);
+    } finally {
+      clearing.current = false;
+    }
+    if (!queue) onSubmit?.(markdown, sent);
   };
   const stop = () => {
     onStop?.();
@@ -534,28 +573,28 @@ export function Composer({
       collapseAnchor === 'top' ? scroller.scrollTop : scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
     let previous = away();
     let travel = 0;
-    // Recent positions, for the speed over the last ~100ms (a flick) — robust to coalesced or jumpy events.
-    const samples: { t: number; d: number }[] = [{ t: performance.now(), d: previous }];
-    const onScroll = () => {
+    // The speed away from the anchor over the last ~100ms (a flick), from UI SDK's velocity tracker.
+    const tracker = createVelocityTracker({ horizon: COLLAPSE_FLICK_WINDOW });
+    tracker.add(performance.now(), previous);
+    const onScroll = (event: Event) => {
       const now = performance.now();
       const d = away();
       const delta = d - previous; // > 0: moving away from the anchor
       previous = d;
-      while (samples.length > 1 && now - samples[0].t > COLLAPSE_FLICK_WINDOW) samples.shift();
-      const base = samples[0];
-      const speed = (d - base.d) / Math.max(COLLAPSE_FLICK_WINDOW, now - base.t);
-      samples.push({ t: now, d });
+      tracker.add(now, d);
+      const speed = tracker.velocity(now);
       const st = scrollState.current;
+      const set = (next: ComposerCollapse) => st.set(next, { reason: 'scroll', event });
       // At (or near) the anchor: the full composer.
       if (d < COLLAPSE_NEAR_ANCHOR) {
         travel = 0;
-        if (st.collapsed !== 'none') st.set('none');
+        if (st.collapsed !== 'none') set('none');
         return;
       }
       if (delta < 0) {
         // Heading back: a FAB opens up to the row on the way, so there is something to type into.
         travel = Math.min(0, travel) + delta;
-        if (st.collapsed === 'fab' && travel < -160) st.set('compact');
+        if (st.collapsed === 'fab' && travel < -160) set('compact');
         return;
       }
       if (delta === 0) return;
@@ -567,8 +606,8 @@ export function Composer({
       // Drafts and replies never fold into the FAB.
       const canFab = st.collapseTo === 'fab' && !st.streaming && !st.draft;
       // A flick (fast) or a long read away folds all the way to the FAB.
-      if (canFab && st.collapsed !== 'fab' && (speed > COLLAPSE_FLICK_SPEED || travel > COLLAPSE_FAB_TRAVEL)) st.set('fab');
-      else if (st.collapsed === 'none' && travel > 24) st.set('compact');
+      if (canFab && st.collapsed !== 'fab' && (speed > COLLAPSE_FLICK_SPEED || travel > COLLAPSE_FAB_TRAVEL)) set('fab');
+      else if (st.collapsed === 'none' && travel > 24) set('compact');
     };
     scroller.addEventListener('scroll', onScroll, { passive: true });
     return () => scroller.removeEventListener('scroll', onScroll);
@@ -590,11 +629,10 @@ export function Composer({
     const snap = shapeSnap.current;
     shapeSnap.current = null;
     if (snap && !prefersReducedMotion()) playShape(rootRef.current, snap);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shapeKey]);
 
-  const restore = () => {
-    setCollapsed('none');
+  const restore = (event?: React.MouseEvent) => {
+    if (!setCollapsed('none', { reason: 'press', event: event?.nativeEvent })) return;
     requestAnimationFrame(() => editor?.commands.focus('end'));
   };
   const fabEnabled = !!collapseOnScroll || collapsedProp !== undefined || defaultCollapsed === 'fab' || collapseTo === 'fab';
@@ -616,11 +654,12 @@ export function Composer({
       return (el?.querySelector('img') ?? el ?? null) as HTMLElement | null;
     };
     setAnnotating(id);
+    setAnnotateOpen(true);
   };
 
   const ctx: ComposerContextValue = {
     value,
-    setValue,
+    setValue: setDraft,
     attachments,
     addAttachment,
     removeAttachment,
@@ -676,12 +715,6 @@ export function Composer({
             {outlet?.parts}
             {children}
           </div>
-          {/* Screen readers hear what a drop, paste or pick attached. */}
-          <VisuallyHidden>
-            <span data-slot="composer-announcer" role="status" aria-live="polite">
-              {announcement}
-            </span>
-          </VisuallyHidden>
         </div>
         {annotated?.src ? (
           <AnnotateLightbox
@@ -690,10 +723,18 @@ export function Composer({
             canvas={annotateCanvas}
             annotator={annotator}
             origin={origin.current}
-            onClose={() => setAnnotating(null)}
-            onSave={(src) => {
-              updateAttachment(annotated.id, { src, type: 'image/png' });
+            open={annotateOpen}
+            onOpenChange={setAnnotateOpen}
+            onOpenChangeComplete={(open) => {
+              if (open) return;
+              // The flattened image replaces the attachment once the old one has landed back in its thumbnail.
+              const saved = savedAnnotation.current;
+              savedAnnotation.current = null;
+              if (saved) updateAttachment(annotated.id, { src: saved, type: 'image/png' }, { reason: 'annotate' });
               setAnnotating(null);
+            }}
+            onSave={(src) => {
+              savedAnnotation.current = src;
             }}
           />
         ) : null}
@@ -714,7 +755,7 @@ const COLLAPSE_FAB_TRAVEL = 420;
 
 /** Controls that fly to their new place when the composer changes shape. */
 const FLIP_CONTROLS =
-  '[data-slot="composer-footer"] > :not([data-slot="composer-spacer"]):not([data-slot="composer-options-home"]), [data-slot="composer-options"] > *, [data-slot="composer-expand"]';
+  '[data-slot="composer-footer"] > :not([data-slot="composer-spacer"]):not([data-slot="composer-options-home"]), [data-slot="composer-options"] > *, [data-composer-expand]';
 
 interface ShapeSnapshot {
   card: DOMRect;
@@ -806,19 +847,17 @@ function playShape(root: HTMLElement | null, snap: ShapeSnapshot) {
 /* ── FAB ── */
 export const composerFabVariants = cva([
   pressable,
-  'z-3 grid size-[52px] cursor-pointer place-items-center rounded-[50%] border border-border bg-card p-0 text-foreground shadow-[0_10px_30px_-8px_color-mix(in_srgb,black_45%,transparent),0_2px_8px_color-mix(in_srgb,black_14%,transparent)] outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
+  'z-3 grid size-[52px] cursor-pointer place-items-center rounded-[50%] border border-border bg-card p-0 text-foreground shadow-[0_10px_30px_-8px_color-mix(in_srgb,black_45%,transparent),0_2px_8px_color-mix(in_srgb,black_14%,transparent)] outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
 ]);
 
 export interface ComposerFabProps extends Omit<ButtonProps, 'children'> {
-  className?: string;
-  style?: React.CSSProperties;
   children?: React.ReactNode;
 }
 
 /** The folded composer: a round button (a Composer in `fab` mode renders one; FloatingChat reuses it). */
 export function ComposerFab({ className, children, 'aria-label': ariaLabel = 'Open composer', ...props }: ComposerFabProps) {
   return (
-    <Button data-slot="composer-fab" aria-label={ariaLabel} className={cn(composerFabVariants(), className)} {...props}>
+    <Button aria-label={ariaLabel} className={cx(composerFabVariants(), className)} {...props}>
       {children ?? <Icon name="square-pencil" size={21} sw={1.9} />}
     </Button>
   );
@@ -885,9 +924,9 @@ export const composerCardVariants = cva(
 
 export interface ComposerCardProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof composerCardVariants> {
   /**
-   * The card is a react-aria drop zone for files (default): drag files from the OS onto it and they attach; a
-   * drop overlay springs in while they hover. Keyboard users reach a hidden drop target after the card's
-   * controls, where react-aria's keyboard drag and drop and ⌘V paste work. `false` opts out.
+   * The card is a drop zone for files (default, UI SDK's FileInputDropzone): drag files from the OS onto it and
+   * they attach; a drop overlay springs in while they hover. Files pasted while focus is in the card attach too.
+   * Only file drags reach it, so text dragged inside the editor keeps the editor's handling. `false` opts out.
    */
   dropZone?: boolean;
   /** The overlay's title while files hover (default "Drop to attach"). */
@@ -895,180 +934,100 @@ export interface ComposerCardProps extends React.HTMLAttributes<HTMLDivElement>,
   ref?: React.Ref<HTMLDivElement>;
 }
 
-/** Files carried by drop items (directories are read recursively). */
-async function filesFromDropItems(items: DropItem[], limit = 500): Promise<File[]> {
-  const files: File[] = [];
-  const walk = async (list: AsyncIterable<DropItem> | DropItem[]) => {
-    for await (const item of list) {
-      if (files.length >= limit) return;
-      if (item.kind === 'file') files.push(await item.getFile());
-      else if (item.kind === 'directory') await walk(item.getEntries());
-    }
-  };
-  await walk(items);
-  return files;
-}
+/** The composer takes every file at the door; `attachFiles` turns away what it doesn't take, with a toast. */
+const NO_FILES: File[] = [];
+const silent = () => null;
 
-const carriesFiles = (e: React.DragEvent) => !!e.dataTransfer && Array.from(e.dataTransfer.types ?? []).includes('Files');
-
-/**
- * The card as a react-aria drop target: `useDrop` with a (visually hidden) drop button, as in react-aria's
- * DropZone, but only file drags reach it — text dragged inside the editor keeps the editor's own handling.
- */
-function useComposerDrop(card: React.RefObject<HTMLDivElement | null>, disabled: boolean) {
-  const { attachFiles } = useComposer();
-  const latest = useRef(attachFiles);
-  latest.current = attachFiles;
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
-  // The drop's files as the browser listed them — for drops whose items can't be read as entries.
-  const nativeFiles = useRef<File[]>([]);
-  const take = async (items: DropItem[], source: ComposerFileSource, point?: { x: number; y: number }) => {
-    const fallback = nativeFiles.current;
-    nativeFiles.current = [];
-    const read = await filesFromDropItems(items);
-    const files = read.length ? read : fallback;
-    if (files.length) latest.current(files, { source, point });
-  };
-  const { dropProps, dropButtonProps, isDropTarget } = useDrop({
-    ref: buttonRef,
-    hasDropButton: true,
-    isDisabled: disabled,
-    // Every file is welcome at the door; attachFiles turns away what the composer doesn't take, with a toast.
-    getDropOperation: () => 'copy',
-    onDrop: (e) => {
-      const rect = card.current?.getBoundingClientRect();
-      // Keyboard and clipboard drops arrive at 0,0 — they go to the caret.
-      const point = rect && (e.x || e.y) ? { x: rect.left + e.x, y: rect.top + e.y } : undefined;
-      void take(e.items, 'drop', point);
-    },
-  });
-  const { buttonProps } = useButton({ ...dropButtonProps, isDisabled: disabled || dropButtonProps?.isDisabled }, buttonRef);
-  const { clipboardProps } = useClipboard({ isDisabled: disabled, onPaste: (items) => void take(items, 'paste') });
-  const { focusProps, isFocusVisible } = useFocusRing();
-  // Only file drags: the editor handles its own text drags (moving a selection, dropping a link).
-  const gate =
-    (handler: React.DragEventHandler | undefined): React.DragEventHandler =>
-    (e) => {
-      if (carriesFiles(e)) handler?.(e);
-    };
-  const gated: React.HTMLAttributes<HTMLElement> = {
-    onDragEnter: gate(dropProps.onDragEnter),
-    onDragOver: gate(dropProps.onDragOver),
-    onDragLeave: gate(dropProps.onDragLeave),
-    onDrop: gate((e) => {
-      nativeFiles.current = Array.from(e.dataTransfer.files ?? []);
-      dropProps.onDrop?.(e as React.DragEvent<HTMLElement>);
-    }),
-  };
-  return {
-    dropProps: gated,
-    buttonProps: mergeProps(buttonProps, clipboardProps, focusProps),
-    buttonRef,
-    isDropTarget,
-    isFocusVisible,
-  };
+/** Where the files of a FileInput change go: through `attachFiles`, which checks them. A drop keeps its point. */
+function takeFiles(attachFiles: ComposerContextValue['attachFiles'], files: File[], details: FileInputValueChangeDetails) {
+  if (!files.length) return;
+  const source: ComposerFileSource = details.reason === 'drop' || details.reason === 'paste' ? details.reason : 'picker';
+  const event = details.event as DragEvent | undefined;
+  // Keyboard and clipboard drops carry no point — they go to the caret.
+  const point = source === 'drop' && event && (event.clientX || event.clientY) ? { x: event.clientX, y: event.clientY } : undefined;
+  attachFiles(files, { source, point, event: details.event });
 }
 
 /** The card's drop overlay: a tinted wash and ring that spring in, the plus lifting into place. */
-function ComposerDropOverlay({ state, label, hint }: { state: 'drop' | 'focus' | null; label?: React.ReactNode; hint: string }) {
+function ComposerDropOverlay({ dragging, label, hint }: { dragging: boolean; label?: React.ReactNode; hint: string }) {
   return (
-    <AnimatePresence>
-      {state ? (
-        <motion.div
-          key="drop"
-          data-slot="composer-drop-overlay"
-          data-state={state}
-          aria-hidden="true"
-          className={cn(
-            'pointer-events-none absolute -inset-px z-4 flex items-center justify-center overflow-hidden rounded-[inherit] border-2 border-primary',
-            state === 'drop'
-              ? 'bg-[color-mix(in_srgb,var(--primary)_11%,var(--card))]'
-              : 'border-dashed bg-[color-mix(in_srgb,var(--primary)_6%,var(--card))]',
-          )}
-          initial={{ opacity: 0, scale: 0.985 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.985 }}
-          transition={springs.snappy}
-        >
-          <motion.div
-            className="flex min-w-0 items-center gap-2.5 px-4"
-            initial={{ y: 8, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 8, opacity: 0 }}
-            transition={springs.bouncy}
-          >
-            <motion.span
-              className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-white shadow-[0_4px_14px_-4px_var(--primary)] group-data-[collapsed=compact]/composer:size-6"
-              initial={{ scale: 0.4, rotate: -90 }}
-              animate={{ scale: 1, rotate: 0 }}
-              exit={{ scale: 0.4, rotate: -90 }}
-              transition={springs.bouncy}
-            >
-              <Icon name="plus" size={16} sw={2.6} />
-            </motion.span>
-            <span className="flex min-w-0 flex-col">
-              <span className="truncate text-[13.5px] font-semibold text-foreground">
-                {state === 'focus' ? 'Paste or drop files' : (label ?? 'Drop to attach')}
-              </span>
-              <span className="truncate text-[11.5px] text-muted-foreground group-data-[collapsed=compact]/composer:hidden">{hint}</span>
-            </span>
-          </motion.div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
+    <div
+      data-slot="composer-drop-overlay"
+      data-dragging={dragging || undefined}
+      aria-hidden="true"
+      className={cn(
+        'group/drop pointer-events-none absolute -inset-px z-4 flex items-center justify-center overflow-hidden rounded-[inherit] border-2 border-primary bg-[color-mix(in_srgb,var(--primary)_11%,var(--card))]',
+        'invisible scale-[.985] opacity-0 transition-[opacity,scale,visibility] duration-spring-snappy ease-spring-snappy data-dragging:visible data-dragging:scale-100 data-dragging:opacity-100 motion-reduce:transition-none',
+      )}
+    >
+      <div className="flex min-w-0 translate-y-2 items-center gap-2.5 px-4 opacity-0 transition-[translate,opacity] duration-spring-bouncy ease-spring-bouncy group-data-dragging/drop:translate-y-0 group-data-dragging/drop:opacity-100 motion-reduce:transition-none">
+        <span className="grid size-8 shrink-0 scale-40 -rotate-90 place-items-center rounded-full bg-primary text-white shadow-[0_4px_14px_-4px_var(--primary)] transition-[scale,rotate] duration-spring-bouncy ease-spring-bouncy group-data-dragging/drop:scale-100 group-data-dragging/drop:rotate-0 group-data-[collapsed=compact]/composer:size-6 motion-reduce:transition-none">
+          <Icon name="plus" size={16} sw={2.6} />
+        </span>
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate text-[13.5px] font-semibold text-foreground">{label ?? 'Drop to attach'}</span>
+          <span className="truncate text-[11.5px] text-muted-foreground group-data-[collapsed=compact]/composer:hidden">{hint}</span>
+        </span>
+      </div>
+    </div>
   );
 }
 
-/** The bordered surface. Holds the input and its addons, takes dropped files; an outlet may wrap it. */
+/** The bordered surface. Holds the input and its addons, takes dropped and pasted files; an outlet may wrap it. */
 export function ComposerCard({ size, dropZone = true, dropLabel, className, ref, children, ...props }: ComposerCardProps) {
-  const { renderCard, collapsed, fab, acceptedFileTypes } = useComposer();
+  const { renderCard, collapsed, fab, acceptedFileTypes, attachFiles } = useComposer();
   const folded = collapsed === 'fab' && !!fab;
-  const cardRef = useRef<HTMLDivElement | null>(null);
-  const drop = useComposerDrop(cardRef, !dropZone || folded);
-  const overlay = !dropZone || folded ? null : drop.isDropTarget ? 'drop' : drop.isFocusVisible ? 'focus' : null;
-  const card = (
+  const surface = (dragging: boolean) => (
     <div
-      ref={(el) => {
-        cardRef.current = el;
-        if (typeof ref === 'function') ref(el);
-        else if (ref) ref.current = el;
-      }}
+      ref={ref}
       data-slot="composer-card"
       data-folded={folded || undefined}
       data-drop-zone={(dropZone && !folded) || undefined}
-      data-drop-target={drop.isDropTarget || undefined}
+      data-drop-target={dragging || undefined}
       className={cn(composerCardVariants({ size }), className)}
-      {...(dropZone ? mergeProps(props, drop.dropProps) : props)}
+      {...props}
     >
       {/* Folded into the FAB, the card keeps its content (faded, inert) and shows the button face over it. */}
       <div data-slot="composer-card-body" className="contents" inert={folded || undefined} aria-hidden={folded || undefined}>
         {children}
       </div>
       {dropZone ? (
-        <>
-          <ComposerDropOverlay
-            state={overlay}
-            label={dropLabel}
-            hint={acceptedFileTypes?.length ? describeAccepted(acceptedFileTypes) : 'Images, documents, code — any file'}
-          />
-          <VisuallyHidden>
-            <button ref={drop.buttonRef} data-slot="composer-drop-target" aria-label="Attach files: drop or paste here" {...drop.buttonProps} />
-          </VisuallyHidden>
-        </>
+        <ComposerDropOverlay
+          dragging={dragging}
+          label={dropLabel}
+          hint={acceptedFileTypes?.length ? describeAccepted(acceptedFileTypes) : 'Images, documents, code — any file'}
+        />
       ) : null}
       {fab ? (
-        <Button
-          data-slot="composer-fab"
-          aria-label="Open composer"
-          aria-hidden={!folded || undefined}
-          excludeFromTabOrder={!folded}
-          onPress={fab.restore}
-          className={cn(pressable, 'absolute inset-0 z-3 grid cursor-pointer place-items-center rounded-[inherit] border-0 bg-transparent p-0 text-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60')}
-        >
-          {fab.icon ?? <Icon name="square-pencil" size={21} sw={1.9} />}
-        </Button>
+        // The face the card folds into (styles.css shows it while folded); the button fills it.
+        <span data-slot="composer-fab" className="absolute inset-0 z-3 rounded-[inherit]">
+          <Button
+            aria-label="Open composer"
+            aria-hidden={!folded || undefined}
+            tabIndex={folded ? undefined : -1}
+            onClick={fab.restore}
+            className={cn(pressable, 'grid size-full cursor-pointer place-items-center rounded-[inherit] border-0 bg-transparent p-0 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary/60')}
+          >
+            {fab.icon ?? <Icon name="square-pencil" size={21} sw={1.9} />}
+          </Button>
+        </span>
       ) : null}
     </div>
+  );
+  const card = dropZone ? (
+    // UI SDK's FileInput holds no files of its own: each drop or paste goes straight to `attachFiles`.
+    <FileInput
+      className="contents"
+      multiple
+      value={NO_FILES}
+      onValueChange={(_, details) => takeFiles(attachFiles, details.added, details)}
+      announcement={silent}
+      disabled={folded}
+    >
+      <FileInputDropzone className="contents">{({ dragging }) => surface(dragging)}</FileInputDropzone>
+    </FileInput>
+  ) : (
+    surface(false)
   );
   return <>{renderCard ? renderCard(card) : card}</>;
 }
@@ -1116,17 +1075,9 @@ export function ComposerSpacer({ className, ...props }: React.HTMLAttributes<HTM
   return <span data-slot="composer-spacer" aria-hidden="true" className={cn('flex-1', className)} {...props} />;
 }
 
-/** A thin vertical rule between footer pills. */
-export function ComposerSeparator({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
-  return (
-    <span
-      data-slot="composer-separator"
-      role="separator"
-      aria-orientation="vertical"
-      className={cn('mx-0.5 h-4 w-px shrink-0 bg-border', className)}
-      {...props}
-    />
-  );
+/** A thin vertical rule between footer pills (the kit's Separator, on UI SDK's). */
+export function ComposerSeparator({ className, ...props }: Omit<SeparatorProps, 'orientation'>) {
+  return <Separator orientation="vertical" className={cx('mx-0.5 h-4 self-center', className)} {...props} />;
 }
 
 /** Muted inline text with an optional leading icon (a bump's "Local checkout", a footer hint). */
@@ -1146,7 +1097,7 @@ export function ComposerText({
 
 /* ── Buttons ── */
 export const composerButtonVariants = cva(
-  cn(pressable, 'flex shrink-0 cursor-pointer items-center justify-center border-0 font-sans outline-none data-disabled:cursor-default data-disabled:opacity-35 data-focus-visible:ring-2 data-focus-visible:ring-primary/60'),
+  cn(pressable, 'flex shrink-0 cursor-pointer items-center justify-center border-0 font-sans outline-none data-disabled:cursor-default data-disabled:opacity-35 focus-visible:ring-2 focus-visible:ring-primary/60'),
   {
     variants: {
       variant: {
@@ -1171,21 +1122,17 @@ export const composerButtonVariants = cva(
   },
 );
 
-export interface ComposerButtonProps extends ButtonProps, VariantProps<typeof composerButtonVariants> {
-  className?: string;
-  ref?: React.Ref<HTMLButtonElement>;
-}
+type ComposerButtonVariantProps = VariantProps<typeof composerButtonVariants>;
 
-/** A react-aria Button in the composer's styles: `ghost` icon button, option `pill`, `primary` / `destructive` circles. */
+/** The size a variant takes when none is given: pills hug their label, send and stop are circles. */
+const buttonSize = (variant: ComposerButtonVariantProps['variant'], size: ComposerButtonVariantProps['size']) =>
+  size ?? (variant === 'pill' ? 'pill' : variant === 'primary' || variant === 'destructive' ? 'round' : 'icon');
+
+export interface ComposerButtonProps extends ButtonProps, ComposerButtonVariantProps {}
+
+/** UI SDK's Button in the composer's styles: `ghost` icon button, option `pill`, `primary` / `destructive` circles. */
 export function ComposerButton({ variant, size, tint, className, ...props }: ComposerButtonProps) {
-  const resolvedSize = size ?? (variant === 'pill' ? 'pill' : variant === 'primary' || variant === 'destructive' ? 'round' : 'icon');
-  return (
-    <Button
-      data-slot="composer-button"
-      className={cn(composerButtonVariants({ variant, size: resolvedSize, tint: !!tint }), className)}
-      {...props}
-    />
-  );
+  return <Button className={cx(composerButtonVariants({ variant, size: buttonSize(variant, size), tint: !!tint }), className)} {...props} />;
 }
 
 /** The pill face: optional icon, label, chevron. */
@@ -1214,92 +1161,93 @@ export interface ComposerSelectProps {
   options: ComposerSelectOption[];
   value?: string;
   defaultValue?: string;
-  onChange?: (id: string) => void;
+  /** A choice was made: the option's `id`, and UI SDK's change details (`reason`, `source`). */
+  onValueChange?: (id: string, details: ComposerSelectChangeDetails) => void;
   /** Leading icon (an `Icon` name or a node). */
   icon?: IconName | (string & {}) | React.ReactNode;
   tint?: boolean;
   className?: string;
-  /** Popover min width. */
+  /** Classes for the menu (e.g. its min width). */
   menuClassName?: string;
 }
 
+/** What a ComposerSelect's `onValueChange` receives beside the id: the menu radio group's change details. */
+export type ComposerSelectChangeDetails = Parameters<NonNullable<React.ComponentProps<typeof DropdownMenuRadioGroup>['onValueChange']>>[1];
+
 export const composerMenuItemVariants = cva(
-  'relative flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-[7px] text-footnote text-foreground outline-none data-focused:bg-secondary data-pressed:bg-secondary-strong data-disabled:cursor-default data-disabled:opacity-40',
+  'relative flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-[7px] text-footnote text-foreground outline-none data-highlighted:bg-secondary active:not-data-disabled:bg-secondary-strong data-disabled:cursor-default data-disabled:opacity-40',
 );
 
-export function ComposerMenuItem({ className, children, ...props }: MenuItemProps & { className?: string; children?: React.ReactNode }) {
+export type ComposerMenuItemProps = Omit<React.ComponentProps<typeof MenuRadioItem>, 'children'> & { children?: React.ReactNode };
+
+/** One choice in a ComposerSelect (UI SDK's MenuRadioItem): a tick that pops in beside the chosen one. */
+export function ComposerMenuItem({ className, children, ...props }: ComposerMenuItemProps) {
   return (
-    <MenuItem data-slot="composer-menu-item" className={cn(composerMenuItemVariants(), className)} {...props}>
-      {composeRenderProps(children, (kids, { isSelected, selectionMode }) => (
-        <>
-          {selectionMode !== 'none' ? (
-            <span className="grid w-3.5 shrink-0 place-items-center text-primary">
-              <AnimatePresence initial={false}>
-                {isSelected ? (
-                  <motion.span
-                    key="tick"
-                    className="grid place-items-center"
-                    initial={{ scale: 0.3, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.3, opacity: 0 }}
-                    transition={springs.bouncy}
-                  >
-                    <Icon name="checkmark" size={13} sw={2.6} />
-                  </motion.span>
-                ) : null}
-              </AnimatePresence>
-            </span>
-          ) : null}
-          {kids}
-        </>
-      ))}
-    </MenuItem>
+    <MenuRadioItem className={cx(composerMenuItemVariants(), className)} {...props}>
+      <span className="grid w-3.5 shrink-0 place-items-center text-primary">
+        <MenuItemIndicator
+          keepMounted
+          className="grid scale-30 place-items-center opacity-0 transition-[scale,opacity] duration-spring-bouncy ease-spring-bouncy data-checked:scale-100 data-checked:opacity-100 motion-reduce:transition-none"
+        >
+          <Icon name="checkmark" size={13} sw={2.6} />
+        </MenuItemIndicator>
+      </span>
+      {children}
+    </MenuRadioItem>
   );
 }
 
-/** An option pill that opens a react-aria Menu of choices (effort, access, …). */
+/** An option pill that opens a menu of choices (effort, access, …) in the palette of the surface it opened from. */
 export function ComposerSelect({
   'aria-label': ariaLabel,
   options,
   value: valueProp,
   defaultValue,
-  onChange,
+  onValueChange,
   icon,
   tint,
   className,
   menuClassName,
 }: ComposerSelectProps) {
-  const [value, setValue] = useControllable<string>(valueProp, defaultValue ?? options[0]?.id ?? '', onChange);
+  const [inner, setInner] = useState(defaultValue ?? options[0]?.id ?? '');
+  const value = valueProp ?? inner;
   const current = options.find((o) => o.id === value) ?? options[0];
+  const palette = useSurfacePalette();
   return (
-    <MenuTrigger>
-      <ComposerButton data-slot="composer-select" variant="pill" tint={tint} aria-label={`${ariaLabel}: ${current?.label ?? ''}`} className={className}>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<ComposerButton variant="pill" tint={tint} aria-label={`${ariaLabel}: ${current?.label ?? ''}`} className={className} />}
+      >
         <ComposerPillLabel icon={icon}>{current?.short ?? current?.label}</ComposerPillLabel>
-      </ComposerButton>
-      <WbPopover placement="top start" className={cn('min-w-[190px] p-1', menuClassName)}>
-        <Menu
-          aria-label={ariaLabel}
-          selectionMode="single"
-          selectedKeys={value ? [value] : []}
-          disallowEmptySelection
-          onSelectionChange={(keys) => {
-            const k = [...(keys as Set<Key>)][0];
-            if (k == null) return;
-            setValue(String(k));
+      </DropdownMenuTrigger>
+      <MenuContent
+        ref={palette.ref}
+        side="top"
+        align="start"
+        sideOffset={8}
+        data-theme-scope={palette['data-theme-scope']}
+        className={cn(wbPopoverSurface, palette.className, 'min-w-[190px] p-1', menuClassName)}
+        style={palette.style}
+      >
+        <DropdownMenuRadioGroup
+          value={value}
+          onValueChange={(next, details) => {
+            // The consumer hears it first: `details.cancel()` keeps an uncontrolled pill's value.
+            onValueChange?.(next, details);
+            if (!details.canceled && valueProp === undefined) setInner(next);
           }}
-          className="outline-none"
         >
           {options.map((o) => (
-            <ComposerMenuItem key={o.id} id={o.id} textValue={o.label}>
+            <ComposerMenuItem key={o.id} value={o.id} label={o.label} closeOnSelect>
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate font-medium">{o.label}</span>
                 {o.description ? <span className="truncate text-[11.5px] text-muted-foreground">{o.description}</span> : null}
               </span>
             </ComposerMenuItem>
           ))}
-        </Menu>
-      </WbPopover>
-    </MenuTrigger>
+        </DropdownMenuRadioGroup>
+      </MenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -1321,38 +1269,21 @@ function StopRing() {
   );
 }
 
-/** A glyph that swaps in place: the old one shrinks and blurs out as the new one grows in (a micro-morph). */
-function GlyphSwap({ id, children }: { id: string; children: React.ReactNode }) {
-  return (
-    <AnimatePresence mode="popLayout" initial={false}>
-      <motion.span
-        key={id}
-        className="relative grid size-full place-items-center"
-        initial={{ opacity: 0, scale: 0.4, filter: 'blur(3px)' }}
-        animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-        exit={{ opacity: 0, scale: 0.4, filter: 'blur(3px)' }}
-        transition={springs.snappy}
-      >
-        {children}
-      </motion.span>
-    </AnimatePresence>
-  );
-}
-
 /** Stops the reply. Renders only while streaming; pops in and out beside its neighbours. */
 export function ComposerStop({ variant = 'ring', forceMount, className, ...props }: ComposerStopProps) {
   const { streaming, stop } = useComposer();
   const shown = streaming || !!forceMount;
+  const presence = usePresence<HTMLSpanElement>(shown);
+  if (!presence.mounted) return null;
   const button =
     variant === 'solid' ? (
-      <ComposerButton data-slot="composer-stop" variant="destructive" aria-label="Stop" onPress={stop} className={className} {...props}>
+      <ComposerButton variant="destructive" aria-label="Stop" onClick={stop} className={className} {...props}>
         <span className="block size-[9px] rounded-[2px] bg-current" />
       </ComposerButton>
     ) : (
       <Button
-        data-slot="composer-stop"
-        className={cn(pressable, 'relative grid size-[30px] cursor-pointer place-items-center border-0 bg-transparent text-foreground', className)}
-        onPress={stop}
+        className={cx(cn(pressable, 'relative grid size-[30px] cursor-pointer place-items-center border-0 bg-transparent text-foreground'), className)}
+        onClick={stop}
         aria-label="Stop"
         {...props}
       >
@@ -1361,21 +1292,14 @@ export function ComposerStop({ variant = 'ring', forceMount, className, ...props
       </Button>
     );
   return (
-    <AnimatePresence initial={false}>
-      {shown ? (
-        <motion.span
-          key="stop"
-          data-slot="composer-stop-presence"
-          className="flex shrink-0 items-center justify-center overflow-visible"
-          initial={{ width: 0, opacity: 0, scale: 0.5 }}
-          animate={{ width: 'auto', opacity: 1, scale: 1 }}
-          exit={{ width: 0, opacity: 0, scale: 0.5 }}
-          transition={springs.snappy}
-        >
-          {button}
-        </motion.span>
-      ) : null}
-    </AnimatePresence>
+    // Its column opens from nothing as it pops in, so the neighbours slide aside.
+    <span
+      ref={presence.ref}
+      data-slot="composer-stop-presence"
+      className="grid shrink-0 grid-cols-[1fr] overflow-visible transition-[grid-template-columns,opacity,scale] duration-spring-snappy ease-spring-snappy data-starting-style:grid-cols-[0fr] data-starting-style:scale-50 data-starting-style:opacity-0 data-ending-style:grid-cols-[0fr] data-ending-style:scale-50 data-ending-style:opacity-0 motion-reduce:transition-none"
+    >
+      <span className="flex min-w-0 items-center justify-center">{button}</span>
+    </span>
   );
 }
 
@@ -1389,6 +1313,7 @@ export interface ComposerSendProps extends Omit<ComposerButtonProps, 'variant'> 
 /**
  * The send circle; disabled while there is nothing to send. While streaming it morphs into the stop control —
  * the same button: the fill drains (ring) or turns red (solid) and the arrow turns into the stop square.
+ * `data-state` says which it is: `send`, `queue` (a ComposerQueue takes the draft) or `stop`.
  */
 export function ComposerSend({ morph = true, stopVariant = 'ring', className, ...props }: ComposerSendProps) {
   const { streaming, canSend, canQueue, send, stop } = useComposer();
@@ -1397,21 +1322,22 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', className, ..
   const stopping = streaming && morph && !queueing;
   return (
     <Button
-      data-slot={stopping ? 'composer-stop' : 'composer-send'}
       data-state={stopping ? 'stop' : queueing ? 'queue' : 'send'}
       aria-label={stopping ? 'Stop' : queueing ? 'Queue message' : 'Send'}
-      isDisabled={stopping ? false : !canSend || (streaming && !canQueue)}
-      onPress={stopping ? stop : send}
-      className={cn(
-        pressable,
-        'relative flex size-[30px] shrink-0 cursor-pointer items-center justify-center overflow-visible rounded-[50%] border-0 p-0 font-sans text-white outline-none data-disabled:cursor-default data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
-        '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
-        !stopping ? 'bg-primary data-disabled:opacity-35' : stopVariant === 'solid' ? 'bg-destructive' : 'bg-transparent text-foreground',
+      disabled={stopping ? false : !canSend || (streaming && !canQueue)}
+      onClick={(event) => (stopping ? stop() : send(event.nativeEvent))}
+      className={cx(
+        cn(
+          pressable,
+          'relative flex size-[30px] shrink-0 cursor-pointer items-center justify-center overflow-visible rounded-[50%] border-0 p-0 font-sans text-white outline-none data-disabled:cursor-default focus-visible:ring-2 focus-visible:ring-primary/60',
+          '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
+          !stopping ? 'bg-primary data-disabled:opacity-35' : stopVariant === 'solid' ? 'bg-destructive' : 'bg-transparent text-foreground',
+        ),
         className,
       )}
       {...props}
     >
-      <GlyphSwap id={stopping ? `stop-${stopVariant}` : 'send'}>
+      <IconSwap id={stopping ? `stop-${stopVariant}` : 'send'} className="size-full">
         {!stopping ? (
           <Icon name="arrow-up-compact" size={16} sw={2.4} />
         ) : stopVariant === 'solid' ? (
@@ -1422,20 +1348,20 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', className, ..
             <Icon name="stop-square" size={12} sw={2.4} />
           </>
         )}
-      </GlyphSwap>
+      </IconSwap>
     </Button>
   );
 }
 
-export interface ComposerAddProps extends Omit<ComposerButtonProps, 'variant' | 'children'> {
+export interface ComposerAddProps extends Omit<React.ComponentProps<typeof FileInputTrigger>, 'children' | 'controller'>, Omit<ComposerButtonVariantProps, 'variant'> {
   /** Files the picker offers (MIME types, wildcards, extensions). Defaults to the Composer's `acceptedFileTypes`. */
   acceptedFileTypes?: string[];
   /** Pick several files at once (default `true`). */
-  allowsMultiple?: boolean;
-  /** Pick a whole directory instead of files. */
-  acceptDirectory?: boolean;
-  /** On mobile, open the camera (`user` / `environment`) rather than the library. */
-  defaultCamera?: 'user' | 'environment';
+  multiple?: boolean;
+  /** Pick a whole folder instead of files. */
+  directory?: boolean;
+  /** On mobile, open the camera (`user` / `environment`, or `true` for the default one) rather than the library. */
+  capture?: 'user' | 'environment' | boolean;
   /** The glyph (an `Icon` name or a node; default `plus`). */
   icon?: IconName | (string & {}) | React.ReactNode;
   /** Accessible name and tooltip (default "Add files"). */
@@ -1443,88 +1369,76 @@ export interface ComposerAddProps extends Omit<ComposerButtonProps, 'variant' | 
 }
 
 /**
- * The "+" button: a react-aria `FileTrigger` that opens the file picker and attaches what you pick — images
- * as chips at the caret, other files as tiles. Pair it with `ComposerAttachments`.
+ * The "+" button: UI SDK's FileInputTrigger, which opens the file picker, and attaches what you pick — images as
+ * chips at the caret, other files as tiles. Pair it with `ComposerAttachments`.
  */
 export function ComposerAdd({
   acceptedFileTypes,
-  allowsMultiple = true,
-  acceptDirectory,
-  defaultCamera,
+  multiple = true,
+  directory,
+  capture,
   icon = 'plus',
   label = 'Add files',
+  size,
+  tint,
   className,
-  onPress,
   ...props
 }: ComposerAddProps) {
   const { attachFiles, acceptedFileTypes: accepted } = useComposer();
+  // Files the picker's filter let through but its `accept` doesn't match go to `attachFiles` too: it turns them
+  // away with the composer's toast.
+  const rejected = (files: FileRejection[]) => attachFiles(files.map((r) => r.file as File), { source: 'picker' });
   return (
-    <FileTrigger
-      acceptedFileTypes={acceptedFileTypes ?? accepted}
-      allowsMultiple={allowsMultiple}
-      acceptDirectory={acceptDirectory}
-      defaultCamera={defaultCamera}
-      onSelect={(list) => attachFiles(Array.from(list ?? []), { source: 'picker' })}
+    <FileInput
+      className="contents"
+      accept={acceptedFileTypes ?? accepted}
+      multiple={multiple}
+      directory={directory}
+      capture={capture}
+      value={NO_FILES}
+      onValueChange={(_, details) => takeFiles(attachFiles, details.added, details)}
+      onReject={rejected}
+      announcement={silent}
     >
-      <ComposerButton
-        data-slot="composer-add"
-        variant="ghost"
+      <FileInputTrigger
         aria-label={label}
         title={label}
-        onPress={(e) => {
-          onPress?.(e);
-        }}
-        className={className}
+        className={cx(composerButtonVariants({ variant: 'ghost', size: buttonSize('ghost', size), tint: !!tint }), className)}
         {...props}
       >
         {typeof icon === 'string' ? <Icon name={icon} size={icon === 'plus' ? 17 : 15.5} sw={2} /> : icon}
-      </ComposerButton>
-    </FileTrigger>
+      </FileInputTrigger>
+    </FileInput>
   );
 }
 
-export interface ComposerAttachProps extends ComposerAddProps {
-  /** @deprecated use `acceptedFileTypes` — an `<input accept>` string (e.g. `"image/*,.pdf"`). */
-  accept?: string;
+/** The paperclip: `ComposerAdd` with a clip glyph and "Attach files" for its name. Takes ComposerAdd's props. */
+export function ComposerAttach({ label = 'Attach files', ...props }: ComposerAddProps) {
+  return <ComposerAdd icon="paperclip-diagonal" label={label} {...props} />;
 }
 
-/** The paperclip: `ComposerAdd` with a clip glyph (kept for existing compositions). */
-export function ComposerAttach({ accept, acceptedFileTypes, label = 'Attach files', ...props }: ComposerAttachProps) {
-  return (
-    <ComposerAdd
-      data-slot="composer-attach"
-      icon="paperclip-diagonal"
-      label={label}
-      acceptedFileTypes={acceptedFileTypes ?? (accept ? accept.split(',').map((t) => t.trim()).filter(Boolean) : undefined)}
-      {...props}
-    />
-  );
-}
-
-/** Toggles the tall drafting mode. Sits in the card's top-right corner unless restyled. */
+/** Toggles the tall drafting mode (UI SDK's Toggle: `aria-pressed`). Sits in the card's top-right corner unless restyled. */
 export function ComposerExpand({ className }: { className?: string }) {
   const { expanded, setExpanded } = useComposer();
   const label = expanded ? 'Collapse composer' : 'Expand composer';
   return (
     <ToggleButton
-      data-slot="composer-expand"
+      data-composer-expand=""
       className={cn(
         pressable,
-        'absolute top-[7px] right-2 z-2 grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-muted-foreground hover:bg-secondary!',
+        'absolute top-[7px] right-2 z-2 grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-muted-foreground hover:bg-secondary! focus-visible:ring-2 focus-visible:ring-primary/60',
         // Compact: fades out of the way rather than vanishing.
         'group-data-[collapsed=compact]/composer:pointer-events-none group-data-[collapsed=compact]/composer:scale-75 group-data-[collapsed=compact]/composer:opacity-0 [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
         className,
       )}
       aria-label={label}
-      isSelected={expanded}
-      onPress={() => {
-        setExpanded(!expanded);
-      }}
+      pressed={expanded}
+      onPressedChange={(pressed, details) => setExpanded(pressed, details)}
       title={label}
     >
-      <GlyphSwap id={expanded ? 'restore' : 'expand'}>
+      <IconSwap id={expanded ? 'restore' : 'expand'} className="size-full">
         <Icon name={expanded ? 'arrows-collapse' : 'arrows-expand'} size={14} sw={2} />
-      </GlyphSwap>
+      </IconSwap>
     </ToggleButton>
   );
 }
@@ -1571,13 +1485,10 @@ function FileTileFace({ a, kind }: { a: ComposerAttachment; kind: ComposerAttach
   if (kind === 'video' && a.preview) {
     return (
       <span className="relative block h-[58px] w-[104px]">
-        <motion.img
+        <img
           src={a.preview}
           alt=""
-          className="block size-full object-cover"
-          initial={{ opacity: 0, filter: 'blur(6px)' }}
-          animate={{ opacity: 1, filter: 'blur(0px)' }}
-          transition={springs.smooth}
+          className="block size-full object-cover transition-[opacity,filter] duration-spring-smooth ease-spring-smooth starting:opacity-0 starting:blur-[6px] motion-reduce:transition-none"
         />
         <span className="absolute top-1/2 left-1/2 grid size-[22px] -translate-1/2 place-items-center rounded-full bg-black/55 pl-px text-white">
           <Icon name="play" size={11} sw={2} className="[&_path]:fill-current" />
@@ -1614,6 +1525,43 @@ function FileTileFace({ a, kind }: { a: ComposerAttachment; kind: ComposerAttach
   );
 }
 
+/** One tile of the strip: it pops in, and pops out of the row (its neighbours slide over its place) as it leaves. */
+function AttachmentTile({ entry, recovery, children }: { entry: PresenceEntry<ComposerAttachment>; recovery: FocusRecovery; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const a = entry.item;
+  // A tile that leaves with focus in it (✕, Backspace, Delete) hands focus on: UI SDK's focus recovery.
+  React.useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || !entry.present) return;
+    return recovery.bind(el, { key: entry.key, props: undefined });
+  }, [entry.present, entry.key, recovery]);
+  // Leaving, the tile is lifted out of the row where it stood, so the others close the gap while it fades.
+  React.useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || entry.present) return;
+    el.style.position = 'absolute';
+    el.style.left = `${el.offsetLeft}px`;
+    el.style.top = `${el.offsetTop}px`;
+    return () => {
+      el.style.position = '';
+      el.style.left = '';
+      el.style.top = '';
+    };
+  }, [entry.present]);
+  useEnterExit(ref, entry.present, { appear: entry.appear, exited: entry.exited });
+  return (
+    <div
+      ref={ref}
+      data-slot="composer-attachment"
+      data-attachment-id={a.id}
+      data-kind={resolveKind(a)}
+      className="relative transition-[opacity,scale,filter] duration-spring-snappy ease-spring-snappy data-starting-style:scale-60 data-starting-style:opacity-0 data-starting-style:blur-[4px] data-ending-style:scale-60 data-ending-style:opacity-0 data-ending-style:blur-[4px] motion-reduce:transition-none"
+    >
+      {children}
+    </div>
+  );
+}
+
 /**
  * The attachments as tiles: images as thumbnails (click to annotate), videos as their first frame, text and
  * code as their first lines, other files as a glyph with name and size (click to open). ✕ — or Backspace /
@@ -1623,112 +1571,115 @@ function FileTileFace({ a, kind }: { a: ComposerAttachment; kind: ComposerAttach
 export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonProps, 'align'>) {
   const { attachments, annotate, canAnnotate, removeAttachment, editor } = useComposer();
   const strip = useRef<HTMLDivElement | null>(null);
-  // Removing from the keyboard hands focus to a neighbour (or back to the editor), never to the page.
-  const removeFromKeyboard = (id: string) => {
-    const tiles = Array.from(strip.current?.querySelectorAll<HTMLElement>('[data-slot="composer-attachment-open"]') ?? []);
-    const i = tiles.findIndex((t) => t.closest('[data-attachment-id]')?.getAttribute('data-attachment-id') === id);
-    const next = tiles[i + 1] ?? tiles[i - 1];
-    removeAttachment(id);
-    if (next) next.focus();
-    else editor?.commands.focus('end');
-  };
+  const presence = usePresence<HTMLDivElement>(attachments.length > 0);
+  const tiles = usePresenceList(attachments, (a) => a.id);
+
+  // The tiles that stay slide to their new places (read before the change commits, played after).
+  const order = attachments.map((a) => a.id).join();
+  const committed = useRef(order);
+  const before = useRef<FlipSnapshot | null>(null);
+  if (order !== committed.current && !before.current && strip.current) {
+    before.current = flipSnapshot(strip.current.querySelectorAll(':scope > [data-slot="composer-attachment"]'));
+  }
+  React.useLayoutEffect(() => {
+    committed.current = order;
+    const snap = before.current;
+    before.current = null;
+    if (snap) flipPlay(snap, { spring: 'snappy' });
+  }, [order]);
+
+  // Focus leaving with a tile goes to the next tile still in the strip, else the one before, else the editor:
+  // never to the page.
+  const latestEditor = useRef(editor);
+  latestEditor.current = editor;
+  const recovery = React.useMemo(
+    () =>
+      createFocusRecovery({
+        fallback: (lost) => {
+          const open = Array.from(strip.current?.querySelectorAll<HTMLElement>('[data-slot="composer-attachment"]:not([data-ending-style]) [data-attachment-open]') ?? []);
+          const after = open.find((t) => lost.el.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING);
+          const target = after ?? open[open.length - 1];
+          if (target) return target;
+          latestEditor.current?.commands.focus('end');
+          return null;
+        },
+      }),
+    [],
+  );
   const onTileKey = (id: string) => (e: React.KeyboardEvent) => {
     if (e.key !== 'Backspace' && e.key !== 'Delete') return;
     e.preventDefault();
-    removeFromKeyboard(id);
+    removeAttachment(id, { reason: 'remove', event: e.nativeEvent });
   };
+  if (!presence.mounted) return null;
   return (
-    <AnimatePresence initial={false}>
-      {attachments.length ? (
-        <motion.div
-          key="strip"
-          data-slot="composer-attachments-presence"
-          className="order-[-2] w-full min-w-0 overflow-hidden group-data-[collapsed=compact]/composer:hidden"
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={springs.smooth}
-        >
-          <ComposerAddon ref={strip} data-slot="composer-attachments" align="block-start" className={cn('flex-wrap gap-2', className)} {...props}>
-            <AnimatePresence mode="popLayout" initial={false}>
-              {attachments.map((a) => {
-                const kind = resolveKind(a);
-                const image = kind === 'image';
-                const meta = attachmentMeta(a, kind);
-                return (
-                  <motion.div
-                    key={a.id}
-                    layout="position"
-                    layoutDependency={attachments.map((x) => x.id).join()}
-                    data-slot="composer-attachment"
-                    data-attachment-id={a.id}
-                    data-kind={kind}
-                    className="relative"
-                    initial={{ opacity: 0, scale: 0.6, filter: 'blur(4px)' }}
-                    animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                    exit={{ opacity: 0, scale: 0.6, filter: 'blur(4px)' }}
-                    transition={springs.snappy}
-                  >
-                    {image ? (
-                      <>
-                        <Button
-                          data-slot="composer-attachment-open"
-                          onPress={() => {
-                            annotate(a.id);
-                          }}
-                          onKeyDown={onTileKey(a.id)}
-                          title={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
-                          aria-label={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
-                          // The thumbnail sits in a dark well in either appearance: a `terminal` theme scope.
-                          data-theme-scope={TERMINAL_WELL['data-theme-scope']}
-                          className={cn(TERMINAL_WELL.className, 'block cursor-pointer overflow-hidden rounded-ctl border border-border bg-background p-0')}
-                        >
-                          {a.src ? (
-                            <img src={a.src} alt={a.name} className="block h-[58px] max-w-[130px] object-cover" />
-                          ) : (
-                            <span className="grid h-[58px] w-[72px] place-items-center text-tertiary-foreground">
-                              <Icon name="doc-corner" size={18} sw={1.7} />
-                            </span>
-                          )}
-                        </Button>
-                        <span className="pointer-events-none absolute bottom-1 left-1 grid size-[18px] place-items-center rounded-md bg-black/55 text-white">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M14 4l6 6-10 10H4v-6z" />
-                          </svg>
-                        </span>
-                      </>
-                    ) : (
-                      <Button
-                        data-slot="composer-attachment-open"
-                        onPress={() => {
-                          if (a.src && typeof window !== 'undefined') window.open(a.src, '_blank', 'noopener');
-                        }}
-                        onKeyDown={onTileKey(a.id)}
-                        title={`${a.name}${meta ? ` · ${meta}` : ''}`}
-                        aria-label={`Open ${a.name}${meta ? `, ${meta}` : ''}`}
-                        className="block cursor-pointer overflow-hidden rounded-ctl border border-border bg-secondary p-0 font-sans outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60"
-                      >
-                        <FileTileFace a={a} kind={kind} />
-                      </Button>
-                    )}
+    <div
+      ref={presence.ref}
+      data-slot="composer-attachments-presence"
+      className="order-[-2] grid w-full min-w-0 grid-rows-[1fr] transition-[grid-template-rows,opacity] duration-spring-smooth ease-spring-smooth data-starting-style:grid-rows-[0fr] data-starting-style:opacity-0 data-ending-style:grid-rows-[0fr] data-ending-style:opacity-0 group-data-[collapsed=compact]/composer:hidden motion-reduce:transition-none"
+    >
+      <div className="min-h-0 overflow-hidden">
+        <ComposerAddon ref={strip} data-slot="composer-attachments" align="block-start" className={cn('relative flex-wrap gap-2', className)} {...props}>
+          {tiles.map((entry) => {
+            const a = entry.item;
+            const kind = resolveKind(a);
+            const meta = attachmentMeta(a, kind);
+            return (
+              <AttachmentTile key={entry.key} entry={entry} recovery={recovery}>
+                {kind === 'image' ? (
+                  <>
                     <Button
-                      onPress={() => {
-                        removeAttachment(a.id);
-                      }}
-                      aria-label={`Remove ${a.name}`}
-                      // The button is a 24px target; the 18px badge is drawn inside it.
-                      className="absolute -top-[9px] -right-[9px] grid size-6 cursor-pointer place-items-center border-0 bg-transparent p-0 text-[10px] leading-none text-muted-foreground"
+                      data-attachment-open=""
+                      onClick={() => annotate(a.id)}
+                      onKeyDown={onTileKey(a.id)}
+                      title={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
+                      aria-label={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
+                      // The thumbnail sits in a dark well in either appearance: a `terminal` theme scope.
+                      data-theme-scope={TERMINAL_WELL['data-theme-scope']}
+                      className={cn(TERMINAL_WELL.className, 'block cursor-pointer overflow-hidden rounded-ctl border border-border bg-background p-0 outline-none focus-visible:ring-2 focus-visible:ring-primary/60')}
                     >
-                      <span aria-hidden="true" className="grid size-[18px] place-items-center rounded-[50%] border border-border bg-popover">✕</span>
+                      {a.src ? (
+                        <img src={a.src} alt={a.name} className="block h-[58px] max-w-[130px] object-cover" />
+                      ) : (
+                        <span className="grid h-[58px] w-[72px] place-items-center text-tertiary-foreground">
+                          <Icon name="doc-corner" size={18} sw={1.7} />
+                        </span>
+                      )}
                     </Button>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </ComposerAddon>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
+                    <span className="pointer-events-none absolute bottom-1 left-1 grid size-[18px] place-items-center rounded-md bg-black/55 text-white">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 4l6 6-10 10H4v-6z" />
+                      </svg>
+                    </span>
+                  </>
+                ) : (
+                  <Button
+                    data-attachment-open=""
+                    onClick={() => {
+                      if (a.src && typeof window !== 'undefined') window.open(a.src, '_blank', 'noopener');
+                    }}
+                    onKeyDown={onTileKey(a.id)}
+                    title={`${a.name}${meta ? ` · ${meta}` : ''}`}
+                    aria-label={`Open ${a.name}${meta ? `, ${meta}` : ''}`}
+                    className="block cursor-pointer overflow-hidden rounded-ctl border border-border bg-secondary p-0 font-sans outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                  >
+                    <FileTileFace a={a} kind={kind} />
+                  </Button>
+                )}
+                <Button
+                  onClick={(event) => removeAttachment(a.id, { reason: 'remove', event: event.nativeEvent })}
+                  aria-label={`Remove ${a.name}`}
+                  // The button is a 24px target; the 18px badge is drawn inside it.
+                  className="absolute -top-[9px] -right-[9px] grid size-6 cursor-pointer place-items-center border-0 bg-transparent p-0 text-[10px] leading-none text-muted-foreground"
+                >
+                  <span aria-hidden="true" className="grid size-[18px] place-items-center rounded-[50%] border border-border bg-popover">✕</span>
+                </Button>
+              </AttachmentTile>
+            );
+          })}
+        </ComposerAddon>
+      </div>
+    </div>
   );
 }
 
@@ -1737,28 +1688,6 @@ function caretOnPlainLine(editor: ComposerEditor): boolean {
   const { $from, empty } = editor.state.selection;
   return empty && $from.depth === 1 && $from.parent.type.name === 'paragraph';
 }
-
-/** Files dropped on the editor inside a drop-zone card are the card's (they attach — images as chips at the
-    drop point); the editor keeps text drags and, without a drop zone, its own image drops. */
-const FILE_DROP_EXTENSIONS = [
-  Extension.create({
-    name: 'composerFileDrop',
-    addProseMirrorPlugins() {
-      return [
-        new Plugin({
-          props: {
-            handleDOMEvents: {
-              drop: (view, event) =>
-                !!event.dataTransfer &&
-                Array.from(event.dataTransfer.types ?? []).includes('Files') &&
-                !!view.dom.closest('[data-slot="composer-card"][data-drop-zone]'),
-            },
-          },
-        }),
-      ];
-    },
-  }),
-];
 
 export interface ComposerInputProps {
   placeholder?: string;
@@ -1796,12 +1725,13 @@ export function ComposerInput({
     const editor = editorRef.current;
     if (!editor || event.key !== 'Enter') return false;
     if (event.metaKey || event.ctrlKey) {
-      latest.current.send();
+      latest.current.send(event);
       return true;
     }
     if (event.shiftKey) return editor.commands.insertContent({ type: 'hardBreak' });
-    if (document.querySelector('.slash-menu') || !caretOnPlainLine(editor)) return false;
-    latest.current.send();
+    // An open "/ @ #" menu takes Enter before the editor sees it, so this only runs with no menu open.
+    if (!caretOnPlainLine(editor)) return false;
+    latest.current.send(event);
     return true;
   };
   // Pasted files attach (images as chips, others as tiles); Markdown-looking text becomes structure.
@@ -1809,12 +1739,14 @@ export function ComposerInput({
     const data = event.clipboardData;
     const files = Array.from(data?.files ?? []);
     if (files.length) {
+      // The editor decides about its own pastes: the card's drop zone, around it, takes pastes from elsewhere.
+      event.stopPropagation();
       const images = files.every((f) => f.type.startsWith('image/'));
       // A Word / Excel selection ships a rendered PNG beside its text: that is a text paste. Inline image
       // blocks are the editor's own.
       if (images && (imagePaste === 'inline' || data?.getData('text/plain').trim())) return false;
       event.preventDefault();
-      latest.current.attachFiles(files, { source: 'paste' });
+      latest.current.attachFiles(files, { source: 'paste', event });
       return true;
     }
     const text = data?.getData('text/plain') ?? '';
@@ -1848,7 +1780,7 @@ export function ComposerInput({
     <div data-slot="composer-input" className="order-0 min-w-0 flex-1 basis-[60%]">
       <GitbookEditor
         markdown={value}
-        onChange={setValue}
+        onChange={(markdown) => setValue(markdown, { reason: 'input-change' })}
         toolbar={false}
         slashMenu={slashMenu}
         references={references}
@@ -1861,13 +1793,12 @@ export function ComposerInput({
         attachments={attachments}
         // Images the editor takes itself (a drop onto a card without a drop zone).
         onAttachmentAdd={({ file, ...attachment }) => {
-          addAttachment({ ...attachment, kind: 'image', file });
+          addAttachment({ ...attachment, kind: 'image', file }, { reason: 'drop' });
         }}
         // Chips deleted, cut or cleared in the editor drop their attachment.
         onAttachmentRemove={(ids) => ids.forEach((id) => latest.current.removeAttachment(id))}
         onAttachmentOpen={onAttachmentOpen}
         onEditorReady={onEditorReady}
-        extensions={FILE_DROP_EXTENSIONS}
       />
     </div>
   );
@@ -1902,11 +1833,18 @@ export const composerBumpVariants = cva('relative box-border flex min-w-0 flex-c
   defaultVariants: { side: 'bottom', variant: 'attached' },
 });
 
+/** Why a draggable bump opened or closed: its handle pressed, dragged, Escape, or code. */
+export type ComposerBumpOpenChangeReason = 'press' | 'drag' | 'escape-key' | 'imperative';
+export type ComposerBumpOpenChangeDetails = ChangeDetails<ComposerBumpOpenChangeReason>;
+/** Why a minimizable bump folded into (or out of) its FAB: a drag below rest, or its handle pressed. */
+export type ComposerBumpMinimizedChangeReason = 'press' | 'drag';
+export type ComposerBumpMinimizedChangeDetails = ChangeDetails<ComposerBumpMinimizedChangeReason>;
+
 export interface ComposerBumpContextValue {
   side: 'top' | 'bottom';
   draggable: boolean;
   open: boolean;
-  setOpen: (open: boolean) => void;
+  setOpen: (open: boolean, given?: ChangeGiven<ComposerBumpOpenChangeReason>) => boolean;
   /** Current revealed body height (px). */
   reveal: number;
   /** 0 at rest (peek), 1 fully open. */
@@ -1914,10 +1852,12 @@ export interface ComposerBumpContextValue {
   peek: number;
   maxReveal: number;
   dragging: boolean;
+  /** The body is transitioning to rest (after a release, a tap or Escape). */
+  settling: boolean;
+  /** @internal starts a drag from a press on the handle. */
+  startDrag: ((event: React.PointerEvent<HTMLElement>) => void) | null;
   /** @internal */
-  handleProps: SheetDragState['handlers'] | null;
-  /** @internal */
-  toggle: () => void;
+  toggle: (event?: Event) => void;
   /** @internal */
   windowRef: React.RefObject<HTMLDivElement | null>;
   contentId: string;
@@ -1933,13 +1873,135 @@ export function useComposerBump(): ComposerBumpContextValue {
 export interface ComposerBumpProgress {
   /** 0 at rest, 1 fully open. */
   progress: number;
-  /** Revealed body height (px). */
+  /** Revealed body height (px): the finger's while dragging, else where the body is heading. */
   reveal: number;
   /** 0–1 fold towards a FAB while dragging below rest (minimizable bumps). */
   minimize: number;
   dragging: boolean;
-  /** The spring is carrying the bump to rest (hosts driving CSS from progress should not transition then). */
+  /** The bump's own CSS transition is carrying it to rest: a host driving CSS from `progress` transitions too. */
   settling: boolean;
+}
+
+/** Extra downward travel (past the peek) that folds the surface into its FAB. */
+const BUMP_MINIMIZE_TRAVEL = 96;
+/** Share of the fold travel a release must reach (projected) to fold into the FAB. */
+const BUMP_FOLD_COMMIT = 0.5;
+/** How far (ms of travel at release speed) a flick is carried before picking the nearest rest. */
+const BUMP_PROJECT_MS = 200;
+/** Release speed (px/ms) above which a drag counts as a flick toward the next rest. */
+const BUMP_FLICK_SPEED = 0.4;
+interface BumpDragOptions {
+  open: boolean;
+  onOpenChange: (open: boolean, given: ChangeGiven<ComposerBumpOpenChangeReason>) => boolean;
+  peek: number;
+  maxReveal: number;
+  minimizable: boolean;
+  minimized: boolean;
+  onMinimizedChange?: (minimized: boolean, details: ComposerBumpMinimizedChangeDetails) => void;
+  windowRef: React.RefObject<HTMLDivElement | null>;
+}
+
+/**
+ * A draggable bump's gesture, on UI SDK's `bindDrag` and gesture math: the body follows the pointer one-to-one
+ * (rubber-banding past its ends), and a release projects the pointer's velocity forward to pick a rest (peek,
+ * open, or the FAB). The body then transitions there in CSS on the `tray` spring; grabbing it mid-way catches it
+ * where it is.
+ */
+function useBumpDrag({ open, onOpenChange, peek, maxReveal, minimizable, minimized, onMinimizedChange, windowRef }: BumpDragOptions) {
+  const target = open ? maxReveal : peek;
+  const [drag, setDrag] = useState<{ reveal: number; minimize: number } | null>(null);
+  // `settling` holds from a release (or a new rest) until the body's own CSS transition has finished: UI SDK's
+  // `animateIn` reports when the element's running animations end (at once without any, as under reduced motion).
+  const [settle, setSettle] = useState(0);
+  const settling = settle > 0;
+  const cleanup = useRef<(() => void) | null>(null);
+  const startSettle = React.useCallback(() => setSettle((n) => n + 1), []);
+  // A tap, Escape or a prop moves the rest: the body transitions there.
+  const rest = `${target}|${minimized}`;
+  const restRef = useRef(rest);
+  React.useEffect(() => {
+    if (restRef.current === rest) return;
+    restRef.current = rest;
+    startSettle();
+  }, [rest, startSettle]);
+  React.useLayoutEffect(() => {
+    const el = windowRef.current;
+    if (!settle) return;
+    if (!el) return setSettle(0);
+    return animateIn(el, () => setSettle(0));
+  }, [settle, rest, windowRef]);
+  React.useEffect(() => () => cleanup.current?.(), []);
+
+  const travel = Math.max(1, peek + BUMP_MINIMIZE_TRAVEL);
+  const minimizeFor = (raw: number) => (minimizable && raw < peek ? Math.min(1, (peek - raw) / travel) : 0);
+  const latest = useRef({ open, minimized, peek, maxReveal, onOpenChange, onMinimizedChange, minimizeFor });
+  latest.current = { open, minimized, peek, maxReveal, onOpenChange, onMinimizedChange, minimizeFor };
+
+  const startDrag = (event: React.PointerEvent<HTMLElement>) => {
+    if (event.button !== 0) return;
+    // Catch the body where it is, mid-transition included.
+    const from = windowRef.current?.getBoundingClientRect().height ?? target;
+    const y0 = event.clientY;
+    const tracker = createVelocityTracker();
+    tracker.add(event.timeStamp, y0);
+    let raw = from;
+    let moved = false;
+    cleanup.current?.();
+    cleanup.current = bindDrag(event.currentTarget, event.nativeEvent, {
+      threshold: dragThreshold,
+      onStart: () => {
+        moved = true;
+        setSettle(0);
+      },
+      onMove: ({ y, event: move }) => {
+        tracker.add(move.timeStamp, y);
+        const { peek: p, maxReveal: max, minimizeFor: fold } = latest.current;
+        raw = from + (y0 - y);
+        // A FAB-bound bump shrinks through its peek; others rubber-band below it.
+        const floor = minimizable ? 0 : Math.min(p, max);
+        const shown = raw > max ? max + rubberBand(raw - max, max || 1) * 0.35 : raw < floor ? Math.max(0, floor - rubberBand(floor - raw, max || 1)) : raw;
+        setDrag({ reveal: Math.min(max + 24, shown), minimize: fold(raw) });
+      },
+      onEnd: (end, canceled) => {
+        cleanup.current = null;
+        if (!moved) return;
+        const { open: wasOpen, minimized: wasMinimized, peek: p, maxReveal: max, onOpenChange: setOpen, onMinimizedChange: setMinimized, minimizeFor: fold } = latest.current;
+        setDrag(null);
+        startSettle();
+        if (canceled) return;
+        // Up is positive: the reveal grows as the pointer rises.
+        const v = -tracker.velocity(end.timeStamp);
+        const projected = raw + v * BUMP_PROJECT_MS;
+        const fab = minimizable && fold(projected) > BUMP_FOLD_COMMIT && fold(raw) > 0.08;
+        const stops = [p, max];
+        const clamped = Math.max(0, Math.min(max, projected));
+        // A decided flick goes to the next rest the way it was thrown; a gentle release, to the nearest one.
+        const ahead = Math.abs(v) > BUMP_FLICK_SPEED ? stops.filter((s) => (v > 0 ? s > raw + 1 : s < raw - 1)) : [];
+        const nearest = ahead.length
+          ? v > 0
+            ? Math.min(...ahead)
+            : Math.max(...ahead)
+          : stops.reduce((best, s) => (Math.abs(s - clamped) < Math.abs(best - clamped) ? s : best), stops[0]);
+        const nextOpen = !fab && nearest === max && max > p;
+        if (fab !== wasMinimized) setMinimized?.(fab, changeDetails({ reason: 'drag', event: end }));
+        if (nextOpen !== wasOpen) setOpen(nextOpen, { reason: 'drag', event: end });
+      },
+    });
+  };
+
+  const toggle = (event?: Event) => {
+    if (minimized) onMinimizedChange?.(false, changeDetails({ reason: 'press', event }));
+    onOpenChange(!open, { reason: 'press', event });
+  };
+
+  return {
+    reveal: drag ? drag.reveal : target,
+    minimize: drag ? drag.minimize : minimized ? 1 : 0,
+    dragging: !!drag,
+    settling,
+    startDrag,
+    toggle,
+  };
 }
 
 export interface ComposerBumpProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onDrag'>, VariantProps<typeof composerBumpVariants> {
@@ -1950,7 +2012,8 @@ export interface ComposerBumpProps extends Omit<React.HTMLAttributes<HTMLDivElem
   draggable?: boolean;
   open?: boolean;
   defaultOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  /** Called before a draggable bump opens or closes; `details.cancel()` keeps an uncontrolled bump where it is. */
+  onOpenChange?: (open: boolean, details: ComposerBumpOpenChangeDetails) => void;
   /** Body height kept visible while closed. */
   peek?: number;
   /** Body height when open, when there are no `bounds` to fill. */
@@ -1961,7 +2024,7 @@ export interface ComposerBumpProps extends Omit<React.HTMLAttributes<HTMLDivElem
   /** Dragging below rest folds the host's surface into a FAB (reported through onProgressChange / onMinimizedChange). */
   minimizable?: boolean;
   minimized?: boolean;
-  onMinimizedChange?: (minimized: boolean) => void;
+  onMinimizedChange?: (minimized: boolean, details: ComposerBumpMinimizedChangeDetails) => void;
   /** Fires as the bump moves, so a host can drive a scrim, a width, a FAB. */
   onProgressChange?: (progress: ComposerBumpProgress) => void;
   /** Escape closes an open draggable bump (default). */
@@ -1972,7 +2035,8 @@ export interface ComposerBumpProps extends Omit<React.HTMLAttributes<HTMLDivElem
 /**
  * A strip attached above (`side="top"`) or below the card. Bumps order themselves by side, so they can be
  * placed anywhere among the Composer's children. With `draggable`, a top bump is a sheet: its handle pulls
- * the content open one-to-one with the pointer and releases snap open or closed.
+ * the content open one-to-one with the pointer and releases snap open or closed. An open one is a layer in UI
+ * SDK's stack, so Escape closes it after any popup opened from inside it.
  */
 export function ComposerBump({
   side = 'bottom',
@@ -1987,7 +2051,7 @@ export function ComposerBump({
   bounds,
   boundsInset = 0,
   minimizable = false,
-  minimized,
+  minimized = false,
   onMinimizedChange,
   onProgressChange,
   closeOnEscape = true,
@@ -1997,8 +2061,9 @@ export function ComposerBump({
   ref,
   ...props
 }: ComposerBumpProps) {
-  const [open, setOpen] = useControllable(openProp, defaultOpen, onOpenChange);
+  const [open, setOpen] = useControllableChange<boolean, ComposerBumpOpenChangeReason>(openProp, defaultOpen, onOpenChange);
   const windowRef = useRef<HTMLDivElement | null>(null);
+  const bumpRef = useRef<HTMLDivElement | null>(null);
   const [measured, setMeasured] = useState<number | null>(null);
   const contentId = React.useId();
 
@@ -2025,16 +2090,7 @@ export function ComposerBump({
 
   const maxReveal = bounds ? (measured ?? maxRevealProp) : maxRevealProp;
   const peek = Math.max(0, Math.min(requestedPeek, maxReveal * 0.75));
-  const drag = useSheetDrag({
-    open,
-    onOpenChange: setOpen,
-    peek,
-    maxReveal,
-    minimizable,
-    minimized,
-    onMinimizedChange,
-  });
-  // Follows the finger, then springs to rest carrying the release velocity.
+  const drag = useBumpDrag({ open, onOpenChange: setOpen, peek, maxReveal, minimizable, minimized, onMinimizedChange, windowRef });
   const reveal = draggable ? drag.reveal : 0;
   const progress = maxReveal > peek ? Math.max(0, (reveal - peek) / (maxReveal - peek)) : 0;
   const minimize = drag.minimize;
@@ -2045,15 +2101,17 @@ export function ComposerBump({
     report.current?.({ progress, reveal, minimize, dragging: drag.dragging, settling: drag.settling });
   }, [progress, reveal, minimize, drag.dragging, drag.settling]);
 
-  const closeRef = useRef(() => setOpen(false));
-  closeRef.current = () => setOpen(false);
+  // Open, the bump is a layer: Escape goes to the topmost one, so a menu opened from it closes first.
+  const closeRef = useRef((event: Event) => setOpen(false, { reason: 'escape-key', event }));
+  closeRef.current = (event: Event) => setOpen(false, { reason: 'escape-key', event });
   React.useEffect(() => {
-    if (!draggable || !open || !closeOnEscape) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !event.defaultPrevented) closeRef.current();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    const el = bumpRef.current;
+    if (!draggable || !open || !closeOnEscape || !el) return;
+    return bindLayer(el, {
+      onDismiss: (reason, event) => {
+        if (reason === 'escape-key') closeRef.current(event);
+      },
+    });
   }, [draggable, open, closeOnEscape]);
 
   const value: ComposerBumpContextValue = {
@@ -2066,7 +2124,8 @@ export function ComposerBump({
     peek,
     maxReveal,
     dragging: drag.dragging,
-    handleProps: draggable ? drag.handlers : null,
+    settling: drag.settling,
+    startDrag: draggable ? drag.startDrag : null,
     toggle: drag.toggle,
     windowRef,
     contentId,
@@ -2075,7 +2134,11 @@ export function ComposerBump({
   return (
     <ComposerBumpContext.Provider value={value}>
       <div
-        ref={ref}
+        ref={(el) => {
+          bumpRef.current = el;
+          if (typeof ref === 'function') ref(el);
+          else if (ref) ref.current = el;
+        }}
         data-slot="composer-bump"
         data-side={side}
         data-variant={variant ?? 'attached'}
@@ -2088,6 +2151,8 @@ export function ComposerBump({
           // A draggable bump's grip is pinned to its top edge (absolutely, in this padding) in every state, so
           // the revealed content opens between the grip and the handle's row instead of above the grip.
           draggable && 'has-[>[data-slot=composer-bump-handle]>[data-bump-grip]]:pt-3',
+          // It widens to the card's edges as it opens: with the finger, else on the tray spring.
+          draggable && !drag.dragging && 'transition-[margin] duration-spring-tray ease-spring-tray motion-reduce:transition-none',
           className,
         )}
         style={
@@ -2115,23 +2180,23 @@ export interface ComposerBumpHandleProps extends React.HTMLAttributes<HTMLDivEle
   label?: string;
 }
 
+/** Presses on these stay theirs: a drag or a tap on the row doesn't start from them (the grip is the exception). */
+const ROW_CONTROL = 'button,a,input,[role=button]';
+
 /** The bump's row. In a draggable bump it is the drag handle: pull up to open, tap the grip to toggle. */
-export function ComposerBumpHandle({ grip = true, label, className, children, ...props }: ComposerBumpHandleProps) {
+export function ComposerBumpHandle({ grip = true, label, className, children, onPointerDown, onClick, ...props }: ComposerBumpHandleProps) {
   const bump = useComposerBump();
-  const onPointerDown = (event: React.PointerEvent<HTMLElement>) => {
-    // Controls inside the row (a Stop button) keep their own presses.
-    const target = event.target as HTMLElement;
-    const control = target.closest('button,a,input,[role=button]');
-    if (control && !control.hasAttribute('data-bump-grip')) return;
-    bump.handleProps?.onPointerDown(event);
-  };
   if (!bump.draggable)
     return (
-      <div data-slot="composer-bump-handle" className={cn('flex min-w-0 items-center gap-[7px] px-[11px] py-1.5', className)} {...props}>
+      <div data-slot="composer-bump-handle" className={cn('flex min-w-0 items-center gap-[7px] px-[11px] py-1.5', className)} onPointerDown={onPointerDown} onClick={onClick} {...props}>
         {children}
       </div>
     );
   const name = label ?? (bump.open ? 'Collapse' : 'Expand');
+  const fromControl = (target: EventTarget) => {
+    const control = (target as HTMLElement).closest?.(ROW_CONTROL);
+    return !!control && !control.hasAttribute('data-bump-grip');
+  };
   return (
     <div
       data-slot="composer-bump-handle"
@@ -2143,25 +2208,22 @@ export function ComposerBumpHandle({ grip = true, label, className, children, ..
         className,
       )}
       {...props}
-      onPointerDown={onPointerDown}
-      // A tap anywhere on the row (or Enter/Space on the grip) toggles; clicks on controls in the row don't.
-      // Pointer capture retargets the click to this row, so the toggle lives here rather than on the grip.
-      onClick={(event) => {
-        const control = (event.target as HTMLElement).closest('button,a,input,[role=button]');
-        if (control && !control.hasAttribute('data-bump-grip')) return;
-        bump.toggle();
+      onPointerDown={(event) => {
+        onPointerDown?.(event);
+        // Controls inside the row (a Stop button) keep their own presses.
+        if (!event.defaultPrevented && !fromControl(event.target)) bump.startDrag?.(event);
       }}
-      onPointerMove={bump.handleProps?.onPointerMove}
-      onPointerUp={bump.handleProps?.onPointerUp}
-      onPointerCancel={bump.handleProps?.onPointerCancel}
-      onLostPointerCapture={bump.handleProps?.onLostPointerCapture}
+      // A tap anywhere on the row (or Enter/Space on the grip) toggles; clicks on controls in the row don't. A drag's
+      // own click is swallowed by bindDrag, and pointer capture retargets a tap's click to this row.
+      onClick={(event) => {
+        onClick?.(event);
+        if (!event.defaultPrevented && !fromControl(event.target)) bump.toggle(event.nativeEvent);
+      }}
     >
       {grip ? (
-        // A raw button: it is the accessible toggle and part of the drag surface.
-        <button
-          type="button"
+        // The accessible toggle, and part of the drag surface.
+        <Button
           data-bump-grip=""
-          data-slot="composer-bump-grip"
           aria-label={name}
           aria-expanded={bump.open}
           aria-controls={bump.contentId}
@@ -2173,7 +2235,7 @@ export function ComposerBumpHandle({ grip = true, label, className, children, ..
               bump.open ? 'w-10 bg-muted-foreground' : 'w-8 bg-handle group-hover/handle:w-10 group-hover/handle:bg-tertiary-foreground',
             )}
           />
-        </button>
+        </Button>
       ) : null}
       {children ? (
         <div className={cn('flex min-w-0 items-center gap-[7px] px-[11px] pb-1.5', !grip && 'pt-1.5')}>{children}</div>
@@ -2191,7 +2253,8 @@ export interface ComposerBumpContentProps extends React.HTMLAttributes<HTMLDivEl
     handle, so it slides out without reflowing mid-drag. */
 export function ComposerBumpContent({ label = 'Details', className, children, ...props }: ComposerBumpContentProps) {
   const bump = useComposerBump();
-  const expanded = bump.reveal > 0;
+  // Still shown while it closes, until the transition is done.
+  const expanded = bump.reveal > 0 || bump.settling;
   return (
     <div
       ref={bump.windowRef}
@@ -2204,7 +2267,8 @@ export function ComposerBumpContent({ label = 'Details', className, children, ..
       data-peeking={(bump.peek > 0 && !bump.open) || undefined}
       className={cn(
         'relative order-first h-(--bump-reveal) w-full shrink-0 overflow-hidden',
-        // The height is written every frame by the drag and its settling spring, so it never CSS-transitions.
+        // The finger sets the height while dragging; otherwise it transitions to rest on the tray spring.
+        !bump.dragging && 'transition-[height] duration-spring-tray ease-spring-tray motion-reduce:transition-none',
         expanded ? 'visible' : 'invisible',
         // A peeking body fades its cut top edge.
         'data-peeking:[mask-image:linear-gradient(to_bottom,transparent,#000_34px)]',
@@ -2221,11 +2285,17 @@ export function ComposerBumpContent({ label = 'Details', className, children, ..
 /* ══ AnnotateLightbox ══
    Click an attachment (strip thumbnail or inline chip): the annotator's surface overlays the image; Save
    rasterizes image + strokes into one flattened PNG. `canvas` supplies a fixed drawing surface instead. With
-   neither (and no provider), it is a preview: the image and a Close button. */
-export interface AnnotateLightboxProps {
+   neither (and no provider), it is a preview: the image and a Close button.
+   It is UI SDK's Dialog (open state, reasons, focus, Escape and outside press, the layer host), and its motion is
+   the dialog's enter and exit: the backdrop and chrome fade on `data-starting-style` / `data-ending-style`, and the
+   image flies out of the thumbnail it was pressed on and back into it, as CSS transitions the exit waits for. */
+export interface AnnotateLightboxProps extends Pick<DialogOptions, 'open' | 'defaultOpen' | 'onOpenChange' | 'onOpenChangeComplete'> {
   src: string;
-  onClose: () => void;
-  onSave: (dataUrl: string) => void;
+  /**
+   * Save pressed: the image with its strokes flattened into one PNG data URL. The lightbox then closes with reason
+   * `action` and `returnValue` `"save"` (Cancel closes with `close-press` and `"cancel"`).
+   */
+  onSave?: (dataUrl: string, details: DialogCloseActionDetails) => void;
   /** A fixed drawing surface (its first <svg> is flattened), instead of an annotator. */
   canvas?: React.ReactNode;
   /** The annotator to run; defaults to the nearest ComposerAnnotatorProvider's, else PencilKit. `null` forces the preview. */
@@ -2234,197 +2304,227 @@ export interface AnnotateLightboxProps {
   origin?: () => HTMLElement | null;
 }
 
-export function AnnotateLightbox({ src, onClose, onSave, canvas, annotator: annotatorProp, origin }: AnnotateLightboxProps) {
-  const boxRef = useRef<HTMLDivElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
-  const chromeRef = useRef<HTMLDivElement>(null);
-  const toolsRef = useRef<HTMLDivElement>(null);
-  const backdropRef = useRef<HTMLDivElement>(null);
-  const contextAnnotator = useComposerAnnotator();
-  const Annotator = canvas === undefined ? (annotatorProp === undefined ? contextAnnotator : annotatorProp) : null;
-  const closing = useRef(false);
-  const hidden = useRef<HTMLElement | null>(null);
-
-  // Where the thumbnail is, as the box's transform: scaled to cover it, clipped to its shape and corners.
-  const zoomFrom = () => {
-    const box = boxRef.current;
-    const el = origin?.() ?? null;
-    if (!box || !el) return null;
-    const s = el.getBoundingClientRect();
-    const f = box.getBoundingClientRect();
-    if (!s.width || !f.width) return null;
-    const scale = Math.max(s.width / f.width, s.height / f.height);
-    const vw = s.width / scale,
-      vh = s.height / scale;
-    const ix = (f.width - vw) / 2,
-      iy = (f.height - vh) / 2;
-    const radius = parseFloat(getComputedStyle(el.closest('button') ?? el).borderRadius) || 10;
-    return {
-      el,
-      x: s.left + s.width / 2 - (f.left + f.width / 2),
-      y: s.top + s.height / 2 - (f.top + f.height / 2),
-      scale,
-      clip: `inset(${iy}px ${ix}px ${iy}px ${ix}px round ${radius / scale}px)`,
-    };
+/** Writes where the image box flies from (open) or to (close) as variables its transition reads. */
+function setZoom(box: HTMLElement, origin: HTMLElement | null, fallbackScale: number) {
+  const reduce = prefersReducedMotion();
+  const s = !reduce && origin ? origin.getBoundingClientRect() : null;
+  const f = box.getBoundingClientRect();
+  const set = (x: number, y: number, scale: number, opacity: number, clip: string) => {
+    box.style.setProperty('--zoom-x', `${x}px`);
+    box.style.setProperty('--zoom-y', `${y}px`);
+    box.style.setProperty('--zoom-scale', String(scale));
+    box.style.setProperty('--zoom-opacity', String(opacity));
+    box.style.setProperty('--zoom-clip', clip);
   };
+  const rest = 'inset(0px round var(--radius-card))';
+  if (!s || !s.width || !f.width) {
+    set(0, 0, reduce ? 1 : fallbackScale, 0, rest);
+    return false;
+  }
+  // Scaled to cover the thumbnail, clipped to its shape and corners.
+  const scale = Math.max(s.width / f.width, s.height / f.height);
+  const ix = (f.width - s.width / scale) / 2,
+    iy = (f.height - s.height / scale) / 2;
+  const radius = parseFloat(getComputedStyle(origin!.closest('button') ?? origin!).borderRadius) || 10;
+  set(s.left + s.width / 2 - (f.left + f.width / 2), s.top + s.height / 2 - (f.top + f.height / 2), scale, 1, `inset(${iy}px ${ix}px ${iy}px ${ix}px round ${radius / scale}px)`);
+  return true;
+}
 
-  // Open: the image flies out of the thumbnail it was pressed on; the chrome follows it in.
-  React.useLayoutEffect(() => {
-    const box = boxRef.current,
-      img = imgRef.current;
-    if (!box || !img) return;
-    const reduce = prefersReducedMotion();
-    const fadeIn = (el: HTMLElement | null, delay = 0) =>
-      el && animate(el, { opacity: [0, 1], y: [reduce ? 0 : 10, 0] }, reduce ? { duration: 0.15 } : { ...springs.smooth, delay });
-    const run = () => {
-      animate(backdropRef.current!, { opacity: [0, 1] }, { duration: reduce ? 0.15 : 0.28 });
-      fadeIn(chromeRef.current, 0.08);
-      fadeIn(toolsRef.current, 0.12);
-      const from = reduce ? null : zoomFrom();
-      if (!from) {
-        animate(box, { opacity: [0, 1], scale: [reduce ? 1 : 0.94, 1] }, reduce ? { duration: 0.15 } : springs.smooth);
-        return;
-      }
-      hidden.current = from.el;
-      from.el.style.visibility = 'hidden';
-      box.style.opacity = '1';
-      animate(
-        box,
-        { x: [from.x, 0], y: [from.y, 0], scale: [from.scale, 1], clipPath: [from.clip, 'inset(0px 0px 0px 0px round 14px)'] },
-        springs.smooth,
-      );
-    };
-    box.style.opacity = '0';
-    if (img.complete && img.naturalWidth) run();
-    else {
-      img.addEventListener('load', run, { once: true });
-      img.addEventListener('error', run, { once: true });
-    }
-    return () => {
-      if (hidden.current) hidden.current.style.visibility = '';
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Close (cancel, Escape, outside press, save): the image lands back in the thumbnail before unmounting.
-  const close = (then: () => void) => {
-    if (closing.current) return;
-    closing.current = true;
-    const box = boxRef.current;
-    const reduce = prefersReducedMotion();
-    for (const el of [chromeRef.current, toolsRef.current]) if (el) animate(el, { opacity: 0 }, { duration: 0.12 });
-    if (backdropRef.current) animate(backdropRef.current, { opacity: 0 }, { duration: reduce ? 0.12 : 0.3 });
-    if (hidden.current) hidden.current.style.visibility = '';
-    const to = !reduce && box ? zoomFrom() : null;
-    if (hidden.current) hidden.current.style.visibility = 'hidden';
-    const finish = () => {
-      if (hidden.current) hidden.current.style.visibility = '';
-      hidden.current = null;
-      then();
-    };
-    if (!box) return finish();
-    if (!to) {
-      animate(box, { opacity: 0, scale: reduce ? 1 : 0.96 }, { duration: 0.14 }).then(finish);
-      return;
-    }
-    animate(box, { x: to.x, y: to.y, scale: to.scale, clipPath: to.clip }, { ...springs.smooth, restDelta: 0.5, restSpeed: 20 }).then(finish);
-  };
-
-  const save = () => {
-    const img = imgRef.current,
-      box = boxRef.current;
-    if (!img || !box) return close(onClose);
-    // The box is exactly the image (aspect kept), so strokes map 1:1; export at the image's native resolution.
-    const w = img.clientWidth,
-      h = img.clientHeight,
-      sc = Math.max(1, img.naturalWidth / w);
-    const cv = document.createElement('canvas');
-    cv.width = w * sc;
-    cv.height = h * sc;
-    const ctx = cv.getContext('2d');
-    if (!ctx) return close(onClose);
-    ctx.drawImage(img, 0, 0, cv.width, cv.height);
-    const fin = () => {
-      const url = cv.toDataURL('image/png');
-      close(() => onSave(url));
-    };
-    const svg = box.querySelector('[data-slot="pencil-canvas"] > svg') ?? box.querySelector('svg');
-    if (!svg) return fin();
-    const cl = svg.cloneNode(true) as SVGElement;
-    cl.setAttribute('width', String(w));
-    cl.setAttribute('height', String(h));
-    cl.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
-    cl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+/** Flattens the image and the surface's strokes into one PNG at the image's native resolution. */
+function rasterize(img: HTMLImageElement, box: HTMLElement): Promise<string | null> {
+  // The box is exactly the image (aspect kept), so strokes map 1:1.
+  const w = img.clientWidth,
+    h = img.clientHeight,
+    sc = Math.max(1, img.naturalWidth / (w || 1));
+  const cv = document.createElement('canvas');
+  cv.width = w * sc;
+  cv.height = h * sc;
+  const ctx = cv.getContext('2d');
+  if (!ctx) return Promise.resolve(null);
+  ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  const svg = box.querySelector('[data-slot="pencil-canvas"] > svg') ?? box.querySelector('svg');
+  if (!svg) return Promise.resolve(cv.toDataURL('image/png'));
+  const cl = svg.cloneNode(true) as SVGElement;
+  cl.setAttribute('width', String(w));
+  cl.setAttribute('height', String(h));
+  cl.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+  cl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  return new Promise((resolve) => {
     const im = new Image();
+    const fin = () => resolve(cv.toDataURL('image/png'));
     im.onload = () => {
       ctx.drawImage(im, 0, 0, cv.width, cv.height);
       fin();
     };
     im.onerror = fin;
     im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(cl));
-  };
-  const btn = (label: string, primary: boolean, onPress: () => void) => (
-    <Button
-      onPress={onPress}
-      className={cn(
-        'cursor-pointer rounded-[9px] px-3.5 py-[7px] font-sans text-[12.5px] font-[650] text-white',
-        primary ? 'border-0 bg-primary' : 'border border-white/20 bg-transparent',
-      )}
-    >
-      {label}
-    </Button>
+  });
+}
+
+const lightboxButton = (primary: boolean) =>
+  cn(
+    'cursor-pointer rounded-[9px] px-3.5 py-[7px] font-sans text-[12.5px] font-[650] text-white',
+    primary ? 'border-0 bg-primary' : 'border border-white/20 bg-transparent',
   );
+
+/* The chrome above and the tools below follow the image in, a beat later, and leave quickly. */
+const lightboxChrome = (delay: string) =>
+  cn(
+    'transition-[opacity,translate] duration-spring-smooth ease-spring-smooth',
+    delay,
+    'group-data-starting-style/lightbox:translate-y-2.5 group-data-starting-style/lightbox:opacity-0',
+    'group-data-ending-style/lightbox:opacity-0 group-data-ending-style/lightbox:delay-0 group-data-ending-style/lightbox:duration-120 group-data-ending-style/lightbox:ease-exit',
+    'motion-reduce:translate-y-0 motion-reduce:delay-0 motion-reduce:duration-150',
+  );
+
+export function AnnotateLightbox({
+  src,
+  open: openProp,
+  defaultOpen = false,
+  onOpenChange,
+  onOpenChangeComplete,
+  onSave,
+  canvas,
+  annotator: annotatorProp,
+  origin,
+}: AnnotateLightboxProps) {
+  const [openInner, setOpenInner] = useState(defaultOpen);
+  const open = openProp ?? openInner;
+  const boxRef = useRef<HTMLDivElement>(null);
+  // The image as state: the dialog's content mounts in its own commit, and the flight starts once it is there.
+  const [img, setImg] = useState<HTMLImageElement | null>(null);
+  const contextAnnotator = useComposerAnnotator();
+  const Annotator = canvas === undefined ? (annotatorProp === undefined ? contextAnnotator : annotatorProp) : null;
+  // The thumbnail hides while the image is out of it (it is the image, flown out), and shows once it is back.
+  const hidden = useRef<HTMLElement | null>(null);
+  const reveal = () => {
+    if (hidden.current) hidden.current.style.visibility = '';
+    hidden.current = null;
+  };
+  React.useEffect(() => reveal, []);
+  const host = useLayerHost();
+  const [ready, setReady] = useState(false);
+
+  // Open: once the image has its size, it flies out of the thumbnail (UI SDK's animateIn from where it was).
+  React.useLayoutEffect(() => {
+    if (!open || !img) return;
+    if (!ready) {
+      if (img.complete && img.naturalWidth) setReady(true);
+      else {
+        const done = () => setReady(true);
+        img.addEventListener('load', done, { once: true });
+        img.addEventListener('error', done, { once: true });
+        return () => {
+          img.removeEventListener('load', done);
+          img.removeEventListener('error', done);
+        };
+      }
+      return;
+    }
+    const box = boxRef.current;
+    if (!box) return;
+    const from = origin?.() ?? null;
+    if (setZoom(box, from, 0.94) && from) {
+      hidden.current = from;
+      from.style.visibility = 'hidden';
+    }
+    return animateIn(box);
+  }, [open, ready, img]);
+
+  const setOpen: NonNullable<DialogOptions['onOpenChange']> = (next, details) => {
+    onOpenChange?.(next, details);
+    if (details.canceled) return;
+    // Close: the box flies back to wherever the thumbnail is now, as the dialog's exit.
+    if (!next && boxRef.current) setZoom(boxRef.current, hidden.current ?? origin?.() ?? null, 0.96);
+    if (openProp === undefined) setOpenInner(next);
+  };
+
+  const save = async (_event: Event | undefined, details: DialogCloseActionDetails) => {
+    const box = boxRef.current;
+    const url = img && box ? await rasterize(img, box) : null;
+    if (url) onSave?.(url, details);
+  };
   const preview = canvas === undefined && !Annotator;
   // The lightbox around a surface: chrome above the image, the surface over it, tools under it.
   const layout = (surface: ComposerAnnotatorSurface | null) => (
     <>
-      <div ref={chromeRef} className="flex items-center gap-2">
+      <div data-slot="annotate-lightbox-header" className={cn('flex items-center gap-2', lightboxChrome('delay-80'))}>
         <span className="flex-1 font-sans text-footnote font-[650] text-foreground">
           {surface ? (surface.title ?? 'Annotate — strokes flatten into the image on save') : 'Preview'}
         </span>
         {surface ? (
           <>
-            {btn('Cancel', false, () => close(onClose))}
-            {btn('Save annotation', true, save)}
+            <DialogClose value="cancel" className={lightboxButton(false)}>
+              Cancel
+            </DialogClose>
+            <DialogClose value="save" action={save} className={lightboxButton(true)}>
+              Save annotation
+            </DialogClose>
           </>
         ) : (
-          btn('Close', true, () => close(onClose))
+          <DialogClose className={lightboxButton(true)}>Close</DialogClose>
         )}
       </div>
       <div
         ref={boxRef}
         data-slot="annotate-lightbox-image"
-        className="relative origin-center self-center overflow-hidden rounded-card border border-white/14 bg-code will-change-transform"
+        data-loading={!ready || undefined}
+        className={cn(
+          'relative origin-center self-center overflow-hidden rounded-card border border-white/14 bg-code will-change-transform data-loading:invisible',
+          '[clip-path:inset(0px_round_var(--radius-card))]',
+          '[transition:translate_var(--duration-spring-smooth)_var(--ease-spring-smooth),scale_var(--duration-spring-smooth)_var(--ease-spring-smooth),clip-path_var(--duration-spring-smooth)_var(--ease-spring-smooth),opacity_var(--duration-spring-smooth)_var(--ease-spring-smooth)]',
+          // Where it flies from (data-starting-style, its own) and back to (the dialog's data-ending-style).
+          'data-starting-style:translate-x-(--zoom-x) data-starting-style:translate-y-(--zoom-y) data-starting-style:scale-(--zoom-scale) data-starting-style:opacity-(--zoom-opacity) data-starting-style:[clip-path:var(--zoom-clip)]',
+          'group-data-ending-style/lightbox:translate-x-(--zoom-x) group-data-ending-style/lightbox:translate-y-(--zoom-y) group-data-ending-style/lightbox:scale-(--zoom-scale) group-data-ending-style/lightbox:opacity-(--zoom-opacity) group-data-ending-style/lightbox:[clip-path:var(--zoom-clip)]',
+          'motion-reduce:[transition:opacity_150ms]',
+        )}
       >
-        <img ref={imgRef} src={src} alt="" className="block h-auto max-h-[68vh] w-auto max-w-[86vw] min-w-[min(340px,86vw)]" />
+        <img ref={setImg} src={src} alt="" className="block h-auto max-h-[68cqh] w-auto max-w-[86cqw] min-w-[min(340px,86cqw)]" />
         {surface?.canvas}
       </div>
-      {surface?.toolbar ? <div ref={toolsRef}>{surface.toolbar}</div> : null}
+      {surface?.toolbar ? (
+        <div data-slot="annotate-lightbox-tools" className={lightboxChrome('delay-120')}>
+          {surface.toolbar}
+        </div>
+      ) : null}
     </>
   );
   return (
-    // react-aria modal: portals out of clipping/transformed ancestors, traps focus, Escape or an outside press closes.
-    <ModalOverlay
-      data-slot="annotate-lightbox"
-      data-preview={preview || undefined}
-      isOpen
-      isDismissable
-      onOpenChange={(open) => {
-        if (!open) close(onClose);
+    // UI SDK's Dialog: it renders into the layer host, traps focus, and Escape or an outside press closes it (after
+    // the image has flown back into its thumbnail). Fixed parts fill the host, so the lightbox covers the frame it
+    // was opened in; the image is sized from the content's own box (container units), never from the viewport.
+    <Dialog
+      open={open}
+      onOpenChange={setOpen}
+      onOpenChangeComplete={(next) => {
+        if (!next) {
+          reveal();
+          setReady(false);
+        }
+        onOpenChangeComplete?.(next);
       }}
-      className="fixed inset-0 z-400 grid place-items-center"
+      container={host}
     >
-      <div ref={backdropRef} data-slot="annotate-lightbox-backdrop" aria-hidden="true" className="absolute inset-0 bg-black/74" />
-      <Modal className="relative outline-none">
-        <Dialog
-          aria-label={preview ? 'Preview image' : 'Annotate image'}
-          // The lightbox is always a dark Workbench surface (image well, PencilKit tools), whatever opened it.
-          {...LIGHTBOX_SCOPE}
-          className={cn(LIGHTBOX_SCOPE.className, 'flex max-w-[90vw] flex-col gap-2.5 text-foreground outline-none')}
-        >
+      <DialogBackdrop
+        data-preview={preview || undefined}
+        className="fixed inset-0 z-400 bg-black/74 transition-opacity duration-280 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0 data-ending-style:duration-300 motion-reduce:duration-150"
+      />
+      <DialogContent
+        aria-label={preview ? 'Preview image' : 'Annotate image'}
+        data-preview={preview || undefined}
+        // The lightbox is always a dark Workbench surface (image well, PencilKit tools), whatever opened it.
+        data-theme-scope={LIGHTBOX_SCOPE['data-theme-scope']}
+        // The content fills the host and centers the lightbox; presses on its empty area fall through to the
+        // backdrop, so they are outside presses.
+        className={cn(
+          LIGHTBOX_SCOPE.className,
+          'group/lightbox pointer-events-none fixed inset-0 z-400 grid place-items-center text-foreground outline-none [container-type:size]',
+        )}
+      >
+        <div data-slot="annotate-lightbox" className="pointer-events-auto flex max-w-[90cqw] flex-col gap-2.5">
           {Annotator ? <Annotator>{layout}</Annotator> : layout(canvas === undefined ? null : { canvas })}
-        </Dialog>
-      </Modal>
-    </ModalOverlay>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

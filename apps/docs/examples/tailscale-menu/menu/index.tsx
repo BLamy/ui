@@ -1,5 +1,5 @@
 import wasmURL from '@agent-wasm/tailscale-connect/main.wasm?url'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { TailscaleLoginButton } from '@/components/ui/tailscale-login-button'
 import { TailscaleMenu, type TailscaleMenuProps } from '@/components/ui/tailscale-menu'
 import { webStorageTailscalePersistence } from '@/lib/tailscale'
@@ -20,12 +20,10 @@ function Menu() {
   if (status !== 'connected') return <TailscaleLoginButton size="pill" />
   return (
     <div className="grid gap-4">
-      <Segmented
-        aria-label="Menu style"
-        value={variant}
-        onChange={(v) => setVariant(v as typeof variant)}
-        options={[{ id: 'networks', label: 'Networks' }, { id: 'radio', label: 'Radio' }]}
-      />
+      <Segmented aria-label="Menu style" value={variant} onValueChange={(v) => { if (v) setVariant(v as typeof variant) }}>
+        <SegmentedItem value="networks">Networks</SegmentedItem>
+        <SegmentedItem value="radio">Radio</SegmentedItem>
+      </Segmented>
       <TailscaleMenu variant={variant} className="rounded-card bg-card p-3 shadow-hairline" />
     </div>
   )

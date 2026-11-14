@@ -72,13 +72,14 @@ export default function Composition() {
       </div>
       <VideoTimeline
         className="h-40 shrink-0"
-        timeline={TIMELINE}
+        value={TIMELINE}
+        readOnly
         clock={clock}
         media={{ dawn: { duration: Infinity, kind: 'image', name: 'Dawn' }, noon: { duration: Infinity, kind: 'image', name: 'Noon' },
           dusk: { duration: Infinity, kind: 'image', name: 'Dusk' }, inset: { duration: Infinity, kind: 'image', name: 'Inset' },
           title: { duration: Infinity, kind: 'image', name: 'Title' } }}
-        selection={selection}
-        onSelectionChange={setSelection}
+        selectedClips={selection}
+        onSelectedClipsChange={setSelection}
         defaultZoom={64}
         trackHeight={(t) => (t.magnetic ? 48 : 36)}
       />

@@ -57,7 +57,7 @@ function TerminalSheet() {
         radius={16}
         dismissible
         visible={open}
-        onDismiss={() => setOpen(false)}
+        onVisibleChange={setOpen}
         peek="50%"
         topGap="8%"
         hideOnScroll={false}
@@ -72,7 +72,7 @@ function TerminalSheet() {
               <TerminalAction
                 icon="bin"
                 label="Close terminal"
-                onPress={() => setOpen(false)}
+                onClick={() => setOpen(false)}
               />
             </TerminalHeader>
             <TerminalBody

@@ -1,199 +1,259 @@
 'use client';
-import { useEffect, useId, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
-import { Button as AriaButton } from 'react-aria-components';
+import { createContext, useCallback, useContext, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
+import { createFocusRecovery } from '@ui-sdk/core';
+import {
+  DialogClose as SdkDialogClose,
+  DialogContent as SdkDialogContent,
+  DialogTitle as SdkDialogTitle,
+} from '@ui-sdk/react/dialog';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { cva } from 'class-variance-authority';
 import { Icon } from '@/lib/icon';
-import { fades, springs, useMotion } from '@/lib/motion';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { usePresenceList, useEnterExit, type PresenceEntry } from '@/lib/presence';
+import { focusRing } from '@/lib/primitives';
+import { scopeStyle, useThemeScopeProps } from '@/lib/theme';
+import { cn, cx } from '@/lib/utils';
+import { Dialog, DialogBackdrop, type DialogProps } from '@/components/ui/dialog';
 import { AnimatedHeight, ContentSwap } from '@/components/ui/animated-height';
 
-/** The card: a centered dialog, or (`compact`) a bottom tray you can drag down. */
+/* ══ Credenza — responsive dialog ⇄ tray with Family-style view morphing ══
+   UI SDK's Dialog with `presentation="auto"`: a centered card while its container is medium or regular, a floating
+   bottom tray you can drag down while it is compact (the nearest size-class scope around it, which the kit's Dialog
+   reads from React context: BLProvider's root, a SplitView, a NavigationStack… so a phone frame counts as a phone
+   and a controlled Credenza with no trigger follows the column it is rendered in). UI SDK owns the behavior: the focus trap, Escape (kept from the views behind), the inert host, focus
+   return, the swipe and `dismissible`.
+   The card springs its height to each view (tray spring); views travel in the direction of the flow — a new view
+   arrives from the right, going back returns from the left — blurred through the middle; the title follows the same
+   direction and the back chevron grows in and out of the header. Direction comes from the view history: a `view`
+   seen before is "back".
+   `dismissible={false}` makes it a step the user has to finish (a paywall, a sign-in gate): Escape, a press on the
+   scrim and a drag down don't close it (the tray springs back and `onDismissAttempt` runs), and there is no × or
+   grabber. A Close part with children, a controller or `open` still close it.
+   <Credenza open={open} onOpenChange={setOpen} view={view}>
+     <CredenzaBackdrop />
+     <CredenzaContent>
+       <CredenzaHeader>
+         <CredenzaBack hidden={view === 'menu'} onClick={() => setView('menu')} />
+         <CredenzaTitle>{TITLES[view]}</CredenzaTitle>
+         <CredenzaClose />
+       </CredenzaHeader>
+       <CredenzaView>…the current view…</CredenzaView>
+     </CredenzaContent>
+   </Credenza> ══ */
+
+export { DialogTrigger as CredenzaTrigger, createDialogController as createCredenzaController } from '@ui-sdk/react/dialog';
+export type { DialogController as CredenzaController } from '@ui-sdk/react/dialog';
+
+type CredenzaContextValue = { view: string; direction: -1 | 0 | 1; dismissible: boolean };
+const CredenzaContext = createContext<CredenzaContextValue>({ view: '', direction: 0, dismissible: true });
+
+export type CredenzaProps = DialogProps & {
+  /** Key of the current view. A new key morphs the card to its height and slides in from the right; a key seen
+      before comes back from the left. */
+  view?: string;
+};
+
+/** The root: a Dialog that presents as a tray in a compact container (`presentation`, default `"auto"`; pass
+    `"sheet"` or `"dialog"` to choose), plus the `view` the card morphs between. */
+export function Credenza({ view: viewProp, presentation = 'auto', dismissible = true, ...props }: CredenzaProps) {
+  const view = String(viewProp ?? '');
+  // Direction of travel between views: revisiting a view in the trail is going back.
+  const trail = useRef<string[]>([view]);
+  const last = useRef<{ view: string; direction: -1 | 0 | 1 }>({ view, direction: 0 });
+  if (last.current.view !== view) {
+    const at = trail.current.indexOf(view);
+    if (at >= 0) {
+      trail.current = trail.current.slice(0, at + 1);
+      last.current = { view, direction: -1 };
+    } else {
+      trail.current = [...trail.current, view];
+      last.current = { view, direction: 1 };
+    }
+  }
+  return (
+    <CredenzaContext.Provider value={{ view, direction: last.current.direction, dismissible }}>
+      <Dialog presentation={presentation} dismissible={dismissible} {...props} />
+    </CredenzaContext.Provider>
+  );
+}
+
+/** The scrim behind the card. Render it to dim the host (inside a layer host there is no `::backdrop`). */
+export const CredenzaBackdrop = DialogBackdrop;
+
+/** The card: a centered dialog, or (presented as a sheet) a tray floating inset from the bottom edge. UI SDK moves
+    the tray, so it is placed with margins rather than a translate. */
 export const credenzaVariants = cva(
-  'z-401 box-border overflow-hidden bg-card text-foreground shadow-[0_24px_80px_--alpha(black/34%),0_0_0_1px_var(--border)] outline-none',
+  'box-border flex flex-col overflow-hidden bg-card text-foreground shadow-[0_24px_80px_--alpha(black/34%),0_0_0_1px_var(--border)] outline-none',
   {
     variants: {
-      compact: {
-        true: 'absolute inset-x-2.5 bottom-2.5 touch-none rounded-[28px]',
-        false: 'absolute top-1/2 left-1/2 w-[400px] max-w-[calc(100%-44px)] rounded-[24px]',
+      presentation: {
+        /* Centered: rises out of the middle on the tray spring. */
+        dialog:
+          'fixed inset-0 m-auto h-fit max-h-[calc(100%-44px)] w-[400px] max-w-[calc(100%-44px)] rounded-[24px] transition-[opacity,scale,translate] duration-spring-tray ease-spring-tray data-starting-style:translate-y-[5%] data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:translate-y-[2%] data-ending-style:scale-97 data-ending-style:opacity-0 motion-reduce:transition-none',
+        /* A floating tray, not an edge-to-edge sheet. */
+        sheet: 'relative inset-auto mx-2.5 mb-2.5 w-auto touch-none rounded-[28px]',
       },
     },
-    defaultVariants: { compact: false },
+    defaultVariants: { presentation: 'dialog' },
   },
 );
 
-/* ══ Credenza — responsive dialog ⇄ tray with Family-style state morphing ══
-   Desktop: centered dialog. Compact: floating bottom tray, drag-down to dismiss. The card springs its height to
-   each view (tray spring); views travel in the direction of the flow — a new view arrives from the right, going
-   back returns from the left — blurred through the middle; titles follow the same direction and the back
-   chevron grows in and out of the header. Direction comes from the view history (a view seen before is "back").
-   It is modal: opening moves focus onto the sheet (or onto a descendant marked `data-autofocus`), Tab cycles
-   inside it, Escape closes only the Credenza (the key is stopped so a SplitView / NavigationStack behind it
-   doesn't also pop), and closing returns focus to whatever had it before.
-   `isDismissable={false}` makes it a step the user has to finish — a paywall, a sign-in gate: Escape (still
-   stopped), a press on the scrim and a drag down don't close it (the tray only rubber-bands), and there is no
-   close button or grabber. Only `open` closes it; focus and the view morph work as before. */
+export type CredenzaContentProps<Payload = unknown> = Parameters<typeof SdkDialogContent<Payload>>[0];
 
-const TABBABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"]),[contenteditable="true"]';
-
-/** Open Credenzas, oldest first — only the last one traps focus. */
-const STACK: object[] = [];
-
-function tabbables(root: HTMLElement) {
-  return [...root.querySelectorAll<HTMLElement>(TABBABLE)].filter((el) => el.getClientRects().length > 0 && !el.closest('[inert],[aria-hidden="true"]'));
+/** The card. Name it with a CredenzaTitle, or `aria-label`. Put `autoFocus` on the control that should take focus
+    when it opens. */
+export function CredenzaContent<Payload = unknown>({ className, style, children, ...props }: CredenzaContentProps<Payload>) {
+  const scope = useThemeScopeProps();
+  const { dismissible } = useContext(CredenzaContext);
+  return (
+    <SdkDialogContent<Payload>
+      data-theme-scope={scope['data-theme-scope']}
+      className={(state) =>
+        cn(credenzaVariants({ presentation: state.presentation }), scope.className, typeof className === 'function' ? className(state) : className)
+      }
+      style={scopeStyle(scope.style, style)}
+      {...props}
+    >
+      {(state) => (
+        <>
+          {/* A tray you can drag away shows a grabber; a required step doesn't. */}
+          {state.presentation === 'sheet' && dismissible ? (
+            <span data-slot="credenza-grabber" aria-hidden="true" className="absolute top-[7px] left-1/2 z-3 h-[5px] w-[38px] -translate-x-1/2 rounded-[3px] bg-secondary-strong" />
+          ) : null}
+          {typeof children === 'function' ? children(state) : children}
+        </>
+      )}
+    </SdkDialogContent>
+  );
 }
 
-export interface CredenzaProps extends VariantProps<typeof credenzaVariants> {
-  open: boolean;
-  /** The user dismissed it: Escape, a press on the scrim, the close button or a drag down. */
-  onClose?: () => void;
-  onBack?: () => void;
-  canBack?: boolean;
-  /** Key of the current morphing view — changing it cross-fades and re-measures the body. */
-  view?: string;
-  title?: ReactNode;
-  compact?: boolean | null;
-  /** `false`: nothing the user does closes it (no close button, Escape, scrim or drag) — only `open`. Default `true`. */
-  isDismissable?: boolean;
+/** The header row: back chevron, title, close button. */
+export function CredenzaHeader({ className, ...props }: ComponentProps<'div'>) {
+  const { dismissible } = useContext(CredenzaContext);
+  return (
+    <div
+      data-slot="credenza-header"
+      // Without its close button the header keeps the height the button gives it, so the back chevron can come and go.
+      className={cn('relative z-2 flex shrink-0 items-center gap-2.5 px-[14px] pt-[14px] pb-1.5', !dismissible && 'min-h-[50px]', className)}
+      {...props}
+    />
+  );
+}
+
+const circleClass = cn(
+  'bl-btn grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-secondary p-0 text-muted-foreground',
+  focusRing,
+);
+
+export type CredenzaBackProps = Omit<ComponentProps<typeof SdkButton>, 'children'> & {
+  /** Fold the chevron away (it shrinks out of the header and can't be reached). */
+  hidden?: boolean;
   children?: ReactNode;
-  className?: string;
-  style?: CSSProperties;
+};
+
+/** The back chevron. It stays mounted and grows in or out with `hidden`, so the title slides over as it goes. */
+export function CredenzaBack({ hidden = false, className, 'aria-label': label = 'Back', children, ...props }: CredenzaBackProps) {
+  return (
+    <span
+      data-slot="credenza-back"
+      data-hidden={hidden || undefined}
+      aria-hidden={hidden || undefined}
+      inert={hidden || undefined}
+      className="grid w-[30px] shrink-0 place-items-center overflow-hidden transition-[width,margin,opacity,scale] duration-spring-snappy ease-spring-snappy data-hidden:-mr-2.5 data-hidden:w-0 data-hidden:scale-40 data-hidden:opacity-0 motion-reduce:transition-none"
+    >
+      <SdkButton aria-label={label} className={cx(circleClass, className)} {...props}>
+        {children ?? <Icon name="chevL" size={15} sw={2.6} />}
+      </SdkButton>
+    </span>
+  );
 }
 
-export function Credenza({ open, onClose, onBack, canBack, view, title, compact, isDismissable = true, children, className, style }: CredenzaProps) {
-  const FM = useMotion();
-  const reduced = FM.useReducedMotion();
-  // Direction of travel between views: revisiting a view in the trail is going back.
-  const trail = useRef<string[]>([String(view)]);
-  const dirRef = useRef<{ view: string; dir: number }>({ view: String(view), dir: 0 });
-  if (dirRef.current.view !== String(view)) {
-    const v = String(view), at = trail.current.indexOf(v);
-    if (at >= 0) { trail.current = trail.current.slice(0, at + 1); dirRef.current = { view: v, dir: -1 }; }
-    else { trail.current = [...trail.current, v]; dirRef.current = { view: v, dir: 1 }; }
+/* A title arrives from the side its view comes from and leaves toward the other: opacity and blur on the entry
+   fade (the exit fade on the way out), travel on the snappy spring. Reduced motion keeps only the fade. */
+const titleTextClass = cn(
+  'absolute top-0 left-0 block whitespace-nowrap',
+  '[transition:opacity_220ms_cubic-bezier(.22,1,.36,1),filter_220ms_cubic-bezier(.22,1,.36,1),translate_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
+  'data-starting-style:translate-x-(--title-enter) data-starting-style:opacity-0 data-starting-style:blur-[3px]',
+  'data-ending-style:translate-x-(--title-exit) data-ending-style:opacity-0 data-ending-style:blur-[3px]',
+  'data-ending-style:[transition:opacity_var(--duration-exit)_var(--ease-exit),filter_var(--duration-exit)_var(--ease-exit),translate_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
+  'motion-reduce:data-starting-style:translate-x-0 motion-reduce:data-ending-style:translate-x-0',
+);
+
+function TitleText({ entry }: { entry: PresenceEntry<{ key: string; node: ReactNode }> }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEnterExit(ref, entry.present, { appear: entry.appear, exited: entry.exited });
+  // The title that is leaving no longer names the card.
+  return (
+    <span ref={ref} data-slot="credenza-title-text" aria-hidden={!entry.present || undefined} className={titleTextClass}>
+      {entry.item.node}
+    </span>
+  );
+}
+
+/* The titles on screen: the current one, and the one it replaced while that plays its exit. */
+function TitleSwap({ id, direction, children }: { id: string; direction: -1 | 0 | 1; children: ReactNode }) {
+  const titles = usePresenceList([{ key: id, node: children }], (t) => t.key);
+  const vars = { '--title-enter': `${direction * 18}px`, '--title-exit': `${direction * -18}px` } as CSSProperties;
+  return (
+    <span className="contents" style={vars}>
+      {titles.map((entry) => (
+        <TitleText key={entry.key} entry={entry} />
+      ))}
+    </span>
+  );
+}
+
+/** The title. It names the card and travels with the view: a new title slides in from the side the view comes from. */
+export function CredenzaTitle({ className, children, ...props }: ComponentProps<typeof SdkDialogTitle>) {
+  const { view, direction } = useContext(CredenzaContext);
+  const key = typeof children === 'string' || typeof children === 'number' ? String(children) : view;
+  return (
+    <SdkDialogTitle className={cx('relative m-0 h-[26px] min-w-0 flex-1 text-[18px] leading-[26px] font-bold tracking-[-.2px]', className)} {...props}>
+      {(state) => (
+        <TitleSwap id={key} direction={direction}>
+          {typeof children === 'function' ? children(state) : children}
+        </TitleSwap>
+      )}
+    </SdkDialogTitle>
+  );
+}
+
+/** Closes the Credenza. On its own it is the round × (left out of a Credenza that isn't `dismissible`); with
+    children or `render` it is whatever you make it (`<CredenzaClose render={<Button />}>Done</CredenzaClose>`),
+    which closes even a required step. */
+export function CredenzaClose({ className, children, render, ...props }: ComponentProps<typeof SdkDialogClose>) {
+  const { dismissible } = useContext(CredenzaContext);
+  if (children !== undefined || render !== undefined) {
+    return <SdkDialogClose className={className} render={render} {...props}>{children}</SdkDialogClose>;
   }
-  const dir = reduced ? 0 : dirRef.current.dir;
-  // Every way the user can dismiss it goes through here; a non-dismissable Credenza has none.
-  const closeRef = useRef(onClose); closeRef.current = isDismissable ? onClose : undefined;
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const titleId = useId();
-  // Modal focus. The Credenza is modal to its host (the positioned element it and its scrim fill), so focus
-  // moves in on open, focus that lands elsewhere in the host is pulled back, and closing returns it to the
-  // opener. Only the most recently opened Credenza enforces this. Escape or Tab while focus has fallen to
-  // <body> (e.g. the focused row left with its view) still closes / re-enters. An instance mounted already open
-  // (a page-load demo) only takes focus when the user was already working inside its host; once their focus is
-  // inside it, view changes hand it on like any other.
-  const wasClosed = useRef(!open);
-  useEffect(() => {
-    if (!open) { wasClosed.current = true; return; }
-    const token = {};
-    STACK.push(token);
-    const top = () => STACK[STACK.length - 1] === token;
-    const opener = document.activeElement as HTMLElement | null;
-    const host = () => sheetRef.current?.parentElement ?? null;
-    const lost = (n: EventTarget | null) => !(n instanceof Node) || n === document.body || n === document.documentElement || n === document;
-    const inside = (n: EventTarget | null) => n instanceof Node && !!sheetRef.current?.contains(n);
-    const into = () => {
-      const el = sheetRef.current;
-      if (el) (el.querySelector<HTMLElement>('[data-autofocus]') ?? el).focus({ preventScroll: true });
-    };
-    // A view change unmounts the focused control, dropping focus to <body> — put it back on the sheet.
-    const refocus = new MutationObserver(() => { if (top() && lost(document.activeElement) && sheetRef.current?.isConnected) into(); });
-    let watching = false;
-    const watch = () => {
-      if (watching || !sheetRef.current) return;
-      watching = true;
-      refocus.observe(sheetRef.current, { childList: true, subtree: true });
-    };
-    const raf = requestAnimationFrame(() => {
-      if (wasClosed.current || (opener && host()?.contains(opener))) { into(); watch(); }
-    });
-    const onFocusIn = (e: FocusEvent) => {
-      if (inside(e.target)) watch();
-      else if (top() && e.target instanceof Node && host()?.contains(e.target)) into();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (!top() || e.defaultPrevented || inside(e.target) || !(lost(e.target) || (e.target instanceof Node && host()?.contains(e.target)))) return;
-      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeRef.current?.(); }
-      else if (e.key === 'Tab') { e.preventDefault(); into(); }
-    };
-    document.addEventListener('focusin', onFocusIn);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      cancelAnimationFrame(raf);
-      refocus.disconnect();
-      STACK.splice(STACK.indexOf(token), 1);
-      document.removeEventListener('focusin', onFocusIn);
-      window.removeEventListener('keydown', onKey);
-      const active = document.activeElement;
-      if (opener?.isConnected && !inside(opener) && (lost(active) || inside(active))) opener.focus({ preventScroll: true });
-    };
-  }, [open]);
-  const onSheetKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (e.defaultPrevented) return;
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeRef.current?.(); return; }
-    if (e.key !== 'Tab') return;
-    const list = tabbables(e.currentTarget);
-    if (!list.length) { e.preventDefault(); return; }
-    const first = list[0], last = list[list.length - 1], a = document.activeElement;
-    if (e.shiftKey && (a === first || a === e.currentTarget)) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
-  };
-  const a11y = {
-    ref: sheetRef, role: 'dialog', 'aria-modal': true, 'aria-labelledby': titleId, tabIndex: -1, onKeyDown: onSheetKeyDown,
-  } as const;
-  const circle = (icon: string, fn: (() => void) | undefined, label: string) => (
-    <AriaButton onPress={fn} aria-label={label}
-      className="bl-btn grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-secondary p-0 text-muted-foreground">
-      <Icon name={icon} size={15} sw={2.6} />
-    </AriaButton>
+  if (!dismissible) return null;
+  return (
+    <SdkDialogClose aria-label="Close" className={cx(circleClass, className)} {...props}>
+      <Icon name="x" size={15} sw={2.6} />
+    </SdkDialogClose>
   );
-  const m = FM.motion as any, AP = FM.AnimatePresence;
-  const spring = reduced ? { duration: 0 } : springs.tray;
-  const header = (
-    // Without its close button the header keeps the height the button gives it, so the back chevron can come and go.
-    <div className={cn('relative z-2 flex items-center gap-2.5 px-[14px] pt-[14px] pb-1.5', !isDismissable && 'min-h-[50px]')}>
-      <AP initial={false}>{canBack ? (
-        <m.div key="bk" initial={{ opacity: 0, scale: .4, width: 0, marginRight: -10 }}
-          animate={{ opacity: 1, scale: 1, width: 30, marginRight: 0 }} exit={{ opacity: 0, scale: .4, width: 0, marginRight: -10, transition: { ...springs.snappy, opacity: fades.out } }}
-          transition={{ default: springs.snappy, opacity: fades.in }} className="grid shrink-0 place-items-center overflow-hidden">{circle('chevL', onBack, 'Back')}</m.div>
-      ) : null}</AP>
-      <div id={titleId} className="relative h-[26px] min-w-0 flex-1">
-        <AP initial={false} custom={dir}>
-          <m.div key={String(title)} custom={dir}
-            variants={{
-              enter: (d: number) => ({ opacity: 0, x: d * 18, filter: 'blur(3px)' }),
-              center: { opacity: 1, x: 0, filter: 'blur(0px)' },
-              exit: (d: number) => ({ opacity: 0, x: d * -18, filter: 'blur(3px)', transition: { ...fades.out, x: springs.snappy } }),
-            }}
-            initial="enter" animate="center" exit="exit" transition={{ default: fades.in, x: springs.snappy }}
-            className="absolute top-0 left-0 text-[18px] leading-[26px] font-bold tracking-[-.2px] whitespace-nowrap">{title}</m.div>
-        </AP>
-      </div>
-      {isDismissable ? circle('x', onClose, 'Close') : null}
-    </div>
-  );
-  const body = (
-    <AnimatedHeight spring="tray" className="relative">
-      <ContentSwap id={String(view)} direction={dirRef.current.dir as -1 | 0 | 1} distance={40} blur={6}>{children}</ContentSwap>
-    </AnimatedHeight>
+}
+
+export type CredenzaViewProps = { children?: ReactNode; className?: string };
+
+/** The current view. Changing the root's `view` cross-fades to the new one in the direction of travel while the
+    card springs to its height. When the view that held focus leaves, focus goes to the card (a control in the new
+    view with `autoFocus` takes it as it mounts). */
+export function CredenzaView({ children, className }: CredenzaViewProps) {
+  const { view, direction } = useContext(CredenzaContext);
+  const [recovery] = useState(() => createFocusRecovery<{ card: HTMLElement | null }>({ fallback: (lost) => lost.props.card }));
+  const bind = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (!el) return;
+      return recovery.bind(el, { key: el.dataset.view ?? '', props: { card: el.closest<HTMLElement>('[data-slot=dialog-content]') } });
+    },
+    [recovery],
   );
   return (
-    <AP>
-      {open ? <m.div key="scrim" onClick={() => closeRef.current?.()} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: .24 } }} transition={fades.in}
-        className="absolute inset-0 z-400 bg-overlay" /> : null}
-      {open ? (compact
-        ? <m.div key="tray" data-slot="credenza" {...a11y} className={cn(credenzaVariants({ compact: true }), className)} initial={{ y: '112%' }} animate={{ y: '0%' }} exit={{ y: '118%' }} transition={spring}
-            // A tray that can't be dismissed still gives a little under the finger, then springs back.
-            drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: .02, bottom: isDismissable ? .55 : .1 }}
-            onDragEnd={(_ev: unknown, inf: any) => { if (inf.offset.y > 120 || inf.velocity.y > 500) closeRef.current?.(); }}
-            style={style}>
-            {isDismissable ? <div aria-hidden="true" className="absolute top-[7px] left-1/2 z-3 h-[5px] w-[38px] -translate-x-1/2 rounded-[3px] bg-secondary-strong" /> : null}
-            {header}{body}
-          </m.div>
-        : <m.div key="dlg" data-slot="credenza" {...a11y}
-            className={cn(credenzaVariants({ compact: false }), className)} initial={{ x: '-50%', y: '-45%', opacity: 0, scale: .95 }} animate={{ x: '-50%', y: '-50%', opacity: 1, scale: 1 }}
-            exit={{ x: '-50%', y: '-48%', opacity: 0, scale: .97 }} transition={spring} style={style}>
-            {header}{body}
-          </m.div>) : null}
-    </AP>
+    <AnimatedHeight spring="tray" className={cn('relative', className)}>
+      <ContentSwap id={view} direction={direction} distance={40} blur={6}>
+        <div ref={bind} data-slot="credenza-view" data-view={view} className="contents">{children}</div>
+      </ContentSwap>
+    </AnimatedHeight>
   );
 }

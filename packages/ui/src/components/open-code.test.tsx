@@ -8,6 +8,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
+
 import { OpenCode } from './open-code';
 import type {
   OpenCodeHostBridge,
@@ -16,6 +17,26 @@ import type {
   OpenCodeRuntime,
   OpenCodeRuntimeSession,
 } from '@/lib/open-code-host';
+
+// Reduced motion (vi.hoisted runs before the imports), so the Buttons' TextMorph swaps "Start" and "Stop" at once instead of morphing for 700 ms.
+vi.hoisted(() => {
+  window.matchMedia ??= (query: string) =>
+    ({
+      matches: query.includes('reduce'),
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as MediaQueryList;
+});
+
+(globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
+// jsdom (kept so the preview iframes never load over the network) has no layout: the Buttons' TextMorph measures
+// its label with a Range.
+Range.prototype.getBoundingClientRect ??= () => new DOMRect();
 
 afterEach(cleanup);
 
@@ -63,6 +84,8 @@ it('mounts the configured bridge, opens new ports automatically, and borrows an 
   render(
     <OpenCode host={f.host} loadRuntime={f.loadRuntime} autoStart={false} />,
   );
+  // The terminal's mount point is a named group, so its name is allowed and heard.
+  expect(screen.getByRole('group', { name: 'OpenCode terminal' })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Start OpenCode' }));
   await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(1));
   expect(f.mount.mock.calls[0]?.[0]).toMatchObject({
@@ -404,4 +427,56 @@ it('routes MCP navigation through a fresh worker bootstrap without restarting th
   expect(f.mount).toHaveBeenCalledTimes(1);
   controller.abort();
   await rejected;
+});
+
+it('picks a preview port from a toggle group: one tab stop, arrow keys between ports, the choice stays pressed', async () => {
+  const f = fixture();
+  const port = (value: number) => ({
+    port: value,
+    url: `${window.location.origin}/__virtual__/${value}/`,
+  });
+  render(<OpenCode host={f.host} loadRuntime={f.loadRuntime} />);
+  await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(1));
+  f.update([port(3000), port(3001)]);
+  const group = screen.getByRole('group', { name: 'Preview port' });
+  const first = screen.getByRole('button', { name: 'Port 3000' });
+  const second = screen.getByRole('button', { name: 'Port 3001' });
+  // The newest port opens; it is the group's only tab stop.
+  expect(second.getAttribute('aria-pressed')).toBe('true');
+  expect(first.getAttribute('aria-pressed')).toBe('false');
+  expect(
+    [...group.querySelectorAll('button')].filter((b) => b.tabIndex === 0),
+  ).toEqual([second]);
+  act(() => second.focus());
+  fireEvent.keyDown(second, { key: 'ArrowLeft' });
+  expect(document.activeElement).toBe(first);
+  fireEvent.click(first);
+  expect(first.getAttribute('aria-pressed')).toBe('true');
+  expect(screen.getByTitle('OpenCode · port 3000')).toBeTruthy();
+  // Pressing the chosen port again keeps it open.
+  fireEvent.click(first);
+  expect(first.getAttribute('aria-pressed')).toBe('true');
+  expect(screen.getByTitle('OpenCode · port 3000')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Close app preview' }));
+  expect(screen.queryByTitle('OpenCode · port 3000')).toBeNull();
+  expect(first.getAttribute('aria-pressed')).toBe('false');
+});
+
+it('stacks the preview under the terminal by its own width, not the viewport', async () => {
+  const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+  Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+    configurable: true,
+    get() {
+      return 420;
+    },
+  });
+  try {
+    const f = fixture();
+    render(<OpenCode host={f.host} loadRuntime={f.loadRuntime} autoStart={false} />);
+    const root = screen.getByRole('region', { name: 'OpenCode' });
+    expect(root.getAttribute('data-size-class')).toBe('compact');
+    expect(root.className).toContain('group/open-code');
+  } finally {
+    if (width) Object.defineProperty(HTMLElement.prototype, 'clientWidth', width);
+  }
 });

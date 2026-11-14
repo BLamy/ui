@@ -1,9 +1,29 @@
 {
   "name": "credenza",
   "title": "Credenza",
-  "description": "A dialog on wide screens and a draggable tray on phones, from one composition.",
+  "description": "A dialog on wide screens and a draggable tray in a compact container, on UI SDK's Dialog: views morph the card's height and travel in the direction of the flow.",
   "page": "credenza",
   "exports": [
-    "Credenza"
+    "Credenza",
+    "CredenzaTrigger",
+    "CredenzaBackdrop",
+    "CredenzaContent",
+    "CredenzaHeader",
+    "CredenzaBack",
+    "CredenzaTitle",
+    "CredenzaClose",
+    "CredenzaView",
+    "createCredenzaController",
+    "credenzaVariants"
+  ],
+  "imports": [
+    "Credenza",
+    "CredenzaBackdrop",
+    "CredenzaContent",
+    "CredenzaHeader",
+    "CredenzaBack",
+    "CredenzaTitle",
+    "CredenzaClose",
+    "CredenzaView"
   ]
 }

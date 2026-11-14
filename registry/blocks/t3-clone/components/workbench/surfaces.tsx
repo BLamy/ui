@@ -53,7 +53,7 @@ export function SurfacePicker({
             key={s.k}
             data-slot="surface-card"
             className={cn(pressable, 'cursor-pointer rounded-[13px] border border-border bg-card px-3.5 py-[15px] text-left text-foreground hover:bg-secondary!')}
-            onPress={() => {
+            onClick={() => {
               onPick(s.k);
             }}
           >

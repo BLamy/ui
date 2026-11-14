@@ -9,6 +9,8 @@ import { openDemo, openHarness } from './helpers.mjs';
    streams the answers back. A *.ts.net name does not resolve on the public internet, so "the request went to the
    network" shows up as a failed fetch. */
 
+/** TailscaleLoginButton: a UI SDK Button (its data-slot is UI SDK's `button`), told apart by the status it shows. */
+const LOGIN = '[data-slot=button][data-status]';
 const status = (page) => page.getByTestId('result-status');
 const via = (page) => page.getByTestId('result-via');
 const body = (page) => page.getByTestId('result-body');
@@ -24,8 +26,8 @@ async function signIn(page) {
 }
 
 test('sign-in walks idle → signing in → connected, and signs out', async ({ page }) => {
-  await openHarness(page, 'tailscale-sign-in', '[data-slot=tailscale-login-button]');
-  const button = page.locator('[data-slot=tailscale-login-button]');
+  await openHarness(page, 'tailscale-sign-in', LOGIN);
+  const button = page.locator(LOGIN);
   await expect(button).toHaveAttribute('data-status', 'idle');
   await button.click();
   await expect(button).toHaveAttribute('aria-busy', 'true');
@@ -38,8 +40,8 @@ test('sign-in walks idle → signing in → connected, and signs out', async ({ 
 });
 
 test('a sign-in can be cancelled with the same button, and with the keyboard', async ({ page }) => {
-  await openHarness(page, 'tailscale-sign-in', '[data-slot=tailscale-login-button]');
-  const button = page.locator('[data-slot=tailscale-login-button]');
+  await openHarness(page, 'tailscale-sign-in', LOGIN);
+  const button = page.locator(LOGIN);
   await button.focus();
   await page.keyboard.press('Enter');
   await expect(button).toHaveAttribute('data-status', /signing-in|loading/);
@@ -49,7 +51,7 @@ test('a sign-in can be cancelled with the same button, and with the keyboard', a
 });
 
 test('auth key: signs in without a person', async ({ page }) => {
-  await openHarness(page, 'tailscale-auth-key', '[data-slot=tailscale-login-button]');
+  await openHarness(page, 'tailscale-auth-key', LOGIN);
   await page.getByRole('button', { name: 'Connect this kiosk' }).click();
   await expect(page.locator('[data-slot=tailscale-status-badge]')).toHaveAttribute('data-status', 'connected', { timeout: 10_000 });
 });
@@ -58,23 +60,23 @@ test('the real client: nothing downloads until the press, then the WebAssembly l
   const wasm = [];
   // The binary itself, not the tiny `main.wasm?import&url` module that only exports its URL.
   page.on('request', (r) => /main\.wasm(\?(?!import)|$)/.test(r.url()) && wasm.push(r.url()));
-  await openDemo(page, 'tailscale-login/sign-in', '[data-slot=tailscale-login-button]');
+  await openDemo(page, 'tailscale-login/sign-in', LOGIN);
   await page.waitForTimeout(500);
   expect(wasm).toEqual([]);
   const popup = context.waitForEvent('page');
-  await page.locator('[data-slot=tailscale-login-button]').click();
+  await page.locator(LOGIN).click();
   await popup; // opened on the press, so a popup blocker allows it
   await expect.poll(() => wasm.length, { timeout: 30_000 }).toBeGreaterThan(0);
-  await expect(page.locator('[data-slot=tailscale-login-button]')).toHaveAttribute('data-status', /loading|starting|signing-in/);
+  await expect(page.locator(LOGIN)).toHaveAttribute('data-status', /loading|starting|signing-in/);
 });
 
 test('the real client reaches Tailscale\'s sign-in page (TAILSCALE_LIVE=1: talks to login.tailscale.com)', async ({ page, context }) => {
   test.skip(!process.env.TAILSCALE_LIVE, 'needs the internet and Tailscale\'s control server');
-  await openDemo(page, 'tailscale-login/sign-in', '[data-slot=tailscale-login-button]');
+  await openDemo(page, 'tailscale-login/sign-in', LOGIN);
   const popup = context.waitForEvent('page');
-  await page.locator('[data-slot=tailscale-login-button]').click();
+  await page.locator(LOGIN).click();
   await (await popup).waitForURL(/^https:\/\/login\.tailscale\.com\//, { timeout: 60_000 });
-  await expect(page.locator('[data-slot=tailscale-login-button]')).toHaveAttribute('data-status', 'signing-in');
+  await expect(page.locator(LOGIN)).toHaveAttribute('data-status', 'signing-in');
   await expect(page.getByRole('link', { name: 'Continue to Tailscale' })).toHaveAttribute('href', /^https:\/\/login\.tailscale\.com\/a\//);
 });
 

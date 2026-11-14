@@ -1,8 +1,10 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, type MouseEvent, type RefObject } from 'react';
 import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
 import { MarkdownEditor, type MarkdownEditorClassNames, type MarkdownEditorHandle } from '@/components/ui/markdown-editor';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
+import { Textarea } from '@ui-sdk/react/textarea';
 import { BROWSER_ROOT } from './use-note-files';
 import type { Note } from './data';
 import type { NotesState } from './use-notes';
@@ -13,7 +15,7 @@ const NOTES_PARTS: MarkdownEditorClassNames = {
   title: 'text-[28px] leading-[1.2] font-bold tracking-[-.4px] mb-2',
   heading: 'text-[21px] font-bold mt-5',
   checklist: 'pl-0',
-  checklistItem: 'gap-2.5 items-start [&>label]:mt-[2px] data-[checked=true]:[&>div]:text-muted-foreground',
+  checklistItem: 'gap-2.5 items-start [&>.gb-task-control]:mt-[2px] data-[checked=true]:[&>div]:text-muted-foreground',
   checkbox: 'size-[21px] cursor-pointer',
   table: 'text-subhead',
   tableHeader: 'bg-transparent font-semibold border-border px-3 py-2',
@@ -54,16 +56,16 @@ export function NoteEditor({ notes, n, source, format, editorRef }: {
     </time></div>
     {demos.error ? <p role="status" className="text-caption text-muted-foreground">{demos.error}</p> : null}
     {draft?.error && !status.conflict ? <div role="alert" className="mb-4 flex items-center gap-2 text-detail text-destructive">
-      <span className="flex-1">{draft.error}</span><Button size="sm" variant="ghost" onPress={() => { void notes.save(n.id); }}>Retry</Button>
+      <span className="flex-1">{draft.error}</span><Button size="sm" variant="ghost" onClick={() => { void notes.save(n.id); }}>Retry</Button>
     </div> : null}
     {status.conflict ? <div role="alert" className="space-y-2 rounded-lg border border-border bg-secondary p-3 text-detail">
       <p className="m-0">{status.missing ? 'This file is no longer available. Your edits are still here.' : 'The file changed in another editor. Your edits have been kept. Choose which version to save.'}</p>
       {!status.missing ? <details><summary className="cursor-pointer">View current file</summary><pre className="max-h-60 overflow-auto whitespace-pre-wrap break-words font-mono text-caption">{draft?.conflict ?? notes.files.notes.find((item) => item.id === n.id)?.body}</pre></details> : null}
       <div className="flex flex-wrap gap-1">
         {!status.missing ? <>
-          <Button size="sm" variant="secondary" isDisabled={!!draft?.saving} onPress={() => notes.revert(n.id)}>Use disk version</Button>
-          <Button size="sm" isDisabled={!!draft?.saving} onPress={() => { void notes.save(n.id, true); }}>Keep my edits</Button>
-        </> : <Button size="sm" isDisabled={!notes.files.ready || !notes.files.isOpfsWritable || !!draft?.saving} onPress={() => {
+          <Button size="sm" variant="secondary" disabled={!!draft?.saving} onClick={() => notes.revert(n.id)}>Use disk version</Button>
+          <Button size="sm" disabled={!!draft?.saving} onClick={() => { void notes.save(n.id, true); }}>Keep my edits</Button>
+        </> : <Button size="sm" disabled={!notes.files.ready || !notes.files.isOpfsWritable || !!draft?.saving} onClick={() => {
           void notes.files.run(async () => {
             const extension = /\.mdx$/i.test(info.name) ? '.mdx' : '.md';
             const id = await notes.files.create(BROWSER_ROOT, `${info.name.replace(/\.mdx?$/i, '')} recovered ${Date.now()}${extension}`, n.body);
@@ -72,8 +74,8 @@ export function NoteEditor({ notes, n, source, format, editorRef }: {
         }}>Keep a copy in Notes</Button>}
       </div>
     </div> : null}
-    {source ? <textarea aria-label={`${info.name} source`} value={n.body} spellCheck={false} autoCapitalize="off" autoCorrect="off"
-      onChange={(e) => notes.edit(n.id, e.target.value)}
+    {source ? <Textarea aria-label={`${info.name} source`} value={n.body} spellCheck={false} autoCapitalize="off" autoCorrect="off"
+      onValueChange={(value) => notes.edit(n.id, value)}
       onKeyDown={onSaveKey}
       className="min-h-[60vh] w-full resize-none border-0 bg-transparent p-0 font-mono text-detail leading-6 text-foreground outline-none" /> :
       <MarkdownEditor key={n.id} ref={editorRef} value={n.body} variant="ghost" toolbar={format} aria-label={`${info.name} note`}
@@ -93,17 +95,20 @@ export function NoteEditor({ notes, n, source, format, editorRef }: {
 export function EditorTools({ editorRef, format, onFormat, source, onSource }: {
   editorRef: RefObject<MarkdownEditorHandle | null>; format: boolean; onFormat: () => void; source: boolean; onSource: () => void;
 }) {
-  const tool = 'h-9 w-10 rounded-ctl px-0 text-primary data-hovered:bg-secondary';
+  const tool = 'h-9 w-10 rounded-ctl px-0 text-primary hover:bg-secondary';
+  // The two toggles (Aa and the source view) rest filled while on.
+  const on = 'data-pressed:bg-secondary data-pressed:text-primary';
+  // A press keeps focus (and the selection) in the editor, so the tool acts where you were typing.
+  const keep = (e: MouseEvent) => e.preventDefault();
   return <>
-    <Button variant="ghost" preventFocusOnPress aria-label="Format" aria-pressed={format} isDisabled={source} onPress={onFormat}
-      className={cn(tool, format && !source && 'bg-secondary')}><Icon name="textformat" /></Button>
-    <Button variant="ghost" preventFocusOnPress aria-label="Checklist" isDisabled={source} className={tool}
-      onPress={() => editorRef.current?.chain()?.toggleList('taskList', 'taskItem').run()}><Icon name="checklist" /></Button>
-    <Button variant="ghost" preventFocusOnPress aria-label="Table" isDisabled={source} className={tool}
-      onPress={() => editorRef.current?.insertMarkdown('| Column | Column |\n| --- | --- |\n|  |  |\n|  |  |')}><Icon name="table" /></Button>
-    <Button variant="ghost" preventFocusOnPress aria-label="Markdown source" aria-pressed={source} onPress={onSource}
-      className={cn(tool, source && 'bg-secondary')}>
+    <Toggle onMouseDown={keep} aria-label="Format" pressed={format && !source} disabled={source} onPressedChange={() => onFormat()}
+      className={cn(tool, on)}><Icon name="textformat" /></Toggle>
+    <Button variant="ghost" onMouseDown={keep} aria-label="Checklist" disabled={source} className={tool}
+      onClick={() => editorRef.current?.chain()?.toggleList('taskList', 'taskItem').run()}><Icon name="checklist" /></Button>
+    <Button variant="ghost" onMouseDown={keep} aria-label="Table" disabled={source} className={tool}
+      onClick={() => editorRef.current?.insertMarkdown('| Column | Column |\n| --- | --- |\n|  |  |\n|  |  |')}><Icon name="table" /></Button>
+    <Toggle onMouseDown={keep} aria-label="Markdown source" pressed={source} onPressedChange={() => onSource()} className={cn(tool, on)}>
       <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 5l-3 14" /></svg>
-    </Button>
+    </Toggle>
   </>;
 }

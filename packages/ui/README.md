@@ -1,6 +1,6 @@
 # @brett_lamy/ui
 
-Touch-first React components inspired by UIKit container patterns, built on react-aria-components and Tailwind v4. Colors, radius and font come from your shadcn theme (CSS variables); the iOS look ships as an optional theme. The library has lists, navigation, adaptive split views, drawers, sheets, a reusable jump rail, the Composer (a Markdown prompt box), PencilKit drawing and the message scroller. Product-specific compositions (an IDE workbench, a team-chat shell, a map chat, …) are **blocks**, installed from the shadcn registry rather than this package.
+Touch-first React components inspired by UIKit container patterns, built on [UI SDK](https://ui-sdk.dev) and Tailwind v4: UI SDK owns the behavior (keyboard, focus, selection, popups, ARIA), this library the look, the tokens and the iOS containers. Colors, radius and font come from your shadcn theme (CSS variables); the iOS look ships as an optional theme. The library has lists, navigation, adaptive split views, drawers, sheets, a reusable jump rail, the Composer (a Markdown prompt box), PencilKit drawing and the message scroller. Product-specific compositions (an IDE workbench, a team-chat shell, a map chat, …) are **blocks**, installed from the shadcn registry rather than this package.
 
 ## Install
 
@@ -35,6 +35,8 @@ export function App() {
 The package is ESM with one output module per source module (`sideEffects` is limited to CSS), so bundlers drop what you don't import; component modules start with `'use client'` for Next.js.
 
 React 19 is required (the components use `use(Context)`, `<Context value>` and `ref` as a prop).
+
+The package depends on our fork of UI SDK under upstream's names (`@ui-sdk/core` → `npm:@brett_lamy/ui-sdk-core`, `@ui-sdk/react` → `npm:@brett_lamy/ui-sdk-react`), so `npm i @brett_lamy/ui` brings it. A registry install copies source that imports `@ui-sdk/core` and `@ui-sdk/react`: add the two aliases to your app yourself (see [Installation](https://blamy.github.io/ui/#/installation)). UI SDK puts a little runtime CSS in a cascade layer named `ui-sdk`; `styles.css` declares it first, and an app with its own Tailwind build should start its global CSS with `@layer ui-sdk;`. Coming from 5.x: [Migrating to 6.0](https://blamy.github.io/ui/#/migrating-to-6).
 
 ## IndexBar
 
@@ -86,7 +88,7 @@ Every component exports its props type from the package root. See the Storybook 
 ```tsx
 import {
   ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain, ChatShellHeader, ChatShellNavTrigger, ChatShellTitle,
-  ChatShellFooter, TabView, TabViewBar, TabViewList, TabViewTab, TabViewIndicator, SidebarContent, SidebarSection,
+  ChatShellFooter, TabView, TabViewBar, TabViewList, TabViewTab, TabViewPill, SidebarContent, SidebarSection,
   SidebarItem, Composer, ComposerCard, ComposerInput, ComposerFooter, ComposerSpacer, ComposerSend,
 } from '@brett_lamy/ui';
 
@@ -95,18 +97,18 @@ export function Chat() {
   return (
     <ChatShell breakpoint={880}>
       <ChatShellNav>
-        <TabView orientation="vertical" defaultSelectedKey="hq" className="contents">
+        <TabView orientation="vertical" defaultValue="hq" className="contents">
           <TabViewBar variant="workspace">
             <TabViewList aria-label="Workspaces">
-              <TabViewTab id="hq" textValue="HQ"><TabViewIndicator variant="pill" />{/* tile */}</TabViewTab>
+              <TabViewTab value="hq" aria-label="HQ"><TabViewPill />{/* tile */}</TabViewTab>
             </TabViewList>
           </TabViewBar>
         </TabView>
         <ChatShellSidebar>
           <SidebarContent>
             <SidebarSection title="Team">
-              <SidebarItem label="general" active={channel === 'general'} onPress={() => setChannel('general')} />
-              <SidebarItem label="dev" badge={2} active={channel === 'dev'} onPress={() => setChannel('dev')} />
+              <SidebarItem label="general" active={channel === 'general'} onClick={() => setChannel('general')} />
+              <SidebarItem label="dev" badge={2} active={channel === 'dev'} onClick={() => setChannel('dev')} />
             </SidebarSection>
           </SidebarContent>
         </ChatShellSidebar>

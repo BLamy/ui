@@ -22,7 +22,7 @@ const TYPES: { id: ValueType; label: string }[] = [
   { id: 'list', label: 'Array' }, { id: 'object', label: 'Object' }, { id: 'any', label: 'Any' },
 ];
 
-const danger = 'flex h-7 cursor-pointer items-center gap-1.5 self-start rounded-md border-0 bg-transparent px-2 text-caption font-medium text-destructive outline-none hover:bg-destructive/10 data-focus-visible:ring-2 data-focus-visible:ring-ring';
+const danger = 'flex h-7 cursor-pointer items-center gap-1.5 self-start rounded-md border-0 bg-transparent px-2 text-caption font-medium text-destructive outline-none hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring';
 
 export function SeguePanel({ segue, doc }: { segue: Segue; doc: Doc }) {
   const b = useBuilder();
@@ -96,7 +96,7 @@ export function SeguePanel({ segue, doc }: { segue: Segue; doc: Doc }) {
       </Section>
 
       <Section title="Danger">
-        <PlainButton onPress={() => b.commit((d) => removeSegue(d, segue.id), { kind: 'scene', scene: from.id })} className={danger}>
+        <PlainButton onClick={() => b.commit((d) => removeSegue(d, segue.id), { kind: 'scene', scene: from.id })} className={danger}>
           <Icon name="trash" size={13} sw={2.2} /> Delete Segue
         </PlainButton>
       </Section>
@@ -119,13 +119,13 @@ export function ContextPanel({ ctx, doc }: { ctx: ContextDef; doc: Doc }) {
         <CodeLine>{`export const ${ctx.name} = createContext(${initial})`}</CodeLine>
         <CodeLine>{`const ${ctx.alias} = useContext(${ctx.name})`}</CodeLine>
       </Section>
-      <Section title="Fields" action={<AddButton label="Add field" onPress={() => upd({ fields: [...ctx.fields, { name: `field${ctx.fields.length + 1}`, type: 'string', initial: "''" }] })} />}>
+      <Section title="Fields" action={<AddButton label="Add field" onClick={() => upd({ fields: [...ctx.fields, { name: `field${ctx.fields.length + 1}`, type: 'string', initial: "''" }] })} />}>
         {ctx.fields.map((f, i) => (
           <div key={i} className="flex flex-col gap-1.5 rounded-lg border border-border p-2">
             <div className="flex items-center gap-1.5">
               <div className="min-w-0 flex-1"><NameInput label="Field name" value={f.name} taken={ctx.fields.filter((_, k) => k !== i).map((x) => x.name)} onCommit={(v) => upd({ fields: ctx.fields.map((x, k) => (k === i ? { ...x, name: v } : x)) })} /></div>
               <div className="w-24 shrink-0"><ChoiceInput label="Type" value={f.type} options={TYPES} onChange={(v) => upd({ fields: ctx.fields.map((x, k) => (k === i ? { ...x, type: v as ValueType } : x)) })} /></div>
-              <IconAction icon="trash" label={`Remove ${f.name}`} tone="danger" onPress={() => upd({ fields: ctx.fields.filter((_, k) => k !== i) })} />
+              <IconAction icon="trash" label={`Remove ${f.name}`} tone="danger" onClick={() => upd({ fields: ctx.fields.filter((_, k) => k !== i) })} />
             </div>
             <ExprInput label={`${f.name} initial value`} value={f.initial} names={new Set()} onCommit={(v) => upd({ fields: ctx.fields.map((x, k) => (k === i ? { ...x, initial: v } : x)) })} />
           </div>
@@ -134,13 +134,13 @@ export function ContextPanel({ ctx, doc }: { ctx: ContextDef; doc: Doc }) {
       </Section>
       <Section title="Read by">
         {readers.length ? readers.map((s) => (
-          <PlainButton key={s.id} onPress={() => b.select({ kind: 'scene', scene: s.id })} className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-2 text-left text-footnote outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+          <PlainButton key={s.id} onClick={() => b.select({ kind: 'scene', scene: s.id })} className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-2 text-left text-footnote outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
             <Icon name="circle-fill" size={11} sw={2} className="text-warning" /> {s.name}
           </PlainButton>
         )) : <Help>No scene reads it yet. Bind a prop to {ctx.alias}.field.</Help>}
       </Section>
       <Section title="Danger">
-        <PlainButton onPress={() => b.commit((d) => ({ ...d, contexts: d.contexts.filter((c) => c.id !== ctx.id) }), { kind: 'none' })} className={danger}>
+        <PlainButton onClick={() => b.commit((d) => ({ ...d, contexts: d.contexts.filter((c) => c.id !== ctx.id) }), { kind: 'none' })} className={danger}>
           <Icon name="trash" size={13} sw={2.2} /> Delete Context
         </PlainButton>
       </Section>
@@ -200,8 +200,9 @@ export function DocPanel({ doc }: { doc: Doc }) {
               value={doc.fonts?.[kind] ?? []}
               placeholder={kind === 'sans' ? 'System font' : 'System monospace'}
               defaultCategory={kind === 'mono' ? 'monospace' : 'all'}
-              placement="left top"
-              onChange={(list) => b.commit((d) => ({ ...d, fonts: { ...d.fonts, [kind]: list.length ? list : undefined } }))}
+              side="left"
+              align="start"
+              onValueChange={(list) => b.commit((d) => ({ ...d, fonts: { ...d.fonts, [kind]: list.length ? list : undefined } }))}
               onPreview={(list) => b.setPreview(list === undefined ? null : { target: 'doc', props: { [kind]: list } })}
               className="bg-secondary"
             />
@@ -209,7 +210,7 @@ export function DocPanel({ doc }: { doc: Doc }) {
         ))}
         <Help>A stack: the first family that loads is used. Hover the list to see every scene in a family; a Text can have a family of its own.</Help>
       </Section>
-      <Section title="App responds to" help="The end of every responder chain" action={<AddButton label="Handle a command" onPress={() => setResponds({ ...responds, [`command${Object.keys(responds).length + 1}`]: [] })} />}>
+      <Section title="App responds to" help="The end of every responder chain" action={<AddButton label="Handle a command" onClick={() => setResponds({ ...responds, [`command${Object.keys(responds).length + 1}`]: [] })} />}>
         {Object.entries(responds).map(([cmd, list]) => (
           <CommandBlock key={cmd} cmd={cmd} actions={list} c={{ doc, scene: scene ?? doc.scenes[0], names, scope: {} }}
             onRename={(to) => setResponds(Object.fromEntries(Object.entries(responds).map(([k, v]) => [k === cmd ? to : k, v])))}
@@ -220,18 +221,18 @@ export function DocPanel({ doc }: { doc: Doc }) {
       </Section>
       <Section title="File">
         <div className="flex flex-wrap gap-1.5">
-          <PlainButton onPress={download} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring"><Icon name="download" size={13} sw={2.1} /> Export JSON</PlainButton>
-          <PlainButton onPress={open} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring"><Icon name="folder" size={13} sw={2.1} /> Open…</PlainButton>
-          <PlainButton onPress={() => b.load(blankDoc())} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring"><Icon name="doc" size={13} sw={2.1} /> New</PlainButton>
+          <PlainButton onClick={download} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring"><Icon name="download" size={13} sw={2.1} /> Export JSON</PlainButton>
+          <PlainButton onClick={open} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring"><Icon name="folder" size={13} sw={2.1} /> Open…</PlainButton>
+          <PlainButton onClick={() => b.load(blankDoc())} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring"><Icon name="doc" size={13} sw={2.1} /> New</PlainButton>
         </div>
         <Help>New and Open can be undone.</Help>
       </Section>
       <Section title="Samples">
-        <PlainButton onPress={() => b.load(SAMPLE_DOC)} className="flex w-full cursor-pointer items-start gap-2 rounded-lg border-0 bg-secondary px-2.5 py-2 text-left outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+        <PlainButton onClick={() => b.load(SAMPLE_DOC)} className="flex w-full cursor-pointer items-start gap-2 rounded-lg border-0 bg-secondary px-2.5 py-2 text-left outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
           <Icon name="flower" size={16} sw={2} className="mt-0.5 shrink-0 text-success" />
           <span className="flex flex-col"><span className="text-footnote font-medium">Plant Pal · iPhone</span><span className="text-caption2 text-muted-foreground">TabView of NavigationStacks, sheets, delegates, the responder chain</span></span>
         </PlainButton>
-        <PlainButton onPress={() => b.load(SPLIT_SAMPLE)} className="flex w-full cursor-pointer items-start gap-2 rounded-lg border-0 bg-secondary px-2.5 py-2 text-left outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+        <PlainButton onClick={() => b.load(SPLIT_SAMPLE)} className="flex w-full cursor-pointer items-start gap-2 rounded-lg border-0 bg-secondary px-2.5 py-2 text-left outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
           <Icon name="sidebar-left" size={16} sw={2} className="mt-0.5 shrink-0 text-primary" />
           <span className="flex flex-col"><span className="text-footnote font-medium">Mail · iPad</span><span className="text-caption2 text-muted-foreground">A three-column SplitView: mailboxes, messages, and a Show Detail segue</span></span>
         </PlainButton>
@@ -245,7 +246,7 @@ export function DeleteScene({ sceneId, doc }: { sceneId: string; doc: Doc }) {
   const b = useBuilder();
   return (
     <Section title="Danger">
-      <PlainButton isDisabled={doc.scenes.length <= 1} onPress={() => b.commit((d) => removeScene(d, sceneId), { kind: 'none' })} className={danger}>
+      <PlainButton disabled={doc.scenes.length <= 1} onClick={() => b.commit((d) => removeScene(d, sceneId), { kind: 'none' })} className={danger}>
         <Icon name="trash" size={13} sw={2.2} /> Delete Scene
       </PlainButton>
     </Section>

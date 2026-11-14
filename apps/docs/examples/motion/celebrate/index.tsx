@@ -31,8 +31,8 @@ export default function Backup() {
       <span style={{ position: 'relative', isolation: 'isolate' }}>
         <Button
           size="lg"
-          onPress={state === 'done' ? () => setState('idle') : run}
-          isDisabled={state === 'busy'}
+          onClick={state === 'done' ? () => setState('idle') : run}
+          disabled={state === 'busy'}
           className={state === 'done' ? 'bg-success' : undefined}
         >
           <IconSwap id={state}>

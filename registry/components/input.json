@@ -1,13 +1,19 @@
 {
   "name": "input",
   "title": "Input",
-  "description": "iOS filled text input on react-aria's Input: three sizes, a primary focus ring, and red invalid and dimmed disabled states; inside a TextField it is wired to its label, description and error.",
+  "description": "iOS filled text input on UI SDK's Input: three sizes, a primary focus ring, red invalid and dimmed disabled states, onValueChange with a reason and cancel, and a controller; inside a Field it is wired to its label, description and error.",
   "page": "input",
   "exports": [
     "Input",
-    "inputVariants"
+    "inputVariants",
+    "createInputController"
   ],
   "imports": [
-    "Input"
+    "Input",
+    "createInputController"
+  ],
+  "types": [
+    "InputProps",
+    "InputController"
   ]
 }

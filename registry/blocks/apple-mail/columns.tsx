@@ -15,11 +15,11 @@ export function ListColumn({ mail }: { mail: MailState }) {
   return (
     <SplitViewSupplementary aria-label={mail.box.title} width={380} minWidth={300}>
       <SplitViewHeader largeTitle title={mail.editing && mail.checked.size ? `${mail.checked.size} Selected` : mail.box.title}
-        leading={mail.editing ? <BarButton label={all ? 'Deselect All' : 'Select All'} onPress={mail.checkAll} /> : <SplitViewToggle />}
+        leading={mail.editing ? <BarButton label={all ? 'Deselect All' : 'Select All'} onClick={mail.checkAll} /> : <SplitViewToggle />}
         trailing={<BarButton label={mail.editing ? 'Done' : 'Edit'} className={mail.editing ? 'font-semibold' : undefined}
-          onPress={() => mail.setEditing(!mail.editing)} />} />
+          onClick={() => mail.setEditing(!mail.editing)} />} />
       <SplitViewContent>
-        <div className="px-4 pb-2"><SearchField value={mail.query} onChange={mail.setQuery} aria-label={`Search ${mail.box.title}`} /></div>
+        <div className="px-4 pb-2"><SearchField value={mail.query} onValueChange={mail.setQuery} aria-label={`Search ${mail.box.title}`} /></div>
         <MessageList mail={mail} onOpen={(id) => { mail.open(id); s.select('supplementary', id); }} />
       </SplitViewContent>
       <ListBar mail={mail} />
@@ -33,10 +33,10 @@ export function MessageColumn({ mail }: { mail: MailState }) {
   const i = m ? mail.list.findIndex((x) => x.id === m.id) : -1;
   // On the phone, a message that leaves the mailbox takes you back to the list.
   const done = () => { if (s.collapsed) s.back(); };
-  const compose = <BarButton label="New message" onPress={() => mail.compose('new')}><Icon name="compose" /></BarButton>;
+  const compose = <BarButton label="New message" onClick={() => mail.compose('new')}><Icon name="compose" /></BarButton>;
   const stepper = m ? <>
-    <BarButton label="Previous message" isDisabled={i <= 0} onPress={() => mail.step(-1)}><Icon name="chevron-up" /></BarButton>
-    <BarButton label="Next message" isDisabled={i < 0 || i >= mail.list.length - 1} onPress={() => mail.step(1)}><Icon name="chevron-down" /></BarButton>
+    <BarButton label="Previous message" disabled={i <= 0} onClick={() => mail.step(-1)}><Icon name="chevron-up" /></BarButton>
+    <BarButton label="Next message" disabled={i < 0 || i >= mail.list.length - 1} onClick={() => mail.step(1)}><Icon name="chevron-down" /></BarButton>
   </> : null;
   return (
     <SplitViewDetail aria-label="Message">
@@ -44,8 +44,8 @@ export function MessageColumn({ mail }: { mail: MailState }) {
         trailing={s.collapsed ? stepper : m ? <>
           <FlagButton mail={mail} m={m} />
           <MoveMenu mail={mail} ids={[m.id]} />
-          <BarButton label="Archive" onPress={() => mail.archive([m.id])}><Icon name="archivebox" /></BarButton>
-          <BarButton label="Trash" onPress={() => mail.trash([m.id])}><Icon name="trash" /></BarButton>
+          <BarButton label="Archive" onClick={() => mail.archive([m.id])}><Icon name="archivebox" /></BarButton>
+          <BarButton label="Trash" onClick={() => mail.trash([m.id])}><Icon name="trash" /></BarButton>
           <ReplyMenu mail={mail} m={m} />
           {compose}
         </> : compose} />
@@ -58,7 +58,7 @@ export function MessageColumn({ mail }: { mail: MailState }) {
         <BottomBar className="justify-between px-3">
           <FlagButton mail={mail} m={m} />
           <MoveMenu mail={mail} ids={[m.id]} onMoved={done} />
-          <BarButton label="Trash" onPress={() => { mail.trash([m.id]); done(); }}><Icon name="trash" /></BarButton>
+          <BarButton label="Trash" onClick={() => { mail.trash([m.id]); done(); }}><Icon name="trash" /></BarButton>
           <ReplyMenu mail={mail} m={m} />
           {compose}
         </BottomBar>

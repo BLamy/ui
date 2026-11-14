@@ -3,10 +3,11 @@
    files — each one added folds into the same map, or from a Replay QA test run above them), and the map's outline, pages with their states and the layers
    opened over them, to select and fly to. Resting on a recording previews what it contributed to the map. */
 import type { ReactNode } from 'react';
-import { FileTrigger } from 'react-aria-components';
 import { Checkbox } from '@/components/ui/checkbox';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
-import { PlainButton } from '@/components/ui/plain-button';
+import { FileUploadButton } from '@/components/ui/file-upload';
+import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Label } from '@/components/ui/label';
+import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
 import { formatReplayTime } from '@/components/ui/replay-preview';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -40,10 +41,10 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
   const row = (key: string, icon: string, label: string, depth: number, extra?: string) => (
     <PlainButton
       key={key}
-      onPress={() => onSelect(key)}
+      onClick={() => onSelect(key)}
       className={cn(
         'flex w-full cursor-pointer items-center gap-1.5 truncate rounded-ctl border-0 bg-transparent py-1 pr-2 text-left text-footnote text-foreground outline-none',
-        'hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring',
+        'hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring',
         selected === key && 'bg-primary/12 text-primary',
       )}
       style={{ paddingLeft: 8 + depth * 14 }}
@@ -58,42 +59,46 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
     <div data-slot="replay-canvas-sidebar" className="flex h-full min-h-0 flex-col border-r border-border bg-sidebar">
       {qa && (
         <div className="flex max-h-[45%] min-h-48 shrink-0 flex-col border-b border-border">
-          <div role="heading" aria-level={2} className="px-3 pt-3 pb-1 text-caption1 font-semibold uppercase tracking-wide text-muted-foreground">Replay QA</div>
+          <h2 className="m-0 px-3 pt-3 pb-1 [font-size:inherit] font-semibold uppercase tracking-wide text-muted-foreground">Replay QA</h2>
           {qa}
         </div>
       )}
       <div className="flex items-center justify-between px-3 pt-3 pb-1">
-        <div role="heading" aria-level={2} className="text-caption1 font-semibold uppercase tracking-wide text-muted-foreground">Recordings</div>
-        <FileTrigger acceptedFileTypes={['application/json', '.json']} allowsMultiple onSelect={(list) => list && onAdd([...list])}>
-          <PlainButton aria-label="Add recordings" title="Add rrweb recordings (.json)" className="grid size-6 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary hover:text-foreground data-focus-visible:ring-2 data-focus-visible:ring-ring">
-            <Icon name="plus" size={15} sw={2} />
-          </PlainButton>
-        </FileTrigger>
+        <h2 className="m-0 [font-size:inherit] font-semibold uppercase tracking-wide text-muted-foreground">Recordings</h2>
+        <FileUploadButton
+          accept={['application/json', '.json']} onFiles={(files) => onAdd(files)}
+          variant="quiet" size="icon-sm" aria-label="Add recordings" title="Add rrweb recordings (.json)"
+          className="size-6 rounded-ctl p-0 hover:text-foreground focus-visible:ring-offset-0"
+        >
+          <Icon name="plus" size={15} sw={2} />
+        </FileUploadButton>
       </div>
       <ul className="m-0 flex max-h-64 shrink-0 list-none flex-col gap-0.5 overflow-y-auto px-2 pb-2">
         {recordings.map((r) => {
           const s = summary.get(r.id);
           return (
             <li key={r.id} className="group flex items-start gap-1 rounded-ctl px-1 py-1 hover:bg-secondary">
-              <PlainButton aria-label={journey === r.id ? `Stop following ${r.name}` : `Follow ${r.name}`} aria-pressed={journey === r.id} isDisabled={!r.enabled}
-                onPress={() => onJourney(journey === r.id ? null : r.id)}
-                className="mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent outline-none data-disabled:opacity-40 data-focus-visible:ring-2 data-focus-visible:ring-ring">
-                <span className={cn('size-2.5 rounded-full', journey === r.id && 'size-3.5 ring-2 ring-background')} style={{ background: colorOf.get(r.id) }} />
-              </PlainButton>
-              <HoverCardTrigger className="min-w-0 flex-1">
-                <Checkbox isSelected={r.enabled} onChange={(on) => onToggle(r.id, on)} className="min-w-0 flex-1 items-start gap-2 text-footnote" aria-label={`Use ${r.name}`}>
+              <PlainToggleButton aria-label={journey === r.id ? `Stop following ${r.name}` : `Follow ${r.name}`} pressed={journey === r.id} disabled={!r.enabled}
+                onPressedChange={(on) => onJourney(on ? r.id : null)}
+                className="group/follow mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent outline-none data-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-ring">
+                <span className="size-2.5 rounded-full group-data-pressed/follow:size-3.5 group-data-pressed/follow:ring-2 group-data-pressed/follow:ring-background" style={{ background: colorOf.get(r.id) }} />
+              </PlainToggleButton>
+              {/* The checkbox is the card's trigger (focusable and named), so focus opens the card as resting does. */}
+              <HoverCard>
+                <Label variant="control" className="min-w-0 flex-1 items-start gap-2 text-footnote">
+                  <HoverCardTrigger render={<Checkbox checked={r.enabled} onCheckedChange={(on) => onToggle(r.id, on === true)} aria-label={`Use ${r.name}`} />} />
                   <span className="flex min-w-0 flex-col">
                     <span className="truncate">{r.name}</span>
                     <span className="text-caption2 text-muted-foreground">
                       {s ? `${formatReplayTime(s.duration)} · ${s.interactions} interactions` : `${r.events.length} events`}
                     </span>
                   </span>
-                </Checkbox>
-                <HoverCard placement="end top">
+                </Label>
+                <HoverCardContent side="end" align="start">
                   <RecordingPeek recording={r} map={map} />
-                </HoverCard>
-              </HoverCardTrigger>
-              <PlainButton aria-label={`Remove ${r.name}`} onPress={() => onRemove(r.id)} className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent text-muted-foreground opacity-0 outline-none group-hover:opacity-100 hover:text-foreground data-focus-visible:opacity-100 data-focus-visible:ring-2 data-focus-visible:ring-ring">
+                </HoverCardContent>
+              </HoverCard>
+              <PlainButton aria-label={`Remove ${r.name}`} onClick={() => onRemove(r.id)} className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent text-muted-foreground opacity-0 outline-none group-hover:opacity-100 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring">
                 <Icon name="xmark" size={12} sw={2} />
               </PlainButton>
             </li>
@@ -101,7 +106,7 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
         })}
         {!recordings.length && <li className="px-2 py-3 text-footnote text-muted-foreground">Drop rrweb recordings (.json) here.</li>}
       </ul>
-      <div role="heading" aria-level={2} className="border-t border-border px-3 pt-3 pb-1 text-caption1 font-semibold uppercase tracking-wide text-muted-foreground">Map</div>
+      <h2 className="m-0 border-t border-border px-3 pt-3 pb-1 [font-size:inherit] font-semibold uppercase tracking-wide text-muted-foreground">Map</h2>
       <nav aria-label="Map outline" className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
         {map.chrome.map((c) => row(`${c.id}/base`, nodeIcon(c), c.label, 0, 'shared'))}
         {map.pages.map((p) => (

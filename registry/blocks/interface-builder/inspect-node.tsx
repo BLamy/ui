@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react';
 import { FontPicker } from '@/components/ui/font-picker';
 import { PlainButton } from '@/components/ui/plain-button';
-import { Segmented } from '@/components/ui/segmented';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
 import { ActionList, type ActionContext } from './actions';
 import { itemsOf, specOf, type PropSpec } from './catalog';
@@ -84,10 +84,11 @@ function FontInput({ label, value, systemLabel, onChange, onPreview }: {
       aria-label={label}
       value={value}
       systemLabel={systemLabel}
-      onChange={onChange}
+      onValueChange={onChange}
       onPreview={onPreview}
       size="sm"
-      placement="left top"
+      side="left"
+      align="start"
       className="h-7 rounded-md bg-secondary px-2 text-footnote hover:bg-secondary-strong"
     />
   );
@@ -242,10 +243,13 @@ function SizeRow({ label, value, onChange, ctx }: { label: string; value: Sizing
         <Segmented
           aria-label={`${label} sizing`}
           value={mode}
-          onChange={(m) => onChange(m === 'fixed' ? 120 : (m as Sizing))}
-          options={[{ id: 'fit', label: 'Fit' }, { id: 'fill', label: 'Fill' }, { id: 'fixed', label: 'Fixed' }]}
+          onValueChange={(m) => m && onChange(m === 'fixed' ? 120 : (m as Sizing))}
           className="flex-1 [&_[role=radio]]:px-1 [&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption"
-        />
+        >
+          <SegmentedItem value="fit">Fit</SegmentedItem>
+          <SegmentedItem value="fill">Fill</SegmentedItem>
+          <SegmentedItem value="fixed">Fixed</SegmentedItem>
+        </Segmented>
         {typeof value === 'number' ? (
           <NumberInput label={label} scrub="none" value={value} min={0} max={4000} step={1} unit="px" onBegin={ctx.begin} onChange={(v, live) => onChange(v, live)} className="w-20 shrink-0" />
         ) : null}
@@ -256,13 +260,13 @@ function SizeRow({ label, value, onChange, ctx }: { label: string; value: Sizing
 
 function IconChoice<T extends string>({ value, options, onChange, label }: { value: T; options: { id: T; icon: string; label: string }[]; onChange: (v: T) => void; label: string }) {
   return (
-    <Segmented
-      aria-label={label}
-      value={value}
-      onChange={(v) => onChange(v as T)}
-      options={options.map((o) => ({ id: o.id, label: <Icon name={o.icon} size={14} sw={2} aria-label={o.label} className="mx-auto" /> }))}
-      className="[&_[role=radio]]:py-[4px]"
-    />
+    <Segmented<T> aria-label={label} value={value} onValueChange={(v) => v && onChange(v)} className="[&_[role=radio]]:py-[4px]">
+      {options.map((o) => (
+        <SegmentedItem key={o.id} value={o.id} aria-label={o.label} title={o.label}>
+          <Icon name={o.icon} size={14} sw={2} className="mx-auto" />
+        </SegmentedItem>
+      ))}
+    </Segmented>
   );
 }
 
@@ -321,8 +325,8 @@ export function LayoutPanel({ ctx }: { ctx: NodeCtx }) {
             <NumberInput label="Padding" value={pad as number} min={0} max={400} step={1} unit="px" onBegin={ctx.begin} onChange={(v, live) => setL({ padding: v }, live)} />
           )}
           <Field label="">
-            <PlainButton onPress={() => setL({ padding: sides ? (pad as number[])[0] : [pad as number, pad as number, pad as number, pad as number] })}
-              className="h-6 cursor-pointer rounded-md border-0 bg-transparent px-1 text-caption text-primary outline-none hover:bg-primary/10 data-focus-visible:ring-2 data-focus-visible:ring-ring">
+            <PlainButton onClick={() => setL({ padding: sides ? (pad as number[])[0] : [pad as number, pad as number, pad as number, pad as number] })}
+              className="h-6 cursor-pointer rounded-md border-0 bg-transparent px-1 text-caption text-primary outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring">
               {sides ? 'Same on every side' : 'Each side separately'}
             </PlainButton>
           </Field>
@@ -384,8 +388,8 @@ export function ConnectionsPanel({ ctx, onSelectSegue }: { ctx: NodeCtx; onSelec
             <NameInput label="Outlet name" placeholder="none" value={node.ref ?? ''} taken={outlets}
               onCommit={(v) => b.commit((d) => renameOutlet(d, scene.id, node.id, v || undefined))} />
           </div>
-          {node.ref ? <IconAction icon="xmark" label="Remove outlet" onPress={() => b.commit((d) => renameOutlet(d, scene.id, node.id, undefined))} />
-            : <PlainButton onPress={() => b.commit((d) => renameOutlet(d, scene.id, node.id, camelName(suggested, outlets)))} className="h-7 shrink-0 cursor-pointer rounded-md border-0 bg-primary/10 px-2 text-caption font-medium text-primary outline-none hover:bg-primary/20 data-focus-visible:ring-2 data-focus-visible:ring-ring">Connect</PlainButton>}
+          {node.ref ? <IconAction icon="xmark" label="Remove outlet" onClick={() => b.commit((d) => renameOutlet(d, scene.id, node.id, undefined))} />
+            : <PlainButton onClick={() => b.commit((d) => renameOutlet(d, scene.id, node.id, camelName(suggested, outlets)))} className="h-7 shrink-0 cursor-pointer rounded-md border-0 bg-primary/10 px-2 text-caption font-medium text-primary outline-none hover:bg-primary/20 focus-visible:ring-2 focus-visible:ring-ring">Connect</PlainButton>}
         </div>
         {node.ref ? <CodeLine>{`const ${node.ref} = useRef<HTMLDivElement>(null)`}</CodeLine> : null}
         <Help>Actions focus an outlet (make it first responder), animate it to a variant, or keep a drag inside it.</Help>
@@ -395,7 +399,7 @@ export function ConnectionsPanel({ ctx, onSelectSegue }: { ctx: NodeCtx; onSelec
         <Field label="On appear"><span className="flex items-center gap-2"><SwitchInput label="Becomes first responder" value={!!node.autoFocus} onChange={(v) => ctx.update((n) => ({ ...n, autoFocus: v || undefined }))} /><span className="text-caption text-muted-foreground">autoFocus</span></span></Field>
         <div className="flex items-center justify-between">
           <span className="text-caption text-muted-foreground">Responds to</span>
-          <AddButton label="Handle a command" onPress={() => setResponds(freeName('command', Object.keys(responds)), [])} />
+          <AddButton label="Handle a command" onClick={() => setResponds(freeName('command', Object.keys(responds)), [])} />
         </div>
         {Object.entries(responds).map(([cmd, list]) => (
           <CommandBlock key={cmd} cmd={cmd} actions={list} c={{ doc, scene, names: ctx.names, scope: ctx.scope }}
@@ -420,7 +424,7 @@ export function ConnectionsPanel({ ctx, onSelectSegue }: { ctx: NodeCtx; onSelec
       {segues.length ? (
         <Section title="Triggered Segues">
           {segues.map((g) => (
-            <PlainButton key={g.id} onPress={() => onSelectSegue(g.id)} className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-2 text-left text-footnote text-foreground outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+            <PlainButton key={g.id} onClick={() => onSelectSegue(g.id)} className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-2 text-left text-footnote text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
               <Icon name="arrow-right" size={13} sw={2.2} className="text-primary" />
               <span className="truncate">{g.identifier}</span>
               <span className="ml-auto truncate text-caption text-muted-foreground">{SEGUE_KINDS.find((k) => k.id === g.kind)?.label} → {doc.scenes.find((s) => s.id === g.to)?.name}</span>
@@ -441,7 +445,7 @@ export function CommandBlock({ cmd, actions, c, onChange, onRename, onRemove }: 
       <div className="flex items-center gap-1.5">
         <Icon name="bolt-fill" size={13} sw={2} className="shrink-0 text-warning" />
         <div className="min-w-0 flex-1"><NameInput label="Command" value={cmd} onCommit={onRename} /></div>
-        <IconAction icon="trash" label={`Stop handling ${cmd}`} tone="danger" onPress={onRemove} />
+        <IconAction icon="trash" label={`Stop handling ${cmd}`} tone="danger" onClick={onRemove} />
       </div>
       <ActionList actions={actions} onChange={onChange} c={c} />
       <CodeLine>{`useResponder('${cmd}', () => { … })`}</CodeLine>

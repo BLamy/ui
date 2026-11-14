@@ -70,7 +70,7 @@ const welcome = scene('welcome', 'Welcome', 0, 0, n('Screen', {
       props: { children: 'Get Started', size: 'pill' },
       layout: { width: 'fill' },
       motion: { ...rise(28), press: { target: { scale: 0.96 }, transition: T.snappy } },
-      on: { onPress: [act({ do: 'segue', segue: 'to-sign-in' })] },
+      on: { onClick: [act({ do: 'segue', segue: 'to-sign-in' })] },
     }),
     text('welcome-legal', 'No account needed for the demo: any email works.', 'footnote', { props: { align: 'center', color: '$muted-foreground' }, layout: { width: 'fit' }, motion: rise() }),
   ],
@@ -86,20 +86,20 @@ const signIn = scene('sign-in', 'SignIn', COL * 2, 0, n('Screen', {
   layout: { axis: 'vertical', gap: 16, padding: [8, 20, 24, 20], align: 'start', distribute: 'start', width: 'fill', height: 'fill' },
   motion: { stagger: { each: 0.06, delay: 0.05, from: 'first' } },
   slots: {
-    leading: [n('Button', { id: 'sign-in-cancel', props: { children: 'Cancel', variant: 'link', size: 'default' }, on: { onPress: [act({ do: 'back' })] } })],
+    leading: [n('Button', { id: 'sign-in-cancel', props: { children: 'Cancel', variant: 'link', size: 'default' }, on: { onClick: [act({ do: 'back' })] } })],
     trailing: [],
   },
   children: [
     text('sign-in-title', 'Welcome back', 'title1', { motion: rise(12) }),
     text('sign-in-copy', 'Sign in to see what needs water today.', 'subhead', { props: { color: '$muted-foreground' }, motion: rise(12) }),
-    n('TextField', {
+    n('Field', {
       id: 'email-field', name: 'Email Field', ref: 'emailField', autoFocus: true,
       props: { label: 'Email', placeholder: 'you@example.com', type: 'email' },
-      bind: { value: 'email', isInvalid: "attempted && !email.includes('@')" },
+      bind: { value: 'email', invalid: "attempted && !email.includes('@')" },
       motion: { ...rise(12), variants: { shake: { target: { x: [0, -12, 11, -8, 6, -3, 0] }, transition: tweenSpec(0.5, 'easeOut') } } },
       on: { onSubmit: [act({ do: 'focus', ref: 'passwordField' })] },
     }),
-    n('TextField', {
+    n('Field', {
       id: 'password-field', name: 'Password Field', ref: 'passwordField',
       props: { label: 'Password', placeholder: 'At least 4 characters', type: 'password' },
       bind: { value: 'password' },
@@ -117,7 +117,7 @@ const signIn = scene('sign-in', 'SignIn', COL * 2, 0, n('Screen', {
       props: { children: 'Sign In', size: 'pill' },
       layout: { width: 'fill' },
       motion: { ...rise(20), press: { target: { scale: 0.96 }, transition: T.snappy } },
-      on: { onPress: [act({ do: 'send', command: 'submit' })] },
+      on: { onClick: [act({ do: 'send', command: 'submit' })] },
     }),
   ],
 }), {
@@ -141,8 +141,8 @@ const signIn = scene('sign-in', 'SignIn', COL * 2, 0, n('Screen', {
 
 const mainTabs = scene('main', 'MainTabs', COL, ROW, n('TabView', {
   id: 'main-root',
-  props: { tabs: 'Garden:flower, Schedule:calendar, Settings:gear', selectedKey: 'Garden' },
-  bind: { selectedKey: 'tab' },
+  props: { tabs: 'Garden:flower, Schedule:calendar, Settings:gear', value: 'Garden' },
+  bind: { value: 'tab' },
   children: [
     n('SceneRef', { id: 'tab-garden', props: { scene: 'garden-nav' } }),
     n('SceneRef', { id: 'tab-schedule', props: { scene: 'schedule' } }),
@@ -170,7 +170,7 @@ const garden = scene('garden', 'Garden', COL * 3, ROW, n('Screen', {
       id: 'add-plant', name: 'Add Button',
       props: { children: 'Add Plant', variant: 'ghost', size: 'icon', icon: 'plus' },
       motion: { press: { target: { scale: 0.86, rotate: 90 }, transition: T.bouncy } },
-      on: { onPress: [act({ do: 'segue', segue: 'to-add' })] },
+      on: { onClick: [act({ do: 'segue', segue: 'to-add' })] },
     })],
   },
   children: [
@@ -197,9 +197,9 @@ const garden = scene('garden', 'Garden', COL * 3, ROW, n('Screen', {
         n('Button', {
           id: 'water-all',
           props: { children: 'Water All', size: 'sm', variant: 'secondary' },
-          bind: { isDisabled: 'watered === plants.length' },
+          bind: { disabled: 'watered === plants.length' },
           motion: { press: { target: { scale: 0.94 }, transition: T.snappy } },
-          on: { onPress: [act({ do: 'set', target: 'plants', value: 'plants.map((p) => ({ ...p, watered: true }))' }), act({ do: 'toast', message: "'Everything’s watered 💧'" })] },
+          on: { onClick: [act({ do: 'set', target: 'plants', value: 'plants.map((p) => ({ ...p, watered: true }))' }), act({ do: 'toast', message: "'Everything’s watered 💧'" })] },
         }),
       ],
     }),
@@ -215,7 +215,7 @@ const garden = scene('garden', 'Garden', COL * 3, ROW, n('Screen', {
           bind: { title: 'plant.name', subtitle: "plant.watered ? 'Watered today' : `Every ${plant.every} days`" },
           repeat: { each: 'plants', as: 'plant', key: 'plant.id' },
           motion: { appear: { target: { opacity: 0, x: 28 }, transition: T.rise, trigger: 'mount', once: true }, exit: { target: { opacity: 0, x: -28 }, transition: tweenSpec(0.2, 'easeIn') } },
-          on: { onPress: [act({ do: 'segue', segue: 'to-plant' })] },
+          on: { onClick: [act({ do: 'segue', segue: 'to-plant' })] },
           slots: {
             leading: [n('Image', {
               id: 'plant-thumb',
@@ -255,7 +255,7 @@ const plantDetail = scene('plant', 'PlantDetail', COL * 4, ROW, n('Screen', {
           idle: { target: { scale: 1 }, transition: T.snappy },
         },
       },
-      on: { onPress: [act({ do: 'set', target: 'liked', value: '!liked' })] },
+      on: { onClick: [act({ do: 'set', target: 'liked', value: '!liked' })] },
     })],
   },
   children: [
@@ -288,10 +288,10 @@ const plantDetail = scene('plant', 'PlantDetail', COL * 4, ROW, n('Screen', {
     n('Button', {
       id: 'water-now',
       props: { children: 'Water Now', size: 'pill' },
-      bind: { children: "watered ? 'Watered' : 'Water Now'", isDisabled: 'watered' },
+      bind: { children: "watered ? 'Watered' : 'Water Now'", disabled: 'watered' },
       layout: { width: 'fill' },
       motion: { ...rise(16), press: { target: { scale: 0.96 }, transition: T.snappy } },
-      on: { onPress: [act({ do: 'animate', ref: 'drop', variant: 'splash' }), act({ do: 'set', target: 'watered', value: 'true' }), act({ do: 'call', prop: 'onWater', args: ['plant.id'] })] },
+      on: { onClick: [act({ do: 'animate', ref: 'drop', variant: 'splash' }), act({ do: 'set', target: 'watered', value: 'true' }), act({ do: 'call', prop: 'onWater', args: ['plant.id'] })] },
     }),
     n('ListSection', {
       id: 'plant-options',
@@ -327,7 +327,7 @@ const schedule = scene('schedule', 'Schedule', COL * 2, ROW * 2, n('Screen', {
   motion: { stagger: { each: 0.06, delay: 0.04, from: 'first' } },
   children: [
     text('schedule-title', 'Schedule', 'largeTitle', { motion: rise(10) }),
-    n('Segmented', { id: 'schedule-range', props: { options: 'Week, Month', 'aria-label': 'Range' }, bind: { value: 'range' }, motion: rise(10) }),
+    n('Segmented', { id: 'schedule-range', props: { items: 'Week, Month', 'aria-label': 'Range' }, bind: { value: 'range' }, motion: rise(10) }),
     n('Calendar', { id: 'schedule-calendar', props: { variant: 'card', 'aria-label': 'Watering day' }, bind: { value: 'day' }, layout: { width: 'fill' }, motion: rise(14) }),
     text('schedule-day', 'Water on 2026-10-04', 'footnote', { props: { color: '$muted-foreground' }, bind: { children: '`Watering on ${day}: Monstera and Golden Pothos`' } }),
     n('ProgressStepper', { id: 'schedule-steps', props: { steps: 'Check soil:hand, Water:drop, Mist:cloud, Done:checkmark', current: 1 }, motion: rise(14) }),
@@ -360,7 +360,7 @@ const settings = scene('settings', 'Settings', COL * 3, ROW * 3, n('Screen', {
         n('ListRow', {
           id: 'sign-out-row',
           props: { title: 'Sign Out', accessory: 'none', destructive: true },
-          on: { onPress: [act({ do: 'set', target: 'session.user', value: "''" }), act({ do: 'segue', segue: 'to-welcome' })] },
+          on: { onClick: [act({ do: 'set', target: 'session.user', value: "''" }), act({ do: 'segue', segue: 'to-welcome' })] },
           slots: { leading: [], accessory: [] },
         }),
       ],
@@ -396,12 +396,12 @@ const addPlant = scene('add-plant', 'AddPlant', COL * 4, 0, n('Screen', {
   props: { title: 'New Plant', largeTitle: false },
   layout: { axis: 'vertical', gap: 18, padding: [12, 20, 24, 20], align: 'center', distribute: 'start', width: 'fill', height: 'fill' },
   slots: {
-    leading: [n('Button', { id: 'add-cancel', props: { children: 'Cancel', variant: 'link', size: 'default' }, on: { onPress: [act({ do: 'back' })] } })],
+    leading: [n('Button', { id: 'add-cancel', props: { children: 'Cancel', variant: 'link', size: 'default' }, on: { onClick: [act({ do: 'back' })] } })],
     trailing: [n('Button', {
       id: 'add-done',
       props: { children: 'Add', variant: 'link', size: 'default' },
-      bind: { isDisabled: '!name.trim()' },
-      on: { onPress: [act({ do: 'send', command: 'add' })] },
+      bind: { disabled: '!name.trim()' },
+      on: { onClick: [act({ do: 'send', command: 'add' })] },
     })],
   },
   children: [
@@ -413,8 +413,8 @@ const addPlant = scene('add-plant', 'AddPlant', COL * 4, 0, n('Screen', {
       style: { radius: 32, shadow: 'md' },
       motion: { appear: { target: { opacity: 0, scale: 0.6, rotate: -12 }, transition: T.pop, trigger: 'mount', once: true } },
     }),
-    n('Segmented', { id: 'add-emoji', props: { options: '🌱, 🌵, 🌸, 🍀, 🌻', 'aria-label': 'Kind' }, bind: { value: 'emoji' } }),
-    n('TextField', {
+    n('Segmented', { id: 'add-emoji', props: { items: '🌱, 🌵, 🌸, 🍀, 🌻', 'aria-label': 'Kind' }, bind: { value: 'emoji' } }),
+    n('Field', {
       id: 'add-name', ref: 'nameField', autoFocus: true,
       props: { label: 'Name', placeholder: 'Monstera' },
       bind: { value: 'name' },
@@ -480,7 +480,7 @@ export const SPLIT_SAMPLE: Doc = {
   scenes: [
     scene('mail', 'Mail', 0, 0, n('SplitView', {
       id: 'mail-root',
-      props: { widthClass: 'auto', sidebarBehavior: 'auto' },
+      props: { sizeClass: 'auto', sidebarBehavior: 'auto' },
       slots: {
         sidebar: [n('SceneRef', { id: 'mail-sidebar', props: { scene: 'mailboxes-nav' } })],
         supplementary: [n('SceneRef', { id: 'mail-list', props: { scene: 'messages-nav' } })],
@@ -513,7 +513,7 @@ export const SPLIT_SAMPLE: Doc = {
           id: 'message-row', props: { title: 'From', subtitle: 'Subject', accessory: 'none' },
           bind: { title: 'm.from', subtitle: 'm.subject' },
           repeat: { each: 'messages', as: 'm', key: 'm.id' },
-          on: { onPress: [act({ do: 'segue', segue: 'to-message' })] },
+          on: { onClick: [act({ do: 'segue', segue: 'to-message' })] },
           slots: { leading: [n('Avatar', { id: 'message-avatar', props: { name: 'Maya', size: 36 }, bind: { name: 'm.from' } })], accessory: [] },
         })],
       })],

@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import type { Selection } from 'react-aria-components'
 import { Badge } from '@/components/ui/badge'
-import { ListBox, ListBoxItem } from '@/components/ui/list-box'
+import { Listbox, ListboxItem } from '@/components/ui/list-box'
 import { Icon } from '@/lib/icon'
 
 const people = [
@@ -12,47 +11,41 @@ const people = [
 ]
 
 // Multiple selection with a leading `icon` and a `description` line. The same
-// parts with `variant="popup"` are the compact, left-checked list that Select,
-// ComboBox and DropdownMenu-style popovers use.
+// parts with `variant="popup"` are the compact, left-checked list that Select
+// and Combobox draw in their popups.
 export default function Multiple() {
-  const [selected, setSelected] = useState<Selection>(new Set(['ana', 'kim']))
-  const count = selected === 'all' ? people.length : selected.size
+  const [selected, setSelected] = useState<string[]>(['ana', 'kim'])
   return (
     <div className="mx-auto grid max-w-sm gap-4">
       <div className="flex items-center gap-2">
         <strong className="flex-1 text-body">Share with</strong>
-        <Badge variant="tinted">{count} selected</Badge>
+        <Badge variant="tinted">{selected.length} selected</Badge>
       </div>
-      <ListBox
-        aria-label="Share with"
-        selectionMode="multiple"
-        selectedKeys={selected}
-        onSelectionChange={setSelected}
-      >
+      <Listbox aria-label="Share with" multiple value={selected} onValueChange={setSelected}>
         {people.map((p) => (
-          <ListBoxItem
+          <ListboxItem
             key={p.id}
-            id={p.id}
-            textValue={p.name}
+            value={p.id}
+            label={p.name}
             icon={<Icon name="person" size={26} />}
             description={p.email}
           >
             {p.name}
-          </ListBoxItem>
+          </ListboxItem>
         ))}
-      </ListBox>
+      </Listbox>
 
-      <ListBox
+      <Listbox
         aria-label="Filter (popup variant)"
         variant="popup"
-        selectionMode="multiple"
-        defaultSelectedKeys={['open']}
+        multiple
+        defaultValue={['open']}
         className="rounded-panel bg-card"
       >
-        <ListBoxItem id="open">Open</ListBoxItem>
-        <ListBoxItem id="closed">Closed</ListBoxItem>
-        <ListBoxItem id="draft">Drafts</ListBoxItem>
-      </ListBox>
+        <ListboxItem value="open">Open</ListboxItem>
+        <ListboxItem value="closed">Closed</ListboxItem>
+        <ListboxItem value="draft">Drafts</ListboxItem>
+      </Listbox>
     </div>
   )
 }

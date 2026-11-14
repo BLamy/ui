@@ -20,7 +20,7 @@ function RingtonePicker() {
               accessory="check"
               checked={t === tone}
               divider={i < tones.length - 1}
-              onPress={() => setTone(t)}
+              onClick={() => setTone(t)}
             />
           ))}
         </ListSection>
@@ -30,7 +30,7 @@ function RingtonePicker() {
             destructive={signedIn}
             divider={false}
             title={signedIn ? 'Sign Out' : 'Sign In'}
-            onPress={() => setSignedIn(!signedIn)}
+            onClick={() => setSignedIn(!signedIn)}
           />
         </ListSection>
       </List>

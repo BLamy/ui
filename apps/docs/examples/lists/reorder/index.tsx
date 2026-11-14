@@ -51,20 +51,20 @@ function UpNext() {
         }}
       >
         <strong style={{ flex: 1, fontSize: 20 }}>Up Next</strong>
-        <Button size="sm" variant="ghost" onPress={add}>
+        <Button size="sm" variant="ghost" onClick={add}>
           Add
         </Button>
-        <Button size="sm" variant="ghost" onPress={() => setEditing(!editing)}>
+        <Button size="sm" variant="ghost" onClick={() => setEditing(!editing)}>
           {editing ? 'Done' : 'Edit'}
         </Button>
       </div>
       <List inset>
-        {/* `animate`: keyed rows spring in, collapse out, and slide to new
-            places. `onReorder` (only while editing) adds a grip: drag it, or
-            focus it and press ↑ / ↓. */}
+        {/* `animate`: keyed rows grow in, collapse out, and slide to new
+            places. `onOrderChange` (only while editing) adds a grip: drag it,
+            or focus it and press Space, ↑ / ↓, Space. */}
         <ListSection
           animate
-          onReorder={editing ? move : undefined}
+          onOrderChange={editing ? (_, { from, to }) => move(from, to) : undefined}
           footer={
             editing
               ? 'Drag a grip to move a song.'

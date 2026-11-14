@@ -41,7 +41,7 @@ export default function NowPlaying() {
               <Slider
                 aria-label="Volume"
                 value={volume}
-                onChange={setVolume}
+                onValueChange={setVolume}
                 style={{ marginTop: 8 }}
               />
             </div>

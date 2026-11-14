@@ -1,15 +1,16 @@
 /* SplitView compositions shared by the stories and the docs: Mail (three columns), Notes (two columns),
    Settings (sidebar + detail), Reminders (tinted rows, shared-selection sections, large titles), Library (a
    nested push/pop stack in the detail), Notes gallery (the supplementary column steps aside) and a frame you
-   can drag to resize. Each is a plain composition of the
-   public SplitView parts — nothing here reaches into the component. Hover cards preview what a press opens, as the
-   real apps do: a sender's contact card on their avatar, a reminders list's first items on its sidebar row, an
+   can drag to resize (UI SDK's Resizable). Each is a plain composition of the public SplitView parts — nothing
+   here reaches into the component. Hover cards preview what a press opens, as the real apps do: a sender's
+   contact card on their avatar, a reminders list's first items on its sidebar row (`SplitViewItem preview`), an
    album's tracks on its cover. */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Button as AriaButton } from 'react-aria-components';
-import { useMove, useFocusRing, mergeProps } from 'react-aria';
+import { Resizable, ResizableHandle, ResizablePanel } from '@ui-sdk/react/resizable';
 import { Avatar } from '@/components/ui/avatar';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ListRow, ListSection } from '@/components/ui/list';
 import { SearchField } from '@/components/ui/search-field';
 import { SIDEBAR_ICONS } from '@/components/ui/sidebar';
@@ -58,12 +59,12 @@ export function DemoGlyph({ name, size = 20, sw = 1.9 }: { name: string; size?: 
   );
 }
 
-function BarButton({ label, children, onPress }: { label: string; children: ReactNode; onPress?: () => void }) {
+function BarButton({ label, children, onClick }: { label: string; children: ReactNode; onClick?: () => void }) {
   return (
-    <AriaButton aria-label={label} onPress={onPress}
-      className="bl-btn grid cursor-pointer place-items-center rounded-ctl border-0 bg-transparent px-2.5 py-2 text-primary outline-none transition-[background,transform] duration-150 data-[hovered]:bg-secondary data-[pressed]:scale-[.94] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+    <Button variant="link" size="icon-sm" aria-label={label} onClick={onClick}
+      className="rounded-ctl px-2.5 py-2 transition-[background,scale] duration-150 hover:bg-secondary active:not-aria-expanded:not-data-disabled:scale-[.94] focus-visible:ring-offset-0">
       {children}
-    </AriaButton>
+    </Button>
   );
 }
 
@@ -124,7 +125,7 @@ function MailSidebar() {
 
 function MailList() {
   const s = useSplitView();
-  const box = MAILBOXES.find((m) => m.id === s.selection.sidebar) ?? MAILBOXES[0];
+  const box = MAILBOXES.find((m) => m.id === s.value.sidebar) ?? MAILBOXES[0];
   const [q, setQ] = useState('');
   const msgs = (MAIL[box.id] ?? []).filter((m) => !q || (m.subject + m.preview + m.from.join(' ')).toLowerCase().includes(q.toLowerCase()));
   return (
@@ -132,7 +133,7 @@ function MailList() {
       <SplitViewHeader title={box.title} leading={<SplitViewToggle />}
         trailing={<BarButton label="New message"><DemoGlyph name="compose" size={21} /></BarButton>} />
       <SplitViewContent>
-        <div className="px-4 pt-2.5 pb-2"><SearchField value={q} onChange={setQ} /></div>
+        <div className="px-4 pt-2.5 pb-2"><SearchField value={q} onValueChange={setQ} /></div>
         {msgs.length === 0 ? <SplitViewEmpty className="h-48" title="No Mail" description={q ? `Nothing matches “${q}”` : undefined} /> : null}
         {msgs.map((m) => (
           <SplitViewItem key={m.id} id={m.id} className="items-start py-3 pl-7">
@@ -176,7 +177,7 @@ function SenderCard({ from }: { from: [string, string] }) {
 function MailMessage() {
   const s = useSplitView();
   const all = Object.values(MAIL).flat();
-  const m = all.find((x) => x.id === s.selection.supplementary);
+  const m = all.find((x) => x.id === s.value.supplementary);
   return (
     <SplitViewDetail aria-label="Message">
       <SplitViewHeader
@@ -216,9 +217,9 @@ function MailMessage() {
 }
 
 /** Mail: mailboxes · message list · message. */
-export function SplitViewMailDemo({ defaultSelection, ...props }: DemoProps) {
+export function SplitViewMailDemo({ defaultValue, ...props }: DemoProps) {
   return (
-    <SplitView aria-label="Mail" defaultSelection={defaultSelection ?? { sidebar: 'inbox', supplementary: 'm2' }} {...props}>
+    <SplitView aria-label="Mail" defaultValue={defaultValue ?? { sidebar: 'inbox', supplementary: 'm2' }} {...props}>
       <MailSidebar />
       <MailList />
       <MailMessage />
@@ -236,9 +237,9 @@ const NOTES = [
 ];
 
 /** Notes: a two-column split — the list is the sidebar, the toggle hides it for a full-width editor. */
-export function SplitViewNotesDemo({ defaultSelection, listWidth = 300, ...props }: DemoProps & { listWidth?: number }) {
+export function SplitViewNotesDemo({ defaultValue, listWidth = 300, ...props }: DemoProps & { listWidth?: number }) {
   return (
-    <SplitView aria-label="Notes" defaultSelection={defaultSelection ?? { sidebar: 'n1' }} defaultCompactColumn="sidebar" {...props}>
+    <SplitView aria-label="Notes" defaultValue={defaultValue ?? { sidebar: 'n1' }} defaultCompactColumn="sidebar" {...props}>
       <SplitViewSidebar aria-label="Notes" width={listWidth} minWidth={Math.min(200, listWidth)} className="bg-background">
         <SplitViewHeader title="Notes" trailing={<BarButton label="New note"><DemoGlyph name="compose" size={21} /></BarButton>} />
         <SplitViewContent className="px-2.5 pt-1 pb-4">
@@ -256,7 +257,7 @@ export function SplitViewNotesDemo({ defaultSelection, listWidth = 300, ...props
 
 function NotesEditor() {
   const s = useSplitView();
-  const n = NOTES.find((x) => x.id === s.selection.sidebar);
+  const n = NOTES.find((x) => x.id === s.value.sidebar);
   return (
     <SplitViewDetail aria-label="Note">
       <SplitViewHeader leading={<SplitViewToggle />} trailing={<BarButton label="Share"><DemoGlyph name="send" /></BarButton>} />
@@ -288,7 +289,7 @@ const Tile = ({ icon, color }: { icon: string; color: string }) => (
 
 function SettingsPane() {
   const s = useSplitView();
-  const cur = SETTINGS.find((x) => x.id === s.selection.sidebar);
+  const cur = SETTINGS.find((x) => x.id === s.value.sidebar);
   const [on, setOn] = useState<Record<string, boolean>>({ a: true, b: false, c: true });
   const flip = (k: string) => (v: boolean) => setOn((o) => ({ ...o, [k]: v }));
   return (
@@ -303,13 +304,13 @@ function SettingsPane() {
               <div className="mt-1 max-w-[360px] text-detail leading-[1.4] text-muted-foreground">Adjust how {cur.title.toLowerCase()} behaves on this device and everywhere you’re signed in.</div>
             </div>
             <ListSection>
-              <ListRow title={cur.title} trailing={<Switch checked={on.a} onChange={flip('a')} aria-label={cur.title} />} />
-              <ListRow title="Show Previews" trailing={<Switch checked={on.b} onChange={flip('b')} aria-label="Show previews" />} />
-              <ListRow title="Allow on Lock Screen" trailing={<Switch checked={on.c} onChange={flip('c')} aria-label="Allow on lock screen" />} divider={false} />
+              <ListRow title={cur.title} trailing={<Switch checked={on.a} onCheckedChange={flip('a')} aria-label={cur.title} />} />
+              <ListRow title="Show Previews" trailing={<Switch checked={on.b} onCheckedChange={flip('b')} aria-label="Show previews" />} />
+              <ListRow title="Allow on Lock Screen" trailing={<Switch checked={on.c} onCheckedChange={flip('c')} aria-label="Allow on lock screen" />} divider={false} />
             </ListSection>
             <ListSection title="Options" footer="Changes sync to your other devices.">
-              <ListRow title="Schedule" accessory="chevron" onPress={() => undefined} />
-              <ListRow title="Customize" accessory="chevron" onPress={() => undefined} divider={false} />
+              <ListRow title="Schedule" accessory="chevron" onClick={() => undefined} />
+              <ListRow title="Customize" accessory="chevron" onClick={() => undefined} divider={false} />
             </ListSection>
           </div>
         </SplitViewContent>
@@ -319,9 +320,9 @@ function SettingsPane() {
 }
 
 /** Settings: sidebar sections, grouped detail. */
-export function SplitViewSettingsDemo({ defaultSelection, ...props }: DemoProps) {
+export function SplitViewSettingsDemo({ defaultValue, ...props }: DemoProps) {
   return (
-    <SplitView aria-label="Settings" defaultSelection={defaultSelection ?? { sidebar: 'notifications' }} defaultCompactColumn="sidebar" {...props}>
+    <SplitView aria-label="Settings" defaultValue={defaultValue ?? { sidebar: 'notifications' }} defaultCompactColumn="sidebar" {...props}>
       <SplitViewSidebar aria-label="Settings" width={300}>
         <SplitViewHeader title="Settings" />
         <SplitViewContent className="px-2.5 pb-4">
@@ -350,40 +351,34 @@ export interface SplitViewResizableDemoProps {
   /** Breakpoints the child SplitView uses, so the readout can name the class. */
   breakpoints?: { medium: number; regular: number };
 }
-/** A frame with a drag handle on its trailing edge; the readout shows the width and size class. */
+/** A frame with a drag handle on its trailing edge (UI SDK's Resizable: drag it, or focus it and use the arrows);
+ *  the readout shows the width and size class. */
 export function SplitViewResizableDemo({ children, initial = 900, min = 320, max = 1200, height = 520, breakpoints = { medium: 640, regular: 1024 } }: SplitViewResizableDemoProps) {
   const [host, hostW] = useContainerWidth<HTMLDivElement>(max + 20);
-  const hi = Math.max(min, Math.min(max, hostW - 20));
-  const [raw, setW] = useState(initial);
-  const w = Math.min(raw, hi);
-  const acc = useRef(w);
-  const [dragging, setDragging] = useState(false);
-  const { moveProps } = useMove({
-    onMoveStart() { acc.current = w; setDragging(true); },
-    onMove(e) { acc.current += e.pointerType === 'keyboard' ? e.deltaX * (e.shiftKey ? 80 : 20) : e.deltaX; acc.current = Math.max(min, Math.min(hi, acc.current)); setW(acc.current); },
-    onMoveEnd() { setDragging(false); },
-  });
-  const { focusProps, isFocusVisible } = useFocusRing();
+  const [share, setShare] = useState<number | null>(null);
+  const w = share == null ? Math.min(initial, hostW) : (share / 100) * hostW;
   const wc = w >= breakpoints.regular ? 'regular' : w >= breakpoints.medium ? 'medium' : 'compact';
   return (
-    <div ref={host} data-slot="split-view-resizable-demo" className="flex w-full flex-col items-start gap-2.5">
+    <div data-slot="split-view-resizable-demo" className="flex w-full flex-col items-start gap-2.5">
       <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground tabular-nums">
         {(['compact', 'medium', 'regular'] as const).map((c) => (
           <span key={c} className={cn('rounded-full px-2.5 py-1 font-semibold transition-colors duration-200', c === wc ? 'bg-primary text-primary-foreground' : 'bg-secondary')}>{c}</span>
         ))}
         <span className="ml-1">{Math.round(w)}px</span>
       </div>
-      <div className="relative flex max-w-full">
-        <div className="relative h-(--frame-h) w-(--frame-w) overflow-hidden rounded-card shadow-[0_0_0_1px_var(--border),0_10px_30px_--alpha(black/12%)]"
-          style={{ '--frame-w': w + 'px', '--frame-h': height + 'px' } as CSSProperties}>
-          {children}
-        </div>
-        <div role="separator" aria-orientation="vertical" aria-label="Resize frame" aria-valuenow={Math.round(w)} aria-valuemin={min} aria-valuemax={hi}
-          tabIndex={0} {...mergeProps(moveProps, focusProps)}
-          className="group grid w-5 shrink-0 cursor-col-resize touch-none place-items-center outline-none">
-          <span className={cn('h-12 w-[5px] rounded-full transition-[background,transform] duration-150',
-            dragging || isFocusVisible ? 'scale-y-110 bg-primary' : 'bg-tertiary-foreground group-hover:bg-muted-foreground')} />
-        </div>
+      <div ref={host} className="w-full">
+        <Resizable onLayoutChange={(layout) => setShare(layout[0] ?? null)} className="flex h-(--frame-h) w-full"
+          style={{ '--frame-h': height + 'px' } as CSSProperties}>
+          <ResizablePanel defaultSize={`${initial}px`} minSize={`${min}px`} maxSize={`${max}px`}
+            className="relative overflow-hidden rounded-card shadow-[0_0_0_1px_var(--border),0_10px_30px_--alpha(black/12%)]">
+            {children}
+          </ResizablePanel>
+          <ResizableHandle aria-label="Resize frame" className="group grid w-5 shrink-0 cursor-col-resize place-items-center outline-none">
+            <span className={cn('h-12 w-[5px] rounded-full bg-tertiary-foreground transition-[background,scale] duration-150 group-hover:bg-muted-foreground',
+              'group-focus-visible:scale-y-110 group-focus-visible:bg-primary group-data-dragging:scale-y-110 group-data-dragging:bg-primary')} />
+          </ResizableHandle>
+          <ResizablePanel />
+        </Resizable>
       </div>
     </div>
   );
@@ -427,27 +422,27 @@ function RListCard({ l }: { l: RList }) {
 function RListItem({ id }: { id: string }) {
   const l = RLISTS[id];
   return (
-    <HoverCardTrigger className="flex w-full">
-      <SplitViewItem id={id} tint={l.color} title={l.title} badge={l.items.length}
-        icon={
-          <span className="grid size-[26px] place-items-center rounded-full bg-(--split-item-tint) text-white transition-colors duration-150 group-data-selected/item:bg-white group-data-selected/item:text-(--split-item-tint)">
-            <DemoGlyph name={l.icon} size={15} sw={2.4} />
-          </span>
-        } />
-      <HoverCard placement="end top"><RListCard l={l} /></HoverCard>
-    </HoverCardTrigger>
+    <SplitViewItem id={id} tint={l.color} title={l.title} badge={l.items.length} preview={<RListCard l={l} />}
+      icon={
+        <span className="grid size-[26px] place-items-center rounded-full bg-(--split-item-tint) text-white transition-colors duration-150 group-data-selected/item:bg-white group-data-selected/item:text-(--split-item-tint)">
+          <DemoGlyph name={l.icon} size={15} sw={2.4} />
+        </span>
+      } />
   );
 }
 
 function RemindersList({ scrolled }: { scrolled?: boolean }) {
   const s = useSplitView();
-  const id = s.selection.sidebar ?? 'today';
+  const id = s.value.sidebar ?? 'today';
   const l = RLISTS[id] ?? RLISTS.today;
   const marker = useRef<HTMLDivElement | null>(null);
   const [done, setDone] = useState<Record<string, boolean>>({});
   useEffect(() => {
+    // After the frame's layout, so the large title is already at the top of the scroll.
     const sc = marker.current?.parentElement;
-    if (scrolled && sc) sc.scrollTop = 160;
+    if (!scrolled || !sc) return;
+    const frame = requestAnimationFrame(() => { sc.scrollTop = 160; });
+    return () => cancelAnimationFrame(frame);
   }, [scrolled]);
   return (
     <SplitViewDetail aria-label={l.title}>
@@ -457,11 +452,13 @@ function RemindersList({ scrolled }: { scrolled?: boolean }) {
         <div ref={marker} className="pb-8 text-foreground">
           {l.items.map((t) => (
             <label key={t} className="flex cursor-pointer items-center gap-3 pl-4">
-              <input type="checkbox" className="peer sr-only" checked={!!done[t]} onChange={(e) => setDone((d) => ({ ...d, [t]: e.target.checked }))} />
-              <span aria-hidden="true" className="grid size-[22px] shrink-0 place-items-center rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))] peer-checked:bg-(--c) peer-checked:shadow-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring" style={{ '--c': l.color } as CSSProperties}>
+              {/* The kit's round Checkbox, filled with the list's colour once checked; the label's text names it. */}
+              <Checkbox checked={!!done[t]} onCheckedChange={(checked) => setDone((d) => ({ ...d, [t]: checked === true }))}
+                className="peer border-0 shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))] focus-visible:ring-2 focus-visible:ring-ring data-checked:bg-(--c) data-checked:shadow-none"
+                style={{ '--c': l.color } as CSSProperties}>
                 {done[t] ? <span className="size-2 rounded-full bg-white" /> : null}
-              </span>
-              <span className="min-w-0 flex-1 truncate py-[11px] pr-4 text-body shadow-hairline-b peer-checked:text-muted-foreground">{t}</span>
+              </Checkbox>
+              <span className="min-w-0 flex-1 truncate py-[11px] pr-4 text-body shadow-hairline-b peer-data-checked:text-muted-foreground">{t}</span>
             </label>
           ))}
         </div>
@@ -472,10 +469,10 @@ function RemindersList({ scrolled }: { scrolled?: boolean }) {
 
 /** Reminders: each list selects in its own colour (`tint`), Groceries sits in Pinned *and* My Lists and
  *  highlights in both, and both columns use large titles that fold into the bar as you scroll. */
-export function SplitViewRemindersDemo({ defaultSelection, scrolled, ...props }: DemoProps & { scrolled?: boolean }) {
+export function SplitViewRemindersDemo({ defaultValue, scrolled, ...props }: DemoProps & { scrolled?: boolean }) {
   return (
-    <SplitView aria-label="Reminders" defaultSelection={defaultSelection ?? { sidebar: 'groceries' }} defaultCompactColumn="sidebar"
-      sidebarVisibility={{ medium: true }} sidebarBehavior="tile" {...props}>
+    <SplitView aria-label="Reminders" defaultValue={defaultValue ?? { sidebar: 'groceries' }} defaultCompactColumn="sidebar"
+      defaultSidebarOpen={{ medium: true }} sidebarBehavior="tile" {...props}>
       <SplitViewSidebar aria-label="Lists" width={290} className="bg-muted">
         <SplitViewHeader title="Lists" largeTitle className="bg-muted" trailing={<BarButton label="Add list"><DemoGlyph name="plus" size={22} /></BarButton>} />
         <SplitViewContent>
@@ -566,12 +563,12 @@ function AlbumPage({ a }: { a: Album }) {
           </div>
           <div className="mt-6">
             {a.tracks.map((t, i) => (
-              <AriaButton key={t} onPress={() => stack.push(<TrackPage a={a} track={t} />, { key: `${a.id}-${i}` })}
-                className="bl-btn flex w-full cursor-pointer items-center gap-4 border-0 bg-transparent px-1 py-3 text-left [font-family:inherit] text-callout text-foreground shadow-hairline-b outline-none data-[pressed]:bg-accent data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+              <Button key={t} variant="link" onClick={() => stack.push(<TrackPage a={a} track={t} />, { key: `${a.id}-${i}` })}
+                className="flex h-auto w-full justify-start gap-4 rounded-none px-1 py-3 text-left text-callout font-normal whitespace-normal text-foreground shadow-hairline-b active:not-aria-expanded:not-data-disabled:scale-100 active:bg-accent focus-visible:ring-offset-0">
                 <span className="w-5 text-right text-detail text-muted-foreground tabular-nums">{i + 1}</span>
                 <span className="min-w-0 flex-1 truncate">{t}</span>
                 <Icon name="chev" size={14} sw={2.6} className="text-tertiary-foreground" />
-              </AriaButton>
+              </Button>
             ))}
           </div>
         </div>
@@ -583,7 +580,7 @@ function AlbumPage({ a }: { a: Album }) {
 function LibraryRoot({ initialAlbum }: { initialAlbum?: string }) {
   const s = useSplitView();
   const stack = useSplitViewStack();
-  const sec = SECTIONS_LIB.find((x) => x.id === s.selection.sidebar) ?? SECTIONS_LIB[0];
+  const sec = SECTIONS_LIB.find((x) => x.id === s.value.sidebar) ?? SECTIONS_LIB[0];
   const opened = useRef(false);
   useEffect(() => {
     const a = ALBUMS.find((x) => x.id === initialAlbum);
@@ -595,15 +592,16 @@ function LibraryRoot({ initialAlbum }: { initialAlbum?: string }) {
       <SplitViewContent>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-4 gap-y-5 px-5 pt-5 pb-10">
           {ALBUMS.map((a) => (
-            <HoverCardTrigger key={a.id} className="flex">
-              <AriaButton onPress={() => stack.push(<AlbumPage a={a} />, { key: a.id })}
-                className="bl-btn flex w-full cursor-pointer flex-col items-stretch gap-1.5 rounded-ctl border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground outline-none transition-transform duration-150 data-[pressed]:scale-[.97] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+            <HoverCard key={a.id}>
+              <HoverCardTrigger
+                render={<Button variant="link" onClick={() => stack.push(<AlbumPage a={a} />, { key: a.id })}
+                  className="flex h-auto w-full flex-col items-stretch justify-start gap-1.5 rounded-ctl text-left font-normal whitespace-normal text-foreground focus-visible:ring-offset-0" />}>
                 <Cover a={a} className="aspect-square w-full" />
                 <span className="mt-0.5 truncate text-detail font-medium">{a.title}</span>
                 <span className="-mt-1 truncate text-footnote text-muted-foreground">{a.artist}</span>
-              </AriaButton>
-              <HoverCard placement="end top" className="w-64"><AlbumCard a={a} /></HoverCard>
-            </HoverCardTrigger>
+              </HoverCardTrigger>
+              <HoverCardContent side="right" align="start" className="w-64"><AlbumCard a={a} /></HoverCardContent>
+            </HoverCard>
           ))}
         </div>
       </SplitViewContent>
@@ -615,7 +613,7 @@ function LibraryDetail({ initialAlbum }: { initialAlbum?: string }) {
   const s = useSplitView();
   return (
     <SplitViewDetail aria-label="Albums">
-      <SplitViewStack resetKey={s.selection.sidebar}>
+      <SplitViewStack resetKey={s.value.sidebar}>
         <LibraryRoot initialAlbum={initialAlbum} />
       </SplitViewStack>
     </SplitViewDetail>
@@ -624,9 +622,9 @@ function LibraryDetail({ initialAlbum }: { initialAlbum?: string }) {
 
 /** Library: the sidebar picks a section; albums push onto a stack inside the detail column (album → credits).
  *  A pushed page's back button is labelled with the page below's title, truncated to the room it has. */
-export function SplitViewLibraryDemo({ defaultSelection, initialAlbum, ...props }: DemoProps & { initialAlbum?: string }) {
+export function SplitViewLibraryDemo({ defaultValue, initialAlbum, ...props }: DemoProps & { initialAlbum?: string }) {
   return (
-    <SplitView aria-label="Library" defaultSelection={defaultSelection ?? { sidebar: 'recent' }} defaultCompactColumn="sidebar" {...props}>
+    <SplitView aria-label="Library" defaultValue={defaultValue ?? { sidebar: 'recent' }} defaultCompactColumn="sidebar" {...props}>
       <SplitViewSidebar aria-label="Library" width={250}>
         <SplitViewHeader title="Library" />
         <SplitViewContent className="px-2.5 pt-2 pb-4">
@@ -649,9 +647,9 @@ const FOLDERS = [
 
 function ViewSwitch() {
   const s = useSplitView();
-  const gallery = !s.supplementaryVisible;
+  const gallery = !s.supplementaryOpen;
   return (
-    <BarButton label={gallery ? 'View as list' : 'View as gallery'} onPress={() => s.setSupplementaryVisible(gallery)}>
+    <BarButton label={gallery ? 'View as list' : 'View as gallery'} onClick={() => s.setSupplementaryOpen(gallery)}>
       <DemoGlyph name={gallery ? 'list' : 'grid'} size={21} />
     </BarButton>
   );
@@ -659,8 +657,8 @@ function ViewSwitch() {
 
 function GalleryDetail() {
   const s = useSplitView();
-  const gallery = !s.supplementaryVisible;
-  const n = NOTES.find((x) => x.id === s.selection.supplementary);
+  const gallery = !s.supplementaryOpen;
+  const n = NOTES.find((x) => x.id === s.value.supplementary);
   return (
     <SplitViewDetail aria-label={gallery ? 'Gallery' : 'Note'}>
       <SplitViewHeader title={gallery ? 'Notes' : undefined} leading={gallery ? <SplitViewToggle /> : null}
@@ -669,17 +667,17 @@ function GalleryDetail() {
         <SplitViewContent>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-4 px-5 pt-5 pb-10">
             {NOTES.map((x) => (
-              <AriaButton key={x.id} onPress={() => { s.select('supplementary', x.id); s.setSupplementaryVisible(true); }}
-                className="bl-btn flex cursor-pointer flex-col items-stretch gap-2 border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground outline-none data-[focus-visible]:rounded-panel data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+              <Button key={x.id} variant="link" onClick={() => { s.select('supplementary', x.id); s.setSupplementaryOpen(true); }}
+                className="flex h-auto flex-col items-stretch justify-start gap-2 rounded-panel p-0 text-left font-normal whitespace-normal text-foreground active:not-aria-expanded:not-data-disabled:scale-100 focus-visible:ring-offset-0">
                 <span className={cn('block h-[150px] overflow-hidden rounded-panel bg-card p-3 text-caption2 leading-[1.45] text-muted-foreground',
-                  x.id === s.selection.supplementary ? 'shadow-[0_0_0_2.5px_var(--primary)]' : 'shadow-[0_0_0_1px_var(--border)]')}>
+                  x.id === s.value.supplementary ? 'shadow-[0_0_0_2.5px_var(--primary)]' : 'shadow-[0_0_0_1px_var(--border)]')}>
                   <span className="mb-1 block text-caption font-semibold text-foreground">{x.title}</span>{x.body}
                 </span>
                 <span className="px-1 text-center">
                   <span className="block truncate text-footnote font-semibold">{x.title}</span>
                   <span className="block text-caption text-muted-foreground">{x.date}</span>
                 </span>
-              </AriaButton>
+              </Button>
             ))}
           </div>
         </SplitViewContent>
@@ -696,11 +694,11 @@ function GalleryDetail() {
   );
 }
 
-/** Notes with a gallery: the grid button hides the supplementary column (`setSupplementaryVisible(false)`) —
+/** Notes with a gallery: the grid button closes the supplementary column (`setSupplementaryOpen(false)`):
  *  it slides away and the detail springs across to fill its space; opening a card brings the list back. */
-export function SplitViewGalleryDemo({ defaultSelection, ...props }: DemoProps) {
+export function SplitViewGalleryDemo({ defaultValue, ...props }: DemoProps) {
   return (
-    <SplitView aria-label="Notes" defaultSelection={defaultSelection ?? { sidebar: 'all', supplementary: 'n1' }} {...props}>
+    <SplitView aria-label="Notes" defaultValue={defaultValue ?? { sidebar: 'all', supplementary: 'n1' }} {...props}>
       <SplitViewSidebar aria-label="Folders" width={230}>
         <SplitViewHeader title="Folders" />
         <SplitViewContent className="px-2.5 pb-4">

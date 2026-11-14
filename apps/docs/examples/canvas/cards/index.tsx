@@ -1,8 +1,8 @@
-import { useState, type PointerEvent } from 'react'
+import { useState } from 'react'
 import { Canvas, CanvasFrame, CanvasGuides, CanvasHandles, CanvasMiniMap, type CanvasPointerInfo } from '@/components/ui/canvas'
 import {
   dist, frameHandles, handleCursor, inFrame, resizeFrame, rotateFrame, snapMove, toScreen,
-  type Camera, type Frame, type Guide, type HandleId, type Rect,
+  type Frame, type Guide, type HandleId, type Rect, type Viewport,
 } from '@/lib/canvas-math'
 
 type Card = Frame & { id: string; label: string; tone: string }
@@ -20,7 +20,7 @@ type Drag =
 
 // The canvas pans and zooms by itself. It hands you the pointer in board units, so this is all that is left.
 export default function Cards() {
-  const [camera, setCamera] = useState<Camera>({ x: 20, y: 10, z: 1 })
+  const [viewport, setViewport] = useState<Viewport>({ x: 20, y: 10, zoom: 1 })
   const [cards, setCards] = useState(START)
   const [picked, setPicked] = useState<string | null>('b')
   const [guides, setGuides] = useState<Guide[]>([])
@@ -28,10 +28,10 @@ export default function Cards() {
   const [cursor, setCursor] = useState('default')
 
   const card = cards.find((c) => c.id === picked) ?? null
-  const handles = card ? frameHandles(card, camera.z) : []
+  const handles = card ? frameHandles(card, viewport.zoom) : []
   const patch = (id: string, f: Partial<Card>) => setCards((all) => all.map((c) => (c.id === id ? { ...c, ...f } : c)))
   const handleAt = ({ screen }: CanvasPointerInfo) =>
-    handles.find((h) => dist(toScreen(camera, h.pt), screen) <= 11)
+    handles.find((h) => dist(toScreen(viewport, h.pt), screen) <= 11)
 
   const down = (_: PointerEvent, info: CanvasPointerInfo) => {
     const h = handleAt(info)
@@ -39,7 +39,7 @@ export default function Cards() {
       setDrag(h.id === 'rot' ? { k: 'rotate', id: card.id, orig: card } : { k: 'resize', id: card.id, handle: h.id, start: info.board, orig: card })
       return
     }
-    const hit = [...cards].reverse().find((c) => inFrame(info.board, c, 4 / camera.z))
+    const hit = [...cards].reverse().find((c) => inFrame(info.board, c, 4 / viewport.zoom))
     setPicked(hit?.id ?? null)
     if (hit) setDrag({ k: 'move', id: hit.id, start: info.board, orig: hit })
   }
@@ -47,7 +47,7 @@ export default function Cards() {
   const move = (e: PointerEvent, info: CanvasPointerInfo) => {
     if (!drag) {
       const h = handleAt(info)
-      const over = cards.some((c) => inFrame(info.board, c, 4 / camera.z))
+      const over = cards.some((c) => inFrame(info.board, c, 4 / viewport.zoom))
       setCursor(h ? handleCursor(h.id, card?.rot ?? 0) : over ? 'move' : 'default')
       return
     }
@@ -56,7 +56,7 @@ export default function Cards() {
       const o = drag.orig
       let dx = p.x - drag.start.x, dy = p.y - drag.start.y
       const others: Rect[] = cards.filter((c) => c.id !== o.id)
-      const snap = snapMove({ x: o.x + dx, y: o.y + dy, w: o.w, h: o.h }, others, 6 / camera.z)
+      const snap = snapMove({ x: o.x + dx, y: o.y + dy, w: o.w, h: o.h }, others, 6 / viewport.zoom)
       dx += snap.dx
       dy += snap.dy
       setGuides(snap.guides)
@@ -76,8 +76,9 @@ export default function Cards() {
   return (
     <div className="relative h-[420px] overflow-hidden rounded-card shadow-hairline">
       <Canvas
-        camera={camera}
-        onCameraChange={setCamera}
+        viewport={viewport}
+        onViewportChange={setViewport}
+        fit={{ x: 60, y: 60, w: 380, h: 290 }}
         cursor={cursor}
         aria-label="Cards on a canvas"
         onCanvasPointerDown={down}
@@ -86,7 +87,7 @@ export default function Cards() {
         overlay={
           <>
             <p className="pointer-events-none absolute bottom-2 left-3 m-0 text-footnote text-foreground">
-              Scroll to pan · pinch or ⌘-scroll to zoom · hold Space to drag the view · ⌘0 fits
+              Scroll to pan · pinch or ⌘-scroll to zoom · hold Space to drag the view · ⌘0 fits · arrows pan
             </p>
             <CanvasMiniMap width={150} height={96}
               items={cards.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h, className: c.id === picked ? 'fill-primary' : undefined }))} />

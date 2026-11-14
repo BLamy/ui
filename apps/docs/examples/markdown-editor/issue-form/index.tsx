@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
-import { TextField } from '@/components/ui/text-field'
 
 export default function IssueForm() {
   const [submitted, setSubmitted] = useState<Record<string, string> | null>(
@@ -29,14 +29,10 @@ export default function IssueForm() {
         )
       }}
     >
-      <TextField
-        name="title"
-        isRequired
-        defaultValue="Tray snaps back on slow drags"
-      >
-        <Label variant="field">Title</Label>
-        <Input />
-      </TextField>
+      <Field name="title">
+        <FieldLabel variant="field">Title</FieldLabel>
+        <Input required defaultValue="Tray snaps back on slow drags" />
+      </Field>
       <div style={{ display: 'grid', gap: 6 }}>
         <Label variant="field" id="issue-body-label">
           Description

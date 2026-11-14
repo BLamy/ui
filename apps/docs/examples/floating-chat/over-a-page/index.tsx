@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { FloatingChat } from '@/components/ui/floating-chat'
 import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 
 const THREAD = [
   ['You', 'Summarise what changed in the last release.'],
@@ -35,12 +35,11 @@ export default function OverAPage() {
       <Segmented
         aria-label="Appearance"
         value={appearance}
-        onChange={(v) => setAppearance(v as 'glass' | 'sheet')}
-        options={[
-          { id: 'glass', label: 'Glass' },
-          { id: 'sheet', label: 'Sheet' },
-        ]}
-      />
+        onValueChange={(v) => v && setAppearance(v)}
+      >
+        <SegmentedItem value="glass">Glass</SegmentedItem>
+        <SegmentedItem value="sheet">Sheet</SegmentedItem>
+      </Segmented>
       <div className="relative h-[520px] overflow-hidden rounded-card border border-border bg-background text-foreground">
         <div ref={scroller} className="absolute inset-0 overflow-y-auto p-5 pb-40">
           <h3 className="m-0 mb-4 text-title font-bold">Release notes</h3>

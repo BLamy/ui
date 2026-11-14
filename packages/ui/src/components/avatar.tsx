@@ -1,17 +1,25 @@
 'use client';
-import { Children, cloneElement, isValidElement, useState, type ComponentProps, type CSSProperties, type ReactElement, type ReactNode } from 'react';
-import { Button as AriaButton } from 'react-aria-components';
+import { Children, cloneElement, isValidElement, type ComponentProps, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import { Avatar as SdkAvatar, AvatarFallback as SdkAvatarFallback, AvatarImage as SdkAvatarImage } from '@ui-sdk/react/avatar';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { HoverCard, useHoverCard } from '@/components/ui/hover-card';
-import { cn } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { cn, cx } from '@/lib/utils';
 
-/* ══ Avatar — a person, a bot or a workspace, as initials, an image or a glyph ══
+/* ══ Avatar — a person, a bot or a workspace, as initials, an image or a glyph, on UI SDK's Avatar ══
    <Avatar c={{ f: 'Wei', l: 'Chen' }} />                                  // a contact: initials on a gradient hashed from the name
    <Avatar name="Ada Lovelace" color="royalblue" status="online" />          // a name, an accent, a presence dot
    <Avatar name="Stitch" shape="square" icon={<Icon name="sparkle" />} />  // a bot: rounded square, a glyph for initials
    <Avatar name="Ada" src="/ada.png" />                                    // an image (initials while it loads or if it fails)
    <Avatar name="Ada" card={<HoverCardHeader … />} />                       // a hover card about them
+
+   With no children it renders its AvatarImage (for `src`) and AvatarFallback (the initials or the glyph) from its
+   props; pass the parts yourself for another image or fallback:
+
+   <Avatar name="Ada">
+     <AvatarImage src="/ada.png" srcSet="/ada@2x.png 2x" loading="lazy" />
+     <AvatarFallback delay={300}>AL</AvatarFallback>
+   </Avatar>
 
    <AvatarGroup max={5}>                                                  // overlapped; press for everyone's names
      <Avatar name="Ada" /> <Avatar name="Miles" /> …
@@ -50,7 +58,15 @@ export const avatarStatusVariants = cva(
 
 export type AvatarStatus = 'online' | 'idle' | 'dnd' | 'offline';
 
-export interface AvatarProps extends Omit<ComponentProps<'span'>, 'children'>, VariantProps<typeof avatarVariants> {
+/** What the presence dot is called, for a screen reader or an agent. */
+const avatarStatusLabels: Record<AvatarStatus, string> = { online: 'Online', idle: 'Idle', dnd: 'Do not disturb', offline: 'Offline' };
+
+/** A card's trigger is a button: reachable with Tab, so focus opens the card as the pointer does. */
+const cardTriggerClass = 'cursor-default border-0 bg-transparent p-0 [font-family:inherit] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+
+export interface AvatarProps extends Omit<ComponentProps<typeof SdkAvatar>, 'children'>, VariantProps<typeof avatarVariants> {
+  /** An AvatarImage and AvatarFallback of your own, in place of the ones made from `src`, `icon` and the name. */
+  children?: ReactNode;
   /** Contact-like record: `f` first name, `l` last name. The initials are `f[0]` + `l[0]`. */
   c?: { f: string; l: string };
   /** A display name: the initials come from it (and its hash colors the avatar when there is no `color`). */
@@ -68,51 +84,65 @@ export interface AvatarProps extends Omit<ComponentProps<'span'>, 'children'>, V
   /** Width and height in px (default 40). */
   size?: number;
   /** A HoverCard's content about them (HoverCardHeader and a line or two), shown while the pointer rests on the
-   *  avatar or keyboard focus lands on it. */
+   *  avatar or keyboard focus stays on it. With a card the avatar is a button, in the Tab order, named after them. */
   card?: ReactNode;
 }
 
-export function Avatar({ c, name, initials, color, src, icon, status, size = 40, shape, card, className, style, ref, ...props }: AvatarProps) {
-  const [failed, setFailed] = useState<string | null>(null);
-  const hover = useHoverCard<HTMLSpanElement>({ isDisabled: !card });
-  const { ref: cardRef, ...cardHandlers } = hover.triggerProps;
+export function Avatar({ c, name, initials, color, src, icon, status, size = 40, shape, card, className, style, children, ...props }: AvatarProps) {
   // A contact's two initials stay two text nodes, as they always were: one node would kern the pair differently.
   const label = initials ?? (c ? <>{c.f[0]}{c.l[0]}</> : initialsOf(name ?? ''));
   const h = hue(c ? c.f + c.l : (name ?? ''));
-  const image = src && failed !== src ? src : undefined;
+  // Size and the gradient are computed per render and handed to the classes as variables.
+  const vars = {
+    '--avatar-size': `${size}px`,
+    '--avatar-font': `${size * 0.38}px`,
+    '--avatar-radius': `${size * 0.3}px`,
+    '--avatar-bg': color
+      ? `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 53%, transparent))`
+      : `linear-gradient(180deg, hsl(${h} 62% 64%), hsl(${h} 55% 47%))`,
+  } as CSSProperties;
+  // A card's trigger needs a name, so with a card the avatar is named after the person unless it is told otherwise.
+  const ariaLabel = props['aria-label'] ?? (card ? name ?? (c ? `${c.f} ${c.l}` : undefined) : undefined);
   const el = (
-    <span
-      data-slot="avatar"
-      ref={(node) => {
-        cardRef.current = node;
-        if (typeof ref === 'function') ref(node);
-        else if (ref) ref.current = node;
-      }}
-      {...(card ? cardHandlers : null)}
-      role={props['aria-label'] ? 'img' : undefined}
-      className={cn(avatarVariants({ shape }), (status || image) && 'relative', className)}
-      // Size and the gradient are computed per render and handed to the classes as variables.
-      style={{
-        '--avatar-size': `${size}px`,
-        '--avatar-font': `${size * 0.38}px`,
-        '--avatar-radius': `${size * 0.3}px`,
-        '--avatar-bg': color
-          ? `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 53%, transparent))`
-          : `linear-gradient(180deg, hsl(${h} 62% 64%), hsl(${h} 55% 47%))`,
-        ...style,
-      } as CSSProperties}
+    <SdkAvatar
+      // UI SDK's "Interactive Avatar": an avatar that does something is a button. Alone, a named one is an image.
+      render={card ? <button type="button" /> : undefined}
+      role={!card && ariaLabel ? 'img' : undefined}
+      className={cx([avatarVariants({ shape }), card && cardTriggerClass, (status || src || children != null) && 'relative'], className)}
+      style={typeof style === 'function' ? (state) => ({ ...vars, ...style(state) }) : { ...vars, ...style }}
       {...props}
+      aria-label={ariaLabel}
     >
-      {icon ?? label}
-      {image && (
-        <img src={image} alt="" draggable={false} onError={() => setFailed(image)} className="absolute inset-0 size-full rounded-[inherit] object-cover" />
+      {children ?? (
+        <>
+          {src ? <AvatarImage src={src} /> : null}
+          <AvatarFallback>{icon ?? label}</AvatarFallback>
+        </>
       )}
       {status && (
-        <span data-slot="avatar-status" data-status={status} role="img" aria-label={status} className={avatarStatusVariants({ status })} />
+        <span data-slot="avatar-status" data-status={status} role="img" aria-label={avatarStatusLabels[status]} className={avatarStatusVariants({ status })} />
       )}
-    </span>
+    </SdkAvatar>
   );
-  return card ? <>{el}<HoverCard {...hover.cardProps}>{card}</HoverCard></> : el;
+  if (!card) return el;
+  return (
+    <HoverCard>
+      <HoverCardTrigger render={el} />
+      <HoverCardContent>{card}</HoverCardContent>
+    </HoverCard>
+  );
+}
+
+/** The image: a real `<img>` that covers the avatar once it has loaded. Decorative by default (`alt=""`): the
+    avatar's `aria-label`, or the name beside it, says who it is. */
+export function AvatarImage({ className, alt = '', draggable = false, ...props }: ComponentProps<typeof SdkAvatarImage>) {
+  return <SdkAvatarImage alt={alt} draggable={draggable} className={cx('absolute inset-0 size-full rounded-[inherit] object-cover', className)} {...props} />;
+}
+
+/** What shows while there is no loaded image: the initials or a glyph. `delay` waits before showing it, so a
+    fast image never flashes it. */
+export function AvatarFallback({ className, ...props }: ComponentProps<typeof SdkAvatarFallback>) {
+  return <SdkAvatarFallback className={cx('contents', className)} {...props} />;
 }
 
 /* ══ AvatarGroup ══ */
@@ -141,7 +171,7 @@ export interface AvatarGroupProps {
   overlap?: number;
   /** Press the group to list everyone with their names (default true). `false` leaves a plain, non-interactive stack. */
   menu?: boolean;
-  /** The pressable group's accessible name (default "N people"). */
+  /** The group's accessible name (default "N people"). */
   label?: string;
   /** A person was chosen from the menu, by their position in `children`. */
   onSelect?: (index: number) => void;
@@ -156,10 +186,11 @@ export function AvatarGroup({ children, max = 5, size = 32, overlap, menu = true
   const groupStyle = { '--avatar-overlap': `${overlap ?? Math.round(size * 0.28)}px`, ...style } as CSSProperties;
   const stack = (
     <>
-      {shown.map((person) => cloneElement(person, { size: person.props.size ?? size }))}
+      {/* Inside the menu's trigger a card avatar would be a button in a button: the menu lists everyone instead. */}
+      {shown.map((person) => cloneElement(person, { size: person.props.size ?? size, card: menu ? undefined : person.props.card }))}
       {extra > 0 && (
         <Avatar
-          data-slot="avatar-overflow"
+          data-overflow=""
           initials={`+${compact.format(extra)}`}
           size={size}
           className="bg-secondary-strong text-secondary-foreground"
@@ -172,26 +203,25 @@ export function AvatarGroup({ children, max = 5, size = 32, overlap, menu = true
 
   if (!menu) {
     return (
-      <div data-slot="avatar-group" role="group" aria-label={label} className={cn(avatarGroupVariants(), className)} style={groupStyle}>
+      <div data-slot="avatar-group" role="group" aria-label={name} className={cn(avatarGroupVariants(), className)} style={groupStyle}>
         {stack}
       </div>
     );
   }
   return (
     <DropdownMenu>
-      <AriaButton
-        data-slot="avatar-group"
+      <DropdownMenuTrigger
         aria-label={name}
-        className={cn(avatarGroupVariants(), 'cursor-pointer border-0 bg-transparent p-0 data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-offset-2', className)}
+        className={cn(avatarGroupVariants(), 'cursor-pointer border-0 bg-transparent p-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2', className)}
         style={groupStyle}
       >
         {stack}
-      </AriaButton>
-      <DropdownMenuContent aria-label={name} placement="bottom start" onAction={(key) => onSelect?.(Number(key))}>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent aria-label={name} side="bottom" align="start">
         {people.map((person, i) => (
-          <DropdownMenuItem key={i} id={i} textValue={nameOf(person.props)}>
+          <DropdownMenuItem key={person.key ?? i} value={String(i)} label={nameOf(person.props)} onSelect={() => onSelect?.(i)}>
             <span className="flex items-center gap-3">
-              {cloneElement(person, { size: 28, className: undefined, style: undefined })}
+              {cloneElement(person, { size: 28, className: undefined, style: undefined, card: undefined })}
               <span className="truncate">{nameOf(person.props)}</span>
             </span>
           </DropdownMenuItem>

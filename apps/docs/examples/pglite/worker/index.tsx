@@ -19,7 +19,7 @@ function Clicks() {
       <p className="text-subhead">
         <strong data-testid="click-count" className="tabular-nums">{rows[0]?.n ?? 0}</strong> clicks, shared by every tab that has this page open.
       </p>
-      <Button variant="secondary" onPress={() => void exec('insert into clicks default values')}>Click</Button>
+      <Button variant="secondary" onClick={() => void exec('insert into clicks default values')}>Click</Button>
       <p role="status" className="text-caption text-foreground/65">
         {info ? `${info.dataDir} · ${info.worker ? 'Web Worker' : 'main thread'} · PostgreSQL ${info.serverVersion}` : 'Opening…'}
       </p>
@@ -34,8 +34,8 @@ export default function WorkerExample() {
   return (
     <div className="mx-auto grid w-full max-w-md gap-3">
       <div className="flex gap-2" role="group" aria-label="Storage">
-        <Button size="sm" variant="secondary" className={storage === 'idb' ? 'bg-foreground text-background' : undefined} onPress={() => setStorage('idb')}>IndexedDB</Button>
-        <Button size="sm" variant="secondary" className={storage === 'opfs-ahp' ? 'bg-foreground text-background' : undefined} onPress={() => setStorage('opfs-ahp')}>OPFS</Button>
+        <Button size="sm" variant="secondary" className={storage === 'idb' ? 'bg-foreground text-background' : undefined} onClick={() => setStorage('idb')}>IndexedDB</Button>
+        <Button size="sm" variant="secondary" className={storage === 'opfs-ahp' ? 'bg-foreground text-background' : undefined} onClick={() => setStorage('opfs-ahp')}>OPFS</Button>
       </div>
       <PGliteProvider
         key={storage}

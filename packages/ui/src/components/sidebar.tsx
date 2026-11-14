@@ -1,20 +1,25 @@
 'use client';
 /* ══ Sidebar system — one compositional API over every sidebar variant ══
-   <SidebarProvider> owns open state + container width (useContainerWidth); <Sidebar variant="docked|rail|float|overlay">
-   renders the same children in any behavior, and ANY variant becomes a hamburger overlay (EdgeDrawer) below the
-   breakpoint. Styled in the workbench language: put it in a `workbench` theme scope (WorkbenchTheme, or
-   <ThemeScope scope="workbench">) for the Workbench palette; elsewhere it follows the surrounding theme. */
-import * as React from 'react';
-import { createContext, useContext, useEffect, useState } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
-import { Button as AriaButton } from 'react-aria-components';
-import { EdgeDrawer } from '@/components/ui/edge-drawer';
-import { useContainerWidth } from '@/lib/container';
-import { cn } from '@/lib/utils';
-import { brandTile } from '@/lib/utils';
+   <SidebarProvider> owns open state and measures its own width (the sidebar primitive, `bindSizeClass`);
+   <Sidebar variant="docked|rail|float|overlay"> renders the same children in any behavior, and ANY variant becomes
+   an overlay drawer (UI SDK's Drawer, contained in the provider) while the provider is compact. The children stay
+   mounted when it switches. The element holding them is `data-slot="sidebar-panel"` (the trigger's
+   `aria-controls`); items and the search button carry `data-sidebar-item` / `data-sidebar-search`. Styled in the workbench language: put it in a `workbench` theme scope (WorkbenchTheme,
+   or <ThemeScope scope="workbench">) for the Workbench palette; elsewhere it follows the surrounding theme. */
+import { createContext, useContext, useMemo, useState } from 'react';
+import type { ComponentProps, CSSProperties, ReactNode } from 'react';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { createParts, usePart, usePrimitive, type PartProps } from '@ui-sdk/react/primitive';
+import type { ChangeOptions } from '@ui-sdk/core';
+import type { SizeClass } from '@/lib/size-class';
+import { EdgeDrawer, useKeptChildren } from '@/components/ui/edge-drawer';
+import { sidebar, type SidebarApi, type SidebarOpenChangeReason, type SidebarOptions } from '@/lib/sidebar-primitive';
+import { brandTile, cn, cx } from '@/lib/utils';
+import { SizeClassProvider } from '@/lib/container';
 
-/** The overlay drawer's shadow (EdgeDrawer takes a CSS box-shadow). */
-const DRAWER_SHADOW = '0 0 44px rgba(0,0,0,.4)';
+export { createSidebarController } from '@/lib/sidebar-primitive';
+export type { SidebarController, SidebarOpenChangeDetails, SidebarOpenChangeReason } from '@/lib/sidebar-primitive';
+
 /* Rows highlight on hover over their resting fill. */
 const hl = 'hover:bg-secondary!';
 
@@ -43,49 +48,57 @@ function BIcon({ d, size = 16, sw = 1.9 }: { d: string; size?: number; sw?: numb
   );
 }
 
+const { Trigger: SidebarTriggerPart, Panel: SidebarPanel } = createParts(sidebar, { trigger: 'button', panel: 'div' });
+
+/** What `useSidebar()` returns: the provider's open state and size class, and ways to change them. */
 export interface SidebarContextValue {
   open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  toggle: () => void;
-  narrow: boolean;
+  setOpen: (open: boolean, options?: ChangeOptions<SidebarOpenChangeReason>) => boolean;
+  toggle: (options?: ChangeOptions<SidebarOpenChangeReason>) => boolean;
+  /** The provider's size class, measured from its own width against `breakpoint`. */
+  sizeClass: SizeClass;
+  /** `sizeClass === 'compact'`: every variant is an overlay drawer. */
+  compact: boolean;
 }
-export const SBCtx = createContext<SidebarContextValue | null>(null);
-export const SBCollapsedCtx = createContext(false);
+const SidebarContext = createContext<SidebarContextValue | null>(null);
+const SidebarCollapsedContext = createContext(false);
+
 export function useSidebar() {
-  const c = useContext(SBCtx);
+  const c = useContext(SidebarContext);
   if (!c) throw new Error('Sidebar components must be rendered inside <SidebarProvider>');
   return c;
 }
-
-export interface SidebarProviderProps {
-  defaultOpen?: boolean;
-  breakpoint?: number;
-  children?: ReactNode;
-  style?: CSSProperties;
-  className?: string;
+/** Whether the sidebar around is a collapsed rail (icons only): for custom parts that hide their labels. */
+export function useSidebarCollapsed() {
+  return useContext(SidebarCollapsedContext);
 }
-export function SidebarProvider({ defaultOpen = true, breakpoint = 560, children, style, className }: SidebarProviderProps) {
-  const [ref, width] = useContainerWidth();
-  const [open, setOpen] = useState(defaultOpen);
-  const narrow = width < breakpoint;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    setOpen(narrow ? false : defaultOpen);
-  }, [narrow]);
-  const toggle = () => {
-    setOpen((o) => !o);
-  };
+
+export interface SidebarProviderProps extends SidebarOptions, Omit<PartProps<'div'>, 'children'> {
+  children?: ReactNode;
+}
+export function SidebarProvider({ open, defaultOpen, onOpenChange, breakpoint, controller, children, className, ...props }: SidebarProviderProps) {
+  const handle = usePrimitive(sidebar, { open, defaultOpen, onOpenChange, breakpoint, controller } as SidebarOptions);
+  const { api } = handle;
+  return usePart(handle, 'provider', {}, {
+    ...props,
+    className: cx('relative flex h-full overflow-hidden bg-background font-sans', className),
+    children: (state: { open: boolean; sizeClass: SizeClass }) => (
+      <SidebarScope open={state.open} sizeClass={state.sizeClass} api={api}>{children}</SidebarScope>
+    ),
+  }, 'div');
+}
+
+/** The provider's state as context, and its size class as the scope of what it holds, popups included
+ *  (`presentation="auto"`). */
+function SidebarScope({ open, sizeClass, api, children }: { open: boolean; sizeClass: SizeClass; api: SidebarApi; children?: ReactNode }) {
+  const value = useMemo<SidebarContextValue>(
+    () => ({ open, sizeClass, compact: sizeClass === 'compact', setOpen: api.setOpen, toggle: api.toggle }),
+    [open, sizeClass, api],
+  );
   return (
-    <SBCtx.Provider value={{ open, setOpen, toggle, narrow }}>
-      <div
-        ref={ref}
-        data-slot="sidebar-provider"
-        className={cn('relative flex h-full overflow-hidden bg-background font-sans', className)}
-        style={style}
-      >
-        {children}
-      </div>
-    </SBCtx.Provider>
+    <SidebarContext.Provider value={value}>
+      <SizeClassProvider value={sizeClass}>{children}</SizeClassProvider>
+    </SidebarContext.Provider>
   );
 }
 
@@ -94,59 +107,67 @@ export interface SidebarProps {
   variant?: SidebarVariant;
   width?: number;
   railWidth?: number;
+  /** The overlay drawer's accessible name. Default "Sidebar". */
+  'aria-label'?: string;
   children?: ReactNode;
 }
-export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, children }: SidebarProps) {
+export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, 'aria-label': label = 'Sidebar', children }: SidebarProps) {
   const c = useSidebar();
-  const overlay = variant === 'overlay' || c.narrow;
+  const overlay = variant === 'overlay' || c.compact;
   const collapsed = !overlay && variant === 'rail' && !c.open;
-  const body = (
-    <SBCollapsedCtx.Provider value={collapsed}>
+  const kept = useKeptChildren(
+    <SidebarCollapsedContext.Provider value={collapsed}>
       <div className="flex h-full flex-col overflow-hidden">{children}</div>
-    </SBCollapsedCtx.Provider>
+    </SidebarCollapsedContext.Provider>,
   );
-  if (overlay)
-    return (
-      <EdgeDrawer
-        side="left"
-        open={c.open}
-        onClose={() => c.setOpen(false)}
-        width={width}
-        zIndex={20}
-        shadow={DRAWER_SHADOW}
-        className="border-r border-border bg-sidebar"
-      >
-        <div data-slot="sidebar" className="h-full">{body}</div>
-      </EdgeDrawer>
-    );
   const w = collapsed ? railWidth : c.open ? width : 0;
   const float = variant === 'float';
-  // Closing slides the panel out to the left: the box narrows while the panel, at full width, moves by its own width
-  // on the same spring, so its right edge stays on the content's left edge and the content closes the gap as fast as
-  // the panel leaves (opening runs it back). A rail only narrows, uncovering its labels from the left.
   return (
-    <div
-      data-slot="sidebar"
-      // Closed, its items are out of sight: keep them out of the tab order and the accessibility tree too.
-      inert={w === 0 || undefined}
-      className={cn(
-        'box-border shrink-0 overflow-hidden transition-[width] duration-spring-smooth ease-spring-smooth',
-        !float && 'border-r border-border bg-sidebar p-0',
+    <>
+      {kept.portal}
+      {overlay ? (
+        <EdgeDrawer
+          side="start"
+          open={c.open}
+          onOpenChange={(next, details) => { if (!c.setOpen(next, details)) details.cancel(); }}
+          aria-label={label}
+          width={width}
+          zIndex={20}
+          className="border-e border-border bg-sidebar shadow-black/40"
+        >
+          <SidebarPanel ref={kept.dock} className="h-full">{kept.inline}</SidebarPanel>
+        </EdgeDrawer>
+      ) : (
+        // Closing slides the panel out toward the start: the box narrows while the panel, at full width, moves by its
+        // own width on the same spring, so its inner edge stays on the content's edge and the content closes the gap
+        // as fast as the panel leaves (opening runs it back). A rail only narrows, uncovering its labels from the start.
+        <SidebarPanel
+          data-variant={variant}
+          // Closed, its items are out of sight: keep them out of the tab order and the accessibility tree too.
+          inert={w === 0 || undefined}
+          className={cn(
+            'box-border w-(--sidebar-w) shrink-0 overflow-hidden transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+            !float && 'border-e border-border bg-sidebar p-0',
+          )}
+          // Width follows open/collapsed state and the width props.
+          style={{ '--sidebar-w': w + 'px', '--sidebar-panel-w': (collapsed ? railWidth : width) + 'px' } as CSSProperties}
+        >
+          <div
+            className={cn(
+              'box-border h-full w-(--sidebar-panel-w) transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+              float && 'p-2.5',
+              w === 0 && '-translate-x-full rtl:translate-x-full',
+            )}
+          >
+            {float ? (
+              <div ref={kept.dock} className="box-border h-full overflow-hidden rounded-card border border-border bg-sidebar font-sans">{kept.inline}</div>
+            ) : (
+              <div ref={kept.dock} className="contents">{kept.inline}</div>
+            )}
+          </div>
+        </SidebarPanel>
       )}
-      // Width follows open/collapsed state and the width props.
-      style={{ width: w }}
-    >
-      <div
-        className={cn(
-          'box-border h-full transition-transform duration-spring-smooth ease-spring-smooth',
-          float && 'p-2.5',
-          w === 0 && '-translate-x-full',
-        )}
-        style={{ width: collapsed ? railWidth : width }}
-      >
-        {float ? <div className="box-border h-full overflow-hidden rounded-card border border-border bg-sidebar font-sans">{body}</div> : body}
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -181,7 +202,7 @@ export interface SidebarWorkspaceProps {
   initial?: ReactNode;
 }
 export function SidebarWorkspace({ name, detail, initial }: SidebarWorkspaceProps) {
-  const collapsed = useContext(SBCollapsedCtx);
+  const collapsed = useSidebarCollapsed();
   return (
     <div
       data-slot="sidebar-workspace"
@@ -202,26 +223,28 @@ export function SidebarWorkspace({ name, detail, initial }: SidebarWorkspaceProp
 
 export interface SidebarSearchProps {
   placeholder?: string;
-  onPress?: () => void;
+  /** UI SDK Button's `onClick(event, details)`. */
+  onClick?: ComponentProps<typeof SdkButton>['onClick'];
 }
-export function SidebarSearch({ placeholder = 'Quick search', onPress }: SidebarSearchProps) {
-  const collapsed = useContext(SBCollapsedCtx);
+export function SidebarSearch({ placeholder = 'Quick search', onClick }: SidebarSearchProps) {
+  const collapsed = useSidebarCollapsed();
   if (collapsed)
     return (
-      <AriaButton
-        data-slot="sidebar-search"
+      <SdkButton
+        data-sidebar-search=""
+        title={placeholder}
+        aria-label={placeholder}
         className={cn(hl, 'grid w-full cursor-pointer place-items-center rounded-lg border-0 bg-transparent px-0 py-2 text-tertiary-foreground')}
-        render={(props) => <button {...props} title={placeholder} />}
-        onPress={onPress}
+        onClick={onClick}
       >
         <BIcon d={P['search']} size={14} />
-      </AriaButton>
+      </SdkButton>
     );
   return (
-    <AriaButton
-      data-slot="sidebar-search"
+    <SdkButton
+      data-sidebar-search=""
       className={cn(hl, 'mx-0 mt-0.5 mb-1 flex w-full cursor-pointer items-center gap-[7px] rounded-lg border-0 bg-secondary px-[9px] py-1.5 font-sans')}
-      onPress={onPress}
+      onClick={onClick}
     >
       <span className="grid text-tertiary-foreground">
         <BIcon d={P['search']} size={13} />
@@ -230,7 +253,7 @@ export function SidebarSearch({ placeholder = 'Quick search', onPress }: Sidebar
       <span className="rounded-sm border border-border px-1 py-0 font-mono text-[10px] text-tertiary-foreground">
         /
       </span>
-    </AriaButton>
+    </SdkButton>
   );
 }
 
@@ -239,7 +262,7 @@ export interface SidebarSectionProps {
   children?: ReactNode;
 }
 export function SidebarSection({ title, children }: SidebarSectionProps) {
-  const collapsed = useContext(SBCollapsedCtx);
+  const collapsed = useSidebarCollapsed();
   return (
     <div data-slot="sidebar-section">
       {title ? (
@@ -262,14 +285,18 @@ export interface SidebarItemProps {
   badge?: ReactNode;
   active?: boolean;
   tone?: string;
-  onPress?: () => void;
+  /** UI SDK Button's `onClick(event, details)`. */
+  onClick?: ComponentProps<typeof SdkButton>['onClick'];
 }
-export function SidebarItem({ icon, label, badge, active, tone, onPress }: SidebarItemProps) {
-  const collapsed = useContext(SBCollapsedCtx);
+export function SidebarItem({ icon, label, badge, active, tone, onClick }: SidebarItemProps) {
+  const collapsed = useSidebarCollapsed();
   const ic = typeof icon === 'string' ? <BIcon d={P[icon] || P['box']} size={15} sw={1.8} /> : icon;
   return (
-    <AriaButton
-      data-slot="sidebar-item"
+    <SdkButton
+      data-sidebar-item=""
+      title={label}
+      aria-label={collapsed ? label : undefined}
+      aria-current={active ? 'page' : undefined}
       className={cn(
         hl,
         'mx-0 my-px flex w-full cursor-pointer items-center gap-[9px] rounded-lg border-0 text-left font-sans text-footnote',
@@ -278,8 +305,7 @@ export function SidebarItem({ icon, label, badge, active, tone, onPress }: Sideb
         !tone && (active ? 'text-foreground' : 'text-muted-foreground'),
         tone ? 'font-semibold' : 'font-normal',
       )}
-      render={(props) => <button {...props} title={label} />}
-      onPress={() => onPress?.()}
+      onClick={onClick}
       // A caller-chosen tone colour.
       style={tone ? { color: tone } : undefined}
     >
@@ -292,7 +318,7 @@ export function SidebarItem({ icon, label, badge, active, tone, onPress }: Sideb
           {badge}
         </span>
       )}
-    </AriaButton>
+    </SdkButton>
   );
 }
 
@@ -304,20 +330,19 @@ Sidebar.Search = SidebarSearch;
 Sidebar.Section = SidebarSection;
 Sidebar.Item = SidebarItem;
 
-export function SidebarTrigger({ style, className }: { style?: CSSProperties; className?: string }) {
-  const c = useSidebar();
+/** The hamburger: toggles the sidebar in whichever presentation is mounted. */
+export function SidebarTrigger({ className, 'aria-label': label = 'Toggle sidebar', ...props }: PartProps<'button'>) {
   return (
-    <AriaButton
-      data-slot="sidebar-trigger"
-      className={cn('grid cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-1.5 text-muted-foreground', className)}
-      onPress={c.toggle}
-      aria-label="Toggle sidebar"
-      style={style}
+    <SidebarTriggerPart
+      type="button"
+      aria-label={label}
+      className={cx('grid cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-1.5 text-muted-foreground', className)}
+      {...props}
     >
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
         <path d="M4 6.5h16M4 12h16M4 17.5h16" />
       </svg>
-    </AriaButton>
+    </SidebarTriggerPart>
   );
 }
 
@@ -340,7 +365,7 @@ export interface SidebarNavProps {
 export function SidebarNav({ variant = 'docked' }: SidebarNavProps) {
   const [cur, setCur] = useState('Home');
   const it = (icon: string, label: string, badge?: ReactNode) => (
-    <SidebarItem key={label} icon={icon} label={label} badge={badge} active={cur === label} onPress={() => setCur(label)} />
+    <SidebarItem key={label} icon={icon} label={label} badge={badge} active={cur === label} onClick={() => setCur(label)} />
   );
   return (
     <Sidebar variant={variant}>
@@ -356,3 +381,4 @@ export function SidebarNav({ variant = 'docked' }: SidebarNavProps) {
     </Sidebar>
   );
 }
+

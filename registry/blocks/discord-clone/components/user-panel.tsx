@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Button, composeRenderProps } from 'react-aria-components';
-import { cn } from '@/lib/utils';
+import { PlainButton } from '@/components/ui/plain-button';
+import { cn, cx } from '@/lib/utils';
 import { cva } from 'class-variance-authority';
 
 /* ══ UserPanel — the signed-in user at the foot of the channel sidebar ══
@@ -64,13 +64,10 @@ export function UserPanelStatus({ status = 'online', className, children, ...pro
 }
 
 /** An icon button in the panel (mute, deafen, settings…). */
-export function UserPanelAction({ className, ...props }: ComponentProps<typeof Button>) {
+export function UserPanelAction({ className, ...props }: ComponentProps<typeof PlainButton>) {
   return (
-    <Button
-      data-slot="user-panel-action"
-      className={composeRenderProps(className, (c) =>
-        cn('grid cursor-pointer border-0 bg-transparent p-0 text-tertiary-foreground data-hovered:text-muted-foreground', c),
-      )}
+    <PlainButton
+      className={cx('grid cursor-pointer border-0 bg-transparent p-0 text-tertiary-foreground hover:text-muted-foreground', className)}
       {...props}
     />
   );

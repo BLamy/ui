@@ -41,7 +41,8 @@ describe('PGliteProvider lifecycle', () => {
     expect(screen.getByTestId('status').textContent).toBe('loading');
     await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('ready'), wait);
     expect(seen[0]).toBe('loading');
-    expect(seen.at(-1)).toBe('ready');
+    // The probe records in an effect, which can run a tick after the text is on screen.
+    await waitFor(() => expect(seen.at(-1)).toBe('ready'), wait);
   });
 
   it('opens ONE database under StrictMode (double mount) and closes it on a real unmount', async () => {

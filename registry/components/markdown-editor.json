@@ -16,6 +16,8 @@
     "MarkdownEditorProps",
     "MarkdownEditorHandle",
     "MarkdownEditorInstance",
-    "MarkdownEditorAttachment"
+    "MarkdownEditorAttachment",
+    "MarkdownEditorValueChangeDetails",
+    "MarkdownEditorValueChangeReason"
   ]
 }

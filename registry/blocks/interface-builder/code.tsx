@@ -31,7 +31,7 @@ export function CodePanel({ doc, scene, node }: { doc: Doc; scene: Scene | null;
         </Section>
       ) : null}
       <Section title="File" action={(
-        <PlainButton onPress={() => void copyAll()} className="flex h-6 cursor-pointer items-center gap-1 rounded-md border-0 bg-secondary px-1.5 text-caption2 font-medium outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+        <PlainButton onClick={() => void copyAll()} className="flex h-6 cursor-pointer items-center gap-1 rounded-md border-0 bg-secondary px-1.5 text-caption2 font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
           <Icon name={copied ? 'checkmark' : 'copy'} size={12} sw={2.2} /> {copied ? 'Copied' : 'Copy all files'}
         </PlainButton>
       )}>

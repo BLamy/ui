@@ -1,7 +1,7 @@
 /* Editing a list of actions: what an event, an effect, a command or a delegate does, in order. Each row says it the
    Interface Builder way and shows the line of React it becomes; press it to edit it. Add one from the menu. */
 import { useState } from 'react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSection } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuGroupLabel, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PlainButton } from '@/components/ui/plain-button';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -104,17 +104,18 @@ function blank(kind: ActionKind, c: ActionContext): ActionInit {
 export function AddActionMenu({ c, onAdd, label = 'Add action' }: { c: ActionContext; onAdd: (a: Action) => void; label?: string }) {
   const groups = [...new Set(ACTION_KINDS.map((k) => k.group))];
   return (
-    <DropdownMenu>
-      <PlainButton aria-label={label} className="flex h-7 cursor-pointer items-center gap-1 self-start rounded-md border-0 bg-transparent px-1.5 text-caption font-medium text-primary outline-none hover:bg-primary/10 data-focus-visible:ring-2 data-focus-visible:ring-ring">
+    <DropdownMenu onAction={(k) => onAdd(newAction(blank(k as ActionKind, c)))}>
+      <DropdownMenuTrigger className="flex h-7 cursor-pointer items-center gap-1 self-start rounded-md border-0 bg-transparent px-1.5 text-caption font-medium text-primary outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring">
         <Icon name="plus" size={12} sw={2.6} /> {label}
-      </PlainButton>
-      <DropdownMenuContent aria-label="Actions" placement="bottom start" onAction={(k) => onAdd(newAction(blank(k as ActionKind, c)))}>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="bottom" align="start">
         {groups.map((g) => (
-          <DropdownMenuSection key={g} title={g}>
+          <DropdownMenuGroup key={g}>
+            <DropdownMenuGroupLabel>{g}</DropdownMenuGroupLabel>
             {ACTION_KINDS.filter((k) => k.group === g).map((k) => (
-              <DropdownMenuItem key={k.kind} id={k.kind} description={k.help} icon={<Icon name={k.icon} size={16} sw={2} />}>{k.label}</DropdownMenuItem>
+              <DropdownMenuItem key={k.kind} value={k.kind} description={k.help} icon={<Icon name={k.icon} size={16} sw={2} />}>{k.label}</DropdownMenuItem>
             ))}
-          </DropdownMenuSection>
+          </DropdownMenuGroup>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -141,8 +142,8 @@ export function ActionList({ actions, onChange, c, empty = 'No actions' }: { act
                 <PlainButton
                   aria-expanded={open === a.id}
                   aria-label={`${summary(a, c)}. Edit`}
-                  onPress={() => setOpen(open === a.id ? null : a.id)}
-                  className="flex min-w-0 flex-1 cursor-pointer items-start gap-2 rounded-lg border-0 bg-transparent px-2 py-1.5 text-left outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring"
+                  onClick={() => setOpen(open === a.id ? null : a.id)}
+                  className="flex min-w-0 flex-1 cursor-pointer items-start gap-2 rounded-lg border-0 bg-transparent px-2 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Icon name={info(a.do).icon} size={14} sw={2.1} className="mt-px shrink-0 text-primary" />
                   <span className="flex min-w-0 flex-col">
@@ -153,11 +154,11 @@ export function ActionList({ actions, onChange, c, empty = 'No actions' }: { act
                 </PlainButton>
                 {actions.length > 1 ? (
                   <>
-                    <IconAction icon="chevron-up" label="Move up" onPress={() => move(i, -1)} />
-                    <IconAction icon="chevron-down" label="Move down" onPress={() => move(i, 1)} />
+                    <IconAction icon="chevron-up" label="Move up" onClick={() => move(i, -1)} />
+                    <IconAction icon="chevron-down" label="Move down" onClick={() => move(i, 1)} />
                   </>
                 ) : null}
-                <IconAction icon="trash" label="Remove action" tone="danger" onPress={() => onChange(actions.filter((x) => x.id !== a.id))} />
+                <IconAction icon="trash" label="Remove action" tone="danger" onClick={() => onChange(actions.filter((x) => x.id !== a.id))} />
               </div>
               {open === a.id ? <div className="flex flex-col gap-2 px-2 pt-0.5 pb-2.5"><ActionFields a={a} c={c} onChange={(next) => set(a.id, next)} /></div> : null}
             </li>

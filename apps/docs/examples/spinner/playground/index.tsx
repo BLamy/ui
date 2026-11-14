@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Slider } from '@/components/ui/slider'
 import { Spinner, spinnerAnimations, type SpinnerAnimation, type SpinnerVariant } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
@@ -46,9 +46,10 @@ export default function Playground() {
             aria-label="Animation"
             className="flex-wrap"
             value={animation}
-            onChange={(id) => { setAnimation(id as SpinnerAnimation); setVariant(undefined) }}
-            options={spinnerAnimations.map((a) => ({ id: a.id, label: a.label }))}
-          />
+            onValueChange={(id) => { if (id) { setAnimation(id as SpinnerAnimation); setVariant(undefined) } }}
+          >
+            {spinnerAnimations.map((a) => <SegmentedItem key={a.id} value={a.id}>{a.label}</SegmentedItem>)}
+          </Segmented>
         </div>
 
         {info.variants.length ? (
@@ -56,17 +57,18 @@ export default function Playground() {
             <span className="text-footnote font-semibold text-foreground">Variant</span>
             <Segmented
               aria-label="Variant"
-              value={active ?? ''}
-              onChange={setVariant}
-              options={info.variants.map((v) => ({ id: v, label: v }))}
-            />
+              value={active ?? null}
+              onValueChange={(v) => v && setVariant(v)}
+            >
+              {info.variants.map((v) => <SegmentedItem key={v} value={v}>{v}</SegmentedItem>)}
+            </Segmented>
           </div>
         ) : null}
 
-        <Slider label={<span className="text-foreground">Size · {size}px</span>} value={size} onChange={(v) => setSize(v as number)} minValue={12} maxValue={160} step={2} aria-label="Size" />
-        <Slider label={<span className="text-foreground">Speed · {speed}×</span>} value={speed} onChange={(v) => setSpeed(v as number)} minValue={0.25} maxValue={3} step={0.25} isDisabled={isIos} aria-label="Speed" />
+        <Slider label={<span className="text-foreground">Size · {size}px</span>} value={size} onValueChange={(v) => setSize(v as number)} min={12} max={160} step={2} aria-label="Size" />
+        <Slider label={<span className="text-foreground">Speed · {speed}×</span>} value={speed} onValueChange={(v) => setSpeed(v as number)} min={0.25} max={3} step={0.25} disabled={isIos} aria-label="Speed" />
         <label className="flex items-center gap-3 text-subhead text-foreground">
-          <Switch checked={paused} onChange={setPaused} aria-label="Paused" />
+          <Switch checked={paused} onCheckedChange={setPaused} aria-label="Paused" />
           paused
         </label>
       </div>

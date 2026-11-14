@@ -3,10 +3,10 @@ import { TabBar, type TabBarItem } from '@/components/ui/tab-bar'
 import { chromeStore } from '@/lib/theme'
 
 const items: TabBarItem[] = [
-  { id: 'favorites', title: 'Favorites', icon: 'star' },
-  { id: 'recents', title: 'Recents', icon: 'clock' },
-  { id: 'contacts', title: 'Contacts', icon: 'person' },
-  { id: 'voicemail', title: 'Voicemail', icon: 'wave' },
+  { value: 'favorites', title: 'Favorites', icon: 'star' },
+  { value: 'recents', title: 'Recents', icon: 'clock' },
+  { value: 'contacts', title: 'Contacts', icon: 'person' },
+  { value: 'voicemail', title: 'Voicemail', icon: 'wave' },
 ]
 
 const calls = [
@@ -23,7 +23,7 @@ export default function Phone() {
   const [tab, setTab] = useState('recents')
   const last = useRef(0)
   useEffect(() => () => chromeStore.set(false), [])
-  const title = items.find((i) => i.id === tab)?.title
+  const title = items.find((i) => i.value === tab)?.title
   return (
     <div className="relative mx-auto h-[440px] max-w-sm overflow-hidden rounded-card bg-background shadow-hairline">
       <div
@@ -59,7 +59,7 @@ export default function Phone() {
           </p>
         )}
       </div>
-      <TabBar items={items} selected={tab} onSelect={setTab} />
+      <TabBar items={items} value={tab} onValueChange={setTab} />
     </div>
   )
 }

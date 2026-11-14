@@ -31,20 +31,20 @@ function Controls() {
   return (
     <div style={{ padding: '18px 0' }}>
       <List inset>
-        {/* No onPress: each row is a plain container, the Switch is the
+        {/* No onClick: each row is a plain container, the Switch is the
             control, and pressing the row's label flips it. The Switch is named
             by the row title. */}
         <ListSection footer="Tap anywhere on a row to flip its switch.">
           <ListRow
             leading={<Tile icon="link" color="#0A84FF" />}
             title="Bluetooth"
-            accessory={<Switch checked={bluetooth} onChange={setBluetooth} />}
+            accessory={<Switch checked={bluetooth} onCheckedChange={setBluetooth} />}
           />
           <ListRow
             leading={<Tile icon="wave" color="#FF2D55" />}
             title="Sound Effects"
             divider={false}
-            accessory={<Switch checked={sounds} onChange={setSounds} />}
+            accessory={<Switch checked={sounds} onCheckedChange={setSounds} />}
           />
         </ListSection>
         <ListSection title="Sounds">
@@ -54,26 +54,26 @@ function Controls() {
             accessory={
               <Slider
                 value={volume}
-                onChange={(v) => setVolume(v as number)}
+                onValueChange={(v) => setVolume(v as number)}
                 style={{ width: 170 }}
               />
             }
           />
         </ListSection>
-        {/* onPress and a Button together: the row button sits beneath the
+        {/* onClick and a Button together: the row button sits beneath the
             content, so the two are siblings, never nested. */}
         <ListSection>
           <ListRow
             leading={<Tile icon="doc" color="#34C759" />}
             title="Field Guide"
             subtitle={queued ? `${queued} queued` : 'Offline copy'}
-            onPress={() => {}}
+            onClick={() => {}}
             divider={false}
             accessory={
               <Button
                 size="sm"
                 variant="secondary"
-                onPress={() => setQueued((n) => n + 1)}
+                onClick={() => setQueued((n) => n + 1)}
               >
                 Get
               </Button>

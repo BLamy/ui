@@ -38,6 +38,7 @@
     "palette.ts",
     "pick.ts",
     "player.tsx",
+    "point-pad.ts",
     "previews.tsx",
     "render.tsx",
     "runtime.ts",
@@ -45,13 +46,14 @@
     "spec.tsx",
     "store.tsx",
     "storyboard.tsx",
+    "timeline-bars.ts",
     "timeline.tsx",
     "toolbar.tsx",
     "tree.ts"
   ],
   "dependencies": [
-    "@internationalized/date",
-    "framer-motion",
-    "react-aria-components"
+    "@ui-sdk/core",
+    "@ui-sdk/react",
+    "framer-motion"
   ]
 }

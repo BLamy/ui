@@ -41,7 +41,7 @@ export default function MentionsAndTags() {
           'Click a chip.'
         )}
         {picked && (
-          <Button size="sm" variant="ghost" onPress={() => setPicked(null)}>
+          <Button size="sm" variant="ghost" onClick={() => setPicked(null)}>
             Clear
           </Button>
         )}

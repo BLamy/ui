@@ -34,7 +34,7 @@ function useComposer(): ComposerContextValue
 | `expanded`, `setExpanded(expanded)` | Whether the editor is expanded. |
 | `streaming` | The Composer's `streaming` prop. |
 | `canSend` | Whether there is anything to send. |
-| `send()` | Sends the draft. |
+| `send(event?)` | Sends the draft. Pass the click or key behind it, so the `send` changes' details carry it. |
 | `stop()` | Calls the Composer's `onStop`. |
 | `annotate(id)`, `canAnnotate` | Opens the annotator for an attachment (a plain preview when the annotator is opted out), and whether an annotator is in effect. |
 | `editor` | The editor instance, or `null` until it is ready. |
@@ -47,7 +47,7 @@ function useComposer(): ComposerContextValue
 function SendButton() {
   const { canSend, send, streaming, stop } = useComposer()
   return (
-    <Button isDisabled={!streaming && !canSend} onPress={streaming ? stop : send}>
+    <Button disabled={!streaming && !canSend} onClick={(event) => (streaming ? stop() : send(event.nativeEvent))}>
       {streaming ? 'Stop' : 'Send'}
     </Button>
   )
@@ -61,7 +61,7 @@ function SendButton() {
 
 Behaviors to know:
 
-- **`send()` does nothing** unless `canSend` is true and the Composer is not streaming. When it sends, it passes the **trimmed** Markdown and the attachments to `onSubmit`, then clears the attachments and the editor. It reads the latest draft through a ref, so calling it from a stale closure is safe.
+- **`send()` does nothing** unless `canSend` is true, and while streaming unless a `ComposerQueue` is mounted (then the draft goes into the queue). It first empties the draft through `onValueChange` and `onAttachmentsChange` (reason `send`): if either cancels, or the queue's `onItemsChange` does, nothing is sent and the draft stays. Otherwise it passes the **trimmed** Markdown and the attachments to `onSubmit` and clears the editor. It reads the latest draft through a ref, so calling it from a stale closure is safe.
 - The attachments you receive in `onSubmit` carry object URLs that stay valid until the Composer unmounts.
 - The context value is rebuilt each render and its functions are not memoized, so do not use them in dependency arrays.
 
@@ -81,13 +81,23 @@ function useComposerBump(): ComposerBumpContextValue
 | `side` | `'top'` or `'bottom'`. |
 | `draggable` | Whether the handle drags the content open. |
 | `open`, `setOpen(open)` | Whether it is open. |
-| `reveal` | The revealed body height, px, this frame. |
+| `reveal` | The revealed body height, px: the finger's while dragging, else the height it rests at. |
 | `progress` | 0 at rest (peek), 1 fully open. |
 | `peek`, `maxReveal` | The resting and fully open body heights, px (`maxReveal` is measured from `bounds` when given). |
 | `dragging` | A finger is on the handle. |
+| `settling` | The bump's own CSS transition is carrying the body to rest (after a release, a tap or Escape). |
 | `contentId` | The id of the bump's content element. |
 
-`handleProps`, `toggle` and `windowRef` are marked `@internal`.
+`startDrag`, `toggle` and `windowRef` are marked `@internal`. A handle of your own starts the drag from its `onPointerDown` and toggles on click:
+
+```tsx
+function MyHandle() {
+  const bump = useComposerBump()
+  return <div className="touch-none" onPointerDown={(e) => bump.startDrag?.(e)} onClick={() => bump.toggle()}>…</div>
+}
+```
+
+`startDrag` is `null` unless the bump is draggable; moves and the release are followed by UI SDK's `bindDrag`, so the handle needs nothing else.
 
 ```tsx
 function BumpHint() {
@@ -96,7 +106,7 @@ function BumpHint() {
 }
 ```
 
-The gesture is [`useSheetDrag`](https://blamy.github.io/ui/#/hooks-motion), so `reveal` and `progress` change every frame while dragging or settling. To follow the motion from outside the bump, use its `onProgressChange` prop, which reports `{ progress, reveal, minimize, dragging, settling }`.
+The gesture is UI SDK's `bindDrag` (with `createVelocityTracker` and `rubberBand`), so `reveal` and `progress` change every frame while dragging. On release they jump to the rest value and the body gets there with a CSS transition on the `tray` spring, while `settling` is `true`. Something that follows the bump should transition too while it settles, and only turn its transition off while `dragging`. To follow the motion from outside the bump, use its `onProgressChange` prop, which reports `{ progress, reveal, minimize, dragging, settling }`.
 
 ## `useComposerAnnotator`
 
@@ -149,7 +159,7 @@ function usePencilHistory(initial: PencilStroke[] = []): PencilHistory
 
 interface PencilHistory {
   strokes: PencilStroke[]
-  onStrokesChange: (next: PencilStroke[], source: 'draw' | 'erase') => void   // wire to PencilCanvas
+  onStrokesChange: (next: PencilStroke[], details: ChangeDetails<'draw' | 'erase'>) => void   // wire to PencilCanvas
   undo: () => void
   redo: () => void
   clear: () => void
@@ -164,9 +174,9 @@ function Sketch() {
   return (
     <>
       <PencilCanvas strokes={history.strokes} onStrokesChange={history.onStrokesChange} />
-      <Button isDisabled={!history.canUndo} onPress={history.undo}>Undo</Button>
-      <Button isDisabled={!history.canRedo} onPress={history.redo}>Redo</Button>
-      <Button isDisabled={!history.canUndo} onPress={history.clear}>Clear</Button>
+      <Button disabled={!history.canUndo} onClick={history.undo}>Undo</Button>
+      <Button disabled={!history.canRedo} onClick={history.redo}>Redo</Button>
+      <Button disabled={!history.canUndo} onClick={history.clear}>Clear</Button>
     </>
   )
 }
@@ -175,7 +185,7 @@ function Sketch() {
 Behaviors to know:
 
 - `initial` is read once, on the first render.
-- A **draw** (`source === 'draw'`) clears the redo stack; an **erase** replaces the strokes and leaves the redo stack as it was.
+- A **draw** (`details.reason === 'draw'`) clears the redo stack; an **erase** replaces the strokes and leaves the redo stack as it was.
 - `undo` moves the last stroke to the redo stack. `redo` moves it back. `clear` empties both, so a clear cannot be undone.
 - There is no limit on history length.
 - `undo`, `redo`, `clear` and `onStrokesChange` are rebuilt each render and close over the current state.

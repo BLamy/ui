@@ -7,7 +7,6 @@
     "springs",
     "springCss",
     "fades",
-    "useMotion",
     "useReducedMotion",
     "useSpringTransition",
     "TextMorph",

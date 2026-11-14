@@ -2,7 +2,10 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ObjectTree } from '@/components/ui/object-tree';
-import { nodeFromValue, type ObjectTreeNode } from '@/lib/object-tree-model';
+import { nodeFromValue, objectTreeKey, type ObjectTreeNode } from '@/lib/object-tree-model';
+
+declare global { var __UI_SDK_STRICT__: boolean | undefined }
+globalThis.__UI_SDK_STRICT__ = true;
 
 // The rows are virtualized: give the tree a size to lay them out in.
 beforeEach(() => {
@@ -18,9 +21,12 @@ afterEach(() => {
 const leaf = (name: string, value = 1): ObjectTreeNode => ({ id: name, name, value: { type: 'number', value } });
 const branch = (name: string, extra: Partial<ObjectTreeNode> = {}): ObjectTreeNode => ({ id: name, name, value: { type: 'object', className: 'Thing' }, hasChildren: true, ...extra });
 
-const rowText = () => screen.getAllByRole('row').map((r) => r.textContent ?? '');
-const row = (start: string) => screen.getAllByRole('row').find((r) => r.textContent?.startsWith(start)) as HTMLElement;
-const chevron = (start: string) => row(start).querySelector('[slot="chevron"]') as HTMLElement;
+const rows = () => screen.queryAllByRole('treeitem');
+const rowText = () => rows().map((r) => r.textContent ?? '');
+const row = (start: string) => rows().find((r) => r.textContent?.startsWith(start)) as HTMLElement;
+const label = (start: string) => row(start).querySelector('[data-slot="tree-label"]') as HTMLElement;
+const chevron = (start: string) => row(start).querySelector('[data-slot="tree-indicator"]') as HTMLElement;
+const focused = () => document.activeElement?.textContent ?? '';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -29,10 +35,16 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
+/** What UI SDK's polite live region says once its announcements have settled. */
+const announced = async () => {
+  await act(async () => { await new Promise((r) => setTimeout(r, 450)); });
+  return (document.querySelector('[data-ui-sdk-announcer=""]')?.textContent ?? '').trim();
+};
+
 describe('ObjectTree', () => {
   it('marks its parts, so a host can find them', () => {
     render(<ObjectTree aria-label="T" root={[{ id: 's', name: 'Local', section: true, children: [leaf('a')] }]} />);
-    expect(row('Local').getAttribute('data-slot')).toBe('object-tree-row');
+    expect(row('Local').getAttribute('data-slot')).toBe('tree-item');
     expect(row('Local').getAttribute('data-kind')).toBe('section');
     expect(row('a').getAttribute('data-kind')).toBe('node');
     expect(row('a').querySelector('[data-slot="object-value"]')?.getAttribute('data-type')).toBe('number');
@@ -44,7 +56,7 @@ describe('ObjectTree', () => {
     expect(el.className).toContain('w-40');
     expect(el.style.color).toBe('red');
     expect(el.getAttribute('data-testid')).toBe('tree');
-    expect(screen.getByRole('treegrid', { name: 'Scopes' })).toBeTruthy();
+    expect(screen.getByRole('tree', { name: 'Scopes' })).toBeTruthy();
   });
 
   it('shows a value\'s name and preview, and only openable rows are openable', () => {
@@ -156,11 +168,11 @@ describe('ObjectTree', () => {
     const { rerender } = render(<ObjectTree aria-label="T" root={[branch('a', { defaultExpanded: true })]} loadChildren={loadChildren} />);
     await waitFor(() => expect(row('kid')).toBeTruthy());
     rerender(<ObjectTree aria-label="T" root={[branch('a', { defaultExpanded: true })]} loadChildren={loadChildren} />);
-    expect(row('kid').className).toContain('opacity-60');
+    expect(label('kid').className).toContain('opacity-60');
     expect(screen.queryByText('Loading…')).toBeNull();
     await act(async () => { second.resolve([leaf('kid', 2)]); });
     expect(row('kid').textContent).toBe('kid:2');
-    expect(row('kid').className).not.toContain('opacity-60');
+    expect(label('kid').className).not.toContain('opacity-60');
   });
 
   it('calls a getter on press and shows what comes back', async () => {
@@ -225,7 +237,7 @@ describe('ObjectTree', () => {
     fireEvent.click(chevron('[0 … 9999]'));
     fireEvent.click(chevron('[0 … 99]'));
     expect(row('0:')).toBeTruthy();
-    expect(screen.getAllByRole('row').length).toBeLessThan(60);
+    expect(rows().length).toBeLessThan(60);
   });
 
   it('takes any JSON-like value with no loader', async () => {
@@ -244,14 +256,138 @@ describe('ObjectTree', () => {
 
   it('hears about selection only when asked, and only for values', () => {
     const onSelect = vi.fn();
-    render(<ObjectTree aria-label="T" root={[{ id: 's', name: 'Local', section: true, children: [leaf('x')] }]} onSelect={onSelect} />);
+    render(<ObjectTree aria-label="T" root={[{ id: 's', name: 'Local', section: true, children: [leaf('x'), branch('b', { children: [leaf('kid')] })] }]} onValueChange={onSelect} />);
+    expect(row('x').getAttribute('aria-selected')).toBe('false');
     fireEvent.click(row('x'));
     expect(onSelect).toHaveBeenCalledTimes(1);
-    expect(onSelect.mock.calls[0]![0]).toMatchObject({ id: 'x' });
+    expect(onSelect.mock.calls[0]![0]).toBe(objectTreeKey(['s', 'x']));
+    expect(onSelect.mock.calls[0]![1]).toMatchObject({ reason: 'item-press', node: { id: 'x' } });
     expect(row('x').getAttribute('aria-selected')).toBe('true');
+    // A press on a value that can open selects it and no more: a double press or Return opens it.
+    fireEvent.click(row('b'));
+    expect(onSelect).toHaveBeenCalledTimes(2);
+    expect(row('b').getAttribute('aria-expanded')).toBe('false');
+    fireEvent.doubleClick(label('b'));
+    expect(row('b').getAttribute('aria-expanded')).toBe('true');
+    fireEvent.keyDown(row('b'), { key: 'Enter' });
+    expect(row('b').getAttribute('aria-expanded')).toBe('false');
+    // A section is never selected: a press opens and closes it.
     fireEvent.click(row('Local'));
-    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenCalledTimes(2);
+    expect(row('Local').getAttribute('aria-selected')).toBe('false');
     expect(row('Local').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('has no selection unless asked, and a press opens a row', () => {
+    render(<ObjectTree aria-label="T" root={[branch('b', { children: [leaf('kid')] })]} />);
+    expect(row('b').hasAttribute('aria-selected')).toBe(false);
+    fireEvent.click(row('b'));
+    expect(row('b').getAttribute('aria-expanded')).toBe('true');
+    expect(row('kid')).toBeTruthy();
+    fireEvent.click(row('b'));
+    expect(row('b').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('is one tab stop, and the arrow keys move, open and close', async () => {
+    const loadChildren = vi.fn(async () => [leaf('kid')]);
+    render(<ObjectTree aria-label="T" root={[leaf('a'), branch('b'), leaf('c')]} loadChildren={loadChildren} />);
+    expect(rows().map((r) => r.getAttribute('tabindex'))).toEqual(['0', '-1', '-1']);
+    row('a').focus();
+    fireEvent.keyDown(row('a'), { key: 'ArrowDown' });
+    expect(focused()).toBe('b:Thing');
+    // Right opens a closed row, then steps into it; Left steps back out, then closes it.
+    fireEvent.keyDown(row('b'), { key: 'ArrowRight' });
+    expect(row('b').getAttribute('aria-expanded')).toBe('true');
+    await waitFor(() => expect(row('kid')).toBeTruthy());
+    expect(row('kid').getAttribute('aria-level')).toBe('2');
+    fireEvent.keyDown(row('b'), { key: 'ArrowRight' });
+    expect(focused()).toBe('kid:1');
+    fireEvent.keyDown(row('kid'), { key: 'ArrowLeft' });
+    expect(focused()).toBe('b:Thing');
+    fireEvent.keyDown(row('b'), { key: 'ArrowLeft' });
+    expect(row('b').getAttribute('aria-expanded')).toBe('false');
+    fireEvent.keyDown(row('b'), { key: 'End' });
+    expect(focused()).toBe('c:1');
+    fireEvent.keyDown(row('c'), { key: 'Home' });
+    expect(focused()).toBe('a:1');
+    // Typing finds the next row that starts with it.
+    fireEvent.keyDown(row('a'), { key: 'c' });
+    expect(focused()).toBe('c:1');
+  });
+
+  it('reaches a row that is not in the DOM with the keyboard', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(240);
+    const many = Array.from({ length: 90 }, (_, i) => leaf(`n${i}`, i));
+    const { container } = render(<ObjectTree aria-label="T" root={many} />);
+    expect(row('n89')).toBeUndefined();
+    row('n0').focus();
+    fireEvent.keyDown(row('n0'), { key: 'End' });
+    const scroller = container.querySelector('[data-slot="object-tree-scroller"]') as HTMLElement;
+    expect(scroller.scrollTop).toBe(90 * 24 - 240);
+    await act(async () => { fireEvent.scroll(scroller); });
+    expect(focused()).toBe('n89:89');
+    expect(row('n89').getAttribute('aria-posinset')).toBe('90');
+    expect(row('n89').getAttribute('aria-setsize')).toBe('90');
+    // Scrolled away, the row with focus stays in the DOM, so focus doesn't drop to the page.
+    scroller.scrollTop = 0;
+    await act(async () => { fireEvent.scroll(scroller); });
+    expect(row('n40:')).toBeUndefined();
+    expect(focused()).toBe('n89:89');
+  });
+
+  it('keeps a row\'s own buttons from pressing the row', async () => {
+    const onSelect = vi.fn();
+    const writeText = vi.fn(async () => {});
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    render(<ObjectTree aria-label="T" root={[leaf('s', 5)]} onValueChange={onSelect} />);
+    const copy = screen.getByRole('button', { name: 'Copy the value' });
+    expect(copy.getAttribute('tabindex')).toBe('-1');
+    await act(async () => { fireEvent.click(copy); });
+    expect(writeText).toHaveBeenCalledWith('5');
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeTruthy();
+    expect(await announced()).toBe('Copied');
+    // No live region of its own: UI SDK's shared announcer says it.
+    expect(document.querySelector('[data-slot="object-tree"] [role="status"]')).toBeNull();
+  });
+
+  it('is controlled by value, and onValueChange can refuse a change', () => {
+    const root = [leaf('a'), leaf('b')];
+    const onValueChange = vi.fn((_key: string | null, details: { cancel: () => void; node: ObjectTreeNode | null }) => {
+      if (details.node?.id === 'b') details.cancel();
+    });
+    const { rerender } = render(<ObjectTree aria-label="T" root={root} value="a" onValueChange={onValueChange} />);
+    expect(row('a').getAttribute('aria-selected')).toBe('true');
+    // Controlled: a press asks, and the owner decides.
+    fireEvent.click(row('b'));
+    expect(onValueChange).toHaveBeenLastCalledWith('b', expect.objectContaining({ reason: 'item-press' }));
+    expect(row('a').getAttribute('aria-selected')).toBe('true');
+    rerender(<ObjectTree aria-label="T" root={root} value="b" onValueChange={onValueChange} />);
+    expect(row('b').getAttribute('aria-selected')).toBe('true');
+    rerender(<ObjectTree aria-label="T" root={root} value={null} onValueChange={onValueChange} />);
+    expect(rows().some((r) => r.getAttribute('aria-selected') === 'true')).toBe(false);
+  });
+
+  it('remembers its own selection from defaultValue, and a canceled change keeps it', () => {
+    const root = [leaf('a'), leaf('b'), leaf('c')];
+    render(<ObjectTree aria-label="T" root={root} defaultValue="a" onValueChange={(key, details) => { if (key === 'c') details.cancel(); }} />);
+    expect(row('a').getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(row('b'));
+    expect(row('b').getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(row('c'));
+    expect(row('b').getAttribute('aria-selected')).toBe('true');
+    expect(row('c').getAttribute('aria-selected')).toBe('false');
+  });
+
+  it('does not take the end of a drag that selected text in a row as a press', () => {
+    render(<ObjectTree aria-label="T" root={[branch('b', { children: [leaf('kid')] })]} />);
+    const text = label('b');
+    vi.spyOn(window, 'getSelection').mockReturnValue({ isCollapsed: false, anchorNode: text.firstChild ?? text } as unknown as Selection);
+    fireEvent.click(text);
+    expect(row('b').getAttribute('aria-expanded')).toBe('false');
+    vi.restoreAllMocks();
+    fireEvent.click(label('b'));
+    expect(row('b').getAttribute('aria-expanded')).toBe('true');
   });
 
   it('copies the focused value with the keyboard', async () => {
@@ -281,6 +417,15 @@ describe('ObjectTree', () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('from s'));
   });
 
+  it('shows the whole of a long value in a popover', async () => {
+    const long = 'x'.repeat(60);
+    render(<ObjectTree aria-label="T" root={[{ id: 's', name: 's', value: { type: 'string', value: long } }]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Show the whole value' }));
+    const dialog = await screen.findByRole('dialog', { name: 'The value of s' });
+    expect(dialog.textContent).toContain(long);
+    expect(row('s').hasAttribute('aria-selected')).toBe(false);
+  });
+
   it('makes a duplicate id in another parent its own row', async () => {
     const shared = branch('same');
     const loadChildren = vi.fn(async () => [leaf('inner')]);
@@ -291,9 +436,9 @@ describe('ObjectTree', () => {
         root={[branch('p', { defaultExpanded: true, children: [shared] }), branch('q', { defaultExpanded: true, children: [shared] })]}
       />,
     );
-    const both = screen.getAllByRole('row').filter((r) => r.textContent?.startsWith('same'));
+    const both = rows().filter((r) => r.textContent?.startsWith('same'));
     expect(both).toHaveLength(2);
-    fireEvent.click(both[1]!.querySelector('[slot="chevron"]') as HTMLElement);
+    fireEvent.click(both[1]!.querySelector('[data-slot="tree-indicator"]') as HTMLElement);
     await waitFor(() => expect(row('inner')).toBeTruthy());
     expect(rowText().map((t) => t.split(':')[0])).toEqual(['p', 'same', 'q', 'same', 'inner']);
   });

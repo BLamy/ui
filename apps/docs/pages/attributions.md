@@ -11,7 +11,7 @@ Most of these are MIT, ISC, BSD or Apache-2.0. Two need a closer look before you
 | Library | Used for | License |
 | --- | --- | --- |
 | [React](https://react.dev) and React DOM 19 | Everything | MIT |
-| [React Aria](https://react-spectrum.adobe.com/react-aria/) (`react-aria`, `react-aria-components`, `@internationalized/date`) by Adobe | Accessible behavior for nearly every component: buttons, menus, dialogs, lists, pickers, focus and keyboard handling, dates | Apache-2.0 |
+| [UI SDK](https://ui-sdk.dev) (`@ui-sdk/core`, `@ui-sdk/react`) by Vercel, through our fork [BLamy/ui-sdk](https://github.com/BLamy/ui-sdk) (published as `@brett_lamy/ui-sdk-core` and `@brett_lamy/ui-sdk-react`) | Behavior for every component: buttons, menus, dialogs, popovers, lists, pickers, trees, tabs, toasts, focus and keyboard handling, selection, drag and drop, dates, colors, ARIA; and the behaviors the containers are built from. The fork adds layer hosts, a `when` option on `bindLayer` and two exported kernel types (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)). Copyright 2026 Vercel, Inc.; the fork's changed files say so at the top. | Apache-2.0 |
 | [Tailwind CSS](https://tailwindcss.com) 4 | Styling, through the design tokens | MIT |
 | [shadcn/ui](https://ui.shadcn.com) | The registry format and the `shadcn` CLI that copies components into your project | MIT |
 | [class-variance-authority](https://cva.style) | Variant recipes | Apache-2.0 |
@@ -19,11 +19,13 @@ Most of these are MIT, ISC, BSD or Apache-2.0. Two need a closer look before you
 | [Motion](https://motion.dev) (`framer-motion`) | Springs, layout and gesture animation | MIT |
 | [Codicons](https://github.com/microsoft/vscode-codicons) (`@vscode/codicons`) | Debugger control icons in `DebugToolbar` | MIT |
 
+UI SDK is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). Our fork keeps that license and its copyright notice: `@brett_lamy/ui-sdk-core` and `@brett_lamy/ui-sdk-react` ship UI SDK's `LICENSE`, and every file the fork changes from upstream says so at its top. A registry install copies BL UI's own source, not UI SDK's; UI SDK reaches your app, with its license, as those two npm packages.
+
 ## Trees, files and data
 
 | Library | Used for | License |
 | --- | --- | --- |
-| [Trees](https://trees.software) (`@pierre/trees`) by The Pierre Computer Co. | Every tree: Tree, SchemaTree, and the trees in the Notes, GitHub, Strudel Studio, Interface Builder and T3 blocks | Apache-2.0 |
+| [Trees](https://trees.software) (`@pierre/trees`) by The Pierre Computer Co. | The file tree in the T3 block's workbench | Apache-2.0 |
 | [Diffs](https://www.npmjs.com/package/@pierre/diffs) (`@pierre/diffs`) by The Pierre Computer Co. | The code diff in the T3 block's workbench | Apache-2.0 |
 | [visual-json](https://github.com/vercel-labs/visual-json) (`@visual-json/react`, `@visual-json/yaml`, `@visual-json/core`) by Vercel Labs | JSON and YAML files in the Notes block | Apache-2.0 |
 | [use-fs](https://github.com/TimMikeladze/use-fs) | Folders from your computer and the browser's private file system (OPFS) in the Notes and Reminders blocks | MIT |

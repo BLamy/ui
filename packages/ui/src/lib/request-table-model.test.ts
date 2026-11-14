@@ -36,7 +36,7 @@ describe('what a row says', () => {
     expect(requestDurationText({ duration: 1500 })).toBe('1.5 s');
     expect(requestDurationText({})).toBe('—');
     expect(requestDurationText({ pending: true })).toBe('Pending');
-    expect(requestSizeText({ size: 1536 })).toBe('1.5 KB');
+    expect(requestSizeText({ size: 1536 })).toBe('1.5 kB');
     expect(requestSizeText({})).toBe('—');
   });
   it('picks a tone', () => {

@@ -30,7 +30,7 @@ export default function Alphabet() {
               key={letter}
               title={letter}
               sticky
-              innerRef={(el) => {
+              ref={(el) => {
                 sections.current[letter] = el
               }}
             >
@@ -40,7 +40,7 @@ export default function Alphabet() {
                   title={name}
                   accessory="chevron"
                   divider={i < byLetter[letter].length - 1}
-                  onPress={() => {}}
+                  onClick={() => {}}
                 />
               ))}
             </ListSection>

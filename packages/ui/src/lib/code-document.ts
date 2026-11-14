@@ -56,7 +56,7 @@ export interface AppliedEdit extends CodeEdit {
 }
 
 /** What made an edit, which also decides how undo groups it. */
-export type CodeEditOrigin = 'input' | 'delete' | 'newline' | 'indent' | 'paste' | 'cut' | 'composition' | 'undo' | 'redo' | 'value';
+export type CodeEditOrigin = 'input' | 'delete' | 'newline' | 'indent' | 'paste' | 'cut' | 'composition' | 'undo' | 'redo' | 'value' | 'imperative';
 
 /** The lines an edit touched, for the caches in lib/code-editor-model.ts. */
 export function lineEditOf(edit: AppliedEdit): LineEdit {

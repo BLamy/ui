@@ -44,7 +44,7 @@ The bar is absolutely positioned on the bottom edge of the nearest positioned an
 
 ## Accessibility
 
-The actions are react-aria buttons, reached by Tab in order and pressed with Enter or Space; disabled ones are skipped. They are named by their text. The count is plain text and is not a live region, so announce a change yourself if it matters (for example, through an `aria-live` status element elsewhere on the screen). The labels are hard-coded English; to localize them or add actions, build the row yourself from `Button` and the `bg-bar` surface.
+The bar is a UI SDK Toolbar named "Edit": Tab enters it once, ← / → move between the actions, and Enter or Space presses one. Disabled actions stay focusable (`aria-disabled`) so they can be found. They are named by their text. The count is plain text and is not a live region, so announce a change yourself if it matters (for example, through an `aria-live` status element elsewhere on the screen). The labels are hard-coded English; to localize them or add actions, build the row yourself from `Button` and the `bg-bar` surface.
 
 ## Props
 
@@ -52,10 +52,10 @@ The actions are react-aria buttons, reached by Tab in order and pressed with Ent
 | --- | --- | --- |
 | `count` | — | Number selected; `0` disables Favorite and Delete. |
 | `allFav` | `false` | Show "Unfavorite" instead of "Favorite". |
-| `onFav` | — | `onPress` of the left action. |
-| `onDelete` | — | `onPress` of the right action. |
+| `onFav` | — | `onClick` of the left action. |
+| `onDelete` | — | `onClick` of the right action. |
 | `className` / `style` | — | Merged onto the bar. |
 
 ## Styling
 
-`data-slot="edit-bar"`: `absolute inset-x-0 bottom-0 z-130`, 62px tall, a hairline on top, `bg-bar` with a 20px backdrop blur and saturation boost. Favorite uses `text-primary` and Delete `text-destructive`; the buttons are react-aria buttons, so `data-disabled` is set when `count` is 0.
+`data-slot="toolbar"` (UI SDK's): `absolute inset-x-0 bottom-0 z-130`, 62px tall, a hairline on top, `bg-bar` with a 20px backdrop blur and saturation boost. Favorite uses `text-primary` and Delete `text-destructive`; the actions are `ToolbarButton`s (`data-slot="toolbar-button"`), so `data-disabled` is set when `count` is 0.

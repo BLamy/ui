@@ -1,6 +1,6 @@
 # Canvas
 
-An infinite, pannable, zoomable surface. `Canvas` owns navigation: scroll pans, pinch or ⌘-scroll zooms, holding Space (or the middle button) drags the view, ⌘ + / − / 0 / 1 zoom in, out, fit and 100%, and a dotted or ruled background follows the camera. Everything else is yours. The canvas hands you the pointer with its position already in board coordinates, so selecting, dragging, drawing and connecting can be one state machine that never thinks about the camera. [Freeform](https://blamy.github.io/ui/#/blocks) is built on it.
+An infinite, pannable, zoomable surface, built on UI SDK's `createViewport`. `Canvas` owns navigation: scroll pans, pinch or ⌘-scroll zooms, holding Space (or the middle button) drags the view, + / − / 0 and ⌘ + / − / 0 / 1 zoom in, out, fit and 100%, arrow keys you don't use pan, focus brings a board item into view, find in page pans to its match, and a dotted or ruled background follows the view. Everything else is yours. The canvas hands you the pointer with its position already in board coordinates, so selecting, dragging, drawing and connecting can be one state machine that never thinks about the view. [Freeform](https://blamy.github.io/ui/#/blocks) is built on it.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -27,14 +27,14 @@ import { Canvas, CanvasFrame, useCanvas } from '@brett_lamy/ui'
 
 ## The idea
 
-A camera is `{ x, y, z }`: a screen point is `board * z + (x, y)`. Children of `Canvas` live in the **board layer**, a div translated and scaled by the camera, so you position them in board units (px at 100% zoom). The `overlay` prop draws in screen space on top (an empty state, a minimap).
+The view is UI SDK's `Viewport`, `{ x, y, zoom }`: a board point is on screen at `board * zoom + (x, y)`. Children of `Canvas` live in the **board layer**, one element moved and scaled by the view, so you position them in board units (px at 100% zoom). The `overlay` prop draws in screen space on top (an empty state, a minimap).
 
 ```tsx
-const [camera, setCamera] = useState({ x: 0, y: 0, z: 1 })
+const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 })
 
 <Canvas
-  camera={camera}
-  onCameraChange={setCamera}
+  viewport={viewport}
+  onViewportChange={(next, details) => setViewport(next)}
   onCanvasPointerDown={(e, { board }) => startDrag(board)}
   onCanvasPointerMove={(e, { board }) => drag(board)}
   onCanvasPointerUp={endDrag}
@@ -43,7 +43,30 @@ const [camera, setCamera] = useState({ x: 0, y: 0, z: 1 })
 </Canvas>
 ```
 
-The camera is controlled with `camera` and `onCameraChange`, or left to the canvas with `defaultCamera`. The updater the canvas uses always sees the latest camera, so a pinch's pan and zoom in the same event compose.
+Control the view with `viewport` and `onViewportChange`, or leave it to the canvas with `defaultViewport`. `onViewportChange(viewport, details)` says why it moved in `details.reason`: `wheel`, `drag`, `pinch`, `zoom-key`, `move-key` (an arrow key), `focus-in`, `find-in-page`, `track-press` (a press on the minimap) or `imperative` (a controller); `details.cancel()` keeps the view where it is.
+
+### Moving the view from outside
+
+Zoom buttons, a "Zoom to Fit" menu item or a search that jumps to a result live outside the canvas. Give it a controller and call its methods; they go through `onViewportChange` like a gesture, with the reason `imperative` unless you pass one:
+
+```tsx
+const [canvas] = useState(() => createCanvasController())
+
+<Button onClick={() => canvas.zoomBy(1.25)}>Zoom In</Button>
+<Button onClick={() => canvas.fit(unionRect(cards))}>Zoom to Fit</Button>
+<Canvas controller={canvas} viewport={viewport} onViewportChange={setViewport}>…</Canvas>
+```
+
+| Method | Does |
+| --- | --- |
+| `fit(rect?, { padding = 72, maxZoom = 1 }?, options?)` | Shows a board rect whole and centered (default the `fit` prop); `null` centers the origin at 100%. |
+| `zoomBy(factor, at?, options?)` / `zoomTo(zoom, at?, options?)` | Zooms about a client point (default the canvas's center). |
+| `panBy(dx, dy, options?)` | Pans by screen pixels. |
+| `reveal(rect, { padding = 24 }?, options?)` | Pans the least that brings a board rect into view. |
+| `setViewport(viewport, options?)` / `getViewport()` | Sets or reads the view. |
+| `toCanvas(clientX, clientY)` / `toScreen(point)` / `visible()` | A client point in board units, a board point on screen, the board rect in view. |
+
+`options` is `{ reason, event }`, passed on to `onViewportChange`. Inside the canvas, `useCanvas()` has the same methods.
 
 {% demo src="canvas/cards" %}
 
@@ -51,19 +74,23 @@ The camera is controlled with `camera` and `onCameraChange`, or left to the canv
 
 The canvas handles these itself and does not pass them on:
 
-| Input | Does |
-| --- | --- |
-| Scroll, two-finger drag | Pans. |
-| ⌘/Ctrl-scroll, trackpad pinch | Zooms about the pointer. |
-| Two-finger pinch on touch | Zooms and pans together. |
-| Space held, middle button, or `panning` | Drags the view (the cursor becomes a hand). |
-| ⌘ + / − | Zooms about the center. |
-| ⌘ 0 | Fits the view to the `fit` rectangle you pass (the bounds of your content). |
-| ⌘ 1 | Back to 100%. |
+| Input | Does | `details.reason` |
+| --- | --- | --- |
+| Scroll, two-finger drag | Pans. | `wheel` |
+| ⌘/Ctrl-scroll, trackpad pinch | Zooms about the pointer. | `wheel` |
+| Two-finger pinch on touch | Zooms and pans together. | `pinch` |
+| Space held, middle button, or `panning` | Drags the view (the cursor becomes a hand). | `drag` |
+| + / − (or ⌘ + / ⌘ −) | Zooms about the center, and says the new zoom to screen readers (`message` words it). | `zoom-key` |
+| 0 | Back to 100%. | `zoom-key` |
+| ⌘ 0 | Fits the view to the `fit` rectangle you pass (the bounds of your content). | `zoom-key` |
+| ⌘ 1 | Back to 100%. | `zoom-key` |
+| Arrow keys you leave alone (Shift: four times as far) | Pans. | `move-key` |
+| Focus moving to an element on the board | Brings it into view. | `focus-in` |
+| Find in page (⌘F) matching text on the board | Pans to the match. | `find-in-page` |
 
-Everything else reaches you: `onCanvasPointerDown`, `onCanvasPointerMove` (including hover, with no button down), `onCanvasPointerUp`, `onCanvasDoubleClick` and `onCanvasKeyDown`. Each pointer callback gets the React event and `{ screen, board, camera }`: the pointer in the canvas's own pixels, in board units, and the camera it was computed with. `onNavigationStart` fires when a two-finger pinch begins, so you can drop a gesture of your own that was in progress.
+Keys typed into a field or an editable element on the board stay with it. Everything else reaches you: `onCanvasPointerDown`, `onCanvasPointerMove` (including hover, with no button down), `onCanvasPointerUp`, `onCanvasDoubleClick` and `onCanvasKeyDown`, each with the DOM event. Each pointer callback also gets `{ screen, board, viewport }`: the pointer in the canvas's own pixels, in board units, and the view it was computed with. An arrow key you handle (`preventDefault()`) doesn't pan, so arrows can nudge a selection and pan when nothing is selected. `onNavigationStart` fires when a second finger turns a press into a pinch, so you can drop a gesture of your own that was in progress.
 
-The canvas is a focusable `role="application"` region: give it an `aria-label`, and set `autoFocus` so keys work before the first click. A press that does not start a pan has the pointer captured on the canvas already.
+The canvas is a focusable `role="application"` region (`aria-roledescription="canvas"`): give it an `aria-label`, and set `autoFocus` so keys work before the first click. A press that does not start a pan has the pointer captured on the canvas already. Zoom is clamped to `minZoom`–`maxZoom` (0.02–4 by default: far enough out for a map of a hundred screens).
 
 ## Overlay parts
 
@@ -78,22 +105,22 @@ A selection outline that is 1px at 100% zoom is 0.1px at 10%. These parts divide
 
 ### MiniMap
 
-`CanvasMiniMap` goes in `overlay` instead: the whole board in a corner, every item a mark and the view an outline. Press or drag on it to move the view there (the map holds its scale while you drag, so it doesn't rescale under the pointer). Pass the items' rects in board units; a `className` per item fills its mark (`fill-primary` for the selection). `position` picks the corner (`bottom-right` by default), `width` and `height` its size (184 × 120).
+`CanvasMiniMap` goes in `overlay` instead: the whole board in a corner, every item a mark and the view an outline. Press or drag on it to move the view there (the map holds its scale while you drag, so it doesn't rescale under the pointer), and press Escape during a drag to put the view back. Pass the items' rects in board units; a `className` per item fills its mark (`fill-primary` for the selection). `position` picks the corner (`bottom-right` by default), `width` and `height` its size (184 × 120).
 
 ```tsx
 <Canvas overlay={<CanvasMiniMap items={cards.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h }))} />}>…</Canvas>
 ```
 
-`useCanvas()` returns the zoom, the canvas size and the conversions (`toBoard(e)`, `toScreen(p)`, `local(e)`) to anything rendered inside, and `update(fn)` to move the camera yourself.
+`useCanvas()` returns the view, its zoom, the canvas size, the conversions (`toBoard(e)` and `local(e)` for a pointer event, `toScreen(p)` for a board point in the canvas's own pixels, `toCanvas(clientX, clientY)` for a client point) and the controller's methods (`fit`, `zoomBy`, `panBy` …) to anything rendered inside.
 
 ## The math
 
-The geometry is plain functions on plain data in `@/lib/canvas-math`, so it works with any item model. A **frame** is `{ x, y, w, h, rot }`, with `rot` in degrees about the center.
+The geometry is plain functions on plain data in `@/lib/canvas-math`, so it works with any item model. Panning, zooming and fitting are the canvas's (through the controller); the math is everything else. A **frame** is `{ x, y, w, h, rot }`, with `rot` in degrees about the center.
 
 ```ts
-import { frameHandles, handleCursor, resizeFrame, rotateFrame, snapMove, inFrame, fitCamera, unionRect } from '@/lib/canvas-math'
+import { frameHandles, handleCursor, resizeFrame, rotateFrame, snapMove, inFrame, unionRect } from '@/lib/canvas-math'
 
-const handles = frameHandles(frame, camera.z)                    // eight resize handles and a rotate handle
+const handles = frameHandles(frame, viewport.zoom)                  // eight resize handles and a rotate handle
 const next = resizeFrame(frame, 'se', pointerDown, pointer, shift) // the opposite side stays put, whatever the rotation
 const rot = rotateFrame(frame, pointer, !shift)                    // snaps to 15° steps and right angles
 const { dx, dy, guides } = snapMove(movingBox, others, 6 / z)      // line up edges and centers with neighbours
@@ -102,16 +129,14 @@ inFrame(point, frame, 4 / z)                                       // hit test a
 
 | Function | Does |
 | --- | --- |
-| `toBoard(camera, sx, sy)` / `toScreen(camera, p)` | Convert between screen px and board units. |
-| `zoomAt(camera, factor, sx, sy)` | Zoom keeping the board point under the screen point where it is. |
-| `fitCamera(rect, size, pad?)` | A camera showing `rect` centered, zoomed in no further than 100%. |
+| `toBoard(viewport, sx, sy)` / `toScreen(viewport, p)` | Convert between the canvas's own px and board units, for a view you hold (render-time math). |
 | `cornersOf`, `rectOf`, `unionRect`, `intersects` | Bounds and overlap, with rotation applied. |
 | `inFrame`, `distToSegment`, `distToPolyline` | Hit testing for boxes and thin things such as strokes and lines. |
 | `frameHandles`, `handleCursor` | Handle positions, and which resize cursor fits a handle on a turned frame. |
 | `resizeFrame`, `rotateFrame` | The frame after dragging a handle. |
 | `snapMove` | Alignment snapping for a move, and the guide lines to draw. |
 
-Zoom is clamped to 0.02–4 (`MIN_ZOOM`, `MAX_ZOOM`: far enough out for a map of a hundred screens) and a frame never resizes below 24 (`MIN_SIZE`).
+A frame never resizes below 24 (`MIN_SIZE`).
 
 ## API
 
@@ -119,18 +144,21 @@ Zoom is clamped to 0.02–4 (`MIN_ZOOM`, `MAX_ZOOM`: far enough out for a map of
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `camera` / `defaultCamera` / `onCameraChange` | origin at 100% | Controlled or uncontrolled camera. |
-| `background` | `dots` | `dots`, `grid` or `none`; the pattern follows the camera. |
+| `viewport` / `defaultViewport` / `onViewportChange(viewport, details)` | origin at 100% | Controlled or uncontrolled view; `details` has `reason`, `source`, `event` and `cancel()`. |
+| `controller` | — | From `createCanvasController()`: move the view from outside. |
+| `background` | `dots` | `dots`, `grid` or `none`; the pattern follows the view. |
 | `panning` | `false` | Drag the view with the primary button (a hand tool). |
-| `fit` | — | The rectangle ⌘0 fits to (your content's bounds). |
+| `fit` | — | The rectangle ⌘0 and `fit()` show (your content's bounds). |
+| `minZoom` / `maxZoom` | 0.02 / 4 | How far out and in it zooms. |
+| `message` | "Zoom 150%" | What a screen reader hears after a zoom key: `(zoom) => string`. |
 | `cursor` | `default` | The cursor when not dragging the view. |
 | `autoFocus` | `false` | Focus the canvas on mount. |
 | `overlay` | — | Drawn over the canvas in screen space. |
 | `aria-label` | "Canvas" | The region's name. |
 | `className` / `style` | — | Merged onto the canvas element. |
 
-The canvas carries `data-slot="canvas"`, the board layer `data-slot="canvas-board"`, and the overlay parts `canvas-frame`, `canvas-handle`, `canvas-marquee`, `canvas-guide` and `canvas-minimap` (its view outline `canvas-minimap-view`).
+The canvas carries `data-slot="canvas"` (with `data-panning` while Space is held and `data-grabbing` while the view is dragged), the scrolling pane find in page uses `canvas-pane`, the board layer `data-slot="canvas-board"` (with the zoom as `--canvas-zoom`), and the overlay parts `canvas-frame`, `canvas-handle`, `canvas-marquee`, `canvas-guide` and `canvas-minimap` (its view outline `canvas-minimap-view`).
 
 ## Accessibility and motion
 
-A canvas is a pointer-first surface, so give people another way to do what they can do on it: keyboard commands through `onCanvasKeyDown` (arrow keys to nudge, Delete to remove, as Freeform does), and a real list or inspector for the same content. Panning and zooming are direct manipulation and do not animate, so there is no reduced-motion variant to turn off.
+A canvas is a pointer-first surface, so give people another way to do what they can do on it: keyboard commands through `onCanvasKeyDown` (arrow keys to nudge, Delete to remove, as Freeform does), and a real list or inspector for the same content. The view itself has a keyboard path (+ − 0, ⌘0, arrows), says each zoom aloud, and follows focus, so Tab through focusable items on the board brings each into view. Panning and zooming are direct manipulation and do not animate, so there is no reduced-motion variant to turn off.

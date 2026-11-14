@@ -18,18 +18,18 @@ export function FolderTree({ notes, root, onOpen }: { notes: NotesState; root: F
     const leaves = (parent: string): Node[] => notes.filter !== 'all' && notes.filter !== 'markdown' ? [] : notes.notes.filter((n) => n.folder === parent && (!q || `${title(n)}\n${n.body}`.toLowerCase().includes(q)))
       .map((n) => {
         const marks = [notes.files.unseen.has(n.id) ? 'Changed outside Notes' : '', notes.drafts[n.id] ? 'Unsaved changes' : ''].filter(Boolean);
-        return { id: n.id, name: title(n), note: n, icon: 'doc' as const, ...(marks.length ? { detail: '•', detailTitle: marks.join(', ') } : {}) };
+        return { value: n.id, label: title(n), note: n, icon: 'doc' as const, ...(marks.length ? { detail: '•', detailTitle: marks.join(', ') } : {}) };
       });
     // Models, images and data files open in their viewers; under All Files, everything else is listed beside them, dimmed.
     const rest = (parent: string): Node[] => notes.others
       .filter((o) => notes.listed(o) && o.folder === parent && (!q || o.name.toLowerCase().includes(q)))
-      .map((o) => ({ id: o.id, name: o.name, other: o, ...(o.kind === 'stl' ? { icon: 'cube' as const } : o.kind === 'image' ? { icon: 'photo' as const } : o.kind === 'csv' ? { icon: 'table' as const }
+      .map((o) => ({ value: o.id, label: o.name, other: o, ...(o.kind === 'stl' ? { icon: 'cube' as const } : o.kind === 'image' ? { icon: 'photo' as const } : o.kind === 'csv' ? { icon: 'table' as const }
         : viewable(o.kind) ? {} : { dimmed: true, detailTitle: 'Drag onto a note to embed it' }) }));
-    const sorted = (items: Node[]) => items.sort((a, b) => a.name.localeCompare(b.name));
+    const sorted = (items: Node[]) => items.sort((a, b) => a.label.localeCompare(b.label));
     const build = (parent: string): Node[] => [...notes.folders
       .filter((f) => f.parent === parent && notes.shown(f))
       .sort((a, b) => a.title.localeCompare(b.title))
-      .map((f) => ({ id: f.id, name: f.title, folder: f, children: build(f.id) })), ...sorted([...leaves(parent), ...rest(parent)])];
+      .map((f) => ({ value: f.id, label: f.title, folder: f, children: build(f.id) })), ...sorted([...leaves(parent), ...rest(parent)])];
     return build(root.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `shown` follows the filter and the folders.
   }, [notes.folders, notes.notes, notes.others, notes.filter, notes.query, notes.files.unseen, notes.drafts, root.id]);
@@ -41,27 +41,27 @@ export function FolderTree({ notes, root, onOpen }: { notes: NotesState; root: F
   };
   const renaming = notes.renaming?.in === 'tree' ? notes.renaming.id : null;
 
-  return <Tree aria-label="Folders and files" items={nodes} icons="standard"
+  return <Tree aria-label="Folders and files" items={nodes}
     defaultExpanded={opened}
     // While searching, every folder opens so the matches show.
-    expandedIds={notes.query ? notes.folders.map((f) => f.id) : undefined}
-    selectedIds={[notes.selectedId ?? notes.folderId]}
-    onSelectionChange={([id]) => {
-      const node = find(nodes, id);
-      if (node?.note || (node?.other && viewable(node.other.kind))) onOpen(node.id);
+    autoExpand={notes.query ? notes.folders.map((f) => f.id) : undefined}
+    value={notes.selectedId ?? notes.folderId}
+    onValueChange={(value) => {
+      const node = find(nodes, value);
+      if (node?.note || (node?.other && viewable(node.other.kind))) onOpen(node.value);
     }}
     contextMenu={(node) => {
       const n = node as Node;
-      return !n.other && hasItemMenu(notes, n.id) ? <ItemMenuContent notes={notes} id={n.id} label={n.name} place="tree" /> : null;
+      return !n.other && hasItemMenu(notes, n.value) ? <ItemMenuContent notes={notes} id={n.value} label={n.label} place="tree" /> : null;
     }}
     preview={(node) => {
       const n = node as Node;
       return n.note ? <NotePreview notes={notes} note={n.note} /> : n.folder ? <FolderPreview notes={notes} folder={n.folder} />
         : n.other ? <FilePreview file={n.other} /> : null;
     }}
-    renamingId={renaming}
-    onRename={(node, name) => { void notes.files.run(() => notes.rename(node.id, name)); }}
-    onRenameEnd={() => { if (notes.renaming?.in === 'tree') notes.setRenaming(null); }}
+    editing={renaming}
+    onEditingChange={(editing) => { if (editing === null && notes.renaming?.in === 'tree') notes.setRenaming(null); }}
+    onRename={(node, label) => { void notes.files.run(() => notes.rename(node.value, label)); }}
     // Files drag out as their paths: a note embeds them, another location moves or copies them.
     canDrag={(list) => list.every((n) => !!pathOf(n as Node))}
     onDragStart={(list, data) => {
@@ -78,10 +78,10 @@ export function FolderTree({ notes, root, onOpen }: { notes: NotesState; root: F
     className="mx-2 h-[60vh] min-h-64 pb-4" />;
 }
 
-function find(nodes: readonly Node[], id: string | undefined): Node | undefined {
+function find(nodes: readonly Node[], value: string | null): Node | undefined {
   for (const n of nodes) {
-    if (n.id === id) return n;
-    const inner = n.children && find(n.children, id);
+    if (n.value === value) return n;
+    const inner = n.children && find(n.children, value);
     if (inner) return inner;
   }
   return undefined;

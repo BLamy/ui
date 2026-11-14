@@ -1,53 +1,63 @@
 'use client';
-import type { CSSProperties, ReactNode } from 'react';
-import { Radio, RadioGroup, SelectionIndicator, SelectionIndicatorContext } from 'react-aria-components';
-import { cn } from '@/lib/utils';
+import type { ComponentProps } from 'react';
+import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from '@ui-sdk/react/segmented-control';
+import { cx } from '@/lib/utils';
 
-/** The sliding selected card (react-aria's SelectionIndicator), shared by Segmented, Tabs and ToggleGroup. It sits
-    behind the labels (the group is `isolate`), and width/height transition too, so it resizes between unequal items. */
+/** The sliding selected card, shared by Segmented, Tabs and ToggleGroup: its look and its move. It sits behind
+    the labels (the group is `relative isolate`); each component adds the box its indicator part measures
+    (`top-(--…-top) left-(--…-left) h-(--…-height) w-(--…-width)`) and a radius. The size transitions with the
+    position, so the card resizes between unequal items. */
 export const segmentIndicator =
-  'absolute top-0 left-0 -z-1 size-full rounded-[inherit] bg-segment shadow-[0_1px_4px_black] shadow-black/14 transition-[translate,width,height] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none';
+  'absolute -z-1 bg-segment shadow-[0_1px_4px_black] shadow-black/14 transition-[top,left,width,height] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none';
 
-export interface SegmentedOption {
-  id: string;
-  label: ReactNode;
-}
+/* ══ Segmented — the iOS segmented control, on UI SDK's SegmentedControl ══
+   A radio group drawn as a row of buttons: one value, one tab stop, arrows move and select. `value` /
+   `defaultValue` / `onValueChange(value, details)`; name it with `aria-label` or a Label.
 
-export interface SegmentedProps {
-  options: SegmentedOption[];
-  value: string;
-  onChange: (id: string) => void;
-  'aria-label'?: string;
-  className?: string;
-  style?: CSSProperties;
-}
+   <Segmented aria-label="View" value={view} onValueChange={setView}>
+     <SegmentedItem value="list">List</SegmentedItem>
+     <SegmentedItem value="grid">Grid</SegmentedItem>
+   </Segmented>
 
-/** iOS segmented control on react-aria's RadioGroup: arrows move and select. The selected
-    card is one element that slides (and resizes) to the new segment on the smooth spring. */
-export function Segmented({ options, value, onChange, className, style, ...rest }: SegmentedProps) {
+   The selected card is one element (UI SDK's indicator part, rendered by the root) that slides and resizes to
+   the checked segment on the smooth spring. */
+export type SegmentedProps<T extends string = string> = ComponentProps<typeof SegmentedControl<T>>;
+
+export function Segmented<T extends string = string>({ className, children, ...props }: SegmentedProps<T>) {
+  const indicator = (
+    <SegmentedControlIndicator
+      className={cx(
+        segmentIndicator,
+        'top-(--segmented-control-indicator-top) left-(--segmented-control-indicator-left) h-(--segmented-control-indicator-height) w-(--segmented-control-indicator-width) rounded-[7px]',
+      )}
+    />
+  );
   return (
-    <RadioGroup
-      data-slot="segmented"
-      aria-label={rest['aria-label'] || 'Segmented control'}
-      orientation="horizontal"
-      value={value}
-      onChange={(id) => { if (id !== value) onChange(id); }}
-      className={cn('isolate flex gap-0.5 rounded-[9px] bg-secondary p-0.5', className)}
-      style={style}
+    <SegmentedControl<T>
+      className={cx(
+        'relative isolate flex gap-0.5 rounded-[9px] bg-secondary p-0.5 data-[orientation=vertical]:flex-col data-disabled:opacity-40',
+        className,
+      )}
+      {...props}
     >
-      {options.map((o) => (
-        <Radio
-          key={o.id}
-          value={o.id}
-          className="bl-btn relative flex flex-1 cursor-pointer items-center justify-center rounded-[7px] px-3 py-[5px] text-footnote font-semibold whitespace-nowrap text-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring"
-        >
-          {/* react-aria's Radio doesn't feed SelectionIndicator (only RadioField does), so say which one is selected. */}
-          <SelectionIndicatorContext.Provider value={{ isSelected: o.id === value }}>
-            <SelectionIndicator data-slot="segmented-indicator" className={segmentIndicator} />
-          </SelectionIndicatorContext.Provider>
-          {o.label}
-        </Radio>
-      ))}
-    </RadioGroup>
+      {typeof children === 'function' ? (state) => <>{indicator}{children(state)}</> : <>{indicator}{children}</>}
+    </SegmentedControl>
   );
 }
+
+export type SegmentedItemProps = ComponentProps<typeof SegmentedControlItem>;
+
+/** One segment: a button with the `radio` role (and the hidden native radio a form submits). */
+export function SegmentedItem({ className, ...props }: SegmentedItemProps) {
+  return (
+    <SegmentedControlItem
+      className={cx(
+        'bl-btn relative flex flex-1 cursor-pointer items-center justify-center rounded-[7px] border-0 bg-transparent px-3 py-[5px] [font-family:inherit] text-footnote leading-[inherit] font-semibold whitespace-nowrap text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring data-disabled:cursor-default not-in-data-disabled:data-disabled:opacity-40',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export { createSegmentedControlController } from '@ui-sdk/react/segmented-control';

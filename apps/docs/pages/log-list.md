@@ -27,7 +27,7 @@ import { LogList } from '@brett_lamy/ui'
 
 ## Usage
 
-Give it rows and a sized parent. A row needs an `id` and a `message`. `currentTime`, in ms, draws the marker, and `onRowPress` is where a press goes.
+Give it rows and a sized parent. A row needs an `id` and a `message`. `currentTime`, in ms, draws the marker, and `onAction` is where a press goes, with the row in `details.row`.
 
 ```tsx
 const rows: LogRow[] = [
@@ -35,7 +35,7 @@ const rows: LogRow[] = [
   { id: 2, level: 'warn', time: 2310, source: 'api.ts:58', message: 'Slow response from /api/cart', count: 3 },
 ]
 
-<LogList aria-label="Console" rows={rows} currentTime={time} onRowPress={(row) => seek(row.time)} className="h-96" />
+<LogList aria-label="Console" rows={rows} currentTime={time} onAction={(id, { row }) => seek(row.time)} className="h-96" />
 ```
 
 {% demo src="log-list/playhead" %}
@@ -44,16 +44,16 @@ const rows: LogRow[] = [
 
 `currentTime` puts the marker before the first row logged later. `currentId` puts it right after that row and tints the row, as a debugger's current line is. Give both when the list can be filtered: if the row with `currentId` is filtered out, `currentTime` decides. Rows don't have to be in time order, and a row with no time belongs with the row before it. `markerLabel` adds a small label, like "Paused here".
 
-**It stays in view as it moves.** It rides near the edge of the view, so rows go by it, and a jump far away centers it. If the user scrolls it out of view the list stops following and a button offers the way back, pointing the right way. Pressing that, or scrolling back to the marker, picks up following again. `follow={false}` turns following off, and `onFollowChange` says when it changes.
+**It stays in view as it moves.** It rides near the edge of the view, so rows go by it, and a jump far away centers it. If the user scrolls it out of view the list stops following and a button offers the way back, pointing the right way. Pressing that, or scrolling back to the marker, picks up following again. `follow={false}` turns following off, and `onFollowingChange(following, details)` says when it changes, with `details.reason`: `scroll`, `trigger-press` or `imperative`.
 
-**Moving it renders nothing.** The prop stops at the list's shell, and the marker is moved by writing a transform and a few attributes. So `currentTime` can change on every frame, as long as `rows`, `renderRow` and `formatTime` stay the same. If you'd rather not render your own component on every tick either, the handle moves it with no React at all:
+**Moving it renders nothing.** The prop stops at the list's shell, and the marker is moved by writing a transform and a few attributes. So `currentTime` can change on every frame, as long as `rows`, `renderRow` and `formatTime` stay the same. If you'd rather not render your own component on every tick either, the controller moves it with no React at all:
 
 ```tsx
-const list = useRef<LogListHandle>(null)
+const [list] = useState(createLogListController)
 
-useEffect(() => clock.subscribe(() => list.current?.setCurrentTime(clock.getState().time * 1000)), [clock])
+useEffect(() => clock.subscribe(() => list.setCurrentTime(clock.getState().time * 1000)), [clock, list])
 
-<LogList ref={list} rows={rows} />
+<LogList controller={list} rows={rows} />
 ```
 
 **Following the newest row.** With no marker, `followTail` stays on the last row as rows arrive, and stops when the user scrolls up, for a console that grows as it's logged to. `footer` goes after the last row, for something like "12 more later in the recording".
@@ -62,7 +62,7 @@ useEffect(() => clock.subscribe(() => list.current?.setCurrentTime(clock.getStat
 
 `level` is `log`, `info`, `warn`, `error` or `debug`, each with an icon, and warnings and errors tint the row. Other console names are mapped: `warning` is `warn`, `assert` is `error`, and `trace` is `debug`. `count` shows a badge when a message repeated. `message` can be any node, so a host can put rich values in it, but keep their state outside: a row unmounts when it scrolls away. A press on a control inside a row doesn't press the row.
 
-Rows are as tall as they need to be. They're measured as they mount, and what's on screen holds still while the rows above it are learned. `overflow="wrap"`, the default, wraps long messages. `overflow="expand"` cuts them to one line until the row is opened, by a press or from the chevron that marks what's cut off. `detail` is more to show in an open row, like a stack trace, and always gets a chevron; `expandOnPress` makes a press open it too. Open rows are held by id, so they're still open when you scroll back.
+Rows are as tall as they need to be. They're measured as they mount, and what's on screen holds still while the rows above it are learned. `overflow="wrap"`, the default, wraps long messages. `overflow="expand"` cuts them to one line until the row is opened, by a press or from the chevron that marks what's cut off. `detail` is more to show in an open row, like a stack trace, and always gets a chevron; `expandOnPress` makes a press open it too. Open rows are held by id (`expanded`, `defaultExpanded` and `onExpandedChange(expanded, details)`, an array of ids), so they're still open when you scroll back.
 
 {% demo src="log-list/open-rows" %}
 
@@ -72,7 +72,7 @@ Rows are as tall as they need to be. They're measured as they mount, and what's 
 const renderRow = useCallback((row: LogRow, state: LogRowState) => (
   <>
     <LogRowContent row={row} expanded={state.expanded} cut={state.cut} disclosure={state.disclosure} formatTime={state.formatTime} />
-    <Button variant="quiet" size="sm" onPress={() => inspect(row)}>Inspect</Button>
+    <Button variant="quiet" size="sm" onClick={() => inspect(row)}>Inspect</Button>
   </>
 ), [])
 ```
@@ -105,13 +105,13 @@ The limit is the browser's: the list's full height has to fit in an element, whi
 | `→` `←` | Open and close it. On a row that's open, or has nothing to open, `→` goes into its own controls. |
 | `⌘C` `Ctrl+C` | Copy the active row, unless text is selected. |
 | `Tab` | Go through the active row's own controls, then out of the list. |
-| `Esc` | From a control in a row, back to the list. |
+| `Esc` | From a control in a row, back to its row. |
 
 ## Accessibility
 
-It's an ARIA treegrid with one tab stop, and the active row is `aria-activedescendant`, as in [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet), so focus can't be lost when a row scrolls out and unmounts. `aria-rowcount` gives the full length and each row has `aria-rowindex`. The current row has `aria-current`, and a row with more to show has `aria-expanded`. The marker's line is drawn for sighted users and hidden from assistive technology.
+It's an ARIA treegrid with one tab stop, built on [UI SDK](https://ui-sdk.dev)'s virtualizer, grid focus and stick-to-bottom: focus is on the active row itself, which stays rendered while it has focus, so it can't be lost when the rows around it scroll out and unmount, and a key that moves to a row that isn't rendered yet scrolls it in first. `aria-rowcount` gives the full length and each row has `aria-rowindex`. The current row has `aria-current`, and a row with more to show has `aria-expanded`. The marker's line is drawn for sighted users and hidden from assistive technology.
 
-A row isn't a react-aria element, for scale: giving each its own hooks is what adds up at this size. A press on a row is the grid's own click, so touch, mouse and a screen reader's click all reach it, and dragging across text to select it isn't a press. The Copy and way-back buttons are real react-aria buttons. Copy is a single button that moves to the row under the pointer, or the active row, which is how touch and keys get to it.
+A press on a row is the row's own click, so touch, mouse and a screen reader's click all reach it, and dragging across text to select it isn't a press. The Copy and way-back buttons are UI SDK buttons. Copy is a single button that moves to the row under the pointer, or the active row, which is how touch and keys get to it.
 
 ## Props
 
@@ -125,12 +125,13 @@ A row isn't a react-aria element, for scale: giving each its own hooks is what a
 | `follow` | `true` | Keep the marker in view as it moves. |
 | `followTail` | `false` | With no marker, stay on the newest row. |
 | `jumpLabel` | "Back to current" or "Back to latest" | The way-back button's text. |
-| `onFollowChange` | none | Whether the view is following. |
+| `onFollowingChange` | none | Whether the view is following, with `details.reason`. |
 | `overflow` | `wrap` | `wrap` long messages, or cut them to a line until opened (`expand`). |
 | `expandOnPress` | on with `expand` | A press also opens or closes the row. |
-| `expandedIds` / `defaultExpandedIds` / `onExpandedChange` | none open | The open rows. |
-| `selectedId` / `defaultSelectedId` / `onSelectionChange` | none | The selected row. A new one that's out of view is scrolled to. |
-| `onRowPress` | none | A press, or Enter or Space on the active row. |
+| `expanded` / `defaultExpanded` / `onExpandedChange` | none open | The open rows' ids. `details.reason` is `trigger-press` (the chevron), `item-press`, `list-navigation` (← →) or `imperative`. |
+| `value` / `defaultValue` / `onValueChange` | none | The selected row's id, or `null`. A new one that's out of view is scrolled to. `details.reason` is `item-press` or `imperative`. |
+| `onAction` | none | `(id, details)`: a press, or Enter or Space on the active row, with `details.row` and `details.index`. |
+| `controller` | none | `createLogListController()`, to drive it from outside. |
 | `copyable` | `true` | The Copy button, and ⌘C. |
 | `getRowText` / `onRowCopy` | `logRowText` / none | What's copied, and hearing about it, with the text, for a host with a clipboard of its own. |
 | `renderRow` | `LogRowContent` | A row's content. Must be stable. |
@@ -152,14 +153,17 @@ A row isn't a react-aria element, for scale: giving each its own hooks is what a
 | `text` | The row as plain text, for copying a rich `message`. |
 | `detail` | More to show when open. |
 
-### The handle
+### The controller
+
+`createLogListController()` makes one; pass it as `controller`.
 
 | Method | Effect |
 | --- | --- |
-| `focus()` | Focuses the list. |
-| `scrollToId(id, align?)` | Scrolls to a row: `center` by default, or `start`, `end`, `nearest`. |
+| `focus()` | Focuses the active row, or the row focus would start on. |
+| `scrollToId(id, { align? })` | Scrolls to a row: `center` by default, or `start`, `end`, `auto` (only if it's out of view). |
 | `followPosition()` | The way back, from your own button. |
 | `setCurrentTime(time)` | Moves the marker with no React. The props take over when they next change. |
+| `setValue(id)` / `setExpanded(ids)` | Selects a row, or opens exactly these rows. |
 
 ### Helpers
 
@@ -167,7 +171,7 @@ A row isn't a react-aria element, for scale: giving each its own hooks is what a
 
 ## Styling
 
-The root is `data-slot="log-list"`, inside it `log-list-grid`, `log-list-rows`, `log-list-marker`, `log-list-marker-label`, `log-list-jump`, `log-list-empty` and `log-list-footer`. A row is `log-list-row`, with `data-level`, and has `log-list-toggle`, `log-list-icon`, `log-list-message`, `log-list-count`, `log-list-meta`, `log-list-source`, `log-list-time`, `log-list-detail` and `log-list-actions`. It takes its colors from the theme, on the surface [ResultTable](https://blamy.github.io/ui/#/result-table) and Spreadsheet use.
+The root is `data-slot="log-list"`, inside it `log-list-grid`, `log-list-rows`, `log-list-marker`, `log-list-marker-label`, `log-list-jump`, `log-list-empty` and `log-list-footer`. A row is `log-list-row`, with `data-level` and, while they hold, `data-selected`, `data-active`, `data-expanded`, `data-future` and `data-current`, and has `log-list-toggle`, `log-list-icon`, `log-list-message`, `log-list-count`, `log-list-meta`, `log-list-source`, `log-list-time`, `log-list-detail` and `log-list-actions`. It takes its colors from the theme, on the surface [ResultTable](https://blamy.github.io/ui/#/result-table) and Spreadsheet use.
 
 ## cva recipes
 
@@ -178,7 +182,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/log-list`. Base classes:
 
 ```text
-@container relative flex h-full max-h-dvh w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground after:pointer-events-none after:absolute after:inset-0 after:z-3 after:rounded-[inherit] after:shadow-hairline after:content-['']
+@container relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground after:pointer-events-none after:absolute after:inset-0 after:z-3 after:rounded-[inherit] after:shadow-hairline after:content-['']
 ```
 
 **`density`** — default `compact`

@@ -1,6 +1,6 @@
 # SqlConsole
 
-A SQL workbench for a PGlite database: a highlighted editor, a schema tree, a result table per statement, errors that point at the offending token, history, and SQL / data-directory export and import. It composes four parts you can also use alone — `SqlEditor`, `ResultTable` (react-aria's Table), `SchemaTree` (react-aria's Tree) and the `useSchema` hook. It reads its database from a [PGliteProvider](https://blamy.github.io/ui/#/pglite), so read that page first for installing the engine, the WebAssembly download and where data is stored.
+A SQL workbench for a PGlite database: a highlighted editor, a schema tree, a result table per statement, errors that point at the offending token, history, and SQL / data-directory export and import. It composes four parts you can also use alone — `SqlEditor`, `ResultTable` (a grid primitive on UI SDK behaviors), `SchemaTree` (UI SDK's Tree) and the `useSchema` hook. It reads its database from a [PGliteProvider](https://blamy.github.io/ui/#/pglite), so read that page first for installing the engine, the WebAssembly download and where data is stored.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -32,7 +32,7 @@ import {
 
 ## Usage
 
-Put the console under a provider. Clicking a table in the Schema tab (or pressing Enter on it) pastes `select * from … limit 100;` at the cursor. ⌘/Ctrl + Enter runs the selection, or everything when nothing is selected; ⌥↑ / ⌥↓ step through history and Escape brings your draft back.
+Put the console under a provider. Clicking a table in the Schema tab (or pressing Enter on it) pastes `select * from … limit 100;` at the cursor. ⌘ + Enter (Ctrl + Enter off Apple platforms) runs the selection, or everything when nothing is selected; ↑ on the editor's first line and ↓ on its last step through history, like a terminal, and ↓ past the newest brings your draft back (UI SDK's `createInputHistory`).
 
 {% demo src="sql-console/console" %}
 
@@ -66,24 +66,24 @@ Rows render in pages (`maxRows`, then "Show more"): there is no virtualization, 
 
 ## SchemaTree
 
-Schemas → tables and views → columns, on react-aria's Tree: arrow keys move, → expands and ← collapses, Enter or a click on a table calls `onSelectTable`. A column shows its type, a key for the primary key, `→ table.column` for a foreign key, and a heavier name when it is `NOT NULL`. Tables show their row count (`rowCounts: 'exact'` by default; use `'estimate'` or `'none'` for large databases). A schema that appears later (`create schema`) opens by itself.
+Schemas → tables and views → columns, on UI SDK's Tree: arrow keys move, → expands and ← collapses, Enter or a click on a table or a column calls `onAction(id, details)`, with `details.table`, `details.column` (for a column) and `details.event`. A column shows its type, a key for the primary key, `→ table.column` for a foreign key, and a heavier name when it is `NOT NULL`. Tables show their row count (`rowCounts: 'exact'` by default; use `'estimate'` or `'none'` for large databases). A schema that appears later (`create schema`) opens by itself, and one you closed stays closed. While `loading` with no schema yet, the root is `aria-busy` and shows a named placeholder group.
 
 {% demo src="sql-console/schema-tree" %}
 
 ```tsx
 const { schema, isLoading } = useSchema()
-<SchemaTree schema={schema} isLoading={isLoading} onSelectTable={(t) => editor.current?.insert(`select * from ${t.name};`)} />
+<SchemaTree schema={schema} loading={isLoading} onAction={(_id, { table, column }) => { if (!column) editor.current?.insert(`select * from ${table.name};`) }} />
 ```
 
 ## SqlEditor
 
-A `<textarea>` (react-aria's `TextArea`) over a highlighted copy of its own text, so selection, IME, undo and mobile keyboards are the browser's and no editor library ships. Highlighting is `lib/sql-lex`, a small PostgreSQL lexer: keywords, types, functions, `'strings'`, `$$ bodies $$`, numbers and nested comments, computed synchronously. The page's shared highlighter (`CodeEditor`, gpu-lexer) was tried first: its no-WebGPU fallback is C-family shaped, so `--` comments and `select` / `where` are not recognised — and headless browsers have no hardware GPU — hence the dedicated lexer, which feeds the same `bl-tok-*` colors.
+A `<textarea>` (UI SDK's `Textarea`) over a highlighted copy of its own text, so selection, IME, undo and mobile keyboards are the browser's and no editor library ships. Highlighting is `lib/sql-lex`, a small PostgreSQL lexer: keywords, types, functions, `'strings'`, `$$ bodies $$`, numbers and nested comments, computed synchronously. The page's shared highlighter (`CodeEditor`, gpu-lexer) was tried first: its no-WebGPU fallback is C-family shaped, so `--` comments and `select` / `where` are not recognised — and headless browsers have no hardware GPU — hence the dedicated lexer, which feeds the same `bl-tok-*` colors.
 
 Tab keeps its job of moving focus, so there is no indenting; that is deliberate (a keyboard trap fails accessibility). `ref` exposes `focus()` and `insert(text)`. `useSqlHistory(key?)` keeps the statements you ran, in localStorage when you pass a key (read after mount, so it is SSR-safe).
 
 ## Accessibility
 
-The result table is a grid (`role="grid"`, one tab stop, arrow keys inside); the schema tree is a tree with the same keyboard model; the editor is a labelled textarea whose highlighted copy is `aria-hidden`. Errors use `role="alert"`, status lines `role="status"`. The tests run axe on the loaded console in light and dark. Small secondary text uses `text-foreground/65` rather than `text-muted-foreground`, and the Run button is ink on paper, because the iOS palette's muted gray and white-on-blue are below WCAG AA contrast at these sizes.
+The result table is a grid (`role="grid"`, one tab stop, arrow keys inside); the schema tree is a tree with the same keyboard model; the editor is a labelled textarea whose highlighted copy is `aria-hidden`. Errors use `role="alert"`; status lines (starting, export/import notices, result counts) stay visible and are read out once through UI SDK's `announce()`. The tests run axe on the loaded console in light and dark. Small secondary text uses `text-foreground/65` rather than `text-muted-foreground`, and the Run button is ink on paper, because the iOS palette's muted gray and white-on-blue are below WCAG AA contrast at these sizes.
 
 ## Props
 
@@ -92,8 +92,8 @@ The result table is a grid (`role="grid"`, one tab stop, arrow keys inside); the
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `defaultValue` | `''` | The editor's initial text. |
-| `historyKey` | — | Keep history in localStorage under this key. |
-| `layout` | `split` | `split` puts the schema beside the editor from `md` up; `stacked` is one column. |
+| `historyKey` | — | Keep history in localStorage under this key (it follows runs in other tabs too). |
+| `layout` | `split` | `split` puts the schema beside the editor when the console's own box is medium or regular (its size class, written as `data-size-class`; the viewport doesn't matter, so a narrow column on a wide screen is one column); `stacked` is one column. |
 | `sidebar` | `true` | Show the Schema / History column. |
 | `transfer` | `true` | Show Export SQL, Export data dir and Import…. |
 | `autoRun` | `false` | Run `defaultValue` once the database is ready. |
@@ -107,10 +107,11 @@ The result table is a grid (`role="grid"`, one tab stop, arrow keys inside); the
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `value` / `defaultValue` / `onChange` | — | Controlled or uncontrolled text. |
-| `onRun` | — | ⌘/Ctrl + Enter or the Run button; receives the selection or the whole text. |
-| `isRunning` | `false` | Disables Run and shows "Running…". |
-| `history` | — | Earlier statements, newest first (⌥↑ / ⌥↓). |
+| `value` / `defaultValue` / `onValueChange` | — | Controlled or uncontrolled text; `onValueChange(value, details)`. |
+| `onRun` | — | ⌘ + Enter (Ctrl + Enter off Apple platforms) or the Run button; receives the selection or the whole text. |
+| `running` | `false` | Disables Run and shows "Running…". |
+| `disabled` / `readOnly` | `false` | The textarea's own states (`data-disabled` on the editor root). |
+| `history` | — | Earlier statements, newest first (↑ on the first line, ↓ on the last). |
 | `error` | — | `{ position }` — underlines that character position. |
 | `highlight` | `true` | SQL highlighting (skipped past 200,000 characters). |
 | `size` | `default` | `sm` 4 rows, `default` 8, `lg` 14. |
@@ -134,14 +135,14 @@ The result table is a grid (`role="grid"`, one tab stop, arrow keys inside); the
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `schema` | — | From `useSchema()` / `loadSchema()`; `null` while loading. |
-| `isLoading` | — | Skeleton rows until the first schema arrives. |
-| `onSelectTable` / `onSelectColumn` | — | Enter or click on a table or column. |
+| `loading` | — | Skeleton rows until the first schema arrives. |
+| `onAction` | — | `(id, { table, column?, event? }) => void`: Enter or click on a table or column. |
 | `defaultExpandAll` | `false` | Open tables as well as schemas at first. |
 | `variant` | `default` | `card` puts it on its own card. |
 
 ## Styling
 
-Slots: `sql-console`, `sql-console-header`, `sql-console-sidebar`, `sql-console-results`, `sql-console-error`, `sql-console-notice`, `sql-editor`, `sql-editor-input`, `sql-editor-highlight`, `sql-editor-footer`, `result-table`, `result-table-toolbar`, `result-table-summary` and `schema-tree`. Variants are `sqlConsoleVariants`, `sqlEditorVariants`, `resultTableVariants` and `schemaTreeVariants`.
+Slots: `sql-console`, `sql-console-header`, `sql-console-sidebar`, `sql-console-results`, `sql-console-error`, `sql-console-notice`, `sql-editor`, `textarea` (the editor's input), `sql-editor-highlight`, `sql-editor-footer`, `result-table`, `result-table-toolbar`, `result-table-summary` and `schema-tree`. Variants are `sqlConsoleVariants`, `sqlEditorVariants`, `resultTableVariants` and `schemaTreeVariants`.
 
 ## cva recipes
 
@@ -189,7 +190,7 @@ flex min-h-0 min-w-0 flex-col gap-3 text-foreground
 
 | Value | Adds |
 | --- | --- |
-| `split` (default) | `md:grid md:grid-cols-[minmax(11rem,16rem)_minmax(0,1fr)] md:items-start` |
+| `split` (default) | `data-[size-class=medium]:grid data-[size-class=medium]:grid-cols-[minmax(11rem,16rem)_minmax(0,1fr)] data-[size-class=medium]:items-start data-[size-class=regu…` |
 | `stacked` | — |
 
 ### `sqlEditorVariants`

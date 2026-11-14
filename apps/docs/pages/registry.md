@@ -12,7 +12,7 @@ An item's dependencies are computed from its real imports (TypeScript's scanner,
 | --- | --- |
 | `@/components/ui/<x>` or `@/lib/<x>` | a `registryDependencies` entry on the item that owns that module |
 | a relative import into another item's module | the same |
-| any other package (`framer-motion`, `react-aria-components`, `class-variance-authority`, …) | an npm `dependencies` entry, versioned from the workspace |
+| any other package (`framer-motion`, `@ui-sdk/react`, `class-variance-authority`, …) | an npm `dependencies` entry, versioned from the workspace |
 | `react`, `react-dom` | nothing: your app has them |
 
 `registryDependencies` are full URLs to BL UI's own items (`https://blamy.github.io/ui/r/button.json`), never bare names. That is what keeps shadcn's stock `button` from being pulled in: installing `list` copies BL UI's `button`, `icon`, `motion` and `utils` with it, and overwrites your `components/ui/button.tsx` and `lib/utils.ts` (see [Installation](https://blamy.github.io/ui/#/installation)).

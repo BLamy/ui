@@ -28,9 +28,9 @@ export default function AppleSettings({ initialPath = [], windowControls = true 
   return (
     <BLProvider dark={dark} tint={SETTINGS_TINT[dark ? 'dark' : 'light']}>
       <SettingsCtx.Provider value={settings}>
-        <SplitView aria-label="Settings" sidebarBehavior="tile" sidebarVisibility={{ medium: true }}
+        <SplitView aria-label="Settings" sidebarBehavior="tile" defaultSidebarOpen={{ medium: true }}
           defaultCompactColumn={initialPath.length ? 'detail' : 'sidebar'}
-          selection={{ sidebar: trailOf(settings.path)[0] }} onSelectionChange={(sel) => sel.sidebar && settings.openPath([sel.sidebar])}>
+          value={{ sidebar: trailOf(settings.path)[0] }} onValueChange={(next) => { if (next.sidebar) settings.openPath([next.sidebar]); }}>
           <SettingsSidebar />
           <SettingsDetail />
         </SplitView>

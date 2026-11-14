@@ -296,7 +296,7 @@ A `VaultStorage` is an async string map: `get`, `set`, `delete`, `keys(prefix)`.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `isOpen` / `onOpenChange` | required | Controlled open state. |
+| `open` / `onOpenChange(open, details)` | required | Controlled open state; `details.reason` says why it wants to change. |
 | `vault` | the provider's | |
 | `mode` | `enroll` | `regenerate` replaces the recovery key of an existing vault. |
 | `appName` / `protects` | | Wording: "Protect {appName} with a passkey", "A passkey will lock {protects}". |
@@ -318,7 +318,7 @@ The parts of the gate, exported to build your own shell. `VaultUnlock` has `Unlo
 
 ## Accessibility
 
-The dialog and the confirmation are react-aria dialogs: focus is trapped and returns on close, Esc closes them (except on the recovery-key step), and every action is a real button reachable by keyboard. Each step moves focus to its primary action. A visually hidden `role="status"` region announces "Waiting for your passkey", "Your recovery key is ready" and, in the gate, "Unlocked" and "Locked"; it never contains a secret. Failures use `role="alert"`. The recovery key is a labelled group read letter by letter by a screen reader, while the visible groups are plain selectable text. Motion collapses to fades under `prefers-reduced-motion`.
+The dialog and the confirmation are UI SDK dialogs (a [Dialog](https://blamy.github.io/ui/#/dialog) and an AlertDialog): focus is trapped and returns on close, Esc closes them (except on the recovery-key step, where the dialog is not dismissible), and every action is a real button reachable by keyboard. Each step moves focus to its primary action. UI SDK's `announce()` (the page's one polite live region, so a message outlives the dialog that said it) reads "Waiting for your passkey", "Your recovery key is ready" and, in the gate, "Unlocked" and "Locked"; it never says a secret. Failures use `role="alert"`. The recovery key is a labelled group read letter by letter by a screen reader, while the visible groups are plain selectable text. Motion collapses to fades under `prefers-reduced-motion`.
 
 ## Styling
 

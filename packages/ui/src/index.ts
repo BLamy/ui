@@ -1,11 +1,13 @@
 import './styles.css';
 
 // lib
-export { cn, FONT, EASE, BARH, pressable, brandTile } from './lib/utils';
+export { cn, FONT, BARH, pressable, brandTile } from './lib/utils';
 export {
-  loadMotion, useMotion, springs, springCss, direction, useDirection, fades, useSpringTransition, useReducedMotion, type SpringName,
+  springs, springCss, direction, useDirection, fades, useSpringTransition, useReducedMotion, type SpringName,
   prefersReducedMotion, flipSnapshot, flipPlay, type FlipSnapshot,
 } from './lib/motion';
+export { usePresence, usePresenceList, useEnterExit } from './lib/presence';
+export type { Presence, PresenceEntry, PresenceOptions } from './lib/presence';
 export { TextMorph } from './components/text-morph';
 export type { TextMorphProps } from './components/text-morph';
 export { NumberMorph } from './components/number-morph';
@@ -13,14 +15,17 @@ export type { NumberMorphProps } from './components/number-morph';
 export { IconSwap, Chevron } from './components/icon-swap';
 export type { IconSwapProps, ChevronProps, ChevronDirection } from './components/icon-swap';
 export { AnimatedHeight, ContentSwap } from './components/animated-height';
-export { Canvas, CanvasFrame, CanvasHandles, CanvasMarquee, CanvasGuides, CanvasMiniMap, useCanvas } from './components/canvas';
-export type { CanvasProps, CanvasPointerInfo, CanvasContextValue, CanvasFrameProps, CanvasMiniMapProps, CanvasMiniMapItem } from './components/canvas';
+export { Canvas, CanvasFrame, CanvasHandles, CanvasMarquee, CanvasGuides, CanvasMiniMap, useCanvas, createCanvasController } from './components/canvas';
+export type {
+  CanvasProps, CanvasPointerInfo, CanvasContextValue, CanvasController, CanvasFitOptions, CanvasViewportChangeDetails, CanvasViewportReason,
+  CanvasFrameProps, CanvasMiniMapProps, CanvasMiniMapItem,
+} from './components/canvas';
 export {
-  toBoard, toScreen, zoomAt, fitCamera, clampZoom, MIN_ZOOM, MAX_ZOOM, MIN_SIZE,
+  toBoard, toScreen, MIN_SIZE,
   rotatePt, centerOf, dist, cornersOf, rectOf, unionRect, intersects, inFrame, distToSegment, distToPolyline,
   frameHandles, handleCursor, resizeFrame, rotateFrame, snapMove, HANDLE_DIR, ALL_HANDLES, EDGE_HANDLES,
 } from './lib/canvas-math';
-export type { Camera, Frame, Guide, Handle, HandleId, Pt, Rect } from './lib/canvas-math';
+export type { Viewport, Frame, Guide, Handle, HandleId, Pt, Rect } from './lib/canvas-math';
 export type { AnimatedHeightProps, ContentSwapProps } from './components/animated-height';
 export { Celebrate } from './components/celebrate';
 export type { CelebrateProps } from './components/celebrate';
@@ -28,84 +33,129 @@ export {
   BLProvider, BLSafeCtx, BLStickyCtx, chromeStore, useChromeHidden, chromeOffset,
   AppearanceContext, AppearanceProvider, useAppearance,
   ThemeScope, ThemeScopeContext, useThemeScopeProps, themeScopeProps, themeScopeClass, tintVars, themeVarStyle, readThemeVars, THEME_VARS,
+  useLayerHost,
 } from './lib/theme';
 export type { BLProviderProps, Appearance, ThemeScopeProps, ThemeScopeName, ThemeScopeState, ThemeVars, ThemeVar } from './lib/theme';
-export { useContainerWidth, useContainerSize, defineSlot, collectSlots } from './lib/container';
+export { useContainerWidth, useContainerSize, useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation, useMountPresentationKey, defineSlot, collectSlots } from './lib/container';
+export { bindSizeClass, sizeClassOf } from './lib/size-class';
+export type { SizeClass, SizeClassBreakpoints, BindSizeClassOptions } from './lib/size-class';
+export { createStack } from './lib/stack';
+export type { Stack, StackExit, StackOptions, StackReason, StackChangeOptions } from './lib/stack';
+export { bindBack } from './lib/back';
+export type { BindBackOptions } from './lib/back';
+export { bindEdgeSwipe } from './lib/edge-swipe';
+export type { BindEdgeSwipeOptions, EdgeSwipeDetails, EdgeSwipeEndDetails } from './lib/edge-swipe';
+export { bindPullToRefresh } from './lib/pull-to-refresh';
+export type { BindPullToRefreshOptions, PullToRefreshDetails, PullToRefresh } from './lib/pull-to-refresh';
+export { bindScrollEdge } from './lib/scroll-edge';
+export type { BindScrollEdgeOptions } from './lib/scroll-edge';
 export { LocalStreams, StreamFullError, pack, unpack } from './lib/append-stream';
 export { DurableStreamsClient, CloudSync, useCloud, deviceId } from './lib/durable-streams';
 export type { DurableStreamsConfig, CloudSettings, CloudStatus } from './lib/durable-streams';
 export { useSessionRecording, startSessionRecording, useSessions, useSessionCloud, sessionCloud, readSession, deleteSession, clearSessions, currentSessionId, storageUsage } from './lib/session-recorder';
 export type { SessionInfo, SessionRecordingOptions, RecordedEvent, IndexRecord } from './lib/session-recorder';
-export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL } from './lib/sheet-drag';
-export { useEdgeSwipe } from './lib/edge-swipe';
-export type { EdgeSwipeConfig } from './lib/edge-swipe';
 export { usePersistentState, loadJSON, saveJSON } from './lib/persistent-state';
-export { useControllableState } from './lib/controllable-state';
-export { useScrollHidden } from './lib/scroll-hidden';
-export type { SheetDragOptions, SheetDragState } from './lib/sheet-drag';
-export type { SlotComponent, SlotProps, ContainerSize } from './lib/container';
+export { useControllableChange } from './lib/controllable-state';
+export type { SlotComponent, SlotProps, ContainerSize, UseSizeClassOptions } from './lib/container';
 export { Icon, IC, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS, ICON_WEIGHTS } from './lib/icon';
 export type { IconProps, IconName, IconCanonicalName, IconShape, IconWeight, IconCategory } from './lib/icon';
 
 // components
-export { Avatar, AvatarGroup, avatarVariants, avatarStatusVariants, avatarGroupVariants } from './components/avatar';
+export { Avatar, AvatarImage, AvatarFallback, AvatarGroup, avatarVariants, avatarStatusVariants, avatarGroupVariants } from './components/avatar';
 export type { AvatarProps, AvatarGroupProps, AvatarStatus } from './components/avatar';
-export { Switch } from './components/switch';
+export { Switch, SwitchThumb, createSwitchController } from './components/switch';
 export type { SwitchProps } from './components/switch';
-export { Segmented } from './components/segmented';
-export type { SegmentedProps, SegmentedOption } from './components/segmented';
+export { Segmented, SegmentedItem, createSegmentedControlController } from './components/segmented';
+export type { SegmentedProps, SegmentedItemProps } from './components/segmented';
 export { Spinner, spinnerAnimations } from './components/spinner';
 export type { SpinnerProps, SpinnerAnimation, SpinnerVariant, SpinnerAnimationInfo } from './components/spinner';
 export { SearchField } from './components/search-field';
-export type { SearchFieldProps } from './components/search-field';
+export type { SearchFieldProps, SearchFieldSubmitDetails } from './components/search-field';
 export { Button, buttonVariants } from './components/button';
 export type { ButtonProps } from './components/button';
 export { QRSvg } from './components/qr-svg';
 export type { QRSvgProps } from './components/qr-svg';
-export { List, ListSection, ListRow, listRowVariants } from './components/list';
-export type { ListProps, ListSectionProps, ListRowProps, ListRowAction } from './components/list';
+export { List, ListSection, ListRow, listRowVariants, createListRowController } from './components/list';
+export type {
+  ListProps, ListSectionProps, ListRowProps, ListRowAction, ListRowActionDetails, ListRowActionReason, ListRowController,
+  ListRowFullSwipe, ListSectionOrderChangeDetails, ListSectionOrderChangeReason,
+} from './components/list';
 export { IndexBar, AL, indexBarVariants } from './components/index-bar';
-export type { IndexBarProps, IndexBarItem, IndexBarKey } from './components/index-bar';
+export type { IndexBarProps, IndexBarItem, IndexBarKey, IndexBarJumpReason } from './components/index-bar';
 export { TabBar } from './components/tab-bar';
 export type { TabBarProps, TabBarItem } from './components/tab-bar';
 export {
-  TabView, TabViewBar, TabViewList, TabViewTab, TabViewIndicator, TabViewSeparator, TabViewAction,
+  TabView, TabViewBar, TabViewList, TabViewTab, TabViewIndicator, TabViewPill, TabViewSeparator, TabViewAction,
   TabViewHeader, TabViewFooter, TabViewPanels, TabViewPanel, useTabView, useTabViewTab,
   tabViewVariants, tabViewBarVariants, tabViewListVariants, tabViewTabVariants, tabViewIndicatorVariants,
-  tabViewActionVariants,
+  tabViewPillVariants, tabViewActionVariants,
 } from './components/tab-view';
 export type {
-  TabViewProps, TabViewBarProps, TabViewTabProps, TabViewIndicatorProps, TabViewActionProps,
+  TabViewProps, TabViewBarProps, TabViewListProps, TabViewTabProps, TabViewIndicatorProps, TabViewPillProps,
+  TabViewSeparatorProps, TabViewActionProps, TabViewPanelProps,
   TabViewPlacement, TabViewOrientation, TabViewBarVariant,
 } from './components/tab-view';
 export { EditBar } from './components/edit-bar';
 export type { EditBarProps } from './components/edit-bar';
-export { NavigationStack, ScreenWrap, navigationPush } from './components/navigation-stack';
-export type { NavigationStackProps, NavigationStackRootBack, Screen, ScreenWrapProps } from './components/navigation-stack';
+export {
+  NavigationStack, NavigationStackPage, NavigationStackBar, NavigationStackTitle, NavigationStackBack, NavigationStackLeading,
+  NavigationStackTrailing, NavigationStackContent, NavigationStackLargeTitle, NavigationStackSubheader,
+  createNavigationStackController, useNavigationStack,
+} from './components/navigation-stack';
+export type {
+  NavigationStackProps, NavigationStackRootBack, NavigationStackPageProps, NavigationStackBarProps, NavigationStackTitleProps,
+  NavigationStackBackProps, NavigationStackLeadingProps, NavigationStackTrailingProps, NavigationStackContentProps,
+  NavigationStackLargeTitleProps, NavigationStackSubheaderProps, NavigationStackController, NavigationStackChangeDetails,
+  NavigationStackChangeOptions, NavigationStackReason, NavigationStackPageState,
+} from './components/navigation-stack';
 export {
   SplitView, SplitViewSidebar, SplitViewSupplementary, SplitViewDetail, SplitViewHeader, SplitViewContent, SplitViewToggle,
   SplitViewItem, SplitViewEmpty, useSplitView, useSplitViewColumn, useSplitViewBack,
   SplitViewSection, SplitViewStack, useSplitViewStack, splitViewItemVariants, splitViewSectionLabelVariants,
+  createSplitViewController, createSplitViewStackController,
 } from './components/split-view';
 export type {
   SplitViewProps, SplitViewColumnProps, SplitViewHeaderProps, SplitViewToggleProps, SplitViewItemProps, SplitViewEmptyProps,
-  SplitViewState, SplitViewColumn, SplitViewWidthClass, SplitViewSidebarBehavior, SplitViewSelection,
+  SplitViewState, SplitViewContextValue, SplitViewColumn, SplitViewSizeClass, SplitViewSidebarBehavior, SplitViewValue,
   SplitViewSectionProps, SplitViewStackProps, SplitViewStackApi, SplitViewItemTint,
+  SplitViewController, SplitViewColumnWidths, SplitViewDefaultSidebarOpen, SplitViewColumnState, SplitViewItemState, SplitViewHeaderState,
+  SplitViewSidebarOpenChangeDetails, SplitViewSidebarOpenChangeReason, SplitViewValueChangeDetails, SplitViewValueChangeReason,
+  SplitViewCompactColumnChangeDetails, SplitViewCompactColumnChangeReason, SplitViewSupplementaryOpenChangeDetails,
+  SplitViewSupplementaryOpenChangeReason, SplitViewColumnWidthsChangeDetails, SplitViewColumnWidthsChangeReason,
+  SplitViewStackPagesChangeDetails, SplitViewStackPagesChangeReason, SplitViewStackController,
 } from './components/split-view';
-export { Credenza, credenzaVariants } from './components/credenza';
-export type { CredenzaProps } from './components/credenza';
-export { SideDrawer, sideDrawerVariants } from './components/side-drawer';
-export type { SideDrawerProps } from './components/side-drawer';
-export { AdaptivePane } from './components/adaptive-pane';
+export {
+  Credenza,
+  CredenzaTrigger,
+  CredenzaBackdrop,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaBack,
+  CredenzaTitle,
+  CredenzaClose,
+  CredenzaView,
+  createCredenzaController,
+  credenzaVariants,
+} from './components/credenza';
+export type { CredenzaProps, CredenzaContentProps, CredenzaBackProps, CredenzaViewProps, CredenzaController } from './components/credenza';
+export { SideDrawer, sideDrawerVariants, sideDrawerPageClass, createSideDrawerController, sideDrawerPresentation } from './components/side-drawer';
+export type {
+  SideDrawerProps, SideDrawerController, SideDrawerOpenChangeDetails, SideDrawerOpenChangeReason, SideDrawerPresentation,
+} from './components/side-drawer';
+export { AdaptivePane, createAdaptivePaneController } from './components/adaptive-pane';
 export {
   Sidebar, SidebarProvider, SidebarHeader, SidebarContent, SidebarFooter, SidebarWorkspace, SidebarSearch,
-  SidebarSection, SidebarItem, SidebarTrigger, SidebarInset, SidebarNav, useSidebar, SBCtx, SBCollapsedCtx, SIDEBAR_ICONS,
+  SidebarSection, SidebarItem, SidebarTrigger, SidebarInset, SidebarNav, useSidebar, useSidebarCollapsed, SIDEBAR_ICONS,
+  createSidebarController,
 } from './components/sidebar';
 export type {
   SidebarContextValue, SidebarProviderProps, SidebarVariant, SidebarProps, SidebarWorkspaceProps, SidebarSearchProps,
-  SidebarSectionProps, SidebarItemProps, SidebarNavProps,
+  SidebarSectionProps, SidebarItemProps, SidebarNavProps, SidebarController, SidebarOpenChangeDetails, SidebarOpenChangeReason,
 } from './components/sidebar';
-export type { AdaptivePaneProps, AdaptivePaneMode } from './components/adaptive-pane';
+export type {
+  AdaptivePaneProps, AdaptivePanePresentation, AdaptivePaneController, AdaptivePaneOpenChangeDetails,
+  AdaptivePaneOpenChangeReason, AdaptivePaneSide, AdaptivePaneWidths, AdaptivePaneWidthsChangeDetails, AdaptivePaneWidthsChangeReason,
+} from './components/adaptive-pane';
 export {
   Breadcrumb, BreadcrumbItem, BreadcrumbSeparator, BreadcrumbEllipsis, breadcrumbVariants, breadcrumbItemVariants, fitBreadcrumbs,
 } from './components/breadcrumb';
@@ -114,7 +164,7 @@ export type {
 } from './components/breadcrumb';
 
 
-// ── shadcn primitives (react-aria-components + Tailwind + cva) ──
+// ── shadcn primitives (UI SDK + Tailwind + cva) ──
 export { Badge, badgeVariants } from './components/badge';
 export type { BadgeProps } from './components/badge';
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, cardVariants } from './components/card';
@@ -124,81 +174,125 @@ export type { SeparatorProps } from './components/separator';
 export { Label, labelVariants } from './components/label';
 export type { LabelProps } from './components/label';
 export { Kbd, KbdGroup } from './components/kbd';
+export type { KbdProps } from './components/kbd';
 export { Skeleton, SkeletonText, skeletonVariants } from './components/skeleton';
 export type { SkeletonProps, SkeletonTextProps } from './components/skeleton';
-export { ScrollArea, scrollAreaVariants } from './components/scroll-area';
-export type { ScrollAreaProps } from './components/scroll-area';
-export { Input, inputVariants } from './components/input';
-export type { InputProps } from './components/input';
+export {
+  ScrollArea, ScrollAreaViewport, ScrollAreaContent, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaCorner,
+  ScrollAreaScrollToEnd, scrollAreaViewportVariants, createScrollAreaController,
+} from './components/scroll-area';
+export type {
+  ScrollAreaProps, ScrollAreaViewportProps, ScrollAreaScrollbarProps, ScrollAreaThumbProps, ScrollAreaScrollToEndProps,
+} from './components/scroll-area';
+export { Input, inputVariants, createInputController } from './components/input';
+export type { InputProps, InputController } from './components/input';
 export { Textarea, textareaVariants } from './components/textarea';
 export type { TextareaProps } from './components/textarea';
 export { MarkdownEditor, markdownEditorVariants, looksLikeMarkdown, insertMarkdown } from './components/markdown-editor';
 export type {
   MarkdownEditorProps, MarkdownEditorHandle, MarkdownEditorInstance, MarkdownEditorAttachment, MarkdownEditorClassNames,
+  MarkdownEditorValueChangeDetails, MarkdownEditorValueChangeReason,
 } from './components/markdown-editor';
-export { TextField, FieldDescription, FieldError } from './components/text-field';
-export type { TextFieldProps } from './components/text-field';
-export { Checkbox, CheckboxGroup, checkboxVariants } from './components/checkbox';
-export type { CheckboxProps, CheckboxGroupProps } from './components/checkbox';
-export { RadioGroup, Radio, radioGroupVariants, radioVariants } from './components/radio-group';
+export { Field, FieldLabel, FieldDescription, FieldError, FieldSet, FieldLegend, FieldGroup, FieldControl, useFieldControl } from './components/field';
+export type { FieldLabelProps } from './components/field';
+export { Checkbox, CheckboxIndicator, CheckboxGroup, checkboxVariants, createCheckboxController, createCheckboxGroupController } from './components/checkbox';
+export type { CheckboxProps, CheckboxIndicatorProps, CheckboxGroupProps } from './components/checkbox';
+export { RadioGroup, Radio, RadioIndicator, radioGroupVariants, radioVariants, createRadioGroupController } from './components/radio-group';
 export type { RadioGroupProps, RadioProps } from './components/radio-group';
-export { Toggle, toggleVariants } from './components/toggle';
+export { Toggle, ToggleIcon, toggleVariants, createToggleController } from './components/toggle';
 export type { ToggleProps } from './components/toggle';
-export { ToggleGroup, ToggleGroupItem, toggleGroupVariants } from './components/toggle-group';
+export { ToggleGroup, ToggleGroupItem, toggleGroupVariants, createToggleGroupController } from './components/toggle-group';
 export type { ToggleGroupProps, ToggleGroupItemProps } from './components/toggle-group';
-export { Tabs, TabList, Tab, TabPanel, tabsListVariants, tabVariants } from './components/tabs';
-export type { TabsProps } from './components/tabs';
 export {
-  DialogTrigger, DialogContent, Dialog, DialogHeader, DialogTitle, DialogDescription, DialogBody, DialogFooter,
-  DialogAction, DialogClose, dialogVariants, dialogActionVariants, dialogOverlayClass,
-} from './components/dialog';
-export type { DialogContentProps, DialogFooterProps, DialogActionProps } from './components/dialog';
-export {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBody, SheetFooter, SheetClose, sheetVariants,
-} from './components/sheet';
-export type { SheetContentProps } from './components/sheet';
-export { Popover, PopoverTrigger, PopoverContent } from './components/popover';
-export type { PopoverProps, PopoverContentProps } from './components/popover';
-export {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSection, DropdownMenuLabel, DropdownMenuSeparator,
-  DropdownMenuShortcut, DropdownMenuSub, dropdownMenuItemVariants,
-} from './components/dropdown-menu';
-export type { DropdownMenuContentProps, DropdownMenuItemProps, DropdownMenuSectionProps } from './components/dropdown-menu';
-export {
-  ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSection, ContextMenuLabel, ContextMenuSeparator,
-  ContextMenuShortcut, ContextMenuSub,
-} from './components/context-menu';
-export type { ContextMenuProps } from './components/context-menu';
-export { Tooltip, TooltipTrigger } from './components/tooltip';
-export type { TooltipProps } from './components/tooltip';
-export { HoverCard, HoverCardTrigger, HoverCardHeader, useHoverCard } from './components/hover-card';
-export type { HoverCardProps, HoverCardHeaderProps, HoverCardState, HoverCardTriggerComponentProps, UseHoverCardOptions } from './components/hover-card';
-export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectSection, selectTriggerVariants } from './components/select';
-export type { SelectProps, SelectTriggerProps, SelectContentProps } from './components/select';
-export { ComboBox, ComboBoxInput, ComboBoxContent, ComboBoxItem, ComboBoxSection } from './components/combobox';
-export type { ComboBoxProps, ComboBoxInputProps, ComboBoxContentProps } from './components/combobox';
-export { Slider, SliderTrack, SliderThumb, sliderVariants } from './components/slider';
-export type { SliderProps, SliderTone } from './components/slider';
-export { ListBox, ListBoxItem, ListBoxSection, ListBoxHeader, listBoxVariants, listBoxItemVariants } from './components/list-box';
-export type { ListBoxProps, ListBoxItemProps, ListBoxSectionProps } from './components/list-box';
-export { Tree, TreeFolderIcon, TreeFileIcon } from './components/tree';
-export type { TreeProps, TreeNode, TreeDropTarget, TreeGitStatus } from './components/tree';
-export {
-  Disclosure, DisclosureGroup, DisclosureTrigger, DisclosurePanel, disclosureGroupVariants,
-  Accordion, AccordionItem, AccordionTrigger, AccordionContent,
-} from './components/disclosure';
-export type { DisclosureGroupProps, DisclosureTriggerProps } from './components/disclosure';
-export { Progress, progressVariants, progressIndicatorVariants } from './components/progress';
-export type { ProgressProps } from './components/progress';
-export { Form, FormSection } from './components/form';
-export type { FormSectionProps } from './components/form';
-export {
-  SyntaxHighlighting, SyntaxHighlightingHeader, SyntaxHighlightingTitle, SyntaxHighlightingCopyButton,
-  SyntaxHighlightingContent, syntaxHighlightingVariants, useSyntaxHighlighting,
-} from './components/syntax-highlighting';
+  Tabs, TabsList, TabsTab, TabsTabIcon, TabsPanel, tabsListVariants, tabsTabVariants, tabsIndicatorVariants,
+  createTabsController,
+} from './components/tabs';
 export type {
-  SyntaxHighlightingProps, SyntaxHighlightingContentProps, SyntaxHighlightingCopyButtonProps, SyntaxLineRange,
-} from './components/syntax-highlighting';
+  TabsProps, TabsListProps, TabsTabProps, TabsTabIconProps, TabsPanelProps, TabsController, TabsValueChangeReason,
+} from './components/tabs';
+export {
+  Dialog, DialogTrigger, DialogBackdrop, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogBody, DialogFooter,
+  DialogClose, dialogVariants, createDialogController,
+  AlertDialog, AlertDialogTrigger, AlertDialogBackdrop, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogClose, alertDialogCloseVariants, createAlertDialogController, createConfirm,
+} from './components/dialog';
+export type {
+  DialogProps, DialogContentProps, DialogController,
+  AlertDialogProps, AlertDialogContentProps, AlertDialogFooterProps, AlertDialogCloseProps, AlertDialogController,
+} from './components/dialog';
+export {
+  Sheet, SheetTrigger, SheetBackdrop, SheetContent, SheetHandle, SheetHeader, SheetTitle, SheetDescription, SheetBody,
+  SheetFooter, SheetClose, sheetVariants, createSheetController,
+} from './components/sheet';
+export type { SheetProps, SheetContentProps, SheetController } from './components/sheet';
+export {
+  Popover, PopoverTrigger, PopoverContent, PopoverArrow, PopoverTitle, PopoverDescription, PopoverClose,
+  popoverContentVariants, createPopoverController,
+} from './components/popover';
+export type { PopoverProps, PopoverContentProps, PopoverController } from './components/popover';
+export {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuRadioGroup,
+  DropdownMenuRadioItem, DropdownMenuGroup, DropdownMenuGroupLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub,
+  DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuItems, dropdownMenuItemVariants, createMenuController,
+} from './components/dropdown-menu';
+export type {
+  DropdownMenuProps, DropdownMenuTriggerProps, DropdownMenuContentProps, DropdownMenuItemProps, DropdownMenuCheckboxItemProps,
+  DropdownMenuRadioGroupProps, DropdownMenuRadioItemProps, DropdownMenuGroupProps, DropdownMenuSubProps, DropdownMenuSubTriggerProps,
+  MenuController, MenuData, MenuDataItem,
+} from './components/dropdown-menu';
+export {
+  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuCheckboxItem, ContextMenuRadioGroup,
+  ContextMenuRadioItem, ContextMenuGroup, ContextMenuGroupLabel, ContextMenuSeparator, ContextMenuShortcut, ContextMenuSub,
+  ContextMenuSubTrigger, ContextMenuSubContent,
+} from './components/context-menu';
+export type { ContextMenuProps, ContextMenuTriggerProps, ContextMenuContentProps } from './components/context-menu';
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipArrow, TooltipShortcut, createTooltipController } from './components/tooltip';
+export type { TooltipProps, TooltipContentProps, TooltipController } from './components/tooltip';
+export {
+  HoverCard, HoverCardTrigger, HoverCardContent, HoverCardArrow, HoverCardHeader, createHoverCardController,
+} from './components/hover-card';
+export type { HoverCardProps, HoverCardContentProps, HoverCardHeaderProps, HoverCardController } from './components/hover-card';
+export {
+  Select, SelectLabel, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup, SelectGroupLabel, SelectSeparator,
+  selectTriggerVariants, createSelectController,
+} from './components/select';
+export type {
+  SelectProps, SelectLabelProps, SelectTriggerProps, SelectContentProps, SelectItemProps, SelectController,
+} from './components/select';
+export {
+  Combobox, ComboboxLabel, ComboboxInput, ComboboxContent, ComboboxList, ComboboxEmpty, ComboboxItem, ComboboxGroup,
+  ComboboxGroupLabel, ComboboxSeparator, ComboboxChip, ComboboxChipRemove, ComboboxStatus, createComboboxController,
+} from './components/combobox';
+export type {
+  ComboboxProps, ComboboxLabelProps, ComboboxInputProps, ComboboxContentProps, ComboboxItemProps, ComboboxChipProps, ComboboxController,
+} from './components/combobox';
+export { Slider, SliderValue, SliderControl, SliderTrack, SliderIndicator, SliderThumb, sliderVariants, createSliderController } from './components/slider';
+export type { SliderProps, SliderTone } from './components/slider';
+export {
+  Listbox, ListboxItem, ListboxGroup, ListboxGroupLabel, ListboxSeparator, listboxVariants, listboxItemVariants, createListboxController,
+} from './components/list-box';
+export type { ListboxProps, ListboxItemProps, ListData, ListboxController } from './components/list-box';
+export {
+  Tree, TreeItem, TreeItemLabel, TreeItemIndicator, TreeItemCheckbox, TreeGroup, treeVariants, treeRowVariants,
+  createTreeController, treeFromPaths, visibleTreeRows, TreeFolderIcon, TreeFileIcon,
+} from './components/tree';
+export type {
+  TreeProps, TreeNode, TreeDensity, TreeDropTarget, TreeGitStatus, TreeEditDetails, TreeEditingChangeDetails, TreeController, TreeItemData, TreeMode,
+} from './components/tree';
+export {
+  Disclosure, DisclosureTrigger, DisclosurePanel,
+  DisclosureGroup, DisclosureGroupItem, DisclosureGroupHeader, DisclosureGroupTrigger, DisclosureGroupPanel,
+  disclosureGroupVariants,
+  createCollapsibleController, createAccordionController,
+} from './components/disclosure';
+export type {
+  DisclosureProps, DisclosureTriggerProps, DisclosurePanelProps,
+  DisclosureGroupProps, DisclosureGroupItemProps, DisclosureGroupHeaderProps, DisclosureGroupTriggerProps,
+  DisclosureGroupPanelProps,
+} from './components/disclosure';
+export { Progress, ProgressLabel, ProgressValue, ProgressTrack, ProgressIndicator, progressVariants, progressIndicatorVariants } from './components/progress';
+export type { ProgressProps } from './components/progress';
+export { Form } from './components/form';
 export { lexSyntax, webgpuSupported, probeWebGPU, languageFromPath, tokenizeLines } from './lib/syntax';
 export type { CodeToken, CodeTokenType, SyntaxToken, SyntaxTokenType, SyntaxSpan, SyntaxHighlighter, SyntaxResult, SyntaxEngine, WebGPUProbe } from './lib/syntax';
 // ── end shadcn primitives ──
@@ -261,13 +355,14 @@ export {
   type ComposerFileSource,
   type ComposerFileRejection,
   type ComposerAddProps,
-  type ComposerAttachProps,
   type ComposerOutletProps,
   type ComposerCardProps,
   type ComposerAddonProps,
   type ComposerButtonProps,
   type ComposerSelectProps,
   type ComposerSelectOption,
+  type ComposerSelectChangeDetails,
+  type ComposerMenuItemProps,
   type ComposerSendProps,
   type ComposerStopProps,
   type ComposerInputProps,
@@ -276,6 +371,18 @@ export {
   type ComposerBumpContextValue,
   type ComposerBumpHandleProps,
   type ComposerBumpContentProps,
+  type ComposerValueChangeReason,
+  type ComposerValueChangeDetails,
+  type ComposerAttachmentsChangeReason,
+  type ComposerAttachmentsChangeDetails,
+  type ComposerExpandedChangeReason,
+  type ComposerExpandedChangeDetails,
+  type ComposerCollapsedChangeReason,
+  type ComposerCollapsedChangeDetails,
+  type ComposerBumpOpenChangeReason,
+  type ComposerBumpOpenChangeDetails,
+  type ComposerBumpMinimizedChangeReason,
+  type ComposerBumpMinimizedChangeDetails,
   type AnnotateLightboxProps,
 } from './components/composer/composer';
 export {
@@ -285,7 +392,9 @@ export {
   type ComposerAnnotatorProps,
   type ComposerAnnotatorSurface,
 } from './components/composer/annotator';
-export { WbPopover, type WbPopoverProps } from './components/composer/composer-popover';
+export {
+  WbPopoverContent, useSurfacePalette, type WbPopoverContentProps, type SurfacePalette,
+} from './components/composer/composer-popover';
 export {
   ComposerCards,
   ComposerMorphCard,
@@ -295,12 +404,16 @@ export {
   type ComposerQueueProps,
   type ComposerQueueItem,
   type ComposerQueueActions,
+  type ComposerQueueItemsChangeReason,
+  type ComposerQueueItemsChangeDetails,
 } from './components/composer/composer-cards';
 
 // ── Chat: floating/artifact chat containers (ChatShell and the Discord-style parts live in the discord-clone block) ──
 export {
   FloatingSheet,
   useFloatingSheet,
+  useHideOnScroll,
+  type FloatingSheetChangeDetails,
   type FloatingSheetProps,
   type FloatingSheetContextValue,
   type FloatingSheetFabPosition,
@@ -314,6 +427,12 @@ export {
   type FloatingChatProps,
   type FloatingChatContextValue,
   type FloatingChatFabPosition,
+  type FloatingChatOpenChangeDetails,
+  type FloatingChatOpenChangeReason,
+  type FloatingChatMinimizedChangeDetails,
+  type FloatingChatMinimizedChangeReason,
+  type FloatingChatComposingChangeDetails,
+  type FloatingChatComposingChangeReason,
 } from './components/floating-chat';
 export { ChatColumn, ChatColumnTranscript, ChatColumnComposer, type ChatColumnProps } from './components/chat-column';
 export {
@@ -344,7 +463,7 @@ export type {
 export { outlinePath, StrokePath, MemoStroke } from './components/pencilkit/stroke-path';
 export type { StrokePathProps } from './components/pencilkit/stroke-path';
 export { PencilCanvas } from './components/pencilkit/pencil-canvas';
-export type { PencilCanvasProps, PencilStrokesChangeSource } from './components/pencilkit/pencil-canvas';
+export type { PencilCanvasProps, PencilStrokesChangeDetails, PencilStrokesChangeReason } from './components/pencilkit/pencil-canvas';
 export {
   PencilToolButton,
   pencilToolButtonVariants,
@@ -369,10 +488,12 @@ export { PencilKitAnnotator } from './components/pencilkit/pencilkit-annotator';
 
 // ── feedback, media and morph primitives ──
 export {
-  Toaster, ToastProvider, ToastQueue, toast, toastApi, useToast, createToastQueue, defaultToastQueue, toastVariants, toastIconVariants,
+  ToastRegion, Toast, ToastIcon, ToastTitle, ToastDescription, ToastAction, ToastClose, ToastProvider, toast, createToaster, hud, createHud,
+  useToast, toastRegionVariants, toastVariants, toastIconVariants,
 } from './components/toast';
 export type {
-  ToastData, ToastOptions, ToastVariant, ToastTone, ToastApi, ToasterProps, ToasterPlacement,
+  ToastRegionProps, ToastProps, ToastIconProps, ToastVariant, ToastExtras, Hud, Toaster, ToastData, ToastOptions, ToastType, ToastItem,
+  ToastState, ToastRegionState, ToastActionData, ToastCancel, ToastDismissDetails, ToastDismissReason,
 } from './components/toast';
 export { ProgressRing, CountdownRing, useCountdown, progressRingVariants, countdownRingLabelVariants } from './components/progress-ring';
 export type { ProgressRingProps, ProgressRingTone, CountdownRingProps, CountdownRingLabelSize, UseCountdownOptions, Countdown } from './components/progress-ring';
@@ -411,12 +532,15 @@ export type { MorphGroupProps, MorphProps, MorphPresenceProps } from './componen
 export { encodeQR } from './lib/qr';
 export type { QRCode, QRLevel, QROptions } from './lib/qr';
 export {
-  CommandMenu, CommandInput, CommandList, CommandPage, CommandGroup, CommandItem, CommandEmpty, CommandSeparator,
-  CommandFooter, CommandHighlight, useCommandMenu, useCommandActive, useHotkey, matchesHotkey, commandMatch,
+  CommandMenu, CommandMenuInput, CommandMenuList, CommandMenuPage, CommandMenuGroup, CommandMenuGroupLabel, CommandMenuItem,
+  CommandMenuItemIcon, CommandMenuItemText, CommandMenuItemDescription, CommandMenuShortcut, CommandMenuItems, CommandMenuEmpty,
+  CommandMenuStatus, CommandMenuSeparator, CommandMenuFooter, CommandMenuDialog, CommandMenuDialogTrigger, CommandMenuDialogContent,
+  createCommandMenuController, useCommandMenu, useCommandMenuValue,
 } from './components/command-menu';
 export type {
-  CommandMenuProps, CommandInputProps, CommandListProps, CommandPageProps, CommandGroupProps, CommandItemProps,
-  CommandFooterProps, CommandLegendItem, CommandMenuApi, CommandMatch,
+  CommandMenuProps, CommandMenuInputProps, CommandMenuListProps, CommandMenuPageProps, CommandMenuGroupProps, CommandMenuItemProps,
+  CommandMenuFooterProps, CommandMenuLegendItem, CommandMenuDialogProps, CommandMenuDialogContentProps, CommandMenuController,
+  CommandMenuState, CommandMenuData, CommandMenuDataItem, CommandMenuDataGroup,
 } from './components/command-menu';
 
 // ── Workbench surface theme and AI transcript parts (used by the Composer, FloatingChat and several blocks) ──
@@ -425,34 +549,39 @@ export {
   Conversation, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationComposer, ConversationSuggestions,
   Suggestion, UserMessage, AssistantMessage, MessageMarkdown, ConversationTyping, WorkLog, ToolCall, SettledBanner,
   type ConversationProps, type ConversationGreetingProps, type ConversationMessagesProps, type UserMessageProps,
-  type WorkLogProps, type ToolCallProps, type SettledBannerProps,
+  type SuggestionProps, type WorkLogProps, type ToolCallProps, type SettledBannerProps,
 } from './components/conversation';
 
 // ── Calendar / DateField / DatePicker / ColorField / ColorPicker ──
 export {
-  Calendar, RangeCalendar, CalendarHeader, CalendarGrid, CalendarCell, calendarVariants,
-  type CalendarProps, type RangeCalendarProps, type CalendarCellProps,
+  Calendar, CalendarHeader, CalendarHeading, CalendarPrevious, CalendarNext, CalendarMonthSelect, CalendarYearSelect,
+  CalendarGrid, CalendarWeekdays, CalendarWeekday, CalendarWeeks, CalendarDay, calendarVariants, createCalendarController,
+  type CalendarProps, type CalendarDayProps, type CalendarController, type CalendarDayState, type CalendarGridCell,
+  type CalendarMode, type CalendarValue, type DateMatcher, type DateMatchers,
 } from './components/calendar';
 export {
-  DateField, TimeField, DateInput, DateSegment, dateInputVariants,
-  type DateFieldProps, type TimeFieldProps, type DateInputProps,
+  DateField, DateFieldSegment, TimeField, TimeFieldSegment, dateFieldVariants, createDateFieldController, createTimeFieldController,
+  type DateFieldProps, type TimeFieldProps, type DateFieldController, type TimeFieldController, type DateFieldSegmentData, type DateFieldState,
 } from './components/date-field';
 export {
-  DatePicker, DatePickerField, DatePickerContent, DateRangePicker, DateRangePickerField, DateRangePickerContent, datePickerFieldVariants,
-  type DatePickerProps, type DatePickerContentProps, type DateRangePickerProps, type DateRangePickerContentProps,
+  DatePicker, DatePickerField, DatePickerInput, DatePickerTrigger, DatePickerClear, DatePickerHint, DatePickerPreset, DatePickerContent,
+  datePickerFieldVariants, createDatePickerController,
+  type DatePickerProps, type DatePickerFieldProps, type DatePickerContentProps, type DatePickerController, type DatePickerMode, type DatePickerValue,
 } from './components/date-picker';
 export {
-  ColorField, ColorFieldGroup, ColorFieldInput, ColorFieldSwatch, ColorSwatch, colorFieldGroupVariants,
+  ColorField, ColorFieldGroup, ColorFieldInput, ColorFieldChannelInput, ColorFieldSwatch, ColorSwatch, colorFieldVariants,
   type ColorFieldProps, type ColorFieldGroupProps, type ColorSwatchProps,
 } from './components/color-field';
 export {
-  ColorPicker, ColorPickerTrigger, ColorPickerContent, ColorArea, ColorSlider, ColorThumb, ColorSwatchPicker, ColorSwatchPickerItem,
-  type ColorPickerProps, type ColorPickerTriggerProps, type ColorPickerContentProps, type ColorAreaProps, type ColorSliderProps,
-  type ColorThumbProps, type ColorSwatchPickerProps, type ColorSwatchPickerItemProps,
+  ColorPicker, ColorPickerTrigger, ColorPickerContent, ColorPickerArea, ColorPickerAreaThumb, ColorPickerAreaCanvas,
+  ColorPickerSlider, ColorPickerSliderThumb, ColorPickerSwatches, ColorPickerSwatchItem,
+  ColorPickerEyeDropper, createColorPickerController,
+  type ColorPickerProps, type ColorPickerTriggerProps, type ColorPickerContentProps, type ColorPickerSliderProps,
+  type ColorPickerController,
 } from './components/color-picker';
 export {
   FontPicker, FontList, FontStackPicker, fontPickerTriggerVariants, fontListItemVariants, fontStackPickerVariants,
-  type FontPickerProps, type FontListProps, type FontStackPickerProps,
+  type FontPickerProps, type FontListProps, type FontStackPickerProps, type FontPickerChangeDetails, type FontPickerReason,
 } from './components/font-picker';
 export {
   GOOGLE_FONTS, FONT_CATEGORIES, findGoogleFont, fontStack, googleFontsUrl, loadGoogleFont, useGoogleFont, useGoogleFontStatus,
@@ -461,7 +590,7 @@ export {
 
 // ── TimeInput / CronEditor ──
 export { TimeInput, timeInputVariants, type TimeInputProps, type TimeInputChange } from './components/time-input';
-export { CronEditor, cronEditorVariants, CRON_PRESETS, type CronEditorProps, type CronPreset } from './components/cron-editor';
+export { CronEditor, cronEditorVariants, CRON_PRESETS, type CronEditorProps, type CronPreset, type CronEditorChangeDetails, type CronEditorChangeReason } from './components/cron-editor';
 export {
   useTimeParse, parseTime, loadGpuTime, formatOccurrence, timeTextSegments, describeRecurrence, rruleLine,
   type TimeParseOptions, type UseTimeParseOptions, type TimeParseState, type TimeParseResult, type TimeOccurrence,
@@ -533,15 +662,17 @@ export type { FormattedCell, CellKind, TabularResult } from './lib/sql-format';
 export { SqlEditor, useSqlHistory, sqlEditorVariants } from './components/sql-editor';
 export type { SqlEditorProps, SqlEditorHandle, SqlHistory } from './components/sql-editor';
 export { ResultTable, resultTableVariants } from './components/result-table';
-export type { ResultTableProps, ResultSet, ResultField } from './components/result-table';
+export type { ResultTableProps, ResultSet, ResultField, ResultTableColumnWidthsChangeReason } from './components/result-table';
 export { SchemaTree, schemaTreeVariants } from './components/schema-tree';
-export type { SchemaTreeProps } from './components/schema-tree';
+export type { SchemaTreeActionDetails, SchemaTreeProps } from './components/schema-tree';
 export { SqlConsole, sqlConsoleVariants } from './components/sql-console';
 export type { SqlConsoleProps } from './components/sql-console';
 
 // Spreadsheet: a virtualized grid with GPU sorting and histograms, and the CSV reader it pairs with
-export { Spreadsheet, spreadsheetVariants, columnName } from './components/spreadsheet';
-export type { SpreadsheetProps, SpreadsheetHandle, SpreadsheetCell, SpreadsheetSelection, SpreadsheetSortInfo } from './components/spreadsheet';
+export { Spreadsheet, spreadsheetVariants, columnName, createSpreadsheetController } from './components/spreadsheet';
+export type {
+  SpreadsheetProps, SpreadsheetController, SpreadsheetSortInfo, SpreadsheetValueChangeReason, SpreadsheetColumnWidthsChangeReason,
+} from './components/spreadsheet';
 export {
   parseCellNumber, parseCellDate, inferColumnType, columnNumbers, sortKeys, sortPermutationCpu, sortTextPermutation, sortRows,
   selectionStats, columnHistogram, histogramCpu, binScale, GPU_MIN_ROWS, MAX_BINS,
@@ -569,7 +700,8 @@ export {
 } from './components/filter';
 export type {
   FilterBarProps, FilterToolbarProps, FilterMenuProps, FilterListProps, FilterChipProps, FilterClearProps, FilterValueEditorProps,
-  FilterBarContextValue, FilterState, FilterActions, UseFiltersOptions,
+  FilterBarContextValue, FilterState, FilterActions, UseFiltersOptions, FilterChangeDetails, FilterChangeReason, FilterMatchChangeDetails,
+  FilterMatchChangeReason, FilterChangeOptions,
 } from './components/filter';
 export { FilterInput, filterInputVariants } from './components/filter-input';
 export type { FilterInputProps } from './components/filter-input';
@@ -584,18 +716,21 @@ export {
   FileUpload, FileDropZone, FileUploadButton, FileList, FileItem, FileThumbnail, fileDropZoneVariants, fileItemVariants, useFileUploadContext,
 } from './components/file-upload';
 export type {
-  FileUploadProps, FileDropZoneProps, FileUploadButtonProps, FileListProps, FileItemProps, FileUploadContextValue, FilesInfo,
+  FileUploadProps, FileDropZoneProps, FileUploadButtonProps, FileListProps, FileItemProps, FileUploadContextValue, OnFiles,
 } from './components/file-upload';
-export {
-  useFileUpload, useFilePreview, xhrUpload, matchesAccept, describeAccept, describeRules, fileKind, validateFiles,
-  readDropItems, entriesFromFileList, rejectionMessage,
-} from './lib/file-upload-model';
+export { xhrUpload, describeAccept, describeRules, fileKind, rejectionMessage } from './lib/file-upload-model';
 export type {
-  UseFileUploadOptions, FileUploadState, UploadFile, UploadFn, UploadContext, UploadResult, FileStatus, FileEntry, FileRules,
-  RejectionCode, RejectionContext, RejectionMessages, XhrUploadOptions, ReadDropOptions, FileKind,
+  UploadFile, UploadFn, UploadContext, UploadResult, FileStatus,
+  FileUploadRules, RejectionReason, RejectionContext, RejectionMessages, XhrUploadOptions, FileKind,
 } from './lib/file-upload-model';
+export { fileUpload, createFileUploadController } from './lib/file-upload-primitive';
+export type {
+  FileUploadOptions, FileUploadController, FileUploadAddResult, FileUploadRootState,
+  FileUploadValueChangeReason, FileUploadValueChangeDetails, FileUploadChangeOptions,
+} from './lib/file-upload-primitive';
+export { useFileUpload, useFilePreview } from './lib/use-file-upload';
+export type { FileUploadState, FileUploadInputProps } from './lib/use-file-upload';
 
-export { formatBytes } from './lib/format-bytes';
 
 
 // ── Tailscale ──
@@ -669,7 +804,10 @@ export type { RenderMedia, RenderContainer, RenderQuality, RenderOptions, Render
 export { createPlayback, usePlaybackClock, usePlaybackState } from './lib/playback';
 export type { Playback, PlaybackState } from './lib/playback';
 export { VideoTimeline, timelineMediaType, fitTimelineZoom, timelineZoomRange, rulerSteps } from './components/video-timeline';
-export type { VideoTimelineProps, TimelineMediaInfo, TimelineDrop } from './components/video-timeline';
+export type {
+  VideoTimelineProps, TimelineMediaInfo, TimelineDrop, TimelineDropDetails, VideoTimelineAction, VideoTimelineChangeDetails, VideoTimelineChangeReason,
+  VideoTimelineSelectionReason, VideoTimelineZoomReason,
+} from './components/video-timeline';
 export { VideoPreview, PlaybackControls, PlaybackTimecode } from './components/video-preview';
 export type { VideoPreviewProps, PreviewMedia, PlaybackControlsProps, PlaybackTimecodeProps } from './components/video-preview';
 export { Filmstrip } from './components/filmstrip';
@@ -689,21 +827,23 @@ export { createVaultOpenCodeCredentialStore, createVaultOpenCodeConnectionStore,
 export type { OpenCodeCredentialStore, OpenCodeConnectionStore, OpenCodeKeychainStore } from './lib/open-code-host';
 
 export {
-  Workspace, WorkspaceTabCloseButton, WorkspaceToolbar,
-  useWorkspaceRef, useWorkspaceCallbackRef, useParentWorkspace,
-  useParentTab, useParentTabState, useParentTabset, useParentTabsetState,
+  Workspace, WorkspaceTab, WorkspaceTabTrigger, WorkspaceTabClose, WorkspaceToolbar, WorkspaceMaximize,
+  createWorkspaceController, workspaceTabsets,
 } from './components/workspace';
 export type {
-  WorkspaceProps, WorkspaceModel, WorkspaceModelInput, WorkspaceImperativeHandle,
-  WorkspaceChangedMeta, WorkspaceChangeReason, WorkspaceClassNames, WorkspaceStyles,
-  WorkspaceNode, TabNode, TabsetNode, SplitNode, TabDropTarget, TabRenderProps,
+  WorkspaceProps, WorkspaceTabProps, WorkspaceTabTriggerProps, WorkspaceTabCloseProps, WorkspaceToolbarProps, WorkspaceMaximizeProps,
+  WorkspaceLayout, WorkspaceLayoutInput, WorkspaceNode, WorkspaceNodeInput, TabNode, TabsetNode, SplitNode,
+  TabDropTarget, TabDropRegion, WorkspaceOrientation, WorkspaceTabPlacement, WorkspaceMinSize,
+  WorkspaceController, WorkspaceChangeOptions, WorkspaceAction,
+  WorkspaceLayoutChangeReason, WorkspaceLayoutChangeDetails, WorkspaceLayoutCommitDetails,
+  WorkspaceState, WorkspaceTabsetState, WorkspaceTabState, WorkspaceTabContentState, WorkspaceClassNames,
 } from './components/workspace';
 
 // Debugging parts
 export { DebugToolbar } from './components/debug-toolbar';
 export type { DebugToolbarAction, DebugToolbarProps } from './components/debug-toolbar';
 export { TraceTimeline, traceTimelineVariants } from './components/trace-timeline';
-export type { TraceTimelineProps, TraceTimelineHandle, TraceValueInfo, TraceDrawStats, TraceFetchActivity } from './components/trace-timeline';
+export type { TraceTimelineProps, TraceTimelineHandle, TraceValueChangeDetails, TraceValueChangeReason, TraceValueCommitDetails, TraceViewChangeDetails, TraceViewChangeReason, TracePickReason, TraceFocusedLaneChangeDetails, TraceSelectedThreadChangeDetails, TraceSelectedRequestChangeDetails, TraceDrawStats, TraceFetchActivity } from './components/trace-timeline';
 export { linearAxis, stopAxis, advanceAlong, selectStops, formatTraceTime, TRACE_SCRUB_SPEEDS } from './lib/trace-timeline-model';
 export type { TraceActivity, TraceAxis, TraceDensity, TraceDiamonds, TraceKey, TraceLane, TraceMarkSeries, TraceRange, TraceRequest, TraceScrubSpeed, TraceStop, TraceStopMark, TraceThread, TraceTone, TraceWindow } from './lib/trace-timeline-model';
 export {
@@ -711,7 +851,8 @@ export {
   codeEditorVariants, codeEditorLineVariants, codeEditorGutterCellVariants,
 } from './components/code-editor';
 export type {
-  CodeEditorProps, CodeEditorContentProps, CodeEditorCopyButtonProps, CodeEditorDisplayProps, CodeEditorHandle, CodeEditorChange, CodeEditorCopy, CodeEditorGutter, CodeEditorMarker,
+  CodeEditorProps, CodeEditorContentProps, CodeEditorCopyButtonProps, CodeEditorDisplayProps, CodeEditorHandle, CodeEditorChangeReason, CodeEditorEdit, CodeEditorValueChangeDetails,
+  CodeEditorSelectionChangeReason, CodeEditorSelectionChangeDetails, CodeEditorGutterClickDetails, CodeEditorMarkerClickDetails, CodeEditorCopy, CodeEditorGutter, CodeEditorMarker,
   CodeEditorLineDecoration, CodeEditorScrollOptions, CodeEditorScrollTarget, CodeEditorPosition, CodeEditorSelection, CodeEditorAlign, CodeHighlight, CodeHighlightContext, CodeLineRange,
   UseSyntaxTokensOptions, SyntaxTokensState,
 } from './components/code-editor';
@@ -720,23 +861,29 @@ export { splitEditorLines, lineAfterEdit } from './lib/code-document';
 export { createGpuCodeHighlight } from './lib/code-editor-gpu';
 export type { GpuCodeHighlightOptions } from './lib/code-editor-gpu';
 export { ObjectTree, objectTreeRowVariants } from './components/object-tree';
-export type { ObjectTreeProps } from './components/object-tree';
+export type { ObjectTreeProps, ObjectTreeValueChangeDetails } from './components/object-tree';
 export { ObjectValue } from './components/object-value';
 export type { ObjectValueProps } from './components/object-value';
-export { childrenOfValue, nodeFromValue } from './lib/object-tree-model';
+export { childrenOfValue, nodeFromValue, objectTreeKey } from './lib/object-tree-model';
 export type { ObjectTreeGetterResult, ObjectTreeNode, ObjectTreeRoot } from './lib/object-tree-model';
 export { copyTextOf, previewFromValue, previewText, previewTokens } from './lib/object-tree-value';
 export type { ValueMapEntry, ValuePreview, ValuePreviewOptions, ValueProperty, ValueTint, ValueToken, ValueType } from './lib/object-tree-value';
 export { CallStack, callStackRowVariants } from './components/call-stack';
-export type { CallStackProps } from './components/call-stack';
+export type { CallStackProps, CallStackValueChangeDetails } from './components/call-stack';
 export { fileBaseName, fullLocation, shortLocation } from './lib/call-stack-model';
 export type { CallStackFrame, CallStackFrameKind, CallStackLocation } from './lib/call-stack-model';
-export { LogList, LogRowContent, logListVariants } from './components/log-list';
-export type { LogListProps, LogListHandle, LogRowContentProps, LogRowState } from './components/log-list';
+export { LogList, LogRowContent, logListVariants, createLogListController } from './components/log-list';
+export type {
+  LogListProps, LogListController, LogListActionDetails, LogListValueChangeReason, LogListExpandedChangeReason,
+  LogListFollowingChangeReason, LogRowContentProps, LogRowState,
+} from './components/log-list';
 export { LOG_LEVELS, countLogLevels, formatLogTime, logRowText, nodeText, normalizeLogLevel } from './lib/log-list-model';
 export type { LogLevel, LogLevelCounts, LogRow, RowId } from './lib/log-list-model';
-export { RequestLink, RequestTable, REQUEST_COLUMNS, requestTableVariants } from './components/request-table';
-export type { RequestColumn, RequestColumnId, RequestLinkProps, RequestTableHandle, RequestTableProps } from './components/request-table';
+export { RequestLink, RequestTable, REQUEST_COLUMNS, requestTableVariants, createRequestTableController } from './components/request-table';
+export type {
+  RequestColumn, RequestColumnId, RequestLinkProps, RequestTableProps, RequestTableController, RequestTableActionDetails,
+  RequestTableValueChangeReason, RequestTableSortChangeReason, RequestTableColumnWidthsChangeReason, RequestTableBreakpoints,
+} from './components/request-table';
 export { isRequestFailed, requestDisplayName, requestDurationText, requestName, requestSizeText, requestStatusText, requestTimeRange, requestTone, sortRequests } from './lib/request-table-model';
 export type { RequestRow, RequestSort, RequestSortDirection, RequestSortValue, RequestColumnSize, RequestTimeRange, RequestTone } from './lib/request-table-model';
 export { Terminal, terminalVariants } from './components/terminal';

@@ -1,6 +1,6 @@
 # useFileUpload
 
-The logic behind [FileUpload](https://blamy.github.io/ui/#/file-upload), without any UI: a list of files with validation (type, size, count, duplicates, your own rule), a concurrency-limited upload queue with abort, retry and controlled mode, an `XMLHttpRequest` adapter that reports real progress, and the pure helpers (`formatBytes`, `matchesAccept`, folder flattening). Use it to build your own drop target, rows or form; the options, the returned API and the helpers are documented under [FileUpload](https://blamy.github.io/ui/#/file-upload).
+The logic behind [FileUpload](https://blamy.github.io/ui/#/file-upload), without its styling: the rows of a file list (queued, uploading, done, failed, and the files UI SDK's [FileInput](https://ui-sdk.dev/docs/react/components/file-input) turned away, with the reason in words), a concurrency-limited upload queue with abort, retry and controlled mode (the `fileUpload` primitive, so agents can reach it too), an `XMLHttpRequest` adapter that reports real progress, and helpers (`describeRules`, `rejectionMessage`; sizes read through UI SDK's `formatFileSize`). Choosing, dropping, pasting and the checks are FileInput's: spread `inputProps` on its root and the hook does the rest. Use it to build your own drop target, rows or form; the options, the returned API and the helpers are documented under [FileUpload](https://blamy.github.io/ui/#/file-upload).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -9,7 +9,8 @@ The logic behind [FileUpload](https://blamy.github.io/ui/#/file-upload), without
 Copies the source into your project's `lib/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import { useFileUpload, xhrUpload } from '@/lib/file-upload-model'
+import { useFileUpload } from '@/lib/use-file-upload'
+import { xhrUpload } from '@/lib/file-upload-model'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -28,16 +29,22 @@ import { useFileUpload, xhrUpload } from '@brett_lamy/ui'
 ## Usage
 
 ```tsx
+import { FileInput, FileInputDropzone, FileInputTrigger } from '@ui-sdk/react/file-input'
+
 const up = useFileUpload({
   accept: ['image/*'],
-  maxSize: 5 * 1024 * 1024,
+  maxSize: 5_000_000,
   upload: xhrUpload('/api/upload'),
 })
 
-<FileUploadButton onFiles={(entries) => up.add(entries)}>Add photos</FileUploadButton>
+<FileInput {...up.inputProps} className="grid gap-2">
+  <FileInputDropzone>
+    Drop photos here <FileInputTrigger>Add photos</FileInputTrigger>
+  </FileInputDropzone>
+</FileInput>
 {up.files.map((f) => (
   <FileItem key={f.id} item={f} onRemove={(x) => up.remove(x.id)} onRetry={(x) => up.retry(x.id)} />
 ))}
 ```
 
-It has no DOM dependency apart from `useFilePreview` (object URLs) and `xhrUpload` (`XMLHttpRequest`), and its pure helpers run anywhere. See the [API](https://blamy.github.io/ui/#/file-upload) and the [limits](https://blamy.github.io/ui/#/file-upload): the browser's `accept` is a hint, and everything must be validated again on the server.
+`inputProps` includes a `render` that makes the FileInput's element the list's root, so the list is on the page for agents and aborts its uploads when it leaves. `up.add(files)` runs files from anywhere (a camera button, a paste handler of your own) through the same FileInput while it is mounted. Apart from that FileInput, `useFilePreview` (object URLs) and `xhrUpload` (`XMLHttpRequest`), it needs no DOM, and its helpers run anywhere. See the [API](https://blamy.github.io/ui/#/file-upload) and the [limits](https://blamy.github.io/ui/#/file-upload): the browser's `accept` is a hint, and everything must be validated again on the server.

@@ -95,7 +95,7 @@ export default function Vibecoder() {
           {busy ? 'Testing browser tools…' : 'Test browser tools'}
         </button>
         <output
-          className="min-w-0 flex-1 text-muted-foreground"
+          className="min-w-0 flex-1 text-foreground/70"
           aria-live="polite"
         >
           {result}

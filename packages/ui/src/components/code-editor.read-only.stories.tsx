@@ -78,8 +78,8 @@ Durable jobs for **Postgres**. See [the docs](https://example.com).
   },
 ];
 
-/* CodeEditor as a snippet: read-only, with every character in the page. These stories are the proof that it looks exactly as it
-   always did: their baselines are SyntaxHighlighting's. */
+/* CodeEditor as a snippet: read-only, with every character in the page. These stories are the proof that it looks exactly as
+   the 5.x snippet component did: their baselines are its. */
 
 const meta: Meta<CodeEditorProps> = {
   title: 'Organisms/CodeEditor/Read only',

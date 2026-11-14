@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
-import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewIndicator, TabViewList, TabViewPanel, TabViewPanels, TabViewSeparator, TabViewTab } from '@/components/ui/tab-view'
+import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewList, TabViewPanel, TabViewPanels, TabViewPill, TabViewSeparator, TabViewTab } from '@/components/ui/tab-view'
 import { Icon } from '@/lib/icon'
 import { themeScopeProps, useAppearance } from '@/lib/theme'
 
@@ -99,7 +99,8 @@ function Panel({ id, horizontal }: { id: string; horizontal: boolean }) {
 
 // Discord's tile: a circle at rest that morphs to a rounded square when its
 // tab is hovered or selected (filling with the workspace color), with a
-// mention badge. It reads the tab's state through `group-data-*`.
+// mention badge. It reads the tab through `group-hover:`, `group-active:` and
+// `group-data-selected:`.
 function WorkspaceTile({
   color = 'var(--primary)',
   mentions,
@@ -112,7 +113,7 @@ function WorkspaceTile({
   return (
     <span
       style={{ '--tile': color } as CSSProperties}
-      className="relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-sans text-[14px] leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-data-hovered:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--tile) group-data-selected:bg-(--tile) group-data-selected:text-white group-data-pressed:scale-[.94] motion-reduce:transition-none group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-link"
+      className="relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-sans text-[14px] leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-hover:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--tile) group-data-selected:bg-(--tile) group-data-selected:text-white group-active:scale-[.94] motion-reduce:transition-none group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-link"
     >
       {children}
       {mentions ? (
@@ -138,22 +139,24 @@ function Rail({
   return (
     <TabView
       orientation="vertical"
-      selectedKey={server}
-      onSelectionChange={(k) => setServer(String(k))}
+      value={server}
+      onValueChange={(next) => {
+        if (next) setServer(next)
+      }}
       className="contents"
     >
       <TabViewBar variant="workspace">
         <TabViewList aria-label="Workspaces">
-          <TabViewTab id="home" textValue="Direct Messages">
-            <TabViewIndicator variant="pill" />
+          <TabViewTab value="home" aria-label="Direct Messages">
+            <TabViewPill />
             <WorkspaceTile mentions={homeMentions}>
               <Icon name="bubble-oval" size={17} sw={2} />
             </WorkspaceTile>
           </TabViewTab>
           <TabViewSeparator />
           {servers.map((s) => (
-            <TabViewTab key={s.id} id={s.id} textValue={s.title}>
-              <TabViewIndicator variant="pill" attention={s.unread} />
+            <TabViewTab key={s.id} value={s.id} aria-label={s.title}>
+              <TabViewPill attention={s.unread} />
               <WorkspaceTile color={s.color} mentions={s.mentions}>
                 {s.label}
               </WorkspaceTile>
@@ -238,8 +241,10 @@ export default function SectionsAndRail({
           <TabView
             key={variant}
             orientation={variant === 'vertical' ? 'vertical' : 'horizontal'}
-            selectedKey={tab}
-            onSelectionChange={(k) => setTab(String(k))}
+            value={tab}
+            onValueChange={(next) => {
+              if (next) setTab(next)
+            }}
             style={{ position: 'absolute', inset: 0 }}
           >
             <TabViewBar>
@@ -247,7 +252,7 @@ export default function SectionsAndRail({
                 {items.map((it) => (
                   <TabViewTab
                     key={it.id}
-                    id={it.id}
+                    value={it.id}
                     icon={it.icon}
                     title={it.title}
                   />
@@ -256,7 +261,7 @@ export default function SectionsAndRail({
             </TabViewBar>
             <TabViewPanels>
               {items.map((it) => (
-                <TabViewPanel key={it.id} id={it.id}>
+                <TabViewPanel key={it.id} value={it.id}>
                   <Panel id={it.id} horizontal={variant !== 'vertical'} />
                 </TabViewPanel>
               ))}

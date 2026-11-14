@@ -8,7 +8,7 @@ import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { ContentSwap } from '@/components/ui/animated-height';
 import { Badge } from '@/components/ui/badge';
 import { ProgressStepper } from '@/components/ui/progress-stepper';
-import { useContainerWidth } from '@/lib/container';
+import { useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { useDirection } from '@/lib/motion';
 import { BLProvider, useAppearance } from '@/lib/theme';
@@ -26,8 +26,8 @@ import { CheckoutCtx, STEPS, useCheckout, type DraftInit, type Step } from './us
 /** The checkout's accent, iOS indigo: `fill` for buttons and selection (white labels read on it), `ink` for tinted text
  *  such as links (lighter in dark mode, so it reads on the dark surfaces too). */
 const CHECKOUT_TINT = { light: { fill: '#5856D6', ink: '#5856D6' }, dark: { fill: '#5E5CE6', ink: '#8F8CFF' } } as const;
-/** Host width (px) from which the summary sits beside the form. */
-const WIDE = 860;
+/** Host width (px) from which the summary sits beside the form: the `regular` size class. */
+const SIZE_CLASSES = { medium: 640, regular: 860 };
 
 const STEP_LABELS = { plan: 'Plan', account: 'Account', payment: 'Payment' } as const;
 const STEP_ICONS = { plan: 'layers', account: 'person', payment: 'wallet' } as const;
@@ -46,8 +46,8 @@ export interface SaasCheckoutProps {
 export default function SaasCheckout({ initialStep, initial, today, onDashboard }: SaasCheckoutProps) {
   const dark = useAppearance() === 'dark';
   const tint = CHECKOUT_TINT[dark ? 'dark' : 'light'];
-  const [ref, width] = useContainerWidth<HTMLDivElement>(1100);
-  const wide = width >= WIDE;
+  const [ref, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: SIZE_CLASSES });
+  const wide = sizeClass === 'regular';
   const checkout = useCheckout({ initialStep, initial, today });
   const { step, status } = checkout;
   const index = step === 'done' || status === 'paid' ? STEPS.length : STEPS.indexOf(step);

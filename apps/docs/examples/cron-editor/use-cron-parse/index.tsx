@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { TextField } from '@/components/ui/text-field'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { nextCronRuns } from '@/lib/cron'
 import { useCronParse } from '@/lib/gpu-cron'
 
@@ -26,10 +25,10 @@ export default function UseCronParse() {
     : []
   return (
     <div className="mx-auto grid max-w-md gap-3">
-      <TextField value={text} onChange={setText}>
-        <Label variant="field" className="text-foreground/70">Describe the schedule</Label>
-        <Input />
-      </TextField>
+      <Field>
+        <FieldLabel variant="field" className="text-foreground/70">Describe the schedule</FieldLabel>
+        <Input value={text} onValueChange={setText} />
+      </Field>
       <p className="m-0 min-h-[18px] px-1 text-footnote text-foreground/70" aria-live="polite">
         {error
           ? error.message

@@ -149,7 +149,7 @@ export function TerminalHeader({ title = 'zsh', children, className, style }: Te
   );
 }
 
-export function TerminalAction({ icon, label, onPress, className }: { icon: IconName | (string & {}); label: string; onPress?: () => void; className?: string }) {
+export function TerminalAction({ icon, label, onClick, className }: { icon: IconName | (string & {}); label: string; onClick?: () => void; className?: string }) {
   return (
     <Button
       variant="quiet"
@@ -157,8 +157,8 @@ export function TerminalAction({ icon, label, onPress, className }: { icon: Icon
       aria-label={label}
       title={label}
       className={className}
-      onPress={() => {
-        onPress?.();
+      onClick={() => {
+        onClick?.();
       }}
     >
       <Icon name={icon} size={15} sw={1.7} />

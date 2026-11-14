@@ -48,11 +48,10 @@
     }
   },
   "dependencies": {
-    "@brett_lamy/docstream": "1.34.4",
-    "@brett_lamy/docstream-editor": "1.34.4",
-    "@internationalized/date": "^3.12.4",
-    "@pierre/trees": "1.0.0-beta.6",
+    "@brett_lamy/docstream": "2.0.0",
+    "@brett_lamy/docstream-editor": "2.0.0",
     "@tiptap/core": "3.30.5",
+    "@tiptap/extension-code": "3.30.5",
     "@tiptap/extension-code-block": "3.30.5",
     "@tiptap/extension-list": "3.30.5",
     "@tiptap/extension-placeholder": "3.30.5",
@@ -60,7 +59,6 @@
     "@tiptap/pm": "3.30.5",
     "@tiptap/react": "3.30.5",
     "@tiptap/starter-kit": "3.30.5",
-    "@tiptap/suggestion": "3.30.5",
     "@ui-sdk/core": "workspace:@brett_lamy/ui-sdk-core@*",
     "@ui-sdk/react": "workspace:@brett_lamy/ui-sdk-react@*",
     "@vscode/codicons": "0.0.46-24",
@@ -75,9 +73,6 @@
     "gpu-lexer": "0.0.3",
     "gpu-time": "0.5.0",
     "perfect-freehand": "^1.2.2",
-    "react-aria": "^3.51.0",
-    "react-aria-components": "^1",
-    "react-resizable-panels": "4.16.0",
     "rrweb": "2.0.0-alpha.20",
     "tailwind-merge": "^3"
   },
@@ -99,7 +94,7 @@
       "optional": true
     }
   },
-  "description": "iOS-flavored React components on react-aria-components, Tailwind v4 and cva — containers, lists, tokens, Composer, PencilKit. Also a shadcn registry (source-copy items and app blocks).",
+  "description": "iOS-flavored React components on UI SDK, Tailwind v4 and cva: adaptive containers (SplitView, NavigationStack, Credenza), lists, tokens, Composer, PencilKit. Also a shadcn registry (source-copy items and app blocks).",
   "license": "MIT",
   "sideEffects": [
     "*.css"
@@ -118,7 +113,7 @@
     "react",
     "blui",
     "ios",
-    "react-aria",
+    "ui-sdk",
     "shadcn",
     "components"
   ],
@@ -129,6 +124,8 @@
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "fake-indexeddb": "^6.2.5",
-    "happy-dom": "^20.14.5"
+    "happy-dom": "^20.14.5",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   }
 }

@@ -4,12 +4,15 @@
 import type { CodeEditorHandle } from '@/components/ui/code-editor';
 import type { TerminalHandle } from '@/components/ui/terminal';
 import type { OpenCodeHostBridge } from '@/lib/open-code-host';
-import type { WorkspaceChangedMeta, WorkspaceImperativeHandle, WorkspaceModel, WorkspaceModelInput, WorkspaceNode, TabNode, TabsetNode } from '@/components/ui/workspace';
+import {
+  createWorkspaceController, workspaceTabsets,
+  type TabNode, type WorkspaceController, type WorkspaceLayout, type WorkspaceLayoutCommitDetails, type WorkspaceLayoutInput, type WorkspaceNode,
+} from '@/components/ui/workspace';
 import { ancestors, basename, buildTree, dirname, isSearchable, isValidName, resolvePath } from './files';
 import type { FileContent, RuntimeEntryKind, RuntimeFileEvent, RuntimeScriptList, RuntimeStatus, RuntimeTerminal, Unsubscribe, VSCodeRuntime } from './runtime';
 
 export type TabData = { kind: 'file'; path: string } | { kind: 'terminal'; id: string };
-export type VSCodeModel = WorkspaceModel<TabData>;
+export type VSCodeLayout = WorkspaceLayout<TabData>;
 
 /** What the rail selects. `editor` and `terminal` are its own tabs in a narrow window, where one pane shows at a time. */
 export type ViewId = 'explorer' | 'search' | 'run' | 'editor' | 'terminal';
@@ -49,6 +52,8 @@ export interface VSCodeStoreOptions {
   initialFile?: string;
   /** The rail's tab to start on. A wide window has no editor or terminal tab, so there that's the Explorer. */
   initialView?: ViewId;
+  /** The controller the store drives its Workspace with. Default: a new one. */
+  workspace?: WorkspaceController<TabData>;
 }
 
 export const EDITORS_TABSET = 'editors';
@@ -61,12 +66,6 @@ const MAX_OUTPUT = 1_000_000;
 /** Files read at once when Search needs them all. */
 const SEARCH_READS_AT_ONCE = 16;
 
-function tabsetsOf(node: WorkspaceNode<TabData>, out: TabsetNode<TabData>[] = []): TabsetNode<TabData>[] {
-  if (node.type === 'tabset') out.push(node);
-  else for (const child of node.children) tabsetsOf(child, out);
-  return out;
-}
-
 export class VSCodeStore {
   readonly runtime: VSCodeRuntime;
   readonly root: string;
@@ -78,12 +77,13 @@ export class VSCodeStore {
     this.runtime = runtime;
     this.root = runtime.files.root;
     this.initialFile = options.initialFile;
+    this.workspace = options.workspace ?? createWorkspaceController<TabData>();
     if (options.initialView) this.view = options.initialView;
     if (options.initialView && options.initialView !== 'editor' && options.initialView !== 'terminal') this.lastSideView = options.initialView;
     this.status = runtime.status.get();
     const terminal = this.makeTerminal(null);
     this.activeTerminal = terminal.id;
-    this.model = {
+    this.layout = {
       version: 1,
       root: {
         type: 'split',
@@ -368,8 +368,10 @@ export class VSCodeStore {
   /* ── The Workspace ── */
 
   /** The layout, to mount a Workspace with. */
-  model: WorkspaceModelInput<TabData> | VSCodeModel;
-  private workspace: WorkspaceImperativeHandle<TabData> | null = null;
+  layout: WorkspaceLayoutInput<TabData> | VSCodeLayout;
+  /** Pass it as the Workspace's `controller`. */
+  readonly workspace: WorkspaceController<TabData>;
+  private workspaceShown = false;
   private readonly fileTabs = new Map<string, string>();
   private nextFileTab = 1;
 
@@ -379,10 +381,17 @@ export class VSCodeStore {
   selectedPath: string | null = null;
   activeTerminal: string | null = null;
 
-  attachWorkspace(handle: WorkspaceImperativeHandle<TabData> | null) {
-    this.workspace = handle;
-    if (handle && this.narrow) this.enterNarrow();
-    if (handle && this.listed && !this.fileTabs.size) this.openInitialFile();
+  /** The Workspace, while one is mounted with `workspace` as its controller. */
+  private get ws(): WorkspaceController<TabData> | null {
+    return this.workspaceShown ? this.workspace : null;
+  }
+
+  /** Call when the Workspace mounts and unmounts: until it's there, its controller can't do anything. */
+  workspaceMounted(mounted: boolean) {
+    this.workspaceShown = mounted;
+    if (!mounted) return;
+    if (this.narrow && !this.wideLayout) this.enterNarrow();
+    if (this.listed && !this.fileTabs.size) this.openInitialFile();
   }
 
   private fileTab(path: string): TabNode<TabData> {
@@ -404,7 +413,7 @@ export class VSCodeStore {
     if (!id) return;
     this.fileTabs.delete(from);
     this.fileTabs.set(to, id);
-    this.workspace?.updateTab(id, { title: basename(to), data: { kind: 'file', path: to } });
+    this.ws?.updateTab(id, { title: basename(to), data: { kind: 'file', path: to } });
     const position = this.positions.get(from);
     if (position) this.positions.set(to, position);
     if (this.activePath === from) this.activePath = to;
@@ -412,16 +421,16 @@ export class VSCodeStore {
 
   private closeFileTab(path: string) {
     const id = this.fileTabs.get(path);
-    if (id) this.workspace?.closeTab(id);
+    if (id) this.ws?.closeTab(id);
     this.fileTabs.delete(path);
     if (this.activePath === path) this.activePath = this.visibleFile();
   }
 
   /** Where a new file tab goes: beside the file in use, else the first place that holds files. */
   private editorTabset(): string {
-    const model = this.workspace?.getModel();
-    if (!model) return EDITORS_TABSET;
-    const tabsets = tabsetsOf(model.root);
+    const layout = this.ws?.getLayout();
+    if (!layout) return EDITORS_TABSET;
+    const tabsets = workspaceTabsets(layout);
     const activeId = this.activePath ? this.fileTabs.get(this.activePath) : undefined;
     const holding = activeId ? tabsets.find((t) => t.tabs.some((tab) => tab.id === activeId)) : undefined;
     return holding?.id ?? (tabsets.some((t) => t.id === EDITORS_TABSET) ? EDITORS_TABSET : tabsets[0].id);
@@ -429,9 +438,9 @@ export class VSCodeStore {
 
   /** A file some tabset is showing, for when the one in use closes. */
   private visibleFile(): string | null {
-    const model = this.workspace?.getModel();
-    if (!model) return null;
-    for (const tabset of tabsetsOf(model.root)) {
+    const layout = this.ws?.getLayout();
+    if (!layout) return null;
+    for (const tabset of workspaceTabsets(layout)) {
       const selected = tabset.tabs.find((tab) => tab.id === tabset.selectedId);
       if (selected?.data.kind === 'file' && this.entries.has(selected.data.path)) return selected.data.path;
     }
@@ -444,8 +453,8 @@ export class VSCodeStore {
     if (reveal) this.reveals.set(path, reveal);
     if (!this.contents.has(path)) void this.load(path);
     const existing = this.fileTabs.get(path);
-    if (existing) this.workspace?.selectTab(existing);
-    else this.workspace?.addTab(this.fileTab(path), { tabsetId: this.editorTabset() });
+    if (existing) this.ws?.selectTab(existing);
+    else this.ws?.addTab(this.fileTab(path), { tabsetId: this.editorTabset() });
     this.activePath = path;
     this.selectedPath = path;
     if (this.narrow && options?.focus !== false) this.setView('editor');
@@ -455,11 +464,11 @@ export class VSCodeStore {
     this.emit();
   }
 
-  /** Called for every change of layout. */
-  onModelChanged = (model: VSCodeModel, meta: WorkspaceChangedMeta) => {
-    this.model = model;
+  /** Called once for every change of layout: a drop, a handle let go, a select, a close, a controller's write. */
+  onLayoutCommit = (layout: VSCodeLayout, details: WorkspaceLayoutCommitDetails) => {
+    this.layout = layout;
     const open = new Set<string>();
-    for (const tabset of tabsetsOf(model.root)) for (const tab of tabset.tabs) open.add(tab.id);
+    for (const tabset of workspaceTabsets(layout)) for (const tab of tabset.tabs) open.add(tab.id);
     for (const [path, id] of [...this.fileTabs]) {
       if (open.has(id)) continue;
       this.fileTabs.delete(path);
@@ -469,9 +478,9 @@ export class VSCodeStore {
     for (const terminal of [...this.terminals]) {
       if (!open.has(terminal.id)) this.forgetTerminal(terminal);
     }
-    if (meta.reason === 'select') {
-      const tabsets = tabsetsOf(model.root);
-      const active = tabsets.find((t) => t.id === this.workspace?.getActiveTabsetId());
+    if (details.action === 'select') {
+      const tabsets = workspaceTabsets(layout);
+      const active = tabsets.find((t) => t.id === this.ws?.getActiveTabsetId());
       const selected = active?.tabs.find((tab) => tab.id === active.selectedId);
       if (selected?.data.kind === 'file') {
         this.activePath = selected.data.path;
@@ -485,11 +494,11 @@ export class VSCodeStore {
 
   /** Moves the tab on show into a new split on the right of its tabset. */
   splitRight(tabsetId: string) {
-    const model = this.workspace?.getModel();
-    if (!model) return;
-    const tabset = tabsetsOf(model.root).find((t) => t.id === tabsetId);
+    const layout = this.ws?.getLayout();
+    if (!layout) return;
+    const tabset = workspaceTabsets(layout).find((t) => t.id === tabsetId);
     const selected = tabset?.selectedId;
-    if (tabset && selected && tabset.tabs.length > 1) this.workspace?.moveTab(selected, { tabsetId, region: 'right' });
+    if (tabset && selected && tabset.tabs.length > 1) this.ws?.moveTab(selected, { tabsetId, region: 'right' });
   }
 
   /* ── Editors ── */
@@ -623,19 +632,19 @@ export class VSCodeStore {
       return Promise.reject(new Error('OpenCode is already running in another terminal. Stop it there first.'));
     }
     return new Promise((resolve) => {
-      const model = this.workspace?.getModel();
-      const pane = model && !model.maximizedTabsetId ? tabsetsOf(model.root).find((tabset) => tabset.tabs.some((tab) => tab.id === record.id)) : undefined;
+      const layout = this.ws?.getLayout();
+      const pane = layout && !layout.maximizedTabsetId ? workspaceTabsets(layout).find((tabset) => tabset.tabs.some((tab) => tab.id === record.id)) : undefined;
       const close = () => {
         if (!record.openCode) return;
         record.openCode = null;
         signal.removeEventListener('abort', close);
-        if (pane && this.workspace?.getModel().maximizedTabsetId === pane.id) this.workspace.restoreTabset();
+        if (pane && this.ws?.getLayout().maximizedTabsetId === pane.id) this.ws?.restoreTabset();
         this.emit();
         resolve();
         this.focusTerminalSoon(record.id);
       };
       record.openCode = { host, close };
-      if (pane) this.workspace?.maximizeTabset(pane.id);
+      if (pane) this.ws?.maximizeTabset(pane.id);
       signal.addEventListener('abort', close, { once: true });
       this.emit();
     });
@@ -685,10 +694,10 @@ export class VSCodeStore {
   }
 
   private addTerminalTab(terminal: TerminalRecord) {
-    const model = this.workspace?.getModel();
-    const tabsets = model ? tabsetsOf(model.root) : [];
+    const layout = this.ws?.getLayout();
+    const tabsets = layout ? workspaceTabsets(layout) : [];
     const beside = tabsets.find((t) => t.tabs.some((tab) => tab.data.kind === 'terminal')) ?? tabsets.find((t) => t.id === TERMINALS_TABSET) ?? tabsets[0];
-    this.workspace?.addTab(this.terminalTab(terminal), { tabsetId: beside?.id });
+    this.ws?.addTab(this.terminalTab(terminal), { tabsetId: beside?.id });
     this.activeTerminal = terminal.id;
     if (this.narrow) this.setView('terminal');
     this.emit();
@@ -697,8 +706,8 @@ export class VSCodeStore {
   closeTerminal(id: string) {
     const terminal = this.terminal(id);
     if (!terminal) return;
-    this.workspace?.closeTab(id);
-    // Closing the tab tells `onModelChanged`, which forgets it; without a Workspace, do it here.
+    this.ws?.closeTab(id);
+    // Closing the tab tells `onLayoutCommit`, which forgets it; without a Workspace, do it here.
     this.forgetTerminal(terminal);
     this.emit();
   }
@@ -770,7 +779,7 @@ export class VSCodeStore {
 
   private showTerminal(terminal: TerminalRecord) {
     this.activeTerminal = terminal.id;
-    this.workspace?.selectTab(terminal.id);
+    this.ws?.selectTab(terminal.id);
     if (this.narrow) this.setView('terminal');
     this.focusTerminalSoon(terminal.id);
     this.emit();
@@ -784,14 +793,14 @@ export class VSCodeStore {
   sidebarOpen = true;
   narrow = false;
   /** The layout from before the window got narrow, to go back to. */
-  private wideModel: VSCodeModel | null = null;
+  private wideLayout: VSCodeLayout | null = null;
 
   setView(view: ViewId) {
     if (this.view !== view) {
       this.view = view;
       if (view !== 'editor' && view !== 'terminal') this.lastSideView = view;
-      if (view === 'editor') this.workspace?.maximizeTabset(this.editorTabset());
-      if (view === 'terminal') this.workspace?.maximizeTabset(this.terminalTabset());
+      if (view === 'editor') this.ws?.maximizeTabset(this.editorTabset());
+      if (view === 'terminal') this.ws?.maximizeTabset(this.terminalTabset());
       this.emit();
     }
     if (view === 'terminal' && this.activeTerminal) this.focusTerminalSoon(this.activeTerminal);
@@ -805,8 +814,8 @@ export class VSCodeStore {
   }
 
   private terminalTabset() {
-    const model = this.workspace?.getModel();
-    const tabsets = model ? tabsetsOf(model.root) : [];
+    const layout = this.ws?.getLayout();
+    const tabsets = layout ? workspaceTabsets(layout) : [];
     return (tabsets.find((t) => t.tabs.some((tab) => tab.id === this.activeTerminal)) ?? tabsets.find((t) => t.id === TERMINALS_TABSET))?.id ?? TERMINALS_TABSET;
   }
 
@@ -820,11 +829,11 @@ export class VSCodeStore {
 
   /** One pane at a time: every file in one tabset and every terminal in the other, with one of them filling the window. */
   private enterNarrow() {
-    const workspace = this.workspace;
+    const workspace = this.ws;
     if (!workspace) return;
-    const model = workspace.getModel();
-    this.wideModel = model;
-    for (const tabset of tabsetsOf(model.root)) {
+    const layout = workspace.getLayout();
+    this.wideLayout = layout;
+    for (const tabset of workspaceTabsets(layout)) {
       for (const tab of tabset.tabs) {
         const home = tab.data.kind === 'file' ? EDITORS_TABSET : TERMINALS_TABSET;
         if (tabset.id !== home) workspace.moveTab(tab.id, { tabsetId: home, index: 0 });
@@ -839,20 +848,20 @@ export class VSCodeStore {
   }
 
   private leaveNarrow() {
-    const workspace = this.workspace;
+    const workspace = this.ws;
     if (!workspace) return;
     workspace.restoreTabset();
-    if (this.wideModel) workspace.setModel(this.restoredModel(this.wideModel, workspace.getModel()));
-    this.wideModel = null;
+    if (this.wideLayout) workspace.setLayout(this.restoredLayout(this.wideLayout, workspace.getLayout()));
+    this.wideLayout = null;
     if (this.view === 'editor' || this.view === 'terminal') this.view = 'explorer';
     this.sidebarOpen = true;
   }
 
   /** The wide layout again, with the tabs that exist now: those closed since go, those opened since join their tabset. */
-  private restoredModel(wide: VSCodeModel, now: VSCodeModel): VSCodeModel {
-    const current = new Map(tabsetsOf(now.root).flatMap((tabset) => tabset.tabs.map((tab) => [tab.id, tab] as const)));
+  private restoredLayout(wide: VSCodeLayout, now: VSCodeLayout): VSCodeLayout {
+    const current = new Map(workspaceTabsets(now).flatMap((tabset) => tabset.tabs.map((tab) => [tab.id, tab] as const)));
     const placed = new Set<string>();
-    const selectedNow = new Map(tabsetsOf(now.root).map((tabset) => [tabset.id, tabset.selectedId]));
+    const selectedNow = new Map(workspaceTabsets(now).map((tabset) => [tabset.id, tabset.selectedId]));
     const rebuild = (node: WorkspaceNode<TabData>): WorkspaceNode<TabData> => {
       if (node.type === 'split') return { ...node, children: node.children.map(rebuild) };
       const tabs = node.tabs.flatMap((tab) => {
@@ -863,7 +872,7 @@ export class VSCodeStore {
       return { ...node, tabs, selectedId: tabs.some((tab) => tab.id === node.selectedId) ? node.selectedId : tabs[0]?.id };
     };
     const root = rebuild(wide.root);
-    for (const tabset of tabsetsOf(root)) {
+    for (const tabset of workspaceTabsets(root)) {
       if (tabset.id !== EDITORS_TABSET && tabset.id !== TERMINALS_TABSET) continue;
       const late = [...current.values()].filter((tab) => !placed.has(tab.id) && (tab.data.kind === 'file') === (tabset.id === EDITORS_TABSET));
       for (const tab of late) {
@@ -986,15 +995,16 @@ export class VSCodeStore {
     this.emit();
   }
 
-  /** The row's new name, from the field. */
-  commitRename(path: string, name: string) {
+  /** The row's new name, from the field. False when it can't be used, which keeps the field open. */
+  commitRename(path: string, name: string): boolean {
     const isNew = this.renaming?.path === path && this.renaming.isNew;
     const to = resolvePath(dirname(path), name);
-    if (dirname(to) !== dirname(path) || this.exists(to)) return;
+    if (dirname(to) !== dirname(path) || this.exists(to)) return false;
     this.renamePath(path, to);
     this.renaming = null;
     if (isNew && this.entries.get(to) === 'file') this.openFile(to);
     this.emit();
+    return true;
   }
 
   /** The field went away. Escape on a new row takes the row away too; otherwise it keeps the name it was given. */

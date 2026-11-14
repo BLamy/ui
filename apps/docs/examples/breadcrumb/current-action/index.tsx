@@ -11,7 +11,7 @@ export default function CurrentAction() {
         items={[
           { id: 'home', label: 'Home', icon: 'house', href: '#home' },
           { id: 'reports', label: 'Reports', href: '#reports' },
-          { id: 'weekly', label: 'Weekly report', onPress: () => setLoads((n) => n + 1) },
+          { id: 'weekly', label: 'Weekly report', onClick: () => setLoads((n) => n + 1) },
         ]}
       />
       <p className="text-footnote text-foreground/70">Loaded {loads} {loads === 1 ? 'time' : 'times'}. Press the current page to reload it.</p>

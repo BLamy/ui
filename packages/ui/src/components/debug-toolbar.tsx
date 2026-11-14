@@ -1,6 +1,7 @@
 'use client';
 
-import { Button } from './button';
+import { Toolbar, ToolbarButton } from '@ui-sdk/react/toolbar';
+import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const DEBUG_STEP_COLOR = 'text-[#75beff]';
@@ -40,13 +41,12 @@ const ACTIONS: readonly { action: DebugToolbarAction; label: string; icon: strin
   { action: 'stop', label: 'Stop', icon: 'debug-stop', color: DEBUG_STOP_COLOR },
 ];
 
-/** A compact debugger control strip using the VS Code Codicon action glyphs. */
+/** A compact debugger control strip using the VS Code Codicon action glyphs. It is a UI SDK Toolbar: one tab stop,
+    arrow keys between the actions, and an unavailable action stays reachable with `aria-disabled`. */
 export function DebugToolbar({ onAction, disabledActions = [], size = 'default', className }: DebugToolbarProps) {
   return (
-    <div
-      data-slot="debug-toolbar"
+    <Toolbar
       data-size={size}
-      role="group"
       aria-label="Debugger controls"
       className={cn(
         'inline-flex h-[52px] shrink-0 items-center rounded-card border px-3 shadow-md',
@@ -58,23 +58,22 @@ export function DebugToolbar({ onAction, disabledActions = [], size = 'default',
       <span aria-hidden="true" className={cn('codicon codicon-gripper mr-4 w-5 shrink-0 text-center text-detail', DEBUG_GRIP_COLOR, size === 'compact' && 'mr-2 w-4 text-footnote')} />
       <div className={cn('flex items-center gap-4', size === 'compact' && 'gap-1.5')}>
         {ACTIONS.map(({ action, label, icon, color }) => (
-          <Button
+          <ToolbarButton
             key={action}
-            variant="quiet"
-            size="icon"
             aria-label={label}
             title={label}
-            isDisabled={disabledActions.includes(action)}
-            onPress={() => onAction(action)}
+            disabled={disabledActions.includes(action)}
+            onClick={() => onAction(action)}
             className={cn(
-              'size-9 rounded-md data-hovered:bg-white/10 data-pressed:bg-white/15',
+              buttonVariants({ variant: 'quiet', size: 'icon' }),
+              'size-9 rounded-md hover:not-data-disabled:bg-white/10 active:not-data-disabled:bg-white/15',
               size === 'compact' && 'size-[30px]',
             )}
           >
             <span aria-hidden="true" className={cn('codicon', `codicon-${icon}`, color, size === 'compact' ? 'text-title' : 'text-[24px]')} />
-          </Button>
+          </ToolbarButton>
         ))}
       </div>
-    </div>
+    </Toolbar>
   );
 }

@@ -4,6 +4,8 @@
   "rules": {
     "duplicates": "off"
   },
+  // Build-output wrappers that tools/ui-sdk/build.mjs generates around the UI SDK fork (vendor/ui-sdk): no source here.
+  "ignoreWorkspaces": ["packages/ui-sdk-core", "packages/ui-sdk-react"],
   "workspaces": {
     ".": {
       "entry": [
@@ -32,8 +34,21 @@
         "eslint-plugin-react",
         "eslint-plugin-react-hooks",
         "happy-dom",
-        "@electron/packager"
-      ]
+        "@electron/packager",
+        // Imported as `@ui-sdk/*` through `workspace:@brett_lamy/ui-sdk-*@*` aliases. Knip resolves those imports to the
+        // workspace's files and matches them by its package name, so it never counts the alias as used.
+        "@ui-sdk/core",
+        "@ui-sdk/react",
+        // Used from CSS only (`@import "tailwindcss/utilities.css"` in packages/ui/src/styles.css), which knip does not read.
+        "tailwindcss"
+      ],
+      // The root vitest config only lists the packages' own configs, and the root has no stories (apps/catalog does).
+      // Without this, the plugins' default globs pick up vendor/ui-sdk (a git submodule with its own toolchain).
+      "vitest": {
+        "config": ["vitest.config.mts"],
+        "entry": []
+      },
+      "storybook": false
     },
     "packages/ui": {
       "entry": [
@@ -42,12 +57,17 @@
       ],
       "project": [
         "src/**/*.{ts,tsx}"
-      ]
+      ],
+      // Imported from CSS only (`@import "@vscode/codicons/dist/codicon.css"` in src/styles.css).
+      "ignoreDependencies": ["@vscode/codicons"]
     },
     "registry": {
       "entry": [
         "blocks/*/page.tsx",
-        "blocks/**/*.stories.tsx"
+        "blocks/**/*.stories.tsx",
+        // The package's own exports (`./blocks/types`, `./components/types`): the shapes meta.json and manifests follow.
+        "blocks/types.ts",
+        "components/types.ts"
       ],
       "project": [
         "**/*.{ts,tsx}"

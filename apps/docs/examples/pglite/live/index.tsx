@@ -26,7 +26,7 @@ function Board() {
           </li>
         ))}
       </ol>
-      <Button variant="secondary" onPress={() => void run('insert into scores (player, points) values ($1, $2)', [players[Math.floor(Math.random() * players.length)], 1 + Math.floor(Math.random() * 20)])}>
+      <Button variant="secondary" onClick={() => void run('insert into scores (player, points) values ($1, $2)', [players[Math.floor(Math.random() * players.length)], 1 + Math.floor(Math.random() * 20)])}>
         Score some points
       </Button>
     </div>

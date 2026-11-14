@@ -1,10 +1,9 @@
 {
   "name": "log-list-model",
   "title": "LogList logic",
-  "description": "LogList's logic as plain functions, and the row window it and RequestTable share: measured heights, anchoring and scrolling far beyond what the DOM could hold.",
+  "description": "LogList's logic as plain functions: levels and their counts, a row's text and time, and what LogList and RequestTable share for their rows: how a list changed, rows by id, and how a followed marker scrolls.",
   "files": [
-    "lib/log-list-model.ts",
-    "lib/log-list-window.ts"
+    "lib/log-list-model.ts"
   ],
   "exports": [
     "LOG_LEVELS",

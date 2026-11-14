@@ -1,10 +1,11 @@
 'use client';
-import { useEffect, useId, useMemo, useState, type ComponentProps, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type ComponentProps, type ReactNode } from 'react';
+import type { ChangeDetails, ChangeSource } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { FieldDescription, FieldError, TextField } from '@/components/ui/text-field';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Toggle } from '@/components/ui/toggle';
+import { ToggleGroup } from '@/components/ui/toggle-group';
 import { CRON_FIELDS, cronProblems, describeCron, isValidTimeZone, localTimeZone, nextCronRuns, validateCron } from '@/lib/cron';
 import { describeCronError, useCronParse } from '@/lib/gpu-cron';
 import { Icon } from '@/lib/icon';
@@ -64,13 +65,19 @@ export const CRON_PRESETS: readonly CronPreset[] = [
   { label: 'First of the month', value: '0 0 1 * *' },
 ];
 
+/** Why the expression changed: typing in the expression field (or the plain-English box, whose answer it is), a
+    preset press, a form reset, or a call from code. */
+export type CronEditorChangeReason = 'input-change' | 'clear-press' | 'item-press' | 'reset' | 'imperative';
+export type CronEditorChangeDetails = ChangeDetails<CronEditorChangeReason>;
+
 export interface CronEditorProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'onChange'>, VariantProps<typeof cronEditorVariants> {
   /** The expression (controlled). */
   value?: string;
   /** The initial expression when uncontrolled. */
   defaultValue?: string;
-  /** Called with the new expression on every edit, a preset press, and every answer of the plain-English box. */
-  onValueChange?: (expression: string) => void;
+  /** Called with the new expression on every edit, a preset press, and every answer of the plain-English box.
+      `details.cancel()` keeps the expression as it was (uncontrolled). */
+  onValueChange?: (expression: string, details: CronEditorChangeDetails) => void;
   /** Label of the expression field. Default: "Cron expression". */
   label?: ReactNode;
   /** Help text under the expression field. */
@@ -95,7 +102,7 @@ export interface CronEditorProps extends Omit<ComponentProps<'div'>, 'defaultVal
   locale?: string;
   /** Milliseconds the plain-English box waits after typing before asking the model. Default: 0 (every keystroke). */
   debounceMs?: number;
-  isDisabled?: boolean;
+  disabled?: boolean;
 }
 
 /** The index (0–4) of the cron field the caret is in, or null past the fifth. */
@@ -153,16 +160,17 @@ export function CronEditor({
   naturalLanguageLabel = 'Describe the schedule',
   locale,
   debounceMs,
-  isDisabled,
+  disabled,
   variant,
   className,
   ...rest
 }: CronEditorProps) {
   const [inner, setInner] = useState(defaultValue);
   const expression = value ?? inner;
-  const set = (next: string) => {
-    if (value === undefined) setInner(next);
-    onValueChange?.(next);
+  // The consumer hears first, and an uncontrolled editor only takes what they didn't cancel.
+  const set = (next: string, details: CronEditorChangeDetails) => {
+    onValueChange?.(next, details);
+    if (value === undefined && !details.canceled) setInner(next);
   };
 
   const validation = useMemo(() => validateCron(expression), [expression]);
@@ -193,26 +201,28 @@ export function CronEditor({
   // While the plain-English box can run (or is still checking), it is the only input; without WebGPU, the raw one.
   const [support, setSupport] = useState<boolean | null>(null);
   // Disabled, the editor shows the expression itself (read-only).
-  const plainEnglish = naturalLanguage && !isDisabled && support !== false;
+  const plainEnglish = naturalLanguage && !disabled && support !== false;
 
   return (
     <div data-slot="cron-editor" className={cn(cronEditorVariants({ variant }), className)} {...rest}>
       {naturalLanguage ? (
-        <NaturalLanguage label={naturalLanguageLabel} current={expression} onUse={set} onSupport={setSupport} debounceMs={debounceMs} isDisabled={isDisabled} />
+        <NaturalLanguage label={naturalLanguageLabel} current={expression} onUse={set} onSupport={setSupport} debounceMs={debounceMs} disabled={disabled} />
       ) : null}
 
       {plainEnglish ? null : (
         <>
-          <TextField value={expression} onChange={set} name={name} isDisabled={isDisabled} isInvalid={!empty && !validation.valid}>
-            <Label variant="field" className={subtleText}>{label}</Label>
+          <Field name={name} disabled={disabled} invalid={!empty && !validation.valid ? true : undefined}>
+            <FieldLabel variant="field" className={subtleText}>{label}</FieldLabel>
             <Input
+              value={expression}
+              onValueChange={set}
               className="[font-family:var(--font-mono)]"
               placeholder="0 9 * * 1-5"
               autoComplete="off"
               autoCapitalize="off"
               autoCorrect="off"
               spellCheck={false}
-              onSelect={(e) => setCaretField(fieldAtCaret(e.currentTarget.value, e.currentTarget.selectionStart ?? e.currentTarget.value.length))}
+              onSelectCapture={(e) => setCaretField(fieldAtCaret(e.currentTarget.value, e.currentTarget.selectionStart ?? e.currentTarget.value.length))}
               onBlur={() => setCaretField(null)}
             />
             <FieldDescription className={subtleText}>{description ?? 'Five fields, separated by spaces.'}</FieldDescription>
@@ -221,7 +231,7 @@ export function CronEditor({
                 <ErrorLine key={`${p.field}-${p.message}`}>{p.message}</ErrorLine>
               ))}
             </FieldError>
-          </TextField>
+          </Field>
 
           <dl data-slot="cron-editor-fields" className="m-0 grid grid-cols-5 gap-1.5">
             {CRON_FIELDS.map((f, i) => {
@@ -249,12 +259,17 @@ export function CronEditor({
           </p>
 
           {presets && presets.length ? (
-            <div data-slot="cron-editor-presets" role="group" aria-label="Presets" className="flex flex-wrap gap-1.5">
-              {presets.map((p) => (
-                <Toggle key={p.value} variant="filled" size="sm" isSelected={expression.trim() === p.value} onChange={() => set(p.value)} isDisabled={isDisabled} className="data-selected:text-foreground">
-                  {p.label}
-                </Toggle>
-              ))}
+            <div data-slot="cron-editor-presets">
+              {/* One of N: the preset the expression matches is pressed, and pressing it again keeps it. */}
+              <ToggleGroup aria-label="Presets" deselectable={false} disabled={disabled} className="w-auto flex-wrap gap-1.5"
+                value={presets.some((p) => p.value === expression.trim()) ? [expression.trim()] : []}
+                onValueChange={(next, details) => { if (next[0] !== undefined) set(next[0], details); }}>
+                {presets.map((p) => (
+                  <Toggle key={p.value} value={p.value} variant="filled" size="sm" className="data-pressed:text-foreground">
+                    {p.label}
+                  </Toggle>
+                ))}
+              </ToggleGroup>
             </div>
           ) : null}
         </>
@@ -296,25 +311,38 @@ interface NaturalLanguageProps {
   label: ReactNode;
   /** The expression in the editor now. */
   current: string;
-  onUse: (expression: string) => void;
+  onUse: (expression: string, details: CronEditorChangeDetails) => void;
   /** Reports whether gpu-cron can run here (null while checking). */
   onSupport: (supported: boolean | null) => void;
   debounceMs?: number;
-  isDisabled?: boolean;
+  disabled?: boolean;
+}
+
+/** The details of a change the plain-English box's answer makes: an `input-change`, from the typing it answers. */
+function answerDetails({ event, source }: { event?: Event; source: ChangeSource }): CronEditorChangeDetails {
+  let canceled = false;
+  return {
+    reason: 'input-change',
+    event,
+    source,
+    cancel: () => { canceled = true; },
+    get canceled() { return canceled; },
+  };
 }
 
 /** The plain-English box: each answer gpu-cron gives for the text becomes the value. Rendered only while gpu-cron may
     run (and as a note when it cannot). */
-function NaturalLanguage({ label, current, onUse, onSupport, debounceMs = 0, isDisabled }: NaturalLanguageProps) {
+function NaturalLanguage({ label, current, onUse, onSupport, debounceMs = 0, disabled }: NaturalLanguageProps) {
   const [text, setText] = useState('');
-  const { result, error, supported, parsedText } = useCronParse(text, { debounceMs, enabled: !isDisabled });
+  // How the text being answered was typed: an answer reports it as its own change.
+  const typed = useRef<{ event?: Event; source: ChangeSource }>({ source: 'keyboard' });
+  const { result, error, supported, parsedText } = useCronParse(text, { debounceMs, enabled: !disabled });
   const answer = result && parsedText === text ? result.expression : null;
 
   useEffect(() => onSupport(supported), [supported, onSupport]);
   // The newest answer is the value (only answers to what the box says now, so a slow one never lands late).
   useEffect(() => {
-    if (answer !== null && answer !== current.trim()) onUse(answer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (answer !== null && answer !== current.trim()) onUse(answer, answerDetails(typed.current));
   }, [answer]);
 
   if (supported === false) {
@@ -328,11 +356,11 @@ function NaturalLanguage({ label, current, onUse, onSupport, debounceMs = 0, isD
 
   return (
     <div data-slot="cron-editor-natural" data-supported={supported ?? undefined} className="flex flex-col gap-2">
-      <TextField value={text} onChange={setText} isDisabled={isDisabled || supported === null} isInvalid={error !== null}>
-        <Label variant="field" className={subtleText}>{label}</Label>
-        <Input placeholder={supported === null && !isDisabled ? 'Checking for WebGPU…' : 'e.g. every weekday at 9am'} autoComplete="off" spellCheck={false} />
+      <Field disabled={disabled || supported === null} invalid={error !== null ? true : undefined}>
+        <FieldLabel variant="field" className={subtleText}>{label}</FieldLabel>
+        <Input value={text} onValueChange={(next, d) => { typed.current = { event: d.event, source: d.source }; setText(next); }} placeholder={supported === null && !disabled ? 'Checking for WebGPU…' : 'e.g. every weekday at 9am'} autoComplete="off" spellCheck={false} />
         <FieldError className="text-foreground">{error ? <ErrorLine>{describeCronError(error)}</ErrorLine> : null}</FieldError>
-      </TextField>
+      </Field>
     </div>
   );
 }

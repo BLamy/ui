@@ -63,7 +63,7 @@ function Toggle() {
   return (
     <div className="flex items-center gap-4">
       <NowPlayingBars playing={playing} size={24} className="text-primary" />
-      <Button variant="secondary" size="sm" onPress={() => setPlaying((p) => !p)}>{playing ? 'Pause' : 'Play'}</Button>
+      <Button variant="secondary" size="sm" onClick={() => setPlaying((p) => !p)}>{playing ? 'Pause' : 'Play'}</Button>
     </div>
   );
 }

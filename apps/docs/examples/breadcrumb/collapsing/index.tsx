@@ -18,7 +18,7 @@ export default function Collapsing() {
   const [width, setWidth] = useState(300)
   return (
     <div className="mx-auto grid max-w-md gap-4 p-2">
-      <Slider label="Frame width" minValue={140} maxValue={440} step={4} value={width} onChange={setWidth} />
+      <Slider<number> label="Frame width" min={140} max={440} step={4} value={width} onValueChange={setWidth} />
       <div
         style={{ '--frame': `${width}px` } as CSSProperties}
         className="w-(--frame) max-w-full resize-x overflow-hidden rounded-card border border-border bg-card p-2"

@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { FloatingSheet } from '@/components/ui/floating-sheet'
 import { ProgressStepper } from '@/components/ui/progress-stepper'
-import { springs, useMotion } from '@/lib/motion'
+import { AnimatePresence, motion } from 'framer-motion'
+import { springs } from '@/lib/motion'
 import { useAppearance } from '@/lib/theme'
 
 const steps = [
@@ -149,9 +150,6 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
 // One sheet, several trays: the height springs between steps rather than
 // jumping.
 export default function Trays() {
-  // useMotion() hands back framer-motion (AnimatePresence, motion) through the
-  // kit.
-  const { AnimatePresence, motion } = useMotion()
   const [step, setStep] = useState(0)
   const [dir, setDir] = useState(1)
   const go = (next: number) => {
@@ -202,12 +200,12 @@ export default function Trays() {
             <Button
               className="flex-1"
               variant="secondary"
-              isDisabled={step === 0}
-              onPress={() => go(step - 1)}
+              disabled={step === 0}
+              onClick={() => go(step - 1)}
             >
               Back
             </Button>
-            <Button className="flex-1" onPress={() => go(last ? 0 : step + 1)}>
+            <Button className="flex-1" onClick={() => go(last ? 0 : step + 1)}>
               {last ? 'Start over' : 'Continue'}
             </Button>
           </div>

@@ -7,7 +7,7 @@ import { ThemeScope } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import {
   TraceTimeline,
-  type TraceDrawStats, type TraceFetchActivity, type TraceTimelineHandle, type TraceTimelineProps, type TraceValueInfo,
+  type TraceDrawStats, type TraceFetchActivity, type TraceTimelineHandle, type TraceTimelineProps, type TraceValueChangeDetails,
 } from '@/components/ui/trace-timeline';
 import {
   lowerBound, stopAxis, stripHeight,
@@ -208,7 +208,7 @@ function Thumbnail({ time }: { time: number }) {
 /* Hooks for scripts that drive these stories in a real browser and time them. They do nothing unless a script sets them. */
 interface TraceHooks {
   __traceDraw?: (s: TraceDrawStats) => void;
-  __traceValue?: (time: number, info: TraceValueInfo<string>) => void;
+  __traceValue?: (time: number, details: TraceValueChangeDetails<string>) => void;
   __traceView?: (view: TraceRange) => void;
 }
 const hooks = globalThis as TraceHooks;
@@ -233,18 +233,18 @@ function HourTimeline({ axisKind = 'time', startAt = 1_512_000, startView, ...pr
       requests={session.requests}
       fetchActivity={session.fetchActivity}
       value={time}
-      onValueChange={(t, info) => {
+      onValueChange={(t, details) => {
         setTime(t);
-        hooks.__traceValue?.(t, info);
+        hooks.__traceValue?.(t, details);
       }}
       onViewChange={(v) => hooks.__traceView?.(v)}
       defaultView={startView}
       focusedLane={focused}
-      onFocusLane={setFocused}
+      onFocusedLaneChange={setFocused}
       selectedThread={thread}
-      onSelectThread={setThread}
+      onSelectedThreadChange={setThread}
       selectedRequest={request}
-      onSelectRequest={setRequest}
+      onSelectedRequestChange={setRequest}
       renderPreview={(t) => <Thumbnail time={t} />}
       onDraw={reportDraw}
       {...props}
@@ -279,7 +279,7 @@ function FakePanel({ title = 'Console', clearLeft }: { title?: string; clearLeft
         <List>
           <ListSection>
             {CONSOLE_ROWS.map((row, i) => (
-              <ListRow key={i} title={row.title} subtitle={row.subtitle} trailing={<span className="text-footnote text-muted-foreground tabular-nums">{row.time}</span>} accessory="chevron" onPress={() => {}} />
+              <ListRow key={i} title={row.title} subtitle={row.subtitle} trailing={<span className="text-footnote text-muted-foreground tabular-nums">{row.time}</span>} accessory="chevron" onClick={() => {}} />
             ))}
           </ListSection>
         </List>
@@ -373,7 +373,7 @@ const pressRail = async (canvasElement: HTMLElement, steps: Array<{ x: number; y
   const rail = canvasElement.querySelector<HTMLElement>('[data-slot=trace-timeline]');
   if (!rail) return;
   const r = rail.getBoundingClientRect();
-  const init = (x: number, y: number) => ({ bubbles: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: r.right - x, clientY: r.top + y });
+  const init = (x: number, y: number) => ({ bubbles: true, pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0, buttons: 1, clientX: r.right - x, clientY: r.top + y });
   rail.dispatchEvent(new PointerEvent('pointerdown', init(steps[0].x, steps[0].y)));
   for (const step of steps.slice(1)) {
     await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -423,10 +423,10 @@ function AcrossTheThreshold() {
   return (
     <ThemeScope className="flex flex-col gap-3 p-4 font-sans">
       <div className="flex flex-wrap items-center gap-3">
-        <Button size="sm" variant="secondary" onPress={() => setWidth(1100)}>Desktop</Button>
-        <Button size="sm" variant="secondary" onPress={() => setWidth(390)}>Phone</Button>
-        <Button size="sm" variant="secondary" onPress={() => handle.current?.fit()}>Fit</Button>
-        <Slider aria-label="Frame width" className="w-60" minValue={360} maxValue={1200} value={width} onChange={(v) => setWidth(v as number)} />
+        <Button size="sm" variant="secondary" onClick={() => setWidth(1100)}>Desktop</Button>
+        <Button size="sm" variant="secondary" onClick={() => setWidth(390)}>Phone</Button>
+        <Button size="sm" variant="secondary" onClick={() => handle.current?.fit()}>Fit</Button>
+        <Slider aria-label="Frame width" className="w-60" min={360} max={1200} value={width} onValueChange={(v) => setWidth(v as number)} />
         <span data-testid="frame-width" className="text-footnote text-muted-foreground tabular-nums">{width} px, {narrow ? 'rail' : 'strip'}</span>
       </div>
       <Phone w={width} h={narrow ? 720 : 560}>
@@ -439,9 +439,9 @@ function AcrossTheThreshold() {
             requests={session.requests}
             fetchActivity={session.fetchActivity}
             value={time}
-            onValueChange={(t, info) => {
+            onValueChange={(t, details) => {
               setTime(t);
-              hooks.__traceValue?.(t, info);
+              hooks.__traceValue?.(t, details);
             }}
             view={view}
             onViewChange={(v) => {

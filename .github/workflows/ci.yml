@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        # vendor/ui-sdk (our UI SDK fork) is a submodule; `pnpm install` builds the two @ui-sdk wrapper packages from it.
+        with: { submodules: true }
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }

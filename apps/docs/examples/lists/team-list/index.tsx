@@ -24,7 +24,7 @@ export default function TeamList() {
               title={`${p.f} ${p.l}`}
               subtitle={p.role}
               accessory="chevron"
-              onPress={() => {}}
+              onClick={() => {}}
             />
           ))}
           <ListRow
@@ -34,7 +34,7 @@ export default function TeamList() {
               <Switch
                 aria-label="Do Not Disturb"
                 checked={dnd}
-                onChange={setDnd}
+                onCheckedChange={setDnd}
               />
             }
           />

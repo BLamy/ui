@@ -83,7 +83,7 @@ function Cards() {
       <MorphGroup spring="tray">
         <div className="absolute inset-0 grid grid-cols-2 content-start gap-3 bg-background p-5">
           {colors.map((c, i) => (sel === i ? <div key={i} className="aspect-square" /> : (
-            <Morph key={i} id={`card-${i}`} radius={18} as="button" type="button" onClick={() => setSel(i)} aria-label={`Open card ${i + 1}`}
+            <Morph key={i} id={`card-${i}`} radius={18} render={<button type="button" />} onClick={() => setSel(i)} aria-label={`Open card ${i + 1}`}
               className="bl-btn aspect-square cursor-pointer border-0" style={{ background: c }} />
           )))}
         </div>

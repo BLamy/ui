@@ -67,7 +67,13 @@ import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas'
 </div>
 ```
 
-`PencilCanvas` is the raw surface: mount it inside any themed container. `usePencilHistory` (from `@/components/ui/pencilkit/use-pencil-history`) gives it undo and redo. The full sketch-pad page with the toolbar, colors and demo strokes is the **pencilkit-sketch** [block](https://blamy.github.io/ui/#/blocks) (`npx shadcn add https://blamy.github.io/ui/r/pencilkit-sketch.json`).
+`PencilCanvas` is the raw surface: mount it inside any themed container. A stroke follows the pointer with UI SDK's `bindDrag`, so it keeps going outside the canvas until the pointer lifts. `onStrokesChange(strokes, details)` reports each drawn or erased stroke with `details.reason` (`draw` or `erase`) before anything moves; on an uncontrolled canvas `details.cancel()` keeps the strokes as they were. `usePencilHistory` (from `@/components/ui/pencilkit/use-pencil-history`) gives it undo and redo. The full sketch-pad page with the toolbar, colors and demo strokes is the **pencilkit-sketch** [block](https://blamy.github.io/ui/#/blocks) (`npx shadcn add https://blamy.github.io/ui/r/pencilkit-sketch.json`).
+
+### The toolbar
+
+`PencilToolbar` is a UI SDK [Toolbar](https://ui-sdk.dev/docs/react/components/toolbar) named "Drawing tools" (pass `aria-label` to rename it): Tab enters it once, and Left and Right move across `ToolPicker`, `InkPicker` and `WidthPicker` (toggle groups join the toolbar's navigation) into `PencilActions`, a `ToolbarGroup` named "History". `PencilToolbarDivider` is a `ToolbarSeparator` inside it, and a decorative line in any other bar. Undo, Redo and Clear stay reachable while they can't run, with `aria-disabled`.
+
+To preview a brush before it is picked, give `ToolPicker` or `WidthPicker` a `hoverCard` controller (`createHoverCardController<PencilTool>()` / `<number>()`) and render one `<HoverCard controller={…}>` for it: every button becomes a trigger handing the card its tool or width index as the payload, with the hover card's own delays, safe path into the card and Escape. The sketch pad block does this.
 
 ## Examples
 
@@ -116,4 +122,4 @@ grid h-[34px] w-[38px] cursor-pointer place-items-center rounded-[9px] border-0 
 | Value | Adds |
 | --- | --- |
 | `true` | `bg-primary text-primary-foreground` |
-| `false` (default) | `bg-transparent text-muted-foreground data-selected:bg-primary data-selected:text-primary-foreground` |
+| `false` (default) | `bg-transparent text-muted-foreground data-pressed:bg-primary data-pressed:text-primary-foreground` |

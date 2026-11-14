@@ -23,7 +23,7 @@ The shell opens the `workbench` [theme scope](https://blamy.github.io/ui/#/themi
 
 ```tsx
 import {
-  WorkbenchShell, WorkbenchSidebar, WorkbenchMain, WorkbenchHeader,
+  WorkbenchShell, WorkbenchSidebar, WorkbenchMain, WorkbenchHeader, WorkbenchContent,
   WorkbenchSidebarTrigger, WorkbenchTitle, WorkbenchActions,
   WorkbenchDockTrigger, WorkbenchPanelTrigger, WorkbenchDock, WorkbenchPanel,
   WorkbenchTabBar, WorkbenchTab,
@@ -40,7 +40,7 @@ import {
         <WorkbenchPanelTrigger />
       </WorkbenchActions>
     </WorkbenchHeader>
-    <Chat />
+    <WorkbenchContent><Chat /></WorkbenchContent>
     <WorkbenchDock><Terminal /></WorkbenchDock>
   </WorkbenchMain>
   <WorkbenchPanel><Surfaces /></WorkbenchPanel>
@@ -63,15 +63,15 @@ Every part at once: the `t3-clone` registry block — thread sidebar, a streamin
 | --- | --- |
 | `WorkbenchShell` | Grid root. `tint`, `appearance`, and the initial state: `defaultSidebarOpen`, `defaultDockOpen`, `defaultDockHeight`, `defaultPanelOpen`, `defaultPanelFullscreen`. |
 | `WorkbenchSidebar` | Left region. `width` (242) for the column, `drawerWidth` (280) for the compact drawer. |
-| `WorkbenchSidebarTrigger` · `WorkbenchSidebarClose` | Header toggle (a hamburger when compact) · the drawer's × (renders only when compact). |
-| `WorkbenchMain` | Centre column: header, content, then the dock. |
+| `WorkbenchSidebarTrigger` · `WorkbenchSidebarClose` | A "Hide sidebar" toggle (a Menu button that opens the drawer when compact) · the drawer's × (renders only when compact). |
+| `WorkbenchMain` · `WorkbenchContent` | Centre column: header, then the content, then the dock. It is a vertical UI SDK [Resizable](https://ui-sdk.dev/docs/react/components/resizable); `WorkbenchContent` is the panel above the dock. |
 | `WorkbenchHeader` · `WorkbenchTitle` · `WorkbenchActions` · `WorkbenchAction` | The 52px title bar (`h-toolbar`): `project / title` crumb that fills the free space, then a row of icon actions. |
-| `WorkbenchDock` · `WorkbenchDockTrigger` · `WorkbenchDockClose` | Bottom dock, resizable from its top edge (`minHeight` 110, `maxHeight` 520); `snaps` for the compact sheet. |
-| `WorkbenchPanel` · `WorkbenchPanelTrigger` | Right region (an inspector) and its header toggle (hidden when compact). |
-| `WorkbenchPanelHeader` · `WorkbenchPanelTitle` · `WorkbenchPanelFullscreen` · `WorkbenchPanelClose` | The panel's bar: icon + name, full-screen toggle (hidden when compact), close. |
-| `WorkbenchTabBar` · `WorkbenchTab` | Compact-only view switcher. The `mainTab` (default `chat`) shows the main column; any other tab opens the panel page and reports its id through `onValueChange`. |
+| `WorkbenchDock` · `WorkbenchDockTrigger` · `WorkbenchDockClose` | Bottom dock, a `ResizablePanel` sized from its top edge, a "Resize dock" separator you drag or step with the arrow keys, Home and End (`minHeight` 110, `maxHeight` 520 px); `snaps` for the compact sheet. The trigger is a toggle (`aria-pressed`) named "Terminal". |
+| `WorkbenchPanel` · `WorkbenchPanelTrigger` | Right region (an inspector) and its header toggle, "Right panel" (hidden when compact). |
+| `WorkbenchPanelHeader` · `WorkbenchPanelTitle` · `WorkbenchPanelFullscreen` · `WorkbenchPanelClose` | The panel's bar: icon + name, full-screen toggle (`pressed`, hidden when compact), close. |
+| `WorkbenchTabBar` · `WorkbenchTab` | Compact-only view switcher. The `mainTab` (default `chat`) shows the main column; any other tab opens the panel page and reports its id through `onValueChange(id, details)` (the ToggleGroup's details; `details.cancel()` keeps the current view). |
 
-Triggers take an optional `onPress` that replaces their default action. Every part also works outside a shell — the triggers then do nothing unless given `onPress`, the dock renders inline with its own height, and the tab bar always shows — so a panel or a terminal can be dropped into any layout.
+Triggers take an optional `onClick` that replaces their default action. Every part also works outside a shell — the triggers then do nothing unless given `onClick`, the dock renders inline with its own height (outside a `WorkbenchMain` it is not resizable), and the tab bar always shows — so a panel or a terminal can be dropped into any layout.
 
 ## Responsive regions
 
@@ -83,7 +83,7 @@ Triggers take an optional `onPress` that replaces their default action. Every pa
 | Panel full screen | Covers the whole shell | Covers the whole shell | — |
 | `WorkbenchTabBar` | Not rendered | Not rendered | Bottom bar |
 
-Widths are measured on the shell's own box (`useContainerWidth` → `workbenchWidthClass`), so nested and resizable workbenches behave. The sidebar and panel are [AdaptivePanes](https://blamy.github.io/ui/#/adaptive-pane); the shell keeps separate state for the wide and compact presentations, so crossing the breakpoint never pops a drawer open.
+The size class is measured on the shell's own box (`useSizeClass` with `workbenchBreakpoints`), so nested and resizable workbenches behave. The sidebar and panel are [AdaptivePanes](https://blamy.github.io/ui/#/adaptive-pane); the shell keeps separate state for the wide and compact presentations, so crossing the breakpoint never pops a drawer open.
 
 ## Context
 
@@ -91,9 +91,9 @@ Widths are measured on the shell's own box (`useContainerWidth` → `workbenchWi
 
 | Field | Meaning |
 | --- | --- |
-| `width` · `widthClass` · `compact` | Measured width and its class. |
+| `sizeClass` · `compact` | The shell's size class (`data-size-class` on the root). |
 | `sidebarOpen` · `setSidebarOpen` · `toggleSidebar` | Column visibility, or the drawer when compact. |
-| `dockOpen` · `setDockOpen` · `toggleDock` · `dockHeight` · `setDockHeight` | Dock (or sheet) visibility and height. |
+| `dockOpen` · `setDockOpen` · `toggleDock` · `dockHeight` · `setDockHeight` | Dock (or sheet) visibility, and the height in px it opens at (kept when a resize ends). |
 | `panelOpen` · `setPanelOpen` · `togglePanel` | Column / drawer visibility, or the panel page when compact. |
 | `panelFullscreen` · `setPanelFullscreen` | Full-screen panel. |
 | `appearance` | The resolved light / dark palette. |

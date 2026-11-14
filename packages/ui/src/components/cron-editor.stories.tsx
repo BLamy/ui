@@ -78,7 +78,7 @@ export const NoPresets: Story = { args: { naturalLanguage: false, presets: false
 
 export const Plain: Story = { args: { variant: 'plain', defaultValue: '0 9 * * 1-5' } };
 
-export const Disabled: Story = { args: { isDisabled: true, defaultValue: '0 9 * * 1-5' } };
+export const Disabled: Story = { args: { disabled: true, defaultValue: '0 9 * * 1-5' } };
 
 export const Dark: Story = {
   decorators: [(Story) => <Pad w={440} dark><Story /></Pad>],

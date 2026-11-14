@@ -1,7 +1,7 @@
 /* Settings state: every setting's value, the navigation path (panes pushed so far) and search. One context so
-   any row can read or change a value, or push a pane. The layout follows the SplitView's width class. */
+   any row can read or change a value, or push a pane. The layout follows the SplitView's size class. */
 import { createContext, useContext, useMemo, useState } from 'react';
-import { useSplitView, type SplitViewWidthClass } from '@/components/ui/split-view';
+import { useSplitView, type SplitViewSizeClass } from '@/components/ui/split-view';
 import { type Appearance } from '@/lib/theme';
 import { DEFAULTS, type Value, type Values } from './data';
 
@@ -28,14 +28,14 @@ export interface SettingsApi {
 }
 
 export const SettingsCtx = createContext<SettingsApi | null>(null);
-const LAYOUT: Record<SplitViewWidthClass, Layout> = { compact: 'phone', medium: 'tablet', regular: 'desktop' };
+const LAYOUT: Record<SplitViewSizeClass, Layout> = { compact: 'phone', medium: 'tablet', regular: 'desktop' };
 
 /** Settings state plus the layout in effect: macOS at regular width, iOS / iPadOS below. */
 export function useSettings(): SettingsApi & { layout: Layout } {
-  const { widthClass } = useSplitView();
+  const { sizeClass } = useSplitView();
   const s = useContext(SettingsCtx);
   if (!s) throw new Error('useSettings must be used inside <AppleSettings>');
-  return { ...s, layout: LAYOUT[widthClass] };
+  return { ...s, layout: LAYOUT[sizeClass] };
 }
 
 /** Sidebar layouts always show a pane: the path, or Wi-Fi when nothing is open yet. */

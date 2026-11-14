@@ -1,68 +1,78 @@
 import { useState } from 'react'
-import type { Key } from 'react-aria-components'
-import { ComboBox, ComboBoxContent, ComboBoxInput, ComboBoxItem } from '@/components/ui/combobox'
-import { Label } from '@/components/ui/label'
-import { FieldDescription } from '@/components/ui/text-field'
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@/components/ui/combobox'
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Icon } from '@/lib/icon'
 import { ThemeScope } from '@/lib/theme'
 
-interface Person { id: string; name: string; email: string }
+interface Person { value: string; label: string; keywords: string[] }
 
+// `keywords` match too: here, the email.
 const people: Person[] = [
-  { id: 'ana', name: 'Ana Torres', email: 'ana@northwind.dev' },
-  { id: 'kim', name: 'Kim Park', email: 'kim@northwind.dev' },
-  { id: 'lee', name: 'Lee Chen', email: 'lee@northwind.dev' },
-  { id: 'maya', name: 'Maya Okafor', email: 'maya@northwind.dev' },
-  { id: 'sam', name: 'Sam Rivera', email: 'sam@northwind.dev' },
-  { id: 'tomas', name: 'Tomás Silva', email: 'tomas@northwind.dev' },
+  { value: 'ana', label: 'Ana Torres', keywords: ['ana@northwind.dev'] },
+  { value: 'kim', label: 'Kim Park', keywords: ['kim@northwind.dev'] },
+  { value: 'lee', label: 'Lee Chen', keywords: ['lee@northwind.dev'] },
+  { value: 'maya', label: 'Maya Okafor', keywords: ['maya@northwind.dev'] },
+  { value: 'sam', label: 'Sam Rivera', keywords: ['sam@northwind.dev'] },
+  { value: 'tomas', label: 'Tomás Silva', keywords: ['tomas@northwind.dev'] },
 ]
 
-// Dynamic items on the ComboBox itself; the built-in "contains" filter runs on
-// each item's textValue. Controlled: `value` is the key, `inputValue` the text.
+// Options as data on the Combobox, filtered by their label and keywords. The
+// list draws the matches itself, so each row gets an icon and a description.
+// `value` is the option; the text is only a query (`onQueryChange`).
 export default function Assignee() {
-  const [value, setValue] = useState<Key | null>('kim')
-  const [query, setQuery] = useState('Kim Park')
-  const person = people.find((p) => p.id === value)
-  // The ThemeScope is only here so the portalled overlay wears this demo's
-  // light / dark appearance; in an app, BLProvider or your root class does it.
+  const [value, setValue] = useState<string | null>('kim')
+  const [query, setQuery] = useState('')
+  const person = people.find((p) => p.value === value)
+  // The ThemeScope is only here so the overlay wears this demo's light / dark
+  // appearance; in an app, BLProvider or your root class does it.
   return (
     <ThemeScope className="mx-auto grid max-w-sm gap-4">
-      <ComboBox<Person>
-        defaultItems={people}
-        value={value}
-        onChange={setValue}
-        inputValue={query}
-        onInputChange={setQuery}
-        menuTrigger="focus"
-        allowsEmptyCollection
-      >
-        <Label variant="field">Assignee</Label>
-        <ComboBoxInput placeholder="Search the team" />
+      <Field>
+        <FieldLabel variant="field">Assignee</FieldLabel>
+        <Combobox
+          items={people}
+          value={value}
+          onValueChange={setValue}
+          onQueryChange={setQuery}
+        >
+          <ComboboxInput placeholder="Search the team" />
+          <ComboboxContent>
+            <ComboboxEmpty>No one matches “{query}”.</ComboboxEmpty>
+            <ComboboxList>
+              {(state) => (state.items as Person[]).map((p) => (
+                <ComboboxItem
+                  key={p.value}
+                  value={p.value}
+                  label={p.label}
+                  keywords={p.keywords}
+                  description={p.keywords[0]}
+                  icon={<Icon name="person" size={22} />}
+                >
+                  {p.label}
+                </ComboboxItem>
+              ))}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
         <FieldDescription>
-          {person ? `${person.name} will get a notification.` : 'Nobody assigned.'}
+          {person ? `${person.label} will get a notification.` : 'Nobody assigned.'}
         </FieldDescription>
-        <ComboBoxContent<Person> renderEmptyState={() => (
-          <p className="m-0 px-3 py-2 text-subhead text-muted-foreground">No one matches “{query}”.</p>
-        )}>
-          {(p) => (
-            <ComboBoxItem
-              textValue={p.name}
-              description={p.email}
-              icon={<Icon name="person" size={22} />}
-            >
-              {p.name}
-            </ComboBoxItem>
-          )}
-        </ComboBoxContent>
-      </ComboBox>
+      </Field>
 
-      <ComboBox isDisabled defaultInputValue="Ana Torres">
-        <Label variant="field">Reviewer (locked)</Label>
-        <ComboBoxInput />
-        <ComboBoxContent>
-          <ComboBoxItem id="ana">Ana Torres</ComboBoxItem>
-        </ComboBoxContent>
-      </ComboBox>
+      <Field disabled>
+        <FieldLabel variant="field">Reviewer (locked)</FieldLabel>
+        <Combobox items={[{ value: 'ana', label: 'Ana Torres' }]} defaultValue="ana">
+          <ComboboxInput />
+          <ComboboxContent />
+        </Combobox>
+      </Field>
     </ThemeScope>
   )
 }

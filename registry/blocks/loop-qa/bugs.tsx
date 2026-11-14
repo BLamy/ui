@@ -1,9 +1,9 @@
 /* Bugs: Linear-style filters (a FilterBar: severity, status, kind, environment as chips with their own operator and
    value; a sentence in the FilterInput becomes chips), a search, and the bulk actions (copy every report as Markdown, download them, connect an issue tracker). The
    table's rows open the bug; the status column is a menu of its own. Narrow containers stack each row. */
-import { useMemo, useState, type CSSProperties, type Key } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FilterBar, FilterToolbar } from '@/components/ui/filter';
 import { FilterInput } from '@/components/ui/filter-input';
 import { SearchField } from '@/components/ui/search-field';
@@ -41,7 +41,7 @@ export function BugsTab({ project }: { project: Project }) {
     const a = Object.assign(document.createElement('a'), { href: url, download: `${project.id}-bugs.md` });
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    qa.toast.hud(`Downloaded ${shown.length} reports`, { tone: 'success' });
+    qa.hud(`Downloaded ${shown.length} reports`, { type: 'success' });
   };
   const filtered = serializeFilters(filters) !== serializeFilters(defaultFilters());
 
@@ -50,20 +50,20 @@ export function BugsTab({ project }: { project: Project }) {
       <div className="flex flex-wrap items-center gap-2">
         <FilterToolbar />
         {filtered ? (
-          <Button size="sm" variant="ghost" className="h-8 rounded-[9px] px-2.5 text-[12.5px] text-muted-foreground" onPress={() => setFilters(defaultFilters())}>
+          <Button size="sm" variant="ghost" className="h-8 rounded-[9px] px-2.5 text-[12.5px] text-muted-foreground" onClick={() => setFilters(defaultFilters())}>
             Reset
           </Button>
         ) : null}
-        <SearchField aria-label="Search bugs" placeholder="Search bugs" value={query} onChange={setQuery} className="max-w-[260px] min-w-[160px] flex-1" />
+        <SearchField aria-label="Search bugs" placeholder="Search bugs" value={query} onValueChange={setQuery} className="max-w-[260px] min-w-[160px] flex-1" />
         <span className="flex-1" />
         <div className="flex gap-1.5">
-          <Button size="sm" variant="secondary" className="h-8 rounded-[9px]" onPress={() => qa.copyBugReports(project.id)}>
+          <Button size="sm" variant="secondary" className="h-8 rounded-[9px]" onClick={() => qa.copyBugReports(project.id)}>
             <Icon name="copy" size={14} sw={2} /><span className="hidden @2xl:inline!">Copy reports</span>
           </Button>
-          <Button size="sm" variant="secondary" className="h-8 rounded-[9px]" onPress={download} aria-label="Download reports">
+          <Button size="sm" variant="secondary" className="h-8 rounded-[9px]" onClick={download} aria-label="Download reports">
             <Icon name="download" size={14} sw={2} /><span className="hidden @4xl:inline!">Download</span>
           </Button>
-          <Button size="sm" variant="secondary" className="h-8 rounded-[9px]" onPress={() => qa.setDialog('tracker')}
+          <Button size="sm" variant="secondary" className="h-8 rounded-[9px]" onClick={() => qa.setDialog('tracker')}
             aria-label={qa.trackers.length ? 'Issue tracker connected' : 'Connect issue tracker'}>
             <Icon name={qa.trackers.length ? 'checkmark-circle' : 'link'} size={14} sw={2} className={qa.trackers.length ? 'text-success' : undefined} />
             <span className="hidden @4xl:inline!">{qa.trackers.length ? 'Tracker connected' : 'Connect tracker'}</span>
@@ -73,7 +73,8 @@ export function BugsTab({ project }: { project: Project }) {
       <FilterInput className="max-w-xl" placeholder="Describe what you want, e.g. critical bugs in production" />
 
       <div className="overflow-hidden rounded-card border border-border bg-card">
-        <div role="row" className="hidden grid-cols-[92px_1fr_128px_128px_112px_72px] items-center gap-3 border-b border-border bg-muted px-4 py-2 text-caption2 font-semibold tracking-[.06em] text-muted-foreground uppercase @4xl:grid!">
+        {/* Column captions for sighted readers; each row names itself and carries its values as text. */}
+        <div aria-hidden="true" data-slot="loop-qa-bug-columns" className="hidden grid-cols-[92px_1fr_128px_128px_112px_72px] items-center gap-3 border-b border-border bg-muted px-4 py-2 text-caption2 font-semibold tracking-[.06em] text-muted-foreground uppercase @4xl:grid!">
           <span>Severity</span><span>Bug</span><span>Status</span><span>Kind</span><span>Environment</span><span className="text-right">Found</span>
         </div>
         {shown.length ? (
@@ -94,8 +95,8 @@ function BugRow({ bug: b }: { bug: Bug }) {
   return (
     <li className="group/row relative grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 border-b border-border px-4 py-3 last:border-b-0 hover:bg-muted! @4xl:grid-cols-[92px_1fr_128px_128px_112px_72px]! @4xl:py-2.5!">
       {/* The row's action covers it; the status menu sits above it. */}
-      <Pressable aria-label={`${b.id}: ${b.title}`} onPress={() => qa.open({ kind: 'bug', id: b.id })}
-        className="absolute inset-0 z-0 cursor-pointer rounded-none bg-transparent data-pressed:not-aria-expanded:scale-100 data-focus-visible:ring-inset" />
+      <Pressable aria-label={`${b.id}: ${b.title}`} onClick={() => qa.open({ kind: 'bug', id: b.id })}
+        className="absolute inset-0 z-0 cursor-pointer rounded-none bg-transparent active:not-aria-expanded:not-data-disabled:scale-100 focus-visible:ring-inset" />
       <span className="pointer-events-none relative hidden @4xl:block!"><SeverityBadge severity={b.severity} /></span>
       <span className="pointer-events-none relative min-w-0">
         <span className="flex items-center gap-2 @4xl:hidden!">
@@ -121,26 +122,23 @@ export function StatusMenu({ bug: b, className }: { bug: Bug; className?: string
   const qa = useLoopQA();
   return (
     <DropdownMenu>
-      <Pressable aria-label={`Status: ${STATUS_LABEL[b.status]}`} className={cn('h-auto cursor-pointer gap-0.5 rounded-full p-0 data-pressed:not-aria-expanded:scale-95', className)}>
+      <DropdownMenuTrigger render={<Pressable />} aria-label={`Status: ${STATUS_LABEL[b.status]}`}
+        className={cn('h-auto cursor-pointer gap-0.5 rounded-full p-0 active:not-aria-expanded:not-data-disabled:scale-95', className)}>
         <span className={pillVariants({ tone: STATUS_TONE[b.status] })}>
           <span className="size-1.5 rounded-full bg-current" />
           {STATUS_LABEL[b.status]}
           <Icon name="chevron-down" size={10} sw={2.6} className="-ml-0.5 opacity-70" />
         </span>
-      </Pressable>
-      <DropdownMenuContent
-        placement="bottom end"
-        selectionMode="single"
-        selectedKeys={[b.status]}
-        onSelectionChange={(keys) => {
-          const next = [...(keys as Set<Key>)][0] as BugStatus | undefined;
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="bottom" align="end">
+        <DropdownMenuRadioGroup value={b.status} onValueChange={(next) => {
           if (next && next !== b.status) {
-            qa.setBugStatus(b.id, next);
-            qa.toast.hud(`${b.id} → ${STATUS_LABEL[next]}`);
+            qa.setBugStatus(b.id, next as BugStatus);
+            qa.hud(`${b.id} → ${STATUS_LABEL[next as BugStatus]}`);
           }
-        }}
-      >
-        {STATUSES.map((s) => <DropdownMenuItem key={s} id={s}>{STATUS_LABEL[s]}</DropdownMenuItem>)}
+        }}>
+          {STATUSES.map((s) => <DropdownMenuRadioItem key={s} value={s}>{STATUS_LABEL[s]}</DropdownMenuRadioItem>)}
+        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

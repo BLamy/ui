@@ -57,7 +57,7 @@ Keep the children in this order; the parts animate between the empty and the thr
     <Composer onSubmit={send}>…</Composer>
   </ConversationComposer>
   <ConversationSuggestions>
-    <Suggestion onPress={() => send('Draft a plan')}>Draft a plan</Suggestion>
+    <Suggestion onClick={() => send('Draft a plan')}>Draft a plan</Suggestion>
   </ConversationSuggestions>
 </Conversation>
 ```
@@ -74,7 +74,7 @@ Press a suggestion or send a message. The reply streams with the typing dots fir
 
 `ConversationMessages` turns its keyed children into `MessageScroller` items: every child needs a `key` (it becomes the item id), and a `UserMessage` anchors the scroll by default, so a new turn lands near the top with the reply growing below it. Pass `anchor` to another message to change that. Switch `threadKey` to re-open at the last anchor, and `peek` sets how many pixels of the previous turn stay visible.
 
-`WorkLog` is the collapsed "Worked for 1m 4s" row. With `ToolCall` children it is a disclosure button (`aria-expanded`) that springs open; with none it is static text. Each `ToolCall` is `done`, `running` (a pulsing dot) or `error`, with an optional `detail` and a `code` well. `MessageMarkdown` shows the typing dots while `streaming` is true and no text has arrived.
+`WorkLog` is the collapsed "Worked for 1m 4s" row. With `ToolCall` children it is a disclosure button (`aria-expanded`) whose panel springs open; with none it is static text. Each `ToolCall` is `done`, `running` (a pulsing dot) or `error`, with an optional `detail` and a `code` well. `MessageMarkdown` shows the typing dots while `streaming` is true and no text has arrived.
 
 {% demo src="conversation/work-log" %}
 
@@ -84,7 +84,7 @@ A settled thread shows `SettledBanner` above its composer. The component does no
 
 - The transcript is [MessageScroller](https://blamy.github.io/ui/#/message-scroller)'s labelled `role="log"` region, with `aria-busy` while `streaming`.
 - `ConversationTyping` is `role="status"` with the label "Thinking".
-- `WorkLog`, `Suggestion`, `SettledBanner`'s button and the composer's controls are react-aria buttons: Enter and Space press them, and they show a focus ring from the keyboard.
+- `Suggestion` and `SettledBanner`'s button are UI SDK Buttons, and `WorkLog` is a UI SDK Collapsible: its summary row is the trigger, with `aria-expanded` and `aria-controls` on its panel. Enter and Space press them, and they show a focus ring from the keyboard.
 - Images on a `UserMessage` all get `alt="attachment"`; if the images matter, describe them in the message text.
 - The composer keeps focus and its draft across the empty-to-thread move. Give the composer an accessible name of its own.
 
@@ -114,15 +114,15 @@ A settled thread shows `SettledBanner` above its composer. The component does no
 | `ConversationGreeting` | `title`, `description`, `icon`, `className` | `icon` replaces the tinted asterisk tile. |
 | `ConversationComposer` | `className`, `style` | The composer dock: 620px wide and centred while empty, 780px with padding in a thread. It animates between the two (skipped under reduced motion). |
 | `ConversationSuggestions` | `className` | Wrapping row of chips under the empty composer. |
-| `Suggestion` | `onPress`, `className` | One chip. |
+| `Suggestion` | `onClick`, `disabled`, `className` and the rest of a UI SDK Button's props | One chip. |
 | `UserMessage` | `images`, `anchor`, `className` | Right-aligned bubble up to 78% wide; `images` are URLs shown above it. No children and no text means no bubble. |
 | `AssistantMessage` | `className` | Plain block for the reply, work log and markdown. |
 | `MessageMarkdown` | `markdown`, `streaming` | Streaming Markdown, and the typing dots until the first token. |
 | `ConversationTyping` | `className` | The three-dot wave. |
-| `WorkLog` | `summary`, `defaultOpen`, `className` | Children are `ToolCall`s. |
+| `WorkLog` | `summary`, `defaultOpen`, `open`, `onOpenChange(open, details)`, `className` | Children are `ToolCall`s; with none the row is static. |
 | `ToolCall` | `title`, `detail`, `code`, `icon`, `status`, `className` | `status`: `done` (default, the `icon` or a check), `running`, `error`. |
 | `SettledBanner` | `onUnsettle`, `title`, `description`, `className`, `style` | `onUnsettle` is required. |
 
 ## Styling
 
-Every part has a `data-slot`: `conversation` (with `data-empty`), `conversation-empty`, `conversation-greeting`, `conversation-messages`, `conversation-composer`, `conversation-suggestions`, `suggestion`, `user-message`, `assistant-message`, `typing-indicator`, `work-log` (with `data-open`), `tool-call` (with `data-status`) and `settled-banner`. All take `className`, merged last with `cn`, so `className="max-w-[520px]"` overrides a part's width.
+Every part has a `data-slot`: `conversation` (with `data-empty`), `conversation-empty`, `conversation-greeting`, `conversation-messages`, `conversation-composer`, `conversation-suggestions`, `user-message`, `assistant-message`, `typing-indicator`, `work-log` (with UI SDK's `collapsible`, `collapsible-trigger` and `collapsible-panel` inside it, which carry `data-open` / `data-closed`), `tool-call` (with `data-status`) and `settled-banner`. A `Suggestion` is UI SDK's `button` slot. All take `className`, merged last with `cn`, so `className="max-w-[520px]"` overrides a part's width.

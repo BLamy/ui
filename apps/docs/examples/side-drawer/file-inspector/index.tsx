@@ -53,7 +53,7 @@ function FileInspector() {
           <Button
             variant={open ? 'secondary' : 'ghost'}
             size="sm"
-            onPress={() => setOpen(!open)}
+            onClick={() => setOpen(!open)}
           >
             <Icon name="info" size={17} /> Info
           </Button>
@@ -73,7 +73,7 @@ function FileInspector() {
                 title={f.name}
                 subtitle={f.modified}
                 selected={f === sel}
-                onPress={() => setSel(f)}
+                onClick={() => setSel(f)}
               />
             ))}
           </ListSection>
@@ -81,9 +81,9 @@ function FileInspector() {
       </div>
       {/* fixed: a docked column that animates its width; no scrim */}
       <SideDrawer
-        mode="fixed"
+        presentation="fixed"
         open={open}
-        onClose={() => setOpen(false)}
+        onOpenChange={setOpen}
         title="Info"
         width={250}
       >

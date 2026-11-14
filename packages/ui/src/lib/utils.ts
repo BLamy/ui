@@ -22,10 +22,17 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** A UI SDK part's `className`: a string, or a function of the part's state. */
+export type ClassProp<State> = string | ((state: State) => string | undefined) | undefined;
+
+/** Puts our classes under a UI SDK part's `className`, which may be a function of the part's state. The
+    caller's classes merge last, so they win a conflict. */
+export function cx<State>(base: ClassValue, className: ClassProp<State>): string | ((state: State) => string) {
+  return typeof className === 'function' ? (state) => cn(base, className(state)) : cn(base, className);
+}
+
 export const FONT =
   "-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',sans-serif";
-/** @deprecated Legacy iOS curve. New motion uses the spring tokens (lib/motion.ts `springs`, CSS `--ease-spring-*`). */
-export const EASE = 'cubic-bezier(.32,.72,0,1)';
 export const BARH = 52;
 
 /** Pressables: no tap flash, the host font, and a brightness nudge on hover (dimmer on light surfaces, brighter on

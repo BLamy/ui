@@ -3,9 +3,10 @@
    per-file commit (GitHub computes that per file), so the table's commit and age columns stay empty there. */
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MarkdownView } from '@/components/ui/markdown-view';
-import { Segmented } from '@/components/ui/segmented';
+import { PlainButton } from '@/components/ui/plain-button';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { CodeEditorCopyButton } from '@/components/ui/code-editor';
 import { cn } from '@/lib/utils';
 import { CommitMessage, UserAvatar, UserName } from './cards';
@@ -75,12 +76,13 @@ export function CodeToolbar({ ui, nav }: { ui: Layout; nav: Nav }) {
   return (
     <div className="flex items-center gap-2">
       <DropdownMenu>
-        <Button className={ghButton()}><Oct name="branch" className="text-muted-foreground" /><span className="max-w-[140px] truncate">{branch}</span><Oct name="chevDown" size={12} className="text-muted-foreground" /></Button>
-        <DropdownMenuContent aria-label="Switch branches" selectionMode="single" selectedKeys={[branch]}
-          onSelectionChange={(keys) => { const b = String([...(keys as Set<string>)][0] ?? branch); setRef(b === repo.branch ? '' : b); }} className="max-h-[360px] py-1">
-          {repo.branches.map((b) => (
-            <DropdownMenuItem key={b} id={b} className="min-h-9 py-1.5 font-mono text-footnote">{b}</DropdownMenuItem>
-          ))}
+        <DropdownMenuTrigger render={<Button className={ghButton()} />}><Oct name="branch" className="text-muted-foreground" /><span className="max-w-[140px] truncate">{branch}</span><Oct name="chevDown" size={12} className="text-muted-foreground" /></DropdownMenuTrigger>
+        <DropdownMenuContent className="max-h-[360px] py-1">
+          <DropdownMenuRadioGroup value={branch} onValueChange={(b) => setRef(b === repo.branch ? '' : b)}>
+            {repo.branches.map((b) => (
+              <DropdownMenuRadioItem key={b} value={b} closeOnSelect className="min-h-9 py-1.5 font-mono text-footnote">{b}</DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
       {!ui.phone ? (
@@ -96,7 +98,7 @@ export function CodeToolbar({ ui, nav }: { ui: Layout; nav: Nav }) {
         </div>
       ) : null}
       {!ui.phone ? <Button className={ghButton()}>Add file<Oct name="chevDown" size={12} /></Button> : null}
-      <Button className={ghButton(true)} onPress={nav.clone}><Oct name="code" />Code<Oct name="chevDown" size={12} /></Button>
+      <Button className={ghButton(true)} onClick={nav.clone}><Oct name="code" />Code<Oct name="chevDown" size={12} /></Button>
     </div>
   );
 }
@@ -141,10 +143,10 @@ export function FileRow({ ui, icon, name, commit, when, onOpen }: { ui: Layout; 
   return (
     <div className="flex h-10 items-center gap-3 border-t border-border px-4 first:border-t-0 hover:bg-muted">
       {icon}
-      <button type="button" onClick={onOpen}
+      <PlainButton onClick={onOpen}
         className={cn('min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-detail text-foreground hover:text-primary hover:underline', ui.phone ? 'flex-1' : 'w-[34%] shrink-0')}>
         {name}
-      </button>
+      </PlainButton>
       {!ui.phone ? <span className="min-w-0 flex-1 truncate text-muted-foreground">{commit}</span> : null}
       <span className="shrink-0 text-right text-muted-foreground">{when}</span>
     </div>
@@ -218,13 +220,13 @@ export function PathView({ ui, path, nav }: { ui: Layout; path: string; nav: Nav
   const parts = path.split('/');
   const crumbs = (
     <div className="flex min-w-0 flex-wrap items-center gap-1 text-callout">
-      <button type="button" onClick={() => nav.openPath('')} className="cursor-pointer border-0 bg-transparent p-0 text-callout font-semibold text-primary hover:underline">{repo.name}</button>
+      <PlainButton onClick={() => nav.openPath('')} className="cursor-pointer border-0 bg-transparent p-0 text-callout font-semibold text-primary hover:underline">{repo.name}</PlainButton>
       {parts.map((p, i) => (
         <span key={i} className="flex items-center gap-1">
           <span className="text-tertiary-foreground">/</span>
           {i === parts.length - 1
             ? <b className="font-semibold">{p}</b>
-            : <button type="button" onClick={() => nav.openPath(parts.slice(0, i + 1).join('/'))} className="cursor-pointer border-0 bg-transparent p-0 text-callout text-primary hover:underline">{p}</button>}
+            : <PlainButton onClick={() => nav.openPath(parts.slice(0, i + 1).join('/'))} className="cursor-pointer border-0 bg-transparent p-0 text-callout text-primary hover:underline">{p}</PlainButton>}
         </span>
       ))}
       <Oct name="copy" size={14} className="ml-1 text-muted-foreground" />
@@ -277,11 +279,12 @@ export function FileViewer({ ui, node }: { ui: Layout; node: FileNode }) {
   return (
     <Box header={
       <div className="flex w-full items-center gap-3">
-        <Segmented aria-label="View" value={view} onChange={setView} className="w-[150px] rounded-md"
-          options={isMd ? [{ id: 'preview', label: 'Preview' }, { id: 'code', label: 'Code' }] : [{ id: 'code', label: 'Code' }, { id: 'blame', label: 'Blame' }]} />
+        <Segmented aria-label="View" value={view} onValueChange={(next) => { if (next) setView(next); }} className="w-[150px] rounded-md">
+          {(isMd ? [['preview', 'Preview'], ['code', 'Code']] : [['code', 'Code'], ['blame', 'Blame']]).map(([id, label]) => <SegmentedItem key={id} value={id}>{label}</SegmentedItem>)}
+        </Segmented>
         {!ui.phone && file.data != null ? <span className="text-caption text-muted-foreground">{lines} lines · {(code.length / 1024).toFixed(1)} KB</span> : null}
         <span className="flex-1" />
-        <Button className={cn(ghButton(), 'h-7 px-2.5 text-caption')} onPress={raw ? () => window.open(raw, '_blank', 'noopener') : undefined}>Raw</Button>
+        <Button className={cn(ghButton(), 'h-7 px-2.5 text-caption')} onClick={raw ? () => window.open(raw, '_blank', 'noopener') : undefined}>Raw</Button>
         <CodeEditorCopyButton value={code} label="Copy raw file" className={cn(ghButton(), 'h-7 w-7 px-0')} />
       </div>
     }>

@@ -1,18 +1,28 @@
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { FloatingSheet, type FloatingSheetAppearance, type FloatingSheetTone } from '@/components/ui/floating-sheet';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardHeader,
+  HoverCardTrigger,
+  createHoverCardController,
+} from '@/components/ui/hover-card';
+import { PlainButton as Button } from '@/components/ui/plain-button';
 import { ProgressStepper, type ProgressStep } from '@/components/ui/progress-stepper';
 import { springs, useReducedMotion } from '@/lib/motion';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { themeScopeProps, useAppearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 import { cva } from 'class-variance-authority';
-import { Button } from 'react-aria-components';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import { distanceMeters, formatDistance, type LatLng, type MapTarget } from '../map-chat/geo';
-import { MAP_ICONS, type MapIconName } from '../map-chat/map-icons';
-import { esriDarkGrayTiles, esriLightGrayTiles, MAP_FONT, TileMap, type MapPin, type MapRoute } from '../map-chat/tile-map';
+// The map is the map-chat block's, through its entry: installing this block installs map-chat with it.
+import {
+  distanceMeters, esriDarkGrayTiles, esriLightGrayTiles, formatDistance, MAP_FONT, MAP_ICONS, TileMap,
+  type LatLng, type MapIconName, type MapPin, type MapRoute, type MapTarget,
+} from '../map-chat/page';
 
 export interface DeliveryStage {
   id: string;
@@ -96,7 +106,7 @@ const FOCUS_RING = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus
 /** The round buttons over the map: the tone's card with a soft lift. */
 const mapButtonVariants = cva(
   cn(
-    'pointer-events-auto inline-flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-[999px] border-0 bg-card p-0 text-subhead font-semibold text-foreground data-hovered:bg-popover',
+    'pointer-events-auto inline-flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-[999px] border-0 bg-card p-0 text-subhead font-semibold text-foreground hover:bg-popover',
     FONT_INHERIT,
     FOCUS_RING,
   ),
@@ -115,7 +125,7 @@ const DELIVERY_ACCENT = '#eb1700';
 /** The courier's pin and the route line, per basemap (content, like the tiles). */
 const DELIVERY_MAP_INK = { dark: { car: '#3a3a3c', route: '#f5f5f7' }, light: { car: '#1c1c1e', route: '#1c1c1e' } } as const;
 const ACTION_BUTTON = cn(
-  'inline-flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[999px] border-0 px-3.5 py-0 text-subhead font-bold [transition:transform_var(--duration-spring-snappy)_var(--ease-spring-snappy),filter_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-pressed:[transform:scale(.97)]',
+  'inline-flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[999px] border-0 px-3.5 py-0 text-subhead font-bold [transition:transform_var(--duration-spring-snappy)_var(--ease-spring-snappy),filter_var(--duration-spring-snappy)_var(--ease-spring-snappy)] active:[transform:scale(.97)]',
   FONT_INHERIT,
   FOCUS_RING,
 );
@@ -182,7 +192,7 @@ function useTween(target: number, ms = 1400) {
   useEffect(() => {
     const from = fromRef.current;
     if (from === target) return;
-    if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (prefersReducedMotion()) {
       fromRef.current = target;
       setValue(target);
       return;
@@ -233,8 +243,7 @@ export function DeliveryTrackingDemo({
   const stageIndex = Math.max(0, Math.min(DELIVERY_STAGES.length - 1, controlledStage ?? uncontrolledStage));
   const stage = DELIVERY_STAGES[stageIndex];
   const [open, setOpen] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const detailsId = useId();
+  const [menuCards] = useState(() => createHoverCardController<number>());
   const reducedMotion = !!useReducedMotion();
   const advancing = autoAdvance && !reducedMotion;
 
@@ -307,7 +316,7 @@ export function DeliveryTrackingDemo({
         ) : null)}
       >
         <div className="pointer-events-none absolute top-3.5 right-3.5 left-3.5 z-4 flex items-center justify-between" data-map-ui>
-          <Button className={mapButton} aria-label="Close" onPress={onClose}>
+          <Button className={mapButton} aria-label="Close" onClick={onClose}>
             <Icon name="x" size={20} />
           </Button>
           <Button className={cn(mapButton, 'pr-3.5 pl-3')}>
@@ -352,10 +361,16 @@ export function DeliveryTrackingDemo({
               </h2>
               <p className="m-0 mt-1.5 text-subhead text-muted-foreground">
                 Pickup at 12:13 PM ·{' '}
-                <HoverCardTrigger className="inline">
-                  <span className="cursor-default underline decoration-current/30 decoration-dotted underline-offset-2">{STORE_ADDRESS}</span>
-                  <HoverCard placement="bottom start">{storeCard}</HoverCard>
-                </HoverCardTrigger>
+                <HoverCard>
+                  <HoverCardTrigger
+                    // The address is a link to it in Maps, which the card previews (a hover card's trigger is a link).
+                    render={<a href={`https://maps.apple.com/?q=${encodeURIComponent(STORE_ADDRESS)}`} target="_blank" rel="noreferrer"
+                      className="text-inherit underline decoration-current/30 decoration-dotted underline-offset-2" />}
+                  >
+                    {STORE_ADDRESS}
+                  </HoverCardTrigger>
+                  <HoverCardContent side="bottom" align="start">{storeCard}</HoverCardContent>
+                </HoverCard>
               </p>
             </header>
 
@@ -386,9 +401,9 @@ export function DeliveryTrackingDemo({
               </p>
               <div className="flex gap-2.5">
                 <Button
-                  className={cn(ACTION_BUTTON, 'bg-[color:var(--ck-delivery-accent)] text-white data-hovered:[filter:brightness(1.06)]')}
+                  className={cn(ACTION_BUTTON, 'bg-[color:var(--ck-delivery-accent)] text-white hover:[filter:brightness(1.06)]')}
                   data-variant="primary"
-                  onPress={() => {
+                  onClick={() => {
                     if (controlledStage == null) setUncontrolledStage(3);
                   }}
                 >
@@ -402,36 +417,22 @@ export function DeliveryTrackingDemo({
               </div>
             </section>
 
-            <Button
-              className={cn(
-                'm-0 mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-[999px] border border-border bg-transparent px-3.5 py-[9px] text-detail font-semibold text-foreground data-hovered:bg-secondary',
-                FONT_INHERIT,
-              )}
-              aria-expanded={detailsOpen}
-              aria-controls={detailsOpen ? detailsId : undefined}
-              onPress={() => {
-                setDetailsOpen((v) => !v);
-              }}
-            >
-              Order details
-              <span
-                className={cn('grid place-items-center [transition:transform_var(--duration-spring-bouncy)_var(--ease-spring-bouncy)] motion-reduce:transition-none', detailsOpen && '[transform:rotate(180deg)]')}
-                data-open={detailsOpen || undefined}
-              >
-                <Icon name="chevronDown" size={16} />
-              </span>
-            </Button>
             {/* The details open as a height morph (the sheet's body grows with them). */}
-            <AnimatePresence initial={false}>
-            {detailsOpen && (
-              <motion.ul
-                key="details"
-                id={detailsId}
-                className="m-0 mt-3 list-none overflow-hidden border-t border-border p-0 pt-1"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={springs.tray}
+            <Collapsible>
+              <CollapsibleTrigger
+                className={cn(
+                  'group/details m-0 mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-[999px] border border-border bg-transparent px-3.5 py-[9px] text-detail font-semibold text-foreground hover:bg-secondary',
+                  FONT_INHERIT,
+                )}
+              >
+                Order details
+                <span className="grid place-items-center [transition:transform_var(--duration-spring-bouncy)_var(--ease-spring-bouncy)] group-data-open/details:[transform:rotate(180deg)] motion-reduce:transition-none">
+                  <Icon name="chevronDown" size={16} />
+                </span>
+              </CollapsibleTrigger>
+              <CollapsiblePanel
+                render={<ul />}
+                className="m-0 mt-3 h-(--collapsible-panel-height) list-none overflow-hidden border-t border-border p-0 pt-1 transition-[height,opacity] duration-spring-tray ease-spring-tray data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0 motion-reduce:transition-none"
               >
                 {ORDER_ITEMS.map((item) => (
                   <li key={item.name} className="flex gap-2.5 border-b border-border py-[9px] text-detail">
@@ -444,17 +445,16 @@ export function DeliveryTrackingDemo({
                   <span className="min-w-0 flex-1">Total</span>
                   <span className="tabular-nums">${total.toFixed(2)}</span>
                 </li>
-              </motion.ul>
-            )}
-            </AnimatePresence>
+              </CollapsiblePanel>
+            </Collapsible>
 
             <Button
               className={cn(
                 'm-0 mt-[18px] flex w-full cursor-pointer items-center gap-3 rounded-card border-0 bg-popover px-3.5 py-3 text-left text-subhead font-semibold text-foreground',
-                'data-hovered:bg-secondary-strong',
+                'hover:bg-secondary-strong',
                 FONT_INHERIT,
               )}
-              onPress={() => setOpen(true)}
+              onClick={() => setOpen(true)}
             >
               <span className={cn('grid size-8 place-items-center rounded-[50%] text-[color:var(--ck-delivery-accent)] shadow-[0_0_0_1px_var(--border)] bg-card')}>
                 <Icon name="gift" size={18} />
@@ -481,19 +481,28 @@ export function DeliveryTrackingDemo({
             <Section title="From this store" action="Browse menu">
               <div className={CAROUSEL}>
                 {MENU.map((item, i) => (
-                  <HoverCardTrigger key={item.name} className="shrink-0 snap-start">
-                    <div className="flex w-[136px] flex-col gap-1">
-                      <div
-                        className="aspect-[1.15] w-full rounded-panel [background:var(--ck-tile-bg)]"
-                        style={{ '--ck-tile-bg': tileColor(i) } as CSSProperties}
-                      />
-                      <span className="mt-1 text-detail font-semibold">{item.name}</span>
-                      <span className="text-footnote text-muted-foreground">${item.price.toFixed(2)}</span>
-                    </div>
-                    <HoverCard placement="top"><MenuCard item={item} index={i} /></HoverCard>
+                  <HoverCardTrigger
+                    key={item.name}
+                    controller={menuCards}
+                    payload={i}
+                    // A product card: an article, a role that takes a name (a bare div's aria-label is ignored).
+                    render={<article aria-label={item.name} className="flex w-[136px] shrink-0 snap-start flex-col gap-1" />}
+                  >
+                    <div
+                      className="aspect-[1.15] w-full rounded-panel [background:var(--ck-tile-bg)]"
+                      style={{ '--ck-tile-bg': tileColor(i) } as CSSProperties}
+                    />
+                    <span className="mt-1 text-detail font-semibold">{item.name}</span>
+                    <span className="text-footnote text-muted-foreground">${item.price.toFixed(2)}</span>
                   </HoverCardTrigger>
                 ))}
               </div>
+              {/* One card for the row, so it follows the pointer from tile to tile. */}
+              <HoverCard controller={menuCards}>
+                <HoverCardContent<number> side="top">
+                  {({ payload }) => (payload == null ? null : <MenuCard item={MENU[payload]} index={payload} />)}
+                </HoverCardContent>
+              </HoverCard>
             </Section>
           </div>
         </FloatingSheet.Body>

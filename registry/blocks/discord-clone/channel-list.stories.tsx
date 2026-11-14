@@ -79,19 +79,19 @@ export const MentionsAndDirectMessages: Story = {
     return (
       <ChatShellSidebar>
         <ServerHeader>BL UI HQ</ServerHeader>
-        <ChannelList selectedKey={cur} onSelectionChange={setCur}>
+        <ChannelList value={cur} onValueChange={setCur}>
           <ChannelGroup label="Team">
-            <ChannelItem id="general">general</ChannelItem>
-            <ChannelItem id="dev" unread mentions={3}>
+            <ChannelItem value="general">general</ChannelItem>
+            <ChannelItem value="dev" unread mentions={3}>
               dev
             </ChannelItem>
-            <ChannelItem id="design" unread>
+            <ChannelItem value="design" unread>
               design
             </ChannelItem>
           </ChannelGroup>
           <ChannelGroup label="Direct messages">
             {(['miles', 'noor', 'stitch'] as const).map((id, i) => (
-              <ChannelItem key={id} id={'dm-' + id} icon={<Avatar {...chatUserAvatar(USERS[id], 18)} />} mentions={i === 1 ? 1 : undefined}>
+              <ChannelItem key={id} value={'dm-' + id} icon={<Avatar {...chatUserAvatar(USERS[id], 18)} />} mentions={i === 1 ? 1 : undefined}>
                 {USERS[id].name}
               </ChannelItem>
             ))}

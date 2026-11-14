@@ -1,14 +1,14 @@
 'use client';
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { ProgressBar, type ProgressBarProps } from 'react-aria-components';
+import { useEffect, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
+import { Progress as SdkProgress, ProgressValue as SdkProgressValue } from '@ui-sdk/react/progress';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 import { NumberMorph } from '@/components/ui/number-morph';
 
 /* ══ ProgressRing / CountdownRing — circular progress, iOS style ══
-   ProgressRing is react-aria's ProgressBar (role=progressbar, aria-valuenow / valuetext) drawn as a ring: a
-   track circle and a round-capped arc that springs to each new value, starting at 12 o'clock and running
-   clockwise. Omit `value` (or pass `isIndeterminate`) for a spinning quarter arc.
+   ProgressRing is UI SDK's Progress (role=progressbar, aria-valuenow / valuetext) drawn as a ring: a track
+   circle and a round-capped arc that springs to each new value, starting at 12 o'clock and running clockwise.
+   Leave `value` out for a spinning quarter arc. Name it with `aria-label`.
 
    CountdownRing is the verification-code ring: seconds remaining out of a period, the arc draining linearly one
    second at a time (it is a clock, so it runs at constant speed rather than on a spring), the label rolling its
@@ -80,7 +80,7 @@ function RingSvg({ px, stroke, r, c, fraction, transition, spin }: RingSvgProps)
   );
 }
 
-export interface ProgressRingProps extends Omit<ProgressBarProps, 'children' | 'className' | 'style'>, VariantProps<typeof progressRingVariants> {
+export type ProgressRingProps = Omit<ComponentProps<typeof SdkProgress>, 'children' | 'style'> & VariantProps<typeof progressRingVariants> & {
   /** `sm` 20 · `md` 28 · `lg` 44 · `xl` 72 px, or a number of px. */
   size?: RingSize | number;
   /** Stroke width in px (defaults scale with the size). */
@@ -89,42 +89,49 @@ export interface ProgressRingProps extends Omit<ProgressBarProps, 'children' | '
   color?: string;
   /** Any CSS color for the track. */
   trackColor?: string;
-  /** Show the percentage in the middle (rolling digits). Needs `md` or larger. */
+  /** Show the value in the middle (the default percentage rolls its digits). Needs `md` or larger. */
   showValue?: boolean;
   /** Custom content in the middle (an icon, a stop button…). */
   children?: ReactNode;
-  className?: string;
   style?: CSSProperties;
-}
+};
+
+const ringCenter = 'absolute inset-0 grid place-items-center font-semibold tabular-nums text-foreground';
 
 export function ProgressRing({
   size, thickness, tone, color, trackColor, showValue, children, className, style, ...props
 }: ProgressRingProps) {
   const d = dims(size, thickness);
-  const plainPercent = props.valueLabel == null && props.formatOptions == null;
+  // A custom format shows UI SDK's text as is; the default percentage rolls.
+  const plainPercent = props.format == null;
+  const sized = d.font ? 'text-(length:--ring-font)' : '';
   return (
-    <ProgressBar
-      data-slot="progress-ring"
+    <SdkProgress
       {...props}
-      className={cn(progressRingVariants({ tone }), className)}
+      className={cx(progressRingVariants({ tone }), className)}
       style={ringVars(d, color, trackColor, style)}
     >
-      {({ percentage, valueText, isIndeterminate }) => (
-        <>
-          <RingSvg
-            {...d}
-            fraction={isIndeterminate ? 0.25 : (percentage ?? 0) / 100}
-            spin={isIndeterminate}
-            transition="[transition:stroke-dashoffset_var(--duration-spring-smooth)_var(--ease-spring-smooth),stroke_.3s,opacity_.15s]"
-          />
-          {children != null || (showValue && !isIndeterminate && d.font) ? (
-            <span className={cn('absolute inset-0 grid place-items-center font-semibold tabular-nums text-foreground', d.font ? 'text-(length:--ring-font)' : '')}>
-              {children ?? (plainPercent ? <NumberMorph value={(percentage ?? 0) / 100} format={{ style: 'percent' }} /> : valueText)}
-            </span>
-          ) : null}
-        </>
-      )}
-    </ProgressBar>
+      {(state) => {
+        const indeterminate = state.status === 'indeterminate';
+        return (
+          <>
+            <RingSvg
+              {...d}
+              fraction={indeterminate ? 0.25 : (state.percent ?? 0) / 100}
+              spin={indeterminate}
+              transition="[transition:stroke-dashoffset_var(--duration-spring-smooth)_var(--ease-spring-smooth),stroke_.3s,opacity_.15s]"
+            />
+            {children != null ? (
+              <span className={cn(ringCenter, sized)}>{children}</span>
+            ) : showValue && !indeterminate && d.font ? (
+              <SdkProgressValue className={cn(ringCenter, sized)}>
+                {plainPercent ? (value) => <NumberMorph value={(value.percent ?? 0) / 100} format={{ style: 'percent' }} /> : undefined}
+              </SdkProgressValue>
+            ) : null}
+          </>
+        );
+      }}
+    </SdkProgress>
   );
 }
 
@@ -264,7 +271,6 @@ export function useCountdown(duration: number, { running = true, loop = true, on
       acc.current += Date.now() - (since.current ?? Date.now());
       since.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running, loop, duration, offset]);
   const reset = () => {
     acc.current = 0;

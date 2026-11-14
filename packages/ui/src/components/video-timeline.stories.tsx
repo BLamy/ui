@@ -95,11 +95,11 @@ interface Args {
   fps: number;
   /** Snap moves and trims to clip edges, the playhead and 0. */
   snap: boolean;
-  /** Leaves out `onChange`: clips still select, but nothing moves and the track toggles are off. */
+  /** `readOnly`: clips still select, but nothing moves and the track toggles are off. */
   readOnly: boolean;
 }
 
-/** Owns the timeline (each edit lands through `onChange`), the selection and the playback clock. */
+/** Owns the timeline (each edit lands through `onValueChange`), the selection and the playback clock. */
 function TimelineDemo({ zoom, time, fps, snap, readOnly, initial = TIMELINE, selected = [] }: Args & { initial?: Timeline; selected?: string[] }) {
   const [timeline, setTimeline] = useState(initial);
   const [selection, setSelection] = useState(selected);
@@ -108,8 +108,8 @@ function TimelineDemo({ zoom, time, fps, snap, readOnly, initial = TIMELINE, sel
   useEffect(() => { clock.setDuration(duration); }, [clock, duration]);
   useEffect(() => { clock.seek(time); }, [clock, time]);
   return (
-    <VideoTimeline className="h-full" timeline={timeline} onChange={readOnly ? undefined : setTimeline} media={MEDIA} clock={clock} fps={fps}
-      selection={selection} onSelectionChange={setSelection} zoom={zoom} snap={snap}
+    <VideoTimeline className="h-full" value={timeline} onValueChange={setTimeline} readOnly={readOnly} media={MEDIA} clock={clock} fps={fps}
+      selectedClips={selection} onSelectedClipsChange={setSelection} zoom={zoom} snap={snap}
       clipClassName={(clip) => (isTitle(clip) ? 'border-chart-5/55 bg-chart-5/25' : undefined)}
       renderClip={(clip, track) => <ClipBody clip={clip} track={track} />} />
   );
@@ -149,7 +149,7 @@ export const Selected: Story = { render: (args) => <TimelineDemo {...args} selec
 /** The Main track locked: dimmed, its clips select but don't move or trim, and nothing can be dropped on it. */
 export const LockedTrack: Story = { render: (args) => <TimelineDemo {...args} initial={updateTrack(TIMELINE, 'main', { locked: true })} /> };
 
-/** Without `onChange` the timeline only shows the edit: clips select, the ruler scrubs, nothing else changes. */
+/** `readOnly`: the timeline only shows the edit: clips select, the ruler scrubs, nothing else changes. */
 export const ReadOnly: Story = { args: { readOnly: true } };
 
 export const Dark: Story = { parameters: { dark: true } };

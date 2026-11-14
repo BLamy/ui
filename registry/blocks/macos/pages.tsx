@@ -1,7 +1,9 @@
-/* Alfred's pages. Each is a <CommandPage> with its own items and, where it needs one, its own keys
-   (`onKeyDown` runs before the menu's; preventDefault takes a key over). The launcher renders the current one. */
+/* Alfred's pages. Each is a <CommandMenuPage> with its own items and, where it needs one, its own keys
+   (`onKeyDown` runs before the menu's; preventDefault takes a key over). The launcher renders the current one (`renderPage`); the first page has no `value`. */
 import type { KeyboardEvent, ReactNode } from 'react';
-import { CommandGroup, CommandItem, CommandPage, useCommandActive, useCommandMenu } from '@/components/ui/command-menu';
+import {
+  CommandMenuGroup, CommandMenuGroupLabel, CommandMenuItem, CommandMenuPage, CommandMenuShortcut, useCommandMenu, useCommandMenuValue,
+} from '@/components/ui/command-menu';
 import { IconSwap } from '@/components/ui/icon-swap';
 import { Kbd } from '@/components/ui/kbd';
 import { NumberMorph } from '@/components/ui/number-morph';
@@ -65,41 +67,44 @@ export function RootPage() {
   const files = q && !q.startsWith(';') && math === null ? descendants('~') : [];
   const desktop = useDesktop();
   const features = APPS.map((app) => (
-    <CommandItem
+    <CommandMenuItem
       key={app.page} value={app.title} keywords={[...app.keywords]} icon={appTile(app.tone, 'icon' in app ? app.icon : undefined)}
-      // The description is a node so it isn't searched ("dark" should find the command, not System's blurb).
-      title={app.title} description={<span>{app.description}</span>} page={app.page}
+      // Only the title and keywords are searched (`label`), not the description: "dark" should find the command, not
+      // System's blurb.
+      label={app.title} title={app.title} description={app.description} page={app.page}
     />
   ));
-  // The desktop's apps: Enter opens (or raises) its window and hides the bar.
+  // The desktop's apps: Enter opens (or raises) its window and hides the bar. Their value is the app's id, so an
+  // app and a folder of the same name ("Music") stay two commands.
   const apps = DESKTOP_APPS.map((app) => (
-    <CommandItem
-      key={app.id} value={app.name} keywords={app.keywords} icon={<AppTile app={app} />}
-      title={app.name} description={<span>{app.description}</span>}
-      badge={desktop.isOpen(app.id) ? <RunningBadge /> : undefined}
+    <CommandMenuItem
+      key={app.id} value={`app:${app.id}`} keywords={app.keywords} icon={<AppTile app={app} />}
+      label={app.name} title={app.name} description={app.description}
+      trailing={desktop.isOpen(app.id) ? <RunningBadge /> : undefined}
       onSelect={() => { desktop.open(app.id); a.close(); }}
     />
   ));
   if (!q) {
     return (
-      <CommandPage id="root" numbered>
-        <CommandGroup heading="Applications">{apps}</CommandGroup>
-        <CommandGroup heading="Alfred">{features}</CommandGroup>
-      </CommandPage>
+      <CommandMenuPage numbered>
+        <CommandMenuGroup><CommandMenuGroupLabel>Applications</CommandMenuGroupLabel>{apps}</CommandMenuGroup>
+        <CommandMenuGroup><CommandMenuGroupLabel>Alfred</CommandMenuGroupLabel>{features}</CommandMenuGroup>
+      </CommandMenuPage>
     );
   }
   // Typing: one ranked list, like Alfred (a group ranks its own items by score; separate groups keep DOM order).
   // The calculator's row matches its own query exactly, so it leads; files follow, and web searches come last.
   return (
-    <CommandPage id="root" numbered>
-      <CommandGroup>
+    <CommandMenuPage numbered>
+      <CommandMenuGroup>
         {math !== null ? (
-          <CommandItem
-            value={q}
+          <CommandMenuItem
+            // Searched by the expression itself (its title is the result), so it matches its own query and leads.
+            value={q} label={q}
             icon={appTile('calc')}
             title={<span className="text-body font-semibold tabular-nums">{formatResult(math)}</span>}
             description={`${prettyExpression(q)} =`}
-            badge={<Hint>Copy</Hint>}
+            trailing={<Hint>Copy</Hint>}
             onSelect={() => {
               a.addHistory({ expr: prettyExpression(q), result: plainResult(math) });
               a.copy(plainResult(math), `Copied ${formatResult(math)}`, 'Calculator');
@@ -107,9 +112,9 @@ export function RootPage() {
           />
         ) : null}
         {snippets.map((s) => (
-          <CommandItem
+          <CommandMenuItem
             key={s.keyword} value={s.keyword} keywords={[s.name]} icon={appTile('snippets', 'textformat')} title={s.name}
-            description={<span>{s.text.split('\n')[0]}</span>} badge={<KeywordChip>{s.keyword}</KeywordChip>}
+            description={<span>{s.text.split('\n')[0]}</span>} trailing={<KeywordChip>{s.keyword}</KeywordChip>}
             onSelect={() => a.copy(s.text, `Pasted ${s.keyword}`, 'Snippets')}
           />
         ))}
@@ -117,15 +122,15 @@ export function RootPage() {
         {features}
         <SystemItems />
         <WorkflowItems />
-      </CommandGroup>
+      </CommandMenuGroup>
       {/* Files after features and commands, so "calc" opens the Calculator rather than calc.ts. */}
-      <CommandGroup heading="Files">
+      <CommandMenuGroup><CommandMenuGroupLabel>Files</CommandMenuGroupLabel>
         {files.map(({ node, path }) => <FileItem key={path} node={node} path={path} />)}
-      </CommandGroup>
-      <CommandGroup heading="Search the web">
+      </CommandMenuGroup>
+      <CommandMenuGroup><CommandMenuGroupLabel>Search the web</CommandMenuGroupLabel>
         {ENGINES.slice(0, 3).map((en) => <EngineItem key={en.id} engine={en} q={q} value={`${en.name} ${q}`} />)}
-      </CommandGroup>
-    </CommandPage>
+      </CommandMenuGroup>
+    </CommandMenuPage>
   );
 }
 
@@ -136,8 +141,8 @@ function KeywordChip({ children }: { children: ReactNode }) {
 /* ══ Calculator ══ */
 
 export function CalculatorPage() {
-  const { query, setQuery } = useCommandMenu();
-  const active = useCommandActive();
+  const { query, controller } = useCommandMenu();
+  const active = useCommandMenuValue();
   const a = useAlfred();
   const q = query.trim();
   const value = evaluate(q);
@@ -150,36 +155,36 @@ export function CalculatorPage() {
     if (e.key !== 'Tab') return;
     e.preventDefault();
     const h = active?.startsWith('h:') ? a.history[Number(active.slice(2))] : null;
-    if (h) setQuery(h.result);
-    else if (value !== null) setQuery(plainResult(value));
+    if (h) controller.setQuery(h.result);
+    else if (value !== null) controller.setQuery(plainResult(value));
   };
   const big = value !== null && Math.abs(value) < 1e15;
   return (
-    <CommandPage id="calc" title="Calculator" placeholder="2^10, sqrt(2), 15% × 80, (1200 × 1.08) ÷ 12" filter={false} numbered onKeyDown={onKeyDown}>
+    <CommandMenuPage value="calc" title="Calculator" placeholder="2^10, sqrt(2), 15% × 80, (1200 × 1.08) ÷ 12" filter={false} numbered onKeyDown={onKeyDown}>
       <div className="px-1 pt-2 pb-1">
         {value !== null ? (
-          <CommandItem value="result" className="min-h-[92px] rounded-card px-4" onSelect={() => copyResult(value, prettyExpression(q))}>
+          <CommandMenuItem value="result" className="min-h-[92px] rounded-card px-4" onSelect={() => copyResult(value, prettyExpression(q))}>
             <CalcDisplay expr={`${prettyExpression(q)} =`}>
               {big ? <NumberMorph value={Number(value.toPrecision(14))} format={{ maximumFractionDigits: 10 }} /> : formatResult(value)}
             </CalcDisplay>
             <Hint>Copy</Hint>
-          </CommandItem>
+          </CommandMenuItem>
         ) : (
           <div className="flex min-h-[92px] items-center px-4">
             <CalcDisplay expr={q ? `${prettyExpression(q)} =` : 'Type an expression'} muted>{q ? '…' : '0'}</CalcDisplay>
           </div>
         )}
       </div>
-      <CommandGroup heading="History">
+      <CommandMenuGroup><CommandMenuGroupLabel>History</CommandMenuGroupLabel>
         {a.history.map((h, i) => (
-          <CommandItem
+          <CommandMenuItem
             key={h.expr} value={`h:${i}`} icon={<Icon name="clock-dial" size={17} sw={1.8} />}
             title={<span className="tabular-nums">{formatResult(Number(h.result))}</span>} description={`${h.expr} =`}
             onSelect={() => a.copy(h.result, `Copied ${formatResult(Number(h.result))}`, 'Calculator')}
           />
         ))}
-      </CommandGroup>
-    </CommandPage>
+      </CommandMenuGroup>
+    </CommandMenuPage>
   );
 }
 
@@ -196,7 +201,7 @@ function CalcDisplay({ expr, muted, children }: { expr: string; muted?: boolean;
 
 export function ClipboardPage() {
   const a = useAlfred();
-  const active = useCommandActive();
+  const active = useCommandMenuValue();
   const pinned = a.clips.filter((c) => c.pinned);
   const rest = a.clips.filter((c) => !c.pinned);
   const onKeyDown = (e: KeyboardEvent) => {
@@ -213,19 +218,19 @@ export function ClipboardPage() {
     }
   };
   const item = (c: (typeof a.clips)[number]) => (
-    <CommandItem
+    <CommandMenuItem
       key={c.id} value={c.text} keywords={[c.app, c.kind]} icon={<ClipGlyph kind={c.kind} text={c.text} size={28} />}
       title={c.kind === 'image' ? c.text : c.text.split('\n')[0]} description={`${c.app} · ${c.when}`}
-      badge={c.pinned ? <Icon name="pushpin-fill" size={13} sw={2} className="ml-auto shrink-0 text-muted-foreground" /> : undefined}
+      trailing={c.pinned ? <Icon name="pushpin-fill" size={13} sw={2} className="ml-auto shrink-0 text-muted-foreground" /> : undefined}
       onSelect={() => a.copy(c.text, 'Pasted to Notes', c.app)}
     />
   );
   return (
-    <CommandPage id="clipboard" title="Clipboard" placeholder="Search clipboard history…" numbered onKeyDown={onKeyDown}>
-      <CommandGroup heading="Pinned">{pinned.map(item)}</CommandGroup>
-      <CommandGroup heading="Recent">{rest.map(item)}</CommandGroup>
+    <CommandMenuPage value="clipboard" title="Clipboard" placeholder="Search clipboard history…" numbered onKeyDown={onKeyDown}>
+      <CommandMenuGroup><CommandMenuGroupLabel>Pinned</CommandMenuGroupLabel>{pinned.map(item)}</CommandMenuGroup>
+      <CommandMenuGroup><CommandMenuGroupLabel>Recent</CommandMenuGroupLabel>{rest.map(item)}</CommandMenuGroup>
       {!a.clips.length ? <div className="py-10 text-center text-detail text-muted-foreground">Clipboard history is empty</div> : null}
-    </CommandPage>
+    </CommandMenuPage>
   );
 }
 
@@ -236,17 +241,17 @@ export const ALL_EMOJI = EMOJI_GROUPS.flatMap((g) => g.items);
 export function EmojiPage({ columns }: { columns: number }) {
   const a = useAlfred();
   return (
-    <CommandPage id="emoji" title="Emoji" placeholder="Search emoji — heart, party, thumbs…">
+    <CommandMenuPage value="emoji" title="Emoji" placeholder="Search emoji — heart, party, thumbs…">
       {EMOJI_GROUPS.map((g) => (
-        <CommandGroup key={g.heading} heading={g.heading} columns={columns} className="px-1">
+        <CommandMenuGroup key={g.heading} columns={columns} className="px-1"><CommandMenuGroupLabel>{g.heading}</CommandMenuGroupLabel>
           {g.items.map((em) => (
-            <CommandItem key={em.name} value={em.name} keywords={em.keywords} className="rounded-panel" onSelect={() => a.copy(em.char, `Copied ${em.char}`, 'Emoji')}>
+            <CommandMenuItem key={em.name} value={em.name} keywords={em.keywords} className="rounded-panel" onSelect={() => a.copy(em.char, `Copied ${em.char}`, 'Emoji')}>
               <span className="text-[28px] leading-none select-none" aria-label={em.name}>{em.char}</span>
-            </CommandItem>
+            </CommandMenuItem>
           ))}
-        </CommandGroup>
+        </CommandMenuGroup>
       ))}
-    </CommandPage>
+    </CommandMenuPage>
   );
 }
 
@@ -256,19 +261,19 @@ export function SnippetsPage() {
   const a = useAlfred();
   const collections = [...new Set(SNIPPETS.map((s) => s.collection))];
   return (
-    <CommandPage id="snippets" title="Snippets" placeholder="Search snippets by name or ;keyword…" numbered>
+    <CommandMenuPage value="snippets" title="Snippets" placeholder="Search snippets by name or ;keyword…" numbered>
       {collections.map((c) => (
-        <CommandGroup key={c} heading={c}>
+        <CommandMenuGroup key={c}><CommandMenuGroupLabel>{c}</CommandMenuGroupLabel>
           {SNIPPETS.filter((s) => s.collection === c).map((s) => (
-            <CommandItem
+            <CommandMenuItem
               key={s.keyword} value={s.keyword} keywords={[s.name]} icon={<Icon name="textformat" size={18} sw={1.8} />}
-              title={s.name} description={s.text.replace(/\n/g, ' · ')} badge={<KeywordChip>{s.keyword}</KeywordChip>}
+              title={s.name} description={s.text.replace(/\n/g, ' · ')} trailing={<KeywordChip>{s.keyword}</KeywordChip>}
               onSelect={() => a.copy(s.text, `Pasted ${s.keyword}`, 'Snippets')}
             />
           ))}
-        </CommandGroup>
+        </CommandMenuGroup>
       ))}
-    </CommandPage>
+    </CommandMenuPage>
   );
 }
 
@@ -282,7 +287,7 @@ function FileItem({ node, path }: { node: FileNode; path: string }) {
   const folder = node.kind === 'folder';
   return (
     // Matched by name only: the path is a node, not searchable text (every file under Projects would match "proj").
-    <CommandItem
+    <CommandMenuItem
       value={node.name} title={node.name} icon={<FileGlyph kind={node.kind} size={28} />}
       description={<span>{where}</span>} page={folder ? `folder:${path}` : undefined}
       onSelect={folder ? undefined : () => a.hud(`Opening ${node.name}`, 'arrow-up-right')}
@@ -291,8 +296,8 @@ function FileItem({ node, path }: { node: FileNode; path: string }) {
 }
 
 export function FolderPage({ path }: { path: string }) {
-  const { query, push, pop, depth } = useCommandMenu();
-  const active = useCommandActive();
+  const { query, pages, controller } = useCommandMenu();
+  const active = useCommandMenuValue();
   const a = useAlfred();
   const node = nodeAt(path) ?? HOME;
   const list = query.trim() ? descendants(path) : (node.children ?? []).map((c) => ({ node: c, path: `${path}/${c.name}` }));
@@ -303,21 +308,21 @@ export function FolderPage({ path }: { path: string }) {
     const target = targetPath ? nodeAt(targetPath) : null;
     if (e.key === 'ArrowRight' && atEnd && target?.kind === 'folder') {
       e.preventDefault();
-      push(`folder:${targetPath}`);
-    } else if (e.key === 'ArrowLeft' && input.value === '' && depth > 1) {
+      controller.push(`folder:${targetPath}`);
+    } else if (e.key === 'ArrowLeft' && input.value === '' && pages.length > 1) {
       e.preventDefault();
-      pop();
+      controller.pop();
     } else if (e.key === 'Enter' && isMod(e) && target) {
       e.preventDefault();
       a.hud(`Revealed ${target.name} in Finder`, 'folder-fill');
     }
   };
   return (
-    <CommandPage id={`folder:${path}`} title={folderTitle(path)} placeholder={`Search in ${folderTitle(path)}…`} numbered onKeyDown={onKeyDown}>
-      <CommandGroup heading={query.trim() ? `In ${path}` : path}>
+    <CommandMenuPage value={`folder:${path}`} title={folderTitle(path)} placeholder={`Search in ${folderTitle(path)}…`} numbered onKeyDown={onKeyDown}>
+      <CommandMenuGroup><CommandMenuGroupLabel>{query.trim() ? `In ${path}` : path}</CommandMenuGroupLabel>
         {list.map(({ node: n, path: p }) => <FileItem key={p} node={n} path={p} />)}
-      </CommandGroup>
-    </CommandPage>
+      </CommandMenuGroup>
+    </CommandMenuPage>
   );
 }
 
@@ -327,29 +332,29 @@ function SystemItems() {
   const a = useAlfred();
   return (
     <>
-      <CommandItem
+      <CommandMenuItem
         value="Toggle Dark Mode" keywords={['appearance', 'light mode', 'theme']} title={a.dark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         description="Appearance"
         icon={<IconSwap id={a.dark ? 'light' : 'dark'}>{a.dark ? <Tile tone="light" icon="sun-fill" size={28} /> : <Tile tone="dark" icon="moon-fill" size={28} />}</IconSwap>}
         onSelect={() => { a.toggleDark(); a.hud(a.dark ? 'Light Mode' : 'Dark Mode', a.dark ? 'sun-fill' : 'moon-fill'); }}
       />
-      <CommandItem value="Lock Screen" keywords={['lock']} title="Lock Screen" icon={<Tile tone="lock" icon="lock-fill" size={28} />} shortcut="⌃⌘Q" onSelect={() => { a.close(); a.setPower('lock'); }} />
-      <CommandItem value="Sleep" keywords={['sleep', 'display']} title="Sleep" icon={<Tile tone="sleep" icon="moon-fill" size={28} />} onSelect={() => { a.close(); a.setPower('sleep'); }} />
-      <CommandItem
+      <CommandMenuItem value="Lock Screen" keywords={['lock']} title="Lock Screen" icon={<Tile tone="lock" icon="lock-fill" size={28} />} trailing={<CommandMenuShortcut shortcut="ctrl+mod+q" />} onSelect={() => { a.close(); a.setPower('lock'); }} />
+      <CommandMenuItem value="Sleep" keywords={['sleep', 'display']} title="Sleep" icon={<Tile tone="sleep" icon="moon-fill" size={28} />} onSelect={() => { a.close(); a.setPower('sleep'); }} />
+      <CommandMenuItem
         value="Empty Trash" keywords={['trash', 'delete', 'bin']} title="Empty Trash" icon={<Tile tone="trash" icon={a.trash ? 'trash-fill' : 'trash'} size={28} />}
         description={a.trash ? `${a.trash} items · ${TRASH.size}` : 'Trash is empty'} dimmed={!a.trash} page={a.trash ? 'confirm:trash' : undefined}
         onSelect={a.trash ? undefined : () => a.hud('Trash is already empty', 'trash')}
       />
-      <CommandItem value="Restart" keywords={['reboot']} title="Restart…" icon={<Tile tone="system" icon="arrow-clockwise" size={28} />} page="confirm:restart" />
-      <CommandItem value="Shut Down" keywords={['power off', 'turn off']} title="Shut Down…" icon={<Tile tone="power" icon="power" size={28} />} page="confirm:shutdown" />
-      <CommandItem value="Log Out" keywords={['sign out', 'user']} title="Log Out Brett Lamy…" icon={<Tile tone="system" icon="person-fill" size={28} />} page="confirm:logout" />
-      <CommandItem value="Eject All" keywords={['eject', 'unmount', 'drives']} title="Eject All Volumes" icon={<Tile tone="system" icon="arrow-up-circle" size={28} />} onSelect={() => a.hud('Ejected 2 volumes', 'arrow-up-circle')} />
+      <CommandMenuItem value="Restart" keywords={['reboot']} title="Restart…" icon={<Tile tone="system" icon="arrow-clockwise" size={28} />} page="confirm:restart" />
+      <CommandMenuItem value="Shut Down" keywords={['power off', 'turn off']} title="Shut Down…" icon={<Tile tone="power" icon="power" size={28} />} page="confirm:shutdown" />
+      <CommandMenuItem value="Log Out" keywords={['sign out', 'user']} title="Log Out Brett Lamy…" icon={<Tile tone="system" icon="person-fill" size={28} />} page="confirm:logout" />
+      <CommandMenuItem value="Eject All" keywords={['eject', 'unmount', 'drives']} title="Eject All Volumes" icon={<Tile tone="system" icon="arrow-up-circle" size={28} />} onSelect={() => a.hud('Ejected 2 volumes', 'arrow-up-circle')} />
     </>
   );
 }
 
 export function SystemPage() {
-  return <CommandPage id="system" title="System" placeholder="Search system commands…" numbered><CommandGroup heading="System"><SystemItems /></CommandGroup></CommandPage>;
+  return <CommandMenuPage value="system" title="System" placeholder="Search system commands…" numbered><CommandMenuGroup><CommandMenuGroupLabel>System</CommandMenuGroupLabel><SystemItems /></CommandMenuGroup></CommandMenuPage>;
 }
 
 const CONFIRM = {
@@ -363,23 +368,23 @@ export type ConfirmId = keyof typeof CONFIRM;
 export function ConfirmPage({ id }: { id: ConfirmId }) {
   const c = CONFIRM[id];
   const a = useAlfred();
-  const { pop } = useCommandMenu();
+  const { controller } = useCommandMenu();
   const confirm = () => {
-    if (id === 'trash') { a.emptyTrash(); a.hud('Trash Emptied', 'trash'); pop(); return; }
+    if (id === 'trash') { a.emptyTrash(); a.hud('Trash Emptied', 'trash'); controller.pop(); return; }
     a.close();
     a.setPower(id === 'restart' ? 'restart' : id === 'shutdown' ? 'off' : 'lock');
   };
   return (
-    <CommandPage id={`confirm:${id}`} title={c.title} placeholder="Confirm or go back…" filter={false} numbered>
+    <CommandMenuPage value={`confirm:${id}`} title={c.title} placeholder="Confirm or go back…" filter={false} numbered>
       <div className="flex items-center gap-3.5 px-3 pt-3 pb-2">
         <Tile tone={c.tone} icon={c.icon} size={40} />
         <p className="m-0 text-detail leading-[20px] text-muted-foreground">{c.body}</p>
       </div>
-      <CommandGroup>
-        <CommandItem value="confirm" title={<span className={id === 'trash' || id === 'shutdown' ? 'font-medium text-destructive' : 'font-medium'}>{c.action}</span>} icon={<Icon name="check-circle-fill" size={20} sw={1.8} />} onSelect={confirm} />
-        <CommandItem value="cancel" title="Cancel" icon={<Icon name="xmark-circle" size={20} sw={1.8} />} onSelect={() => pop()} />
-      </CommandGroup>
-    </CommandPage>
+      <CommandMenuGroup>
+        <CommandMenuItem value="confirm" title={<span className={id === 'trash' || id === 'shutdown' ? 'font-medium text-destructive' : 'font-medium'}>{c.action}</span>} icon={<Icon name="check-circle-fill" size={20} sw={1.8} />} onSelect={confirm} />
+        <CommandMenuItem value="cancel" title="Cancel" icon={<Icon name="xmark-circle" size={20} sw={1.8} />} onSelect={() => controller.pop()} />
+      </CommandMenuGroup>
+    </CommandMenuPage>
   );
 }
 
@@ -397,10 +402,10 @@ const ENGINE_TILE: Record<string, ReactNode> = {
 function EngineItem({ engine, q, value }: { engine: Engine; q: string; value?: string }) {
   const a = useAlfred();
   return (
-    <CommandItem
+    <CommandMenuItem
       value={value ?? engine.id} icon={ENGINE_TILE[engine.id]}
-      // Fallbacks always "match" (their value holds the query): rank them under real results, and don't search the URL.
-      boost={value ? 0.4 : 1} searchDescription={false}
+      // Fallbacks always "match" (their value holds the query); the URL in the description isn't searched.
+      label={value ?? engine.name}
       title={q ? <>Search {engine.name} for <span className="font-semibold">“{q}”</span></> : `Search ${engine.name}`}
       description={q ? `${engine.url}${encodeURIComponent(q)}` : engine.host} dimmed={!q}
       onSelect={() => (q ? a.hud(`Opening ${engine.name}…`, 'arrow-up-right') : a.hud('Type something to search', 'magnifyingglass'))}
@@ -412,11 +417,11 @@ export function WebPage() {
   const { query } = useCommandMenu();
   const q = query.trim();
   return (
-    <CommandPage id="web" title="Web Search" placeholder="Search the web for…" filter={false} numbered>
-      <CommandGroup heading={q ? 'Search for' : 'Type a query, then pick a site'}>
+    <CommandMenuPage value="web" title="Web Search" placeholder="Search the web for…" filter={false} numbered>
+      <CommandMenuGroup><CommandMenuGroupLabel>{q ? 'Search for' : 'Type a query, then pick a site'}</CommandMenuGroupLabel>
         {ENGINES.map((en) => <EngineItem key={en.id} engine={en} q={q} />)}
-      </CommandGroup>
-    </CommandPage>
+      </CommandMenuGroup>
+    </CommandMenuPage>
   );
 }
 
@@ -426,30 +431,30 @@ function WorkflowItems() {
   const a = useAlfred();
   return (
     <>
-      <CommandItem value="Create GitHub Issue" keywords={['github', 'bug', 'issue', 'new']} title="Create GitHub Issue" description="Repository → title → label → create" icon={<Tile tone="github" icon="branch" size={28} />} page="gh-repo" onSelect={() => a.setIssue({ title: undefined, label: undefined })} />
-      <CommandItem value="Start Timer" keywords={['timer', 'pomodoro', 'focus']} title="Start Timer" description="Length → label → start" icon={<Tile tone="timer" icon="clock-fill" size={28} />} page="timer" />
+      <CommandMenuItem value="Create GitHub Issue" keywords={['github', 'bug', 'issue', 'new']} title="Create GitHub Issue" description="Repository → title → label → create" icon={<Tile tone="github" icon="branch" size={28} />} page="gh-repo" onSelect={() => a.setIssue({ title: undefined, label: undefined })} />
+      <CommandMenuItem value="Start Timer" keywords={['timer', 'pomodoro', 'focus']} title="Start Timer" description="Length → label → start" icon={<Tile tone="timer" icon="clock-fill" size={28} />} page="timer" />
     </>
   );
 }
 
 export function WorkflowsPage() {
-  return <CommandPage id="workflows" title="Workflows" placeholder="Search workflows…" numbered><CommandGroup heading="Workflows"><WorkflowItems /></CommandGroup></CommandPage>;
+  return <CommandMenuPage value="workflows" title="Workflows" placeholder="Search workflows…" numbered><CommandMenuGroup><CommandMenuGroupLabel>Workflows</CommandMenuGroupLabel><WorkflowItems /></CommandMenuGroup></CommandMenuPage>;
 }
 
 export function RepoPage() {
   const a = useAlfred();
   return (
-    <CommandPage id="gh-repo" title="New Issue" placeholder="Choose a repository…" numbered>
-      <CommandGroup heading="Repositories">
+    <CommandMenuPage value="gh-repo" title="New Issue" placeholder="Choose a repository…" numbered>
+      <CommandMenuGroup><CommandMenuGroupLabel>Repositories</CommandMenuGroupLabel>
         {REPOS.map((r) => (
-          <CommandItem
+          <CommandMenuItem
             key={r.name} value={r.name} keywords={[r.lang]} title={r.name} description={`${r.description} · ★ ${r.stars}`}
             icon={<Tile tone="github" icon="branch" size={28} />} page="gh-title" onSelect={() => a.setIssue({ repo: r.name })}
-            badge={<span className="ml-auto inline-flex shrink-0 items-center gap-1.5 pl-3 text-[12.5px] text-muted-foreground"><span className="size-2.5 rounded-full" style={{ background: r.langColor }} />{r.lang}</span>}
+            trailing={<span className="ml-auto inline-flex shrink-0 items-center gap-1.5 pl-3 text-[12.5px] text-muted-foreground"><span className="size-2.5 rounded-full" style={{ background: r.langColor }} />{r.lang}</span>}
           />
         ))}
-      </CommandGroup>
-    </CommandPage>
+      </CommandMenuGroup>
+    </CommandMenuPage>
   );
 }
 
@@ -458,32 +463,32 @@ export function IssueTitlePage() {
   const a = useAlfred();
   const q = query.trim();
   return (
-    <CommandPage id="gh-title" title={a.issue.repo ?? 'New Issue'} placeholder="Issue title…" filter={false}>
-      <CommandGroup heading="Title">
+    <CommandMenuPage value="gh-title" title={a.issue.repo ?? 'New Issue'} placeholder="Issue title…" filter={false}>
+      <CommandMenuGroup><CommandMenuGroupLabel>Title</CommandMenuGroupLabel>
         {q ? (
-          <CommandItem value="title" icon={<Icon name="square-pencil" size={19} sw={1.8} />} title={`“${q}”`} description="Next: choose a label" page="gh-label" onSelect={() => a.setIssue({ title: q })} />
+          <CommandMenuItem value="title" icon={<Icon name="square-pencil" size={19} sw={1.8} />} title={`“${q}”`} description="Next: choose a label" page="gh-label" onSelect={() => a.setIssue({ title: q })} />
         ) : (
-          <CommandItem value="title" icon={<Icon name="square-pencil" size={19} sw={1.8} />} title="Type a title for the new issue" description={`In ${a.issue.repo ?? 'a repository'}`} disabled />
+          <CommandMenuItem value="title" icon={<Icon name="square-pencil" size={19} sw={1.8} />} title="Type a title for the new issue" description={`In ${a.issue.repo ?? 'a repository'}`} disabled />
         )}
-      </CommandGroup>
-    </CommandPage>
+      </CommandMenuGroup>
+    </CommandMenuPage>
   );
 }
 
 export function LabelPage() {
   const a = useAlfred();
   return (
-    <CommandPage id="gh-label" title="Label" placeholder="Choose a label…" numbered>
-      <CommandGroup heading="Labels">
+    <CommandMenuPage value="gh-label" title="Label" placeholder="Choose a label…" numbered>
+      <CommandMenuGroup><CommandMenuGroupLabel>Labels</CommandMenuGroupLabel>
         {LABELS.map((l) => (
-          <CommandItem
+          <CommandMenuItem
             key={l.id} value={l.name} title={l.name} description={l.description} page="gh-confirm" onSelect={() => a.setIssue({ label: l.id })}
             icon={<span className="size-3.5 rounded-full shadow-[inset_0_0_0_.5px_rgba(0,0,0,.15)]" style={{ background: l.color }} />}
           />
         ))}
-        <CommandItem value="No label" title="No label" icon={<Icon name="minus-circle" size={18} sw={1.8} />} page="gh-confirm" onSelect={() => a.setIssue({ label: undefined })} />
-      </CommandGroup>
-    </CommandPage>
+        <CommandMenuItem value="No label" title="No label" icon={<Icon name="minus-circle" size={18} sw={1.8} />} page="gh-confirm" onSelect={() => a.setIssue({ label: undefined })} />
+      </CommandMenuGroup>
+    </CommandMenuPage>
   );
 }
 
@@ -491,7 +496,7 @@ export function IssueConfirmPage() {
   const a = useAlfred();
   const label = LABELS.find((l) => l.id === a.issue.label);
   return (
-    <CommandPage id="gh-confirm" title="Confirm" placeholder="Create the issue?" filter={false} numbered>
+    <CommandMenuPage value="gh-confirm" title="Confirm" placeholder="Create the issue?" filter={false} numbered>
       <div className="mx-1 mt-2 mb-1 rounded-panel border border-border bg-background/50 p-3.5">
         <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground"><Icon name="branch" size={14} sw={2} />{a.issue.repo}</div>
         <div className="mt-1 text-callout leading-[22px] font-semibold">{a.issue.title}</div>
@@ -501,28 +506,28 @@ export function IssueConfirmPage() {
           </span>
         ) : null}
       </div>
-      <CommandGroup>
-        <CommandItem value="create" title="Create Issue" icon={<Icon name="plus-circle-fill" size={20} sw={1.8} />} onSelect={() => { a.hud(`Issue #483 opened in ${a.issue.repo}`, 'check'); a.reset(); }} />
-        <CommandItem value="cancel" title="Discard" icon={<Icon name="xmark-circle" size={20} sw={1.8} />} onSelect={() => { a.hud('Issue discarded', 'xmark'); a.reset(); }} />
-      </CommandGroup>
-    </CommandPage>
+      <CommandMenuGroup>
+        <CommandMenuItem value="create" title="Create Issue" icon={<Icon name="plus-circle-fill" size={20} sw={1.8} />} onSelect={() => { a.hud(`Issue #483 opened in ${a.issue.repo}`, 'check'); a.reset(); }} />
+        <CommandMenuItem value="cancel" title="Discard" icon={<Icon name="xmark-circle" size={20} sw={1.8} />} onSelect={() => { a.hud('Issue discarded', 'xmark'); a.reset(); }} />
+      </CommandMenuGroup>
+    </CommandMenuPage>
   );
 }
 
 export function TimerPage() {
   const a = useAlfred();
   return (
-    <CommandPage id="timer" title="Timer" placeholder="How long?" numbered>
-      <CommandGroup heading="Length">
+    <CommandMenuPage value="timer" title="Timer" placeholder="How long?" numbered>
+      <CommandMenuGroup><CommandMenuGroupLabel>Length</CommandMenuGroupLabel>
         {TIMERS.map((t) => (
-          <CommandItem
+          <CommandMenuItem
             key={t.minutes} value={`${t.minutes} minutes`} keywords={[t.name]} title={`${t.minutes} minutes`} description={t.name}
             icon={<Tile tone="timer" size={28} glyph={<span className="text-caption font-bold tabular-nums">{t.minutes}</span>} />}
             page="timer-name" onSelect={() => a.setTimerDraft(t.minutes)}
           />
         ))}
-      </CommandGroup>
-    </CommandPage>
+      </CommandMenuGroup>
+    </CommandMenuPage>
   );
 }
 
@@ -531,14 +536,14 @@ export function TimerNamePage() {
   const a = useAlfred();
   const name = query.trim() || 'Focus';
   return (
-    <CommandPage id="timer-name" title={`${a.timerDraft} min`} placeholder="What are you working on?" filter={false}>
-      <CommandGroup heading="Start">
-        <CommandItem
+    <CommandMenuPage value="timer-name" title={`${a.timerDraft} min`} placeholder="What are you working on?" filter={false}>
+      <CommandMenuGroup><CommandMenuGroupLabel>Start</CommandMenuGroupLabel>
+        <CommandMenuItem
           value="start" icon={<Tile tone="timer" icon="clock-fill" size={28} />} title={`Start ${a.timerDraft}-minute timer`} description={name}
           onSelect={() => { a.startTimer(a.timerDraft, name); a.hud(`${a.timerDraft}:00 — ${name}`, 'clock-fill'); a.reset(); }}
         />
-      </CommandGroup>
-    </CommandPage>
+      </CommandMenuGroup>
+    </CommandMenuPage>
   );
 }
 

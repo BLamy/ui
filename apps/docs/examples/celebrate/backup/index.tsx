@@ -50,15 +50,15 @@ export default function Backup() {
       />
       <div className="flex gap-2">
         <Button
-          isDisabled={running}
-          onPress={() => {
+          disabled={running}
+          onClick={() => {
             setValue(0)
             setRunning(true)
           }}
         >
           {done ? 'Back up again' : 'Back up now'}
         </Button>
-        <Button variant="secondary" onPress={() => setFired((n) => n + 1)}>
+        <Button variant="secondary" onClick={() => setFired((n) => n + 1)}>
           Replay burst
         </Button>
       </div>

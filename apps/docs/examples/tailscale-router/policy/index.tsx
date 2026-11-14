@@ -35,7 +35,7 @@ export default function Policy() {
       </div>
       <div className="flex items-center justify-between gap-3 text-subhead">
         Route every cross-origin request
-        <Switch checked={all} onChange={setAll} aria-label="Route every cross-origin request" />
+        <Switch checked={all} onCheckedChange={setAll} aria-label="Route every cross-origin request" />
       </div>
       <p className="m-0 text-footnote text-foreground/70">{result.text}</p>
       <p role="status" className="m-0 text-subhead" data-testid="verdict">

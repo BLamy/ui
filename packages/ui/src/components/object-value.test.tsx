@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ObjectValue } from '@/components/ui/object-value';
 import { STRING_PREVIEW_LENGTH, type ValuePreview } from '@/lib/object-tree-value';
 
+(globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();

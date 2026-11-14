@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Toggle } from '@/components/ui/toggle'
+import { Toggle, ToggleIcon } from '@/components/ui/toggle'
 import { Icon } from '@/lib/icon'
 
 // Toggle is a two-state button (aria-pressed). Icon-only toggles need an
@@ -9,23 +9,23 @@ export default function Toolbar() {
   return (
     <div className="mx-auto grid max-w-sm justify-items-start gap-5">
       <div className="flex items-center gap-2">
-        <Toggle aria-label="Pin" isSelected={pinned} onChange={setPinned}>
+        <Toggle aria-label="Pin" pressed={pinned} onPressedChange={setPinned}>
           <Icon name="pin" size={16} />
         </Toggle>
-        <Toggle variant="filled" aria-label="Favorite" defaultSelected>
+        <Toggle variant="filled" aria-label="Favorite" defaultPressed>
           <Icon name="star" size={16} />
         </Toggle>
         <Toggle variant="outline" aria-label="Notifications">
           <Icon name="bell" size={16} />
         </Toggle>
-        <Toggle variant="outline" isDisabled aria-label="Locked">
+        <Toggle variant="outline" disabled aria-label="Locked">
           <Icon name="lock" size={16} />
         </Toggle>
       </div>
       <div className="flex items-center gap-2">
-        <Toggle size="sm" variant="filled"><Icon name="bell" size={14} />Mute</Toggle>
-        <Toggle variant="filled"><Icon name="bell" size={16} />Mute</Toggle>
-        <Toggle size="lg" variant="filled"><Icon name="bell" size={18} />Mute</Toggle>
+        <Toggle size="sm" variant="filled"><ToggleIcon><Icon name="bell" size={14} /></ToggleIcon>Mute</Toggle>
+        <Toggle variant="filled"><ToggleIcon><Icon name="bell" size={16} /></ToggleIcon>Mute</Toggle>
+        <Toggle size="lg" variant="filled"><ToggleIcon><Icon name="bell" size={18} /></ToggleIcon>Mute</Toggle>
       </div>
       <p className="m-0 text-footnote text-muted-foreground">{pinned ? 'Pinned to the top.' : 'Not pinned.'}</p>
     </div>

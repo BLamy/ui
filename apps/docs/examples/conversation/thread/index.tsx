@@ -123,7 +123,7 @@ function Thread() {
         </ConversationComposer>
         <ConversationSuggestions>
           {SUGGESTIONS.map((s) => (
-            <Suggestion key={s} onPress={() => send(s)}>
+            <Suggestion key={s} onClick={() => send(s)}>
               {s}
             </Suggestion>
           ))}
@@ -141,7 +141,7 @@ export default function ThreadExample() {
         <Thread key={key} />
         <div className="flex items-center justify-between text-footnote text-muted-foreground">
           <span>Send a message or press a suggestion to watch the composer dock.</span>
-          <Button size="sm" variant="secondary" onPress={() => setKey((k) => k + 1)}>
+          <Button size="sm" variant="secondary" onClick={() => setKey((k) => k + 1)}>
             Start over
           </Button>
         </div>

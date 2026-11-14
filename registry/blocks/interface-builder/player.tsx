@@ -7,12 +7,15 @@
    Slow Animations slows the transitions the storyboard sets. Edits made while it runs show up live. */
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { AnimatePresence, LayoutGroup, motion, MotionConfig, type PanInfo } from 'framer-motion';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { PlainButton } from '@/components/ui/plain-button';
-import { createToastQueue, Toaster, toastApi } from '@/components/ui/toast';
-import { useContainerSize } from '@/lib/container';
+import { DialogContent as SdkDialogContent, DialogTitle as SdkDialogTitle, type DialogOpenChangeDetails } from '@ui-sdk/react/dialog';
+import { useShortcut } from '@ui-sdk/react/shortcuts';
+import { Dialog, DialogClose, type DialogController } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { createHud, ToastRegion } from '@/components/ui/toast';
+import { SizeClassProvider, useContainerSize, useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
-import { springs } from '@/lib/motion';
+import { BLProvider } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { springSpec, toFramer, type TransitionSpec } from './easing';
 import { preview } from './expr';
@@ -36,7 +39,36 @@ const SPEEDS = [1, 0.5, 0.25, 0.1] as const;
 
 /* ── The window ── */
 
-export function Player({ appearance, onClose }: { appearance: 'light' | 'dark'; onClose: () => void }) {
+export interface PlayerProps {
+  /** Whether it runs. */
+  open: boolean;
+  onOpenChange: (open: boolean, details: DialogOpenChangeDetails) => void;
+  /** Runs and stops it from outside (the toolbar, ⌘R). */
+  controller: DialogController;
+  /** The layer host over the storyboard it renders into. */
+  container: HTMLElement;
+  appearance: 'light' | 'dark';
+}
+
+/** The preview: a dialog over the storyboard, in the layer host around it (so only the storyboard turns inert, and
+    the navigator and inspector stay live). Escape, Stop and ⌘. close it; focus goes back to where it was. */
+export function Player({ open, onOpenChange, controller, container, appearance }: PlayerProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange} controller={controller} container={container}>
+      <SdkDialogContent
+        data-ib-player=""
+        className="group/player absolute inset-0 z-30 flex flex-col bg-muted/92 outline-none backdrop-blur-md transition-opacity duration-200 data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
+      >
+        <PlayerWindow appearance={appearance} onStop={(event) => controller.close({ reason: 'shortcut', event })} />
+      </SdkDialogContent>
+    </Dialog>
+  );
+}
+
+/** The debug area shows beside the device from 760px of window. */
+const WINDOW_CLASSES = { medium: 480, regular: 760 } as const;
+
+function PlayerWindow({ appearance, onStop }: { appearance: 'light' | 'dark'; onStop: (event: Event) => void }) {
   const b = useBuilder();
   const device = DEVICES[b.doc.device];
   const [speed, setSpeed] = useState(1);
@@ -46,8 +78,12 @@ export function Player({ appearance, onClose }: { appearance: 'light' | 'dark'; 
   const [active, setActive] = useState<Instance | null>(null);
   const [tick, setTick] = useState(0);
   const bump = useCallback(() => setTick((t) => t + 1), []);
+  const [measure, windowClass] = useSizeClass<HTMLDivElement>({ breakpoints: WINDOW_CLASSES });
+  const self = useRef<HTMLDivElement | null>(null);
+  const setWindow = useCallback((el: HTMLDivElement | null) => { self.current = el; measure(el); }, [measure]);
+  // The device scales to the room it has: that takes pixels.
   const [ref, size] = useContainerSize<HTMLDivElement>({ width: 900, height: 700 });
-  const showDebug = debug && size.width > 760;
+  const showDebug = debug && windowClass === 'regular';
   const room = { w: size.width - (showDebug ? 300 : 0) - 48, h: size.height - 48 };
   const scale = Math.max(0.3, Math.min(1, room.h / (device.h + 24), room.w / (device.w + 24)));
   const start = useRef(performance.now());
@@ -56,70 +92,58 @@ export function Player({ appearance, onClose }: { appearance: 'light' | 'dark'; 
   }, []);
   const restart = () => { setGeneration((g) => g + 1); setLog([]); setActive(null); start.current = performance.now(); };
 
-  // ⌘R restarts while running.
-  useEffect(() => {
-    const on = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'r') { e.preventDefault(); restart(); }
-    };
-    window.addEventListener('keydown', on);
-    return () => window.removeEventListener('keydown', on);
-  });
+  // ⌘R restarts and ⌘. stops while it runs: the preview's own shortcuts, wherever focus is.
+  useShortcut('mod+r', () => restart(), { layer: self, description: 'Restart' });
+  useShortcut('mod+.', (event) => onStop(event), { layer: self, description: 'Stop' });
 
   return (
-    <motion.div
-      data-slot="ib-player"
-      role="dialog"
-      aria-label={`Running ${b.doc.name}`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.18 }}
-      className="absolute inset-0 z-30 flex flex-col bg-muted/92 backdrop-blur-md"
-    >
-      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-card/80 px-3">
-        <span className="grid size-6 place-items-center rounded-full bg-success text-white"><Icon name="play" size={11} sw={2.4} /></span>
-        <span className="min-w-0 truncate text-footnote font-medium">Running {b.doc.name} on {device.name}</span>
-        <span className="flex-1" />
-        <DropdownMenu>
-          <PlainButton aria-label={`Animation speed: ${speed}×`} className={cn('flex h-7 cursor-pointer items-center gap-1 rounded-md border-0 px-2 text-caption font-medium outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring', speed < 1 ? 'bg-warning/15 text-warning' : 'bg-transparent text-muted-foreground')}>
-            <Icon name="clock" size={13} sw={2.1} /> {speed === 1 ? 'Normal speed' : `Slow ${speed}×`}
+    <SizeClassProvider value={windowClass}>
+      <div ref={setWindow} className="flex min-h-0 flex-1 flex-col">
+        <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-card/80 px-3">
+          <span className="grid size-6 place-items-center rounded-full bg-success text-white"><Icon name="play" size={11} sw={2.4} /></span>
+          <SdkDialogTitle className="m-0 min-w-0 truncate text-footnote font-medium">Running {b.doc.name} on {device.name}</SdkDialogTitle>
+          <span className="flex-1" />
+          <DropdownMenu>
+            <DropdownMenuTrigger aria-label={`Animation speed: ${speed}×`} className={cn('flex h-7 cursor-pointer items-center gap-1 rounded-md border-0 px-2 text-caption font-medium outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring', speed < 1 ? 'bg-warning/15 text-warning' : 'bg-transparent text-muted-foreground')}>
+              <Icon name="clock" size={13} sw={2.1} /> {speed === 1 ? 'Normal speed' : `Slow ${speed}×`}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuRadioGroup value={String(speed)} onValueChange={(k) => setSpeed(Number(k))}>
+                {SPEEDS.map((s) => <DropdownMenuRadioItem key={s} value={String(s)} closeOnSelect>{s === 1 ? 'Normal' : `${s}× (Slow Animations)`}</DropdownMenuRadioItem>)}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <PlainButton aria-label="Restart" title="Restart (⌘R)" onClick={restart} className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+            <Icon name="arrow-clockwise" size={15} sw={2.1} />
           </PlainButton>
-          <DropdownMenuContent aria-label="Animation speed" placement="bottom end" onAction={(k) => setSpeed(Number(k))}>
-            {SPEEDS.map((s) => <DropdownMenuItem key={s} id={String(s)}>{s === 1 ? 'Normal' : `${s}× (Slow Animations)`}</DropdownMenuItem>)}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <PlainButton aria-label="Restart" title="Restart (⌘R)" onPress={restart} className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary hover:text-foreground data-focus-visible:ring-2 data-focus-visible:ring-ring">
-          <Icon name="arrow-clockwise" size={15} sw={2.1} />
-        </PlainButton>
-        <PlainButton aria-label={debug ? 'Hide debug area' : 'Show debug area'} title="Debug area" aria-pressed={debug} onPress={() => setDebug((d) => !d)} className={cn('grid size-7 cursor-pointer place-items-center rounded-md border-0 outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring', debug ? 'bg-secondary text-primary' : 'bg-transparent text-muted-foreground')}>
-          <Icon name="panel-bottom" size={15} sw={2.1} />
-        </PlainButton>
-        <PlainButton aria-label="Stop" title="Stop (⌘.)" onPress={onClose} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2.5 text-caption font-semibold outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
-          <Icon name="stop" size={11} sw={2.4} /> Stop
-        </PlainButton>
-      </div>
-      <div ref={ref} className="flex min-h-0 flex-1">
-        <div className="relative grid min-w-0 flex-1 place-items-center overflow-hidden">
-          <motion.div
-            initial={{ y: 30, scale: 0.94, opacity: 0 }}
-            animate={{ y: 0, scale: 1, opacity: 1 }}
-            transition={springs.smooth}
-            style={{ width: (device.w + 24) * scale, height: (device.h + 24) * scale }}
-            className="relative"
-          >
-            <div className="absolute top-0 left-0 origin-top-left" style={{ transform: `scale(${scale})`, width: device.w + 24, height: device.h + 24 }}>
-              <div className="rounded-[67px] bg-black p-3 shadow-[0_30px_80px_black] shadow-black/35 ring-1 ring-white/10" style={{ borderRadius: device.radius + 12 }}>
-                {/* Layout animations and drags measure in page px; the device is scaled, so tell framer-motion. */}
-                <MotionConfig transformPagePoint={(p) => ({ x: p.x / scale, y: p.y / scale })}>
-                  <DeviceScreen key={generation} device={device} appearance={appearance} speed={speed} onLog={push} onActive={setActive} onTick={bump} />
-                </MotionConfig>
+          <PlainToggleButton aria-label="Debug area" title="Debug area" pressed={debug} onPressedChange={setDebug} className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring data-pressed:bg-secondary data-pressed:text-primary">
+            <Icon name="panel-bottom" size={15} sw={2.1} />
+          </PlainToggleButton>
+          <DialogClose title="Stop (⌘.)" className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2.5 text-caption font-semibold outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+            <Icon name="stop" size={11} sw={2.4} /> Stop
+          </DialogClose>
+        </div>
+        <div ref={ref} className="flex min-h-0 flex-1">
+          <div className="relative grid min-w-0 flex-1 place-items-center overflow-hidden">
+            {/* The device rises in as the window fades in. */}
+            <div
+              style={{ width: (device.w + 24) * scale, height: (device.h + 24) * scale }}
+              className="relative transition-[translate,scale,opacity] duration-spring-smooth ease-spring-smooth group-data-starting-style/player:translate-y-7.5 group-data-starting-style/player:scale-94 group-data-starting-style/player:opacity-0 motion-reduce:transition-none"
+            >
+              <div className="absolute top-0 left-0 origin-top-left" style={{ transform: `scale(${scale})`, width: device.w + 24, height: device.h + 24 }}>
+                <div className="rounded-[67px] bg-black p-3 shadow-[0_30px_80px_black] shadow-black/35 ring-1 ring-white/10" style={{ borderRadius: device.radius + 12 }}>
+                  {/* Layout animations and drags measure in page px; the device is scaled, so tell framer-motion. */}
+                  <MotionConfig transformPagePoint={(p) => ({ x: p.x / scale, y: p.y / scale })}>
+                    <DeviceScreen key={generation} device={device} appearance={appearance} speed={speed} onLog={push} onActive={setActive} onTick={bump} />
+                  </MotionConfig>
+                </div>
               </div>
             </div>
-          </motion.div>
+          </div>
+          {showDebug ? <DebugArea log={log} active={active} tick={tick} onClear={() => setLog([])} /> : null}
         </div>
-        {showDebug ? <DebugArea log={log} active={active} tick={tick} onClear={() => setLog([])} /> : null}
       </div>
-    </motion.div>
+    </SizeClassProvider>
   );
 }
 
@@ -138,8 +162,7 @@ function DeviceScreen({ device, appearance, speed, onLog, onActive, onTick }: {
   const [contexts, setContexts] = useState(() => contextDefaults(b.doc));
   const ctx = useRef(contexts);
   const [morph, setMorph] = useState<TransitionSpec>(springSpec(0.5, 0.18));
-  const queue = useMemo(() => createToastQueue({ maxVisibleToasts: 2 }), []);
-  const toast = useMemo(() => toastApi(queue), [queue]);
+  const [hud] = useState(() => createHud());
   const [frames, setFrames] = useState<Frame[]>([]);
   const framesRef = useRef(frames);
   framesRef.current = frames;
@@ -165,7 +188,7 @@ function DeviceScreen({ device, appearance, speed, onLog, onActive, onTick }: {
         onActive(inst);
       },
       log: (text, kind) => onLog(text, kind),
-      toast: (m) => { toast.hud(m); },
+      toast: (m) => { hud(m); },
       instances,
       // The debug area follows what you navigate to and what you touch. Embedded scenes (a container's page, a tab
       // that isn't showing) only take over when nothing on screen is followed yet; effects run children first, so a
@@ -218,19 +241,22 @@ function DeviceScreen({ device, appearance, speed, onLog, onActive, onTick }: {
 
   return (
     <div className="relative overflow-hidden bg-black" style={{ width: device.w, height: device.h, borderRadius: device.radius }}>
-      <LayoutGroup id="ib-player">
-        <AnimatePresence initial={false}>
-          {frames.map((f, i) => (
-            <FrameView key={f.key} frame={f} index={i} cover={frames[i + 1] ?? null} top={i === frames.length - 1} device={device} env={env} appearance={appearance}
-              back={() => f.inst.back()} backTitle={i > 0 ? frames[i - 1].inst.scene?.name ?? 'Back' : ''} />
-          ))}
-        </AnimatePresence>
-      </LayoutGroup>
-      <div className={cn('pointer-events-none absolute inset-0 z-200', appearance === 'dark' ? 'dark' : 'light')}>
-        <StatusBar device={device} />
-        {device.bottom ? <span aria-hidden="true" className="absolute bottom-2 left-1/2 h-[5px] w-[134px] -translate-x-1/2 rounded-full bg-foreground" /> : null}
-      </div>
-      <Toaster queue={queue} inline placement="top" offset={device.top + 4} className="z-210" />
+      {/* The device is the app's own layer host: its menus, dialogs and toasts open inside the screen. */}
+      <BLProvider dark={appearance === 'dark'} className="bg-transparent">
+        <LayoutGroup id="ib-player">
+          <AnimatePresence initial={false}>
+            {frames.map((f, i) => (
+              <FrameView key={f.key} frame={f} index={i} cover={frames[i + 1] ?? null} top={i === frames.length - 1} device={device} env={env} appearance={appearance}
+                back={() => f.inst.back()} backTitle={i > 0 ? frames[i - 1].inst.scene?.name ?? 'Back' : ''} />
+            ))}
+          </AnimatePresence>
+        </LayoutGroup>
+        <div className={cn('pointer-events-none absolute inset-0 z-200', appearance === 'dark' ? 'dark' : 'light')}>
+          <StatusBar device={device} />
+          {device.bottom ? <span aria-hidden="true" className="absolute bottom-2 left-1/2 h-[5px] w-[134px] -translate-x-1/2 rounded-full bg-foreground" /> : null}
+        </div>
+        <ToastRegion variant="hud" toaster={hud.toaster} side="top" offset={device.top + 4} className="z-210" />
+      </BLProvider>
     </div>
   );
 }
@@ -340,7 +366,7 @@ function DebugArea({ log, active, tick, onClear }: { log: LogEntry[]; active: In
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex h-8 shrink-0 items-center justify-between border-b border-border px-3">
           <span className="text-caption font-semibold">Console</span>
-          <PlainButton onPress={onClear} aria-label="Clear console" className="grid size-6 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring">
+          <PlainButton onClick={onClear} aria-label="Clear console" className="grid size-6 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
             <Icon name="trash" size={12} sw={2.2} />
           </PlainButton>
         </div>

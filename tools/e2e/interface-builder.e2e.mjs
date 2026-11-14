@@ -76,7 +76,7 @@ test('Esc walks out to what shows the scene: the stack, the tab’s scene, the T
 
 test('right-click lists everything under the pointer; choosing one selects it', async ({ page }) => {
   await page.mouse.click(...Object.values(center(await inMain(page, 'plant-row').boundingBox())), { button: 'right' });
-  const items = page.locator('[data-slot=dropdown-menu-item]');
+  const items = page.locator('[data-slot=menu-item]');
   await expect(items.first()).toContainText('Plant Cell');
   await expect(items.filter({ hasText: 'TabView' })).toHaveCount(1);
   await items.filter({ hasText: 'ListSection' }).click();

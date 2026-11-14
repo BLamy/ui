@@ -1,14 +1,16 @@
 /* Step 1 — the plan, how it is billed, and how many seats. Prices roll to their yearly figure when the cycle changes;
-   the seat stepper (react-aria's NumberField: arrows, Page Up/Down, typing) keeps to the plan's limits. */
-import { Group, NumberField } from 'react-aria-components';
+   the seat stepper (UI SDK's NumberInput: arrows, Page Up/Down, typing, held step buttons) keeps to the plan's
+   limits. */
+import { NumberInput, NumberInputControl, NumberInputDecrement, NumberInputGroup, NumberInputIncrement } from '@ui-sdk/react/number-input';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Form } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { inputVariants } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { Radio, RadioGroup } from '@/components/ui/radio-group';
-import { Segmented } from '@/components/ui/segmented';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { money } from './checkout';
@@ -25,18 +27,12 @@ export function PlanStep() {
       <StepHeading title="Choose your plan" description="Change plans or seats whenever you like — we prorate the difference." focus={c.moved} />
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <span aria-hidden="true" className="text-subhead font-medium text-foreground">Billing</span>
-        <Segmented
-          aria-label="Billing"
-          value={c.draft.cycle}
-          onChange={(id) => c.setCycle(id as Cycle)}
-          options={[
-            { id: 'monthly', label: 'Monthly' },
-            { id: 'annual', label: <span>Yearly <span className="text-link">−{ANNUAL_SAVING * 100}%</span></span> },
-          ]}
-          className="w-[232px]"
-        />
+        <Segmented<Cycle> aria-label="Billing" value={c.draft.cycle} onValueChange={(cycle) => { if (cycle) c.setCycle(cycle); }} className="w-[232px]">
+          <SegmentedItem value="monthly">Monthly</SegmentedItem>
+          <SegmentedItem value="annual"><span>Yearly <span className="text-link">−{ANNUAL_SAVING * 100}%</span></span></SegmentedItem>
+        </Segmented>
       </div>
-      <RadioGroup aria-label="Plan" value={c.draft.plan} onChange={(id) => c.setPlan(id as PlanId)} className="gap-3">
+      <RadioGroup<PlanId> aria-label="Plan" value={c.draft.plan} onValueChange={(id) => { if (id) c.setPlan(id); }} className="gap-3">
         {PLANS.map((plan) => <PlanOption key={plan.id} plan={plan} cycle={c.draft.cycle} />)}
       </RadioGroup>
       <SeatStepper />
@@ -47,19 +43,21 @@ export function PlanStep() {
   );
 }
 
-/** A plan as a selectable card: the radio, name, price per seat and the three things it adds. */
+/** A plan as a selectable card: the radio's label is the card (a press anywhere on it picks the plan), with the
+ *  name, price per seat and the three things it adds. */
 function PlanOption({ plan, cycle }: { plan: Plan; cycle: Cycle }) {
   const yearly = cycle === 'annual';
   return (
-    <Radio
-      value={plan.id}
+    <Label
+      variant="control"
       className={cn(
-        'w-full items-start rounded-card bg-card p-4 text-subhead shadow-hairline [&>[data-slot=radio-indicator]]:mt-px',
+        'w-full items-start rounded-card bg-card p-4 text-subhead shadow-hairline',
         'transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
-        'data-hovered:bg-secondary/40 data-selected:bg-primary/[.05] data-selected:shadow-[inset_0_0_0_2px_var(--primary)]',
-        'data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-primary',
+        'hover:bg-secondary/40 has-data-checked:bg-primary/[.05] has-data-checked:shadow-[inset_0_0_0_2px_var(--primary)]',
+        'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary',
       )}
     >
+      <Radio value={plan.id} className="mt-px" />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-start justify-between gap-3">
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -85,7 +83,7 @@ function PlanOption({ plan, cycle }: { plan: Plan; cycle: Cycle }) {
           ))}
         </span>
       </span>
-    </Radio>
+    </Label>
   );
 }
 
@@ -99,27 +97,32 @@ function SeatStepper() {
     : plan.seats.min > 1 ? `${plan.name} starts at ${plan.seats.min} seats.`
     : 'Add seats as your team grows; you pay for the days you use them.';
   return (
-    <NumberField
-      value={seats}
-      onChange={(n) => { if (Number.isFinite(n)) c.setSeats(n); }}
-      minValue={plan.seats.min}
-      maxValue={plan.seats.max}
-      formatOptions={{ maximumFractionDigits: 0 }}
-      className="flex flex-col gap-1.5"
-    >
-      <Label>Seats</Label>
+    <Field className="gap-1.5">
+      <FieldLabel>Seats</FieldLabel>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Group className="flex h-11 items-center gap-0.5 rounded-ctl bg-input p-1 transition-shadow duration-spring-snappy ease-spring-snappy data-focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)]">
-          <Button slot="decrement" variant="ghost" size="icon" className="rounded-lg"><Icon name="minus" size={16} sw={2.4} /></Button>
-          <Input className="h-9 w-14 bg-transparent px-0 text-center text-callout font-semibold tabular-nums data-focused:bg-transparent data-focused:shadow-none" />
-          <Button slot="increment" variant="ghost" size="icon" className="rounded-lg"><Icon name="plus" size={16} sw={2.4} /></Button>
-        </Group>
+        <NumberInput
+          value={seats}
+          onValueChange={(n) => { if (n != null && Number.isFinite(n)) c.setSeats(n); }}
+          min={plan.seats.min}
+          max={plan.seats.max}
+          format={{ maximumFractionDigits: 0 }}
+        >
+          <NumberInputGroup className="flex h-11 items-center gap-0.5 rounded-ctl bg-input p-1 transition-shadow duration-spring-snappy ease-spring-snappy focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)]">
+            <NumberInputDecrement aria-label="Remove a seat" className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'rounded-lg')}>
+              <Icon name="minus" size={16} sw={2.4} />
+            </NumberInputDecrement>
+            <NumberInputControl className={cn(inputVariants(), 'h-9 w-14 bg-transparent px-0 text-center text-callout font-semibold tabular-nums focus:bg-transparent focus:shadow-none')} />
+            <NumberInputIncrement aria-label="Add a seat" className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'rounded-lg')}>
+              <Icon name="plus" size={16} sw={2.4} />
+            </NumberInputIncrement>
+          </NumberInputGroup>
+        </NumberInput>
         <p aria-live="polite" className={cn('m-0 text-footnote leading-[18px]', SOFT_INK)}>
           {seats} × {money(unit, true)} = <span className="font-semibold text-foreground">{money(unit * seats, true)}</span> a month
           {yearly ? <>, billed {money(unit * seats * 12, true)} a year</> : null}
         </p>
       </div>
       <Hint>{limit}</Hint>
-    </NumberField>
+    </Field>
   );
 }

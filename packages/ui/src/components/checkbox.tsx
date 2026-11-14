@@ -1,21 +1,32 @@
 'use client';
+import type { ComponentProps } from 'react';
 import {
-  Checkbox as AriaCheckbox, type CheckboxProps as AriaCheckboxProps,
-  CheckboxGroup as AriaCheckboxGroup, type CheckboxGroupProps as AriaCheckboxGroupProps,
-  composeRenderProps,
-} from 'react-aria-components';
+  Checkbox as SdkCheckbox, CheckboxGroup as SdkCheckboxGroup, CheckboxIndicator as SdkCheckboxIndicator,
+} from '@ui-sdk/react/checkbox';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 
-/* ══ Checkbox — react-aria's Checkbox. Round by default (iOS selection circle), square like shadcn on request. ══ */
+/* ══ Checkbox — UI SDK's Checkbox. Round by default (the iOS selection circle), square like shadcn on request ══
+   `checked` / `defaultChecked` / `onCheckedChange(checked, details)`, where checked is `true`, `false` or
+   `'indeterminate'`; `disabled`, `readOnly`, `required`, and `name` / `value` to submit with a form. The root is
+   the box (a button with the `checkbox` role); with no children it renders its `CheckboxIndicator`, the tick that
+   draws itself on. Wrap it and its text in a Label, or pass `aria-label`:
+
+   <Label variant="control"><Checkbox defaultChecked />Remember me</Label>
+
+   CheckboxGroup keeps one list of checked values (`value` / `defaultValue` / `onValueChange`); each Checkbox in it
+   gives its `value`, and one with `parent` checks or clears them all. */
 export const checkboxVariants = cva(
   [
-    'box-border grid size-[22px] shrink-0 place-items-center border-[1.5px] border-tertiary-foreground text-white',
+    'box-border grid size-[22px] shrink-0 cursor-pointer place-items-center border-[1.5px] border-tertiary-foreground bg-transparent p-0 text-white outline-none',
     'transition-[background-color,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
-    'group-data-selected:border-primary group-data-selected:bg-primary',
-    'group-data-indeterminate:border-primary group-data-indeterminate:bg-primary',
-    'group-data-pressed:scale-90 group-data-focus-visible:ring-[3px] group-data-focus-visible:ring-ring/45',
-    'group-data-invalid:border-destructive group-data-invalid:group-data-selected:bg-destructive',
+    'data-checked:border-primary data-checked:bg-primary',
+    'data-indeterminate:border-primary data-indeterminate:bg-primary',
+    'active:not-data-disabled:scale-90 focus-visible:ring-[3px] focus-visible:ring-ring/45',
+    // Invalid: the box itself (`aria-invalid`, which a Field writes on its control) or the group around it.
+    'aria-invalid:border-destructive group-aria-invalid:border-destructive',
+    'aria-invalid:data-checked:border-destructive aria-invalid:data-checked:bg-destructive group-aria-invalid:data-checked:border-destructive group-aria-invalid:data-checked:bg-destructive',
+    'data-disabled:cursor-default data-disabled:opacity-40',
   ],
   {
     variants: {
@@ -28,47 +39,45 @@ export const checkboxVariants = cva(
   },
 );
 
-export interface CheckboxProps extends AriaCheckboxProps, VariantProps<typeof checkboxVariants> {}
+export type CheckboxProps = ComponentProps<typeof SdkCheckbox> & VariantProps<typeof checkboxVariants>;
 
 export function Checkbox({ className, shape, children, ...props }: CheckboxProps) {
   return (
-    <AriaCheckbox
-      data-slot="checkbox"
-      className={composeRenderProps(className, (cls) =>
-        cn('group relative inline-flex cursor-pointer items-center gap-3 text-body text-foreground outline-none data-disabled:cursor-default data-disabled:opacity-40', cls))}
-      {...props}
-    >
-      {composeRenderProps(children, (kids, { isSelected, isIndeterminate }) => (
-        <>
-          <span data-slot="checkbox-indicator" className={checkboxVariants({ shape })}>
-            <svg viewBox="0 0 24 24" className="size-3.5" aria-hidden="true">
-              {/* The tick draws itself on (stroke-dashoffset); the dash morphs from/to the tick's middle. */}
-              <path d={isIndeterminate ? 'M6 12h12' : 'M5.5 12.6l4.3 4.3 8.7-9.3'} pathLength={1} fill="none" stroke="currentColor" strokeWidth={3}
-                strokeLinecap="round" strokeLinejoin="round"
-                className={cn(
-                  '[stroke-dasharray:1] transition-[stroke-dashoffset,opacity] motion-reduce:transition-none',
-                  isSelected || isIndeterminate
-                    ? '[stroke-dashoffset:0] opacity-100 duration-spring-smooth ease-spring-smooth'
-                    : '[stroke-dashoffset:1] opacity-0 duration-exit ease-exit',
-                )} />
-            </svg>
-          </span>
-          {kids}
-        </>
-      ))}
-    </AriaCheckbox>
+    <SdkCheckbox className={cx(checkboxVariants({ shape }), className)} {...props}>
+      {children ?? <CheckboxIndicator />}
+    </SdkCheckbox>
   );
 }
 
-export interface CheckboxGroupProps extends AriaCheckboxGroupProps {}
+export type CheckboxIndicatorProps = ComponentProps<typeof SdkCheckboxIndicator>;
 
-/** Group of checkboxes sharing a value array; put a <Label> first. */
-export function CheckboxGroup({ className, ...props }: CheckboxGroupProps) {
+/** The mark inside the box: a tick, or a dash while indeterminate. It stays mounted, so the tick draws itself on
+    (stroke-dashoffset) and off, and the dash morphs from and to the tick's middle. Children replace the mark. */
+export function CheckboxIndicator({ className, children, keepMounted = true, ...props }: CheckboxIndicatorProps) {
   return (
-    <AriaCheckboxGroup
-      data-slot="checkbox-group"
-      className={composeRenderProps(className, (cls) => cn('group flex flex-col gap-3', cls))}
-      {...props}
-    />
+    <SdkCheckboxIndicator keepMounted={keepMounted} className={cx('grid place-items-center', className)} {...props}>
+      {children ?? ((state) => (
+        <svg viewBox="0 0 24 24" className="size-3.5" aria-hidden="true">
+          <path d={state.indeterminate ? 'M6 12h12' : 'M5.5 12.6l4.3 4.3 8.7-9.3'} pathLength={1} fill="none" stroke="currentColor" strokeWidth={3}
+            strokeLinecap="round" strokeLinejoin="round"
+            className={cn(
+              '[stroke-dasharray:1] transition-[stroke-dashoffset,opacity] motion-reduce:transition-none',
+              state.checked || state.indeterminate
+                ? '[stroke-dashoffset:0] opacity-100 duration-spring-smooth ease-spring-smooth'
+                : '[stroke-dashoffset:1] opacity-0 duration-exit ease-exit',
+            )} />
+        </svg>
+      ))}
+    </SdkCheckboxIndicator>
   );
 }
+
+export type CheckboxGroupProps<T extends string = string> = ComponentProps<typeof SdkCheckboxGroup<T>>;
+
+/** Checkboxes that share one list of checked values. Name it with `aria-label`, or a Label whose `htmlFor` is
+    the group's `id`. */
+export function CheckboxGroup<T extends string = string>({ className, ...props }: CheckboxGroupProps<T>) {
+  return <SdkCheckboxGroup<T> className={cx('group flex flex-col gap-3', className)} {...props} />;
+}
+
+export { createCheckboxController, createCheckboxGroupController } from '@ui-sdk/react/checkbox';

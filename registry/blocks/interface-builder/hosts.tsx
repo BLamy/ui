@@ -9,10 +9,13 @@
    - an embedded scene (SceneRef): another scene rendered as a component, its props from bindings and its callback
      props from actions — React composition, the storyboard's container view. */
 import { createContext, use, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
+import {
+  NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackLeading, NavigationStackPage,
+  NavigationStackTitle, NavigationStackTrailing,
+} from '@/components/ui/navigation-stack';
 import { SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSupplementary, useSplitView } from '@/components/ui/split-view';
 import { TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab, type TabViewPlacement } from '@/components/ui/tab-view';
-import { useContainerWidth } from '@/lib/container';
+import { useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { appearSchedule } from './appear';
 import { itemsOf, num, SceneNavContext, str, type RenderArgs } from './spec';
@@ -204,24 +207,52 @@ function Placeholder({ icon, text }: { icon: string; text: string }) {
 
 interface Page { key: string; scene: Scene; inst: Instance | null; root: boolean }
 
-/** A scene as one of the stack's screens: its Screen root's bar, its content under it. */
 /** A Screen's readable width: its content centers at this on a wide screen (none when 0). */
 const readableWidth = (n: Node) => num(n.props.maxWidth, 720) || undefined;
 
-function screenOf(page: Page, embedded: boolean, own?: { title: string; largeTitle: boolean; grouped: boolean; maxW?: number }): Screen {
+/** What a page's bar says and how its content sits. */
+interface PageLook { title: ReactNode; largeTitle: boolean; grouped: boolean; maxWidth?: number; leading?: ReactNode; trailing?: ReactNode }
+
+/** One page of a NavigationStack: its bar (title, bar items) and its content under it, a large title first. */
+function StackPage({ value, look, children }: { value: string; look: PageLook; children: ReactNode }) {
+  return (
+    <NavigationStackPage value={value} grouped={look.grouped}>
+      <NavigationStackBar>
+        {look.leading ? <NavigationStackLeading>{look.leading}</NavigationStackLeading> : null}
+        <NavigationStackTitle>{look.title}</NavigationStackTitle>
+        {look.trailing ? <NavigationStackTrailing>{look.trailing}</NavigationStackTrailing> : null}
+      </NavigationStackBar>
+      <NavigationStackContent maxWidth={look.maxWidth}>
+        {look.largeTitle ? <NavigationStackLargeTitle /> : null}
+        {children}
+      </NavigationStackContent>
+    </NavigationStackPage>
+  );
+}
+
+/** A scene as one of the stack's pages: its Screen root's bar, its content under it. */
+function pageOf(page: Page, embedded: boolean) {
   const r = page.scene.root;
-  const isScreen = r.type === 'Screen';
-  const title = isScreen ? <ScreenTitle scene={page.scene} inst={page.inst} /> : own?.title;
-  return {
-    key: page.key,
-    title,
-    largeTitle: isScreen ? r.props.largeTitle !== false : own?.largeTitle,
-    grouped: isScreen ? !!r.props.grouped : own?.grouped,
-    maxW: isScreen ? readableWidth(r) : own?.maxW,
-    leading: isScreen ? <SceneHost scene={page.scene} inst={page.inst} part="leading" embedded={embedded} /> : undefined,
-    trailing: isScreen ? <SceneHost scene={page.scene} inst={page.inst} part="trailing" embedded={embedded} /> : undefined,
-    content: <SceneHost scene={page.scene} inst={page.inst} part={isScreen ? 'content' : 'all'} embedded={embedded} />,
+  if (r.type !== 'Screen') {
+    return (
+      <StackPage key={page.key} value={page.key} look={{ title: page.scene.name, largeTitle: false, grouped: false }}>
+        <SceneHost scene={page.scene} inst={page.inst} part="all" embedded={embedded} />
+      </StackPage>
+    );
+  }
+  const look: PageLook = {
+    title: <ScreenTitle scene={page.scene} inst={page.inst} />,
+    largeTitle: r.props.largeTitle !== false,
+    grouped: !!r.props.grouped,
+    maxWidth: readableWidth(r),
+    leading: <SceneHost scene={page.scene} inst={page.inst} part="leading" embedded={embedded} />,
+    trailing: <SceneHost scene={page.scene} inst={page.inst} part="trailing" embedded={embedded} />,
   };
+  return (
+    <StackPage key={page.key} value={page.key} look={look}>
+      <SceneHost scene={page.scene} inst={page.inst} part="content" embedded={embedded} />
+    </StackPage>
+  );
 }
 
 /** A Screen's title: a literal, or bound to the scene's state (`plant.name`). */
@@ -276,12 +307,10 @@ function NavStack({ r }: { r: RenderArgs }) {
   const embedded = useEmbedded(ref ?? { id: '', type: 'SceneRef', props: {} }, { stack });
   const rootScene = ref ? embedded.scene : null;
 
-  const pages: Page[] = [];
-  if (ref && rootScene) pages.push({ key: 'root', scene: rootScene, inst: live ? embedded.inst : null, root: true });
-  const screens: Screen[] = [];
-  if (ref && rootScene) screens.push(screenOf(pages[0], true));
-  else screens.push({ key: 'root', title: own.title, largeTitle: own.largeTitle, grouped: own.grouped, maxW: own.maxW, content: <div style={r.box}>{r.children}</div> });
-  if (live) for (const p of pushed) screens.push(screenOf(p, true));
+  const root = ref && rootScene
+    ? pageOf({ key: 'root', scene: rootScene, inst: live ? embedded.inst : null, root: true }, true)
+    : <StackPage key="root" value="root" look={{ title: own.title, largeTitle: own.largeTitle, grouped: own.grouped, maxWidth: own.maxW }}><div style={r.box}>{r.children}</div></StackPage>;
+  const shown = live ? pushed : [];
 
   // Inline content (no embedded scene) pushes from this scene's own instance.
   useEffect(() => {
@@ -291,11 +320,14 @@ function NavStack({ r }: { r: RenderArgs }) {
   return (
     <HostsContext.Provider value={{ ...extra, stack }}>
       <NavigationStack
-        screens={screens}
-        onPop={() => setPushed((p) => p.slice(0, -1))}
+        pages={['root', ...shown.map((p) => p.key)]}
+        onPagesChange={(keys) => setPushed((p) => p.filter((x) => keys.includes(x.key)))}
         safeTop={nav.safeTop}
-        rootBack={nav.canGoBack ? { title: nav.backTitle, onPress: nav.goBack } : undefined}
-      />
+        rootBack={nav.canGoBack ? { title: nav.backTitle, onClick: nav.goBack } : undefined}
+      >
+        {root}
+        {shown.map((p) => pageOf(p, true))}
+      </NavigationStack>
     </HostsContext.Provider>
   );
 }
@@ -307,31 +339,32 @@ const RAIL_AT = 700;
 
 export function TabViewHost({ r }: { r: RenderArgs }) {
   const tabs = itemsOf(r.p.tabs);
-  const selected = str(r.p.selectedKey, tabs[0]?.id);
-  const [box, width] = useContainerWidth<HTMLDivElement>(393);
+  const selected = str(r.p.value, tabs[0]?.id);
+  // auto: compact is a phone's width (a tab bar), anything wider gets a side rail.
+  const [box, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: { medium: RAIL_AT }, initial: 'compact' });
   const asked = (['bottom', 'start', 'top'] as const).find((p) => p === r.p.placement);
-  const placement: TabViewPlacement = asked ?? (width >= RAIL_AT ? 'start' : 'bottom');
+  const placement: TabViewPlacement = asked ?? (sizeClass === 'compact' ? 'bottom' : 'start');
   return (
     <div ref={box} className="relative size-full">
-    <TabView
-      placement={placement}
-      selectedKey={selected}
-      onSelectionChange={(k) => r.on.onSelectionChange?.(String(k))}
-      className="relative size-full"
-    >
-      <TabViewBar hideOnScroll={false}>
-        <TabViewList aria-label="Tabs">
-          {tabs.map((t) => <TabViewTab key={t.id} id={t.id} icon={t.icon ?? 'circle'} title={t.label} />)}
-        </TabViewList>
-      </TabViewBar>
-      <TabViewPanels>
-        {tabs.map((t, i) => (
-          <TabViewPanel key={t.id} id={t.id} shouldForceMount className="overflow-hidden">
-            {r.childList[i] ?? <Placeholder icon="plus" text={`Drop a scene here for “${t.label}”`} />}
-          </TabViewPanel>
-        ))}
-      </TabViewPanels>
-    </TabView>
+      <TabView
+        placement={placement}
+        value={selected}
+        onValueChange={(k) => k != null && r.on.onValueChange?.(k)}
+        className="relative size-full"
+      >
+        <TabViewBar hideOnScroll={false}>
+          <TabViewList aria-label="Tabs">
+            {tabs.map((t) => <TabViewTab key={t.id} value={t.id} icon={t.icon ?? 'circle'} title={t.label} />)}
+          </TabViewList>
+        </TabViewBar>
+        <TabViewPanels>
+          {tabs.map((t, i) => (
+            <TabViewPanel key={t.id} value={t.id} keepMounted className="overflow-hidden">
+              {r.childList[i] ?? <Placeholder icon="plus" text={`Drop a scene here for “${t.label}”`} />}
+            </TabViewPanel>
+          ))}
+        </TabViewPanels>
+      </TabView>
     </div>
   );
 }
@@ -398,16 +431,16 @@ function ColumnHosts({ split, children }: { split: NonNullable<Hosts['split']>; 
 function NavFrame({ page, embedded = false }: { page: Page; embedded?: boolean }) {
   const nav = use(SceneNavContext);
   if (page.scene.root.type !== 'Screen') return <SceneHost scene={page.scene} inst={page.inst} embedded={embedded} />;
-  return <NavigationStack screens={[screenOf(page, embedded)]} safeTop={nav.safeTop} />;
+  return <NavigationStack pages={[page.key]} safeTop={nav.safeTop}>{pageOf(page, embedded)}</NavigationStack>;
 }
 
 export function SplitViewHost({ r }: { r: RenderArgs }) {
   const env = use(EnvContext);
-  const width = r.p.widthClass;
+  const size = r.p.sizeClass;
   return (
     <SplitView
       aria-label="Split view"
-      widthClass={width === 'compact' || width === 'medium' || width === 'regular' ? width : undefined}
+      sizeClass={size === 'compact' || size === 'medium' || size === 'regular' ? size : undefined}
       sidebarBehavior={(['tile', 'overlay', 'displace'] as const).find((b) => b === r.p.sidebarBehavior) ?? 'auto'}
       className="size-full"
     >
@@ -443,11 +476,11 @@ export function SimulatedNav({ scene, pushed }: { scene: Scene; pushed: string |
   return (
     <EnvContext.Provider value={env}>
       <ScopeContext.Provider value={scope}>
-        <NavigationStack
-          safeTop={nav.safeTop}
-          rootBack={pushed ? { title: pushed, onPress: () => {} } : false}
-          screens={[{ key: 'screen', title, largeTitle: r.props.largeTitle !== false, grouped: !!r.props.grouped, maxW: readableWidth(r), leading: slot('leading'), trailing: slot('trailing'), content: <ScreenContent node={r} /> }]}
-        />
+        <NavigationStack safeTop={nav.safeTop} rootBack={pushed ? { title: pushed, onClick: () => {} } : false} pages={['screen']}>
+          <StackPage value="screen" look={{ title, largeTitle: r.props.largeTitle !== false, grouped: !!r.props.grouped, maxWidth: readableWidth(r), leading: slot('leading'), trailing: slot('trailing') }}>
+            <ScreenContent node={r} />
+          </StackPage>
+        </NavigationStack>
       </ScopeContext.Provider>
     </EnvContext.Provider>
   );

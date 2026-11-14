@@ -9,6 +9,9 @@ import {
   type CSSProperties,
 } from 'react';
 import { cn } from '@/lib/utils';
+import { useSizeClass } from '@/lib/container';
+import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { createOpenCodeBrowser } from '@/lib/open-code-browser';
 import {
   connectOpenCodePreview,
@@ -58,7 +61,10 @@ export interface OpenCodeProps {
   ) => void;
 }
 
-/** A real OpenCode TUI beside the HTTP apps started by its host runtime. */
+/* ══ OpenCode — a real OpenCode TUI beside the HTTP apps its host runtime starts ══
+   The kit's Button runs Start/Stop, Reload and Close; the open ports are a ToggleGroup (one tab stop, arrows
+   between ports). The terminal and the preview sit side by side unless the component's own box is compact
+   (`data-size-class` from `useSizeClass`), where the preview stacks under the terminal. */
 export function OpenCode({
   host,
   credentialStore,
@@ -78,6 +84,7 @@ export function OpenCode({
   onReady,
 }: OpenCodeProps) {
   const terminal = useRef<HTMLDivElement>(null);
+  const [rootRef] = useSizeClass<HTMLElement>();
   const connection = useRef<HTMLDivElement>(null);
   const [started, setStarted] = useState(autoStart);
   const stores = useMemo(
@@ -324,15 +331,16 @@ export function OpenCode({
 
   return (
     <section
+      ref={rootRef}
       className={cn(
-        'flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-background font-sans text-foreground',
+        'group/open-code flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-background font-sans text-foreground',
         className,
       )}
       style={{ height: Math.max(320, height), ...style }}
       aria-label={title}
       data-state={state}
     >
-      <header className="flex min-h-11 shrink-0 flex-wrap items-center gap-3 border-b border-border px-3 py-2 text-sm">
+      <header className="flex min-h-11 shrink-0 flex-wrap items-center gap-3 border-b border-border px-3 py-2 text-footnote">
         <strong>
           {title}
           {version && (
@@ -341,7 +349,7 @@ export function OpenCode({
             </span>
           )}
         </strong>
-        <span className="text-xs text-muted-foreground" role="status">
+        <span className="text-caption text-muted-foreground" role="status">
           {state === 'starting'
             ? 'Starting WebAssembly…'
             : state === 'running'
@@ -353,9 +361,9 @@ export function OpenCode({
                   : 'Ready to start'}
         </span>
         <div ref={connection} className="ml-auto" />
-        <button
-          type="button"
-          className="appearance-none rounded-md border border-border bg-transparent px-3 py-1 font-sans text-xs focus-visible:outline-2 focus-visible:outline-ring"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => {
             if (started) {
               setStarted(false);
@@ -367,27 +375,28 @@ export function OpenCode({
           }}
         >
           {started ? 'Stop OpenCode' : 'Start OpenCode'}
-        </button>
+        </Button>
       </header>
       {error && (
-        <p role="alert" className="m-3 rounded-lg bg-muted p-3 text-sm">
+        <p role="alert" className="m-3 rounded-lg bg-muted p-3 text-footnote">
           {error}
         </p>
       )}
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+      <div className="flex min-h-0 flex-1 flex-row group-data-[size-class=compact]/open-code:flex-col">
         <div className="relative min-h-0 min-w-0 flex-1 bg-muted p-2">
           <div
             ref={terminal}
+            role="group"
             className="h-full min-h-0"
             aria-label={`${title} terminal`}
           />
           {state === 'starting' && (
-            <p className="pointer-events-none absolute inset-0 m-auto flex max-w-sm items-center justify-center p-6 text-center text-sm text-muted-foreground">
+            <p className="pointer-events-none absolute inset-0 m-auto flex max-w-sm items-center justify-center p-6 text-center text-footnote text-muted-foreground">
               Loading OpenCode and its WebAssembly renderer…
             </p>
           )}
           {!started && (
-            <p className="absolute inset-0 m-auto flex max-w-sm items-center justify-center p-6 text-center text-sm text-muted-foreground">
+            <p className="absolute inset-0 m-auto flex max-w-sm items-center justify-center p-6 text-center text-footnote text-muted-foreground">
               Start OpenCode to edit files and run commands in this browser.
               Servers opened by the host appear here as live previews.
             </p>
@@ -395,10 +404,10 @@ export function OpenCode({
         </div>
         {ports.length > 0 && (
           <aside
-            className="flex min-h-0 min-w-0 flex-1 flex-col border-t border-border md:border-t-0 md:border-l"
+            className="flex min-h-0 min-w-0 flex-1 flex-col border-l border-border group-data-[size-class=compact]/open-code:border-t group-data-[size-class=compact]/open-code:border-l-0"
             aria-label="App preview"
           >
-            <div className="flex min-h-10 shrink-0 flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-xs">
+            <div className="flex min-h-10 shrink-0 flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-caption">
               <span>Preview</span>
               {browserTools && active && (
                 <span
@@ -408,42 +417,48 @@ export function OpenCode({
                   Browser MCP · {browserConnected ? 'ready' : 'connecting'}
                 </span>
               )}
-              {ports.map((port) => (
-                <button
-                  key={port.port}
-                  type="button"
-                  aria-pressed={selected === port.port}
-                  className="appearance-none rounded border border-border bg-transparent px-2 py-1 font-sans aria-pressed:bg-muted"
-                  onClick={() => {
-                    setPreviewPath('/');
-                    setSelected(port.port);
-                  }}
-                >
-                  {port.name ?? `Port ${port.port}`}
-                </button>
-              ))}
+              <ToggleGroup
+                aria-label="Preview port"
+                size="sm"
+                deselectable={false}
+                value={selected === null ? [] : [String(selected)]}
+                onValueChange={(value) => {
+                  const port = Number(value[0]);
+                  if (!value.length || port === selected) return;
+                  setPreviewPath('/');
+                  setSelected(port);
+                }}
+              >
+                {ports.map((port) => (
+                  <ToggleGroupItem key={port.port} value={String(port.port)}>
+                    {port.name ?? `Port ${port.port}`}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
               {active && (
                 <>
-                  <button
-                    type="button"
-                    className="ml-auto appearance-none rounded border border-border bg-transparent px-2 py-1 font-sans"
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto"
                     onClick={() => setRevision((value) => value + 1)}
                     aria-label="Reload app preview"
                   >
                     Reload
-                  </button>
-                  <button
-                    type="button"
-                    className="appearance-none rounded border border-border bg-transparent px-2 py-1 font-sans"
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setSelected(null)}
                     aria-label="Close app preview"
                   >
                     Close
-                  </button>
+                  </Button>
                 </>
               )}
             </div>
             {active ? (
+              // A browser paints a page with no background of its own on white; an iframe would show ours.
               <iframe
                 key={previewFrame.key}
                 ref={frame}
@@ -460,14 +475,14 @@ export function OpenCode({
                 }
               />
             ) : (
-              <p className="p-4 text-sm text-muted-foreground">
+              <p className="p-4 text-footnote text-muted-foreground">
                 Select a port to open its app.
               </p>
             )}
           </aside>
         )}
       </div>
-      <p className="m-0 shrink-0 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+      <p className="m-0 shrink-0 border-t border-border px-3 py-2 text-caption text-muted-foreground">
         {connectionStore
           ? 'Connections and provider sign-ins use your Passwords keychain. Unlock it after a refresh to restore them.'
           : credentialStore

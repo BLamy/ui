@@ -1,6 +1,6 @@
 # TabView
 
-A compositional tab container on react-aria's `Tabs`. The same parts make the iOS bottom bar, a vertical rail along the left edge, or a fully custom bar — a Discord-style workspace rail for a [ChatShell](https://blamy.github.io/ui/#/chat-shell) is one of them.
+A compositional tab container on UI SDK's `Tabs`. The same parts make the iOS bottom bar, a vertical rail along the left edge, or a fully custom bar — a Discord-style workspace rail for a [ChatShell](https://blamy.github.io/ui/#/chat-shell) is one of them.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -34,16 +34,16 @@ import {
   TabView, TabViewBar, TabViewList, TabViewTab, TabViewPanels, TabViewPanel,
 } from '@brett_lamy/ui'
 
-<TabView orientation="vertical" defaultSelectedKey="contacts">
+<TabView orientation="vertical" defaultValue="contacts">
   <TabViewBar>
     <TabViewList aria-label="Sections">
-      <TabViewTab id="contacts" icon="person" title="Contacts" />
-      <TabViewTab id="recents" icon="clock" title="Recents" />
+      <TabViewTab value="contacts" icon="person" title="Contacts" />
+      <TabViewTab value="recents" icon="clock" title="Recents" />
     </TabViewList>
   </TabViewBar>
   <TabViewPanels>
-    <TabViewPanel id="contacts"><ContactList /></TabViewPanel>
-    <TabViewPanel id="recents"><Recents /></TabViewPanel>
+    <TabViewPanel value="contacts"><ContactList /></TabViewPanel>
+    <TabViewPanel value="recents"><Recents /></TabViewPanel>
   </TabViewPanels>
 </TabView>
 ```
@@ -52,17 +52,18 @@ import {
 
 | Part | What it is |
 | --- | --- |
-| `TabView` | Root (react-aria `Tabs`). `selectedKey` / `defaultSelectedKey` / `onSelectionChange`, `orientation`, `placement`. |
-| `TabViewBar` | The bar's surface: `variant="bar"` (iOS bottom bar, hides with the scroll), `"rail"` (vertical, icons over labels) or `"plain"` (no chrome — you style it). Defaults to `bar` when horizontal, `rail` when vertical. |
+| `TabView` | Root (UI SDK `Tabs`). `value` / `defaultValue` / `onValueChange(value, details)`, `orientation`, `placement`, and the rest of the Tabs options: `activation`, `loop`, `hiddenUntilFound`, `controller`. |
+| `TabViewBar` | The bar's surface: `variant="bar"` (iOS bottom bar, hides with the scroll), `"rail"` (vertical, icons over labels), `"workspace"` (a narrow column of tiles) or `"plain"` (no chrome — you style it). Defaults to `bar` when horizontal, `rail` when vertical. |
 | `TabViewList` | The tablist. Arrow keys follow the orientation — Left/Right horizontally, Up/Down vertically. |
-| `TabViewTab` | A tab. `icon` + `title` render the default look; `children` (or a render function) replace it entirely. Exposes `data-selected`, `data-hovered`, `data-pressed`, `data-focus-visible`. |
-| `TabViewIndicator` | Put inside a tab. `variant="bar"` is react-aria's `SelectionIndicator`: an underline (horizontal) or leading bar (vertical) that slides between tabs. `variant="pill"` is the Discord pill on the leading edge: a nub for `attention`, taller on hover, full height when selected. |
-| `TabViewSeparator` | A divider inside the list. Arrow keys skip it. |
-| `TabViewAction` | A button in the bar that isn't a tab ("Add server", "Compose"). |
+| `TabViewTab` | A tab, by `value`. `icon` + `title` render the default look; `children` (or a function of the tab's state) replace it entirely. Carries `data-selected` and `data-disabled`. |
+| `TabViewIndicator` | Goes in the list, once: a mark that slides to the selected tab — an underline (horizontal) or a leading bar (vertical). |
+| `TabViewPill` | Goes in a tab: the Discord pill on its leading edge — a nub for `attention`, taller on hover, full height when selected. |
+| `TabViewSeparator` | A divider inside the list. It is decorative, so arrow keys pass over it. |
+| `TabViewAction` | A button in the bar that isn't a tab ("Add server", "Compose"). `onClick`, `disabled`. |
 | `TabViewHeader` / `TabViewFooter` | Non-tab content before the list and at the far end of the bar (logo, account button). |
-| `TabViewPanels` / `TabViewPanel` | The content, one panel per tab `id`. Pass `shouldForceMount` to keep a panel's state while it's hidden. |
+| `TabViewPanels` / `TabViewPanel` | The content, one panel per tab `value`. Pass `keepMounted` to keep a panel's state while it's hidden. |
 
-Descendants read the root with `useTabView()` (`orientation`, `placement`, `variant`); anything inside a tab reads that tab's state with `useTabViewTab()`.
+Descendants read the root with `useTabView()` (`orientation`, `placement`, `variant`); anything inside a tab reads that tab's state (`selected`, `disabled`) with `useTabViewTab()`.
 
 ## Orientation and placement
 
@@ -75,9 +76,21 @@ Descendants read the root with `useTabView()` (`orientation`, `placement`, `vari
 <TabView placement="end">       // vertical rail on the trailing edge
 ```
 
+## Selection
+
+`defaultValue` picks the first tab (otherwise the first enabled one); `value` with `onValueChange` controls it. The callback gets the new value, or `null` when nothing is selected, and the change's details: `details.reason` (`item-press`, `list-navigation`, `find-in-page`, `item-removed`, `imperative`) and `details.cancel()`.
+
+```tsx
+const [tab, setTab] = useState<string | null>('contacts')
+
+<TabView value={tab} onValueChange={setTab}>…</TabView>
+```
+
+Select from outside the tree with a controller from `createTabsController()` (exported by [Tabs](https://blamy.github.io/ui/#/tabs)): `<TabView controller={tabs}>`, then `tabs.select('recents')`.
+
 ## Order
 
-The bar and the panels may be written either way round. react-aria mints the ids the panels point at while it renders the tablist, so the tablist has to render first: a `TabViewBar` (or `TabViewList`) that is a direct child of `TabView` is moved ahead of the panels — which also keeps `placement` right — and when the bar is nested deeper and comes after the panels, `TabViewPanels` leaves a box-less placeholder where you wrote it and the panels render after the tablist, into that placeholder.
+The bar and the panels may be written either way round: tabs and panels find each other by `value` wherever they sit. A `TabViewBar` (or a bare `TabViewList`) that is a direct child of `TabView` and comes after the panels is still laid out ahead of them, so `placement` keeps meaning what it says. When the bar is nested deeper, lay the wrapper out yourself:
 
 ```tsx
 <TabView placement="top">
@@ -93,58 +106,61 @@ The bar and the panels may be written either way round. react-aria mints the ids
 
 ## Custom tabs
 
-A render function gets the tab's state, so a tab can look like anything:
+A function as children gets the tab's state, so a tab can look like anything. Put one `TabViewIndicator` in the list and it slides to the selected tab:
 
 ```tsx
-<TabViewTab id="unread" textValue="Unread">
-  {({ isSelected }) => (
-    <>
-      Unread <Badge variant={isSelected ? 'default' : 'secondary'}>7</Badge>
-      <TabViewIndicator />   {/* slides to the selected tab */}
-    </>
-  )}
-</TabViewTab>
+<TabViewList aria-label="Inbox">
+  <TabViewTab value="unread">
+    {({ selected }) => (
+      <>Unread <Badge variant={selected ? 'default' : 'secondary'}>7</Badge></>
+    )}
+  </TabViewTab>
+  …
+  <TabViewIndicator />
+</TabViewList>
 ```
 
-Or style off the data attributes: give the tab `className="group"` and use `group-data-selected:` / `group-data-hovered:` on what's inside it.
+Or style off the tab itself: give it `className="group"` and use `group-data-selected:`, `group-hover:` and `group-focus-visible:` on what's inside it. The indicator's `className` styles the mark, which sits in a frame the size of the selected tab, so `inset-x-2.5` or `-start-1.5` place it against that tab.
+
+A tab is UI SDK's `button` with the tab role (the kit resets its border, background and font, so it takes the host's look); `render` changes the element: `render={<a href="/inbox" />}` for a link, `render={<div />}` for a tab that holds controls of its own. A tab whose content has no text — an icon, a tile — needs an `aria-label`.
 
 ## Building a Discord rail
 
-`TabViewBar variant="workspace"` is the rail: a 52px muted column with a hairline. Its list scrolls on its own once the tiles outgrow the rail, the footer follows the last tile, `TabViewSeparator` is the short rule under Home, `TabViewAction` the dashed "Add" tile, and the `pill` indicator on the leading edge rides the bouncy spring. Custom tiles are the tabs' content; the rail gets tab semantics for free: one tab stop, Up/Down between servers, Home/End to jump.
+`TabViewBar variant="workspace"` is the rail: a 52px muted column with a hairline. Its list scrolls on its own once the tiles outgrow the rail, the footer follows the last tile, `TabViewSeparator` is the short rule under Home, `TabViewAction` the dashed "Add" tile, and the `TabViewPill` on each tab's leading edge rides the bouncy spring. Custom tiles are the tabs' content; the rail gets tab semantics for free: one tab stop, Up/Down between servers, Home/End to jump.
 
 ```tsx
 <TabView
-  orientation="vertical" selectedKey={server} onSelectionChange={setServer}
+  orientation="vertical" value={server} onValueChange={setServer}
 >
   <TabViewBar variant="workspace">
     <TabViewList aria-label="Workspaces">
-      <TabViewTab id="home" textValue="Direct Messages">
-        <TabViewIndicator variant="pill" />
+      <TabViewTab value="home" aria-label="Direct Messages">
+        <TabViewPill />
         <Tile><Icon name="bubble-oval" size={17} sw={2} /></Tile>
       </TabViewTab>
       <TabViewSeparator />
       {servers.map((s) => (
-        <TabViewTab key={s.id} id={s.id} textValue={s.name}>
-          <TabViewIndicator variant="pill" attention={s.unread} />
+        <TabViewTab key={s.id} value={s.id} aria-label={s.name}>
+          <TabViewPill attention={s.unread} />
           <Tile color={s.color} mentions={s.mentions}>{s.label}</Tile>
         </TabViewTab>
       ))}
     </TabViewList>
     <TabViewFooter>
-      <TabViewAction aria-label="Add a server" icon="plus" onPress={addServer} />
+      <TabViewAction aria-label="Add a server" icon="plus" onClick={addServer} />
     </TabViewFooter>
   </TabViewBar>
 </TabView>
 ```
 
-`Tile` is yours: a circle that reads `group-data-hovered:` / `group-data-selected:` to morph into a rounded square in its color (the examples below carry a copy; the discord-clone block ships it as `WorkspaceTile`). Put the rail in a `chat` theme scope — `ChatShell` opens one — and it follows light and dark.
+`Tile` is yours: a circle that reads `group-hover:` / `group-data-selected:` to morph into a rounded square in its color (the examples below carry a copy; the discord-clone block ships it as `WorkspaceTile`). Put the rail in a `chat` theme scope — `ChatShell` opens one — and it follows light and dark.
 
 ## TabBar and navigation stacks
 
 `TabBar` is the one-line iOS bar — a `TabView` with a `bar` and no panels, for hosts that own their content:
 
 ```jsx
-<TabBar items={tabs} selected={tab} onSelect={setTab}/>
+<TabBar items={tabs} value={tab} onValueChange={setTab}/>
 ```
 
 Tabs are just containers — where you nest them decides how pushes interact with the bar. There is no mode flag.
@@ -159,14 +175,22 @@ The `bar` variant follows the scrolling screen: down hides it, up brings it back
 
 ```jsx
 // follows the scroll
-<TabBar items={tabs} selected={tab} onSelect={setTab}/>
+<TabBar items={tabs} value={tab} onValueChange={setTab}/>
 // pinned
-<TabBar items={tabs} selected={tab} onSelect={setTab} hideOnScroll={false}/>
+<TabBar items={tabs} value={tab} onValueChange={setTab} hideOnScroll={false}/>
 // pinned, composed
 <TabViewBar hideOnScroll={false}>…</TabViewBar>
 ```
 
 Anything else that should duck out of the way can read the same flag with `useChromeHidden()`.
+
+## Accessibility
+
+UI SDK gives the list `role="tablist"` (with `aria-orientation` when vertical), each tab `role="tab"` with `aria-selected`, and each panel `role="tabpanel"` labelled by its tab. A tab points at its panel with `aria-controls` only while that panel is in the page, so a bar with no panels (a `TabBar`, a rail that routes elsewhere) stays valid. The list is one tab stop; arrow keys move and select (`activation="manual"` waits for Enter or Space), Home and End jump to the ends, and a disabled tab can be reached but not selected. Name the `TabViewList` with `aria-label`. The separator, the indicator and the pill are hidden from assistive technology; `TabViewAction` is an ordinary button outside the tablist and needs its own name.
+
+## Styling
+
+The tab parts carry UI SDK's slots — `data-slot="tabs"` on the root, `tabs-list`, `tabs-tab`, `tabs-indicator`, `tabs-panel` — and the kit's own elements theirs: `tab-view-bar` (with `data-variant`, `data-orientation`, `data-bar-placement`), `tab-view-header`, `tab-view-footer`, `tab-view-panels`, `tab-view-pill`. State is `data-selected` and `data-disabled` on a tab, `data-orientation` and `data-activation-direction` on every tab part, and `data-bar-placement` (`top`, `bottom`, `start`, `end`) on the root; hover, press and keyboard focus are the native `hover:`, `active:` and `focus-visible:`. Panels stack in `TabViewPanels` and move with the selection: the new one gets `data-starting-style` for its first frame and the old one `data-ending-style` until it has left, each offset toward the side `data-activation-direction` names. Under reduced motion they cross-fade.
 
 ## Live example
 
@@ -184,7 +208,7 @@ The iOS Phone app: four tabs over a `bar` that floats at the bottom of the host.
 
 ### Top tabs with badges
 
-`placement="top"` with a `plain` bar. Each tab is a render function, so its badge can follow `isSelected`, and one `TabViewIndicator` slides between tabs. `TabViewFooter` pushes an action to the far end.
+`placement="top"` with a `plain` bar. Each tab is a function of its state, so its badge can follow `selected`, and one `TabViewIndicator` slides between tabs. `TabViewFooter` pushes an action to the far end.
 
 {% demo src="tab-view/inbox-badges" %}
 
@@ -196,7 +220,7 @@ A mail client's leading rail: a logo in `TabViewHeader`, the mailboxes as tabs, 
 
 ### Trailing inspector
 
-`placement="end"` puts an icon-only rail on the trailing edge of an editor, with the panels beside it. `TabViewSeparator` splits the groups and arrow keys skip it.
+`placement="end"` puts an icon-only rail on the trailing edge of an editor, with the panels beside it. `TabViewSeparator` splits the groups and arrow keys pass over it.
 
 {% demo src="tab-view/editor-inspector" %}
 
@@ -215,7 +239,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/tab-view`. Base classes:
 
 ```text
-flex min-h-0 min-w-0
+flex min-h-0 min-w-0 [&>[data-slot=tab-view-panels]~[data-slot=tab-view-bar]]:-order-1 [&>[data-slot=tab-view-panels]~[data-slot=tabs-list]]:-order-1
 ```
 
 **`placement`** — default `bottom`
@@ -240,7 +264,7 @@ box-border
 | Value | Adds |
 | --- | --- |
 | `bar` (default) | `absolute inset-x-0 bottom-0 z-120 flex h-[62px] [border-top:1px_solid_var(--border)] bg-bar pb-1 backdrop-blur-[20px] backdrop-saturate-[1.7] transition-transf…` |
-| `rail` | `relative flex w-[76px] shrink-0 flex-col gap-1 bg-bar py-2 data-[placement=end]:[border-left:1px_solid_var(--border)] data-[placement=start]:[border-right:1px_…` |
+| `rail` | `relative flex w-[76px] shrink-0 flex-col gap-1 bg-bar py-2 data-[bar-placement=end]:[border-left:1px_solid_var(--border)] data-[bar-placement=start]:[border-ri…` |
 | `workspace` | `flex w-[52px] shrink-0 flex-col items-center gap-[8px] border-r border-border bg-muted px-0 py-[10px]` |
 | `plain` | `flex shrink-0 data-[orientation=vertical]:flex-col` |
 
@@ -249,7 +273,7 @@ box-border
 Defined in `@/components/ui/tab-view`. Base classes:
 
 ```text
-outline-none
+relative outline-none
 ```
 
 **`variant`** — default `plain`
@@ -266,7 +290,7 @@ outline-none
 Defined in `@/components/ui/tab-view`. Base classes:
 
 ```text
-relative cursor-pointer outline-none
+group/tab relative cursor-pointer outline-none
 ```
 
 **`variant`** — default `plain`
@@ -274,47 +298,48 @@ relative cursor-pointer outline-none
 | Value | Adds |
 | --- | --- |
 | `bar` | `bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 text-center leading-[normal] [font-family:inherit] text-tertiary-…` |
-| `rail` | `bl-btn flex flex-col items-center justify-center gap-[3px] rounded-panel px-1 pt-[7px] pb-1.5 text-center leading-[normal] text-tertiary-foreground transition-…` |
-| `workspace` | `group flex w-full shrink-0 justify-center data-disabled:cursor-default` |
-| `plain` (default) | `data-disabled:cursor-default` |
+| `rail` | `bl-btn flex flex-col items-center justify-center gap-[3px] rounded-panel border-0 bg-transparent px-1 pt-[7px] pb-1.5 text-center [font-family:inherit] leading…` |
+| `workspace` | `group flex w-full shrink-0 justify-center border-0 bg-transparent p-0 [font-family:inherit] text-inherit data-disabled:cursor-default` |
+| `plain` (default) | `border-0 bg-transparent p-0 [font-family:inherit] text-inherit data-disabled:cursor-default` |
 
 ### `tabViewIndicatorVariants`
 
 Defined in `@/components/ui/tab-view`. Base classes:
 
 ```text
-pointer-events-none absolute
+absolute bg-primary
 ```
-
-**`variant`** — default `bar`
-
-| Value | Adds |
-| --- | --- |
-| `bar` (default) | `bg-primary transition-[translate,width,height] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none` |
-| `pill` | `start-0 top-1/2 h-0 w-1 -translate-y-1/2 rounded-e-[4px] bg-foreground opacity-0 transition-[height,opacity] duration-spring-snappy ease-spring-snappy data-att…` |
 
 **`orientation`** — default `horizontal`
 
 | Value | Adds |
 | --- | --- |
-| `horizontal` (default) | — |
-| `vertical` | — |
+| `horizontal` (default) | `inset-x-3 bottom-0 h-[2px] rounded-full` |
+| `vertical` | `start-0 inset-y-2.5 w-[3px] rounded-e-full` |
 
-2 compound variants — see the source.
+### `tabViewPillVariants`
+
+Defined in `@/components/ui/tab-view`. Base classes:
+
+```text
+pointer-events-none absolute start-0 top-1/2 h-0 w-1 -translate-y-1/2 rounded-e-[4px] bg-foreground opacity-0 transition-[height,opacity] duration-spring-snappy ease-spring-snappy data-attention:h-1.5 data-attention:opacity-100 group-hover/tab:not-data-selected:h-3.5 group-hover/tab:not-data-selected:opacity-100 data-selected:h-7 data-selected:opacity-100
+```
+
+No variants.
 
 ### `tabViewActionVariants`
 
 Defined in `@/components/ui/tab-view`. Base classes:
 
 ```text
-cursor-pointer outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring/45
+cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring/45
 ```
 
 **`variant`** — default `plain`
 
 | Value | Adds |
 | --- | --- |
-| `bar` | `bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 leading-[normal] [font-family:inherit] text-tertiary-foreground d…` |
+| `bar` | `bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 leading-[normal] [font-family:inherit] text-tertiary-foreground a…` |
 | `rail` | `bl-btn mx-1.5 flex flex-col items-center justify-center gap-[3px] rounded-panel border-0 bg-transparent px-1 pt-[7px] pb-1.5 leading-[normal] [font-family:inhe…` |
 | `workspace` | `grid size-[34px] shrink-0 place-items-center rounded-[17px] border border-dashed border-border bg-transparent text-tertiary-foreground [transition:border-radiu…` |
 | `plain` (default) | `bl-btn border-0 bg-transparent p-0 [font-family:inherit]` |

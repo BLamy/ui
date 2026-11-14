@@ -30,10 +30,10 @@ export default function PersistentState() {
           <span className="text-footnote text-foreground">Reload the page: it stays.</span>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onPress={() => setCount((c) => c + 1)}>
+          <Button variant="secondary" size="sm" onClick={() => setCount((c) => c + 1)}>
             Add one
           </Button>
-          <Button variant="secondary" size="sm" onPress={() => setCount(0)}>
+          <Button variant="secondary" size="sm" onClick={() => setCount(0)}>
             Reset
           </Button>
         </div>
@@ -42,7 +42,7 @@ export default function PersistentState() {
         <span id="ps-compact" className="text-body text-foreground">
           Compact rows
         </span>
-        <Switch aria-labelledby="ps-compact" checked={compact} onChange={setCompact} />
+        <Switch aria-labelledby="ps-compact" checked={compact} onCheckedChange={setCompact} />
       </div>
       <p className="m-0 text-footnote text-foreground">
         <code className="font-mono">{COUNT_KEY}</code> in localStorage:{' '}

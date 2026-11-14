@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 
 const ranges = [
   { id: 'day', label: 'Day' },
@@ -15,19 +15,20 @@ const totals: Record<string, { value: string; note: string }> = {
   year: { value: '412,077', note: 'visits this year' },
 }
 
-// Controlled: `value` is the selected option's id, `onChange` gets the new id.
+// Controlled: `value` is the checked item's value, `onValueChange` gets the new one.
 // Arrow keys move and select, like a radio group, and the selected card slides.
 export default function Basic() {
   const [range, setRange] = useState('week')
   const t = totals[range]
   return (
     <div className="mx-auto grid max-w-sm gap-5">
-      <Segmented
-        aria-label="Time range"
-        options={ranges}
-        value={range}
-        onChange={setRange}
-      />
+      <Segmented aria-label="Time range" value={range} onValueChange={(v: string | null) => v && setRange(v)}>
+        {ranges.map((r) => (
+          <SegmentedItem key={r.id} value={r.id}>
+            {r.label}
+          </SegmentedItem>
+        ))}
+      </Segmented>
       <div className="rounded-card bg-card p-5 text-center">
         <div className="text-title font-bold tabular-nums">{t.value}</div>
         <div className="text-subhead text-muted-foreground">{t.note}</div>

@@ -1,28 +1,12 @@
-'use client';
-import type { ComponentProps, ReactNode } from 'react';
-import { Form as AriaForm, type FormProps as AriaFormProps } from 'react-aria-components';
+import type { ComponentProps } from 'react';
 import { cn } from '@/lib/utils';
 
-/* ══ Form — react-aria's Form: native submit + constraint validation, with react-aria fields' errors shown on
-   submit (validationBehavior="native") or live ("aria"). `validationErrors` maps server errors onto fields by
-   name. FormSection groups fields under an iOS-style section header. ══ */
-export function Form({ className, ...props }: AriaFormProps) {
-  return <AriaForm data-slot="form" className={cn('flex flex-col gap-5', className)} {...props} />;
-}
-
-export interface FormSectionProps extends Omit<ComponentProps<'fieldset'>, 'title'> {
-  title?: ReactNode;
-  description?: ReactNode;
-}
-
-export function FormSection({ className, title, description, children, ...props }: FormSectionProps) {
-  return (
-    <fieldset data-slot="form-section" className={cn('m-0 flex min-w-0 flex-col gap-3 border-0 p-0', className)} {...props}>
-      {title ? (
-        <legend className="mb-2 p-0 px-1 text-footnote leading-[18px] font-normal tracking-[.02em] text-muted-foreground uppercase">{title}</legend>
-      ) : null}
-      {children}
-      {description ? <p className="m-0 px-1 text-footnote leading-[18px] text-muted-foreground">{description}</p> : null}
-    </fieldset>
-  );
+/* ══ Form — a native <form> as a vertical stack of fields ══
+   UI SDK has no form component: its controls submit under their `name`, validate with the browser's constraints,
+   and each <Field> shows its own error after a submit attempt (the first invalid control takes focus). So this is
+   the element itself, with the kit's spacing: `onSubmit`, `action` (a server action too), `onReset` and `noValidate`
+   are the native ones. Group fields with FieldSet (components/field); show a server's error with `invalid` on the
+   Field and a `<FieldError match>`. */
+export function Form({ className, ...props }: ComponentProps<'form'>) {
+  return <form data-slot="form" className={cn('flex flex-col gap-5', className)} {...props} />;
 }

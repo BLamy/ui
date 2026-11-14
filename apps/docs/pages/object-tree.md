@@ -114,9 +114,18 @@ The tree follows its own width and has nothing to reset as it changes. The inden
 
 ## Accessibility
 
-It's react-aria's Tree, a `treegrid`, under its Virtualizer. Up and Down move, Right opens, Left closes or goes to the parent, Home, End and the page keys go further, and typing a name jumps to it. Enter does what a press does. Right also reaches the buttons in a row. Each row is announced by its name and value, with its level and whether it's open. ⌘C or Ctrl+C copies the focused value, unless you've selected text, which copies as usual.
+It's [UI SDK](https://ui-sdk.dev)'s Tree over its virtualizer: a `tree` of `treeitem`s with `aria-level`, `aria-posinset`, `aria-setsize` and `aria-expanded`, and one tab stop. Up and Down move, Right opens a row and then steps into it, Left closes it or goes to the parent, Home and End reach either end, `*` opens the rows beside the focused one, and typing a name jumps to it. The keyboard reaches rows that aren't in the DOM: the list scrolls to them. Each row is announced by its name and value, with its level and whether it's open.
 
-With `onSelect`, a press selects and the chevron or a double press opens. Sections and ranges still open on a press, and don't select. On touch a tap acts, as it does across react-aria, so it opens a branch and selects a leaf, and a long press selects.
+Return does what a press does: it opens or closes a row, calls a getter, shows the whole of a value its row cut off, and retries a load that failed. ⌘C or Ctrl+C copies the focused value, unless you've selected text, which copies as usual. A copy is announced ("Copied") through UI SDK's shared live region. The buttons in a row (copy, the whole value, `(...)`, Retry) are for the pointer and stay out of the tab order.
+
+## Selection
+
+With `value` / `defaultValue` / `onValueChange` (or `mode="single"`), a press selects a value and no more, and the chevron, a double press or Return opens it. Sections and ranges still open on a press, and are never selected. A row's value is its key: `objectTreeKey(ids)`, the node ids from the top down, a section's id first. `onValueChange(key, details)` gets UI SDK's change details with the node: `details.reason` (`item-press`, `list-navigation`, `imperative`), `details.node`, and `details.cancel()` to refuse the change.
+
+```tsx
+const [key, setKey] = useState<string | null>(objectTreeKey(['local', 'user']))
+<ObjectTree aria-label="Scopes" root={scopes} value={key} onValueChange={(next) => setKey(next)} />
+```
 
 ## Props
 
@@ -128,7 +137,9 @@ With `onSelect`, a press selects and the chevron or a double press opens. Sectio
 | `root` | required | One node or a list. A new object is a new moment: see Lazy children. |
 | `loadChildren` | children of `nodeFromValue` values | `(node) => nodes`, or a promise of them. |
 | `onInvokeGetter` | calls `nodeFromValue` getters | `(node) => ({ value, hasChildren?, children?, data? })`, or a promise of that. A whole node works too. |
-| `onSelect` | none | `(node \| null) => void`. Rows can be selected only if it's there. |
+| `mode` | `'single'` with any of the three below, else `'none'` | Whether a value's row can be selected. |
+| `value` / `defaultValue` | none | The selected row's key (`objectTreeKey(ids)`), or `null`. |
+| `onValueChange` | none | `(key \| null, details) => void`; `details.node`, `details.reason`, `details.cancel()`. |
 | `copyValue` | see below | `(node) => text`, or a promise of it. By default a string's own text, an error's stack, JSON for `nodeFromValue` values, otherwise the preview. |
 | `groupSize` | `100` | Indexed children to a range. |
 | `rowHeight` | `24` | Row height in px. |
@@ -160,7 +171,7 @@ With `onSelect`, a press selects and the chevron or a double press opens. Sectio
 
 ## Styling
 
-The tree is `data-slot="object-tree"` with rows in `object-tree-row`, whose `data-kind` is `node`, `section`, `range` or `note`; `objectTreeRowVariants` is their recipe. Set `--object-tree-indent` on it to change the indent, 14px by default. The value is `object-value`, with its type in `data-type`. Tints are CodeEditor's token colors, so a value and the code beside it read alike, and its `--bl-syntax-*` properties retheme both.
+The tree is `data-slot="object-tree"`. Its rows are UI SDK's `tree-item`s, each with a `tree-label` inside, and an item's `data-kind` is `node`, `section`, `range` or `note`; `objectTreeRowVariants` is the label's recipe, and selection (`data-selected`) and the open state (`data-expanded`) show on both. Set `--object-tree-indent` on it to change the indent, 14px by default. The value is `object-value`, with its type in `data-type`. Tints are CodeEditor's token colors, so a value and the code beside it read alike, and its `--bl-syntax-*` properties retheme both.
 
 ## cva recipes
 
@@ -171,16 +182,16 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/object-tree`. Base classes:
 
 ```text
-[ 'group/row flex h-full w-full cursor-default items-center gap-1 pr-1 outline-none', 'pl-[min(calc((var(--tree-item-level)-1)*var(--object-tree-indent)),25%)]', 'text-caption leading-none text-foreground', 'data-selected:bg-accent data-focus-visible:[box-shadow:inset_0_0_0_2px_var(--ring)]', ]
+[ 'flex h-full w-full cursor-default items-center gap-1 pr-1', 'pl-[min(calc((var(--tree-level)-1)*var(--object-tree-indent)),25%)]', 'text-caption leading-none text-foreground', 'data-selected:bg-accent group-focus-visible/row:[box-shadow:inset_0_0_0_2px_var(--ring)]', ]
 ```
 
 **`kind`**
 
 | Value | Adds |
 | --- | --- |
-| `node` | `font-mono data-hovered:bg-accent/50` |
-| `section` | `font-sans font-semibold shadow-hairline-b data-hovered:bg-accent/50` |
-| `range` | `font-mono text-muted-foreground data-hovered:bg-accent/50` |
+| `node` | `font-mono hover:bg-accent/50` |
+| `section` | `font-sans font-semibold shadow-hairline-b hover:bg-accent/50` |
+| `range` | `font-mono text-muted-foreground hover:bg-accent/50` |
 | `note` | `font-sans text-muted-foreground` |
 
 **`stale`**

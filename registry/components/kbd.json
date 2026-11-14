@@ -1,7 +1,7 @@
 {
   "name": "kbd",
   "title": "Kbd",
-  "description": "A keycap for keyboard shortcuts, with a group wrapper for chords; inside a menu item it becomes the item's shortcut.",
+  "description": "A keycap for keyboard shortcuts, with a group wrapper for chords; `keys` shows a UI SDK shortcut string for the reader's platform (\u2318K or Ctrl+K).",
   "page": "kbd",
   "exports": [
     "Kbd",
@@ -10,5 +10,8 @@
   "imports": [
     "Kbd",
     "KbdGroup"
+  ],
+  "types": [
+    "KbdProps"
   ]
 }

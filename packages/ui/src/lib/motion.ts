@@ -11,17 +11,9 @@
 
    `springs` are framer-motion transitions; the same physics are sampled into CSS as
    `--ease-spring-*` / `--duration-spring-*` in theme.css for plain CSS transitions. */
-import * as Motion from 'framer-motion';
-import { animate } from 'framer-motion';
-import { useReducedMotion as useReducedMotionFM } from 'framer-motion';
+import { animate, useReducedMotion as useReducedMotionFM } from 'framer-motion';
 import { useRef } from 'react';
-
-export function loadMotion() { /* no-op — framer-motion is a static npm import */ }
-
-/** The framer-motion module (kept for the prototype's call shape). Prefer importing from 'framer-motion'. */
-export function useMotion(): typeof Motion {
-  return Motion;
-}
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 
 /** Spring presets. `snappy` for small controls, `smooth` for layout and panels, `tray` for sheets and
  *  height morphs, `bouncy` for rare, celebratory moments only. */
@@ -69,14 +61,12 @@ export function useDirection(index: number): -1 | 0 | 1 {
 export { useReducedMotion } from 'framer-motion';
 
 /* ══ FLIP moves and reduced-motion checks ══
-   For elements that change parents (the sheet gesture is `useSheetDrag` in lib/sheet-drag.ts), after Benji Taylor's
-   "Family Values". Everything honours prefers-reduced-motion. */
+   For elements that change parents or places (a tile closing a gap, a pill flying to a bump), after Benji Taylor's
+   "Family Values". Everything honours prefers-reduced-motion. Gestures are UI SDK behaviors (`bindDrag` and
+   `@ui-sdk/core/gesture`), not part of this module. */
 
 
-/** Whether the user asked for reduced motion (checked when an animation starts, so it follows the setting live). */
-export function prefersReducedMotion(): boolean {
-  return typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
+export { prefersReducedMotion };
 
 /* ── FLIP ── */
 export type FlipSnapshot = Map<Element, DOMRect>;

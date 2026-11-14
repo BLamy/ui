@@ -17,21 +17,21 @@ const S = () => <span className="line-through">S</span>;
 
 function Format({ variant }: { variant: 'default' | 'filled' | 'outline' }) {
   return (
-    <ToggleGroup variant={variant} selectionMode="multiple" defaultSelectedKeys={['bold', 'italic']} aria-label="Text formatting">
-      <ToggleGroupItem id="bold" aria-label="Bold"><B /></ToggleGroupItem>
-      <ToggleGroupItem id="italic" aria-label="Italic"><I /></ToggleGroupItem>
-      <ToggleGroupItem id="underline" aria-label="Underline"><U /></ToggleGroupItem>
-      <ToggleGroupItem id="strike" aria-label="Strikethrough"><S /></ToggleGroupItem>
+    <ToggleGroup variant={variant} multiple defaultValue={['bold', 'italic']} aria-label="Text formatting">
+      <ToggleGroupItem value="bold" aria-label="Bold"><B /></ToggleGroupItem>
+      <ToggleGroupItem value="italic" aria-label="Italic"><I /></ToggleGroupItem>
+      <ToggleGroupItem value="underline" aria-label="Underline"><U /></ToggleGroupItem>
+      <ToggleGroupItem value="strike" aria-label="Strikethrough"><S /></ToggleGroupItem>
     </ToggleGroup>
   );
 }
 
 function Align({ variant }: { variant: 'default' | 'filled' | 'outline' }) {
   return (
-    <ToggleGroup variant={variant} selectionMode="single" disallowEmptySelection defaultSelectedKeys={['left']} aria-label="Alignment">
-      <ToggleGroupItem id="left">Left</ToggleGroupItem>
-      <ToggleGroupItem id="center">Center</ToggleGroupItem>
-      <ToggleGroupItem id="right">Right</ToggleGroupItem>
+    <ToggleGroup variant={variant} deselectable={false} defaultValue={['left']} aria-label="Alignment">
+      <ToggleGroupItem value="left">Left</ToggleGroupItem>
+      <ToggleGroupItem value="center">Center</ToggleGroupItem>
+      <ToggleGroupItem value="right">Right</ToggleGroupItem>
     </ToggleGroup>
   );
 }
@@ -43,10 +43,10 @@ const all = (
     <Format variant="outline" />
     <Align variant="filled" />
     <Align variant="outline" />
-    <ToggleGroup size="sm" variant="outline" selectionMode="single" defaultSelectedKeys={['day']} aria-label="Range">
-      <ToggleGroupItem id="day">Day</ToggleGroupItem>
-      <ToggleGroupItem id="week">Week</ToggleGroupItem>
-      <ToggleGroupItem id="month">Month</ToggleGroupItem>
+    <ToggleGroup size="sm" variant="outline" defaultValue={['day']} aria-label="Range">
+      <ToggleGroupItem value="day">Day</ToggleGroupItem>
+      <ToggleGroupItem value="week">Week</ToggleGroupItem>
+      <ToggleGroupItem value="month">Month</ToggleGroupItem>
     </ToggleGroup>
   </div>
 );

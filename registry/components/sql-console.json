@@ -1,7 +1,7 @@
 {
   "name": "sql-console",
   "title": "SqlConsole",
-  "description": "A SQL workbench for a PGlite database: a highlighted SqlEditor (⌘/Ctrl+Enter runs), a SchemaTree on react-aria's Tree, a ResultTable on react-aria's Table with type-aware cells and CSV / JSON copy, per-statement results, errors with line and caret, history, and SQL / data-directory export and import.",
+  "description": "A SQL workbench for a PGlite database: a highlighted SqlEditor (⌘/Ctrl+Enter runs), a SchemaTree on UI SDK's Tree, a ResultTable on UI SDK's grid focus with type-aware cells and CSV / JSON copy, per-statement results, errors with line and caret, history, and SQL / data-directory export and import.",
   "page": "sql-console",
   "files": [
     "components/sql-console.tsx",
@@ -28,6 +28,8 @@
   ],
   "types": [
     "SqlEditorHandle",
+    "SchemaTreeProps",
+    "SchemaTreeActionDetails",
     "ResultSet",
     "ResultField"
   ]

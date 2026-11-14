@@ -114,7 +114,7 @@ function PressOnMount({ label, children }: { label: string; children: ReactNode 
 }
 
 const dialog = (vault: Vault) => (
-  <PasskeyEnrollDialog isOpen onOpenChange={() => undefined} vault={vault} appName="Notes" protects="your notes" />
+  <PasskeyEnrollDialog open onOpenChange={() => undefined} vault={vault} appName="Notes" protects="your notes" />
 );
 
 export const EnrollDialog: Story = {

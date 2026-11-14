@@ -1,6 +1,6 @@
 # Separator
 
-A one-pixel rule in the border colour, horizontal or vertical. It is react-aria's `Separator`: a horizontal rule renders as an `<hr>`, a vertical one as a `div` with `role="separator"` and `aria-orientation="vertical"`. Use it between blocks of content, between rows of a list, and between inline items.
+A one-pixel rule in the border colour, horizontal or vertical, on UI SDK's `Separator`: a `div` with `role="separator"` and its `aria-orientation`, or, when it is `decorative`, a line screen readers skip. Use it between blocks of content, between rows of a list, and between inline items.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -43,21 +43,23 @@ A horizontal rule is full width, `inset` indents the start by 16px like an iOS l
 
 ## Accessibility
 
-A separator is exposed as a divider and is not focusable. It is structural: where spacing alone already separates the content, a border or gap is enough. Inside a menu or list box, use those components' own separators (DropdownMenu ships one) rather than this one.
+A separator is announced as a divider with its orientation and never takes focus. Where the content around it already says the parts are separate (a "or" between two sign-in buttons, the rows of a list), set `decorative`: it gets `role="none"` and screen readers skip it. Where spacing alone already separates the content, a border or gap is enough. Inside a menu or list box, use those components' own separators (DropdownMenu ships one) rather than this one.
 
 ## Props
 
-Extends react-aria `SeparatorProps` (`elementType`, `id`, any DOM attribute), with `orientation` and `inset` from the recipe.
+UI SDK's `Separator` props (`decorative`, `render`, `id`, any DOM attribute), with `orientation` and `inset` from the recipe.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `orientation` | `horizontal` | `horizontal` (`h-px w-full`) or `vertical` (`w-px self-stretch`). |
 | `inset` | `false` | Indent a horizontal rule by 16px. |
+| `decorative` | `false` | Only visual: `role="none"`, no `aria-orientation`. |
+| `render` | — | Another element, such as `render={<hr />}`. |
 | `className` | — | Merged after the recipe. |
 
 ## Styling
 
-`data-slot="separator"`. The recipe is `m-0 shrink-0 border-0 bg-border`, so override the colour with a `bg-*` class, and give a vertical rule a height by placing it in a flex row with a fixed height (it uses `self-stretch`, so it has no height of its own elsewhere).
+`data-slot="separator"`, with `data-orientation`. The recipe is `m-0 shrink-0 border-0 bg-border`, so override the colour with a `bg-*` class, and give a vertical rule a height by placing it in a flex row with a fixed height (it uses `self-stretch`, so it has no height of its own elsewhere).
 
 ## cva recipes
 

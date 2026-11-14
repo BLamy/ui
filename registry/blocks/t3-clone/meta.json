@@ -32,8 +32,9 @@
   "dependencies": [
     "@pierre/diffs",
     "@pierre/trees",
+    "@ui-sdk/core",
+    "@ui-sdk/react",
     "class-variance-authority",
-    "framer-motion",
-    "react-aria-components"
+    "framer-motion"
   ]
 }

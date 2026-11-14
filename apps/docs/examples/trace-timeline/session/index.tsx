@@ -54,11 +54,11 @@ export default function Session({ variant = 'time' }: { variant?: string }) {
         view={view}
         onViewChange={setView}
         focusedLane={lane}
-        onFocusLane={setLane}
+        onFocusedLaneChange={setLane}
         selectedThread={thread}
-        onSelectThread={setThread}
+        onSelectedThreadChange={setThread}
         selectedRequest={request}
-        onSelectRequest={setRequest}
+        onSelectedRequestChange={setRequest}
         orientation={narrow ? 'vertical' : 'horizontal'}
         top={8}
         bottom={8}
@@ -68,7 +68,7 @@ export default function Session({ variant = 'time' }: { variant?: string }) {
         <List>
           <ListSection>
             {ROWS.map(([title, subtitle]) => (
-              <ListRow key={title} title={title} subtitle={subtitle} accessory="chevron" onPress={() => {}} />
+              <ListRow key={title} title={title} subtitle={subtitle} accessory="chevron" onClick={() => {}} />
             ))}
           </ListSection>
         </List>

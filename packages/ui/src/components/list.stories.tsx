@@ -4,7 +4,17 @@ import { Avatar } from '@/components/ui/avatar';
 import { EditBar } from '@/components/ui/edit-bar';
 import { IndexBar, AL } from '@/components/ui/index-bar';
 import { List } from '@/components/ui/list';
-import { NavigationStack } from '@/components/ui/navigation-stack';
+import {
+  NavigationStack,
+  NavigationStackBar,
+  NavigationStackContent,
+  NavigationStackLargeTitle,
+  NavigationStackLeading,
+  NavigationStackPage,
+  NavigationStackSubheader,
+  NavigationStackTitle,
+  NavigationStackTrailing,
+} from '@/components/ui/navigation-stack';
 import { SearchField } from '@/components/ui/search-field';
 import { Icon } from '@/lib/icon';
 import { BARH } from '@/lib/utils';
@@ -86,7 +96,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
     s.scrollTop = s.scrollTop + el.getBoundingClientRect().top - s.getBoundingClientRect().top - BARH + 1;
   };
   const togglePick = (id: string) => {
-    const n = new Set(pick); n.has(id) ? n.delete(id) : n.add(id); setPick(n);
+    const n = new Set(pick); if (n.has(id)) n.delete(id); else n.add(id); setPick(n);
   };
   const exitEdit = () => { setEdit(false); setPick(new Set()); };
   const selN = pick.size;
@@ -98,16 +108,16 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
         </div>
       ) : null}
       {sections.map((s) => (
-        <List.Section key={s.L} sticky={!grouped} title={s.L} innerRef={(el) => { if (el) secEls.current[s.L] = el; }}>
+        <List.Section key={s.L} sticky={!grouped} title={s.L} ref={(el) => { if (el) secEls.current[s.L] = el; }}>
           {s.items.map((c, i) => (
-            <List.Row key={c.id} rowRole="option"
+            <List.Row key={c.id}
               title={<span>{c.f} <span style={{ fontWeight: 600 }}>{c.l}</span></span>}
               subtitle={c.role + (c.com ? ' · ' + c.com : '')}
               leading={<Avatar c={c} />}
               trailing={favs.has(c.id) ? <Icon name="starF" size={13} className="text-warning" /> : null}
               accessory={edit ? undefined : 'chevron'}
               edit={edit} checked={pick.has(c.id)}
-              onPress={() => { if (edit) togglePick(c.id); }}
+              onClick={() => { if (edit) togglePick(c.id); }}
               onDelete={edit ? undefined : () => setGone((g) => new Set([...g, c.id]))}
               divider={i < s.items.length - 1} />
           ))}
@@ -122,27 +132,33 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
   );
   return (
     <>
-      <NavigationStack onPop={() => undefined} screens={[{
-        key: 'list',
-        title: edit ? (selN ? selN + ' Selected' : 'Select Contacts') : 'Contacts',
-        largeTitle: true, grouped,
-        subheader: <SearchField value={q} onChange={setQ} aria-label="Search contacts" />,
-        trailing: (
-          <button className="bl-btn" onClick={() => { edit ? exitEdit() : setEdit(true); }}
-            style={{
-              border: 0, background: 'none', cursor: 'pointer', color: 'var(--primary)', fontFamily: 'inherit', fontSize: 17,
-              fontWeight: edit ? 700 : 400, padding: '8px 10px',
-            }}>{edit ? 'Done' : 'Select'}</button>
-        ),
-        content,
-        overlay: <IndexBar avail={avail} onLetter={jump} top={BARH + 4} bottom={10} />,
-        onRefresh: () => { if (gone.size) { setGone(new Set()); } },
-      }]} />
+      <NavigationStack pages={['list']}>
+        <NavigationStackPage value="list" grouped={grouped}>
+          <NavigationStackBar>
+            <NavigationStackTitle>{edit ? (selN ? selN + ' Selected' : 'Select Contacts') : 'Contacts'}</NavigationStackTitle>
+            <NavigationStackTrailing>
+              <button className="bl-btn" onClick={() => { if (edit) exitEdit(); else setEdit(true); }}
+                style={{
+                  border: 0, background: 'none', cursor: 'pointer', color: 'var(--primary)', fontFamily: 'inherit', fontSize: 17,
+                  fontWeight: edit ? 700 : 400, padding: '8px 10px',
+                }}>{edit ? 'Done' : 'Select'}</button>
+            </NavigationStackTrailing>
+          </NavigationStackBar>
+          <NavigationStackContent onRefresh={() => { if (gone.size) { setGone(new Set()); } }}>
+            <NavigationStackLargeTitle />
+            <NavigationStackSubheader>
+              <SearchField value={q} onValueChange={setQ} aria-label="Search contacts" />
+            </NavigationStackSubheader>
+            {content}
+          </NavigationStackContent>
+          <IndexBar avail={avail} onLetter={jump} top={BARH + 4} bottom={10} />
+        </NavigationStackPage>
+      </NavigationStack>
       {edit ? (
         <EditBar count={selN} allFav={selN > 0 && [...pick].every((id) => favs.has(id))}
           onFav={() => {
             const all = [...pick].every((id) => favs.has(id)); const n = new Set(favs);
-            pick.forEach((id) => { all ? n.delete(id) : n.add(id); }); setFavs(n);
+            pick.forEach((id) => { if (all) n.delete(id); else n.add(id); }); setFavs(n);
           }}
           onDelete={() => { setGone((g) => new Set([...g, ...pick])); setPick(new Set()); }} />
       ) : null}
@@ -177,7 +193,7 @@ export const StickySearchHeader: Story = {
     return (
       <Phone>
         <div className="bl-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', background: 'var(--background)' }}>
-          <List header={<div style={{ padding: '10px 16px' }}><SearchField value={q} onChange={setQ} /></div>}>
+          <List header={<div style={{ padding: '10px 16px' }}><SearchField value={q} onValueChange={setQ} /></div>}>
             {sections.map((s) => (
               <List.Section key={s.L} sticky title={s.L}>
                 {s.items.map((c, i) => (
@@ -200,9 +216,11 @@ export const SwipeToDelete: Story = {
     const items = CONTACTS.slice(0, 8).filter((c) => !gone.has(c.id));
     return (
       <Phone h={560}>
-        <NavigationStack onPop={() => undefined} screens={[{
-          key: 'swipe', title: 'Swipe to Delete', largeTitle: true,
-          content: (
+        <NavigationStack pages={['swipe']}>
+          <NavigationStackPage value="swipe">
+            <NavigationStackBar><NavigationStackTitle>Swipe to Delete</NavigationStackTitle></NavigationStackBar>
+            <NavigationStackContent>
+            <NavigationStackLargeTitle />
             <List>
               <List.Section sticky title="Contacts">
                 {items.map((c, i) => (
@@ -211,8 +229,9 @@ export const SwipeToDelete: Story = {
                 ))}
               </List.Section>
             </List>
-          ),
-        }]} />
+            </NavigationStackContent>
+          </NavigationStackPage>
+        </NavigationStack>
       </Phone>
     );
   },
@@ -225,23 +244,28 @@ export const EditModeWithEditBar: Story = {
     const [gone, setGone] = useState<Set<string>>(() => new Set());
     const items = CONTACTS.slice(0, 9).filter((c) => !gone.has(c.id));
     const toggle = (id: string) => {
-      const n = new Set(pick); n.has(id) ? n.delete(id) : n.add(id); setPick(n);
+      const n = new Set(pick); if (n.has(id)) n.delete(id); else n.add(id); setPick(n);
     };
     return (
       <Phone h={560}>
-        <NavigationStack onPop={() => undefined} screens={[{
-          key: 'edit', title: pick.size ? pick.size + ' Selected' : 'Select Contacts', largeTitle: true,
-          content: (
+        <NavigationStack pages={['edit']}>
+          <NavigationStackPage value="edit">
+            <NavigationStackBar>
+              <NavigationStackTitle>{pick.size ? pick.size + ' Selected' : 'Select Contacts'}</NavigationStackTitle>
+            </NavigationStackBar>
+            <NavigationStackContent>
+            <NavigationStackLargeTitle />
             <List>
               <List.Section sticky title="Contacts">
                 {items.map((c, i) => (
                   <List.Row key={c.id} title={c.f + ' ' + c.l} subtitle={c.role} leading={<Avatar c={c} />}
-                    edit checked={pick.has(c.id)} onPress={() => toggle(c.id)} divider={i < items.length - 1} />
+                    edit checked={pick.has(c.id)} onClick={() => toggle(c.id)} divider={i < items.length - 1} />
                 ))}
               </List.Section>
             </List>
-          ),
-        }]} />
+            </NavigationStackContent>
+          </NavigationStackPage>
+        </NavigationStack>
         <EditBar count={pick.size} allFav={false}
           onDelete={() => { setGone((g) => new Set([...g, ...pick])); setPick(new Set()); }} />
       </Phone>
@@ -253,15 +277,20 @@ export const EditModeWithEditBar: Story = {
 export const EmptyState: Story = {
   render: () => (
     <Phone h={480}>
-      <NavigationStack onPop={() => undefined} screens={[{
-        key: 'empty', title: 'Contacts', largeTitle: true,
-        subheader: <SearchField value="zzzz" onChange={() => undefined} />,
-        content: (
-          <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--muted-foreground)', fontSize: 15 }}>
-            No results for &ldquo;zzzz&rdquo;
-          </div>
-        ),
-      }]} />
+      <NavigationStack pages={['empty']}>
+        <NavigationStackPage value="empty">
+          <NavigationStackBar><NavigationStackTitle>Contacts</NavigationStackTitle></NavigationStackBar>
+          <NavigationStackContent>
+            <NavigationStackLargeTitle />
+            <NavigationStackSubheader>
+              <SearchField aria-label="Search contacts" value="zzzz" onValueChange={() => undefined} />
+            </NavigationStackSubheader>
+            <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--muted-foreground)', fontSize: 15 }}>
+              No results for &ldquo;zzzz&rdquo;
+            </div>
+          </NavigationStackContent>
+        </NavigationStackPage>
+      </NavigationStack>
     </Phone>
   ),
 };
@@ -269,19 +298,22 @@ export const EmptyState: Story = {
 export const WithFooter: Story = {
   render: () => (
     <Phone h={480}>
-      <NavigationStack onPop={() => undefined} screens={[{
-        key: 'footer', title: 'Settings', largeTitle: true, grouped: true,
-        content: (
+      <NavigationStack pages={['footer']}>
+        <NavigationStackPage value="footer" grouped>
+          <NavigationStackBar><NavigationStackTitle>Settings</NavigationStackTitle></NavigationStackBar>
+          <NavigationStackContent>
+          <NavigationStackLargeTitle />
           <List inset>
             <List.Section title="Contacts table view" footer="UITableView styles: .plain keeps sticky letter headers; .insetGrouped floats each letter section as a card.">
               {CONTACTS.slice(0, 3).map((c, i) => (
                 <List.Row key={c.id} title={c.f + ' ' + c.l} subtitle={c.role} leading={<Avatar c={c} size={34} />}
-                  accessory="chevron" onPress={() => undefined} divider={i < 2} />
+                  accessory="chevron" onClick={() => undefined} divider={i < 2} />
               ))}
             </List.Section>
           </List>
-        ),
-      }]} />
+          </NavigationStackContent>
+        </NavigationStackPage>
+      </NavigationStack>
     </Phone>
   ),
 };
@@ -300,14 +332,18 @@ function ReorderDemo({ startEditing = true }: { startEditing?: boolean }) {
       style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--primary)', fontFamily: 'inherit', fontSize: 17, padding: '8px 10px' }}>{label}</button>
   );
   return (
-    <NavigationStack onPop={() => undefined} screens={[{
-      key: 'up-next', title: 'Up Next', largeTitle: true, grouped: true,
-      leading: bar('Add', add),
-      trailing: bar(edit ? 'Done' : 'Edit', () => setEdit(!edit)),
-      content: (
+    <NavigationStack pages={['up-next']}>
+      <NavigationStackPage value="up-next" grouped>
+        <NavigationStackBar>
+          <NavigationStackLeading>{bar('Add', add)}</NavigationStackLeading>
+          <NavigationStackTitle>Up Next</NavigationStackTitle>
+          <NavigationStackTrailing>{bar(edit ? 'Done' : 'Edit', () => setEdit(!edit))}</NavigationStackTrailing>
+        </NavigationStackBar>
+        <NavigationStackContent>
+        <NavigationStackLargeTitle />
         <List inset>
-          <List.Section animate onReorder={edit ? move : undefined}
-            footer={edit ? 'Drag a grip, or focus it and press ↑/↓.' : 'Add inserts at the top; swipe a row to remove it.'}>
+          <List.Section animate onOrderChange={edit ? (_, { from, to }) => move(from, to) : undefined}
+            footer={edit ? 'Drag a grip, or focus it and press Space, ↑/↓, Space.' : 'Add inserts at the top; swipe a row to remove it.'}>
             {songs.map((t, i) => (
               <List.Row key={t} title={t} subtitle={`Track ${PLAYLIST.indexOf(t) + 1}`}
                 leading={<span aria-hidden style={{ width: 34, height: 34, borderRadius: 7, background: `hsl(${PLAYLIST.indexOf(t) * 45} 70% 60%)` }} />}
@@ -316,12 +352,13 @@ function ReorderDemo({ startEditing = true }: { startEditing?: boolean }) {
             ))}
           </List.Section>
         </List>
-      ),
-    }]} />
+        </NavigationStackContent>
+      </NavigationStackPage>
+    </NavigationStack>
   );
 }
 
-/** `List.Section animate`: keyed rows spring in, collapse out and slide on reorder. `onReorder` adds a grip to
- *  every row — drag it or focus it and press ↑/↓. */
+/** `List.Section animate`: keyed rows grow in, collapse out and slide on reorder. `onOrderChange` adds a grip to
+ *  every row — drag it, or focus it and press Space, ↑/↓, Space. */
 export const AnimatedReorder: Story = { render: () => <Phone h={600}><ReorderDemo /></Phone> };
 export const AnimatedReorderDark: Story = { render: () => <Phone h={600} dark><ReorderDemo /></Phone> };

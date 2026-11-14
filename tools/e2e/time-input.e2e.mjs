@@ -67,6 +67,8 @@ test.describe('basic demo', () => {
     const field = page.getByRole('textbox', { name: 'When' });
     for (let i = 0; i < 3 && !(await field.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press('Tab');
     await expect(field).toBeFocused();
+    // The preview (and the id that describes the field) comes with the first reading, which loads gpu-time first.
+    await expect(page.locator(PREVIEW)).toBeVisible();
     const describedBy = await field.getAttribute('aria-describedby');
     const previewId = await page.locator(PREVIEW).getAttribute('id');
     expect(describedBy.split(' ')).toContain(previewId);
@@ -74,6 +76,8 @@ test.describe('basic demo', () => {
 
   test('keeps the old preview, dimmed, while a new one is being read, and never shows offsets of old text', async ({ page }) => {
     const field = page.getByRole('textbox', { name: 'When' });
+    // There is an old preview to keep only once the default text has been read.
+    await expect(page.locator(PREVIEW)).toBeVisible();
     await field.click();
     await field.press('ControlOrMeta+a');
     // One key, then look at once (a single round trip): the 120 ms debounce has not fired yet.
@@ -158,7 +162,7 @@ test.describe('loading', () => {
   test('gpu-time is not downloaded by a page without a TimeInput, and is once one is mounted', async ({ page }) => {
     const urls = [];
     page.on('request', (r) => urls.push(r.url()));
-    await openDemo(page, 'text-field/anatomy', '[data-slot=text-field]');
+    await openDemo(page, 'field/anatomy', '[data-slot=field]');
     await page.waitForTimeout(500);
     expect(urls.filter((u) => /node_modules\/[^?]*(gpu-time|gpu-cron|cronstrue)/.test(u))).toEqual([]);
 

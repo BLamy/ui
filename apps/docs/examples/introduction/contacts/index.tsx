@@ -2,7 +2,15 @@ import { useRef, useState } from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { IndexBar } from '@/components/ui/index-bar'
 import { List, ListRow, ListSection } from '@/components/ui/list'
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import {
+  NavigationStack,
+  NavigationStackBar,
+  NavigationStackContent,
+  NavigationStackLargeTitle,
+  NavigationStackPage,
+  NavigationStackSubheader,
+  NavigationStackTitle,
+} from '@/components/ui/navigation-stack'
 import { SearchField } from '@/components/ui/search-field'
 import { TabBar } from '@/components/ui/tab-bar'
 import { BLProvider } from '@/lib/theme'
@@ -38,86 +46,6 @@ export default function Contacts() {
   for (const p of people) (byLetter[p.f[0]] ??= []).push(p)
   const letters = Object.keys(byLetter).sort()
 
-  const screens: Screen[] = [
-    {
-      key: 'list',
-      title: 'Contacts',
-      largeTitle: true,
-      grouped: true,
-      bottomInset: 62,
-      subheader: (
-        <div style={{ padding: '0 14px 8px' }}>
-          <SearchField value={q} onChange={setQ} placeholder="Search" />
-        </div>
-      ),
-      overlay: (
-        <IndexBar
-          avail={new Set(letters)}
-          top={118}
-          bottom={70}
-          onLetter={(L) =>
-            sections.current[L]?.scrollIntoView({ block: 'start' })
-          }
-        />
-      ),
-      content: (
-        <List>
-          {letters.map((L) => (
-            <div
-              key={L}
-              ref={(el) => {
-                sections.current[L] = el
-              }}
-            >
-              <ListSection title={L} sticky>
-                {byLetter[L].map((p, i) => (
-                  <ListRow
-                    key={p.f + p.l}
-                    leading={<Avatar c={p} size={36} />}
-                    title={p.f + ' ' + p.l}
-                    subtitle={p.role}
-                    accessory="chevron"
-                    divider={i < byLetter[L].length - 1}
-                    onPress={() => setSel(p)}
-                  />
-                ))}
-              </ListSection>
-            </div>
-          ))}
-        </List>
-      ),
-    },
-  ]
-  if (sel)
-    screens.push({
-      key: 'detail',
-      title: sel.f + ' ' + sel.l,
-      grouped: true,
-      content: (
-        <div style={{ padding: '26px 18px', textAlign: 'center' }}>
-          <Avatar c={sel} size={76} style={{ margin: '0 auto' }} />
-          <div style={{ fontSize: 21, fontWeight: 700, marginTop: 12 }}>
-            {sel.f} {sel.l}
-          </div>
-          <div
-            style={{ fontSize: 13.5, color: 'var(--muted-foreground)', marginTop: 3 }}
-          >
-            {sel.role}
-          </div>
-          <div
-            style={{
-              fontSize: 12.5,
-              color: 'var(--muted-foreground)',
-              marginTop: 22,
-              lineHeight: 1.5,
-            }}
-          >
-            Edge-swipe from the left or use the back chevron to pop.
-          </div>
-        </div>
-      ),
-    })
-
   return (
     <div style={{ position: 'relative', height: 560, overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0 }}>
@@ -133,7 +61,98 @@ export default function Contacts() {
                 display: tab === 'contacts' ? undefined : 'none',
               }}
             >
-              <NavigationStack screens={screens} onPop={() => setSel(null)} />
+              <NavigationStack
+                pages={sel ? ['list', 'detail'] : ['list']}
+                onPagesChange={(pages) => {
+                  if (pages.length === 1) setSel(null)
+                }}
+              >
+                <NavigationStackPage value="list" grouped>
+                  <NavigationStackBar>
+                    <NavigationStackTitle>Contacts</NavigationStackTitle>
+                  </NavigationStackBar>
+                  <NavigationStackContent bottomInset={62}>
+                    <NavigationStackLargeTitle />
+                    <NavigationStackSubheader>
+                      <div style={{ padding: '0 14px 8px' }}>
+                        <SearchField
+                          value={q}
+                          onValueChange={setQ}
+                          placeholder="Search"
+                        />
+                      </div>
+                    </NavigationStackSubheader>
+                    <List>
+                      {letters.map((L) => (
+                        <div
+                          key={L}
+                          ref={(el) => {
+                            sections.current[L] = el
+                          }}
+                        >
+                          <ListSection title={L} sticky>
+                            {byLetter[L].map((p, i) => (
+                              <ListRow
+                                key={p.f + p.l}
+                                leading={<Avatar c={p} size={36} />}
+                                title={p.f + ' ' + p.l}
+                                subtitle={p.role}
+                                accessory="chevron"
+                                divider={i < byLetter[L].length - 1}
+                                onClick={() => setSel(p)}
+                              />
+                            ))}
+                          </ListSection>
+                        </div>
+                      ))}
+                    </List>
+                  </NavigationStackContent>
+                  <IndexBar
+                    avail={new Set(letters)}
+                    top={118}
+                    bottom={70}
+                    onLetter={(L) =>
+                      sections.current[L]?.scrollIntoView({ block: 'start' })
+                    }
+                  />
+                </NavigationStackPage>
+                {sel ? (
+                  <NavigationStackPage value="detail" grouped>
+                    <NavigationStackBar>
+                      <NavigationStackTitle>
+                        {sel.f + ' ' + sel.l}
+                      </NavigationStackTitle>
+                    </NavigationStackBar>
+                    <NavigationStackContent>
+                      <div style={{ padding: '26px 18px', textAlign: 'center' }}>
+                        <Avatar c={sel} size={76} style={{ margin: '0 auto' }} />
+                        <div style={{ fontSize: 21, fontWeight: 700, marginTop: 12 }}>
+                          {sel.f} {sel.l}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 13.5,
+                            color: 'var(--muted-foreground)',
+                            marginTop: 3,
+                          }}
+                        >
+                          {sel.role}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 12.5,
+                            color: 'var(--muted-foreground)',
+                            marginTop: 22,
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          Edge-swipe from the left or use the back chevron to pop.
+                        </div>
+                      </div>
+                    </NavigationStackContent>
+                  </NavigationStackPage>
+                ) : null}
+              </NavigationStack>
             </div>
             {tab !== 'contacts' && (
               <div
@@ -163,12 +182,12 @@ export default function Contacts() {
               </div>
             )}
             <TabBar
-              selected={tab}
-              onSelect={setTab}
+              value={tab}
+              onValueChange={setTab}
               items={[
-                { id: 'contacts', icon: 'person', title: 'Contacts' },
-                { id: 'recents', icon: 'clock', title: 'Recents' },
-                { id: 'settings', icon: 'sliders', title: 'Settings' },
+                { value: 'contacts', icon: 'person', title: 'Contacts' },
+                { value: 'recents', icon: 'clock', title: 'Recents' },
+                { value: 'settings', icon: 'sliders', title: 'Settings' },
               ]}
             />
           </div>

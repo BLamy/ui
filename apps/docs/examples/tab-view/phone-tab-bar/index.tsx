@@ -31,19 +31,19 @@ function TabScreen({
 function PhoneApp() {
   return (
     <TabView
-      defaultSelectedKey="recents"
+      defaultValue="recents"
       style={{ position: 'relative', height: 440 }}
     >
       <TabViewBar hideOnScroll={false}>
         <TabViewList aria-label="Phone">
-          <TabViewTab id="favorites" icon="star" title="Favorites" />
-          <TabViewTab id="recents" icon="clock" title="Recents" />
-          <TabViewTab id="contacts" icon="person" title="Contacts" />
-          <TabViewTab id="voicemail" icon="wave" title="Voicemail" />
+          <TabViewTab value="favorites" icon="star" title="Favorites" />
+          <TabViewTab value="recents" icon="clock" title="Recents" />
+          <TabViewTab value="contacts" icon="person" title="Contacts" />
+          <TabViewTab value="voicemail" icon="wave" title="Voicemail" />
         </TabViewList>
       </TabViewBar>
       <TabViewPanels>
-        <TabViewPanel id="favorites">
+        <TabViewPanel value="favorites">
           <TabScreen title="Favorites">
             <List inset>
               <ListSection>
@@ -57,7 +57,7 @@ function PhoneApp() {
             </List>
           </TabScreen>
         </TabViewPanel>
-        <TabViewPanel id="recents">
+        <TabViewPanel value="recents">
           <TabScreen title="Recents">
             <List inset>
               <ListSection>
@@ -86,7 +86,7 @@ function PhoneApp() {
             </List>
           </TabScreen>
         </TabViewPanel>
-        <TabViewPanel id="contacts">
+        <TabViewPanel value="contacts">
           <TabScreen title="Contacts">
             <List inset>
               <ListSection>
@@ -97,14 +97,14 @@ function PhoneApp() {
                     title={`${c.f} ${c.l}`}
                     accessory="chevron"
                     divider={i < recents.length - 1}
-                    onPress={() => {}}
+                    onClick={() => {}}
                   />
                 ))}
               </ListSection>
             </List>
           </TabScreen>
         </TabViewPanel>
-        <TabViewPanel id="voicemail">
+        <TabViewPanel value="voicemail">
           <TabScreen title="Voicemail">
             <p
               style={{

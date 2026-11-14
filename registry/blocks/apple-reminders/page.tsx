@@ -1,7 +1,7 @@
 /* Apple Reminders — smart lists and your lists in a SplitView. Wide: sidebar + list side by side (the sidebar
    toggles away). Phone: the lists screen pushes the open list. Everything tints with the open list's color. */
 import { useState } from 'react';
-import { SplitView, type SplitViewSelection } from '@/components/ui/split-view';
+import { SplitView, type SplitViewValue } from '@/components/ui/split-view';
 import { BLProvider, useAppearance } from '@/lib/theme';
 import { SMART, SYSTEM } from './data';
 import { DetailsSheet } from './details';
@@ -19,16 +19,15 @@ export interface AppleRemindersProps {
 export default function AppleReminders({ initialList = 'today', openList = false }: AppleRemindersProps) {
   const dark = useAppearance() === 'dark';
   const reminders = useRemindersState();
-  const [selection, setSelection] = useState<SplitViewSelection>({ sidebar: initialList });
-  const [sidebar, setSidebar] = useState(true);
+  const [selection, setSelection] = useState<SplitViewValue>({ sidebar: initialList });
   const id = selection.sidebar ?? 'today';
   const tint = SMART.find((s) => s.id === id)?.color ?? reminders.lists.find((l) => l.id === id)?.color ?? SYSTEM.blue;
 
   return (
     <BLProvider dark={dark} tint={tint}>
       <RemindersCtx.Provider value={reminders}>
-        <SplitView aria-label="Reminders" selection={selection} onSelectionChange={setSelection} sidebarBehavior="tile" sidebarVisibility={{ medium: true }}
-          sidebarVisible={sidebar} onSidebarVisibleChange={setSidebar} defaultCompactColumn={openList ? 'detail' : 'sidebar'}>
+        <SplitView aria-label="Reminders" value={selection} onValueChange={setSelection} sidebarBehavior="tile"
+          defaultSidebarOpen={{ regular: true, medium: true }} defaultCompactColumn={openList ? 'detail' : 'sidebar'}>
           <ListsSidebar />
           <ListView />
           <DetailsSheet />

@@ -1,6 +1,6 @@
 # ToggleGroup
 
-A row of [Toggle](https://blamy.github.io/ui/#/toggle)s on react-aria's `ToggleButtonGroup`: one choice at a time (single selection, like a segmented control) or any number (multiple, like text styles). Items inherit the group's `variant` and `size`, and arrow keys move focus between them.
+A row of [Toggle](https://blamy.github.io/ui/#/toggle)s on UI SDK's `ToggleGroup`: one choice at a time (single selection, like a segmented control) or any number (multiple, like text styles). Items inherit the group's `variant` and `size`, and arrow keys move focus between them.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -29,48 +29,51 @@ import { ToggleGroup, ToggleGroupItem } from '@brett_lamy/ui'
 
 ## Single and multiple
 
-`selectionMode` is `single` by default. In a `filled` single group one white card slides between the items. In `multiple` mode each item toggles on its own. Selection is a set of item `id`s (`selectedKeys` / `defaultSelectedKeys` / `onSelectionChange`); add `disallowEmptySelection` to keep one always on.
+One toggle is pressed at a time unless you set `multiple`. In a `filled` single group one white card slides between the items. With `multiple` each item toggles on its own. The value is always an array of the pressed items' `value`s, in document order (`value` / `defaultValue` / `onValueChange(value, details)`). Pressing the pressed item of a single group again clears it; add `deselectable={false}` (with a `defaultValue`) to keep one always on.
 
 {% demo src="toggle-group/modes" %}
 
 ```tsx
-<ToggleGroup variant="filled" aria-label="View" defaultSelectedKeys={['grid']} disallowEmptySelection>
-  <ToggleGroupItem id="list">List</ToggleGroupItem>
-  <ToggleGroupItem id="grid">Grid</ToggleGroupItem>
+<ToggleGroup variant="filled" aria-label="View" defaultValue={['grid']} deselectable={false}>
+  <ToggleGroupItem value="list">List</ToggleGroupItem>
+  <ToggleGroupItem value="grid">Grid</ToggleGroupItem>
 </ToggleGroup>
 
-<ToggleGroup variant="outline" selectionMode="multiple" aria-label="Text style">
-  <ToggleGroupItem id="bold" aria-label="Bold">B</ToggleGroupItem>
-  <ToggleGroupItem id="italic" aria-label="Italic">I</ToggleGroupItem>
+<ToggleGroup variant="outline" multiple aria-label="Text style">
+  <ToggleGroupItem value="bold" aria-label="Bold">B</ToggleGroupItem>
+  <ToggleGroupItem value="italic" aria-label="Italic">I</ToggleGroupItem>
 </ToggleGroup>
 ```
 
+`details.reason` is `item-press` or `imperative` (a write from a controller made with `createToggleGroupController()` and passed as `controller`); `details.cancel()` keeps the current value.
+
 ## Accessibility
 
-A single-selection group is a `radiogroup` of `radio` buttons (`aria-checked`); a multiple-selection group is a `toolbar` of `aria-pressed` buttons. The group needs a name (`aria-label` or `aria-labelledby`). It is one Tab stop; arrow keys move between items, and Space / Enter select. Items with only a glyph (B, I, an icon) need an `aria-label`.
+It renders UI SDK's `ToggleGroup`: a `group` of native buttons with `aria-pressed`, in single and multiple mode alike (use [Segmented](https://blamy.github.io/ui/#/segmented) or [RadioGroup](https://blamy.github.io/ui/#/radio-group) when arrow keys should select as they move). The group needs a name (`aria-label` or `aria-labelledby`). It is one Tab stop, entering on the first pressed item; the arrow keys and Home / End move focus, and Space / Enter press. Disabled items stay reachable with the arrow keys (`aria-disabled`) but ignore presses. Items with only a glyph (B, I, an icon) need an `aria-label`.
 
 ## Props
 
 ### ToggleGroup
 
-Every react-aria `ToggleButtonGroup` prop applies, plus:
+Every UI SDK `ToggleGroup` prop applies, plus:
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `default` | `default` (gap, tinted when on) · `filled` (secondary tray, white selected card) · `outline` (joined buttons in a hairline frame). |
+| `variant` | `default` | `default` (gap, tinted when on) · `filled` (secondary tray, white pressed card) · `outline` (joined buttons in a hairline frame). |
 | `size` | `default` | `sm` · `default` · `lg`; passed to every item. |
-| `selectionMode` | `single` | `single` or `multiple`. |
-| `selectedKeys` / `defaultSelectedKeys` / `onSelectionChange` | — | The selected item ids. |
-| `disallowEmptySelection` | `false` | Keep at least one selected. |
-| `orientation` / `isDisabled` | `horizontal` / `false` | As in react-aria. |
+| `multiple` | `false` | Let several items stay pressed. |
+| `value` / `defaultValue` / `onValueChange` | — | The pressed items' values, as an array. |
+| `deselectable` | `true` | `false` keeps one pressed once any is (single mode). |
+| `orientation` / `loop` / `disabled` | `horizontal` / `true` / `false` | Arrow-key axis, wrapping at the ends, and disabling every item. |
+| `controller` | — | From `createToggleGroupController()`. |
 
 ### ToggleGroupItem
 
-Every `ToggleButton` prop (`id`, `isDisabled`, `className`, `children`), plus `variant` and `size` to override the group's for one item.
+A [Toggle](https://blamy.github.io/ui/#/toggle): `value` (what the group's value lists while it is pressed), `disabled`, `focusableWhenDisabled`, `className`, `children`, plus `variant` and `size` to override the group's for one item. Its own `pressed` / `defaultPressed` don't apply inside a group.
 
 ## Styling
 
-`data-slot="toggle-group"` (with `data-variant`) and `data-slot="toggle-group-item"`; the sliding card is `data-slot="toggle-group-indicator"`. Items get `data-selected`, `data-pressed` and `data-focus-visible` from react-aria. `toggleGroupVariants({ variant })` returns the container classes.
+`data-slot="toggle-group"` (with `data-variant` and `data-orientation`) and `data-slot="toggle"` on each item; the sliding card is `data-slot="selection-indicator"`, positioned from the `--selection-indicator-left`, `-top`, `-width` and `-height` variables it writes on itself. Pressed items have `data-pressed` and unavailable ones `data-disabled`; hover, press and keyboard focus are plain `hover:`, `active:` and `focus-visible:`. `toggleGroupVariants({ variant })` returns the container classes.
 
 ## cva recipes
 
@@ -81,7 +84,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/toggle-group`. Base classes:
 
 ```text
-isolate inline-flex w-fit items-center
+relative isolate inline-flex w-fit items-center
 ```
 
 **`variant`** — default `default`

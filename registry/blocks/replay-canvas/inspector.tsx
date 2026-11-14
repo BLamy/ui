@@ -3,7 +3,7 @@
    draw the frame from it) and the segues in and out; a segue says what was clicked, where it led and in which
    recordings. Either way the recording itself plays below, in ReplayPreview, from that moment. */
 import type { ReactNode } from 'react';
-import { PlainButton } from '@/components/ui/plain-button';
+import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
 import { ReplayPreview, formatReplayTime } from '@/components/ui/replay-preview';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -36,7 +36,7 @@ function refLabel(map: AppMap, node: string, state: string): string {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="border-b border-border px-4 py-3">
-      <div role="heading" aria-level={3} className="mb-2 text-caption1 font-semibold uppercase tracking-wide text-muted-foreground">{title}</div>
+      <h3 className="m-0 mb-2 [font-size:inherit] font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
       {children}
     </section>
   );
@@ -48,9 +48,9 @@ function EvidenceList({ evidence, recordings, active, onPick }: { evidence: Evid
       {evidence.map((e, i) => (
         <li key={`${e.recording}@${e.time}`}>
           <PlainButton
-            onPress={() => onPick(i)}
+            onClick={() => onPick(i)}
             className={cn(
-              'flex w-full cursor-pointer items-center gap-2 rounded-ctl border-0 bg-transparent px-2 py-1 text-left text-footnote text-foreground outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring',
+              'flex w-full cursor-pointer items-center gap-2 rounded-ctl border-0 bg-transparent px-2 py-1 text-left text-footnote text-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring',
               i === active && 'bg-primary/12 text-primary',
             )}
           >
@@ -68,8 +68,8 @@ function SegueRow({ map, segue, onSelect, dir }: { map: AppMap; segue: Segue; on
   const other = dir === 'out' ? segue.to : segue.from;
   return (
     <PlainButton
-      onPress={() => onSelect({ kind: 'segue', id: segue.id })}
-      className="flex w-full cursor-pointer items-center gap-2 rounded-ctl border-0 bg-transparent px-2 py-1 text-left text-footnote text-foreground outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring"
+      onClick={() => onSelect({ kind: 'segue', id: segue.id })}
+      className="flex w-full cursor-pointer items-center gap-2 rounded-ctl border-0 bg-transparent px-2 py-1 text-left text-footnote text-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Icon name={SEGUE_ICON[segue.kind]} size={12} sw={2} className="shrink-0 text-muted-foreground" />
       <span className="truncate">
@@ -110,10 +110,10 @@ export function Inspector({ map, recordings, selection, onSelect, shown, onShow,
               <Icon name={SEGUE_ICON[s.kind]} size={12} sw={2} /> {KIND_TEXT[s.kind]} · seen {s.evidence.length}× in {recs} recording{recs === 1 ? '' : 's'}
             </p>
             <div className="mt-3 flex flex-col gap-1 text-footnote">
-              <PlainButton onPress={() => onSelect({ kind: 'frame', key: frameKey(s.from) })} className="cursor-pointer truncate rounded-ctl border-0 bg-secondary px-2 py-1.5 text-left text-foreground outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+              <PlainButton onClick={() => onSelect({ kind: 'frame', key: frameKey(s.from) })} className="cursor-pointer truncate rounded-ctl border-0 bg-secondary px-2 py-1.5 text-left text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
                 From · {refLabel(map, s.from.node, s.from.state)}
               </PlainButton>
-              <PlainButton onPress={() => onSelect({ kind: 'frame', key: frameKey(s.to) })} className="cursor-pointer truncate rounded-ctl border-0 bg-secondary px-2 py-1.5 text-left text-foreground outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+              <PlainButton onClick={() => onSelect({ kind: 'frame', key: frameKey(s.to) })} className="cursor-pointer truncate rounded-ctl border-0 bg-secondary px-2 py-1.5 text-left text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
                 To · {refLabel(map, s.to.node, s.to.state)}
               </PlainButton>
             </div>
@@ -185,11 +185,11 @@ export function Inspector({ map, recordings, selection, onSelect, shown, onShow,
         <ul className="m-0 flex list-none flex-col gap-0.5 p-0 text-footnote">
           {journeys.filter((j) => map.recordings.some((r) => r.id === j.id)).map((j) => (
             <li key={j.id}>
-              <PlainButton onPress={() => onJourney(journey === j.id ? null : j.id)} aria-pressed={journey === j.id}
-                className={cn('flex w-full cursor-pointer items-center gap-2 rounded-ctl border-0 bg-transparent px-2 py-1 text-left text-foreground outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring', journey === j.id && 'bg-secondary')}>
+              <PlainToggleButton pressed={journey === j.id} onPressedChange={(on) => onJourney(on ? j.id : null)}
+                className="flex w-full cursor-pointer items-center gap-2 rounded-ctl border-0 bg-transparent px-2 py-1 text-left text-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring data-pressed:bg-secondary">
                 <span className="size-2.5 shrink-0 rounded-full" style={{ background: j.color }} />
                 <span className="truncate">{j.name}</span>
-              </PlainButton>
+              </PlainToggleButton>
             </li>
           ))}
         </ul>

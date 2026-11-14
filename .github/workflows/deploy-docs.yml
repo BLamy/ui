@@ -32,6 +32,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        # vendor/ui-sdk (our UI SDK fork) is a submodule; `pnpm install` builds the two @ui-sdk wrapper packages from it.
+        with: { submodules: true }
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4

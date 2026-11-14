@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Avatar } from '@/components/ui/avatar';
 import { List } from '@/components/ui/list';
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
+import {
+  NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackPage,
+  NavigationStackTitle,
+} from '@/components/ui/navigation-stack';
 import { TabBar } from '@/components/ui/tab-bar';
 import { Phone } from '../stories/frame';
 
@@ -21,39 +24,55 @@ const PEOPLE: [string, string, string][] = [
   ['Hana', 'Sato', 'Animator · Pixelfold'],
 ];
 
+/** A page with a bar title and content, the shape most of these stories use. */
+function Simple({ value, title, grouped, large, showOnScroll, hideOnScroll, bottomInset, onRefresh, children }: {
+  value: string; title: ReactNode; grouped?: boolean; large?: boolean; showOnScroll?: boolean; hideOnScroll?: boolean;
+  bottomInset?: number; onRefresh?: () => unknown; children: ReactNode;
+}) {
+  return (
+    <NavigationStackPage value={value} grouped={grouped}>
+      <NavigationStackBar hideOnScroll={hideOnScroll}>
+        <NavigationStackTitle showOnScroll={showOnScroll}>{title}</NavigationStackTitle>
+      </NavigationStackBar>
+      <NavigationStackContent bottomInset={bottomInset} onRefresh={onRefresh}>
+        {large ? <NavigationStackLargeTitle /> : null}
+        {children}
+      </NavigationStackContent>
+    </NavigationStackPage>
+  );
+}
+
 function Demo({ safeTop, withRefresh }: { safeTop?: boolean; withRefresh?: boolean }) {
   const [sel, setSel] = useState<number | null>(null);
-  const root: Screen = {
-    key: 'list', title: 'Contacts', largeTitle: true,
-    onRefresh: withRefresh ? () => undefined : undefined,
-    content: (
-      <List>
-        <List.Section sticky title="Team">
-          {PEOPLE.map(([f, l, role], i) => (
-            <List.Row key={f} title={f + ' ' + l} subtitle={role} leading={<Avatar c={{ f, l }} />}
-              accessory="chevron" onPress={() => setSel(i)} divider={i < PEOPLE.length - 1} />
-          ))}
-        </List.Section>
-      </List>
-    ),
-  };
-  const detail: Screen | null = sel == null ? null : {
-    key: 'detail', title: PEOPLE[sel][0] + ' ' + PEOPLE[sel][1], titleOnScroll: true, grouped: true,
-    content: (
-      <div style={{ padding: '0 16px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 0 18px' }}>
-          <Avatar c={{ f: PEOPLE[sel][0], l: PEOPLE[sel][1] }} size={92} />
-          <div style={{ fontSize: 26, fontWeight: 700, marginTop: 12, letterSpacing: '-.3px' }}>{PEOPLE[sel][0]} {PEOPLE[sel][1]}</div>
-          <div style={{ fontSize: 14.5, color: 'var(--muted-foreground)', marginTop: 3 }}>{PEOPLE[sel][2]}</div>
-        </div>
-        <div style={{ fontSize: 13.5, lineHeight: 1.5, color: 'var(--muted-foreground)', padding: '0 2px' }}>
-          Pop with the back button, an edge-swipe from the left, or Esc.
-        </div>
-      </div>
-    ),
-  };
+  const person = sel == null ? null : PEOPLE[sel];
   return (
-    <NavigationStack screens={[root, ...(detail ? [detail] : [])]} onPop={() => setSel(null)} safeTop={safeTop ? 59 : undefined} />
+    <NavigationStack pages={person ? ['list', 'detail'] : ['list']} onPagesChange={(p) => { if (p.length < 2) setSel(null); }}
+      safeTop={safeTop ? 59 : undefined}>
+      <Simple value="list" title="Contacts" large onRefresh={withRefresh ? () => undefined : undefined}>
+        <List>
+          <List.Section sticky title="Team">
+            {PEOPLE.map(([f, l, role], i) => (
+              <List.Row key={f} title={f + ' ' + l} subtitle={role} leading={<Avatar c={{ f, l }} />}
+                accessory="chevron" onClick={() => setSel(i)} divider={i < PEOPLE.length - 1} />
+            ))}
+          </List.Section>
+        </List>
+      </Simple>
+      {person ? (
+        <Simple value="detail" title={person[0] + ' ' + person[1]} showOnScroll grouped>
+          <div style={{ padding: '0 16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 0 18px' }}>
+              <Avatar c={{ f: person[0], l: person[1] }} size={92} />
+              <div style={{ fontSize: 26, fontWeight: 700, marginTop: 12, letterSpacing: '-.3px' }}>{person[0]} {person[1]}</div>
+              <div style={{ fontSize: 14.5, color: 'var(--muted-foreground)', marginTop: 3 }}>{person[2]}</div>
+            </div>
+            <div style={{ fontSize: 13.5, lineHeight: 1.5, color: 'var(--muted-foreground)', padding: '0 2px' }}>
+              Pop with the back button, an edge-swipe from the left, or Esc.
+            </div>
+          </div>
+        </Simple>
+      ) : null}
+    </NavigationStack>
   );
 }
 
@@ -72,14 +91,13 @@ const tallRows = (n = 40) => (
   </List>
 );
 
-/** `titleOnScroll`: the bar title only fades in once the content scrolls (detail-screen pattern),
- *  vs `largeTitle` where the big in-content title hands off to the bar. */
+/** `showOnScroll`: the bar title only fades in once the content scrolls (detail-page pattern),
+ *  vs a large title, where the big in-content title hands off to the bar. */
 export const TitleOnScroll: Story = {
   render: () => (
-    <NavigationStack onPop={() => undefined} screens={[{
-      key: 'tos', title: 'Wei Chen', titleOnScroll: true, grouped: true,
-      content: tallRows(30),
-    }]} />
+    <NavigationStack defaultPages={['tos']}>
+      <Simple value="tos" title="Wei Chen" showOnScroll grouped>{tallRows(30)}</Simple>
+    </NavigationStack>
   ),
 };
 
@@ -90,26 +108,24 @@ export const ChromeHideOnScroll: Story = {
     const [tab, setTab] = useState('contacts');
     return (
       <>
-        <NavigationStack onPop={() => undefined} screens={[{
-          key: 'hide', title: 'Contacts', largeTitle: true, bottomInset: 66,
-          content: tallRows(60),
-        }]} />
-        <TabBar selected={tab} onSelect={setTab} items={[
-          { id: 'contacts', title: 'Contacts', icon: 'person' },
-          { id: 'settings', title: 'Settings', icon: 'sliders' },
+        <NavigationStack defaultPages={['hide']}>
+          <Simple value="hide" title="Contacts" large bottomInset={66}>{tallRows(60)}</Simple>
+        </NavigationStack>
+        <TabBar value={tab} onValueChange={setTab} items={[
+          { value: 'contacts', title: 'Contacts', icon: 'person' },
+          { value: 'settings', title: 'Settings', icon: 'sliders' },
         ]} />
       </>
     );
   },
 };
 
-/** `hideChromeOnScroll: false` keeps the bar pinned no matter how far you scroll. */
+/** `hideOnScroll={false}` on the bar keeps it pinned no matter how far you scroll. */
 export const ChromeHideDisabled: Story = {
   render: () => (
-    <NavigationStack onPop={() => undefined} screens={[{
-      key: 'pinned', title: 'Pinned Chrome', largeTitle: true, hideChromeOnScroll: false,
-      content: tallRows(60),
-    }]} />
+    <NavigationStack defaultPages={['pinned']}>
+      <Simple value="pinned" title="Pinned Chrome" large hideOnScroll={false}>{tallRows(60)}</Simple>
+    </NavigationStack>
   ),
 };
 
@@ -117,10 +133,9 @@ export const ChromeHideDisabled: Story = {
  *  the opaque under-island strip never goes away. */
 export const ChromeHideWithSafeTop: Story = {
   render: () => (
-    <NavigationStack safeTop={59} onPop={() => undefined} screens={[{
-      key: 'island', title: 'Contacts', largeTitle: true,
-      content: tallRows(60),
-    }]} />
+    <NavigationStack safeTop={59} defaultPages={['island']}>
+      <Simple value="island" title="Contacts" large>{tallRows(60)}</Simple>
+    </NavigationStack>
   ),
 };
 
@@ -130,43 +145,46 @@ const settingsRows = (items: string[], open?: (s: string) => void) => (
   <List inset>
     <List.Section>
       {items.map((t, i) => (
-        <List.Row key={t} title={t} accessory={open ? 'chevron' : undefined} onPress={open ? () => open(t) : undefined}
+        <List.Row key={t} title={t} accessory={open ? 'chevron' : undefined} onClick={open ? () => open(t) : undefined}
           divider={i < items.length - 1} />
       ))}
     </List.Section>
   </List>
 );
 
-/** Push Settings → General → About: the large title flies into the next screen's back button, and an inline
+/** Push Settings → General → About: the large title flies into the next page's back button, and an inline
  *  title does the same one level down; popping (button, Esc or edge swipe) flies the label back into place.
  *  The edge swipe scrubs the morph with the finger. */
 export const HeaderTitleMorph: Story = {
   render: function HeaderTitleMorphStory() {
     const [path, setPath] = useState<string[]>([]);
     const push = (k: string) => setPath((p) => [...p, k]);
-    const screens: Screen[] = [
-      { key: 'settings', title: 'Settings', largeTitle: true, grouped: true,
-        content: settingsRows(['General', 'Accessibility', 'Privacy & Security'], push) },
-      ...path.map((k, i): Screen => ({
-        key: k, title: k, grouped: true,
-        content: settingsRows(i === 0 ? ['About', 'Software Update', 'AirDrop'] : ['Name', 'iOS Version', 'Model Name'],
-          i === 0 ? push : undefined),
-      })),
-    ];
-    return <NavigationStack screens={screens} onPop={() => setPath((p) => p.slice(0, -1))} />;
+    return (
+      <NavigationStack pages={['settings', ...path]} onPagesChange={(p) => setPath(p.slice(1))}>
+        <Simple value="settings" title="Settings" large grouped>
+          {settingsRows(['General', 'Accessibility', 'Privacy & Security'], push)}
+        </Simple>
+        {path.map((k, i) => (
+          <Simple key={k} value={k} title={k} grouped>
+            {settingsRows(i === 0 ? ['About', 'Software Update', 'AirDrop'] : ['Name', 'iOS Version', 'Model Name'],
+              i === 0 ? push : undefined)}
+          </Simple>
+        ))}
+      </NavigationStack>
+    );
   },
 };
 
 function Deep({ prev, title }: { prev: string; title: string }) {
   return (
-    <NavigationStack onPop={() => undefined} screens={[
-      { key: 'a', title: prev, grouped: true, content: settingsRows(['One']) },
-      { key: 'b', title, grouped: true, content: settingsRows(['Detail']) },
-    ]} />
+    <NavigationStack defaultPages={['a', 'b']}>
+      <Simple value="a" title={prev} grouped>{settingsRows(['One'])}</Simple>
+      <Simple value="b" title={title} grouped>{settingsRows(['Detail'])}</Simple>
+    </NavigationStack>
   );
 }
 
-/** The back label is the previous screen's title when it fits beside the centered title… */
+/** The back label is the previous page's title when it fits beside the centered title… */
 export const BackLabelFits: Story = { render: () => <Deep prev="Settings" title="General" /> };
 /** …ellipsized when it doesn't (measured, not a character count)… */
 export const BackLabelTruncated: Story = { render: () => <Deep prev="Notifications and Focus" title="Scheduled Summary" /> };

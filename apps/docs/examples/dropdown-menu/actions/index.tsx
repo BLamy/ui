@@ -1,60 +1,59 @@
 import { useState } from 'react'
-import type { Key } from 'react-aria-components'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Icon } from '@/lib/icon'
 import { ThemeScope } from '@/lib/theme'
 
 // An iOS pull-down: trailing icons, thick bands between groups, a destructive
 // row, a shortcut, a submenu and a disabled row. Choices arrive through
-// `onAction` on the menu — the list below is what it received.
+// `onAction` on the menu, submenu rows included — the line below is what it
+// received.
 export default function Actions() {
   const [log, setLog] = useState<string[]>([])
-  const act = (key: Key) => setLog((l) => [String(key), ...l].slice(0, 3))
-  // The ThemeScope is only here so the portalled overlay wears this demo's
-  // light / dark appearance; in an app, BLProvider or your root class does it.
+  const act = (value: string) => setLog((l) => [value, ...l].slice(0, 3))
+  // The ThemeScope is only here so the overlay wears this demo's light / dark
+  // appearance; in an app, BLProvider or your root class does it.
   return (
     <ThemeScope className="mx-auto grid max-w-sm justify-items-start gap-4">
-      <DropdownMenu>
-        <Button variant="secondary" aria-label="Photo actions" size="icon">
+      <DropdownMenu onAction={act}>
+        <DropdownMenuTrigger className={buttonVariants({ variant: 'secondary', size: 'icon' })} aria-label="Photo actions">
           <Icon name="ellipsis" size={20} />
-        </Button>
-        <DropdownMenuContent aria-label="Photo actions" onAction={act}>
-          <DropdownMenuItem id="copy" icon={<Icon name="copy" size={20} />}>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem value="copy" icon={<Icon name="copy" size={20} />}>
             Copy
           </DropdownMenuItem>
-          <DropdownMenuItem id="share" icon={<Icon name="share" size={20} />}>
+          <DropdownMenuItem value="share" icon={<Icon name="share" size={20} />}>
             Share…
           </DropdownMenuItem>
           <DropdownMenuSub>
-            <DropdownMenuItem id="move">Move to album</DropdownMenuItem>
-            <DropdownMenuContent aria-label="Albums" onAction={act}>
-              <DropdownMenuItem id="album-recents">Recents</DropdownMenuItem>
-              <DropdownMenuItem id="album-trip">Lisbon trip</DropdownMenuItem>
-            </DropdownMenuContent>
+            <DropdownMenuSubTrigger>Move to album</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuItem value="album-recents">Recents</DropdownMenuItem>
+              <DropdownMenuItem value="album-trip">Lisbon trip</DropdownMenuItem>
+            </DropdownMenuSubContent>
           </DropdownMenuSub>
-          <DropdownMenuItem
-            id="rename"
-            shortcut={<DropdownMenuShortcut>⌘R</DropdownMenuShortcut>}
-          >
+          <DropdownMenuItem value="rename" shortcut="mod+r">
             Rename
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem id="info" icon={<Icon name="info" size={20} />} description="Captured Sep 22">
+          <DropdownMenuItem value="info" icon={<Icon name="info" size={20} />} description="Captured Sep 22">
             Show info
           </DropdownMenuItem>
-          <DropdownMenuItem id="lock" isDisabled icon={<Icon name="lock" size={20} />}>
+          <DropdownMenuItem value="lock" disabled icon={<Icon name="lock" size={20} />}>
             Lock album
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem id="delete" variant="destructive" icon={<Icon name="trash" size={20} />}>
+          <DropdownMenuItem value="delete" destructive icon={<Icon name="trash" size={20} />}>
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { AdaptivePane, type AdaptivePaneMode } from '@/components/ui/adaptive-pane'
+import { AdaptivePane, type AdaptivePanePresentation } from '@/components/ui/adaptive-pane'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { List, ListRow, ListSection } from '@/components/ui/list'
@@ -17,7 +17,7 @@ function TeamDirectory() {
   const compact = width < 600
   // Wide: the detail is a column beside the list. Compact: it covers the list
   // until you close it.
-  const mode: AdaptivePaneMode = compact ? (sel ? 'cover' : 'hidden') : 'column'
+  const mode: AdaptivePanePresentation = compact ? (sel ? 'cover' : 'hidden') : 'column'
   return (
     <div
       ref={ref}
@@ -39,18 +39,18 @@ function TeamDirectory() {
                 accessory="chevron"
                 selected={!compact && sel === p}
                 divider={i < team.length - 1}
-                onPress={() => setSel(p)}
+                onClick={() => setSel(p)}
               />
             ))}
           </ListSection>
         </List>
       </main>
       <AdaptivePane
-        mode={mode}
-        side="right"
+        presentation={mode}
+        side="end"
         columnWidth={260}
         zIndex={10}
-        columnStyle={{ borderLeft: '1px solid var(--border)' }}
+        columnStyle={{ borderInlineStart: '1px solid var(--border)' }}
       >
         <div
           style={{
@@ -65,7 +65,7 @@ function TeamDirectory() {
             <Button
               variant="link"
               style={{ display: 'block' }}
-              onPress={() => setSel(null)}
+              onClick={() => setSel(null)}
             >
               ‹ Team
             </Button>

@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectSection } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { FieldError } from '@/components/ui/text-field';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectGroup, SelectGroupLabel } from '@/components/ui/select';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Card } from '@/components/ui/card';
 import { Screen } from '../stories/primitive-frame';
 
@@ -14,15 +13,17 @@ type Story = StoryObj<typeof Select>;
 
 const repeat = ['Never', 'Every Day', 'Every Week', 'Every 2 Weeks', 'Every Month', 'Every Year'];
 
-function Repeat({ open }: { open?: boolean }) {
+function Repeat({ open, presentation }: { open?: boolean; presentation?: 'popover' | 'auto' | 'sheet' }) {
   return (
-    <Select defaultOpen={open} defaultValue="Every Week" placeholder="Choose…">
-      <Label variant="field">Repeat</Label>
-      <SelectTrigger />
-      <SelectContent>
-        {repeat.map((r) => <SelectItem key={r} id={r}>{r}</SelectItem>)}
-      </SelectContent>
-    </Select>
+    <Field>
+      <FieldLabel variant="field">Repeat</FieldLabel>
+      <Select defaultOpen={open} defaultValue="Every Week" placeholder="Choose…" presentation={presentation}>
+        <SelectTrigger />
+        <SelectContent>
+          {repeat.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </Field>
   );
 }
 
@@ -30,23 +31,52 @@ export const Open: Story = { render: () => <Screen h={560}><Repeat open /></Scre
 export const Closed: Story = { render: () => <Screen h={360}><Repeat /></Screen> };
 export const OpenDark: Story = { render: () => <Screen dark h={560}><Repeat open /></Screen> };
 
-export const Sections: Story = {
+export const Groups: Story = {
   render: () => (
     <Screen h={600}>
-      <Select defaultOpen placeholder="Choose a timezone">
-        <Label variant="field">Time zone</Label>
-        <SelectTrigger />
-        <SelectContent>
-          <SelectSection title="Americas">
-            <SelectItem id="pt">Pacific Time</SelectItem>
-            <SelectItem id="et">Eastern Time</SelectItem>
-          </SelectSection>
-          <SelectSection title="Europe">
-            <SelectItem id="gmt">Greenwich Mean Time</SelectItem>
-            <SelectItem id="cet">Central European Time</SelectItem>
-          </SelectSection>
-        </SelectContent>
-      </Select>
+      <Field>
+        <FieldLabel variant="field">Time zone</FieldLabel>
+        <Select defaultOpen placeholder="Choose a timezone">
+          <SelectTrigger />
+          <SelectContent>
+            <SelectGroup>
+              <SelectGroupLabel>Americas</SelectGroupLabel>
+              <SelectItem value="pt">Pacific Time</SelectItem>
+              <SelectItem value="et">Eastern Time</SelectItem>
+            </SelectGroup>
+            <SelectGroup>
+              <SelectGroupLabel>Europe</SelectGroupLabel>
+              <SelectItem value="gmt">Greenwich Mean Time</SelectItem>
+              <SelectItem value="cet">Central European Time</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </Field>
+    </Screen>
+  ),
+};
+
+/** Options as data: `items` on the Select and an empty content. The button can type-select before the list has opened. */
+export const FromData: Story = {
+  render: () => (
+    <Screen h={560}>
+      <Field>
+        <FieldLabel variant="field">Plan</FieldLabel>
+        <Select
+          defaultOpen
+          defaultValue="pro"
+          items={[
+            { value: 'free', label: 'Free' },
+            { value: 'pro', label: 'Pro' },
+            { value: 'edu', label: 'Education', disabled: true },
+            { type: 'separator' },
+            { type: 'group', label: 'Contact sales', items: [{ value: 'enterprise', label: 'Enterprise' }] },
+          ]}
+        >
+          <SelectTrigger />
+          <SelectContent />
+        </Select>
+      </Field>
     </Screen>
   ),
 };
@@ -55,13 +85,15 @@ export const PlainInRow: Story = {
   render: () => (
     <Screen h={420}>
       <Card className="px-4">
-        <Select defaultValue="Every Week" aria-label="Repeat" className="flex-row items-center justify-between gap-2 py-1.5">
+        <div className="flex flex-row items-center justify-between gap-2 py-1.5">
           <span className="text-[17px] text-foreground">Repeat</span>
-          <SelectTrigger variant="plain" className="w-auto" />
-          <SelectContent placement="bottom end">
-            {repeat.map((r) => <SelectItem key={r} id={r}>{r}</SelectItem>)}
-          </SelectContent>
-        </Select>
+          <Select defaultValue="Every Week">
+            <SelectTrigger aria-label="Repeat" variant="plain" className="w-auto" />
+            <SelectContent align="end">
+              {repeat.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
       </Card>
     </Screen>
   ),
@@ -70,15 +102,20 @@ export const PlainInRow: Story = {
 export const Invalid: Story = {
   render: () => (
     <Screen h={300}>
-      <Select isRequired isInvalid placeholder="Choose…">
-        <Label variant="field">Priority</Label>
-        <SelectTrigger />
-        <SelectContent>
-          <SelectItem id="low">Low</SelectItem>
-          <SelectItem id="high">High</SelectItem>
-        </SelectContent>
+      <Field invalid>
+        <FieldLabel variant="field">Priority</FieldLabel>
+        <Select required placeholder="Choose…">
+          <SelectTrigger />
+          <SelectContent>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+          </SelectContent>
+        </Select>
         <FieldError>Pick a priority.</FieldError>
-      </Select>
+      </Field>
     </Screen>
   ),
 };
+
+/** `presentation="sheet"`: the options slide up from the bottom of their host. */
+export const Sheet: Story = { render: () => <Screen h={560}><Repeat open presentation="sheet" /></Screen> };

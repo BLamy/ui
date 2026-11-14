@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { CodeEditor, type CodeEditorChange, type CodeEditorGutter, type CodeEditorHandle } from '@/components/ui/code-editor'
+import { CodeEditor, type CodeEditorChangeReason, type CodeEditorEdit, type CodeEditorGutter, type CodeEditorHandle, type CodeEditorValueChangeDetails } from '@/components/ui/code-editor'
 import { Input } from '@/components/ui/input'
 import Safari from '@/components/blocks/safari/page'
 import VSCode from '@/components/blocks/vscode/page'
@@ -114,11 +114,11 @@ function Console() {
         <Button type="submit" variant="secondary">Fetch</Button>
       </form>
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" onPress={() => void send('http://notes.demo-tailnet.ts.net/echo', { method: 'POST', body: 'hello over the tailnet' })}>POST echo</Button>
-        <Button size="sm" variant="secondary" onPress={() => void send('http://notes.demo-tailnet.ts.net/stream')}>Stream</Button>
-        <Button size="sm" variant="secondary" onPress={() => void send('http://100.101.102.103/ping')}>100.101.102.103</Button>
-        <Button size="sm" variant="secondary" onPress={() => void send(new URL(`${import.meta.env.BASE_URL}favicon.ico`, location.origin).href)}>Same origin</Button>
-        <Button size="sm" variant="ghost" onPress={() => void router.router?.unregister()}>Remove service worker</Button>
+        <Button size="sm" variant="secondary" onClick={() => void send('http://notes.demo-tailnet.ts.net/echo', { method: 'POST', body: 'hello over the tailnet' })}>POST echo</Button>
+        <Button size="sm" variant="secondary" onClick={() => void send('http://notes.demo-tailnet.ts.net/stream')}>Stream</Button>
+        <Button size="sm" variant="secondary" onClick={() => void send('http://100.101.102.103/ping')}>100.101.102.103</Button>
+        <Button size="sm" variant="secondary" onClick={() => void send(new URL(`${import.meta.env.BASE_URL}favicon.ico`, location.origin).href)}>Same origin</Button>
+        <Button size="sm" variant="ghost" onClick={() => void router.router?.unregister()}>Remove service worker</Button>
       </div>
       <output aria-live="polite" className="grid gap-1 text-footnote">
         {result ? (
@@ -195,13 +195,15 @@ function CodeEditorHarness() {
   const mode = params.get('mode') ?? 'uncontrolled'
   const [value, setValue] = useState(initial)
   const editor = useRef<CodeEditorHandle>(null)
-  const changes = useRef<CodeEditorChange[]>([])
+  // What the page reads back: the edit and its reason, without the DOM event, which doesn't cross into the test.
+  const changes = useRef<(CodeEditorEdit & { reason: CodeEditorChangeReason })[]>([])
+  const record = ({ reason, from, to, newTo, text, removed }: CodeEditorValueChangeDetails) => { changes.current.push({ reason, from, to, newTo, text, removed }) }
   const onChangeCalls = useRef(0)
   const [breakpoints] = useState(() => new Set([2]))
   const gutters = useMemo<CodeEditorGutter[] | undefined>(() => (params.get('gutters') ? [{
     id: 'breakpoint',
     width: 18,
-    onPress: () => {},
+    onClick: () => {},
     label: (line) => `Breakpoint on line ${line}`,
     render: (line) => (breakpoints.has(line) ? <span data-testid="breakpoint" className="size-2 rounded-full bg-warning" /> : null),
   }] : undefined), [breakpoints])
@@ -226,13 +228,13 @@ function CodeEditorHarness() {
         {params.get('readOnly') ? (
           <CodeEditor {...shared} readOnly value={value} windowed={params.get('windowed') ? true : undefined} />
         ) : mode === 'controlled' ? (
-          <CodeEditor {...shared} value={value} onChange={(next, change) => { onChangeCalls.current++; changes.current.push(change); setValue(next) }} />
+          <CodeEditor {...shared} value={value} onValueChange={(next, details) => { onChangeCalls.current++; record(details); setValue(next) }} />
         ) : mode === 'upper' ? (
-          <CodeEditor {...shared} value={value} onChange={(next, change) => { changes.current.push(change); setValue(next.toUpperCase()) }} />
+          <CodeEditor {...shared} value={value} onValueChange={(next, details) => { record(details); setValue(next.toUpperCase()) }} />
         ) : mode === 'rejects' ? (
-          <CodeEditor {...shared} value={value} onChange={(_, change) => { changes.current.push(change) }} />
+          <CodeEditor {...shared} value={value} onValueChange={(_, details) => { record(details) }} />
         ) : (
-          <CodeEditor {...shared} defaultValue={initial} onEdit={(change) => { changes.current.push(change) }} />
+          <CodeEditor {...shared} defaultValue={initial} onEdit={record} />
         )}
       </div>
       <button type="button" data-testid="after">after</button>

@@ -6,12 +6,11 @@ import { Terminal, type TerminalHandle } from '@/components/ui/terminal';
 import { OpenCode } from '@/components/ui/open-code';
 import { TreeFileIcon } from '@/components/ui/tree';
 import {
-  Workspace, WorkspaceTabCloseButton, WorkspaceToolbar,
-  type TabNode, type TabRenderProps, type TabsetNode, type WorkspaceImperativeHandle,
+  Workspace, WorkspaceTab, WorkspaceTabClose, WorkspaceTabTrigger, WorkspaceToolbar,
+  type TabNode, type TabsetNode,
 } from '@/components/ui/workspace';
 import { Icon } from '@/lib/icon';
 import { languageFromPath } from '@/lib/syntax';
-import { cn } from '@/lib/utils';
 import { useAppearance } from '@/lib/theme';
 import { EDITORS_TABSET, TERMINALS_TABSET, type TabData, type VSCodeStore } from './store';
 
@@ -34,7 +33,7 @@ function FileEditor({ store, path }: { store: VSCodeStore; path: string }) {
         variant="ghost"
         className="h-full"
         value={text}
-        onChange={(next) => store.edit(path, next)}
+        onValueChange={(next) => store.edit(path, next)}
         language={languageFromPath(path)}
         onSelectionChange={(selection) => { if (selection) store.setCursor(path, selection.focus); }}
       />
@@ -66,7 +65,7 @@ function TerminalPane({ store, id }: { store: VSCodeStore; id: string }) {
       {openCode ? (
         <div className="absolute inset-0 z-10 flex min-h-0 flex-col bg-background" data-slot="vscode-opencode">
           <div className="flex shrink-0 justify-end border-b border-border px-2">
-            <Button size="sm" variant="quiet" onPress={openCode.close}>Return to terminal</Button>
+            <Button size="sm" variant="quiet" onClick={openCode.close}>Return to terminal</Button>
           </div>
           <OpenCode
             host={openCode.host}
@@ -120,12 +119,12 @@ function TabsetToolbar({ store, tabset }: { store: VSCodeStore; tabset: TabsetNo
   return (
     <WorkspaceToolbar className={narrow ? '[&>[aria-label$=pane]]:hidden' : undefined}>
       {holdsTerminals ? (
-        <Button variant="quiet" size="icon-sm" aria-label="New terminal" title="New terminal" onPress={() => store.newTerminal()}>
+        <Button variant="quiet" size="icon-sm" aria-label="New terminal" title="New terminal" onClick={() => store.newTerminal()}>
           <Icon name="plus" size={14} />
         </Button>
       ) : null}
       {canSplit ? (
-        <Button variant="quiet" size="icon-sm" aria-label="Split right" title="Split right" onPress={() => store.splitRight(tabset.id)}>
+        <Button variant="quiet" size="icon-sm" aria-label="Split right" title="Split right" onClick={() => store.splitRight(tabset.id)}>
           <Icon name="rectangle-split" size={14} />
         </Button>
       ) : null}
@@ -135,7 +134,7 @@ function TabsetToolbar({ store, tabset }: { store: VSCodeStore; tabset: TabsetNo
 
 const WORKSPACE_CLASSES = {
   header: 'min-h-[35px] bg-muted',
-  tab: 'gap-1.5 py-1.5 pe-1.5 ps-2.5 data-[tab-selected]:shadow-[inset_0_2px_0_var(--primary)]',
+  tab: 'gap-1.5 py-1.5 pe-1.5 ps-2.5 data-selected:shadow-[inset_0_2px_0_var(--primary)]',
 };
 
 /** The editors and the terminals, in one Workspace: drag a tab to any edge to split there. */
@@ -144,20 +143,22 @@ export function EditorArea({ store }: { store: VSCodeStore }) {
   const renderTabContent = useCallback((tab: TabNode<TabData>) => (
     tab.data.kind === 'file' ? <FileEditor store={store} path={tab.data.path} /> : <TerminalPane store={store} id={tab.data.id} />
   ), [store]);
-  const renderTab = useCallback((tab: TabNode<TabData>, props: TabRenderProps) => (
-    <div {...props} className={cn(props.className)}>
-      {tab.data.kind === 'file'
-        ? <TreeFileIcon name={tab.title ?? ''} size={15} className="shrink-0 text-muted-foreground" />
-        : <TerminalTabIcon store={store} id={tab.data.id} />}
-      <span className="truncate">{tab.title ?? tab.id}</span>
-      <WorkspaceTabCloseButton />
-    </div>
+  const renderTab = useCallback((tab: TabNode<TabData>) => (
+    <WorkspaceTab value={tab.id}>
+      <WorkspaceTabTrigger>
+        {tab.data.kind === 'file'
+          ? <TreeFileIcon name={tab.title ?? ''} size={15} className="shrink-0 text-muted-foreground" />
+          : <TerminalTabIcon store={store} id={tab.data.id} />}
+        <span className="truncate">{tab.title ?? tab.id}</span>
+      </WorkspaceTabTrigger>
+      <WorkspaceTabClose />
+    </WorkspaceTab>
   ), [store]);
   const renderToolbar = useCallback((tabset: TabsetNode<TabData>) => <TabsetToolbar store={store} tabset={tabset} />, [store]);
   const renderEmpty = useCallback((tabset: TabsetNode<TabData>) => (
     tabset.id === TERMINALS_TABSET ? (
       <div className="grid h-full place-items-center">
-        <Button variant="quiet" onPress={() => store.newTerminal()}>New Terminal</Button>
+        <Button variant="quiet" onClick={() => store.newTerminal()}>New Terminal</Button>
       </div>
     ) : (
       <div className="grid h-full place-items-center text-footnote text-muted-foreground">
@@ -165,20 +166,27 @@ export function EditorArea({ store }: { store: VSCodeStore }) {
       </div>
     )
   ), [store]);
-  const attach = useCallback((handle: WorkspaceImperativeHandle<TabData> | null) => store.attachWorkspace(handle), [store]);
-  const model = useMemo(() => store.model, [store]);
+  // The layout it mounts with; after that the Workspace owns it and the store follows `onLayoutCommit`.
+  const layout = useMemo(() => store.layout, [store]);
+  // The store drives the Workspace through its controller, which works once the Workspace is mounted.
+  useEffect(() => {
+    store.workspaceMounted(true);
+    return () => store.workspaceMounted(false);
+  }, [store]);
   return (
     <Workspace<TabData>
+      aria-label="Editors and terminals"
       className="rounded-none border-0"
       classNames={WORKSPACE_CLASSES}
-      defaultModel={model}
+      controller={store.workspace}
+      defaultLayout={layout}
       renderTab={renderTab}
       renderTabContent={renderTabContent}
       renderTabsetToolbar={renderToolbar}
       renderEmptyTabset={renderEmpty}
-      onModelChanged={store.onModelChanged}
-      workspaceRef={attach}
-      disableDrop={narrow}
+      onLayoutCommit={store.onLayoutCommit}
+      // One pane at a time in a narrow window, so nothing to split or move a tab to.
+      accepts={narrow ? () => false : undefined}
     />
   );
 }

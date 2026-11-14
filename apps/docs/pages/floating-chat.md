@@ -27,7 +27,7 @@ import { FloatingChat, useFloatingChat } from '@brett_lamy/ui'
 {% endtab %}
 {% endtabs %}
 
-It is the floating half of [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container), and works on its own over a map, a dashboard or a scrolling page. It is not built on [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet): it puts a `ComposerBump` on top of the Composer you supply and reuses FloatingSheet's tone and the shared drag gesture (`useSheetDrag`). For the docked counterpart see [ChatColumn](https://blamy.github.io/ui/#/chat-column); for the transcript itself see [Conversation](https://blamy.github.io/ui/#/conversation).
+It is the floating half of [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container), and works on its own over a map, a dashboard or a scrolling page. It is not built on [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet): it puts a `ComposerBump` on top of the Composer you supply (the bump owns the drag) and reuses FloatingSheet's tone and its hide-on-scroll signal (`useHideOnScroll`). For the docked counterpart see [ChatColumn](https://blamy.github.io/ui/#/chat-column); for the transcript itself see [Conversation](https://blamy.github.io/ui/#/conversation).
 
 ## Usage
 
@@ -68,8 +68,9 @@ With `working`, the composer card is replaced by a status pill (`workingLabel`) 
 ## Accessibility
 
 - The grip is a real button, named "Expand chat" or "Collapse chat", with `aria-expanded` and `aria-controls` pointing at the transcript. Enter and Space toggle it, and a plain tap anywhere on the handle row does too.
-- The transcript is a labelled region; set `label` (default "Full chat"). Escape closes an open chat.
-- The scrim is a button named "Close", mounted only while the chat is open or growing, and focusable only while open.
+- The transcript is a labelled region; set `label` (default "Full chat").
+- An open chat is a layer in UI SDK's stack (`bindLayer`): Escape closes it, after any popup opened from the composer or transcript, and so does a press outside it. Focus is never moved.
+- The scrim is decoration (`aria-hidden`, not focusable), mounted only while the chat is open or growing. While open it keeps presses off the host, and a press on it is the layer's outside press.
 - The FAB is named "Open chat". The working pill has the visible `workingLabel` and an `sr-only` "Add something new".
 - While minimized the dock is `inert` and `aria-hidden`.
 - Dragging is a pointer affordance; keyboard users get the same result from the grip button.
@@ -78,11 +79,11 @@ With `working`, the composer card is replaced by a status pill (`workingLabel`) 
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `open` / `defaultOpen` / `onOpenChange` | `false` | Controlled or uncontrolled transcript. |
+| `open` / `defaultOpen` / `onOpenChange(open, details)` | `false` | Controlled or uncontrolled transcript. `details.reason`: `handle-press`, `swipe`, `escape-key`, `outside-press`, `trigger-press` (the FAB), `imperative` (`setOpen` from `useFloatingChat`); `details.cancel()` keeps it as it is. |
 | `working` | `false` | Collapses the composer card into the status pill. |
 | `workingLabel` | `Working…` | Text of the pill. |
 | `onAdd` | | Called when the pill is pressed, or the chat is opened while working. |
-| `composing` / `onComposingChange` | `!working` | Whether the composer shows while `working`. Defaults to hiding it whenever work starts. |
+| `composing` / `onComposingChange(composing, details)` | `!working` | Whether the composer shows while `working`. Defaults to hiding it whenever work starts. `details.reason`: `trigger-press` (the pill), `handle-press` or `swipe` (opening the chat brings it back), `imperative` (`setComposing`, or `working` starting or stopping while uncontrolled); `details.cancel()` keeps it as it is. |
 | `peek` | `0` | Transcript height kept visible above the composer while closed, so the newest reply peeks out. While it is above 0 the chat does not hide on scroll. |
 | `gutter` | `16` | Inset of the composer from the host edges, in px. |
 | `appearance` | `glass` | `glass` blurs the host behind it; `sheet` uses opaque host-card surfaces. |
@@ -90,13 +91,13 @@ With `working`, the composer card is replaced by a status pill (`workingLabel`) 
 | `hideOnScroll` | `true` | Slide away when the shared chrome or `scrollRef` scrolls down. Does not hide while `peek` is above 0 or the transcript is open or growing. |
 | `scrollRef` | | A scroller whose direction hides and restores the composer. |
 | `fabPosition` | `bottom-center` | Where the folded FAB rests. |
-| `minimized` / `defaultMinimized` / `onMinimizedChange` | `false` | The fold into the FAB. |
+| `minimized` / `defaultMinimized` / `onMinimizedChange(minimized, details)` | `false` | The fold into the FAB. `details.reason`: `swipe` (dragged below rest), `trigger-press` (the FAB, or a press on the folded bump), `imperative` (`setMinimized`, or the chat opened while folded); `details.cancel()` keeps it as it is. |
 | `label` | `Full chat` | Accessible name of the transcript region. |
 | `className` / `style` | | Merged onto the root layer. |
 
 ## Styling
 
-The root is `data-slot="floating-chat"` with `data-appearance`, `data-tone` (unless `auto`), `data-open`, `data-expanded`, `data-dragging`, `data-minimized` and `data-hidden`. Its parts are `floating-chat-scrim`, `floating-chat-dock`, `floating-chat-composer`, `floating-chat-card`, `floating-chat-working`, `floating-chat-bump`, `floating-chat-transcript` and `floating-chat-fab`. `--ck-chat-gutter` and `--ck-chat-fold` (0 to 1 as it folds) are set on the root.
+The root is `data-slot="floating-chat"` with `data-appearance`, `data-tone` (unless `auto`), `data-open`, `data-expanded`, `data-dragging`, `data-minimized` and `data-hidden`. Its parts are `floating-chat-scrim`, `floating-chat-dock`, `floating-chat-composer`, `floating-chat-card`, `floating-chat-bump`, `floating-chat-transcript` and `floating-chat-fab`; the working status is a UI SDK Button marked `data-floating-chat-working`. `--ck-chat-gutter`, `--ck-chat-fold` (0 to 1 as it folds) and `--ck-chat-progress` (0 to 1 as the transcript grows; the scrim's opacity) are set on the root.
 
 The transcript takes the host's palette back through `ck-floating-chat__transcript` (the glass composer scope would otherwise recolor it), so it reads the same `--background`, `--foreground` and `--muted-foreground` as the page around it. `FloatingChat.Context` and `FloatingChat.useFloatingChat` are also available as statics.
 

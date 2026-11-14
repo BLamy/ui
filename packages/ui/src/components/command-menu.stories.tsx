@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  CommandEmpty, CommandFooter, CommandGroup, CommandInput, CommandItem, CommandList, CommandMenu, CommandPage,
-  useCommandActive, type CommandMenuProps,
+  CommandMenu, CommandMenuDialog, CommandMenuDialogContent, CommandMenuDialogTrigger, CommandMenuEmpty, CommandMenuFooter, CommandMenuGroup,
+  CommandMenuGroupLabel, CommandMenuInput, CommandMenuItem, CommandMenuList, CommandMenuPage, CommandMenuShortcut, CommandMenuStatus,
+  useCommandMenuValue, type CommandMenuData, type CommandMenuProps,
 } from '@/components/ui/command-menu';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Pad } from '../stories/frame';
 
 const meta: Meta<typeof CommandMenu> = {
@@ -35,45 +36,51 @@ function Monogram({ name, color }: { name: string; color: string }) {
   );
 }
 
-function Palette(props: Partial<CommandMenuProps> & { children?: ReactNode }) {
+/** Keys the app handles itself: shown, not registered, so a story never takes ⌘P from the page. */
+const keys = (shortcut: string) => <CommandMenuShortcut shortcut={shortcut} />;
+
+function Palette(props: Partial<CommandMenuProps>) {
   return (
-    <CommandMenu aria-label="Command menu" {...props}>
-      <CommandInput placeholder="Search commands, projects, and threads…" />
-      <CommandList>
-        <CommandEmpty>No matching commands</CommandEmpty>
-        <CommandPage id="root">
-          <CommandGroup heading="Actions">
-            <CommandItem icon="square-pencil" title="New thread in ui" value="New thread in ui" shortcut="⇧⌘O" />
-            <CommandItem icon="square-pencil" title="New thread in…" page="projects" />
-            <CommandItem icon="link" title="Copy thread ID" description="b7578c63-c54a-4669-a6a1-51348cf0177b" shortcut="⇧⌘C" />
-            <CommandItem icon="branch" title="Show linked pull requests" disabled />
-            <CommandItem icon="doc-text" title="Go to file" shortcut="⌘P" />
-            <CommandItem icon="magnifier" title="Search project contents" shortcut="⇧⌘F" />
-            <CommandItem icon="folder-plus" title="Add project" page="add-project" />
-          </CommandGroup>
-          <CommandGroup heading="Threads">
-            <CommandItem icon="bubble-left" title="Fix composer grabber" description="ui · 2h ago" />
-            <CommandItem icon="bubble-left" title="Command menu primitive" description="ui · yesterday" />
-          </CommandGroup>
-        </CommandPage>
-        <CommandPage id="projects" numbered>
-          <CommandGroup heading="Projects">
+    <CommandMenu {...props}>
+      <CommandMenuInput placeholder="Search commands, projects, and threads…" />
+      <CommandMenuEmpty>No matching commands</CommandMenuEmpty>
+      <CommandMenuList>
+        <CommandMenuPage>
+          <CommandMenuGroup>
+            <CommandMenuGroupLabel>Actions</CommandMenuGroupLabel>
+            <CommandMenuItem icon="square-pencil" title="New thread in ui" trailing={keys('shift+mod+o')} />
+            <CommandMenuItem icon="square-pencil" title="New thread in…" page="projects" />
+            <CommandMenuItem icon="link" title="Copy thread ID" description="b7578c63-c54a-4669-a6a1-51348cf0177b" trailing={keys('shift+mod+c')} />
+            <CommandMenuItem icon="branch" title="Show linked pull requests" disabled />
+            <CommandMenuItem icon="doc-text" title="Go to file" trailing={keys('mod+p')} />
+            <CommandMenuItem icon="magnifier" title="Search project contents" trailing={keys('shift+mod+f')} />
+            <CommandMenuItem icon="folder-plus" title="Add project" page="add-project" />
+          </CommandMenuGroup>
+          <CommandMenuGroup>
+            <CommandMenuGroupLabel>Threads</CommandMenuGroupLabel>
+            <CommandMenuItem icon="bubble-left" title="Fix composer grabber" description="ui · 2h ago" />
+            <CommandMenuItem icon="bubble-left" title="Command menu primitive" description="ui · yesterday" />
+          </CommandMenuGroup>
+        </CommandMenuPage>
+        <CommandMenuPage value="projects" numbered>
+          <CommandMenuGroup>
+            <CommandMenuGroupLabel>Projects</CommandMenuGroupLabel>
             {PROJECTS.map((p) => (
-              <CommandItem key={p.name} icon={<Monogram name={p.name} color={p.color} />} title={p.name} description={`Local · ${p.path}`} />
+              <CommandMenuItem key={p.name} icon={<Monogram name={p.name} color={p.color} />} title={p.name} description={`Local · ${p.path}`} />
             ))}
-          </CommandGroup>
-        </CommandPage>
-        <CommandPage id="add-project">
-          <CommandGroup heading="Sources">
-            <CommandItem icon="folder-plus" title="Local folder" description="Browse a folder on disk" />
-            <CommandItem icon="link" title="Git URL" description="Clone from a remote URL" />
-            <CommandItem icon="network" title="Bitbucket repository" description="Clone Bitbucket workspace/repository" dimmed
-              badge={<Badge variant="outline" className="rounded-md text-warning shadow-[inset_0_0_0_1px_var(--border)]">Setup Required</Badge>} />
-          </CommandGroup>
-        </CommandPage>
-      </CommandList>
-      <CommandFooter />
-      {props.children}
+          </CommandMenuGroup>
+        </CommandMenuPage>
+        <CommandMenuPage value="add-project">
+          <CommandMenuGroup>
+            <CommandMenuGroupLabel>Sources</CommandMenuGroupLabel>
+            <CommandMenuItem icon="folder-plus" title="Local folder" description="Browse a folder on disk" />
+            <CommandMenuItem icon="link" title="Git URL" description="Clone from a remote URL" />
+            <CommandMenuItem icon="network" title="Bitbucket repository" description="Clone Bitbucket workspace/repository" dimmed
+              trailing={<Badge variant="outline" className="rounded-md text-warning shadow-[inset_0_0_0_1px_var(--border)]">Setup Required</Badge>} />
+          </CommandMenuGroup>
+        </CommandMenuPage>
+      </CommandMenuList>
+      <CommandMenuFooter />
     </CommandMenu>
   );
 }
@@ -82,43 +89,91 @@ const frame = (node: ReactNode, dark = false) => <Pad w={620} dark={dark}>{node}
 
 export const Inline: Story = { render: () => frame(<Palette />) };
 export const InlineDark: Story = { render: () => frame(<Palette />, true) };
-/** Opened on a sub-page: the back arrow replaces the search icon and the footer adds Backspace Back. */
+/** Opened on a page below the first: the back button replaces the search icon and the footer adds Backspace Back. */
 export const SubPage: Story = { render: () => frame(<Palette defaultPages={['projects']} />, true) };
 export const DimmedWithBadge: Story = { render: () => frame(<Palette defaultPages={['add-project']} />, true) };
 
-function Filtered({ initial }: { initial: string }) {
-  const [q, setQ] = useState(initial);
-  return <Palette query={q} onQueryChange={setQ} />;
-}
-/** Fuzzy matching ranks within each group and highlights the matched characters. */
-export const Filtering: Story = { render: () => frame(<Filtered initial="thr" />, true) };
-export const Empty: Story = { render: () => frame(<Filtered initial="zzzz" />) };
+/** Typing keeps the commands that match, in their order, and marks the letters that matched. */
+export const Filtering: Story = { render: () => frame(<Palette defaultQuery="thr" />, true) };
+export const Empty: Story = { render: () => frame(<Palette defaultQuery="zzzz" />) };
+
+const DATA: CommandMenuData = [
+  {
+    type: 'group',
+    label: 'Actions',
+    items: [
+      { value: 'new-thread', label: 'New thread in ui', icon: 'square-pencil' },
+      { value: 'copy-id', label: 'Copy thread ID', icon: 'link', description: 'b7578c63-c54a-4669-a6a1-51348cf0177b' },
+      { value: 'go-to-file', label: 'Go to file', icon: 'doc-text' },
+      { value: 'projects', label: 'New thread in…', icon: 'square-pencil', items: PROJECTS.map((p) => ({ value: p.name, label: p.name, description: `Local · ${p.path}` })) },
+    ],
+  },
+  { type: 'separator' },
+  {
+    type: 'group',
+    label: 'Threads',
+    items: [
+      { value: 'thread-1', label: 'Fix composer grabber', icon: 'bubble-left', description: 'ui · 2h ago' },
+      { value: 'thread-2', label: 'Thread list virtualization', icon: 'bubble-left', description: 'ui · yesterday' },
+    ],
+  },
+];
+
+/** Commands given as `items` are ranked as you type: the best match, and its group, lead. */
+export const Ranked: Story = {
+  render: () =>
+    frame(
+      <CommandMenu items={DATA} defaultQuery="thr">
+        <CommandMenuInput placeholder="Search commands and threads…" />
+        <CommandMenuEmpty />
+        <CommandMenuList />
+        <CommandMenuFooter />
+      </CommandMenu>,
+      true,
+    ),
+};
+
+/** `status="loading"` marks the list busy; CommandMenuStatus says so. */
+export const Loading: Story = {
+  render: () =>
+    frame(
+      <CommandMenu status="loading" filter={false}>
+        <CommandMenuInput placeholder="Search issues…" />
+        <CommandMenuStatus>{(state) => (state.loading ? 'Searching…' : null)}</CommandMenuStatus>
+        <CommandMenuList>
+          <CommandMenuItem icon="exclamation-circle" title="Login button does nothing on Safari" description="#412 · open" />
+        </CommandMenuList>
+        <CommandMenuFooter />
+      </CommandMenu>,
+    ),
+};
 
 const EMOJI = ['😀', '😂', '🥹', '😍', '🤔', '😎', '🥳', '😴', '👍', '👏', '🙏', '🔥', '✨', '🎉', '❤️', '💯', '🚀', '🌈', '🍕', '☕️', '🐶', '🐱', '🌵', '⚡️'];
 const EMOJI_NAMES = ['grinning', 'joy', 'holding back tears', 'heart eyes', 'thinking', 'sunglasses', 'party', 'sleeping', 'thumbs up', 'clap', 'pray', 'fire', 'sparkles', 'tada', 'heart', '100', 'rocket', 'rainbow', 'pizza', 'coffee', 'dog', 'cat', 'cactus', 'zap'];
 
 function EmojiPreview() {
-  const v = useCommandActive();
+  const v = useCommandMenuValue();
   return <span className="text-[13px] text-muted-foreground">{v ?? ''}</span>;
 }
 
-/** A `columns` group is a grid: ← → step, ↑ ↓ move a row. */
+/** A `columns` group is a grid: the arrows move by cell and by row. */
 export const Grid: Story = {
   render: () =>
     frame(
-      <CommandMenu aria-label="Emoji">
-        <CommandInput placeholder="Search emoji…" />
-        <CommandList>
-          <CommandEmpty />
-          <CommandGroup heading="Smileys & more" columns={8}>
+      <CommandMenu>
+        <CommandMenuInput placeholder="Search emoji…" />
+        <CommandMenuEmpty />
+        <CommandMenuList>
+          <CommandMenuGroup columns={8}>
+            <CommandMenuGroupLabel>Smileys & more</CommandMenuGroupLabel>
             {EMOJI.map((e, i) => (
-              <CommandItem key={e} value={EMOJI_NAMES[i]} className="text-[24px]">{e}</CommandItem>
+              <CommandMenuItem key={e} value={EMOJI_NAMES[i]} label={EMOJI_NAMES[i]} className="text-[24px]">{e}</CommandMenuItem>
             ))}
-          </CommandGroup>
-        </CommandList>
-        <CommandFooter legend={[{ keys: ['←', '→', '↑', '↓'], label: 'Move' }, { keys: ['Enter'], label: 'Copy' }]}>
+          </CommandMenuGroup>
+        </CommandMenuList>
+        <CommandMenuFooter legend={[{ keys: ['←', '→', '↑', '↓'], label: 'Move' }, { keys: ['Enter'], label: 'Copy' }]}>
           <EmojiPreview />
-        </CommandFooter>
+        </CommandMenuFooter>
       </CommandMenu>,
       true,
     ),
@@ -128,8 +183,12 @@ function DialogDemo() {
   const [open, setOpen] = useState(true);
   return (
     <div className="relative h-[600px]">
-      <Button onPress={() => setOpen(true)}>Open ⌘K</Button>
-      <Palette variant="dialog" isOpen={open} onOpenChange={setOpen} hotkey="mod+k" />
+      <CommandMenuDialog open={open} onOpenChange={setOpen}>
+        <CommandMenuDialogTrigger shortcut="mod+k" className={buttonVariants()}>Open ⌘K</CommandMenuDialogTrigger>
+        <CommandMenuDialogContent aria-label="Command menu">
+          <Palette />
+        </CommandMenuDialogContent>
+      </CommandMenuDialog>
     </div>
   );
 }

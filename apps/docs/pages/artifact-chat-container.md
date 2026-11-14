@@ -65,7 +65,7 @@ import {
 
 | Piece | Role |
 | --- | --- |
-| `useContainerWidth` | Resolves `layout="auto"` from the container width. |
+| `bindSizeClass` (the kit's, `@/lib/size-class`) | Resolves `layout="auto"` from the container's own size class: `compact` below `breakpoint` floats the chat. The root carries `data-size-class` for CSS, and the container is the size-class scope of what it renders (`SizeClassProvider`), so popups inside with `presentation="auto"` follow it too. |
 | `ChatColumn` | The split layout's docked chat: `ChatColumn.Transcript` scrolls above `ChatColumn.Composer`. |
 | `FloatingChat` | The floating layout: the slot's Composer over the content, with the transcript on a draggable top bump (`ComposerOutlet` + `ComposerBump`). |
 
@@ -79,7 +79,7 @@ Each piece is a library part (`@/components/ui/chat-column`, `@/components/ui/fl
 | `Composer` | Bottom of the chat column | Floating over the content; its top bump carries the transcript |
 | `Content` | Right column | Full canvas scrolling behind the glass |
 
-The breakpoint measures the container, not the viewport. A tap on the bump's handle toggles the two chat states; a drag previews the travel, then release settles fully open or fully closed. The scrim and `Escape` collapse the full chat. Dragging downward past the closed Composer minimizes it. `fabPosition` accepts `top-left`, `top-center`, `top-right`, `center-left`, `center-right`, `bottom-left`, `bottom-center`, or `bottom-right`; the default is `bottom-center`. `chatOpen` / `onChatOpenChange` provide controlled chat state, and `useArtifactChatContainer()` exposes the measured width and presentation state to descendants.
+The breakpoint measures the container, not the viewport. A tap on the bump's handle toggles the two chat states; a drag previews the travel, then release settles fully open or fully closed. The scrim and `Escape` collapse the full chat. Dragging downward past the closed Composer minimizes it. `fabPosition` accepts `top-left`, `top-center`, `top-right`, `center-left`, `center-right`, `bottom-left`, `bottom-center`, or `bottom-right`; the default is `bottom-center`. `chatOpen` / `onChatOpenChange(open, details)` provide controlled chat state (`details.reason` is FloatingChat's: `handle-press`, `swipe`, `escape-key`, `outside-press`, `trigger-press`, or `imperative` for `setChatOpen` from the context; `details.cancel()` keeps the chat as it is), and `useArtifactChatContainer()` exposes the size class (`sizeClass`) and presentation state to descendants.
 
 ## Layout, peek, and surface options
 
@@ -87,7 +87,7 @@ The breakpoint measures the container, not the viewport. A tap on the bump's han
 | --- | --- | --- |
 | `layout` | `auto` | `auto` splits above `breakpoint` and floats below it. `floating` always floats the chat over the content — the right choice for maps, canvases, and other full-bleed artifacts. `split` always docks. |
 | `chatSide` | `left` | The edge the docked column sits on. `right` puts an assistant beside an app's page (the Loop QA block docks Ask QA there); the column slides in from and out toward its own edge. |
-| `minimized` / `onMinimizedChange` | uncontrolled | Controls the floating chat's fold into its FAB. A host can switch `layout` to `floating` with `minimized` to hide a docked chat as a FAB; tapping the FAB reports `false`, and the composer flies back to the column when the host docks it again. |
+| `minimized` / `onMinimizedChange(minimized, details)` | uncontrolled | Controls the floating chat's fold into its FAB, with FloatingChat's details (`swipe`, `trigger-press`, `imperative`; `details.cancel()` keeps it). A host can switch `layout` to `floating` with `minimized` to hide a docked chat as a FAB; tapping the FAB reports `false` with reason `trigger-press`, and the composer flies back to the column when the host docks it again. |
 | `peek` | `0` | Height of transcript kept visible above the composer while the chat is closed, so the newest reply stays readable over the content. Growth is measured from the peek, so the glass keeps its compact shape until it is dragged past it. |
 | `appearance` | `glass` | `glass` blurs the content behind it; `sheet` is an opaque card. |
 | `tone` | `auto` | `auto` inherits the host's theme variables; `dark` and `light` override them so the surface can disagree with the page. |

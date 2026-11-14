@@ -2,11 +2,11 @@ import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 /* ══ WorkspaceTile — a server tile for a `TabViewBar variant="workspace"` rail ══
-   <TabView orientation="vertical" defaultSelectedKey="blui">
+   <TabView orientation="vertical" defaultValue="blui">
      <TabViewBar variant="workspace">
        <TabViewList aria-label="Workspaces">
-         <TabViewTab id="blui" textValue="BL UI HQ">
-           <TabViewIndicator variant="pill" attention={unread} />
+         <TabViewTab value="blui" aria-label="BL UI HQ">
+           <TabViewPill attention={unread} />
            <WorkspaceTile color="#0A84FF" mentions={4}>B</WorkspaceTile>
          </TabViewTab>
        </TabViewList>
@@ -21,17 +21,20 @@ export interface WorkspaceTileProps {
   color?: string;
   /** mention count: a red badge on the tile */
   mentions?: number;
+  /** a native tooltip (the workspace's full name) */
+  title?: string;
   children?: ReactNode;
   className?: string;
 }
 
-export function WorkspaceTile({ color = 'var(--primary)', mentions, children, className }: WorkspaceTileProps) {
+export function WorkspaceTile({ color = 'var(--primary)', mentions, title, children, className }: WorkspaceTileProps) {
   return (
     <span
       data-slot="workspace-tile"
+      title={title}
       style={{ '--tile': color } as CSSProperties}
       className={cn(
-        'relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-sans text-detail leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-data-hovered:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--tile) group-data-selected:bg-(--tile) group-data-selected:text-white group-data-pressed:scale-[.94] motion-reduce:transition-none group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-link',
+        'relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-sans text-detail leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-hover:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--tile) group-data-selected:bg-(--tile) group-data-selected:text-white group-active:scale-[.94] motion-reduce:transition-none group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-link',
         className,
       )}
     >

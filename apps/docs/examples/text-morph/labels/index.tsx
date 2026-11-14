@@ -16,7 +16,7 @@ export default function Labels() {
         <p className="text-title font-semibold">
           <TextMorph>{flow[step]}</TextMorph>
         </p>
-        <Button onPress={() => setStep((s) => (s + 1) % flow.length)}>
+        <Button onClick={() => setStep((s) => (s + 1) % flow.length)}>
           Next label
         </Button>
       </div>
@@ -26,7 +26,7 @@ export default function Labels() {
         </p>
         <Button
           variant="secondary"
-          onPress={() => setTab((t) => (t + 1) % tabs.length)}
+          onClick={() => setTab((t) => (t + 1) % tabs.length)}
         >
           {tabs[tab]}
         </Button>

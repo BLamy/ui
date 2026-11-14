@@ -9,11 +9,11 @@
    several curves side by side, each with its own dot. Pressing a dot follows that journey: its curves, numbered in
    the order it took them, stand out (arrows hidden or not), the frames it reached stay lit, and the rest fades, so
    zoomed out it reads as one path through the app. */
-import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { Canvas, CanvasFrame, CanvasMiniMap, useCanvas } from '@/components/ui/canvas';
-import { HoverCard, HoverCardHeader, useHoverCard } from '@/components/ui/hover-card';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Canvas, CanvasFrame, CanvasMiniMap, useCanvas, type CanvasController, type CanvasViewportChangeDetails } from '@/components/ui/canvas';
+import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger, createHoverCardController } from '@/components/ui/hover-card';
 import { formatReplayTime } from '@/components/ui/replay-preview';
-import { fitCamera, unionRect, type Camera, type Rect } from '@/lib/canvas-math';
+import { unionRect, type Rect, type Viewport } from '@/lib/canvas-math';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import type { AppMap, ChromeType, Evidence, MapNode, OverlayType, Recording, Segue, SegueKind } from './analyze';
@@ -65,6 +65,10 @@ const OVERVIEW_ZOOM = 0.15;
 /** Below this zoom only the hovered and selected segues are labelled. */
 const LABEL_ZOOM = 0.42;
 
+/** HoverCard's own delays, for the segues the board hit-tests itself: rest this long to preview one; the card lingers this long after. */
+const PEEK_OPEN_DELAY = 600;
+const PEEK_CLOSE_DELAY = 300;
+
 export const actionVerb = (a: 'click' | 'contextmenu') => (a === 'contextmenu' ? 'Right-click' : 'Click');
 
 export interface BoardProps {
@@ -74,8 +78,11 @@ export interface BoardProps {
   viewport: { w: number; h: number };
   crops: Crops;
   onCrop: (key: string, rect: Rect) => void;
-  camera: Camera;
-  onCameraChange: (c: Camera) => void;
+  /** The canvas's view of the map. */
+  view: Viewport;
+  onViewChange: (view: Viewport, details: CanvasViewportChangeDetails) => void;
+  /** The page's fit buttons and search move the view through it; a double-click on a frame fits it here. */
+  controller: CanvasController;
   selection: Selection;
   onSelect: (s: Selection) => void;
   showDismiss: boolean;
@@ -94,23 +101,34 @@ export interface BoardProps {
   onJourney: (id: string | null) => void;
 }
 
-export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera, onCameraChange, selection, onSelect, showDismiss, showArrows, showMiniMap, shown, onShow, journeys, journey, onJourney }: BoardProps) {
+export function Board({ map, boxes, recordings, viewport, crops, onCrop, view, onViewChange, controller, selection, onSelect, showDismiss, showArrows, showMiniMap, shown, onShow, journeys, journey, onJourney }: BoardProps) {
   const [hover, setHover] = useState<string | null>(null);
   const byKey = useMemo(() => new Map(boxes.map((b) => [b.key, b])), [boxes]);
-  // One hover card for the board, anchored to the frame or segue under the pointer.
-  const peek = useHoverCard();
+  // One hover card for the board. Each frame is one of its triggers (HoverCard's hover intent and delays); a segue
+  // is SVG the board hit-tests itself (a curve, a dot, a label), so it drives the same card through the controller
+  // with the same delays: it opens once the pointer rests, jumps straight to the next target while open, and closes
+  // a moment after leaving.
+  const [peek] = useState(() => createHoverCardController<Exclude<Selection, null>>());
   const [peeked, setPeeked] = useState<Exclude<Selection, null> | null>(null);
-  const peekAt = useRef<HTMLElement | null>(null);
-  const onPeek = (e: ReactPointerEvent) => {
+  const peekAt = useRef<Element | null>(null);
+  const peekTimer = useRef<number | undefined>(undefined);
+  const later = (ms: number, run: () => void) => { window.clearTimeout(peekTimer.current); peekTimer.current = window.setTimeout(run, ms); };
+  const leavePeek = () => { if (peekAt.current) { peekAt.current = null; later(PEEK_CLOSE_DELAY, () => peek.close()); } };
+  const closePeek = () => { window.clearTimeout(peekTimer.current); peekAt.current = null; peek.close(); };
+  useEffect(() => () => window.clearTimeout(peekTimer.current), []);
+  const onPeek = (e: PointerEvent) => {
     if (e.pointerType === 'touch' || e.buttons) return;
-    const el = (e.target as Element).closest?.('[data-rc-segue],[data-rc-frame]') as HTMLElement | null;
-    if (!el) { peekAt.current = null; peek.triggerProps.onPointerLeave(e); return; }
+    const target = e.target as Element;
+    // Over a frame its trigger owns the card.
+    if (target.closest?.('[data-rc-frame]')) { window.clearTimeout(peekTimer.current); peekAt.current = null; return; }
+    const el = target.closest?.('[data-rc-segue]') ?? null;
+    if (!el) { leavePeek(); return; }
     if (el === peekAt.current) return;
     peekAt.current = el;
-    peek.close();
-    const segue = el.getAttribute('data-rc-segue');
-    setPeeked(segue ? { kind: 'segue', id: segue } : { kind: 'frame', key: el.getAttribute('data-rc-frame')! });
-    peek.triggerProps.onPointerEnter(e);
+    const payload: Exclude<Selection, null> = { kind: 'segue', id: el.getAttribute('data-rc-segue')! };
+    // A curve or a dot is SVG: position against its box, read afresh as the board moves.
+    const open = () => { void peek.open({ anchor: { getBoundingClientRect: () => el.getBoundingClientRect() }, payload }); };
+    later(peek.isOpen() ? 0 : PEEK_OPEN_DELAY, open);
   };
   // Each segue with its ends and the journeys that took it, in the recordings' order.
   const routes = useMemo(() => {
@@ -151,7 +169,7 @@ export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera,
     return { segues, frames };
   }, [selection, map.segues]);
 
-  const pick = (e: ReactPointerEvent | ReactMouseEvent) => {
+  const pick = (e: MouseEvent) => {
     const el = e.target as Element;
     const segue = el.closest?.('[data-rc-segue]')?.getAttribute('data-rc-segue');
     // A journey's dot (or curve) follows that journey.
@@ -165,11 +183,12 @@ export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera,
   const selectedBox = selection?.kind === 'frame' ? byKey.get(selection.key) : undefined;
   return (
     // React derives pointer leave from the tree, so this box-less wrapper hears the pointer leave the board.
-    <div className="contents" onPointerLeave={(e) => { peekAt.current = null; peek.triggerProps.onPointerLeave(e); }}>
+    <div className="contents" onPointerLeave={leavePeek}>
       <Canvas
         aria-label="App map"
-        camera={camera}
-        onCameraChange={onCameraChange}
+        viewport={view}
+        onViewportChange={onViewChange}
+        controller={controller}
         fit={fit}
         className="size-full bg-secondary"
         overlay={showMiniMap && boxes.length ? (
@@ -178,8 +197,8 @@ export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera,
             className: selection?.kind === 'frame' && selection.key === b.key ? 'fill-primary' : related?.frames.has(b.key) ? 'fill-primary/45' : undefined,
           }))} />
         ) : null}
-        onCanvasPointerDown={(e) => { peek.close(); const p = pick(e); if (!p) onJourney(null); onSelect(p); }}
-        onNavigationStart={peek.close}
+        onCanvasPointerDown={(e) => { closePeek(); const p = pick(e); if (!p) onJourney(null); onSelect(p); }}
+        onNavigationStart={closePeek}
         onCanvasPointerMove={(e) => {
           onPeek(e);
           const p = pick(e);
@@ -189,8 +208,7 @@ export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera,
         onCanvasDoubleClick={(e) => {
           const p = pick(e);
           const box = p?.kind === 'frame' ? byKey.get(p.key) : undefined;
-          const host = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          if (box) onCameraChange(fitCamera({ ...box, y: box.y - 40, h: box.h + 40 }, { width: host.width, height: host.height }, 48));
+          if (box) controller.fit({ ...box, y: box.y - 40, h: box.h + 40 }, { padding: 48 }, { reason: 'imperative', event: e });
         }}
       >
         {boxes.map((box, i) => {
@@ -203,10 +221,13 @@ export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera,
           return (
             <div key={box.key} className={cn('transition-opacity duration-200', dim && 'opacity-35')}>
               <FrameTitle box={box} />
-              <div
-                data-rc-frame={box.key}
+              <HoverCardTrigger
+                controller={peek}
+                payload={{ kind: 'frame', key: box.key }}
+                aria-label={frameName(box)}
+                // A screen of the app: named as the map names it, so the card's trigger has a name.
+                render={<div role="figure" data-rc-frame={box.key} style={{ left: box.x, top: box.y, width: box.w, height: box.h }} />}
                 className={cn('absolute overflow-hidden', node.kind === 'overlay' ? 'drop-shadow-xl' : 'bg-background shadow-lg')}
-                style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
               >
                 {rec && (
                   <ScreenFrame
@@ -220,21 +241,32 @@ export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera,
                     onBlank={at + 1 < state.evidence.length ? () => onShow(box.key, at + 1) : undefined}
                   />
                 )}
-              </div>
+              </HoverCardTrigger>
             </div>
           );
         })}
         <Segues routes={routes} crops={crops} journeys={journeys} related={related?.segues ?? null} hover={hover}
           followed={followed?.step ?? null} journey={journey} showArrows={showArrows} selected={selection?.kind === 'segue' ? selection.id : null} />
         {selectedBox && <CanvasFrame frame={{ ...selectedBox, rot: 0 }} />}
-        {peeked && (
-          <HoverCard {...peek.cardProps} triggerRef={peekAt} placement={peeked.kind === 'frame' ? 'end top' : 'top'}>
-            <Peek target={peeked} map={map} byKey={byKey} recordings={recordings} />
-          </HoverCard>
-        )}
+        <HoverCard controller={peek} delay={PEEK_OPEN_DELAY} closeDelay={PEEK_CLOSE_DELAY} onPayloadChange={(p) => setPeeked((p as Exclude<Selection, null> | null | undefined) ?? null)}>
+          <HoverCardContent
+            side={peeked?.kind === 'frame' ? 'end' : 'top'} align={peeked?.kind === 'frame' ? 'start' : 'center'}
+            // A frame's card stays and goes with its trigger; a segue's is the board's to close.
+            onPointerEnter={() => window.clearTimeout(peekTimer.current)}
+            onPointerLeave={() => { if (peeked?.kind === 'segue') later(PEEK_CLOSE_DELAY, () => peek.close()); }}
+          >
+            {peeked ? <Peek target={peeked} map={map} byKey={byKey} recordings={recordings} /> : null}
+          </HoverCardContent>
+        </HoverCard>
       </Canvas>
     </div>
   );
+}
+
+/** A frame's name: its state's label, or its page's or layer's for the state it opens in. */
+function frameName(box: FrameBox) {
+  const state = box.node.states.find((s) => s.id === box.state);
+  return state && state.id !== 'base' && state.id !== 'open' ? state.label : box.node.label;
 }
 
 /** What a hover card says about a frame or a segue: what it is, how often it was seen, and in which recordings. */
@@ -243,8 +275,7 @@ function Peek({ target, map, byKey, recordings }: {
 }) {
   const nameOf = (key: string) => {
     const box = byKey.get(key);
-    const state = box?.node.states.find((s) => s.id === box.state);
-    return box ? (state && state.id !== 'base' && state.id !== 'open' ? state.label : box.node.label) : key;
+    return box ? frameName(box) : key;
   };
   const seen = (evidence: Evidence[]) => {
     const recs = [...new Set(evidence.map((e) => e.recording))];

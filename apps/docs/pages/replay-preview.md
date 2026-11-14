@@ -122,7 +122,7 @@ const player = useRef<ReplayPreviewHandle>(null)
 const steps = getReplayMarkers(events).filter((m) => m.kind !== 'click')
 
 <ReplayPreview events={events} playerRef={player} onTimeUpdate={setTime} />
-{steps.map((m) => <Button onPress={() => player.current?.seek(m.time)}>{m.label}</Button>)}
+{steps.map((m) => <Button onClick={() => player.current?.seek(m.time)}>{m.label}</Button>)}
 ```
 
 ## Still frames
@@ -212,4 +212,4 @@ The [Replay Canvas](https://blamy.github.io/ui/#/blocks/replay-canvas) block lay
 
 ## Styling
 
-The root is `data-slot="replay-preview"` with `data-state` (`loading` · `paused` · `playing`) and `data-chrome`. Its parts are `replay-preview-bar`, `-stage`, `-poster`, `-pointer`, `-controls`, `-scrubber` and `-markers`, plus `-url`, `-center`, `-play`, `-time`, `-speed` and `-fullscreen`. Style them with `[data-slot=…]` selectors or utilities on `className`. Since the move to docstream the scrubber is a native range input, marker tooltips are `title` attributes, the icons are lucide, and the old `replayPreviewVariants` and `replayMarkerVariants` recipes are gone; the look is plain CSS on the tokens above.
+The root is `data-slot="replay-preview"` with `data-state` (`loading` · `paused` · `playing`) and `data-chrome`. Its parts are `replay-preview-bar`, `-stage`, `-poster`, `-pointer`, `-controls`, `-scrubber` and `-markers`, plus `-url`, `-center`, `-play`, `-time`, `-speed` and `-fullscreen`. Style them with `[data-slot=…]` selectors or utilities on `className`. Parts that are UI SDK parts keep their own `data-slot` and carry these names in `data-part` instead: the captions toggle (`[data-part=replay-preview-captions]`) and the DevTools panel's pane, tab list, sections, buttons, chips, nodes, code and detail body (`[data-part=replay-devtools-pane]` …). The scrubber is a UI SDK Slider inside `replay-preview-scrubber` (its fill reads `--replay-progress` on the track), marker tooltips are `title` attributes, the icons are lucide, and the old `replayPreviewVariants` and `replayMarkerVariants` recipes are gone; the look is plain CSS on the tokens above.

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
-import { SideDrawer } from '@/components/ui/side-drawer';
+import { SideDrawer, sideDrawerPageClass } from '@/components/ui/side-drawer';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof SideDrawer> = {
@@ -29,9 +29,9 @@ export const Fixed: Story = {
       <Phone w={760} h={520}>
         <div style={{ display: 'flex', height: '100%' }}>
           <div style={{ flex: 1, position: 'relative', background: 'var(--muted)', display: 'grid', placeItems: 'center', minWidth: 0 }}>
-            <Button size="pill" onPress={() => setOpen((v) => !v)} className="w-[180px]">{open ? 'Close drawer' : 'Open drawer'}</Button>
+            <Button size="pill" onClick={() => setOpen((v) => !v)} className="w-[180px]">{open ? 'Close drawer' : 'Open drawer'}</Button>
           </div>
-          <SideDrawer mode="fixed" open={open} onClose={() => setOpen(false)} title="Activity" width={318}>
+          <SideDrawer presentation="fixed" open={open} onOpenChange={setOpen} title="Activity" width={318}>
             {content}
           </SideDrawer>
         </div>
@@ -41,14 +41,15 @@ export const Fixed: Story = {
 };
 
 /* ── Compact: the overlay as a pushed page ──
-   Below `compactBreakpoint` (520px) the overlay takes the whole host and is pushed like a NavigationStack screen:
+   Below `breakpoint` (520px) the default `auto` presentation takes the whole host and is pushed like a NavigationStack screen:
    the page before it parallaxes and dims, the bar has a back button, and an edge swipe pops it. */
 function CompactPage({ onOpen }: { onOpen: () => void }) {
   return (
-    <div style={{ position: 'absolute', inset: 0, padding: '64px 20px 20px', background: 'var(--background)', color: 'var(--foreground)' }}>
+    // The page under the push opts in to its parallax.
+    <div className={sideDrawerPageClass} style={{ position: 'absolute', inset: 0, padding: '64px 20px 20px', background: 'var(--background)', color: 'var(--foreground)' }}>
       <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5 }}>Maya Lindqvist</div>
       <div style={{ fontSize: 14, color: 'var(--muted-foreground)', margin: '6px 0 22px' }}>Product design · Stockholm</div>
-      <Button size="pill" onPress={onOpen} className="w-[180px]">Show activity</Button>
+      <Button size="pill" onClick={onOpen} className="w-[180px]">Show activity</Button>
     </div>
   );
 }
@@ -58,7 +59,7 @@ function CompactStory({ initial, dark }: { initial: boolean; dark?: boolean }) {
   return (
     <Phone w={390} h={720} dark={dark}>
       <CompactPage onOpen={() => setOpen(true)} />
-      <SideDrawer mode="overlay" open={open} onClose={() => setOpen(false)} title="Activity" backLabel="Maya">
+      <SideDrawer open={open} onOpenChange={setOpen} title="Activity" backLabel="Maya">
         {content}
       </SideDrawer>
     </Phone>
@@ -80,9 +81,9 @@ export const Overlay: Story = {
     return (
       <Phone w={640} h={520}>
         <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
-          <Button size="pill" onPress={() => setOpen(true)} className="w-[180px]">Open overlay</Button>
+          <Button size="pill" onClick={() => setOpen(true)} className="w-[180px]">Open overlay</Button>
         </div>
-        <SideDrawer mode="overlay" open={open} onClose={() => setOpen(false)} title="Activity" width={340}>
+        <SideDrawer presentation="overlay" open={open} onOpenChange={setOpen} title="Activity" width={340}>
           {content}
         </SideDrawer>
       </Phone>

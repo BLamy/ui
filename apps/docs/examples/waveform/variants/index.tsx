@@ -21,8 +21,8 @@ export default function WaveformVariants() {
         <div className="h-12 rounded-ctl bg-success/12 px-1"><Waveform peaks={PEAKS} rate={40} gain={gain} tone="success" from={5} to={10} /></div>
         <div className="h-12 rounded-ctl bg-secondary px-1"><Waveform peaks={PEAKS} rate={40} gain={gain} tone="muted" from={0} to={2} /></div>
       </div>
-      <Slider label={`Gain: ${Math.round(gain * 100)}%`} minValue={0} maxValue={2} step={0.05} value={gain}
-        onChange={(v) => setGain(v as number)} />
+      <Slider label={`Gain: ${Math.round(gain * 100)}%`} min={0} max={2} step={0.05} value={gain}
+        onValueChange={(v) => setGain(v as number)} />
     </div>
   )
 }

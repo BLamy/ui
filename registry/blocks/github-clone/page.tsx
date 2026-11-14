@@ -8,18 +8,21 @@
    api.github.com, and the comment composer posts real comments. Without a token it shows the invented acme/orbit
    (data.ts), offline, with a "Sign in with GitHub" button (or "Unlock keychain" when a saved sign-in is behind the
    passkey). `token` or `github` bypass the keychain; `keychain={false}` keeps it out entirely. */
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
+import {
+  NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLeading, NavigationStackPage, NavigationStackTitle, NavigationStackTrailing,
+} from '@/components/ui/navigation-stack';
+import { PlainButton } from '@/components/ui/plain-button';
 import { TabView, TabViewBar, TabViewList, TabViewPanels } from '@/components/ui/tab-view';
 import { WorkbenchTheme } from '@/components/ui/workbench-theme';
-import { useContainerWidth } from '@/lib/container';
+import { SizeClassProvider, useSizeClass, useSizeClassScope } from '@/lib/container';
 import type { Tailscale } from '@/lib/tailscale';
 import { BLProvider, useAppearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { PasswordsKeychain, useKeychainSignIn, type DeviceAuth } from '../apple-passwords/page';
 import { githubClient, githubRepo, type GitHub } from './github-api';
-import { Box, FlowPanel, Oct, UnderlineTab, ghButton, GITHUB_THEME, GITHUB_TINT, type OctName, type Layout, type Nav } from './parts';
+import { Box, FlowPanel, Oct, UnderlineIndicator, UnderlineTab, ghButton, GITHUB_THEME, GITHUB_TINT, type OctName, type Layout, type Nav } from './parts';
 import { RepoProvider, useLoad, useRepo, Failed, Pending } from './repo-context';
 import { SAMPLE_SOURCE, type RepoSource } from './source';
 import { ActionsView } from './actions-tab';
@@ -60,26 +63,33 @@ export interface GithubCloneProps {
 
 export default function GithubClone({ keychain = true, auth, tailscale, ...props }: GithubCloneProps) {
   const appearance = useAppearance() === 'dark' ? 'dark' : 'light';
-  const [ref, width] = useContainerWidth<HTMLDivElement>(1200);
-  const app = <GithubApp {...props} width={width} dark={appearance === 'dark'} />;
+  // Phone below 640px, GitHub's desktop layout with sidebars from 1012px; the block's box is the size-class scope
+  // its screens and Credenzas read.
+  const [ref, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: GITHUB_BREAKPOINTS });
+  const app = <GithubApp {...props} dark={appearance === 'dark'} />;
   return (
     <BLProvider tint={GITHUB_TINT[appearance]} style={GITHUB_THEME[appearance]} className="min-h-0 bg-background">
       <WorkbenchTheme appearance={appearance} tint={GITHUB_TINT[appearance]} style={GITHUB_THEME[appearance]}
         className="h-full w-full bg-background text-detail text-foreground select-text">
-        <div ref={ref} className="relative flex h-full min-h-0 w-full flex-col">
-          {keychain && !props.token && !props.github
-            ? <PasswordsKeychain compact={width < 640} auth={auth} tailscale={tailscale} protects="the GitHub sign-in this block reads your repositories with">{app}</PasswordsKeychain>
-            : app}
+        <div ref={ref} className="@container/gh relative flex h-full min-h-0 w-full flex-col">
+          <SizeClassProvider value={sizeClass}>
+            {keychain && !props.token && !props.github
+              ? <PasswordsKeychain auth={auth} tailscale={tailscale} protects="the GitHub sign-in this block reads your repositories with">{app}</PasswordsKeychain>
+              : app}
+          </SizeClassProvider>
         </div>
       </WorkbenchTheme>
     </BLProvider>
   );
 }
 
-type AppProps = Omit<GithubCloneProps, 'keychain' | 'auth' | 'tailscale'> & { width: number; dark: boolean };
+type AppProps = Omit<GithubCloneProps, 'keychain' | 'auth' | 'tailscale'> & { dark: boolean };
+
+/** Where the medium (no sidebars) and regular (GitHub's desktop layout) classes start, px of the block's width. */
+const GITHUB_BREAKPOINTS = { medium: 640, regular: 1012 };
 
 /** Picks the source: live with a token (the chosen repository), the sample without one or when chosen. */
-function GithubApp({ width, dark, repo: initialRepo, token, github, ...initial }: AppProps) {
+function GithubApp({ dark, repo: initialRepo, token, github, ...initial }: AppProps) {
   const keychain = useKeychainSignIn('github');
   const liveToken = token ?? keychain?.token;
   const gh = useMemo(() => github ?? (liveToken ? githubClient(liveToken) : null), [github, liveToken]);
@@ -89,19 +99,20 @@ function GithubApp({ width, dark, repo: initialRepo, token, github, ...initial }
   const source: RepoSource = useMemo(() => (gh && !sample ? githubRepo(gh, repo) : SAMPLE_SOURCE), [gh, sample, repo]);
   // The initial screen (a PR, a path) belongs to the first repository shown; another one opens on its Code tab.
   const first = useRef(source.id);
-  const ui: Layout = { phone: width < 640, wide: width >= 1012, dark };
+  const sizeClass = useSizeClassScope();
+  const ui: Layout = { phone: sizeClass === 'compact', wide: sizeClass === 'regular', dark };
   return (
     <>
-      <RepoScreens key={source.id} ui={ui} width={width} source={source} keychain={keychain} openPicker={() => setPicking(true)}
+      <RepoScreens key={source.id} ui={ui} source={source} keychain={keychain} openPicker={() => setPicking(true)}
         {...(source.id === first.current ? initial : {})} />
-      <RepoPicker open={picking} onClose={() => setPicking(false)} compact={ui.phone} keychain={keychain} gh={gh} current={source}
+      <RepoPicker open={picking} onClose={() => setPicking(false)} keychain={keychain} gh={gh} current={source}
         onPick={(full) => { setPicking(false); if (full) { setRepo(full); setSample(false); } else setSample(true); }} />
     </>
   );
 }
 
-function RepoScreens({ ui, width, source, keychain, openPicker, initialTab, initialPullRequest, initialPath = '', initialPullRequestTab }: {
-  ui: Layout; width: number; source: RepoSource; keychain: ReturnType<typeof useKeychainSignIn>; openPicker: () => void;
+function RepoScreens({ ui, source, keychain, openPicker, initialTab, initialPullRequest, initialPath = '', initialPullRequestTab }: {
+  ui: Layout; source: RepoSource; keychain: ReturnType<typeof useKeychainSignIn>; openPicker: () => void;
 } & Pick<GithubCloneProps, 'initialTab' | 'initialPullRequest' | 'initialPath' | 'initialPullRequestTab'>) {
   const [tab, setTab] = useState<GithubTab>(initialTab ?? (initialPullRequest ? 'pulls' : 'code'));
   const [path, setPath] = useState(initialPath);
@@ -127,43 +138,64 @@ function RepoScreens({ ui, width, source, keychain, openPicker, initialTab, init
     <RepoPage ui={ui} tab={tab} onTab={setTab} path={ui.phone ? '' : path} pr={ui.phone ? null : pr} issue={ui.phone ? null : issue}
       nav={nav} labelFilter={labelFilter} prTab={initialPullRequestTab} />
   ) : (
-    <div className="mx-auto w-full max-w-[1280px] px-4 py-6 md:px-6">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-6 @3xl/gh:px-6">
       {repo.error ? <Failed error={repo.error} retry={repo.retry} /> : <Pending label={`Opening ${source.full}…`} />}
     </div>
   );
 
-  /* Phone: the repo page is the root screen; each folder level, the open file, issue and PR push on top. */
-  const screens: Screen[] = [
-    {
-      key: 'repo', title: name, content: page, hideChromeOnScroll: false,
-      leading: <button type="button" aria-label="Choose repository" onClick={openPicker} className={cn(ghButton(), 'ml-2 w-8 px-0')}><Oct name="menu" /></button>,
-      trailing: viewer.data ? <Avatar c={viewer.data} src={viewer.data.avatar} size={28} className="mr-2.5" /> : undefined,
-    },
+  /* Phone: the repo page is the root page; each folder level, the open file, issue and PR push on top. */
+  const pushed: Array<{ key: string; title: string; content: ReactNode }> = [
     ...(repo.data && tab === 'code' && path
       ? path.split('/').map((_, i, parts) => {
           const p = parts.slice(0, i + 1).join('/');
-          return { key: 'path:' + p, title: parts[i], content: <PathView ui={ui} path={p} nav={nav} />, hideChromeOnScroll: false };
+          return { key: 'path:' + p, title: parts[i], content: <PathView ui={ui} path={p} nav={nav} /> };
         })
       : []),
-    ...(repo.data && tab === 'pulls' && pr ? [{ key: 'pr', title: '#' + pr, content: <PullRequestView ui={ui} number={pr} nav={nav} initialTab={initialPullRequestTab} />, hideChromeOnScroll: false }] : []),
-    ...(repo.data && tab === 'issues' && issue ? [{ key: 'issue', title: '#' + issue, content: <IssueView ui={ui} number={issue} nav={nav} />, hideChromeOnScroll: false }] : []),
+    ...(repo.data && tab === 'pulls' && pr ? [{ key: 'pr', title: '#' + pr, content: <PullRequestView ui={ui} number={pr} nav={nav} initialTab={initialPullRequestTab} /> }] : []),
+    ...(repo.data && tab === 'issues' && issue ? [{ key: 'issue', title: '#' + issue, content: <IssueView ui={ui} number={issue} nav={nav} /> }] : []),
   ];
-  const pop = () => (pr && tab === 'pulls' ? setPr(null) : issue && tab === 'issues' ? setIssue(null) : setPath(path.split('/').slice(0, -1).join('/')));
+  const pages = ['repo', ...pushed.map((page) => page.key)];
+  // A pop lands on a shorter stack: the repo page closes what was open on this tab, a folder shows that folder.
+  const popTo = (next: string[]) => {
+    if (next.length >= pages.length) return;
+    const top = next[next.length - 1];
+    if (top?.startsWith('path:')) setPath(top.slice(5));
+    else if (tab === 'pulls') setPr(null);
+    else if (tab === 'issues') setIssue(null);
+    else setPath('');
+  };
 
   return (
     <RepoProvider value={state}>
       {ui.phone ? (
-        <NavigationStack screens={screens} onPop={pop} />
+        <NavigationStack pages={pages} onPagesChange={popTo}>
+          <NavigationStackPage value="repo">
+            <NavigationStackBar hideOnScroll={false}>
+              <NavigationStackLeading>
+                <PlainButton aria-label="Choose repository" onClick={openPicker} className={cn(ghButton(), 'ml-2 w-8 px-0')}><Oct name="menu" /></PlainButton>
+              </NavigationStackLeading>
+              <NavigationStackTitle>{name}</NavigationStackTitle>
+              {viewer.data ? <NavigationStackTrailing><Avatar c={viewer.data} src={viewer.data.avatar} size={28} className="mr-2.5" /></NavigationStackTrailing> : null}
+            </NavigationStackBar>
+            <NavigationStackContent>{page}</NavigationStackContent>
+          </NavigationStackPage>
+          {pushed.map(({ key, title, content }) => (
+            <NavigationStackPage key={key} value={key}>
+              <NavigationStackBar hideOnScroll={false}><NavigationStackTitle>{title}</NavigationStackTitle></NavigationStackBar>
+              <NavigationStackContent>{content}</NavigationStackContent>
+            </NavigationStackPage>
+          ))}
+        </NavigationStack>
       ) : (
         <>
-          <GlobalHeader ui={ui} width={width} />
+          <GlobalHeader ui={ui} />
           <div className="bl-scroll min-h-0 flex-1 overflow-y-auto">{page}</div>
         </>
       )}
       {repo.data ? (
         <>
-          <CloneDialog open={cloneOpen} onClose={() => setCloneOpen(false)} compact={ui.phone} />
-          <LabelFilter open={labelsOpen} onClose={() => setLabelsOpen(false)} compact={ui.phone} value={labelFilter} onChange={setLabelFilter} />
+          <CloneDialog open={cloneOpen} onClose={() => setCloneOpen(false)} />
+          <LabelFilter open={labelsOpen} onClose={() => setLabelsOpen(false)} value={labelFilter} onChange={setLabelFilter} />
         </>
       ) : null}
     </RepoProvider>
@@ -177,27 +209,28 @@ function RepoPage({ ui, tab, onTab, path, pr, issue, nav, labelFilter, prTab }: 
   const { source } = useRepo();
   const counts = useLoad(source.id + ':counts', source.counts).data;
   return (
-    <TabView placement="top" selectedKey={tab} onSelectionChange={(k) => { onTab(k as GithubTab); if (k === 'pulls') nav.openPr(null); if (k === 'issues') nav.openIssue(null); }}>
+    <TabView placement="top" value={tab} onValueChange={(k) => { if (!k) return; onTab(k as GithubTab); if (k === 'pulls') nav.openPr(null); if (k === 'issues') nav.openIssue(null); }}>
       <div className="border-b border-border">
         <RepoHeader ui={ui} />
-        <TabViewBar variant="plain" className="mt-2 overflow-x-auto px-2 [scrollbar-width:none] md:px-4">
+        <TabViewBar variant="plain" className="mt-2 overflow-x-auto px-2 [scrollbar-width:none] @3xl/gh:px-4">
           <TabViewList aria-label="Repository" className="flex gap-1">
-            <UnderlineTab id="code" icon="code" label="Code" />
-            <UnderlineTab id="issues" icon="issue" label="Issues" count={counts?.issues.open} />
-            <UnderlineTab id="pulls" icon="pr" label="Pull requests" count={counts?.pulls.open} />
-            <UnderlineTab id="actions" icon="play" label="Actions" />
-            {!ui.phone ? <UnderlineTab id="insights" icon="pulse" label="Insights" /> : null}
-            {!ui.phone ? <UnderlineTab id="settings" icon="gear" label="Settings" /> : null}
+            <UnderlineTab value="code" icon="code" label="Code" />
+            <UnderlineTab value="issues" icon="issue" label="Issues" count={counts?.issues.open} />
+            <UnderlineTab value="pulls" icon="pr" label="Pull requests" count={counts?.pulls.open} />
+            <UnderlineTab value="actions" icon="play" label="Actions" />
+            {!ui.phone ? <UnderlineTab value="insights" icon="pulse" label="Insights" /> : null}
+            {!ui.phone ? <UnderlineTab value="settings" icon="gear" label="Settings" /> : null}
+            <UnderlineIndicator />
           </TabViewList>
         </TabViewBar>
       </div>
-      <TabViewPanels className="mx-auto w-full max-w-[1280px] px-4 py-6 md:px-6">
-        <FlowPanel id="code">{path ? <PathView ui={ui} path={path} nav={nav} /> : <CodeHome ui={ui} nav={nav} />}</FlowPanel>
-        <FlowPanel id="issues">{issue ? <IssueView ui={ui} number={issue} nav={nav} /> : <IssueList ui={ui} nav={nav} labelFilter={labelFilter} />}</FlowPanel>
-        <FlowPanel id="pulls">{pr ? <PullRequestView ui={ui} number={pr} nav={nav} initialTab={prTab} /> : <PullList ui={ui} nav={nav} />}</FlowPanel>
-        <FlowPanel id="actions"><ActionsView ui={ui} /></FlowPanel>
-        <FlowPanel id="insights"><Placeholder icon="pulse" title="Insights" text="Pulse, contributors, traffic and dependency graphs." /></FlowPanel>
-        <FlowPanel id="settings"><Placeholder icon="gear" title="Settings" text="Only repository admins can change settings." /></FlowPanel>
+      <TabViewPanels className="mx-auto w-full max-w-[1280px] px-4 py-6 @3xl/gh:px-6">
+        <FlowPanel value="code">{path ? <PathView ui={ui} path={path} nav={nav} /> : <CodeHome ui={ui} nav={nav} />}</FlowPanel>
+        <FlowPanel value="issues">{issue ? <IssueView ui={ui} number={issue} nav={nav} /> : <IssueList ui={ui} nav={nav} labelFilter={labelFilter} />}</FlowPanel>
+        <FlowPanel value="pulls">{pr ? <PullRequestView ui={ui} number={pr} nav={nav} initialTab={prTab} /> : <PullList ui={ui} nav={nav} />}</FlowPanel>
+        <FlowPanel value="actions"><ActionsView ui={ui} /></FlowPanel>
+        <FlowPanel value="insights"><Placeholder icon="pulse" title="Insights" text="Pulse, contributors, traffic and dependency graphs." /></FlowPanel>
+        <FlowPanel value="settings"><Placeholder icon="gear" title="Settings" text="Only repository admins can change settings." /></FlowPanel>
       </TabViewPanels>
     </TabView>
   );

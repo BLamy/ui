@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { CommandEmpty, CommandFooter, CommandGroup, CommandInput, CommandItem, CommandList, CommandMenu, CommandPage } from '@/components/ui/command-menu'
+import {
+  CommandMenu, CommandMenuEmpty, CommandMenuFooter, CommandMenuGroup, CommandMenuGroupLabel, CommandMenuInput, CommandMenuItem,
+  CommandMenuList, CommandMenuPage, CommandMenuShortcut,
+} from '@/components/ui/command-menu'
 
 const projects = [
   { name: 'ui', path: '~/Code/ui', color: '#30D158' },
@@ -29,6 +32,10 @@ function Monogram({ name, color }: { name: string; color: string }) {
   )
 }
 
+/** Keys the app handles itself: shown, not registered, so the demo never takes them from the page.
+    `shortcut` on a command would register them and run it. */
+const keys = (shortcut: string) => <CommandMenuShortcut shortcut={shortcut} />
+
 const setupRequired = (
   <Badge variant="outline" style={{ borderRadius: 6, color: 'var(--warning)' }}>
     Setup Required
@@ -40,35 +47,37 @@ export default function NestedPages() {
   return (
     <div style={{ display: 'grid', gap: 12, width: 'min(560px, 100%)' }}>
       <CommandMenu aria-label="Command menu">
-        <CommandInput placeholder="Search commands and projects…" />
-        <CommandList maxHeight={320}>
-          <CommandEmpty>No matching commands</CommandEmpty>
-          <CommandPage id="root">
-            <CommandGroup heading="Actions">
-              <CommandItem
+        <CommandMenuInput placeholder="Search commands and projects…" />
+        <CommandMenuEmpty>No matching commands</CommandMenuEmpty>
+        <CommandMenuList className="max-h-80">
+          <CommandMenuPage>
+            <CommandMenuGroup>
+              <CommandMenuGroupLabel>Actions</CommandMenuGroupLabel>
+              <CommandMenuItem
                 icon="square-pencil"
                 title="New thread in ui"
-                shortcut="⇧⌘O"
+                trailing={keys('mod+shift+o')}
                 onSelect={() => setLast('New thread in ui')}
               />
-              {/* `page` pushes a page and shows the chevron */}
-              <CommandItem icon="square-pencil" title="New thread in…" page="projects" />
-              <CommandItem
+              {/* `page` opens a page and shows the chevron */}
+              <CommandMenuItem icon="square-pencil" title="New thread in…" page="projects" />
+              <CommandMenuItem
                 icon="link"
                 title="Copy thread ID"
                 description="b7578c63-c54a-4669-a6a1-51348cf0177b"
-                shortcut="⇧⌘C"
+                trailing={keys('mod+shift+c')}
                 onSelect={() => setLast('Copied thread ID')}
               />
-              <CommandItem icon="branch" title="Show linked pull requests" disabled />
-              <CommandItem icon="folder-plus" title="Add project" page="sources" chevron={false} />
-            </CommandGroup>
-          </CommandPage>
+              <CommandMenuItem icon="branch" title="Show linked pull requests" disabled />
+              <CommandMenuItem icon="folder-plus" title="Add project" page="sources" chevron={false} />
+            </CommandMenuGroup>
+          </CommandMenuPage>
           {/* numbered: ⌘1–⌘9 shown on the first nine visible rows */}
-          <CommandPage id="projects" numbered>
-            <CommandGroup heading="Projects">
+          <CommandMenuPage value="projects" title="Projects" numbered>
+            <CommandMenuGroup>
+              <CommandMenuGroupLabel>Projects</CommandMenuGroupLabel>
               {projects.map((p) => (
-                <CommandItem
+                <CommandMenuItem
                   key={p.name}
                   icon={<Monogram {...p} />}
                   title={p.name}
@@ -76,25 +85,26 @@ export default function NestedPages() {
                   onSelect={() => setLast(`New thread in ${p.name}`)}
                 />
               ))}
-            </CommandGroup>
-          </CommandPage>
-          <CommandPage id="sources">
-            <CommandGroup heading="Sources">
-              <CommandItem icon="folder-plus" title="Local folder" description="Browse a folder on disk" onSelect={() => setLast('Local folder')} />
-              <CommandItem icon="link" title="Git URL" description="Clone from a remote URL" onSelect={() => setLast('Git URL')} />
-              {/* dimmed: greyed but still selectable */}
-              <CommandItem
+            </CommandMenuGroup>
+          </CommandMenuPage>
+          <CommandMenuPage value="sources" title="Add project">
+            <CommandMenuGroup>
+              <CommandMenuGroupLabel>Sources</CommandMenuGroupLabel>
+              <CommandMenuItem icon="folder-plus" title="Local folder" description="Browse a folder on disk" onSelect={() => setLast('Local folder')} />
+              <CommandMenuItem icon="link" title="Git URL" description="Clone from a remote URL" onSelect={() => setLast('Git URL')} />
+              {/* dimmed: greyed but still runnable */}
+              <CommandMenuItem
                 icon="network"
                 title="Bitbucket repository"
                 description="Clone Bitbucket workspace/repository"
                 dimmed
-                badge={setupRequired}
+                trailing={setupRequired}
                 onSelect={() => setLast('Bitbucket needs setup')}
               />
-            </CommandGroup>
-          </CommandPage>
-        </CommandList>
-        <CommandFooter />
+            </CommandMenuGroup>
+          </CommandMenuPage>
+        </CommandMenuList>
+        <CommandMenuFooter />
       </CommandMenu>
       <div style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
         Last action: <b style={{ color: 'var(--foreground)' }}>{last}</b>

@@ -24,12 +24,12 @@ const RESPONSE = {
 const ROOT = nodeFromValue(RESPONSE, { defaultExpanded: true })
 
 // `nodeFromValue` needs no loader: children are worked out as rows open, so a value can be huge or point back at itself.
-// With `onSelect` a press selects, and the chevron or a double press opens. ⌘C copies the focused value as JSON.
+// With `onValueChange` a press selects, and the chevron, a double press or Return opens. ⌘C copies the focused value as JSON.
 export default function Json() {
   const [selected, setSelected] = useState<ObjectTreeNode | null>(null)
   return (
     <ThemeScope className="mx-auto flex h-96 max-w-2xl flex-col overflow-hidden rounded-card bg-card shadow-hairline">
-      <ObjectTree aria-label="A response" root={ROOT} onSelect={setSelected} className="min-h-0 flex-1 py-1" />
+      <ObjectTree aria-label="A response" root={ROOT} onValueChange={(_key, { node }) => setSelected(node)} className="min-h-0 flex-1 py-1" />
       <div className="shrink-0 truncate px-3 py-2 text-footnote text-muted-foreground shadow-hairline-t">
         {selected?.value ? `${selected.name}: ${previewText(selected.value)}` : 'Nothing selected'}
       </div>

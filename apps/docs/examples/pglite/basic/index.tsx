@@ -37,14 +37,14 @@ function Notes() {
         }}
       >
         <Input aria-label="New note" placeholder="Write a note" value={draft} onChange={(e) => setDraft(e.target.value)} />
-        <Button type="submit" isDisabled={isPending || !draft.trim()}>Add</Button>
+        <Button type="submit" disabled={isPending || !draft.trim()}>Add</Button>
       </form>
       {error ? <p role="alert" className="text-footnote text-destructive">{error.message}</p> : null}
       <ul className="grid gap-1.5" aria-busy={isLoading}>
         {rows.map((n) => (
           <li key={n.id} className="flex items-center gap-2 rounded-ctl bg-card px-3 py-2 text-subhead shadow-hairline">
             <span className="min-w-0 flex-1 truncate">{n.body}</span>
-            <Button variant="ghost" size="sm" aria-label={`Delete note ${n.id}`} onPress={() => void run('delete from notes where id = $1', [n.id])}>
+            <Button variant="ghost" size="sm" aria-label={`Delete note ${n.id}`} onClick={() => void run('delete from notes where id = $1', [n.id])}>
               Delete
             </Button>
           </li>

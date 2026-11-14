@@ -1,7 +1,6 @@
 import { useState } from 'react'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { TextField } from '@/components/ui/text-field'
 import { formatOccurrence, useTimeParse } from '@/lib/gpu-time'
 
 // useTimeParse is the engine under TimeInput: it debounces, drops answers that
@@ -19,10 +18,10 @@ export default function UseTimeParse() {
   const first = result?.occurrences[0]
   return (
     <div className="mx-auto grid max-w-md gap-3">
-      <TextField value={text} onChange={setText}>
-        <Label variant="field" className="text-foreground/70">Remind me</Label>
-        <Input />
-      </TextField>
+      <Field>
+        <FieldLabel variant="field" className="text-foreground/70">Remind me</FieldLabel>
+        <Input value={text} onValueChange={setText} />
+      </Field>
       <p className="m-0 min-h-[18px] px-1 text-footnote text-foreground/70" aria-live="polite">
         {error
           ? error.message

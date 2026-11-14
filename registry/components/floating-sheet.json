@@ -1,11 +1,12 @@
 {
   "name": "floating-sheet",
   "title": "FloatingSheet",
-  "description": "A floating card that grows into the full page along one drag, over a map or canvas.",
+  "description": "A floating card that grows into the full page along one drag, over a map or canvas: UI SDK's Drawer with snap points, modal only above its peek, folding into a FAB.",
   "page": "floating-sheet",
   "exports": [
     "FloatingSheet",
-    "useFloatingSheet"
+    "useFloatingSheet",
+    "useHideOnScroll"
   ],
   "imports": [
     "FloatingSheet",

@@ -1,23 +1,28 @@
 {
   "name": "sheet",
   "title": "Sheet",
-  "description": "A modal panel pinned to an edge: the iOS card sheet with a grabber at the bottom, side panels on the left and right, or a drop-down from the top.",
+  "description": "A modal panel pinned to an edge, on UI SDK's Drawer: the iOS card sheet with a grabber at the bottom, side panels on the left and right, or a drop-down from the top; it follows a drag, rests on snap points and springs away.",
   "page": "sheet",
   "exports": [
     "Sheet",
+    "SheetTrigger",
+    "SheetBackdrop",
     "SheetContent",
+    "SheetHandle",
     "SheetHeader",
     "SheetTitle",
     "SheetDescription",
     "SheetBody",
     "SheetFooter",
     "SheetClose",
-    "sheetVariants"
+    "sheetVariants",
+    "createSheetController"
   ],
   "imports": [
     "Sheet",
+    "SheetTrigger",
+    "SheetBackdrop",
     "SheetContent",
-    "SheetHeader",
     "SheetTitle"
   ]
 }

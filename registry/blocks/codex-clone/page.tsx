@@ -36,7 +36,7 @@ export default function CodexClone({ appearance, tint = DEFAULT_TINT, initialCha
   return (
     <AppearanceProvider value={look}>
       <BLProvider tint={tint} className="bg-background">
-        <SplitView aria-label="Codex" selection={{ sidebar: codex.current.id }} defaultCompactColumn="supplementary" supplementaryVisible={codex.current.kind === 'dot'}>
+        <SplitView aria-label="Codex" value={{ sidebar: codex.current.id }} defaultCompactColumn="supplementary" supplementaryOpen={codex.current.kind === 'dot'}>
           <ChatSidebar codex={codex} inbox={inbox} />
           <ChatPane codex={codex} />
           <DetailPane codex={codex} />

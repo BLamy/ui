@@ -1,6 +1,6 @@
 # RadioGroup
 
-One choice from a short list, on react-aria's `RadioGroup` and `Radio`: round 22px radios that fill their ring with the tint when selected. Arrow keys move the selection; Tab enters and leaves the group as one stop. For the iOS segmented-control look use `Segmented`; for several independent choices use [Checkbox](https://blamy.github.io/ui/#/checkbox).
+One choice from a short list, on UI SDK's `RadioGroup` and `Radio`: round 22px radios that fill their ring with the tint when selected. Arrow keys move the selection; Tab enters and leaves the group as one stop. For the iOS segmented-control look use `Segmented`; for several independent choices use [Checkbox](https://blamy.github.io/ui/#/checkbox).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -27,28 +27,41 @@ import { RadioGroup, Radio } from '@brett_lamy/ui'
 
 ## Orientation and disabled options
 
-Children are `Radio`s, each with a `value`; put a `Label` first to name the group. `RadioGroup` is vertical by default; `orientation="horizontal"` lays the radios in a wrapping row. That row includes the label, so in a horizontal group wrap the radios in their own `div` with a flex layout to keep the label above.
+Children are `Radio`s, each with a `value`. A `Radio` is the circle itself (with its `RadioIndicator`, the dot): wrap it and its text in a [Label](https://blamy.github.io/ui/#/label) with `variant="control"` so the whole line presses it. Name the group with `aria-label`, a `Label` whose `htmlFor` is the group's `id`, or the `FieldLabel` of a [Field](https://blamy.github.io/ui/#/field) around it. `value` / `defaultValue` + `onValueChange(value, details)` hold the choice. `RadioGroup` is vertical by default; `orientation="horizontal"` lays the radios in a wrapping row.
 
 {% demo src="radio-group/plans" %}
 
 ```tsx
-<RadioGroup value={plan} onChange={setPlan}>
-  <Label variant="field">Plan</Label>
-  <Radio value="free">Free</Radio>
-  <Radio value="pro">Pro · $8 / month</Radio>
-  <Radio value="enterprise" isDisabled>Enterprise</Radio>
+<Label variant="field" htmlFor="plan">Plan</Label>
+<RadioGroup id="plan" value={plan} onValueChange={setPlan}>
+  <Label variant="control"><Radio value="free" />Free</Label>
+  <Label variant="control"><Radio value="pro" />Pro · $8 / month</Label>
+  <Label variant="control"><Radio value="enterprise" disabled />Enterprise</Label>
 </RadioGroup>
 ```
 
+To pick from elsewhere, pass a controller from `createRadioGroupController()` as `controller`.
+
 ## Validation
 
-Set `isRequired` on the group (or `isInvalid`, or a `validate` function) and add a `FieldError`: the radios turn red and the message shows after a submit inside a [Form](https://blamy.github.io/ui/#/form) (or live with `validationBehavior="aria"`).
+Put a `required` group in a [Field](https://blamy.github.io/ui/#/field) with a `FieldError`: submitting a [Form](https://blamy.github.io/ui/#/form) without a choice turns the radios red, shows the error under the group and moves focus to it. `invalid` on the Field marks it invalid yourself.
 
 {% demo src="radio-group/validation" %}
 
+```tsx
+<Field>
+  <FieldLabel variant="field">Data region</FieldLabel>
+  <RadioGroup name="region" required>
+    <Label variant="control"><Radio value="us" />United States</Label>
+    <Label variant="control"><Radio value="eu" />European Union</Label>
+  </RadioGroup>
+  <FieldError match="valueMissing">Choose where your data is stored.</FieldError>
+</Field>
+```
+
 ## Accessibility
 
-The group is `role="radiogroup"`, named by its `Label` (or `aria-label`), and each `Radio` is a native radio input inside its label. Arrow keys move focus and selection together. A disabled option is skipped by arrow navigation. A group with no label is announced without context, so always label it.
+The group is `role="radiogroup"` and each `Radio` a `<button>` with the `radio` role and `aria-checked`, with a hidden native radio for forms. The group is one tab stop; arrow keys on both axes move focus and selection together and skip disabled options. A group with no name is announced without context, so always name it.
 
 ## Props
 
@@ -56,23 +69,29 @@ The group is `role="radiogroup"`, named by its `Label` (or `aria-label`), and ea
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `orientation` | `vertical` | `vertical` (column, `gap-3`) or `horizontal` (wrapping row, `gap-5`); also sets the arrow-key axis. |
-| `value` / `defaultValue` / `onChange` | — | The selected radio's `value` (string). |
-| `name`, `isRequired`, `isDisabled`, `isReadOnly`, `isInvalid`, `validate`, `validationBehavior` | — | As in react-aria's `RadioGroup`. |
-| `className` | — | Merged; may be a function of the render state. |
+| `orientation` | `vertical` | `vertical` (column, `gap-3`) or `horizontal` (wrapping row, `gap-5`). |
+| `value` / `defaultValue` / `onValueChange` | — | The checked radio's `value`; the callback gets `(value, details)` with `details.reason` and `details.cancel()`. |
+| `name`, `required`, `disabled`, `readOnly` | — | Form name and constraints for the whole group. |
+| `loop` | `true` | Whether arrow keys wrap from the last radio to the first. |
+| `controller` | — | From `createRadioGroupController()`. |
+| `className` | — | Merged; may be a function of the state. |
 
 ### Radio
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `value` | — | Required; the group's value when selected. |
-| `isDisabled` | `false` | Dims to 40% and skips it. |
-| `children` | — | The label. |
-| `className` | — | Merged onto the row. |
+| `value` | — | Required; the group's value when checked. |
+| `disabled` | `false` | Dims to 40% and skips it. |
+| `children` | `<RadioIndicator />` | Replace the dot. |
+| `className` | — | Merged onto the circle. |
+
+### RadioIndicator
+
+The white dot inside a checked radio; it has `data-starting-style` / `data-ending-style` as it comes and goes.
 
 ## Styling
 
-`data-slot="radio-group"`, `"radio"` and `"radio-indicator"`. The indicator reads the row's `data-selected`, `data-pressed`, `data-focus-visible` and `data-invalid`. `radioGroupVariants({ orientation })` and `radioVariants()` return the class lists.
+`data-slot="radio-group"`, `"radio"` and `"radio-indicator"`. A radio carries `data-checked` / `data-unchecked`, `data-disabled`, `data-readonly` and `data-required`; pressed is `active:` and keyboard focus `focus-visible:`. Invalid is `aria-invalid` (which a Field writes) on the radio or the group. `radioGroupVariants({ orientation })` and `radioVariants()` return the class lists.
 
 ## cva recipes
 
@@ -98,7 +117,7 @@ group flex
 Defined in `@/components/ui/radio-group`. Base classes:
 
 ```text
-[ 'box-border size-[22px] shrink-0 rounded-full border-[1.5px] border-tertiary-foreground bg-transparent', 'transition-[border-width,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'group-data-selected:border-[7px] group-data-selected:border-primary group-data-selected:bg-white', 'group-data-pressed:scale-90 group-data-focus-visible:ring-[3px] group-data-focus-visible:ring-ring/45', 'group-data-invalid:border-destructive', ]
+[ 'box-border grid size-[22px] shrink-0 cursor-pointer rounded-full border-[1.5px] border-tertiary-foreground bg-transparent p-0 outline-none', 'transition-[border-width,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'data-checked:border-[7px] data-checked:border-primary', 'active:not-data-disabled:scale-90 focus-visible:ring-[3px] focus-visible:ring-ring/45', // Invalid: the radio itself (`aria-invalid`, which a Field writes on its control) or the group around it. 'aria-invalid:border-destructive group-aria-invalid:border-destructive', 'data-disabled:cursor-default data-disabled:opacity-40', ]
 ```
 
 No variants.

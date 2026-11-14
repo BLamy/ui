@@ -1,21 +1,34 @@
 {
   "name": "select",
   "title": "Select",
-  "description": "A pop-up button that opens a list of options: react-aria's Select with a filled or plain trigger, sectioned items and typeahead on the closed button.",
+  "description": "A pop-up button that opens a list of options: UI SDK's Select with a filled or plain trigger, groups, options from data, typeahead on the closed button, Field integration and a sheet on small touch screens.",
   "page": "select",
   "exports": [
     "Select",
+    "SelectLabel",
     "SelectTrigger",
     "SelectValue",
     "SelectContent",
     "SelectItem",
-    "SelectSection",
-    "selectTriggerVariants"
+    "SelectGroup",
+    "SelectGroupLabel",
+    "SelectSeparator",
+    "selectTriggerVariants",
+    "createSelectController"
   ],
   "imports": [
     "Select",
     "SelectTrigger",
     "SelectContent",
     "SelectItem"
+  ],
+  "types": [
+    "SelectProps",
+    "SelectLabelProps",
+    "SelectTriggerProps",
+    "SelectContentProps",
+    "SelectItemProps",
+    "SelectController",
+    "ListData"
   ]
 }

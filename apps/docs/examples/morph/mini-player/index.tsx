@@ -152,8 +152,7 @@ export default function MiniPlayer() {
               key="mini"
               id="player"
               radius={14}
-              as="button"
-              type="button"
+              render={<button type="button" />}
               onClick={() => setOpen(true)}
               aria-label="Open Now Playing"
               style={{

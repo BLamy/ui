@@ -40,3 +40,9 @@ apps/docs/public/llms.txt
 # The FFmpeg wasm build the docs serve (node tools/ffmpeg-wasm/build.mjs); ffmpeg-worker.js comes from packages/ui.
 apps/docs/public/ffmpeg/
 packages/ui-sdk-*/docs/
+
+# Local secrets (OPENAI_API_KEY for pnpm agent-test). Never committed.
+.env
+.env.*
+!.env.example
+tools/agent-test/.results/

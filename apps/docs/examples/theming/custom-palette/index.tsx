@@ -45,7 +45,7 @@ export default function SepiaReader() {
                 title="Pride and Prejudice"
                 subtitle="Chapter 3 · 42% read"
                 accessory="chevron"
-                onPress={() => {}}
+                onClick={() => {}}
               />
               <ListRow
                 title="Serif font"
@@ -54,7 +54,7 @@ export default function SepiaReader() {
                   <Switch
                     aria-label="Serif font"
                     checked={serif}
-                    onChange={setSerif}
+                    onCheckedChange={setSerif}
                   />
                 }
               />

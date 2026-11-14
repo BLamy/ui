@@ -1,6 +1,6 @@
 # Disclosure
 
-Show-and-hide sections built on react-aria's `Disclosure`: a trigger row with a turning chevron and a panel whose height springs open while its content fades down into place. `DisclosureGroup` (exported as `Accordion`) groups several of them so they share expanded state, and a single `Disclosure` on its own is one collapsible section. Use it for FAQs, settings groups and "show more" blocks. For content that swaps rather than expands, use [Tabs](https://blamy.github.io/ui/#/tabs).
+Show-and-hide sections on UI SDK's `Collapsible` and `Accordion`: a trigger row with a turning chevron and a panel whose height springs open while its content fades down into place. A `Disclosure` on its own is one collapsible section; a `DisclosureGroup` is an accordion of items that share their open state (UI SDK's `Accordion`, with the `DisclosureGroup` part names). Use it for FAQs, settings groups and "show more" blocks. For content that swaps rather than expands, use [Tabs](https://blamy.github.io/ui/#/tabs).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -10,7 +10,8 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  Accordion, AccordionItem, AccordionTrigger, AccordionContent,
+  DisclosureGroup, DisclosureGroupItem, DisclosureGroupHeader,
+  DisclosureGroupTrigger, DisclosureGroupPanel,
 } from '@/components/ui/disclosure'
 ```
 {% endtab %}
@@ -23,93 +24,123 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  Accordion, AccordionItem, AccordionTrigger, AccordionContent,
+  DisclosureGroup, DisclosureGroupItem, DisclosureGroupHeader,
+  DisclosureGroupTrigger, DisclosureGroupPanel,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
 
-The shadcn names are aliases of the same parts: `Accordion` = `DisclosureGroup`, `AccordionItem` = `Disclosure`, `AccordionTrigger` = `DisclosureTrigger`, `AccordionContent` = `DisclosurePanel`.
+The two families have the same look:
 
-## Accordion
+| Family | Parts | Built on |
+| --- | --- | --- |
+| One section | `Disclosure`, `DisclosureTrigger`, `DisclosurePanel` | UI SDK `Collapsible` |
+| A group | `DisclosureGroup`, `DisclosureGroupItem`, `DisclosureGroupHeader`, `DisclosureGroupTrigger`, `DisclosureGroupPanel` | UI SDK `Accordion` |
 
-Each item needs an `id`; the group tracks open items by id. By default one item is open at a time, and `defaultExpandedKeys` opens one at first. A disabled item (`isDisabled`) stays closed, dims and is skipped by press.
+## A group
+
+Each item needs a `value`; the group's value is the array of open items. By default one item is open at a time, and `defaultValue` opens some at first. Put each trigger in a `DisclosureGroupHeader`, the heading that places the item in the page's outline. A `disabled` item stays as it is and dims, but stays in the tab order so it can be found.
 
 {% demo src="disclosure/faq" %}
 
 ```tsx
-<Accordion defaultExpandedKeys={['billing']}>
-  <AccordionItem id="billing">
-    <AccordionTrigger>When am I billed?</AccordionTrigger>
-    <AccordionContent>On the same day each month.</AccordionContent>
-  </AccordionItem>
+<DisclosureGroup defaultValue={['billing']}>
+  <DisclosureGroupItem value="billing">
+    <DisclosureGroupHeader>
+      <DisclosureGroupTrigger>When am I billed?</DisclosureGroupTrigger>
+    </DisclosureGroupHeader>
+    <DisclosureGroupPanel>On the same day each month.</DisclosureGroupPanel>
+  </DisclosureGroupItem>
   …
-</Accordion>
+</DisclosureGroup>
 ```
+
+`collapsible={false}` keeps the open item open until another one replaces it.
 
 ## Inset and controlled
 
-`variant="inset"` turns the group into an iOS grouped card (rounded, card color, 16px side padding); the rows keep their hairline dividers. `allowsMultipleExpanded` lets several items stay open. `expandedKeys` / `onExpandedChange` make the group controlled — a `Set` of ids, so "Expand all" is `new Set(ids)`.
+`variant="inset"` turns the group into an iOS grouped card (rounded, card color, 16px side padding); the rows keep their hairline dividers. `multiple` lets several items stay open. `value` / `onValueChange` make the group controlled — an array of item values, so "Expand all" is `setOpen(ids)`. `onValueChange(value, details)` gets the reason (`trigger-press`, `find-in-page` or `imperative`), and an item's own `onOpenChange(open, details)` runs first and can `details.cancel()` the change.
 
 {% demo src="disclosure/settings" %}
 
 ```tsx
-const [open, setOpen] = useState<Set<Key>>(new Set(['privacy']))
+const [open, setOpen] = useState(['privacy'])
 
-<DisclosureGroup variant="inset" allowsMultipleExpanded expandedKeys={open} onExpandedChange={setOpen}>
-  <Disclosure id="privacy">
-    <DisclosureTrigger>Privacy</DisclosureTrigger>
-    <DisclosurePanel>…</DisclosurePanel>
-  </Disclosure>
+<DisclosureGroup variant="inset" multiple value={open} onValueChange={setOpen}>
+  <DisclosureGroupItem value="privacy">
+    <DisclosureGroupHeader>
+      <DisclosureGroupTrigger>Privacy</DisclosureGroupTrigger>
+    </DisclosureGroupHeader>
+    <DisclosureGroupPanel>…</DisclosureGroupPanel>
+  </DisclosureGroupItem>
 </DisclosureGroup>
 ```
 
+To open items from outside the tree, pass a controller: `const faq = createAccordionController()`, `<DisclosureGroup controller={faq}>`, then `faq.open('billing')`, `faq.openAll()` (with `multiple`) or `faq.closeAll()`.
+
 ## A single disclosure
 
-Outside a group, `Disclosure` owns its own state: `defaultExpanded`, or `isExpanded` with `onExpandedChange`.
+`Disclosure` owns its own state: `defaultOpen`, or `open` with `onOpenChange(open, details)`. `createCollapsibleController()` drives it from outside (`open()`, `close()`, `toggle()`).
 
 ```tsx
-<Disclosure defaultExpanded>
+<Disclosure defaultOpen>
   <DisclosureTrigger>Advanced options</DisclosureTrigger>
   <DisclosurePanel>…</DisclosurePanel>
 </Disclosure>
 ```
 
+`DisclosureTrigger` is not wrapped in a heading. Where the section belongs in the outline, put it in one: `<h3 className="m-0 flex"><DisclosureTrigger>…</DisclosureTrigger></h3>`.
+
 ## Accessibility
 
-react-aria wires the trigger to the panel: the trigger is a button with `aria-expanded` and `aria-controls`, the panel is a `role="group"` region labelled by it, and Enter or Space toggles. Collapsed panels use `hidden="until-found"`, so the browser's find-in-page opens the section that contains a match. The trigger is wrapped in a heading — level 3 by default, set `level` on `DisclosureTrigger` to fit your outline — so screen-reader users can navigate by heading. Name each trigger with its visible text; there is nothing else to label. Motion is skipped under `prefers-reduced-motion`.
+UI SDK wires the trigger to the panel: the trigger is a button with `aria-expanded`, and `aria-controls` while its panel is mounted; the panel is a region labelled by its trigger; Enter or Space toggles, and closing a panel with focus inside it returns focus to the trigger. In a group each trigger sits in a heading — an `h3` by default; `render={<h4 />}` on the header changes the level. Closed panels stay in the page, hidden until found (`hiddenUntilFound`, on by default here), so the browser's find in page opens the section that holds a match. Name each trigger with its visible text; there is nothing else to label. Motion is skipped under `prefers-reduced-motion`.
 
 ## Props
 
-### DisclosureGroup / Accordion
+### DisclosureGroup
 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `variant` | `default` | `default`: rows with hairline dividers, no container. `inset`: a rounded card-colored group with side padding. |
-| `allowsMultipleExpanded` | `false` | Let more than one item be open. |
-| `expandedKeys` / `defaultExpandedKeys` | — | Controlled / initial set of open item ids. |
-| `onExpandedChange` | — | Called with the new `Set` of ids. |
-| `isDisabled` | `false` | Disable every item. |
+| `multiple` | `false` | Let more than one item be open. |
+| `value` / `defaultValue` / `onValueChange` | — | Controlled / initial array of open item values. `onValueChange(value, details)`. |
+| `collapsible` | `true` | `false` keeps the open item open until another replaces it. |
+| `disabled` | `false` | Disable every item. |
+| `keepMounted` | `false` | Keep closed panels' content mounted (hidden), to keep their state. |
+| `hiddenUntilFound` | `true` | Keep closed panels findable by the browser's find in page. |
+| `controller` | — | From `createAccordionController()`. |
 
-### Disclosure / AccordionItem
-
-| Prop | Default | Effect |
-| --- | --- | --- |
-| `id` | — | The item's key in a group. |
-| `isExpanded` / `defaultExpanded` / `onExpandedChange` | — | State for a disclosure used on its own. |
-| `isDisabled` | `false` | Disables the trigger (dimmed, not pressable). |
-
-### DisclosureTrigger and DisclosurePanel
+### DisclosureGroupItem
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `level` (trigger) | `3` | Heading level of the trigger's wrapper. |
-| `children` | — | Trigger label; the chevron is added after it and is not configurable. |
-| `className` | — | Merged last on the trigger button / on the panel (not on the inner padded wrapper, which adds 14px of bottom padding). |
+| `value` | — | The item's key in the group. |
+| `disabled` | `false` | Disables the item's trigger (dimmed, still focusable). |
+| `onOpenChange` / `onOpenChangeComplete` | — | `(open, details)` before the group's `onValueChange` (cancelable), and `(open)` after the panel's animation. |
+
+### Disclosure
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `open` / `defaultOpen` / `onOpenChange` | — | Controlled / initial state. `onOpenChange(open, details)`. |
+| `onOpenChangeComplete` | — | `(open)`, after the panel's animation. |
+| `disabled` | `false` | Disables the trigger. |
+| `controller` | — | From `createCollapsibleController()`. |
+
+### Triggers, headers and panels
+
+| Part | Notes |
+| --- | --- |
+| `DisclosureTrigger` / `DisclosureGroupTrigger` | A button; `children` are the label, and the chevron is added after it. `className` may be a function of state (`({ open }) => …`). |
+| `DisclosureGroupHeader` | The heading around a group trigger, an `h3` unless you `render` another. |
+| `DisclosurePanel` / `DisclosureGroupPanel` | `keepMounted`, `hiddenUntilFound` (default `true`). `className` goes on the panel, not on the inner padded wrapper (14px of bottom padding). |
+
+All parts accept `className` (merged last), `style` and `render`.
 
 ## Styling
 
-Slots: `data-slot="disclosure-group"`, `disclosure`, `disclosure-trigger`, `disclosure-panel`. React-aria state attributes are on each: `data-expanded` and `data-disabled` on the item, plus `data-pressed`, `data-focus-visible` on the trigger. The item is a `group/disclosure`, which is how the chevron turns 90° and the panel content fades; target it the same way in your own children (`group-data-expanded/disclosure:…`). The panel height transitions from react-aria's `--disclosure-panel-height` variable.
+Slots are UI SDK's: `data-slot="collapsible"`, `collapsible-trigger`, `collapsible-panel` for a `Disclosure`, and `accordion`, `accordion-item`, `accordion-header`, `accordion-trigger`, `accordion-panel` for a group. The item and each of its parts carry `data-open` or `data-closed`, and `data-disabled`; hover, press and keyboard focus are the native `hover:`, `active:` and `focus-visible:`. The item (or the `Disclosure`) is a `group/disclosure`, which is how the chevron turns 90° — target it the same way in your own children (`group-data-open/disclosure:…`). The panel's height transitions from UI SDK's measured `--collapsible-panel-height` / `--accordion-panel-height`, from and to zero under `data-starting-style` and `data-ending-style`, and the panel is a `group/disclosure-panel` so its content can fade with it.
 
 ## cva recipes
 

@@ -1,4 +1,4 @@
-import { formatBytes } from '@/lib/format-bytes';
+import { formatFileSize } from '@ui-sdk/core/file-input';
 import type { RowId } from '@/lib/log-list-model';
 import { formatDuration } from '@/lib/sql-format';
 
@@ -70,7 +70,7 @@ export function requestDurationText(row: Pick<RequestRow, 'duration' | 'pending'
 }
 
 export function requestSizeText(row: Pick<RequestRow, 'size'>): string {
-  return row.size === undefined ? '—' : formatBytes(row.size);
+  return row.size === undefined ? '—' : formatFileSize(row.size);
 }
 
 export function requestTone(row: Pick<RequestRow, 'tone' | 'failed' | 'status' | 'pending'>): RequestTone {
@@ -184,8 +184,9 @@ export interface RequestColumnSize {
   maxWidth?: number;
   /** Share of the spare width, like `fr`. Without it the column keeps `width`. */
   flex?: number;
-  /** Hidden when the table is narrower than this, in px. */
-  hideBelow?: number;
+  /** Hidden while the table's own size class is below this one: `'regular'` leaves the column out of a medium or
+   *  compact table. */
+  hideBelow?: 'medium' | 'regular';
 }
 
 const COLUMN_MIN = 40;

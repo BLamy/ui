@@ -43,24 +43,26 @@ export function Badge({ className, variant, ...props }: BadgeProps) {
 }
 ```
 
-That is `Badge`, abridged. Interactive parts sit on [React Aria Components](https://react-aria.adobe.com/), whose `className` may be a function of the render state; there the recipe goes through `composeRenderProps(className, (cls) => cn(buttonVariants({ variant, size }), cls))`, so a function `className` keeps working.
+That is `Badge`, abridged. Interactive parts sit on [UI SDK](https://ui-sdk.dev), whose `className` may be a function of the part's state; there the recipe goes through `cx(buttonVariants({ variant, size }), className)` from `@/lib/utils`, so a function `className` keeps working.
 
 ## Use a recipe on any element
 
 A recipe is a function from options to a class string. Put a button's look on a link, a router link or a plain `<a>`:
 
 ```tsx
-import { Link } from 'react-aria-components'
-import { buttonVariants } from '@/components/ui/button'
+import { Link } from 'react-router'
+import { Button, buttonVariants } from '@/components/ui/button'
 
 <a href="/docs" className={buttonVariants({ variant: 'link' })}>Docs</a>
 
-<Link href="/pricing" className={buttonVariants({ size: 'lg' })}>
+<Link to="/pricing" className={buttonVariants({ size: 'lg' })}>
   See pricing
 </Link>
+
+<Button render={<a href="/pricing" />} size="lg">See pricing</Button>
 ```
 
-React Aria's `Link` navigates through the router you configure with its `RouterProvider`, so the same line works with React Router, Next.js or TanStack Router. Because the recipe returns classes only, it never changes which element renders.
+A router's own `Link` keeps its navigation, so the same line works with React Router, Next.js or TanStack Router. Because the recipe returns classes only, it never changes which element renders; to keep the Button's behavior and render a link instead, pass `render`.
 
 ## Typed props with VariantProps
 
@@ -135,7 +137,7 @@ Because the recipe is a plain object in your copy, a new variant is one line, an
 variant: {
   default: 'bg-primary text-primary-foreground',
   secondary: 'bg-secondary text-secondary-foreground',
-  ghost: 'bg-transparent text-foreground data-hovered:bg-accent',
+  ghost: 'bg-transparent text-foreground hover:not-data-disabled:bg-accent',
   destructive: 'bg-destructive text-white',
   link: 'bg-transparent p-0 text-primary',
   success: 'bg-success text-white', // new
@@ -144,22 +146,25 @@ variant: {
 
 Use theme utilities (`bg-success`, `rounded-ctl`, `text-footnote`) rather than literals, so your variant follows the theme like the rest.
 
-## State comes from data attributes
+## State comes from the platform and from data attributes
 
-Interactive parts are React Aria elements, which expose their state as data attributes instead of pseudo-classes, and recipes style them with Tailwind's `data-*` variants:
+Hover, press and keyboard focus are the browser's own pseudo-classes; everything else a UI SDK part knows about itself is a data attribute, and recipes style both with Tailwind's variants:
 
 | Variant | When |
 | --- | --- |
-| `data-pressed:` | pressed, by mouse, touch, keyboard or screen reader |
-| `data-hovered:` | a mouse is over it (touch never sets it, so there is no stuck hover) |
-| `data-focus-visible:` | focused by keyboard |
-| `data-selected:` | selected, checked or on |
-| `data-disabled:` | disabled |
+| `hover:` | a mouse is over it (Tailwind's `hover:` skips touch, so there is no stuck hover) |
+| `active:` | held down |
+| `focus-visible:` | focused by keyboard |
+| `data-pressed:` | a toggle that is on |
+| `data-checked:` / `data-selected:` | a checked switch, checkbox or radio / a selected option, tab or row |
+| `data-highlighted:` | the keyboard or pointer cursor in a list or menu |
+| `data-open:` / `data-disabled:` | an open popup or its trigger / disabled |
+| `data-starting-style:` / `data-ending-style:` | entering / leaving (the part stays mounted until the exit transition ends) |
 
-Use `group-data-selected:` on a child that reacts to its parent's state. For your own classes on a shipped part, use the same variants:
+Each part's page lists its exact attributes. Use `group-data-checked:` (and friends) on a child that reacts to its parent's state. For your own classes on a shipped part, use the same variants:
 
 ```tsx
-<Button className="data-pressed:scale-90 data-hovered:bg-accent">Tap</Button>
+<Button className="active:scale-90 hover:bg-accent">Tap</Button>
 ```
 
 ## The tailwind-merge caveat

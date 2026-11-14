@@ -15,7 +15,7 @@ export default function Session() {
   const [shown, setShown] = useState(true)
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col items-start gap-2">
-      <Button size="sm" variant="secondary" onPress={() => setShown((now) => !now)}>{shown ? 'Unmount it' : 'Mount it again'}</Button>
+      <Button size="sm" variant="secondary" onClick={() => setShown((now) => !now)}>{shown ? 'Unmount it' : 'Mount it again'}</Button>
       <div className="h-48 w-full overflow-hidden rounded-xl border border-border">
         {shown ? <Terminal shell={shell} /> : null}
       </div>

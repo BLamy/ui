@@ -5,11 +5,13 @@
    (and keep their desktop places) when the width crosses over. */
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { useContainerSize } from '@/lib/container';
+import { bindDrag, bindHold } from '@ui-sdk/core';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { APPS, type DesktopApp } from './apps';
 import type { Area } from './desktop';
 import { AppTile, Hat } from './parts';
+import { PlainButton } from '@/components/ui/plain-button';
 
 /** Status bar and home bar heights. */
 export const STATUS_H = 44;
@@ -48,70 +50,69 @@ export function StatusBar({ dark, inApp }: { dark: boolean; inApp: boolean }) {
 /** Two taps this close together on the home bar open the app switcher (a Mac's default double-click speed, so a
     trackpad double-tap — and the first tap's animation running under it — still counts). */
 const DOUBLE_TAP = 500;
-/** Holding the bar this long, or pressing it this hard (a stylus or a touch screen that reports force), opens the
-    switcher too; moving the pointer further than `HOLD_SLOP` first makes it a swipe instead. */
+/** Holding the bar this long (pointer, or Space or Enter), or pressing it this hard (a stylus or a touch screen that
+    reports force), opens the switcher too. The hold is UI SDK's `bindHold`: moving off first, a scroll, Escape or blur
+    cancels it, and a held or canceled press does not click. */
 const LONG_PRESS = 450;
 const HARD_PRESS = 0.75;
-const HOLD_SLOP = 10;
 
 /** The home bar: tap it to leave the open app (or the switcher) for the springboard; double-tap, long-press or
     press hard on it for the switcher. */
 export function HomeBar({ dark, inApp, onHome, onSwitcher }: { dark: boolean; inApp: boolean; onHome: () => void; onSwitcher: () => void }) {
   const button = useRef<HTMLButtonElement>(null);
   const last = useRef(0);
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const press = useRef<Point | null>(null);
-  // The press already opened the switcher, so the click that ends it is not a tap.
-  const held = useRef(false);
-  const stop = () => { clearTimeout(timer.current); press.current = null; };
-  const hold = () => { stop(); held.current = true; onSwitcher(); };
+  // A hard press already opened the switcher, so neither the hold nor the click that ends this press does again.
+  const forced = useRef(false);
+  const latest = useRef(onSwitcher);
+  latest.current = onSwitcher;
+  const force = () => {
+    if (forced.current) return;
+    forced.current = true;
+    latest.current();
+  };
 
-  // A Force Touch trackpad (Safari) reports a hard click as its own event; pointer events only carry force for touch and pens.
   useEffect(() => {
     const el = button.current;
     if (!el) return;
+    const stopHold = bindHold(el, {
+      delay: LONG_PRESS,
+      onPress: () => { forced.current = false; },
+      onHold: () => { if (!forced.current) latest.current(); },
+    });
+    // A Force Touch trackpad (Safari) reports a hard click as its own event; pointer events only carry force for touch and pens.
     const willBegin = (e: Event) => e.preventDefault();
     el.addEventListener('webkitmouseforcewillbegin', willBegin);
-    el.addEventListener('webkitmouseforcedown', hold);
-    return () => { el.removeEventListener('webkitmouseforcewillbegin', willBegin); el.removeEventListener('webkitmouseforcedown', hold); };
-  });
-  useEffect(() => () => clearTimeout(timer.current), []);
+    el.addEventListener('webkitmouseforcedown', force);
+    return () => {
+      stopHold();
+      el.removeEventListener('webkitmouseforcewillbegin', willBegin);
+      el.removeEventListener('webkitmouseforcedown', force);
+    };
+  }, []);
 
-  const down = (e: ReactPointerEvent<HTMLButtonElement>) => {
-    held.current = false;
-    press.current = { x: e.clientX, y: e.clientY };
-    clearTimeout(timer.current);
-    timer.current = setTimeout(hold, LONG_PRESS);
-    if (e.pointerType !== 'mouse' && e.pressure >= HARD_PRESS) hold();
-  };
-  const move = (e: ReactPointerEvent<HTMLButtonElement>) => {
-    const from = press.current;
-    if (!from) return;
-    if (Math.hypot(e.clientX - from.x, e.clientY - from.y) > HOLD_SLOP) stop();
-    else if (e.pointerType !== 'mouse' && e.pressure >= HARD_PRESS) hold();
+  const pressure = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType !== 'mouse' && e.buttons && e.pressure >= HARD_PRESS) force();
   };
   const tap = () => {
-    if (held.current) { held.current = false; return; }
+    if (forced.current) { forced.current = false; return; }
     onHome();
     const now = Date.now();
     if (now - last.current < DOUBLE_TAP) { last.current = 0; onSwitcher(); } else last.current = now;
   };
   return (
     <div className={cn('grid shrink-0 place-items-center transition-colors duration-spring-smooth ease-spring-smooth', inApp ? 'bg-background' : 'bg-transparent')} style={{ height: HOME_H }}>
-      <button
+      <PlainButton
         ref={button}
-        type="button"
         aria-label="Home"
+        aria-description="Double-tap or hold for the app switcher"
         onClick={tap}
-        onPointerDown={down}
-        onPointerMove={move}
-        onPointerUp={stop}
-        onPointerCancel={stop}
+        onPointerDown={pressure}
+        onPointerMove={pressure}
         onContextMenu={(e) => e.preventDefault()}
-        className="grid size-full cursor-pointer touch-none place-items-center border-0 bg-transparent p-0 select-none [-webkit-touch-callout:none]"
+        className="grid size-full cursor-pointer touch-none place-items-center border-0 bg-transparent p-0 select-none"
       >
         <span aria-hidden="true" className={cn('block h-1 w-34 rounded-full', inApp ? 'bg-foreground/85' : dark ? 'bg-white/70' : 'bg-black/55')} />
-      </button>
+      </PlainButton>
     </div>
   );
 }
@@ -138,16 +139,16 @@ export function Springboard({ dark, away, onLaunch, onSearch }: SpringboardProps
   const perPage = rows * COLUMNS;
   const pages = Array.from({ length: Math.ceil(PAGE_APPS.length / perPage) }, (_, i) => PAGE_APPS.slice(i * perPage, (i + 1) * perPage));
 
-  const launch = (app: DesktopApp) => (e: MouseEvent<HTMLButtonElement>) => {
+  const launch = (app: DesktopApp) => (e: MouseEvent<HTMLElement>) => {
     const box = root.current?.getBoundingClientRect();
     const r = e.currentTarget.getBoundingClientRect();
     onLaunch(app.id, box ? { x: Math.round(r.left + r.width / 2 - box.left), y: Math.round(r.top + r.height / 2 - box.top) } : { x: r.left, y: r.top });
   };
   const icon = (app: DesktopApp, label: boolean) => (
-    <button key={app.id} type="button" aria-label={app.name} onClick={launch(app)} className="group/icon flex cursor-pointer flex-col items-center gap-1.5 border-0 bg-transparent p-0 transition-transform duration-spring-snappy ease-spring-snappy active:scale-90 motion-reduce:transition-none">
+    <PlainButton key={app.id} aria-label={app.name} onClick={launch(app)} className="group/icon flex cursor-pointer flex-col items-center gap-1.5 border-0 bg-transparent p-0 transition-transform duration-spring-snappy ease-spring-snappy active:scale-90 motion-reduce:transition-none">
       <AppTile app={app} size={tile} />
       {label ? <span aria-hidden="true" className={cn('max-w-full truncate text-[11.5px] leading-none font-medium', dark ? 'text-white [text-shadow:0_1px_3px_rgba(0,0,0,.45)]' : 'text-black/85')}>{app.name}</span> : null}
-    </button>
+    </PlainButton>
   );
 
   return (
@@ -173,8 +174,7 @@ export function Springboard({ dark, away, onLaunch, onSearch }: SpringboardProps
           {pages.map((_, i) => <span key={i} className={cn('size-1.5 rounded-full transition-colors', i === page ? (dark ? 'bg-white' : 'bg-black/70') : dark ? 'bg-white/35' : 'bg-black/25')} />)}
         </div>
       ) : null}
-      <button
-        type="button"
+      <PlainButton
         onClick={onSearch}
         className={cn(
           'mx-auto mb-3 inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border-0 px-4 py-1.5 text-footnote font-medium backdrop-blur-xl backdrop-saturate-150 transition-transform duration-spring-snappy ease-spring-snappy active:scale-95 motion-reduce:transition-none',
@@ -183,7 +183,7 @@ export function Springboard({ dark, away, onLaunch, onSearch }: SpringboardProps
       >
         <Hat size={15} />
         Search
-      </button>
+      </PlainButton>
       <div
         data-slot="macos-phone-dock"
         className={cn(
@@ -281,30 +281,39 @@ function SwitcherCard({ app, dark, switcher, style, top, height, onPick, onQuit 
   app: DesktopApp; dark: boolean; switcher: Switcher; style: { width: number; marginRight: number }; top: number; height: number;
   onPick: () => void; onQuit: () => void;
 }) {
-  // Where the press began, and whether it turned into a flick (so the click that follows it doesn't open the app).
-  const start = useRef<number | null>(null);
+  // Whether the press turned into a flick (so the click that follows it doesn't open the app), and the drag following it.
   const flicked = useRef(false);
+  const drag = useRef<(() => void) | null>(null);
+  useEffect(() => () => drag.current?.(), []);
+  const reset = () => { switcher.setLive(false); switcher.setDrag((d) => ({ ...d, [app.id]: 0 })); };
+  /** A flick up (UI SDK's bindDrag past a 6px threshold) lifts the card; let go far enough up and the app quits. A
+   *  sideways move is left to the strip's scroll, and Escape puts the card back. */
   const down = (e: ReactPointerEvent<HTMLButtonElement>) => {
     if (e.button !== 0) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    start.current = e.clientY;
+    const x0 = e.clientX;
+    const y0 = e.clientY;
+    let dy = 0;
     flicked.current = false;
-  };
-  const move = (e: ReactPointerEvent<HTMLButtonElement>) => {
-    if (start.current === null) return;
-    const dy = Math.min(0, e.clientY - start.current);
-    if (!flicked.current && dy > -6) return;
-    flicked.current = true;
-    switcher.setLive(true);
-    switcher.setDrag((d) => ({ ...d, [app.id]: dy }));
-  };
-  const up = (e: ReactPointerEvent<HTMLButtonElement>) => {
-    const from = start.current;
-    start.current = null;
-    if (!flicked.current || from === null) return;
-    switcher.setLive(false);
-    if (e.clientY - from < -QUIT_DISTANCE) onQuit();
-    else switcher.setDrag((d) => ({ ...d, [app.id]: 0 }));
+    drag.current?.();
+    drag.current = bindDrag(e.currentTarget, e.nativeEvent, {
+      threshold: 6,
+      cancelOnEscape: true,
+      onStart: (ev) => {
+        if (ev.clientY - y0 >= 0 || Math.abs(ev.clientX - x0) > Math.abs(ev.clientY - y0)) return false;
+        flicked.current = true;
+        switcher.setLive(true);
+        return true;
+      },
+      onMove: ({ y }) => {
+        dy = Math.min(0, y - y0);
+        switcher.setDrag((d) => ({ ...d, [app.id]: dy }));
+      },
+      onEnd: (_ev, canceled) => {
+        drag.current = null;
+        if (!canceled && dy < -QUIT_DISTANCE) { switcher.setLive(false); onQuit(); }
+        else reset();
+      },
+    });
   };
   const ink = dark ? 'text-white' : 'text-black/85';
   return (
@@ -312,19 +321,15 @@ function SwitcherCard({ app, dark, switcher, style, top, height, onPick, onQuit 
       <div data-card="" className={cn('absolute inset-x-0 flex items-center gap-2 px-1', ink)} style={{ top: top - 34, opacity: Math.max(0, 1 + (switcher.drag[app.id] ?? 0) / 120) }}>
         <AppTile app={app} size={22} />
         <span className="min-w-0 flex-1 truncate text-footnote font-semibold [text-shadow:0_1px_3px_rgba(0,0,0,.25)]">{app.name}</span>
-        <button type="button" aria-label={`Close ${app.name}`} onClick={onQuit} className={cn('grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 p-0 backdrop-blur-xl', dark ? 'bg-white/20 text-white' : 'bg-black/12 text-black/70')}>
+        <PlainButton aria-label={`Close ${app.name}`} onClick={onQuit} className={cn('grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 p-0 backdrop-blur-xl', dark ? 'bg-white/20 text-white' : 'bg-black/12 text-black/70')}>
           <Icon name="xmark" size={11} sw={3} />
-        </button>
+        </PlainButton>
       </div>
-      <button
-        type="button"
+      <PlainButton
         data-card=""
         aria-label={`Open ${app.name}`}
         onClick={() => { if (!flicked.current) onPick(); }}
         onPointerDown={down}
-        onPointerMove={move}
-        onPointerUp={up}
-        onPointerCancel={() => { start.current = null; switcher.setLive(false); switcher.setDrag((d) => ({ ...d, [app.id]: 0 })); }}
         className="absolute inset-x-0 cursor-pointer touch-pan-x rounded-[28px] border-0 bg-transparent p-0"
         style={{ top, height }}
       />

@@ -1,20 +1,23 @@
 {
   "name": "tabs",
   "title": "Tabs",
-  "description": "Tabs on react-aria with a sliding selection indicator and directional panels, in an iOS segmented look or a tinted underline.",
+  "description": "Tabs on UI SDK with a sliding selection indicator and directional panels, in an iOS segmented look or a tinted underline.",
   "page": "tabs",
   "exports": [
     "Tabs",
-    "TabList",
-    "Tab",
-    "TabPanel",
+    "TabsList",
+    "TabsTab",
+    "TabsTabIcon",
+    "TabsPanel",
     "tabsListVariants",
-    "tabVariants"
+    "tabsTabVariants",
+    "tabsIndicatorVariants",
+    "createTabsController"
   ],
   "imports": [
     "Tabs",
-    "TabList",
-    "Tab",
-    "TabPanel"
+    "TabsList",
+    "TabsTab",
+    "TabsPanel"
   ]
 }

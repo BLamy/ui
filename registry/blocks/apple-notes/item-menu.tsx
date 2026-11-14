@@ -1,7 +1,7 @@
 /* Everything in Notes has the same actions wherever you reach it: right-click a sidebar location, a folder or
    note row, a tree item, or use the note's … button. Rename edits the name in place; Delete asks first. */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ContextMenu, ContextMenuContent } from '@/components/ui/context-menu';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -67,33 +67,35 @@ function useAct(notes: NotesState, id: string, place: RenamePlace) {
   };
 }
 
-/** The menu's items, for a ContextMenuContent or a DropdownMenuContent. */
-export function itemMenuItems(notes: NotesState, id: string) {
+/** The menu's items, for a ContextMenuContent or a DropdownMenuContent. Each runs its action through its own
+    `onSelect`, so the same items work in a Tree's `contextMenu` too. */
+export function ItemMenuItems({ notes, id, place = 'list' }: { notes: NotesState; id: string; place?: RenamePlace }) {
+  const act = useAct(notes, id, place);
   return actionsFor(notes, id).map((entry, index) => entry === 'separator'
     ? <DropdownMenuSeparator key={`separator-${index}`} />
-    : <DropdownMenuItem key={entry.id} id={entry.id} isDisabled={entry.disabled} variant={entry.destructive ? 'destructive' : undefined}
+    : <DropdownMenuItem key={entry.id} value={entry.id} disabled={entry.disabled} destructive={entry.destructive}
+      onSelect={() => act(entry.id)}
       icon={entry.icon ? <Icon name={entry.icon} size={20} /> : undefined}>{entry.label}</DropdownMenuItem>);
-}
-
-/** The menu's action handler, for a dropdown that shows `itemMenuItems`. */
-export function useItemMenuAction(notes: NotesState, id: string, place: RenamePlace = 'list') {
-  const act = useAct(notes, id, place);
-  return (key: string | number) => act(String(key));
 }
 
 /** The item's right-click menu, for a ContextMenu (or a Tree's `contextMenu`). */
 export function ItemMenuContent({ notes, id, label, place }: { notes: NotesState; id: string; label: string; place?: RenamePlace }) {
-  const act = useItemMenuAction(notes, id, place);
-  return <ContextMenuContent aria-label={`${label} actions`} onAction={act}>{itemMenuItems(notes, id)}</ContextMenuContent>;
+  return <ContextMenuContent aria-label={`${label} actions`} finalFocus={() => renameFieldOf(id)}>
+    <ItemMenuItems notes={notes} id={id} place={place} />
+  </ContextMenuContent>;
 }
+
+/** Where a menu whose Rename… started an in-place rename sends focus as it closes: the item's name field, once it
+    has mounted (null, and the menu's usual return, for every other action). Pass it as the content's `finalFocus`. */
+export const renameFieldOf = (id: string) => document.querySelector<HTMLElement>(`[data-rename-field="${CSS.escape(id)}"]`);
 
 export const hasItemMenu = (notes: NotesState, id: string) => actionsFor(notes, id).length > 0;
 
 /** Right-click (or long-press, or the menu key) on `children` for the item's actions. */
 export function ItemMenu({ notes, id, label, children, className }: { notes: NotesState; id: string; label: string; children: ReactNode; className?: string }) {
   const empty = !hasItemMenu(notes, id);
-  return <ContextMenu isDisabled={empty} className={className}>
-    {children}
+  return <ContextMenu>
+    <ContextMenuTrigger disabled={empty} className={className}>{children}</ContextMenuTrigger>
     {empty ? null : <ItemMenuContent notes={notes} id={id} label={label} />}
   </ContextMenu>;
 }
@@ -104,18 +106,11 @@ export function RenameField({ notes, id, name, className }: { notes: NotesState;
   const [value, setValue] = useState(name);
   const done = useRef(false);
   const input = useRef<HTMLInputElement>(null);
-  // The menu that started the rename hands focus back to where it opened as it closes, after this field has
-  // mounted: take it back for that first moment rather than treating it as the user leaving.
-  const opened = useRef(0);
-  const focus = () => {
+  // Focused as it mounts (a double-click on the title); a menu's Rename… also sends its focus here (`renameFieldOf`).
+  useLayoutEffect(() => {
     const el = input.current;
-    if (!el || done.current) return;
+    if (!el) return;
     el.focus(); el.setSelectionRange(0, /\.mdx?$/i.exec(name)?.index ?? name.length);
-  };
-  useEffect(() => {
-    opened.current = performance.now();
-    const frame = requestAnimationFrame(focus);
-    return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const finish = (keep: boolean) => {
@@ -126,9 +121,9 @@ export function RenameField({ notes, id, name, className }: { notes: NotesState;
     if (keep && next && next !== name) void notes.files.run(() => notes.rename(id, next));
   };
   const stop = (e: { stopPropagation(): void }) => e.stopPropagation();
-  return <input ref={input} aria-label={`Rename ${name}`} value={value} spellCheck={false} autoCapitalize="off" autoCorrect="off"
+  return <input ref={input} data-rename-field={id} aria-label={`Rename ${name}`} value={value} spellCheck={false} autoCapitalize="off" autoCorrect="off"
     onChange={(e) => setValue(e.target.value)}
-    onBlur={() => { if (performance.now() - opened.current < 400) requestAnimationFrame(focus); else finish(true); }}
+    onBlur={() => finish(true)}
     onKeyDown={(e) => {
       stop(e);
       if (e.key === 'Enter') { e.preventDefault(); finish(true); }

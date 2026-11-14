@@ -1,35 +1,36 @@
 {
   "name": "color-picker",
   "title": "ColorPicker",
-  "description": "Color editing parts on react-aria: a ColorArea, ColorSliders, preset swatches, and a popover that composes them with a hex field behind a trigger that shows the current color.",
+  "description": "UI SDK's ColorPicker drawn as iOS: an area, channel sliders, preset swatches and an eye dropper that edit one CSS color, and a popover that composes them with a color field behind a trigger that shows the current color.",
   "page": "color-picker",
   "exports": [
     "ColorPicker",
     "ColorPickerTrigger",
     "ColorPickerContent",
-    "ColorArea",
-    "ColorSlider",
-    "ColorThumb",
-    "ColorSwatchPicker",
-    "ColorSwatchPickerItem"
+    "ColorPickerArea",
+    "ColorPickerAreaThumb",
+    "ColorPickerAreaCanvas",
+    "ColorPickerSlider",
+    "ColorPickerSliderThumb",
+    "ColorPickerSwatches",
+    "ColorPickerSwatchItem",
+    "ColorPickerEyeDropper",
+    "createColorPickerController"
   ],
   "imports": [
     "ColorPicker",
     "ColorPickerTrigger",
     "ColorPickerContent",
-    "ColorArea",
-    "ColorSlider",
-    "ColorSwatchPicker",
-    "ColorSwatchPickerItem"
+    "ColorPickerArea",
+    "ColorPickerSlider",
+    "ColorPickerSwatches",
+    "ColorPickerSwatchItem"
   ],
   "types": [
     "ColorPickerProps",
     "ColorPickerTriggerProps",
     "ColorPickerContentProps",
-    "ColorAreaProps",
-    "ColorSliderProps",
-    "ColorThumbProps",
-    "ColorSwatchPickerProps",
-    "ColorSwatchPickerItemProps"
+    "ColorPickerSliderProps",
+    "ColorPickerController"
   ]
 }

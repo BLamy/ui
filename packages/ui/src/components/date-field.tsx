@@ -1,57 +1,29 @@
 'use client';
-import {
-  DateField as AriaDateField, type DateFieldProps as AriaDateFieldProps,
-  DateInput as AriaDateInput, type DateInputProps as AriaDateInputProps,
-  DateSegment as AriaDateSegment, type DateSegmentProps as AriaDateSegmentProps,
-  TimeField as AriaTimeField, type TimeFieldProps as AriaTimeFieldProps,
-  composeRenderProps,
-  type DateValue, type TimeValue,
-} from 'react-aria-components';
+import type { ComponentProps } from 'react';
+import { DateInput as SdkDateInput, DateInputSegment as SdkDateInputSegment } from '@ui-sdk/react/date-input';
+import { TimeInput as SdkTimeInput, TimeInputSegment as SdkTimeInputSegment } from '@ui-sdk/react/time-input';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { selectableText } from '@/lib/primitives';
-import { cn } from '@/lib/utils';
+import { cx } from '@/lib/utils';
 
-/* ══ DateField / TimeField — react-aria's segmented fields: each part of the date (month, day, year, hour …) is its own
-   spin-button, edited by typing or Up/Down, with Left/Right moving between them. Locale decides the order and
-   separators. Inside a field a Label, the DateInput, a FieldDescription and a FieldError are wired automatically.
-   <DateField defaultValue={parseDate('2026-09-09')}>
-     <Label variant="field">Birthday</Label>
-     <DateInput />
+/* ══ DateField / TimeField — UI SDK's Date Input and Time Input: each part of the value (month, day, year, hour …) is
+   its own small input, a spin button filled by typing or stepped with Up/Down, with Left/Right moving between them.
+   The locale decides the order, the separators and the clock. Values are ISO strings: "2026-09-09", with a time
+   `granularity` "2026-09-09T09:30", and "09:30" for a TimeField; `null` until every part is filled. Put one in a
+   Field for its label, description and error:
+   <Field>
+     <FieldLabel variant="field">Birthday</FieldLabel>
+     <DateField defaultValue="2026-09-09" />
      <FieldError />
-   </DateField> ══ */
+   </Field> ══ */
 
-export interface DateFieldProps<T extends DateValue> extends AriaDateFieldProps<T> {}
-
-export function DateField<T extends DateValue>({ className, ...props }: DateFieldProps<T>) {
-  return (
-    <AriaDateField<T>
-      data-slot="date-field"
-      className={composeRenderProps(className, (cls) => cn('group flex flex-col gap-1.5', cls))}
-      {...props}
-    />
-  );
-}
-
-export interface TimeFieldProps<T extends TimeValue> extends AriaTimeFieldProps<T> {}
-
-export function TimeField<T extends TimeValue>({ className, ...props }: TimeFieldProps<T>) {
-  return (
-    <AriaTimeField<T>
-      data-slot="time-field"
-      className={composeRenderProps(className, (cls) => cn('group flex flex-col gap-1.5', cls))}
-      {...props}
-    />
-  );
-}
-
-export const dateInputVariants = cva('flex min-w-0 items-center text-foreground [font-family:inherit] whitespace-nowrap', {
+export const dateFieldVariants = cva('flex min-w-0 items-center text-foreground tabular-nums [font-family:inherit] whitespace-nowrap', {
   variants: {
-    /** `field`: the filled iOS field (what DateField shows). `bare`: just the segments, for a field you draw yourself
-        around them (DatePickerField puts a calendar button beside them). */
+    /** `field`: the filled iOS field. `bare`: just the segments, for a field you draw yourself around them. */
     variant: {
       field: [
         'box-border w-full rounded-ctl bg-input px-3 outline-none transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy',
-        'data-focus-within:bg-transparent data-focus-within:ring-[1.5px] data-focus-within:ring-primary data-focus-within:ring-inset',
+        'focus-within:bg-transparent focus-within:ring-[1.5px] focus-within:ring-primary focus-within:ring-inset',
         'data-invalid:ring-[1.5px] data-invalid:ring-destructive data-invalid:ring-inset data-disabled:cursor-not-allowed data-disabled:opacity-50',
       ],
       bare: 'flex-1',
@@ -70,38 +42,64 @@ export const dateInputVariants = cva('flex min-w-0 items-center text-foreground 
   defaultVariants: { variant: 'field', size: 'default' },
 });
 
-export interface DateInputProps extends Omit<AriaDateInputProps, 'children' | 'size'>, VariantProps<typeof dateInputVariants> {}
+/* An editable part is a real input, 24px at least each way (WCAG target size) and as wide as its digits; the one
+   being edited is filled with the tint, and an empty one shows dimmed dashes. The kit's unlayered placeholder
+   color outranks a plain utility, hence the `!`. */
+const editableSegment = [
+  'box-content h-6 w-[2ch] min-w-5 rounded-sm border-0 bg-transparent px-0.5 py-0 text-center [font:inherit] text-inherit tabular-nums caret-transparent outline-none',
+  'data-[type=year]:w-[4ch] data-[type=dayPeriod]:w-[2.6ch]',
+  'placeholder:text-foreground/60! selection:bg-transparent focus:bg-primary focus:text-primary-foreground focus:placeholder:text-primary-foreground!',
+  'data-disabled:cursor-not-allowed',
+  selectableText,
+];
+/* The text between parts ("/", ":", ", ") stays narrow and keeps its spaces. */
+const literalSegment = 'whitespace-pre text-muted-foreground';
 
-/** The row of segments (month / day / year …). Use `variant="bare"` inside a DatePickerField. */
-export function DateInput({ className, variant, size, ...props }: DateInputProps) {
+type SegmentProps = ComponentProps<typeof SdkDateInputSegment>;
+const segmentClass = ({ segment, className }: Pick<SegmentProps, 'segment' | 'className'>) =>
+  cx(segment.editable ? editableSegment : literalSegment, className);
+
+/** One part of a DateField, from the root's `segments`: an input you type or step, or the text between two. */
+export function DateFieldSegment({ className, segment, ...props }: SegmentProps) {
+  return <SdkDateInputSegment segment={segment} className={segmentClass({ segment, className })} {...props} />;
+}
+
+/** One part of a TimeField, from the root's `segments`. */
+export function TimeFieldSegment({ className, segment, ...props }: ComponentProps<typeof SdkTimeInputSegment>) {
+  return <SdkTimeInputSegment segment={segment} className={segmentClass({ segment, className })} {...props} />;
+}
+
+/* The root is a group, which can't be `disabled` the way an input is: a disabled field also says so with
+   aria-disabled, so assistive tech hears the group (and its label) as inactive, not only each part. */
+const groupElement = (props: Record<string, unknown>, state: { disabled: boolean }) => (
+  <div {...props} aria-disabled={state.disabled ? true : undefined} />
+);
+
+export type DateFieldProps = ComponentProps<typeof SdkDateInput> & VariantProps<typeof dateFieldVariants>;
+
+/** A date (and, with a time `granularity`, a time) typed part by part. It renders its segments; pass a function of
+    its state as children to render `state.segments` yourself with DateFieldSegment. */
+export function DateField({ className, variant, size, children, render = groupElement, ...props }: DateFieldProps) {
   return (
-    <AriaDateInput
-      data-slot="date-input"
-      className={composeRenderProps(className, (cls) => cn(dateInputVariants({ variant, size }), cls))}
-      {...props}
-    >
-      {(segment) => <DateSegment segment={segment} />}
-    </AriaDateInput>
+    <SdkDateInput className={cx(dateFieldVariants({ variant, size }), className)} render={render} {...props}>
+      {children ?? ((state) => state.segments.map((segment) => <DateFieldSegment key={segment.key} segment={segment} />))}
+    </SdkDateInput>
   );
 }
 
-/** One editable part of the date. The one being edited is filled with the tint; an empty one shows its name dimmed. */
-export function DateSegment({ className, ...props }: AriaDateSegmentProps) {
+export type TimeFieldProps = ComponentProps<typeof SdkTimeInput> & VariantProps<typeof dateFieldVariants>;
+
+/** A time of day typed part by part: hours and minutes, with seconds and AM/PM when shown. The value is 24-hour
+    ("14:30") whatever clock the field shows. This is UI SDK's `TimeInput`; the kit's own `TimeInput`
+    (`@/components/ui/time-input`) is a different thing, a natural-language text field ("tomorrow at 3pm"). */
+export function TimeField({ className, variant, size, children, render = groupElement, ...props }: TimeFieldProps) {
   return (
-    <AriaDateSegment
-      data-slot="date-segment"
-      className={composeRenderProps(className, (cls) =>
-        cn(
-          // 24px at least each way (WCAG target size); the literals between them ("/", ":") stay narrow.
-          'min-h-6 min-w-6 rounded-sm px-0.5 text-center tabular-nums caret-transparent outline-none',
-          'data-placeholder:text-foreground/60 data-[type=literal]:min-w-0 data-[type=literal]:px-0 data-[type=literal]:text-muted-foreground',
-          'data-focused:bg-primary data-focused:text-primary-foreground data-focused:data-placeholder:text-primary-foreground',
-          'data-disabled:cursor-not-allowed',
-          selectableText,
-          cls,
-        ),
-      )}
-      {...props}
-    />
+    <SdkTimeInput className={cx(dateFieldVariants({ variant, size }), className)} render={render} {...props}>
+      {children ?? ((state) => state.segments.map((segment) => <TimeFieldSegment key={segment.key} segment={segment} />))}
+    </SdkTimeInput>
   );
 }
+
+export { createDateInputController as createDateFieldController, type DateInputController as DateFieldController } from '@ui-sdk/react/date-input';
+export { createTimeInputController as createTimeFieldController, type TimeInputController as TimeFieldController } from '@ui-sdk/react/time-input';
+export type { DateInputSegmentData as DateFieldSegmentData, DateInputState as DateFieldState } from '@ui-sdk/react/date-input';

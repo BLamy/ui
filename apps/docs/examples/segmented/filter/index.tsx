@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 
 const inbox = [
   { id: 1, from: 'Maya Lindqvist', subject: 'Roadmap review moved', unread: true, flagged: false },
@@ -24,22 +24,17 @@ export default function Filter() {
   )
   return (
     <div className="mx-auto grid max-w-sm gap-3">
-      <Segmented
-        aria-label="Filter messages"
-        options={filters}
-        value={filter}
-        onChange={setFilter}
-      />
-      <Segmented
-        aria-label="Density"
-        className="w-fit"
-        options={[
-          { id: 'comfortable', label: 'Comfortable' },
-          { id: 'compact', label: 'Compact' },
-        ]}
-        value={density}
-        onChange={setDensity}
-      />
+      <Segmented aria-label="Filter messages" value={filter} onValueChange={(v: string | null) => v && setFilter(v)}>
+        {filters.map((f) => (
+          <SegmentedItem key={f.id} value={f.id}>
+            {f.label}
+          </SegmentedItem>
+        ))}
+      </Segmented>
+      <Segmented aria-label="Density" className="w-fit" value={density} onValueChange={(v: string | null) => v && setDensity(v)}>
+        <SegmentedItem value="comfortable">Comfortable</SegmentedItem>
+        <SegmentedItem value="compact">Compact</SegmentedItem>
+      </Segmented>
       <ul className="m-0 grid list-none gap-px overflow-hidden rounded-card bg-border p-0">
         {rows.map((m) => (
           <li key={m.id} className={`flex items-center gap-2 bg-card px-4 ${density === 'compact' ? 'py-1.5' : 'py-3'}`}>

@@ -1,4 +1,7 @@
-@layer theme, base, components, docstream, utilities;
+/* UI SDK adds the little CSS its behaviors need in a layer named `ui-sdk`; it comes first so everything here wins.
+   Docstream's and the editor's sheets declare the same layer: the editor's is imported into a layer below, so its
+   `@layer ui-sdk` nests there, and only this line orders the page's own `ui-sdk` layer. */
+@layer ui-sdk, theme, base, components, docstream, utilities;
 @layer components.bl-editor, components.bl-mde, components.bl-terminal;
 @import "./tokens.css";
 @import "@vscode/codicons/dist/codicon.css" layer(components);
@@ -47,15 +50,14 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .bl-range::-moz-range-progress{height:4px;border-radius:2px;background:var(--primary)}
 .bl-range::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28)}
 
-/* ── shadcn primitives (badge … form): overlay enter/exit keyframes for react-aria's data-entering /
-   data-exiting, exposed as animate-bl-* utilities. Exit animations must end (react-aria keeps the overlay
-   mounted until `animationend`), so they fill forwards. ── */
+/* ── Enter/exit keyframes, exposed as animate-bl-* utilities, for what plays once as it mounts or leaves.
+   Popups don't use them: they transition between UI SDK's data-starting-style / data-ending-style and rest
+   (lib/primitives `popoverMotion`, Dialog), and a Sheet is moved by its Drawer. Exits fill forwards, so what
+   leaves stays gone until it unmounts. ── */
 @keyframes bl-fade-in{from{opacity:0}}
 @keyframes bl-fade-out{to{opacity:0}}
 @keyframes bl-pop-in{from{opacity:0;transform:translate(var(--bl-pop-x,0),var(--bl-pop-y,0)) scale(.9)}}
 @keyframes bl-pop-out{to{opacity:0;transform:scale(.96)}}
-@keyframes bl-alert-in{from{opacity:0;transform:scale(1.14)}}
-@keyframes bl-alert-out{to{opacity:0;transform:scale(.98)}}
 @keyframes bl-sheet-in-bottom{from{transform:translateY(100%)}}
 @keyframes bl-sheet-out-bottom{to{transform:translateY(100%)}}
 @keyframes bl-sheet-in-top{from{transform:translateY(-100%)}}
@@ -578,15 +580,13 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 }
 @theme {
   /* Entrances spring (theme.css --ease-spring-*); exits are a quick ease-in (--ease-exit) — what leaves gets
-     out of the way. Exit animations must end (react-aria unmounts on animationend), so they fill forwards. */
+     out of the way, and fills forwards. */
   --animate-bl-fade-in: bl-fade-in var(--duration-spring-smooth) var(--ease-spring-smooth);
   --animate-bl-fade-out: bl-fade-out var(--duration-exit) var(--ease-exit) forwards;
-  /* Scrims outlast their sheet: react-aria unmounts the whole overlay when the scrim's animation ends. */
+  /* A slower fade, for a scrim that should outlast what it was behind. */
   --animate-bl-fade-out-slow: bl-fade-out var(--duration-exit-slow) var(--ease-exit) forwards;
   --animate-bl-pop-in: bl-pop-in var(--duration-spring-snappy) var(--ease-spring-snappy);
   --animate-bl-pop-out: bl-pop-out var(--duration-exit) var(--ease-exit) forwards;
-  --animate-bl-alert-in: bl-alert-in var(--duration-spring-smooth) var(--ease-spring-smooth);
-  --animate-bl-alert-out: bl-alert-out var(--duration-exit) var(--ease-exit) forwards;
   --animate-bl-sheet-in-bottom: bl-sheet-in-bottom var(--duration-spring-tray) var(--ease-spring-tray);
   --animate-bl-sheet-out-bottom: bl-sheet-out-bottom var(--duration-exit-tray) var(--ease-exit) forwards;
   --animate-bl-sheet-in-top: bl-sheet-in-top var(--duration-spring-tray) var(--ease-spring-tray);
@@ -684,9 +684,6 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 @keyframes wbBlink{0%,55%{opacity:1}56%,100%{opacity:0}}
 @keyframes wbPulse{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes wbSpin{to{transform:rotate(360deg)}}
-/* Popovers grow out of their trigger (transform-origin: the anchor point) on the snappy spring. */
-@keyframes wb-pop-in{from{opacity:0;transform:scale(.88);filter:blur(2px)}}
-@keyframes wb-pop-out{to{opacity:0;transform:scale(.96)}}
 .wb-scroll{scrollbar-width:thin;scrollbar-color:rgba(140,140,155,.3) transparent}
 .wb-scroll::-webkit-scrollbar{width:8px;height:8px}
 .wb-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.28);border-radius:4px;border:2px solid transparent;background-clip:padding-box}
@@ -800,20 +797,17 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
    the text color so they keep text contrast in light and dark. */
 [data-slot="tree"]{--trees-accent-override:var(--primary);--trees-fg-override:var(--foreground);--trees-fg-muted-override:var(--muted-foreground);--trees-bg-override:transparent;--trees-bg-muted-override:var(--secondary);--trees-input-bg-override:var(--secondary);--trees-search-bg-override:var(--secondary);--trees-border-color-override:var(--border);--trees-indent-guide-bg-override:var(--border);--trees-selected-bg-override:color-mix(in oklab,var(--primary) 16%,transparent);--trees-selected-fg-override:var(--foreground);--trees-focus-ring-color-override:var(--ring);--trees-selected-focused-border-color-override:var(--ring);--trees-scrollbar-thumb-override:var(--secondary-strong,var(--border));--trees-font-family-override:var(--font-sans);--trees-font-size-override:var(--text-footnote);--trees-border-radius-override:var(--radius-ctl);--trees-status-added-override:color-mix(in oklab,var(--trees-added-light) 60%,var(--foreground));--trees-status-untracked-override:color-mix(in oklab,var(--trees-untracked-light) 60%,var(--foreground));--trees-status-modified-override:color-mix(in oklab,var(--trees-modified-light) 60%,var(--foreground));--trees-status-renamed-override:color-mix(in oklab,var(--trees-renamed-light) 55%,var(--foreground));--trees-status-deleted-override:color-mix(in oklab,var(--trees-deleted-light) 70%,var(--foreground))}
 
-/* Attachment chips: the editor portals the hover card to <body>, outside any theme scope. While a chip in a dark
-   composer is hovered or focused, the card takes the dark Workbench scope's palette (card, foreground, muted and
-   muted-foreground are that scope's values; the editor's defaults are light). */
+/* Attachment chips. Their hover card renders in place (top layer), so it wears the composer's theme scope. */
 .wb-composer-doc.gb .gb-attachment{background:var(--secondary);border-color:var(--border)}
 .wb-composer-doc.gb .gb-attachment:hover{border-color:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))}
-body:has(:is([data-theme-scope="workbench"].dark,[data-theme-scope="glass"].dark) [data-slot="composer-input"]:not([data-theme-scope="workbench"].light *) .gb-attachment:is(:hover,:focus-visible)) .gb-attachment-card{--border:rgba(255,255,255,.12);--card:#1C1C23;--card-foreground:#EDEDF2;--foreground:#EDEDF2;--muted:#101014;--muted-foreground:#9C9CA6;box-shadow:0 14px 40px rgba(0,0,0,.5)}
 /* Compact composer: one row, the editor a single line beside the controls. */
 .wb-composer-doc-compact.gb{max-height:44px;padding-right:4px}
 .wb-composer-doc-compact.gb .ProseMirror{min-height:22px;padding:10px 0 9px}
 
 /* ── MarkdownEditor (markdown-editor.tsx) ──
    The Docstream editor as a field. The wrapper maps the --bl-* tokens onto the shadcn names the editor's
-   stylesheet reads (BL light literals when there is no BLProvider above), so the editor follows light/dark; the
-   same resolved values are copied onto the popovers it portals to <body>. The editor itself is a flex column:
+   stylesheet reads (BL light literals when there is no BLProvider above), so the editor follows light/dark, and
+   so do its popovers, which render in place (top layer) and inherit them. The editor itself is a flex column:
    the toolbar stays put, the writing area scrolls. */
 @layer components.bl-mde{
 .bl-mde{--popover:var(--card);--background:var(--card);--card-foreground:var(--foreground);--popover-foreground:var(--foreground);
@@ -848,19 +842,18 @@ body:has(:is([data-theme-scope="workbench"].dark,[data-theme-scope="glass"].dark
 .bl-mde .bl-mde-doc .ProseMirror hr{margin:1.2em 0}
 .bl-mde .bl-mde-doc .ProseMirror :not(pre)>code{background:var(--secondary);border-radius:5px;font-size:.86em;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
 .bl-mde .bl-mde-doc .ProseMirror p:is(.is-empty,.is-editor-empty):first-child::before{color:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))}
-.bl-mde .bl-mde-doc .ProseMirror ul[data-type="taskList"] input{accent-color:var(--primary)}
 /* Toolbar: a quiet strip above the writing area, divided by a hairline. */
 .bl-mde .bl-mde-doc .gb-toolbar{position:static;flex:none;margin:0;padding:5px 6px;gap:2px;border:0;border-bottom:1px solid var(--border);border-radius:0;background:transparent;box-shadow:none}
 .bl-mde .bl-mde-doc .gb-tool{width:28px;height:28px;border-radius:7px;color:var(--muted-foreground);transition:background-color .12s ease,color .12s ease}
 .bl-mde .bl-mde-doc .gb-tool:hover{background:var(--accent);color:var(--foreground)}
-.bl-mde .bl-mde-doc .gb-tool-active{background:var(--secondary-strong, var(--accent));color:var(--foreground)}
+.bl-mde .bl-mde-doc .gb-tool:is([data-pressed],[data-active],[data-open]){background:var(--secondary-strong, var(--accent));color:var(--foreground)}
 .bl-mde .bl-mde-doc .gb-toolbar-hint{font-size:12px;color:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))}
 .bl-mde .bl-mde-doc .gb-toolbar-hint kbd{border-color:var(--border);background:transparent;font-family:inherit;color:var(--muted-foreground)}
 .bl-mde[data-variant="ghost"] .bl-mde-doc .gb-toolbar{padding-left:0;padding-right:0;margin-bottom:8px}
-/* The editor's popovers, dressed by the editor that opened them (tokens copied when they open). */
-[data-markdown-editor-portal] .slash-menu{border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.06)}
-[data-markdown-editor-portal] .slash-item{border-radius:8px}
-[data-markdown-editor-portal][data-scheme="dark"] .slash-menu,.gb-attachment-card[data-markdown-editor-portal][data-scheme="dark"]{box-shadow:0 14px 40px rgba(0,0,0,.5)}
+/* The editor's popovers (in place, so inside .bl-mde). The shadow deepens on a dark color scheme. */
+.bl-mde .slash-menu{border-radius:12px;box-shadow:0 12px 32px light-dark(rgba(0,0,0,.16),transparent),0 2px 6px light-dark(rgba(0,0,0,.06),transparent),0 14px 40px light-dark(transparent,rgba(0,0,0,.5))}
+.bl-mde .slash-item{border-radius:8px}
+:is(.bl-mde,.wb-composer-doc) .gb-attachment-card{box-shadow:0 12px 32px light-dark(rgba(0,0,0,.18),transparent),0 2px 6px light-dark(rgba(0,0,0,.08),transparent),0 14px 40px light-dark(transparent,rgba(0,0,0,.5))}
 }
 
 /* TipTap injects its base sheet unlayered at runtime (`.ProseMirror{white-space:break-spaces}`), which would now
@@ -934,11 +927,11 @@ body:has(:is([data-theme-scope="workbench"].dark,[data-theme-scope="glass"].dark
 .bl-syntax-header{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 6px 0 14px;box-sizing:border-box;border-bottom:1px solid var(--border);background:var(--bl-syntax-header-bg,color-mix(in srgb,var(--foreground) 3.5%,transparent));font-size:12.5px;color:var(--muted-foreground)}
 .bl-syntax-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace));font-weight:500;color:var(--foreground)}
 .bl-syntax-copy{display:grid;flex:none;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--muted-foreground);cursor:pointer;outline:none;transition:background-color .15s,color .15s,opacity .15s}
-.bl-syntax-copy[data-hovered]{background:var(--secondary);color:var(--foreground)}
-.bl-syntax-copy[data-focus-visible]{box-shadow:0 0 0 2px var(--primary)}
+.bl-syntax-copy:hover{background:var(--secondary);color:var(--foreground)}
+.bl-syntax-copy:focus-visible{box-shadow:0 0 0 2px var(--primary)}
 .bl-syntax-copy[data-copied]{color:var(--success, oklch(0.723 0.191 149.6))}
 .bl-syntax-copy-float{position:absolute;top:7px;right:7px;z-index:2;background:var(--_bl-syn-surface);box-shadow:inset 0 0 0 1px var(--border);opacity:0}
-.bl-syntax:hover>.bl-syntax-copy-float,.bl-syntax-copy-float[data-focus-visible],.bl-syntax-copy-float[data-copied]{opacity:1}
+.bl-syntax:hover>.bl-syntax-copy-float,.bl-syntax-copy-float:focus-visible,.bl-syntax-copy-float[data-copied]{opacity:1}
 @media (hover:none){.bl-syntax-copy-float{opacity:1}}
 .bl-syntax-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .bl-syntax[data-windowed]{font-family:var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace));font-size:var(--bl-syntax-font-size,13px)}

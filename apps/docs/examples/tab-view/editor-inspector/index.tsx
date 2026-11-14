@@ -30,29 +30,29 @@ function EditorInspector() {
           beside it */}
       <TabView
         placement="end"
-        defaultSelectedKey="info"
+        defaultValue="info"
         style={{ width: 300, borderLeft: '1px solid var(--border)' }}
       >
         <TabViewBar style={{ width: 56 }}>
           <TabViewList aria-label="Inspector">
-            <TabViewTab id="info" icon="info" textValue="Info" />
-            <TabViewTab id="comments" icon="message" textValue="Comments" />
+            <TabViewTab value="info" icon="info" aria-label="Info" />
+            <TabViewTab value="comments" icon="message" aria-label="Comments" />
             <TabViewSeparator />
-            <TabViewTab id="history" icon="clock" textValue="History" />
+            <TabViewTab value="history" icon="clock" aria-label="History" />
           </TabViewList>
         </TabViewBar>
         <TabViewPanels>
-          <TabViewPanel id="info" style={{ padding: 16, fontSize: 13.5 }}>
+          <TabViewPanel value="info" style={{ padding: 16, fontSize: 13.5 }}>
             <strong>Frame 12</strong>
             <p style={{ color: 'var(--muted-foreground)' }}>390 × 844 · Auto layout</p>
           </TabViewPanel>
-          <TabViewPanel id="comments" style={{ padding: 16, fontSize: 13.5 }}>
+          <TabViewPanel value="comments" style={{ padding: 16, fontSize: 13.5 }}>
             <strong>2 comments</strong>
             <p style={{ color: 'var(--muted-foreground)' }}>
               “Tighten the header spacing.”
             </p>
           </TabViewPanel>
-          <TabViewPanel id="history" style={{ padding: 16, fontSize: 13.5 }}>
+          <TabViewPanel value="history" style={{ padding: 16, fontSize: 13.5 }}>
             <strong>Version history</strong>
             <p style={{ color: 'var(--muted-foreground)' }}>Autosaved 2 minutes ago</p>
           </TabViewPanel>

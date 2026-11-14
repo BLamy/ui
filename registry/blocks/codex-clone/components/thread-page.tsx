@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { TextArea, TextField } from 'react-aria-components';
-import { Button } from '@/components/ui/button';
+import { Textarea } from '@ui-sdk/react/textarea';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { PlainToggleButton } from '@/components/ui/plain-button';
 import { IndexBar } from '@/components/ui/index-bar';
 import { SplitViewHeader, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
@@ -123,19 +124,16 @@ function ThreadComposer({
   return (
     <div className="shrink-0 px-6 pt-2 pb-5">
       <div className="mx-auto w-full max-w-[820px] rounded-2xl bg-secondary px-4 pt-3 pb-2.5 shadow-hairline">
-        <TextField aria-label="Message" value={text} onChange={setText}>
-          <TextArea
-            rows={1}
-            placeholder="Do anything"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            className="box-border block min-h-7 w-full resize-none border-0 bg-transparent p-0 text-[14.5px] text-foreground [font-family:inherit] outline-none placeholder:text-tertiary-foreground"
-          />
-        </TextField>
+        <Textarea
+          aria-label="Message"
+          value={text}
+          onValueChange={setText}
+          rows={1}
+          placeholder="Do anything"
+          submitShortcut="enter"
+          onSubmit={() => send()}
+          className="box-border block min-h-7 w-full resize-none border-0 bg-transparent p-0 text-[14.5px] text-foreground [font-family:inherit] outline-none placeholder:text-tertiary-foreground"
+        />
         <div className="mt-2 flex items-center gap-1">
           <Button
             variant="quiet"
@@ -148,7 +146,7 @@ function ThreadComposer({
           </Button>
           <Button
             variant="ghost"
-            className="h-8 gap-1.5 rounded-full px-2 text-footnote font-normal text-muted-foreground data-hovered:bg-accent"
+            className="h-8 gap-1.5 rounded-full px-2 text-footnote font-normal text-muted-foreground hover:bg-accent"
           >
             <Icon name="shield" size={14} />
             Approve for me
@@ -156,7 +154,7 @@ function ThreadComposer({
           <span className="flex-1" />
           <Button
             variant="ghost"
-            className="h-8 gap-1 rounded-full px-2 text-footnote font-normal text-muted-foreground data-hovered:bg-accent"
+            className="h-8 gap-1 rounded-full px-2 text-footnote font-normal text-muted-foreground hover:bg-accent"
           >
             <Icon name="bolt-fill" size={12} />
             <span className="text-foreground">GPT-6 Luna</span> Medium
@@ -174,8 +172,8 @@ function ThreadComposer({
           <Button
             aria-label="Send"
             size="icon"
-            isDisabled={!text.trim() || disabled}
-            onPress={send}
+            disabled={!text.trim() || disabled}
+            onClick={send}
             className="size-8 bg-foreground text-background data-disabled:opacity-60"
           >
             <Icon name="arrow-up" size={16} sw={2.4} />
@@ -323,16 +321,15 @@ export function ThreadContent({ codex }: { codex: CodexState }) {
             >
               <Icon name="ellipsis" size={17} sw={1.7} />
             </Button>
-            <Button
-              variant="quiet"
-              size="icon-sm"
-              active={panel}
-              aria-label="Toggle thread panel"
-              title="Toggle thread panel"
-              onPress={() => setPanel((p) => !p)}
+            <PlainToggleButton
+              pressed={panel}
+              onPressedChange={setPanel}
+              aria-label="Thread panel"
+              title="Thread panel"
+              className={buttonVariants({ variant: 'quiet', size: 'icon-sm' })}
             >
               <Icon name="sidebar-right" size={17} sw={1.7} />
-            </Button>
+            </PlainToggleButton>
           </>
         }
       />

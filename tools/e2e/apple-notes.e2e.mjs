@@ -3,11 +3,18 @@ import { openDemo } from './helpers.mjs';
 
 test.use({ viewport: { width: 1280, height: 850 } });
 const STACK = '[data-slot=split-view-supplementary] [data-slot=navigation-stack]';
-const current = (page) => page.locator(`${STACK} > [data-slot=screen]:not([inert])`);
+const PAGE = `${STACK} [data-slot=navigation-stack-page]`;
+const current = (page) => page.locator(`${PAGE}:not([inert]):not([data-ending-style])`);
 const row = (page, name) => current(page).locator('[data-slot=list-row]').filter({ hasText: name });
 const editor = (page, name) => page.getByRole('textbox', { name: `${name} source`, exact: true });
-const path = (page) => page.locator(`${STACK} > [data-slot=screen]:not([data-screen-ghost])`).evaluateAll((screens) => screens.filter((s) => !s.classList.contains('pointer-events-none')).map((s) => s.dataset.screenKey));
+const path = (page) => page.locator(`${PAGE}:not([data-ending-style])`).evaluateAll((pages) => pages.map((p) => p.dataset.value));
+/** The title in the top page's bar. */
+const title = (page) => current(page).locator('[data-slot=navigation-stack-bar] [data-slot=navigation-stack-title]');
+/** A dialog that has closed is gone: a press on a modal's backdrop while it fades out is the dialog's (UI SDK
+    consumes it, so it can't land on what is under the backdrop), so wait for it before pressing the page. */
+const dialogsGone = (page) => expect(page.locator('[data-slot=dialog-backdrop], [role=dialog]')).toHaveCount(0);
 async function sourceMode(page) {
+  await dialogsGone(page);
   const toggle = page.getByRole('button', { name: 'Markdown source', exact: true });
   if (await toggle.getAttribute('aria-pressed') !== 'true') await toggle.click();
 }
@@ -56,17 +63,18 @@ async function action(page, name) {
 }
 /** Right-click `target` and choose `name`. */
 async function contextAction(page, target, name) {
+  await dialogsGone(page);
   await target.click({ button: 'right' });
   await page.getByRole('menuitem', { name, exact: true }).click();
 }
 async function browserNotes(page) {
   await page.getByRole('group', { name: 'In This Browser', exact: true }).getByRole('button', { name: /^Notes / }).click();
-  await expect(current(page)).toHaveAttribute('data-screen-key', 'folder:browser-notes');
+  await expect(current(page)).toHaveAttribute('data-value', 'folder:browser-notes');
 }
 async function addFolder(page, name) {
   await page.evaluate((name) => { window.__nextFolder = name; }, name);
   await action(page, 'Add Folder…');
-  await expect(current(page)).toHaveAttribute('data-screen-label', name);
+  await expect(title(page)).toHaveText(name);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -82,7 +90,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('starts with no sample content, on the browser location, with only the sidebar\'s + folder menu', async ({ page }) => {
-  await expect(current(page)).toHaveAttribute('data-screen-key', 'folder:browser-notes');
+  await expect(current(page)).toHaveAttribute('data-value', 'folder:browser-notes');
   await expect(current(page).getByRole('searchbox', { name: 'Search Notes' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'All Folders', exact: true })).toHaveCount(0);
   await expect(current(page).getByRole('button', { name: /Folder actions|More/ })).toHaveCount(0);
@@ -135,21 +143,21 @@ test('folders push the stack and file leaves only open the note', async ({ page 
   await expect(editor(page, 'readme.mdx')).toHaveValue('# Nested');
   expect(await path(page)).toEqual(['folder:Work', 'folder:Work/Projects', 'folder:Work/Projects/Components']);
   await current(page).getByRole('button', { name: 'Projects', exact: true }).click();
-  await expect(current(page)).toHaveAttribute('data-screen-label', 'Projects');
+  await expect(title(page)).toHaveText('Projects');
 });
 
 test('the top-right tree is also inside the stack and file selection never changes the folder path', async ({ page }) => {
   await seed(page, { 'nested/readme.mdx': '# Tree\n\n<Card />' }, 'Work');
   await addFolder(page, 'Work');
-  await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
+  await current(page).getByRole('radio', { name: 'Tree view', exact: true }).click();
   const tree = current(page).getByRole('tree', { name: 'Folders and files' });
   await expect(tree).toBeVisible();
   const nested = tree.getByRole('treeitem', { name: 'nested', exact: true });
   await nested.press('ArrowRight'); await nested.press('ArrowDown'); await page.keyboard.press('Enter'); await sourceMode(page);
   await expect(editor(page, 'readme.mdx')).toHaveValue('# Tree\n\n<Card />');
   expect(await path(page)).toEqual(['folder:Work']);
-  await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'List', exact: true }) }).click();
-  await expect(current(page)).toHaveAttribute('data-screen-key', 'folder:Work');
+  await current(page).getByRole('radio', { name: 'List', exact: true }).click();
+  await expect(current(page)).toHaveAttribute('data-value', 'folder:Work');
   await expect(row(page, 'readme.mdx')).toHaveCount(0);
   await expect(current(page).getByRole('button', { name: 'Open folder nested', exact: true })).toBeVisible();
 });
@@ -270,6 +278,27 @@ test('browsers without local pickers can create personal notes with no storage m
   await expect.poll(() => read(page, 'personal.md')).toBe('# My personal note');
 });
 
+test('the / menu opens over the note, contained in the app, and inserts a block', async ({ page }) => {
+  await page.addInitScript(() => { window.showOpenFilePicker = undefined; window.showDirectoryPicker = undefined; });
+  await page.reload();
+  await action(page, /^New Note/); await page.getByRole('dialog').getByRole('textbox', { name: /^File name/ }).fill('slash.md');
+  await page.getByRole('button', { name: 'Create Note', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const rich = page.getByRole('textbox', { name: 'slash.md note', exact: true });
+  await rich.click(); await expect(rich).toBeFocused();
+  await page.keyboard.type('/');
+  const blocks = page.getByRole('listbox', { name: 'Blocks' });
+  await expect(blocks).toBeVisible();
+  // BLProvider's root is a layer host: the menu stays inside it, on top of the note.
+  expect(await blocks.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return !!el.closest('[data-layer-host]') && el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + 12));
+  })).toBe(true);
+  await page.keyboard.type('quote'); await page.keyboard.press('Enter');
+  await expect(blocks).toHaveCount(0);
+  await expect(rich.locator('blockquote')).toHaveCount(1);
+});
+
 test('write failures preserve the buffer for retry', async ({ page }) => {
   await seed(page, { 'retry.md': '# Original' }); await browserNotes(page); await row(page, 'retry.md').click(); await sourceMode(page);
   await page.evaluate(() => {
@@ -313,13 +342,13 @@ test('phone folder navigation stays in the master stack when a leaf opens and th
   await current(page).getByRole('button', { name: /^(Folders|Back)$/ }).click();
   await action(page, 'Add Folder…');
   await current(page).getByRole('button', { name: 'Open folder nested', exact: true }).click();
-  await expect(current(page)).toHaveAttribute('data-screen-key', 'folder:Work/nested');
+  await expect(current(page)).toHaveAttribute('data-value', 'folder:Work/nested');
   const before = await path(page);
   await row(page, 'phone.md').click(); await sourceMode(page);
   await expect(editor(page, 'phone.md')).toHaveValue('# Phone note');
   expect(await path(page)).toEqual(before);
   await page.locator('[data-slot=split-view-detail] [data-slot=split-view-back]').click();
-  await expect(current(page)).toHaveAttribute('data-screen-key', 'folder:Work/nested');
+  await expect(current(page)).toHaveAttribute('data-value', 'folder:Work/nested');
 });
 
 test('Markdown opens in Docstream by default, preserves frontmatter, saves rich edits and watches external edits', async ({ page }) => {
@@ -351,7 +380,7 @@ test('first-party document properties edit and autosave with the body and stay i
   await seed(page, { 'properties.md': markdown }, 'Work'); await addFolder(page, 'Work'); await row(page, 'properties.md').click();
   const sheet = page.locator('[data-document-properties]');
   await expect(sheet).toBeVisible();
-  await sheet.locator('summary').click();
+  await sheet.getByRole('button', { name: /^Properties/ }).click();
   await sheet.getByRole('spinbutton', { name: 'priority', exact: true }).fill('7');
   await expect.poll(() => read(page, 'properties.md', 'Work')).toBe(markdown.replace('priority: 4', 'priority: 7'));
   await sheet.getByRole('checkbox', { name: 'complete', exact: true }).check();
@@ -359,7 +388,7 @@ test('first-party document properties edit and autosave with the body and stay i
   await sourceMode(page);
   await expect(editor(page, 'properties.md')).toHaveValue(/priority: 7[\s\S]*complete: true/);
   await page.getByRole('button', { name: 'Markdown source', exact: true }).click();
-  await sheet.locator('summary').click();
+  await sheet.getByRole('button', { name: /^Properties/ }).click();
   await expect(sheet.getByRole('spinbutton', { name: 'priority', exact: true })).toHaveValue('7');
 });
 
@@ -398,7 +427,7 @@ test('external edits get persistent blue dots in both list and tree, opening cle
   await page.reload();
   await mac(page).getByRole('button', { name: /^Work / }).click();
   await expect(row(page, 'two.md').getByRole('img', { name: 'Changed outside Notes' })).toBeVisible();
-  await current(page).getByRole('radiogroup', { name: 'View as' }).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
+  await current(page).getByRole('radiogroup', { name: 'View as' }).getByRole('radio', { name: 'Tree view', exact: true }).click();
   const treeRow = page.getByRole('tree').getByRole('treeitem', { name: /two.md/ });
   // The tree's rows mark it with a titled dot after the name.
   await expect(treeRow.locator('[title="Changed outside Notes"]')).toBeVisible();
@@ -463,7 +492,8 @@ test('right-click renames and deletes notes and folders in place, in the list an
   await expect(row(page, 'final.md')).toHaveCount(0);
   await expect.poll(() => read(page, 'final.md', 'Work').catch(() => null)).toBe(null);
   // The tree has the same menu.
-  await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
+  await dialogsGone(page);
+  await current(page).getByRole('radio', { name: 'Tree view', exact: true }).click();
   await contextAction(page, page.getByRole('tree').getByRole('treeitem', { name: 'Trash me', exact: true }), 'Delete');
   await page.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page.getByRole('tree').getByRole('treeitem', { name: 'Trash me', exact: true })).toHaveCount(0);
@@ -508,9 +538,9 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await expect(others.getByRole('listitem')).toHaveText([/app\.ts$/]);
   await expect(current(page).getByRole('heading', { name: 'No Notes' })).toHaveCount(0);
   await current(page).getByRole('button', { name: 'Project', exact: true }).click();
-  await expect(current(page)).toHaveAttribute('data-screen-label', 'Project');
+  await expect(title(page)).toHaveText('Project');
 
-  await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
+  await current(page).getByRole('radio', { name: 'Tree view', exact: true }).click();
   const tree = current(page).getByRole('tree', { name: 'Folders and files' });
   // Files Notes can't open are listed (dimmed, draggable onto a note) but never selected.
   await tree.getByRole('treeitem', { name: 'data.bin', exact: true }).click();

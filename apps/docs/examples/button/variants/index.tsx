@@ -40,12 +40,12 @@ export default function Variants() {
           Download
         </Button>
       </Row>
-      <Row label="isDisabled">
-        <Button isDisabled>Save changes</Button>
-        <Button variant="secondary" isDisabled>
+      <Row label="disabled">
+        <Button disabled>Save changes</Button>
+        <Button variant="secondary" disabled>
           Cancel
         </Button>
-        <Button variant="destructive" isDisabled>
+        <Button variant="destructive" disabled>
           Delete
         </Button>
       </Row>

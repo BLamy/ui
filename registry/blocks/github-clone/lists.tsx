@@ -3,7 +3,9 @@
 import { type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/search-field';
-import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { ToggleGroup } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { UserCard } from './cards';
 import type { Label, User } from './data';
@@ -15,10 +17,10 @@ export function ListToolbar({ ui, nav, q, setQ, placeholder, newLabel }: { ui: L
   const labels = useLoad(source.id + ':labels', source.labels).data;
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
-      <SearchField value={q} onChange={setQ} placeholder={placeholder} aria-label="Search"
+      <SearchField value={q} onValueChange={(next) => setQ(next)} placeholder={placeholder} aria-label="Search"
         className="h-8 min-w-[200px] flex-1 rounded-md border border-border bg-muted px-2 py-0 text-detail [&_input]:text-detail [&_svg]:size-4" />
       <div className="flex">
-        <Button className={cn(ghButton(), 'rounded-r-none')} onPress={nav.labels}><Oct name="tag" className="text-muted-foreground" />Labels{!ui.phone && labels ? <Counter>{labels.length}</Counter> : null}</Button>
+        <Button className={cn(ghButton(), 'rounded-r-none')} onClick={nav.labels}><Oct name="tag" className="text-muted-foreground" />Labels{!ui.phone && labels ? <Counter>{labels.length}</Counter> : null}</Button>
         <Button className={cn(ghButton(), '-ml-px rounded-l-none')}><Oct name="history" className="text-muted-foreground" />Milestones</Button>
       </div>
       <Button className={ghButton(true)}>{newLabel}</Button>
@@ -31,13 +33,18 @@ export function StateToggle({ value, onChange, open, closed, closedIcon }: {
 }) {
   /** Counts arrive separately from the rows (live: a search total); until then just the label. */
   const item = (v: 'open' | 'closed', icon: OctName, n: number | undefined, label: string) => (
-    <button type="button" onClick={() => onChange(v)} aria-pressed={value === v}
-      className={cn('flex cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2 py-1 text-detail hover:bg-secondary',
-        value === v ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
+    <PlainToggleButton value={v}
+      className="flex cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2 py-1 text-detail text-muted-foreground hover:bg-secondary data-pressed:font-semibold data-pressed:text-foreground">
       <Oct name={icon} />{n != null ? n.toLocaleString('en-US') + ' ' : ''}{label}
-    </button>
+    </PlainToggleButton>
   );
-  return <div className="flex items-center gap-1">{item('open', 'issue', open, 'Open')}{item('closed', closedIcon, closed, 'Closed')}</div>;
+  // One of two, always one: a ToggleGroup that can't be emptied (arrow keys move between the two).
+  return (
+    <ToggleGroup<'open' | 'closed'> aria-label="State" value={[value]} deselectable={false}
+      onValueChange={([next]) => { if (next) onChange(next); }}>
+      {item('open', 'issue', open, 'Open')}{item('closed', closedIcon, closed, 'Closed')}
+    </ToggleGroup>
+  );
 }
 
 export function FilterMenus({ ui, names, onLabel }: { ui: Layout; names: string[]; onLabel: () => void }) {
@@ -46,10 +53,10 @@ export function FilterMenus({ ui, names, onLabel }: { ui: Layout; names: string[
   return (
     <div className="ml-auto flex items-center text-muted-foreground">
       {shown.map((n) => (
-        <button key={n} type="button" onClick={n === 'Labels' ? onLabel : undefined}
+        <PlainButton key={n} onClick={n === 'Labels' ? onLabel : undefined}
           className="flex cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-2 py-1 text-detail text-muted-foreground hover:bg-secondary hover:text-foreground">
           {n}<Oct name="chevDown" size={12} />
-        </button>
+        </PlainButton>
       ))}
     </div>
   );
@@ -62,18 +69,19 @@ export function ItemRow({ ui, state, title, labels, meta, assignees, comments, s
   preview?: ReactNode;
   onOpen?: () => void;
 }) {
-  const open = (
-    <button type="button" onClick={onOpen}
-      className="cursor-pointer border-0 bg-transparent p-0 text-left text-callout leading-6 font-semibold text-foreground hover:text-primary">
-      {title}
-    </button>
-  );
+  const openClass = 'cursor-pointer border-0 bg-transparent p-0 text-left text-callout leading-6 font-semibold text-foreground hover:text-primary';
+  const open = <PlainButton onClick={onOpen} className={openClass}>{title}</PlainButton>;
   return (
     <div className="flex gap-2 border-t border-border px-4 py-2 first:border-t-0 hover:bg-muted">
       <StateIcon state={state} className="mt-[3px]" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-          {preview ? <HoverCardTrigger>{open}<HoverCard placement="bottom start" className="w-80">{preview}</HoverCard></HoverCardTrigger> : open}
+          {preview ? (
+            <HoverCard>
+              <HoverCardTrigger render={<PlainButton onClick={onOpen} className={openClass} />}>{title}</HoverCardTrigger>
+              <HoverCardContent side="bottom" align="start" className="w-80">{preview}</HoverCardContent>
+            </HoverCard>
+          ) : open}
           {status}
           {labels.map((l) => <LabelChip key={l.name} label={l} dark={ui.dark} />)}
         </div>

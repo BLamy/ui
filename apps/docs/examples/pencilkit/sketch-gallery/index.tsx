@@ -72,8 +72,8 @@ export default function SketchGallery() {
         <Button
           size="sm"
           style={{ position: 'absolute', right: 12, bottom: 12 }}
-          isDisabled={!history.strokes.length}
-          onPress={save}
+          disabled={!history.strokes.length}
+          onClick={save}
         >
           Save sketch
         </Button>

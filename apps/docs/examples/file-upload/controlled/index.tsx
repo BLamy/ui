@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileUpload } from '@/components/ui/file-upload'
-import { useFileUpload, type UploadContext, type UploadFile } from '@/lib/file-upload-model'
+import type { UploadContext, UploadFile } from '@/lib/file-upload-model'
+import { useFileUpload } from '@/lib/use-file-upload'
 
 // A stand-in for your server (see the basic example).
 function mockUpload(_file: File, { signal, onProgress }: UploadContext) {
@@ -28,8 +29,8 @@ function mockUpload(_file: File, { signal, onProgress }: UploadContext) {
 export default function Controlled() {
   const [files, setFiles] = useState<UploadFile[]>([])
   const up = useFileUpload({
-    files,
-    onFilesChange: setFiles,
+    value: files,
+    onValueChange: setFiles,
     upload: mockUpload,
     autoUpload: false,
     maxFiles: 5,
@@ -44,7 +45,7 @@ export default function Controlled() {
             ? 'No files yet.'
             : `${up.counts.done} of ${files.length - up.counts.rejected} sent`}
         </p>
-        <Button isDisabled={waiting === 0 || up.counts.uploading > 0} onPress={up.uploadAll}>
+        <Button disabled={waiting === 0 || up.counts.uploading > 0} onClick={up.uploadAll}>
           {waiting > 0 ? `Submit ${waiting} ${waiting === 1 ? 'file' : 'files'}` : 'Submit'}
         </Button>
       </div>

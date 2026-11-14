@@ -36,7 +36,7 @@ Four layers, from your CSS down to the pixels:
 1. **You define variables.** In `:root`, `.dark`, or any selector: `--background`, `--foreground`, `--card`, `--primary`, `--border`, `--radius`, `--font-sans`, … These are the names shadcn presets already use.
 2. **`@theme inline` maps them.** BL UI's tokens (the `bl-ui` registry item, or `@brett_lamy/ui/styles.css`) declare Tailwind variables that point at yours: `--color-primary: var(--primary)`, `--radius-ctl: calc(var(--radius) * 1)`. `inline` keeps the `var()` in every compiled utility, so a nested scope that redefines `--primary` re-resolves it. Nothing is baked in at build time.
 3. **Components read utilities only.** `bg-primary`, `text-muted-foreground`, `rounded-ctl`, `text-footnote`, `shadow-hairline`, `h-row`. No hex, no `rgba()`, no arbitrary radius or text size inside a component, so there is exactly one place to change each value.
-4. **Any subtree can override.** Redefine variables with plain CSS, or wrap a region in `ThemeScope`. Popovers, menus and dialogs opened inside it wear the same scope even though they render in a portal.
+4. **Any subtree can override.** Redefine variables with plain CSS, or wrap a region in `ThemeScope`. Popovers, menus and dialogs opened inside it wear the same scope even though they render into the layer host (BLProvider's root), outside the scope's element.
 
 The `dark:` variant is redefined as `(&:where(.dark, .dark *))`, so the element that carries `.dark` (a `ThemeScope` root) restyles itself as well as its children.
 
@@ -295,11 +295,13 @@ Without the bl-theme, a built-in scope is just its `light` / `dark` class and we
 
 ## BLProvider
 
-`BLProvider` is the app frame: light or dark, `tint`, a safe-area inset (`safeTop`), and the portal root that overlays render into so they inherit the theme variables and font. It is built on the same variables. Use `ThemeScope` for a region inside a page and `BLProvider` for a frame that fills its box, such as a phone or a pane.
+`BLProvider` is the app frame: light or dark, `tint`, a safe-area inset (`safeTop`), and the layer host that popups render into, so they inherit the theme variables and font and stay inside the app's frame (see [Layer hosts](https://blamy.github.io/ui/#/behaviors-layer-hosts)), and a size-class scope: it measures its own box and provides `compact` / `medium` / `regular` to everything inside, which `presentation="auto"` popups follow (see [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit)). It is built on the same variables. Use `ThemeScope` for a region inside a page and `BLProvider` for a frame that fills its box, such as a phone or a pane.
 
 ```tsx
-<BLProvider tint="#0A84FF" safeTop>
-  <NavigationStack screens={screens} onPop={handlePop} />
+<BLProvider tint="#0A84FF" safeTop={47}>
+  <NavigationStack pages={pages} onPagesChange={setPages}>
+    <NavigationStackPage value="inbox">…</NavigationStackPage>
+  </NavigationStack>
 </BLProvider>
 ```
 

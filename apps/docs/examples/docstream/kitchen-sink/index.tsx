@@ -3,7 +3,7 @@ import { createBundledSourceClient, SourcePreview, type DemoResolver, type Sourc
 import { Button } from '@/components/ui/button'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { MarkdownView, type ReferenceNode } from '@/components/ui/markdown-view'
-import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
 import Counter from './counter'
 import counterSource from './counter.tsx?raw'
 import { kitchenSinkMarkdown } from './document'
@@ -67,24 +67,24 @@ export default function KitchenSink() {
 
   return (
     <div className="docstream-kitchen-sink">
-      <Tabs selectedKey={mode} onSelectionChange={(key) => setMode(String(key))} className="sink-tabs">
+      <Tabs value={mode} onValueChange={(v) => v && setMode(v)} className="sink-tabs">
         <div className="sink-controls">
-          <TabList aria-label="Document mode">
-            <Tab id="markdown">Markdown</Tab>
-            <Tab id="editor">Rich editor</Tab>
-            <Tab id="preview">Preview</Tab>
-          </TabList>
+          <TabsList aria-label="Document mode">
+            <TabsTab value="markdown">Markdown</TabsTab>
+            <TabsTab value="editor">Rich editor</TabsTab>
+            <TabsTab value="preview">Preview</TabsTab>
+          </TabsList>
           {mode !== 'editor' && (
-            <Button size="sm" variant="secondary" onPress={() => { setPicked(null); setStreamedLength(streaming ? null : 0) }}>
+            <Button size="sm" variant="secondary" onClick={() => { setPicked(null); setStreamedLength(streaming ? null : 0) }}>
               {streaming ? 'Show full document' : 'Stream example'}
             </Button>
           )}
-          <Button size="sm" variant="ghost" onPress={reset}>Reset example</Button>
+          <Button size="sm" variant="ghost" onClick={reset}>Reset example</Button>
           <span className="sink-status" role="status">
             {streaming ? 'Streaming…' : picked ? picked.kind + ': ' + picked.id : 'Every Docstream block, one document'}
           </span>
         </div>
-        <TabPanel id="markdown" className="sink-workspace sink-workspace-split">
+        <TabsPanel value="markdown" className="sink-workspace sink-workspace-split">
           <section className="sink-panel">
             <div className="sink-panel-label">Markdown source</div>
             <textarea
@@ -101,8 +101,8 @@ export default function KitchenSink() {
               {preview}
             </div>
           </section>
-        </TabPanel>
-        <TabPanel id="editor" className="sink-workspace sink-workspace-split">
+        </TabsPanel>
+        <TabsPanel value="editor" className="sink-workspace sink-workspace-split">
           <section className="sink-panel">
             <div className="sink-panel-label">Rich editor · type / for blocks</div>
             <div className="sink-panel-body">
@@ -124,15 +124,15 @@ export default function KitchenSink() {
               {preview}
             </div>
           </section>
-        </TabPanel>
-        <TabPanel id="preview" className="sink-workspace">
+        </TabsPanel>
+        <TabsPanel value="preview" className="sink-workspace">
           <section className="sink-panel">
             <div className="sink-panel-label">Rendered preview</div>
             <div className="sink-panel-body sink-preview" tabIndex={0} role="region" aria-label="Kitchen sink preview">
               {preview}
             </div>
           </section>
-        </TabPanel>
+        </TabsPanel>
       </Tabs>
     </div>
   )

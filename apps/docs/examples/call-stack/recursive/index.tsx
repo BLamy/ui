@@ -23,7 +23,7 @@ export default function Recursive() {
   const [selected, setSelected] = useState('visit')
   return (
     <ThemeScope className="mx-auto h-80 max-w-2xl overflow-hidden rounded-card bg-card py-1 shadow-hairline">
-      <CallStack frames={FRAMES} selectedId={selected} onSelect={(frame) => setSelected(frame.id)} />
+      <CallStack frames={FRAMES} value={selected} onValueChange={setSelected} />
     </ThemeScope>
   )
 }

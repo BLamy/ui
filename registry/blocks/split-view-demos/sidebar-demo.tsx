@@ -1,23 +1,15 @@
 import { useState } from 'react';
-import { Button as AriaButton } from 'react-aria-components';
+import { PlainToggleButton } from '@/components/ui/plain-button';
 import { SidebarInset, SidebarNav, SidebarProvider, SidebarTrigger, type SidebarVariant } from '@/components/ui/sidebar';
+import { ToggleGroup } from '@/components/ui/toggle-group';
 import { themeScopeProps } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 const VARIANTS: SidebarVariant[] = ['docked', 'rail', 'float', 'overlay'];
-function Chip({ active, onPress, children }: { active: boolean; onPress: () => void; children: string }) {
-  return (
-    <AriaButton
-      onPress={onPress}
-      className={cn(
-        'cursor-pointer rounded-[999px] border-0 px-[11px] py-[5px] font-sans text-caption font-semibold',
-        active ? 'bg-primary text-primary-foreground' : 'bg-secondary-strong text-foreground',
-      )}
-    >
-      {children}
-    </AriaButton>
-  );
-}
+const chip = cn(
+  'h-auto cursor-pointer rounded-[999px] border-0 bg-secondary-strong px-[11px] py-[5px] font-sans text-caption font-semibold text-foreground outline-none',
+  'focus-visible:ring-2 focus-visible:ring-ring data-pressed:bg-primary data-pressed:text-primary-foreground',
+);
 
 /** One Sidebar, four variants, plus a narrow container that turns any of them into the overlay. */
 export function SidebarDemo({ variant: initial = 'docked' }: { variant?: SidebarVariant }) {
@@ -28,8 +20,10 @@ export function SidebarDemo({ variant: initial = 'docked' }: { variant?: Sidebar
     // A plain element (not <ThemeScope>): the demo's own chrome keeps content-box sizing.
     <div {...scope} className={cn(scope.className, 'grid justify-items-center gap-3 bg-background p-4 font-sans')}>
       <div className="flex flex-wrap justify-center gap-1.5">
-        {VARIANTS.map((v) => <Chip key={v} active={variant === v} onPress={() => setVariant(v)}>{v}</Chip>)}
-        <Chip active={narrow} onPress={() => setNarrow((n) => !n)}>narrow container</Chip>
+        <ToggleGroup<SidebarVariant> aria-label="Variant" value={[variant]} deselectable={false} onValueChange={([next]) => next && setVariant(next)} className="gap-1.5">
+          {VARIANTS.map((v) => <PlainToggleButton key={v} value={v} className={chip}>{v}</PlainToggleButton>)}
+        </ToggleGroup>
+        <PlainToggleButton pressed={narrow} onPressedChange={setNarrow} className={chip}>narrow container</PlainToggleButton>
       </div>
       <div className={cn(
         'h-[330px] max-w-[640px] overflow-hidden rounded-card border border-border transition-[width] duration-spring-smooth ease-spring-smooth',

@@ -6,6 +6,7 @@ import {
   WorkbenchSidebarTrigger,
   WorkbenchSidebarClose,
   WorkbenchMain,
+  WorkbenchContent,
   WorkbenchHeader,
   WorkbenchTitle,
   WorkbenchActions,
@@ -94,7 +95,7 @@ function ThreadNav({
               icon={<Icon name="bubble-left" size={15} sw={1.8} />}
               label={t.title}
               active={t.id === current}
-              onPress={() => {
+              onClick={() => {
                 onPick?.(t.id);
                 if (shell?.compact) shell.setSidebarOpen(false);
               }}
@@ -147,39 +148,41 @@ function ShellDemo({
             <WorkbenchSidebarTrigger />
             <WorkbenchTitle project="cookbook">{thread ? thread.title : 'new thread'}</WorkbenchTitle>
             <WorkbenchActions>
-              <WorkbenchAction icon="plus" label="New thread" onPress={() => setCur(null)} />
+              <WorkbenchAction icon="plus" label="New thread" onClick={() => setCur(null)} />
               <WorkbenchDockTrigger />
               <WorkbenchPanelTrigger />
             </WorkbenchActions>
           </WorkbenchHeader>
-          <Conversation empty={!thread}>
-            <ConversationEmpty>
-              <ConversationGreeting title="What are we building?" description="Start a thread — ask anything about this workspace." />
-            </ConversationEmpty>
-            <ConversationMessages threadKey={thread?.id}>
-              {thread?.messages.map((m) =>
-                m.role === 'user' ? (
-                  <UserMessage key={m.id}>{m.text}</UserMessage>
-                ) : (
-                  <AssistantMessage key={m.id}>
-                    {m.summary ? <WorkLog summary={m.summary}>{m.steps?.map((s, i) => <ToolCall key={i} {...s} />)}</WorkLog> : null}
-                    <MessageMarkdown markdown={m.text} />
-                  </AssistantMessage>
-                ),
-              )}
-            </ConversationMessages>
-            <ConversationComposer>
-              {thread?.settled ? (
-                <SettledBanner onUnsettle={() => setThreads((ts) => ts.map((t) => (t.id === thread.id ? { ...t, settled: false } : t)))} />
-              ) : null}
-              <WorkbenchComposer onSubmit={() => {}} autoFocus={!thread} />
-            </ConversationComposer>
-            <ConversationSuggestions>
-              {SUGGESTIONS.map((s) => (
-                <Suggestion key={s}>{s}</Suggestion>
-              ))}
-            </ConversationSuggestions>
-          </Conversation>
+          <WorkbenchContent>
+            <Conversation empty={!thread}>
+              <ConversationEmpty>
+                <ConversationGreeting title="What are we building?" description="Start a thread — ask anything about this workspace." />
+              </ConversationEmpty>
+              <ConversationMessages threadKey={thread?.id}>
+                {thread?.messages.map((m) =>
+                  m.role === 'user' ? (
+                    <UserMessage key={m.id}>{m.text}</UserMessage>
+                  ) : (
+                    <AssistantMessage key={m.id}>
+                      {m.summary ? <WorkLog summary={m.summary}>{m.steps?.map((s, i) => <ToolCall key={i} {...s} />)}</WorkLog> : null}
+                      <MessageMarkdown markdown={m.text} />
+                    </AssistantMessage>
+                  ),
+                )}
+              </ConversationMessages>
+              <ConversationComposer>
+                {thread?.settled ? (
+                  <SettledBanner onUnsettle={() => setThreads((ts) => ts.map((t) => (t.id === thread.id ? { ...t, settled: false } : t)))} />
+                ) : null}
+                <WorkbenchComposer onSubmit={() => {}} autoFocus={!thread} />
+              </ConversationComposer>
+              <ConversationSuggestions>
+                {SUGGESTIONS.map((s) => (
+                  <Suggestion key={s}>{s}</Suggestion>
+                ))}
+              </ConversationSuggestions>
+            </Conversation>
+          </WorkbenchContent>
           <WorkbenchDock>
             <TerminalHeader title="zsh — cookbook">
               <TerminalAction icon="rectangle-split" label="Split terminal" />
@@ -198,7 +201,7 @@ function ShellDemo({
               size="icon-sm"
               aria-label="Switch surface"
               title="Switch surface"
-              onPress={() => setKind(null)}
+              onClick={() => setKind(null)}
             >
               <Icon name="chevron-down-wide" size={15} sw={1.7} />
             </Button> : null}
@@ -225,11 +228,11 @@ function ShellDemo({
         </WorkbenchPanel>
 
         <WorkbenchTabBar value={kind} onValueChange={(k) => setKind(k as SurfaceKind)}>
-          <WorkbenchTab id="chat" icon="bubble-left">
+          <WorkbenchTab value="chat" icon="bubble-left">
             Chat
           </WorkbenchTab>
           {SURFACES.map((s) => (
-            <WorkbenchTab key={s.k} id={s.k} icon={s.icon}>
+            <WorkbenchTab key={s.k} value={s.k} icon={s.icon}>
               {s.name}
             </WorkbenchTab>
           ))}
@@ -274,22 +277,24 @@ function ChatOnlyDemo() {
             <WorkbenchSidebarTrigger />
             <WorkbenchTitle>{t.title}</WorkbenchTitle>
           </WorkbenchHeader>
-          <Conversation>
-            <ConversationMessages threadKey={t.id}>
-              {t.messages.map((m) =>
-                m.role === 'user' ? (
-                  <UserMessage key={m.id}>{m.text}</UserMessage>
-                ) : (
-                  <AssistantMessage key={m.id}>
-                    <MessageMarkdown markdown={m.text} />
-                  </AssistantMessage>
-                ),
-              )}
-            </ConversationMessages>
-            <ConversationComposer>
-              <WorkbenchComposer options={false} checkout={false} onSubmit={() => {}} />
-            </ConversationComposer>
-          </Conversation>
+          <WorkbenchContent>
+            <Conversation>
+              <ConversationMessages threadKey={t.id}>
+                {t.messages.map((m) =>
+                  m.role === 'user' ? (
+                    <UserMessage key={m.id}>{m.text}</UserMessage>
+                  ) : (
+                    <AssistantMessage key={m.id}>
+                      <MessageMarkdown markdown={m.text} />
+                    </AssistantMessage>
+                  ),
+                )}
+              </ConversationMessages>
+              <ConversationComposer>
+                <WorkbenchComposer options={false} checkout={false} onSubmit={() => {}} />
+              </ConversationComposer>
+            </Conversation>
+          </WorkbenchContent>
         </WorkbenchMain>
       </WorkbenchShell>
     </div>
@@ -309,20 +314,22 @@ export const ChatWithInspector: Story = {
               <WorkbenchPanelTrigger />
             </WorkbenchActions>
           </WorkbenchHeader>
-          <Conversation>
-            <ConversationMessages threadKey="inspect">
-              <UserMessage key="u">Fix the boot order so the shim installs before the first tap.</UserMessage>
-              <AssistantMessage key="a">
-                <WorkLog summary="Worked for 42s" defaultOpen>
-                  {THREADS[1].messages[1].steps?.map((s, i) => <ToolCall key={i} {...s} />)}
-                </WorkLog>
-                <MessageMarkdown markdown="Done — the change is in the inspector." />
-              </AssistantMessage>
-            </ConversationMessages>
-            <ConversationComposer>
-              <WorkbenchComposer checkout={false} onSubmit={() => {}} />
-            </ConversationComposer>
-          </Conversation>
+          <WorkbenchContent>
+            <Conversation>
+              <ConversationMessages threadKey="inspect">
+                <UserMessage key="u">Fix the boot order so the shim installs before the first tap.</UserMessage>
+                <AssistantMessage key="a">
+                  <WorkLog summary="Worked for 42s" defaultOpen>
+                    {THREADS[1].messages[1].steps?.map((s, i) => <ToolCall key={i} {...s} />)}
+                  </WorkLog>
+                  <MessageMarkdown markdown="Done — the change is in the inspector." />
+                </AssistantMessage>
+              </ConversationMessages>
+              <ConversationComposer>
+                <WorkbenchComposer checkout={false} onSubmit={() => {}} />
+              </ConversationComposer>
+            </Conversation>
+          </WorkbenchContent>
         </WorkbenchMain>
         <WorkbenchPanel>
           <WorkbenchPanelHeader>

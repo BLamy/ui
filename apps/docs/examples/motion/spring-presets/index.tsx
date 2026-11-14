@@ -51,7 +51,7 @@ export default function Springs() {
         </div>
       ))}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
-        <Button variant="secondary" onPress={() => setOn((v) => !v)}>
+        <Button variant="secondary" onClick={() => setOn((v) => !v)}>
           {on ? 'Back' : 'Go'}
         </Button>
       </div>

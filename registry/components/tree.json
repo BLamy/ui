@@ -1,14 +1,36 @@
 {
   "name": "tree",
   "title": "Tree",
-  "description": "A virtualized, keyboard-driven tree on Trees (@pierre/trees): indent guides, file-type icons, type-to-search, Git status, inline rename, drag and drop and a right-click menu per row. Takes nested items, so it fits any hierarchy, not only files.",
+  "description": "UI SDK's Tree with the kit's rows: compose it from parts, or hand it nested items and it draws them virtualized, with indent guides, file-type icons, search, Git status, rename in place, a context menu and a hover preview per row, and drag and drop. Fits any hierarchy, not only files.",
   "page": "tree",
   "exports": [
     "Tree",
+    "TreeItem",
+    "TreeItemLabel",
+    "TreeItemIndicator",
+    "TreeItemCheckbox",
+    "TreeGroup",
+    "treeVariants",
+    "treeRowVariants",
+    "createTreeController",
+    "treeFromPaths",
+    "visibleTreeRows",
     "TreeFolderIcon",
     "TreeFileIcon"
   ],
   "imports": [
     "Tree"
+  ],
+  "types": [
+    "TreeProps",
+    "TreeNode",
+    "TreeDensity",
+    "TreeDropTarget",
+    "TreeGitStatus",
+    "TreeEditDetails",
+    "TreeEditingChangeDetails",
+    "TreeController",
+    "TreeItemData",
+    "TreeMode"
   ]
 }

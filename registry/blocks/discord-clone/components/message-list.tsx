@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, type ComponentProps, type ReactNode, type Ref } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode, type Ref } from 'react';
+import { createStickToBottom } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -18,32 +19,33 @@ export interface MessageListProps extends ComponentProps<'div'> {
   scrollKey?: string | number;
 }
 
-/** The scrolling transcript (a `log` region). Pinned to the bottom until the reader scrolls up. */
-export function MessageList({ autoScroll = true, scrollKey, className, onScroll, ref, ...props }: MessageListProps) {
-  const el = useRef<HTMLDivElement | null>(null);
-  const stick = useRef(true);
+/** The scrolling transcript (a `log` region). Pinned to the bottom until the reader scrolls up (UI SDK's
+    `createStickToBottom`, which also follows content that grows in place). */
+export function MessageList({ autoScroll = true, scrollKey, className, ref, ...props }: MessageListProps) {
+  const [stick] = useState(() => createStickToBottom({ threshold: 48 }));
   const key = useRef(scrollKey);
   useLayoutEffect(() => {
-    if (key.current !== scrollKey) {
-      key.current = scrollKey;
-      stick.current = true;
-    }
-    if (autoScroll && stick.current && el.current) el.current.scrollTop = el.current.scrollHeight;
-  });
+    if (key.current === scrollKey) return;
+    key.current = scrollKey;
+    if (autoScroll) stick.scrollToBottom({ behavior: 'auto' });
+  }, [scrollKey, autoScroll, stick]);
+  const connect = useCallback(
+    (node: HTMLDivElement | null) => {
+      setRef(ref, node);
+      const disconnect = node && autoScroll ? stick.connect(node) : undefined;
+      return () => {
+        disconnect?.();
+        setRef(ref, null);
+      };
+    },
+    [ref, autoScroll, stick],
+  );
   return (
     <div
-      ref={(node) => {
-        el.current = node;
-        setRef(ref, node);
-      }}
+      ref={connect}
       data-slot="message-list"
       role="log"
       aria-live="polite"
-      onScroll={(e) => {
-        const t = e.currentTarget;
-        stick.current = t.scrollHeight - t.scrollTop - t.clientHeight < 48;
-        onScroll?.(e);
-      }}
       className={cn('ck-scroll relative min-h-0 flex-1 overflow-y-auto py-3', className)}
       {...props}
     />

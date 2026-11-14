@@ -40,7 +40,7 @@ export function buildTree(root: string, files: Iterable<string>, dirs: Iterable<
     if (!folder) {
       const children: TreeNode[] = [];
       const name = basename(path);
-      const node: TreeNode = { id: path, name, children, ...(name === 'node_modules' || name.startsWith('.') ? { dimmed: true } : {}) };
+      const node: TreeNode = { value: path, label: name, children, ...(name === 'node_modules' || name.startsWith('.') ? { dimmed: true } : {}) };
       folder = { node, children };
       folders.set(path, folder);
       place(node, path);
@@ -51,7 +51,7 @@ export function buildTree(root: string, files: Iterable<string>, dirs: Iterable<
   for (const file of files) {
     if (!file.startsWith(prefix)) continue;
     const name = basename(file);
-    place({ id: file, name, ...(name.startsWith('.') ? { dimmed: true } : {}) }, file);
+    place({ value: file, label: name, ...(name.startsWith('.') ? { dimmed: true } : {}) }, file);
   }
   return top;
 }

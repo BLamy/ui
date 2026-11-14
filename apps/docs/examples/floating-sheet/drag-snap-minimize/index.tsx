@@ -173,10 +173,10 @@ function Actions() {
   }
   return (
     <div style={{ display: 'flex', gap: 8, padding: '8px 16px 16px' }}>
-      <Button className="flex-1" onPress={() => setOpen(!open)}>
+      <Button className="flex-1" onClick={() => setOpen(!open)}>
         {open ? 'Close' : 'Open'}
       </Button>
-      <Button className="flex-1" variant="secondary" onPress={minimize}>
+      <Button className="flex-1" variant="secondary" onClick={minimize}>
         Minimize
       </Button>
     </div>

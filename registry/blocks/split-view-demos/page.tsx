@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Segmented } from '@/components/ui/segmented';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { BLProvider } from '@/lib/theme';
 import {
   SplitViewGalleryDemo, SplitViewLibraryDemo, SplitViewMailDemo, SplitViewNotesDemo, SplitViewRemindersDemo, SplitViewSettingsDemo,
@@ -22,7 +22,9 @@ export default function SplitViewDemos() {
     <BLProvider>
       <div className="flex h-full flex-col">
         <div className="flex justify-center p-2.5">
-          <Segmented aria-label="Composition" options={DEMOS.map(({ id, label }) => ({ id, label }))} value={id} onChange={setId} />
+          <Segmented aria-label="Composition" value={id} onValueChange={(v) => v && setId(v)}>
+            {DEMOS.map((d) => <SegmentedItem key={d.id} value={d.id}>{d.label}</SegmentedItem>)}
+          </Segmented>
         </div>
         <div key={demo.id} className="relative min-h-0 flex-1">{demo.render()}</div>
       </div>

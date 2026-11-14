@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewIndicator, TabViewList, TabViewSeparator, TabViewTab } from '@/components/ui/tab-view'
+import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewList, TabViewPill, TabViewSeparator, TabViewTab } from '@/components/ui/tab-view'
 import { Icon } from '@/lib/icon'
 import { ChatShell } from '@/components/blocks/discord-clone/components/chat-shell'
 
@@ -36,7 +36,7 @@ function WorkspaceTile({
   return (
     <span
       style={{ '--tile': color } as CSSProperties}
-      className="relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-sans text-[14px] leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-data-hovered:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--tile) group-data-selected:bg-(--tile) group-data-selected:text-white group-data-pressed:scale-[.94] motion-reduce:transition-none group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-link"
+      className="relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-sans text-[14px] leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-hover:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--tile) group-data-selected:bg-(--tile) group-data-selected:text-white group-active:scale-[.94] motion-reduce:transition-none group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-link"
     >
       {children}
       {mentions ? (
@@ -81,21 +81,21 @@ export default function Rail() {
       <ChatShell style={{ height: 300 }}>
         <TabView
           orientation="vertical"
-          defaultSelectedKey="blui"
+          defaultValue="blui"
           className="contents"
         >
           <TabViewBar variant="workspace">
             <TabViewList aria-label="Workspaces">
-              <TabViewTab id="home" textValue="Direct Messages">
-                <TabViewIndicator variant="pill" attention />
+              <TabViewTab value="home" aria-label="Direct Messages">
+                <TabViewPill attention />
                 <WorkspaceTile>
                   <Icon name="bubble-oval" size={17} sw={2} />
                 </WorkspaceTile>
               </TabViewTab>
               <TabViewSeparator />
               {workspaces.map((w) => (
-                <TabViewTab key={w.id} id={w.id} textValue={w.title}>
-                  <TabViewIndicator variant="pill" attention={w.unread} />
+                <TabViewTab key={w.id} value={w.id} aria-label={w.title}>
+                  <TabViewPill attention={w.unread} />
                   <WorkspaceTile
                     color={WORKSPACE_COLORS[w.id]}
                     mentions={w.mentions}

@@ -1,15 +1,23 @@
 {
   "name": "checkbox",
   "title": "Checkbox",
-  "description": "react-aria Checkbox and CheckboxGroup with a round iOS selection mark (or a square one), a drawn-on tick and an indeterminate state.",
+  "description": "UI SDK's Checkbox and CheckboxGroup with a round iOS selection mark (or a square one), a drawn-on tick and an indeterminate state.",
   "page": "checkbox",
   "exports": [
     "Checkbox",
+    "CheckboxIndicator",
     "CheckboxGroup",
-    "checkboxVariants"
+    "checkboxVariants",
+    "createCheckboxController",
+    "createCheckboxGroupController"
   ],
   "imports": [
     "Checkbox",
     "CheckboxGroup"
+  ],
+  "types": [
+    "CheckboxProps",
+    "CheckboxIndicatorProps",
+    "CheckboxGroupProps"
   ]
 }

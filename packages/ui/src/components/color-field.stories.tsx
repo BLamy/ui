@@ -1,10 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { parseColor, type Color } from 'react-aria-components';
-import { ColorField, ColorFieldGroup, ColorFieldInput, ColorFieldSwatch, ColorSwatch } from '@/components/ui/color-field';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { FieldDescription, FieldError } from '@/components/ui/text-field';
+import { formatColor, parseColor } from '@ui-sdk/core/color';
+import { ColorField, ColorFieldChannelInput, ColorFieldInput, ColorFieldSwatch, ColorSwatch } from '@/components/ui/color-field';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Caption, Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof ColorField> = {
@@ -17,36 +15,23 @@ type Story = StoryObj<typeof ColorField>;
 
 export const Default: Story = {
   render: (args) => (
-    <ColorField {...args} defaultValue="#7f5af0">
-      <Label variant="field">Accent</Label>
-      <ColorFieldGroup>
-        <ColorFieldSwatch />
-        <ColorFieldInput />
-      </ColorFieldGroup>
-      <FieldDescription>A hex color, with or without the #.</FieldDescription>
-    </ColorField>
-  ),
-};
-
-export const Empty: Story = {
-  render: (args) => (
-    <ColorField {...args}>
-      <Label variant="field">Accent</Label>
-      <ColorFieldGroup>
-        <ColorFieldSwatch />
-        <ColorFieldInput placeholder="#RRGGBB" />
-      </ColorFieldGroup>
-    </ColorField>
+    <Field>
+      <FieldLabel variant="field">Accent</FieldLabel>
+      <ColorField defaultValue="#7f5af0" {...args} />
+      <FieldDescription>Any CSS color: a hex, a name, hsl() or oklch().</FieldDescription>
+    </Field>
   ),
 };
 
 export const PlainInput: Story = {
-  name: 'With the plain Input',
+  name: 'Without a swatch',
   render: (args) => (
-    <ColorField {...args} defaultValue="#30d158">
-      <Label variant="field">Accent</Label>
-      <Input />
-    </ColorField>
+    <Field>
+      <FieldLabel variant="field">Accent</FieldLabel>
+      <ColorField defaultValue="#30d158" {...args}>
+        <ColorFieldInput placeholder="#RRGGBB" />
+      </ColorField>
+    </Field>
   ),
 };
 
@@ -54,9 +39,7 @@ export const Sizes: Story = {
   render: (args) => (
     <>
       {(['sm', 'default', 'lg'] as const).map((s) => (
-        <ColorField key={s} {...args} aria-label={s} defaultValue="#ff9f0a">
-          <ColorFieldGroup size={s}><ColorFieldSwatch /><ColorFieldInput /></ColorFieldGroup>
-        </ColorField>
+        <ColorField key={s} aria-label={s} defaultValue="#ff9f0a" {...args} size={s} />
       ))}
     </>
   ),
@@ -64,42 +47,46 @@ export const Sizes: Story = {
 
 export const Channel: Story = {
   render: (args) => (
-    <ColorField {...args} colorSpace="hsl" channel="hue" defaultValue="#7f5af0">
-      <Label variant="field">Hue</Label>
-      <Input />
-    </ColorField>
+    <Field>
+      <FieldLabel variant="field">Hue</FieldLabel>
+      <ColorField space="hsl" defaultValue="#7f5af0" {...args}>
+        <ColorFieldSwatch />
+        <ColorFieldChannelInput channel="hue" />
+      </ColorField>
+    </Field>
   ),
 };
 
 export const Invalid: Story = {
   render: (args) => (
-    <ColorField {...args} isInvalid defaultValue="#7f5af0">
-      <Label variant="field">Accent</Label>
-      <ColorFieldGroup><ColorFieldSwatch /><ColorFieldInput /></ColorFieldGroup>
-      <FieldError>Pick a darker color.</FieldError>
-    </ColorField>
+    <Field invalid>
+      <FieldLabel variant="field">Accent</FieldLabel>
+      <ColorField defaultValue="#7f5af0" {...args} />
+      <FieldError match>Pick a darker color.</FieldError>
+    </Field>
   ),
 };
 
 export const Disabled: Story = {
   render: (args) => (
-    <ColorField {...args} isDisabled defaultValue="#7f5af0">
-      <Label variant="field">Accent</Label>
-      <ColorFieldGroup><ColorFieldSwatch /><ColorFieldInput /></ColorFieldGroup>
-    </ColorField>
+    <Field disabled>
+      <FieldLabel variant="field">Accent</FieldLabel>
+      <ColorField defaultValue="#7f5af0" {...args} />
+    </Field>
   ),
 };
 
 export const Controlled: Story = {
   render: (args) => {
-    const [color, setColor] = useState<Color | null>(parseColor('#0a84ff'));
+    const [color, setColor] = useState('#0a84ff');
+    const parsed = parseColor(color);
     return (
       <>
-        <ColorField {...args} value={color} onChange={setColor}>
-          <Label variant="field">Accent</Label>
-          <ColorFieldGroup><ColorFieldSwatch /><ColorFieldInput /></ColorFieldGroup>
-        </ColorField>
-        <Caption>{color ? color.toString('hsl') : 'No color'}</Caption>
+        <Field>
+          <FieldLabel variant="field">Accent</FieldLabel>
+          <ColorField {...args} value={color} onValueChange={setColor} />
+        </Field>
+        <Caption>{parsed ? formatColor(parsed, 'hsl') : color}</Caption>
       </>
     );
   },
@@ -117,9 +104,9 @@ export const Swatches: Story = {
 export const Dark: Story = {
   decorators: [(Story) => <Panel w={340} dark><Story /></Panel>],
   render: (args) => (
-    <ColorField {...args} defaultValue="#7f5af0">
-      <Label variant="field">Accent</Label>
-      <ColorFieldGroup><ColorFieldSwatch /><ColorFieldInput /></ColorFieldGroup>
-    </ColorField>
+    <Field>
+      <FieldLabel variant="field">Accent</FieldLabel>
+      <ColorField defaultValue="#7f5af0" {...args} />
+    </Field>
   ),
 };

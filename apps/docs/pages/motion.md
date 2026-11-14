@@ -109,6 +109,17 @@ Exits are quicker than entrances: what leaves gets out of the way, what arrives 
 
 `Chevron` is one glyph that rotates to face `right`, `down`, `left` or `up`, always the short way round — the forward arrow becomes a back arrow by turning. `IconSwap` changes a glyph in place (copy → check, idle → spinner → done) by shrinking and blurring the old one out as the new one grows in, stacked in the same cell so nothing around it moves. `Disclosure` turns its chevron as its panel grows.
 
+## Coming and going
+
+Anything that appears and disappears (a toast, a tile, a glyph, a view) uses UI SDK's presence: `animateIn` writes `data-starting-style` for the first frame, `animateOut` writes `data-ending-style` and keeps the element mounted until its CSS transitions finish. The kit's `usePresence(present)` (one element) and `usePresenceList(items, key)` with `useEnterExit` (keyed children) in `@/lib/presence` wrap them for React; the motion itself is CSS on the spring tokens. framer-motion is kept only for what CSS can't do: shared-layout morphs (`Morph`), digit and letter morphs (`NumberMorph`, `TextMorph`), spring-animated values (`AnimatedHeight`'s height, `Chevron`'s angle) and confetti.
+
+```tsx
+const toast = usePresence<HTMLDivElement>(shown)
+return toast.mounted ? (
+  <div ref={toast.ref} className="transition-opacity duration-spring-snappy data-starting-style:opacity-0 data-ending-style:opacity-0">…</div>
+) : null
+```
+
 ## A rare moment
 
 `Celebrate` bursts confetti and a ring out of its parent's centre whenever `fire` changes. Save it for moments that happen rarely and mean something — a completed backup, a first payment.

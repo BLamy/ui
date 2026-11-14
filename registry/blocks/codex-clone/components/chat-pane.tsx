@@ -1,7 +1,8 @@
-import { useLayoutEffect, useRef, useState } from 'react';
-import { Input, TextField } from 'react-aria-components';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { createStickToBottom } from '@ui-sdk/core';
+import { Input } from '@ui-sdk/react/input';
 import { Button } from '@/components/ui/button';
-import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { SplitViewHeader, SplitViewSupplementary, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -61,15 +62,20 @@ function DocLink({ codex, id }: { codex: CodexState; id: string }) {
   };
   return (
     <div className="mt-2 flex flex-col items-start gap-2">
-      <HoverCardTrigger>
-        <Button variant="secondary" onPress={open} className="h-auto rounded-full px-3.5 py-1.5 text-detail font-normal underline decoration-muted-foreground underline-offset-2">
+      <HoverCard>
+        <HoverCardTrigger
+          render={<Button variant="secondary" className="h-auto rounded-full px-3.5 py-1.5 text-detail font-normal underline decoration-muted-foreground underline-offset-2" />}
+          onClick={open}
+        >
           {doc.title}
-        </Button>
-        <HoverCard placement="top start"><DocCard doc={doc} /></HoverCard>
-      </HoverCardTrigger>
+        </HoverCardTrigger>
+        <HoverCardContent side="top" align="start">
+          <DocCard doc={doc} />
+        </HoverCardContent>
+      </HoverCard>
       <Button
         aria-label={`Open ${doc.title}`}
-        onPress={open}
+        onClick={open}
         className="relative aspect-[1.75] h-auto w-[252px] max-w-full flex-col items-start justify-end gap-0 overflow-hidden rounded-2xl bg-(image:--doc-cover) p-3.5 text-left text-white shadow-[inset_0_0_0_1px_--alpha(white/10%)]"
         // the document's own cover
         style={{ '--doc-cover': doc.cover } as React.CSSProperties}
@@ -133,13 +139,14 @@ function Composer({ onSend, disabled }: { onSend: (text: string) => void; disabl
         >
           <Icon name="plus" size={18} sw={1.7} />
         </Button>
-        <TextField aria-label="Message" value={text} onChange={setText} className="min-w-0 flex-1">
-          <Input
-            placeholder="Send a message"
-            onKeyDown={(e) => e.key === 'Enter' && send()}
-            className="box-border w-full min-w-0 border-0 bg-transparent px-1.5 text-[14.5px] text-foreground [font-family:inherit] outline-none placeholder:text-tertiary-foreground"
-          />
-        </TextField>
+        <Input
+          aria-label="Message"
+          value={text}
+          onValueChange={setText}
+          placeholder="Send a message"
+          onKeyDown={(e) => e.key === 'Enter' && send()}
+          className="box-border w-full min-w-0 flex-1 border-0 bg-transparent px-1.5 text-[14.5px] text-foreground [font-family:inherit] outline-none placeholder:text-tertiary-foreground"
+        />
         <Button
           variant="quiet"
           size="icon-sm"
@@ -149,7 +156,7 @@ function Composer({ onSend, disabled }: { onSend: (text: string) => void; disabl
         >
           <Icon name="mic" size={17} sw={1.7} />
         </Button>
-        <Button aria-label="Send" size="icon" isDisabled={!text.trim() || disabled} onPress={send} className="size-8 bg-primary text-primary-foreground data-disabled:opacity-60">
+        <Button aria-label="Send" size="icon" disabled={!text.trim() || disabled} onClick={send} className="size-8 bg-primary text-primary-foreground data-disabled:opacity-60">
           <Icon name="arrow-up" size={16} sw={2.4} />
         </Button>
       </div>
@@ -161,21 +168,16 @@ function Composer({ onSend, disabled }: { onSend: (text: string) => void; disabl
 export function ChatPane({ codex }: { codex: CodexState }) {
   const { current, streaming } = codex;
   const s = useSplitView();
-  const scroller = useRef<HTMLDivElement>(null);
-  // Follow the newest message (and the reply as it streams) while already at the bottom.
-  const last = current.items[current.items.length - 1];
-  const tail = last?.kind === 'message' ? last.text.length : 0;
-  const stick = useRef(true);
+  // Follow the newest message (and the reply as it streams, and anything that grows in place) while the reader is
+  // at the bottom: UI SDK's createStickToBottom. Another chat opens at its end.
+  const [stick] = useState(() => createStickToBottom({ threshold: 48 }));
   const chatId = useRef(current.id);
   useLayoutEffect(() => {
-    const el = scroller.current;
-    if (!el) return;
-    if (chatId.current !== current.id) {
-      chatId.current = current.id;
-      stick.current = true;
-    }
-    if (stick.current) el.scrollTop = el.scrollHeight;
-  }, [current.id, current.items.length, tail]);
+    if (chatId.current === current.id) return;
+    chatId.current = current.id;
+    stick.scrollToBottom({ behavior: 'auto' });
+  }, [current.id, stick]);
+  const scroller = useCallback((el: HTMLDivElement | null) => (el ? stick.connect(el) : undefined), [stick]);
 
   return (
     <SplitViewSupplementary aria-label="Chat" width={390} minWidth={320} maxWidth={520}>
@@ -193,10 +195,6 @@ export function ChatPane({ codex }: { codex: CodexState }) {
       />
       <div
         ref={scroller}
-        onScroll={(e) => {
-          const el = e.currentTarget;
-          stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-        }}
         className="bl-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
       >
         <div className="flex min-h-full flex-col justify-end gap-2 px-4 py-3">

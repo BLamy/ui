@@ -1,15 +1,17 @@
 'use client';
 import { useEffect, useRef, useState, type ComponentProps, type FormEvent, type ReactNode } from 'react';
-import { VisuallyHidden } from 'react-aria';
+import { announce } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { DialogAction, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button, buttonVariants } from '@/components/ui/button';
+import {
+  AlertDialog, AlertDialogBackdrop, AlertDialogClose, AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/dialog';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { PasskeyEnrollDialog, vaultActionClass, vaultErrorClass, vaultLinkClass, vaultMutedClass } from '@/components/ui/passkey-enroll-dialog';
 import { Spinner } from '@/components/ui/spinner';
-import { FieldDescription, TextField } from '@/components/ui/text-field';
 import { Icon, type IconName } from '@/lib/icon';
 import { passkeyUnsupportedReason } from '@/lib/passkey';
 import { cn } from '@/lib/utils';
@@ -135,11 +137,11 @@ export function VaultSetup({ vault, appName, protects, requireVerification, onSe
       className={className}
       {...props}
     >
-      <Button size="lg" className={cn('w-full', vaultActionClass)} onPress={() => (onSetup ? onSetup() : setOpen(true))}>
+      <Button size="lg" className={cn('w-full', vaultActionClass)} onClick={() => (onSetup ? onSetup() : setOpen(true))}>
         <Icon name="passkey" size={18} />
         Set up passkey
       </Button>
-      {onSetup ? null : <PasskeyEnrollDialog isOpen={open} onOpenChange={setOpen} vault={v} appName={appName} protects={protects} requireVerification={requireVerification} />}
+      {onSetup ? null : <PasskeyEnrollDialog open={open} onOpenChange={setOpen} vault={v} appName={appName} protects={protects} requireVerification={requireVerification} />}
     </Panel>
   );
 }
@@ -199,18 +201,20 @@ export function VaultUnlock({ vault, appName, title, description, autoFocus = tr
       {why ? <p className={cn('m-0 text-footnote', vaultMutedClass)}>{unsupportedMessage(why).title}. Your recovery key still works.</p> : null}
 
       {mode === 'passkey' ? (
-        <Button size="lg" className={cn('w-full', vaultActionClass)} autoFocus={autoFocus} isPending={unlocking} onPress={() => void run(() => v.unlock())}>
+        // Pending while the passkey prompt is up: the press returns its Promise.
+        <Button size="lg" className={cn('w-full', vaultActionClass)} autoFocus={autoFocus} onClick={() => (unlocking ? undefined : run(() => v.unlock()))}>
           {unlocking ? <Spinner spin size={18} /> : <Icon name="passkey" size={18} />}
           {unlocking ? 'Waiting for passkey' : 'Unlock with passkey'}
         </Button>
       ) : (
         <form className="grid w-full gap-3 text-left" onSubmit={submitRecovery} noValidate>
-          <TextField value={text} onChange={setText} isInvalid={error !== null} autoComplete="off" autoFocus={autoFocus}>
-            <Label variant="field" className={vaultMutedClass}>Recovery key</Label>
-            <Input className="font-mono uppercase" spellCheck={false} autoCapitalize="characters" autoCorrect="off" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" />
+          <Field invalid={error !== null}>
+            <FieldLabel variant="field" className={vaultMutedClass}>Recovery key</FieldLabel>
+            <Input value={text} onValueChange={setText} autoComplete="off" autoFocus={autoFocus} className="font-mono uppercase" spellCheck={false} autoCapitalize="characters" autoCorrect="off" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" />
             <FieldDescription className={vaultMutedClass}>Eight groups of four letters and digits. Case and dashes don&apos;t matter.</FieldDescription>
-          </TextField>
-          <Button type="submit" size="lg" className={vaultActionClass} isPending={unlocking} isDisabled={!text.trim()}>
+          </Field>
+          {/* Still focusable while it unlocks, so focus isn't dropped mid-way. */}
+          <Button type="submit" size="lg" className={vaultActionClass} disabled={!text.trim() || unlocking} focusableWhenDisabled={unlocking}>
             {unlocking ? 'Unlocking' : 'Unlock with recovery key'}
           </Button>
         </form>
@@ -220,23 +224,24 @@ export function VaultUnlock({ vault, appName, title, description, autoFocus = tr
 
       <div className="flex flex-col items-center gap-1">
         {!passkeyOff ? (
-          <Button variant="link" size="sm" className={vaultLinkClass} onPress={() => { setError(null); setMode(mode === 'passkey' ? 'recovery' : 'passkey'); }}>
+          <Button variant="link" size="sm" className={vaultLinkClass} onClick={() => { setError(null); setMode(mode === 'passkey' ? 'recovery' : 'passkey'); }}>
             {mode === 'passkey' ? 'Use recovery key instead' : 'Use passkey instead'}
           </Button>
         ) : null}
-        <DialogTrigger>
-          <Button variant="link" size="sm" className={vaultMutedClass}>Lost both? Erase this vault…</Button>
-          <DialogContent size="alert">
-            <DialogHeader>
-              <DialogTitle>Erase this vault?</DialogTitle>
-              <DialogDescription>Everything stored in it is deleted from this browser and cannot be recovered. You can then set it up again.</DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <DialogAction variant="cancel" className={vaultLinkClass}>Cancel</DialogAction>
-              <DialogAction variant="destructive" className={vaultErrorClass} onPress={() => { setError(null); v.reset().catch((e) => setError(vaultErrorMessage(e))); }}>Erase</DialogAction>
-            </DialogFooter>
-          </DialogContent>
-        </DialogTrigger>
+        <AlertDialog>
+          <AlertDialogTrigger className={cn(buttonVariants({ variant: 'link', size: 'sm' }), vaultMutedClass)}>Lost both? Erase this vault…</AlertDialogTrigger>
+          <AlertDialogBackdrop />
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Erase this vault?</AlertDialogTitle>
+              <AlertDialogDescription>Everything stored in it is deleted from this browser and cannot be recovered. You can then set it up again.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogClose variant="cancel" className={vaultLinkClass}>Cancel</AlertDialogClose>
+              <AlertDialogClose variant="destructive" value="confirm" className={vaultErrorClass} action={() => { setError(null); v.reset().catch((e) => setError(vaultErrorMessage(e))); }}>Erase</AlertDialogClose>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Panel>
   );
@@ -272,21 +277,22 @@ export function VaultGate({
   // The dialog lives here, above the status switch: enrolling flips the status to `unlocked` before the recovery key
   // has been shown, and the screens below unmount at that moment.
   const [dialog, setDialog] = useState<{ open: boolean; mode: 'enroll' | 'regenerate' }>({ open: false, mode: 'enroll' });
-  const [announce, setAnnounce] = useState('');
   const first = useRef(true);
+  const root = useRef<HTMLDivElement>(null);
 
-  // Say what changed ("Locked." after an auto-lock) without ever including a secret.
+  // Say what changed ("Locked." after an auto-lock) without ever including a secret, in UI SDK's polite live region.
   useEffect(() => {
     if (first.current) { first.current = false; return; }
-    setAnnounce(ANNOUNCE[state.status] ?? '');
+    const message = ANNOUNCE[state.status];
+    if (message) announce(message, { doc: root.current?.ownerDocument });
   }, [state.status]);
 
   let body: ReactNode;
   switch (state.status) {
     case 'loading':
       body = loading ?? (
-        <div className={cn('grid place-items-center p-8', vaultMutedClass)} role="status" aria-label="Checking passkey support">
-          <Spinner spin size={24} />
+        <div className={cn('grid place-items-center p-8', vaultMutedClass)}>
+          <Spinner spin size={24} label="Checking passkey support" />
         </div>
       );
       break;
@@ -306,7 +312,7 @@ export function VaultGate({
             <div role="region" aria-label="Recovery key" className="m-3 flex items-center gap-3 rounded-card bg-secondary p-3 text-subhead">
               <Icon name="key" size={20} className="shrink-0 text-primary" />
               <span className="min-w-0 flex-1">You haven&apos;t confirmed saving your recovery key. Without it, losing your passkey means losing your data.</span>
-              <Button size="sm" className={vaultActionClass} onPress={() => setDialog({ open: true, mode: 'regenerate' })}>Get a new key</Button>
+              <Button size="sm" className={vaultActionClass} onClick={() => setDialog({ open: true, mode: 'regenerate' })}>Get a new key</Button>
             </div>
           ) : null}
           {children}
@@ -315,10 +321,10 @@ export function VaultGate({
   }
 
   return (
-    <div data-slot="vault-gate" data-status={state.status} className={cn('contents', className)}>
+    <div ref={root} data-slot="vault-gate" data-status={state.status} className={cn('contents', className)}>
       {body}
       <PasskeyEnrollDialog
-        isOpen={dialog.open}
+        open={dialog.open}
         onOpenChange={(open) => setDialog((d) => ({ ...d, open }))}
         vault={v}
         mode={dialog.mode}
@@ -326,9 +332,6 @@ export function VaultGate({
         protects={protects}
         requireVerification={requireVerification}
       />
-      <VisuallyHidden>
-        <span role="status" aria-live="polite">{announce}</span>
-      </VisuallyHidden>
     </div>
   );
 }

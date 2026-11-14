@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { DialogBody, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogBackdrop, DialogBody, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { FfmpegError, type Ffmpeg, type FfmpegProgress } from '@/lib/ffmpeg';
-import { formatBytes } from '@/lib/format-bytes';
+import { formatFileSize } from '@ui-sdk/react/file-input';
 import { Icon } from '@/lib/icon';
 import { buildRender, type RenderContainer, type RenderMedia, type RenderPlan, type RenderQuality } from '@/lib/video-render';
 import { timelineDuration, type Timeline, type TimelineFormat } from '@/lib/video-timeline-model';
@@ -23,9 +23,6 @@ const CONTAINERS: { id: RenderContainer; label: string; note: string }[] = [
   { id: 'wav', label: 'WAV', note: 'The soundtrack only, uncompressed.' },
 ];
 const SIZES = [{ id: 'full', label: 'Full' }, { id: '720', label: '720p' }, { id: '480', label: '480p' }, { id: '360', label: '360p' }];
-
-/** The one key of a single-selection change (react-aria hands over a Set, or 'all'). */
-const one = (keys: 'all' | Set<string | number>) => (keys === 'all' ? '' : String([...keys][0] ?? ''));
 
 /** Whether a <video> here plays what the encoder wrote (an MP4 holds MPEG-4 Part 2, which Chrome and Firefox don't decode). */
 const playable = (mime: string) =>
@@ -104,11 +101,16 @@ export function ExportDialog({ ffmpeg, engine, project, media }: { ffmpeg: Ffmpe
 
   const fileName = `${(project.name || 'Video').replace(/[^\w\- ]+/g, '').trim() || 'Video'}.${container}`;
   return (
-    <DialogTrigger onOpenChange={(open) => { if (!open) reset(); }}>
-      <Button size="sm" isDisabled={duration <= 0} title={duration <= 0 ? 'Add something to the timeline first' : undefined}>
+    <Dialog onOpenChange={(open) => { if (!open) reset(); }} dismissible={phase.at !== 'running'}>
+      <DialogTrigger
+        render={<Button size="sm" />}
+        disabled={duration <= 0}
+        title={duration <= 0 ? 'Add something to the timeline first' : undefined}
+      >
         <Icon name="share" size={15} /> Export
-      </Button>
-      <DialogContent size="lg" isDismissable={phase.at !== 'running'}>
+      </DialogTrigger>
+      <DialogBackdrop />
+      <DialogContent size="lg">
         {phase.at !== 'running' ? <DialogClose /> : null}
         <DialogHeader>
           <DialogTitle>Export</DialogTitle>
@@ -119,45 +121,45 @@ export function ExportDialog({ ffmpeg, engine, project, media }: { ffmpeg: Ffmpe
         <DialogBody className="flex flex-col gap-4 px-5 pb-5">
           {phase.at === 'setup' ? (
             <>
-              <ToggleGroup aria-label="Format" variant="filled" size="sm" selectionMode="single" disallowEmptySelection className="w-full"
-                selectedKeys={[container]} onSelectionChange={(k) => setContainer((one(k) || 'webm') as RenderContainer)}>
-                {CONTAINERS.map((c) => <ToggleGroupItem key={c.id} id={c.id} className="flex-1">{c.label}</ToggleGroupItem>)}
+              <ToggleGroup<RenderContainer> aria-label="Format" variant="filled" size="sm" deselectable={false} className="w-full"
+                value={[container]} onValueChange={([next]) => next && setContainer(next)}>
+                {CONTAINERS.map((c) => <ToggleGroupItem key={c.id} value={c.id} className="flex-1">{c.label}</ToggleGroupItem>)}
               </ToggleGroup>
               <p className="m-0 text-footnote text-muted-foreground">{CONTAINERS.find((c) => c.id === container)?.note}</p>
               <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-3">
                 <span className="text-footnote font-medium">Quality</span>
-                <ToggleGroup aria-label="Quality" variant="filled" size="sm" selectionMode="single" disallowEmptySelection
-                  selectedKeys={[quality]} onSelectionChange={(k) => setQuality((one(k) || 'medium') as RenderQuality)}>
-                  <ToggleGroupItem id="low" className="flex-1">Smaller</ToggleGroupItem>
-                  <ToggleGroupItem id="medium" className="flex-1">Balanced</ToggleGroupItem>
-                  <ToggleGroupItem id="high" className="flex-1">Best</ToggleGroupItem>
+                <ToggleGroup<RenderQuality> aria-label="Quality" variant="filled" size="sm" deselectable={false}
+                  value={[quality]} onValueChange={([next]) => next && setQuality(next)}>
+                  <ToggleGroupItem value="low" className="flex-1">Smaller</ToggleGroupItem>
+                  <ToggleGroupItem value="medium" className="flex-1">Balanced</ToggleGroupItem>
+                  <ToggleGroupItem value="high" className="flex-1">Best</ToggleGroupItem>
                 </ToggleGroup>
                 {!audioOnly ? (
                   <>
                     <span className="text-footnote font-medium">Size</span>
-                    <ToggleGroup aria-label="Size" variant="filled" size="sm" selectionMode="single" disallowEmptySelection
-                      selectedKeys={[size]} onSelectionChange={(k) => setSize(one(k) || 'full')}>
-                      {SIZES.map((s) => <ToggleGroupItem key={s.id} id={s.id} className="flex-1">{s.label}</ToggleGroupItem>)}
+                    <ToggleGroup aria-label="Size" variant="filled" size="sm" deselectable={false}
+                      value={[size]} onValueChange={([next]) => next && setSize(next)}>
+                      {SIZES.map((s) => <ToggleGroupItem key={s.id} value={s.id} className="flex-1">{s.label}</ToggleGroupItem>)}
                     </ToggleGroup>
                   </>
                 ) : null}
               </div>
               <div className="flex justify-end gap-2 pt-1">
-                <Button variant="secondary" slot="close">Cancel</Button>
-                <Button isDisabled={!ffmpeg || !!engine || duration <= 0} onPress={run}>Export {CONTAINERS.find((c) => c.id === container)?.label}</Button>
+                <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
+                <Button disabled={!ffmpeg || !!engine || duration <= 0} onClick={run}>Export {CONTAINERS.find((c) => c.id === container)?.label}</Button>
               </div>
             </>
           ) : null}
           {phase.at === 'running' ? (
             <>
-              <Progress label="Rendering" showValue value={Math.round((phase.progress?.fraction ?? 0) * 100)} isIndeterminate={!phase.progress} />
+              <Progress label="Rendering" showValue value={phase.progress?.fraction != null ? Math.round(phase.progress.fraction * 100) : null} />
               <p className="m-0 text-footnote text-muted-foreground tabular-nums">
                 {phase.progress
                   ? `${phase.progress.time.toFixed(1)} of ${duration.toFixed(1)} s${phase.progress.speed ? ` · ${phase.progress.speed.toFixed(1)}× realtime` : ''}`
                   : 'Drawing titles and starting FFmpeg…'}
               </p>
               <div className="flex justify-end">
-                <Button variant="secondary" onPress={() => abort.current?.abort()}>Cancel</Button>
+                <Button variant="secondary" onClick={() => abort.current?.abort()}>Cancel</Button>
               </div>
             </>
           ) : null}
@@ -173,14 +175,13 @@ export function ExportDialog({ ffmpeg, engine, project, media }: { ffmpeg: Ffmpe
                       : <p className="m-0 p-6 text-center text-footnote text-white/80">This browser can’t play MPEG-4 Part 2 video. Download the file to watch it in QuickTime Player or VLC.</p>}
               </div>
               <p className="m-0 text-footnote text-muted-foreground tabular-nums">
-                {fileName} · {formatBytes(phase.size)} · rendered in {(phase.ms / 1000).toFixed(1)} s
+                {fileName} · {formatFileSize(phase.size)} · rendered in {(phase.ms / 1000).toFixed(1)} s
               </p>
               <div className="flex justify-end gap-2">
-                <Button variant="secondary" onPress={reset}>Export again</Button>
-                <a href={phase.url} download={fileName}
-                  className="inline-flex h-9 items-center gap-2 rounded-ctl bg-primary px-4 text-subhead font-semibold text-primary-foreground no-underline">
+                <Button variant="secondary" onClick={reset}>Export again</Button>
+                <Button render={<a href={phase.url} download={fileName} />} className="no-underline">
                   <Icon name="download" size={15} /> Download
-                </a>
+                </Button>
               </div>
             </>
           ) : null}
@@ -188,7 +189,7 @@ export function ExportDialog({ ffmpeg, engine, project, media }: { ffmpeg: Ffmpe
             <>
               <p role="alert" className="m-0 text-footnote text-destructive">{phase.message}</p>
               {phase.stderr ? <pre className="bl-scroll m-0 max-h-40 overflow-auto rounded-ctl bg-secondary p-2 text-caption2 whitespace-pre-wrap">{phase.stderr}</pre> : null}
-              <div className="flex justify-end"><Button variant="secondary" onPress={reset}>Back</Button></div>
+              <div className="flex justify-end"><Button variant="secondary" onClick={reset}>Back</Button></div>
             </>
           ) : null}
           {plan && phase.at !== 'setup' ? (
@@ -201,6 +202,6 @@ export function ExportDialog({ ffmpeg, engine, project, media }: { ffmpeg: Ffmpe
           ) : null}
         </DialogBody>
       </DialogContent>
-    </DialogTrigger>
+    </Dialog>
   );
 }

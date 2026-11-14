@@ -310,7 +310,7 @@ export function setRowOpen<T>(state: ObjectTreeState<T>, key: string, open: bool
   return { ...state, open: withEntry(state.open, key, open) };
 }
 
-/** react-aria reports the whole set of open rows after a toggle: note what changed. */
+/** The tree reports the whole set of open rows after a toggle: note what changed. */
 export function applyExpanded<T>(state: ObjectTreeState<T>, before: ReadonlySet<string>, after: ReadonlySet<string>): ObjectTreeState<T> {
   const open = new Map(state.open);
   for (const key of after) if (!before.has(key)) open.set(key, true);
@@ -351,6 +351,11 @@ function withGetterResult<T>(source: ObjectTreeNode<T>, result: ObjectTreeGetter
 const SEPARATOR = '\u001f';
 const joinKey = (parent: string, id: string) => (parent ? `${parent}${SEPARATOR}${id}` : id);
 
+/** A row's key, the ObjectTree's `value`, from its node's ids from the top down (a section's id first). */
+export function objectTreeKey(ids: readonly string[]): string {
+  return ids.join(SEPARATOR);
+}
+
 export interface ObjectTreeRows<T = unknown> {
   rows: readonly ObjectTreeRow<T>[];
   /** Every row in `rows`, at any depth. */
@@ -368,7 +373,7 @@ function sameList<V>(a: readonly V[] | undefined, b: readonly V[] | undefined): 
 }
 
 /** Works out the rows on show: only open rows are walked, however many children sit behind closed ones. A row that
- *  didn't change is the same object as last time (from `last`), which is what keeps react-aria from rebuilding it. */
+ *  didn't change is the same object as last time (from `last`), which is what keeps the tree from rebuilding it. */
 export function buildRows<T>(state: ObjectTreeState<T>, options: { groupSize?: number } = {}, last?: ObjectTreeRows<T> | null): ObjectTreeRows<T> {
   const size = options.groupSize ?? RANGE_SIZE;
   const byKey = new Map<string, ObjectTreeRow<T>>();

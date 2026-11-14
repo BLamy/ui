@@ -8,8 +8,9 @@ import { useOptionalTailscale } from '@/lib/tailscale-react';
 import { TailscaleLoginButton } from '@/components/ui/tailscale-login-button';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Credenza } from '@/components/ui/credenza';
+import { Credenza, CredenzaBackdrop, CredenzaClose, CredenzaContent, CredenzaHeader, CredenzaTitle, CredenzaView } from '@/components/ui/credenza';
 import { SplitViewSection } from '@/components/ui/split-view';
+import { PlainButton } from '@/components/ui/plain-button';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -34,10 +35,10 @@ export function ServiceButtons({ onOpen }: { onOpen: (id: ServiceId) => void }) 
   return (
     <SplitViewSection title="Developer Sign-In" className="mt-2">
       {passkeys.status === 'locked' ? (
-        <button type="button" onClick={() => void passkeys.unlock().catch(() => {})}
+        <PlainButton onClick={() => void passkeys.unlock().catch(() => {})}
           className="bl-btn mb-1.5 flex w-full cursor-pointer items-center gap-2 rounded-panel border-0 bg-transparent px-2.5 py-1.5 text-left [font-family:inherit] text-detail text-primary">
           <Icon name="passkey" size={16} />Unlock saved sign-ins with your passkey
-        </button>
+        </PlainButton>
       ) : null}
       <div className="grid grid-cols-2 gap-2.5 px-0.5 pt-1">
         {SERVICES.map((s) => {
@@ -45,7 +46,7 @@ export function ServiceButtons({ onOpen }: { onOpen: (id: ServiceId) => void }) 
           const check = checks[s.id];
           const status = grant ? STATUS[check?.state ?? 'checking'] : null;
           return (
-            <button key={s.id} type="button" onClick={() => (grant && check?.state !== 'rejected' ? onOpen(s.id) : signIn(s.id))}
+            <PlainButton key={s.id} onClick={() => (grant && check?.state !== 'rejected' ? onOpen(s.id) : signIn(s.id))}
               aria-label={grant ? `${s.name}: ${grant.account}, ${status!.label}` : `Sign in to ${s.name}`}
               className={cn(
                 'bl-btn flex cursor-pointer items-center gap-2.5 rounded-panel border-0 bg-card p-2.5 text-left [font-family:inherit] text-foreground outline-none',
@@ -59,7 +60,7 @@ export function ServiceButtons({ onOpen }: { onOpen: (id: ServiceId) => void }) 
                   {status ? <>{check?.state === 'ok' ? <Icon name="check-circle-fill" size={11} /> : null}{status.label}</> : 'Sign In'}
                 </span>
               </span>
-            </button>
+            </PlainButton>
           );
         })}
       </div>
@@ -113,11 +114,10 @@ function useSecondsLeft(until: number | undefined, live: boolean) {
   return until == null ? 0 : Math.max(0, Math.round((until - now) / 1000));
 }
 
-export function SignInCredenza({ service: id, auth, compact, live, onClose, onSaved, onSavePasskey }: {
+export function SignInCredenza({ service: id, auth, live, onClose, onSaved, onSavePasskey }: {
   /** The service being signed in to; null when closed. */
   service: ServiceId | null;
   auth: DeviceAuth;
-  compact: boolean;
   /** Count the code's expiry down. False holds it still (screenshots). */
   live: boolean;
   onClose: () => void;
@@ -164,8 +164,12 @@ export function SignInCredenza({ service: id, auth, compact, live, onClose, onSa
   const title = !service ? '' : step.view === 'done' ? 'Signed In' : step.view === 'error' ? 'Couldn’t Sign In' : `Sign In to ${service.name}`;
 
   return (
-    <Credenza open={!!id} onClose={onClose} compact={compact} title={title}
+    <Credenza open={!!id} onOpenChange={(open) => { if (!open) onClose(); }}
       view={step.view === 'approving' ? 'code' : step.view}>
+      <CredenzaBackdrop />
+      <CredenzaContent>
+      <CredenzaHeader><CredenzaTitle>{title}</CredenzaTitle><CredenzaClose /></CredenzaHeader>
+      <CredenzaView>
       {service ? (
         <div className="px-4 pt-1 pb-4">
           {step.view === 'starting' ? (
@@ -194,11 +198,11 @@ export function SignInCredenza({ service: id, auth, compact, live, onClose, onSa
                   : <><Icon name="clock-fill" size={13} />Expires in {Math.floor(left / 60)}:{String(left % 60).padStart(2, '0')}</>}
               </div>
               <div className="mt-4 grid gap-2">
-                <Button size="pill" onPress={openBrowser}>
+                <Button size="pill" onClick={openBrowser}>
                   <Icon name="arrow-up-right" size={16} weight="semibold" />
                   {prompt.userCode ? `Copy Code & ${service.verb}` : service.verb}
                 </Button>
-                <Button size="pill" variant="secondary" data-autofocus onPress={onClose}>Cancel</Button>
+                <CredenzaClose render={<Button size="pill" variant="secondary" autoFocus />}>Cancel</CredenzaClose>
               </div>
             </>
           ) : null}
@@ -218,11 +222,11 @@ export function SignInCredenza({ service: id, auth, compact, live, onClose, onSa
               </div>
               <div className="mt-3 grid w-full gap-2">
                 {passkeys.status === 'empty' || passkeys.status === 'locked' ? <>
-                  <Button size="pill" onPress={() => { onClose(); onSavePasskey(); }}>
+                  <Button size="pill" onClick={() => { onClose(); onSavePasskey(); }}>
                     <Icon name="passkey" size={17} />{passkeys.status === 'empty' ? 'Save with a Passkey' : 'Unlock to Save'}
                   </Button>
-                  <Button size="pill" variant="secondary" onPress={onClose}>Not Now</Button>
-                </> : <Button size="pill" onPress={onClose}>Done</Button>}
+                  <CredenzaClose render={<Button size="pill" variant="secondary" />}>Not Now</CredenzaClose>
+                </> : <CredenzaClose render={<Button size="pill" />}>Done</CredenzaClose>}
               </div>
             </div>
           ) : null}
@@ -234,13 +238,15 @@ export function SignInCredenza({ service: id, auth, compact, live, onClose, onSa
                 <span className="leading-[1.4]">{step.message}</span>
               </div>
               <div className="mt-4 grid gap-2">
-                <Button size="pill" onPress={() => setAttempt((n) => n + 1)}>Try Again</Button>
-                <Button size="pill" variant="secondary" onPress={onClose}>Cancel</Button>
+                <Button size="pill" onClick={() => setAttempt((n) => n + 1)}>Try Again</Button>
+                <CredenzaClose render={<Button size="pill" variant="secondary" />}>Cancel</CredenzaClose>
               </div>
             </>
           ) : null}
         </div>
       ) : null}
+      </CredenzaView>
+      </CredenzaContent>
     </Credenza>
   );
 }
@@ -280,15 +286,15 @@ export function ServiceCard({ id }: { id: ServiceId }) {
         <Icon name="passkey" size={13} />
         {isSaved(id) ? 'Saved, encrypted with your passkey.' : passkeys.status === 'unsupported' ? 'Kept until you close this page (no passkey encryption in this browser).' : 'Kept until you close this page.'}
         {!isSaved(id) && (passkeys.status === 'empty' || passkeys.status === 'locked') ? (
-          <button type="button" onClick={savePasskey} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-caption text-primary">
+          <PlainButton onClick={savePasskey} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-caption text-primary">
             {passkeys.status === 'empty' ? 'Save with a Passkey' : 'Unlock to Save'}
-          </button>
+          </PlainButton>
         ) : null}
       </div>
       <div className="flex flex-wrap gap-2">
-        {check?.state === 'rejected' ? <Button size="sm" onPress={() => signIn(id)}>Sign In Again</Button>
-          : <Button size="sm" variant="secondary" isDisabled={check?.state === 'checking'} onPress={() => recheck(id)}>Check Again</Button>}
-        <Button size="sm" variant="secondary" className="text-destructive" onPress={() => forget(id)}>Sign Out</Button>
+        {check?.state === 'rejected' ? <Button size="sm" onClick={() => signIn(id)}>Sign In Again</Button>
+          : <Button size="sm" variant="secondary" disabled={check?.state === 'checking'} onClick={() => recheck(id)}>Check Again</Button>}
+        <Button size="sm" variant="secondary" className="text-destructive" onClick={() => forget(id)}>Sign Out</Button>
       </div>
     </Card>
   );

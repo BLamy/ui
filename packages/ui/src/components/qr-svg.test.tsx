@@ -4,6 +4,8 @@ import jsQR from 'jsqr';
 import { QRSvg } from '@/components/ui/qr-svg';
 import { encodeQR, numDataCodewords, type QRLevel } from '@/lib/qr';
 
+(globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
+
 type Pt = [number, number];
 
 /** Flatten an SVG path (only the M/H/V/C/Z absolute commands QRSvg emits) into closed polygons. */
@@ -207,12 +209,12 @@ describe('QRSvg', () => {
     expect(decode(renderToStaticMarkup(<QRSvg value={max} level="L" rounded={false} />))).toBe(max);
   });
 
-  it('keeps the deprecated seed prop working and honours margin', () => {
-    const seed = 'https://example.com/albums/summer-2026';
-    const svg = renderToStaticMarkup(<QRSvg seed={seed} margin={2} />);
+  it('honours margin', () => {
+    const text = 'https://example.com/albums/summer-2026';
+    const svg = renderToStaticMarkup(<QRSvg value={text} margin={2} />);
     expect(svg).toContain('data-slot="qr-svg"');
-    expect(svg).toContain(`viewBox="0 0 ${encodeQR(seed).size + 4} ${encodeQR(seed).size + 4}"`);
-    expect(decode(svg)).toBe(seed);
+    expect(svg).toContain(`viewBox="0 0 ${encodeQR(text).size + 4} ${encodeQR(text).size + 4}"`);
+    expect(decode(svg)).toBe(text);
   });
 
   it('is aria-hidden by default and labelled when titled', () => {

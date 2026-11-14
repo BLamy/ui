@@ -51,7 +51,7 @@ function SidebarDemo({ compact }: { compact?: boolean }) {
   const settled = match.filter((t) => t.settled);
   const shown = showAll ? settled : settled.slice(0, 7);
   const item = (t: (typeof threads)[number]) => (
-    <ThreadItem key={t.id} active={cur === t.id} meta={t.age} onPress={() => setCur(t.id)}>
+    <ThreadItem key={t.id} active={cur === t.id} meta={t.age} onClick={() => setCur(t.id)}>
       {t.title}
     </ThreadItem>
   );
@@ -70,15 +70,15 @@ function SidebarDemo({ compact }: { compact?: boolean }) {
         </Button> : null}
       </ThreadSidebarHeader>
       <ThreadSidebarToolbar>
-        <ThreadSearch value={query} onChange={setQuery} />
-        <ThreadNewButton onPress={() => setCur(null)} />
+        <ThreadSearch value={query} onValueChange={setQuery} />
+        <ThreadNewButton onClick={() => setCur(null)} />
       </ThreadSidebarToolbar>
       <ProjectSwitcher />
       <ThreadList>
         {active.length ? <ThreadGroup label="Active">{active.map(item)}</ThreadGroup> : null}
         <ThreadGroup label="Settled" collapsible>
           {shown.map(item)}
-          {settled.length > shown.length ? <ThreadShowMore count={settled.length - shown.length} onPress={() => setShowAll(true)} /> : null}
+          {settled.length > shown.length ? <ThreadShowMore count={settled.length - shown.length} onClick={() => setShowAll(true)} /> : null}
         </ThreadGroup>
       </ThreadList>
       <ThreadSidebarFooter>

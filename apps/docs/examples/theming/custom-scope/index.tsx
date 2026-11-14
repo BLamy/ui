@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover'
 import { Slider } from '@/components/ui/slider'
 import { ThemeScope } from '@/lib/theme'
 
@@ -36,16 +36,17 @@ export default function CustomScope() {
       </div>
       <Slider
         label="Corner radius"
-        minValue={0}
-        maxValue={24}
+        min={0}
+        max={24}
         value={radius}
-        onChange={setRadius}
+        onValueChange={setRadius}
       />
       <div className="flex gap-3">
         <Button>Save</Button>
-        <PopoverTrigger>
-          <Button variant="secondary">Options</Button>
-          <PopoverContent aria-label="Options" placement="bottom start">
+        <Popover>
+          <PopoverTrigger className={buttonVariants({ variant: 'secondary' })}>Options</PopoverTrigger>
+          <PopoverContent side="bottom" align="start">
+            <PopoverTitle className="sr-only">Options</PopoverTitle>
             <p className="m-0 text-detail text-muted-foreground">
               This popover opened inside the scope, so it reads the scope&apos;s{' '}
               <code>--popover</code>, <code>--primary</code> and{' '}
@@ -55,7 +56,7 @@ export default function CustomScope() {
               Primary follows the tint
             </Button>
           </PopoverContent>
-        </PopoverTrigger>
+        </Popover>
       </div>
     </ThemeScope>
   )

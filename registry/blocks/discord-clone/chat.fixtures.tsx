@@ -88,17 +88,17 @@ export function FixtureSidebar({ selected, onSelect, onPickThread, title = 'BL U
   return (
     <ChatShellSidebar style={style}>
       <ServerHeader onClose={onClose}>{title}</ServerHeader>
-      <ChannelList selectedKey={selected} onSelectionChange={onSelect}>
+      <ChannelList value={selected} onValueChange={onSelect}>
         {CHANNEL_GROUPS.map((g) => (
           <ChannelGroup key={g.label} label={g.label}>
             {g.channels.map((c) => (
               <Fragment key={c.id}>
-                <ChannelItem id={c.id} unread={c.unread}>
+                <ChannelItem value={c.id} unread={c.unread}>
                   {c.name}
                 </ChannelItem>
                 {c.id === selected &&
                   c.threads?.map((t) => (
-                    <ChannelThreadItem key={t.id} onPress={() => onPickThread?.(c.id, t.id)}>
+                    <ChannelThreadItem key={t.id} onClick={() => onPickThread?.(c.id, t.id)}>
                       {t.title}
                     </ChannelThreadItem>
                   ))}

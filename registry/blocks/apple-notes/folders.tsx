@@ -41,20 +41,20 @@ export function FoldersSidebar({ notes }: { notes: NotesState }) {
           {local.map((f) => <LocationDrop key={f.id} notes={notes} f={f}><ItemMenu notes={notes} id={f.id} label={f.title}>
             <SplitViewItem id={f.id} title={f.title}
               subtitle={f.connected === false ? 'Reconnect folder' : undefined}
-              icon={<Icon name="folder" size={21} />} badge={notes.count(f)} onPress={() => open(f)} />
+              icon={<Icon name="folder" size={21} />} badge={notes.count(f)} onClick={() => open(f)} />
           </ItemMenu></LocationDrop>)}
           {!local.length ? <p className="m-0 px-2.5 py-3 text-detail leading-relaxed text-muted-foreground">Add the folders where you keep your notes.</p> : null}
         </SplitViewSection>
         {browser ? <SplitViewSection title="In This Browser" collapsible>
           <LocationDrop notes={notes} f={browser}><ItemMenu notes={notes} id={browser.id} label="Notes">
-            <SplitViewItem id={browser.id} title="Notes" icon={<Icon name="note" size={21} />} badge={notes.count(browser)} onPress={() => open(browser)} />
+            <SplitViewItem id={browser.id} title="Notes" icon={<Icon name="note" size={21} />} badge={notes.count(browser)} onClick={() => open(browser)} />
           </ItemMenu></LocationDrop>
         </SplitViewSection> : null}
         {!notes.files.canOpenFolder ? <p className="px-2.5 pt-4 text-caption leading-relaxed text-muted-foreground">Open in Chrome or Edge to add folders from your Mac.</p> : null}
       </div>
     </SplitViewContent>
     {s.collapsed ? <BottomBar className="justify-end px-3">
-      <BarButton label="New note" onPress={() => notes.startCreating('file')}><Icon name="compose" size={24} /></BarButton>
+      <BarButton label="New note" onClick={() => notes.startCreating('file')}><Icon name="compose" size={24} /></BarButton>
     </BottomBar> : null}
   </SplitViewSidebar>;
 }

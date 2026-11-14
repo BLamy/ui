@@ -28,7 +28,7 @@ function SheetDemo({ open: initialOpen }: { open: boolean }) {
             <div className="mb-3.5">compact-width terminal presentation</div>
             <Button
               className={cn(pressable, 'cursor-pointer rounded-[9px] border-0 bg-primary px-4 py-[9px] text-[13px] font-semibold text-primary-foreground')}
-              onPress={() => setOpen(true)}
+              onClick={() => setOpen(true)}
             >
               Open terminal drawer
             </Button>
@@ -42,7 +42,7 @@ function SheetDemo({ open: initialOpen }: { open: boolean }) {
             radius={16}
             dismissible
             visible={open}
-            onDismiss={() => setOpen(false)}
+            onVisibleChange={setOpen}
             peek="52%"
             topGap="7%"
             hideOnScroll={false}
@@ -56,7 +56,7 @@ function SheetDemo({ open: initialOpen }: { open: boolean }) {
                 <TerminalHeader title="zsh — cookbook">
                   <TerminalAction icon="rectangle-split" label="Split terminal" />
                   <TerminalAction icon="plus" label="New terminal" />
-                  <TerminalAction icon="bin" label="Close terminal" onPress={() => setOpen(false)} />
+                  <TerminalAction icon="bin" label="Close terminal" onClick={() => setOpen(false)} />
                 </TerminalHeader>
                 <TerminalBody seed={TERMINAL_SEED} />
               </div>

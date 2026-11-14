@@ -29,14 +29,14 @@ import { ProgressRing, CountdownRing } from '@brett_lamy/ui'
 
 ## ProgressRing
 
-`ProgressRing` is react-aria's `ProgressBar` (`role="progressbar"`, `aria-valuenow`, `aria-valuetext`) drawn as a ring. Give it an `aria-label` and a `value` (0–100 by default, or set `minValue` / `maxValue`); `showValue` puts the rolling percentage in the middle, or pass children — a stop square, a check. Omit `value` (or pass `isIndeterminate`) for a spinning quarter arc.
+`ProgressRing` is UI SDK's `Progress` (`role="progressbar"`, `aria-valuenow`, `aria-valuetext`) drawn as a ring. Give it an `aria-label` and a `value` (0–100 by default, or set `min` / `max`); `showValue` puts the rolling percentage in the middle (a custom `format` shows UI SDK's text as is), or pass children — a stop square, a check. Leave `value` out (or pass `null`) for a spinning quarter arc.
 
 {% demo src="progress-ring/rings" %}
 
 ```tsx
 <ProgressRing aria-label="Upload" value={progress} size="lg" showValue />
 <ProgressRing aria-label="Downloading" value={42}><StopSquare /></ProgressRing>
-<ProgressRing aria-label="Loading" isIndeterminate />
+<ProgressRing aria-label="Loading" />
 ```
 
 ## CountdownRing
@@ -60,8 +60,8 @@ The ring has `role="timer"` and an `aria-label` of "N seconds left" (override wi
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `value` / `minValue` / `maxValue` | — / 0 / 100 | The progress (react-aria `ProgressBar`). |
-| `isIndeterminate` | `false` | Spinning quarter arc (still under reduced motion). |
+| `value` / `min` / `max` | `null` / 0 / 100 | The progress (UI SDK `Progress`). Leave `value` out or `null` for the spinning quarter arc (still under reduced motion). |
+| `format` / `getValueLabel` | percent | The value text and its screen-reader label, as on [Progress](https://blamy.github.io/ui/#/progress). |
 | `size` | `md` | `sm` 20 · `md` 28 · `lg` 44 · `xl` 72 px, or any number of px. |
 | `thickness` | scales with size | Stroke width in px. |
 | `tone` | `default` | `success`, `warning`, `destructive`. |
@@ -81,7 +81,7 @@ The ring has `role="timer"` and an `aria-label` of "N seconds left" (override wi
 | `showLabel` | on from `md` | The seconds in the middle. |
 | `labelSize` | scales with the ring | `sm` 9.36 · `md` 10.5 · `lg` 13 · `xl` 20 px, independent of the ring's size (`countdownRingLabelVariants`). |
 
-The elements carry `data-slot="progress-ring"` or `data-slot="countdown-ring"` (with `data-warning` while warning); the arc is `data-slot="progress-ring-arc"`.
+A ProgressRing is UI SDK's Progress root, so it carries `data-slot="progress"` and its state attributes (`data-indeterminate`, `data-progressing`, `data-complete`); the value in the middle is `progress-value`. A CountdownRing carries `data-slot="countdown-ring"` (with `data-warning` while warning); the arc of either is `data-slot="progress-ring-arc"`.
 
 ## cva recipes
 

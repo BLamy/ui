@@ -47,7 +47,7 @@ Inside a `FilterBar` it needs nothing else: it reads the fields and applies into
 | `fields` | What can be filtered. Default: the enclosing bar's. |
 | `onApply(filters)` | Called with the understood filters on Enter or Apply. Default: the bar's `apply`. |
 | `mode` | With a bar: `merge` (default) replaces the filter of a field the sentence names and adds the rest; `replace` swaps them all. |
-| `value` / `defaultValue` / `onValueChange` | The sentence. |
+| `value` / `defaultValue` / `onValueChange(text, details)` | The sentence. `details` is the Input's: `reason` is `input-change` for typing, `clear-press` for Esc and `imperative` when the box empties after an apply; `cancel()` rejects the change. |
 | `placeholder` | Default "Describe what you want…". |
 | `query` | Options for `useFilterQuery`: `debounce`, `now`, `enabled`, `maxLength`. |
 
@@ -87,9 +87,9 @@ const { filters, unresolved, notes, status, pending, refresh } = useFilterQuery(
 
 ## Accessibility
 
-- The box is a labelled text field described by its hint and the preview.
-- The preview is mirrored in a polite live region as one sentence — "2 filters understood: Priority is Urgent; Assignee is Bob. Ignored: bugs. Press Enter to apply." — and the chips beside it are a visual copy, hidden from assistive technology so it is not read twice.
-- Enter while the preview is still catching up only brings it up; a second Enter applies. Esc clears the box. Applied filters are announced by the bar.
+- The box is UI SDK's `Input`: a labelled text field described by its hint.
+- The preview is read out with UI SDK's `announce()` (its one polite live region) as one sentence — "2 filters understood: Priority is Urgent; Assignee is Bob. Ignored: bugs. Press Enter to apply." — and the chips beside it are a visual copy, hidden from assistive technology so it is not read twice.
+- Enter while the preview is still catching up only brings it up; a second Enter applies. Esc clears the box, and is left alone when the box is empty, so a popover around it still closes. Applied filters are announced by the bar.
 
 ## cva recipes
 

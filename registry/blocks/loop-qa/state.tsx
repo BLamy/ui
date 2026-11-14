@@ -2,9 +2,9 @@
    next, the bugs (their status and severity change), the runs (a live one ticks forward), the Ask QA thread
    (replies stream in), the palette and the dialogs. Pages read it with useLoopQA() — the detail stack keeps
    pushed pages as elements, so they must read live data from here rather than from props captured at push time. */
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { type SplitViewState } from '@/components/ui/split-view';
-import { createToastQueue, toastApi, type ToastApi } from '@/components/ui/toast';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { type SplitViewContextValue } from '@/components/ui/split-view';
+import { createHud, createToaster } from '@/components/ui/toast';
 import { useReducedMotion } from '@/lib/motion';
 import { type Appearance } from '@/lib/theme';
 import { chunks, replyTo, SEED_CHAT, isOpen, type ChatMessage } from './agent';
@@ -64,15 +64,17 @@ export function useLoopQAState(o: LoopQAOptions) {
   const [dialog, setDialog] = useState<DialogName>(null);
   const [trackers, setTrackers] = useState<string[]>([]);
   const [currentBug, setCurrentBug] = useState<string | null>(null);
-  const [hud] = useState(createToastQueue);
-  const toast = useMemo<ToastApi>(() => toastApi(hud), [hud]);
+  // The block's own queues, shown by its own regions: banners (runs, trackers, saves) and the HUD pill (copies,
+  // status changes).
+  const [toast] = useState(() => createToaster());
+  const [hud] = useState(() => createHud());
 
   const project = PROJECTS.find((p) => p.id === section) ?? null;
   const tab: ProjectTab = (project && tabs[project.id]) || 'overview';
 
   /* ── navigation ── */
   /** The SplitView's API (registered from inside it), so programmatic navigation pushes columns on a phone. */
-  const split = useRef<SplitViewState | null>(null);
+  const split = useRef<SplitViewContextValue | null>(null);
   const openSection = useCallback((id: string) => {
     if (split.current) split.current.select('sidebar', id);
     else setSection(id);
@@ -91,8 +93,8 @@ export function useLoopQAState(o: LoopQAOptions) {
   const setBugSeverity = useCallback((id: string, severity: Severity) => setBugs((l) => l.map((b) => (b.id === id ? { ...b, severity } : b))), []);
   const copy = useCallback((text: string, message: string) => {
     void navigator.clipboard?.writeText(text).catch(() => {});
-    toast.hud(message, { tone: 'success' });
-  }, [toast]);
+    hud(message, { type: 'success' });
+  }, [hud]);
   const copyBugReport = useCallback((id: string) => {
     const b = bugs.find((x) => x.id === id);
     if (b) copy(bugReport(b, PROJECTS.find((p) => p.id === b.projectId)), `Copied ${b.id}`);

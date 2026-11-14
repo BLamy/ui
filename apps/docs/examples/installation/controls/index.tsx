@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Avatar } from '@/components/ui/avatar'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 
@@ -14,31 +14,22 @@ export default function Controls() {
   const [range, setRange] = useState('day')
   const [on, setOn] = useState(true)
   return (
-    <div
-      style={{
-        display: 'grid',
-        gap: 16,
-        justifyItems: 'center',
-        maxWidth: 420,
-        margin: '0 auto',
-      }}
-    >
-      <div style={{ width: 280 }}>
-        <Segmented
-          aria-label="Range"
-          value={range}
-          onChange={setRange}
-          options={ranges}
-        />
+    <div className="mx-auto grid max-w-md justify-items-center gap-4">
+      <div className="w-70">
+        <Segmented aria-label="Range" value={range} onValueChange={(v) => v && setRange(v)}>
+          {ranges.map((r) => (
+            <SegmentedItem key={r.id} value={r.id}>
+              {r.label}
+            </SegmentedItem>
+          ))}
+        </Segmented>
       </div>
-      <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
+      <div className="flex items-center gap-4.5">
         <Avatar c={{ f: 'Ada', l: 'Lovelace' }} size={40} />
-        <Switch aria-label="Demo switch" checked={on} onChange={setOn} />
+        <Switch aria-label="Demo switch" checked={on} onCheckedChange={setOn} />
         <Spinner />
       </div>
-      <div style={{ fontSize: 12.5, color: 'var(--muted-foreground)' }}>
-        @brett_lamy/ui is live.
-      </div>
+      <div className="text-footnote text-muted-foreground">@brett_lamy/ui is live.</div>
     </div>
   )
 }

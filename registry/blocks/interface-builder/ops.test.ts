@@ -44,10 +44,10 @@ describe('moveTo', () => {
 
 describe('connect', () => {
   it('adds a segue and has the source node’s event perform it', () => {
-    const [next, segue] = connect(SAMPLE_DOC, 'garden', 'schedule', 'water-all', 'onPress');
+    const [next, segue] = connect(SAMPLE_DOC, 'garden', 'schedule', 'water-all', 'onClick');
     expect(next.segues.at(-1)).toBe(segue);
     const node = findNode(next.scenes.find((s) => s.id === 'garden')!.root, 'water-all')!;
-    expect(node.on?.onPress?.some((a) => a.do === 'segue' && a.segue === segue.id)).toBe(true);
+    expect(node.on?.onClick?.some((a) => a.do === 'segue' && a.segue === segue.id)).toBe(true);
   });
 });
 

@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { DocstreamEnvHost } from '@brett_lamy/docstream';
 import { Button } from '@/components/ui/button';
-import { Credenza } from '@/components/ui/credenza';
+import { Credenza, CredenzaBackdrop, CredenzaClose, CredenzaContent, CredenzaHeader, CredenzaTitle, CredenzaView } from '@/components/ui/credenza';
 import { Input } from '@/components/ui/input';
 import { PasskeyEnrollDialog } from '@/components/ui/passkey-enroll-dialog';
 import { BLProvider } from '@/lib/theme';
@@ -124,7 +124,7 @@ function Keychain({ children }: { children: (host: DocstreamEnvHost) => ReactNod
       {children(host)}
       {/* The sheets need a positioned host over the page; it only takes pointer events while one is open. */}
       <BLProvider className="fixed inset-0 z-50" style={{ pointerEvents: overlay ? 'auto' : 'none', background: 'transparent' }}>
-        <SignInCredenza service={signIn} auth={auth} compact={false} live
+        <SignInCredenza service={signIn} auth={auth} live
           onSaved={(id: ServiceId, grant: DeviceGrant) => store.store(id, grant)}
           onSavePasskey={savePasskey}
           onClose={() => {
@@ -133,7 +133,7 @@ function Keychain({ children }: { children: (host: DocstreamEnvHost) => ReactNod
             if (closed && !store.grants[closed] && pending) cancel(`Signing in to ${SERVICES.find((s) => s.id === closed)?.name} was cancelled.`);
           }} />
         <TypeValue name={typing} onSave={saveTyped} onCancel={() => { setTyping(null); cancel('Cancelled.'); }} />
-        <PasskeyEnrollDialog isOpen={enrolling} onOpenChange={setEnrolling} appName="Passwords"
+        <PasskeyEnrollDialog open={enrolling} onOpenChange={(open) => setEnrolling(open)} appName="Passwords"
           protects="the tokens and variables the docs' examples use" />
       </BLProvider>
     </SignInsProvider>
@@ -147,12 +147,21 @@ function TypeValue({ name, onSave, onCancel }: { name: string | null; onSave: (n
   useEffect(() => { if (name) setValue(''); }, [name]);
   const shown = last.current ?? '';
   return (
-    <Credenza open={name !== null} onClose={onCancel} title={`Enter ${shown}`} compact={false}>
-      <form className="grid gap-3 px-4 pt-1 pb-4" onSubmit={(e) => { e.preventDefault(); if (value) onSave(shown, value); }}>
-        <p className="m-0 text-footnote text-muted-foreground">No sign-in provides <code>{shown}</code>. It is kept in your keychain (encrypted with your passkey once one is set up).</p>
-        <Input aria-label={shown} type="password" autoComplete="off" value={value} onChange={(e) => setValue(e.target.value)} autoFocus />
-        <Button size="pill" type="submit" isDisabled={!value}>Save</Button>
-      </form>
+    <Credenza open={name !== null} onOpenChange={(open) => { if (!open) onCancel(); }} presentation="dialog">
+      <CredenzaBackdrop />
+      <CredenzaContent>
+        <CredenzaHeader>
+          <CredenzaTitle>{`Enter ${shown}`}</CredenzaTitle>
+          <CredenzaClose />
+        </CredenzaHeader>
+        <CredenzaView>
+          <form className="grid gap-3 px-4 pt-1 pb-4" onSubmit={(e) => { e.preventDefault(); if (value) onSave(shown, value); }}>
+            <p className="m-0 text-footnote text-muted-foreground">No sign-in provides <code>{shown}</code>. It is kept in your keychain (encrypted with your passkey once one is set up).</p>
+            <Input aria-label={shown} type="password" autoComplete="off" value={value} onValueChange={setValue} autoFocus />
+            <Button size="pill" type="submit" disabled={!value}>Save</Button>
+          </form>
+        </CredenzaView>
+      </CredenzaContent>
     </Credenza>
   );
 }

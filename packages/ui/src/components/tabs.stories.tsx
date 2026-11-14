@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Tabs, TabList, Tab, TabPanel } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Panel } from '../stories/primitive-frame';
 
@@ -18,17 +18,17 @@ function Demo({ variant }: { variant: 'segmented' | 'underline' }) {
     ['billing', 'Billing', 'Plan, invoices and payment.'],
   ];
   return (
-    <Tabs variant={variant} defaultSelectedKey="account">
-      <TabList aria-label="Settings">
-        {panels.map(([id, t]) => <Tab key={id} id={id}>{t}</Tab>)}
-      </TabList>
+    <Tabs variant={variant} defaultValue="account">
+      <TabsList aria-label="Settings">
+        {panels.map(([id, t]) => <TabsTab key={id} value={id}>{t}</TabsTab>)}
+      </TabsList>
       {panels.map(([id, t, d]) => (
-        <TabPanel key={id} id={id}>
+        <TabsPanel key={id} value={id}>
           <Card>
             <CardHeader><CardTitle>{t}</CardTitle><CardDescription>{d}</CardDescription></CardHeader>
             <CardContent className="text-muted-foreground">Content for {t.toLowerCase()}.</CardContent>
           </Card>
-        </TabPanel>
+        </TabsPanel>
       ))}
     </Tabs>
   );

@@ -27,7 +27,7 @@ export default function SlashBlocks() {
             key={b.label}
             size="sm"
             variant="secondary"
-            onPress={() => editor.current?.insertMarkdown(b.markdown)}
+            onClick={() => editor.current?.insertMarkdown(b.markdown)}
           >
             + {b.label}
           </Button>
@@ -35,7 +35,7 @@ export default function SlashBlocks() {
         <Button
           size="sm"
           variant="ghost"
-          onPress={() => editor.current?.clear()}
+          onClick={() => editor.current?.clear()}
         >
           Clear
         </Button>

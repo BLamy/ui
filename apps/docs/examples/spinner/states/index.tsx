@@ -25,7 +25,7 @@ export default function States() {
         </div>
       </div>
       <label className="flex items-center gap-3 text-subhead">
-        <Switch checked={spin} onChange={setSpin} aria-label="Spin" />
+        <Switch checked={spin} onCheckedChange={setSpin} aria-label="Spin" />
         spin
       </label>
     </div>

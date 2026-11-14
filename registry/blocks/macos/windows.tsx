@@ -1,10 +1,13 @@
 /* A macOS window: traffic lights, a title bar you drag (double-click zooms), edges you resize, and the app inside.
-   The app stays mounted while the window is minimized, so it comes back as it was. On a phone-sized desktop the
+   The app's box is a small screen of its own (a size class and a layer host), so an app in a narrow window lays
+   itself out, and presents its popups, as it would on a phone. It stays mounted while the window is minimized. On a phone-sized desktop the
    same window is a full-screen app that zooms out of its springboard icon — no chrome, same mounted app. */
 import { Suspense, memo, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { PlainButton } from '@/components/ui/plain-button';
 import { Spinner } from '@/components/ui/spinner';
+import { bindDrag } from '@ui-sdk/core';
 import { Icon } from '@/lib/icon';
-import { AppearanceProvider } from '@/lib/theme';
+import { AppearanceProvider, BLProvider } from '@/lib/theme';
 import { useOptionalTailscale } from '@/lib/tailscale-react';
 import { cn } from '@/lib/utils';
 import { appById, type DesktopApp } from './apps';
@@ -49,9 +52,13 @@ const AppBody = memo(function AppBody({ app, dark }: { app: DesktopApp; dark: bo
   const props = typeof app.props === 'function' ? app.props({ tailscale }) : app.props;
   return (
     <AppearanceProvider value={dark ? 'dark' : 'light'}>
-      <Suspense fallback={<div className="grid h-full place-items-center bg-muted text-muted-foreground"><Spinner spin size={24} /></div>}>
-        <Component {...props} />
-      </Suspense>
+      {/* The window's own layer host and size-class scope: the app's dialogs, sheets and menus stay inside the window
+          and follow its size (an app that has a BLProvider of its own becomes the nearer one). */}
+      <BLProvider className="bg-background">
+        <Suspense fallback={<div className="grid h-full place-items-center bg-muted text-muted-foreground"><Spinner spin size={24} /></div>}>
+          <Component {...props} />
+        </Suspense>
+      </BLProvider>
     </AppearanceProvider>
   );
 });
@@ -80,7 +87,9 @@ export function DesktopWindow({ win, dark, dock, phone }: { win: WindowState; da
   const d = useDesktop();
   const settled = useSettled();
   const app = appById(win.app);
-  const gesture = useRef<{ kind: 'move' | Edge; px: number; py: number; rect: Rect } | null>(null);
+  // The drag in progress (UI SDK's bindDrag), ended if the window goes away mid-drag.
+  const drag = useRef<(() => void) | null>(null);
+  useEffect(() => () => drag.current?.(), []);
   // Where the window would snap if the drag ended now (drawn as a preview while the pointer is at an edge).
   const [snap, setSnap] = useState<Snap | null>(null);
   if (!app) return null;
@@ -89,41 +98,47 @@ export function DesktopWindow({ win, dark, dock, phone }: { win: WindowState; da
   const card = phone?.card;
   const up = phone ? phone.shown && settled && !card : false;
 
-  const begin = (kind: 'move' | Edge) => (e: ReactPointerEvent) => {
+  /** Follows a press on the title bar (move) or an edge (resize) until it lifts; a move that ends at a desktop edge
+   *  snaps there, and Escape puts the window back. */
+  const begin = (kind: 'move' | Edge) => (e: ReactPointerEvent<HTMLElement>) => {
     if (e.button !== 0 || win.zoomed) return;
     if (kind === 'move' && (e.target as HTMLElement).closest('button')) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    gesture.current = { kind, px: e.clientX, py: e.clientY, rect };
-  };
-  const move = (e: ReactPointerEvent) => {
-    const g = gesture.current;
-    if (!g) return;
-    const dx = e.clientX - g.px;
-    const dy = e.clientY - g.py;
-    if (g.kind === 'move') {
-      d.setRect(win.app, { ...g.rect, x: clamp(g.rect.x + dx, 60 - g.rect.w, d.area.width - 60), y: clamp(g.rect.y + dy, 0, d.area.height - TITLE_H) });
-      // The pointer's place on the desktop (the windows layer starts at the stack's origin, so client coordinates less its box).
-      const layer = e.currentTarget.closest('[data-slot=macos-windows]')?.getBoundingClientRect();
-      setSnap(layer ? snapAt(e.clientX - layer.left, e.clientY - layer.top, d.area) : null);
-    } else {
-      const w = g.kind === 's' ? g.rect.w : clamp(g.rect.w + dx, MIN_W, d.area.width - g.rect.x);
-      const h = g.kind === 'e' ? g.rect.h : clamp(g.rect.h + dy, MIN_H, d.area.height - g.rect.y);
-      d.setRect(win.app, { ...g.rect, w, h });
-    }
-  };
-  const end = () => {
-    const g = gesture.current;
-    gesture.current = null;
-    if (g?.kind === 'move' && snap) {
-      // Back to the place the drag began from first: a zoomed window un-zooms to where it was, not to where it was dragged.
-      if (snap === 'top') { d.setRect(win.app, g.rect); d.toggleZoom(win.app); }
-      else d.setRect(win.app, snapRect(snap, d.area, dock));
-    }
-    setSnap(null);
+    const start = { px: e.clientX, py: e.clientY, rect };
+    const layer = e.currentTarget.closest('[data-slot=macos-windows]');
+    let snapTo: Snap | null = null;
+    drag.current?.();
+    drag.current = bindDrag(e.currentTarget, e.nativeEvent, {
+      cancelOnEscape: true,
+      onMove: ({ x, y }) => {
+        const dx = x - start.px;
+        const dy = y - start.py;
+        const g = start.rect;
+        if (kind === 'move') {
+          d.setRect(win.app, { ...g, x: clamp(g.x + dx, 60 - g.w, d.area.width - 60), y: clamp(g.y + dy, 0, d.area.height - TITLE_H) });
+          // The pointer's place on the desktop (the windows layer starts at the stack's origin, so client coordinates less its box).
+          const box = layer?.getBoundingClientRect();
+          snapTo = box ? snapAt(x - box.left, y - box.top, d.area) : null;
+          setSnap(snapTo);
+        } else {
+          const w = kind === 's' ? g.w : clamp(g.w + dx, MIN_W, d.area.width - g.x);
+          const h = kind === 'e' ? g.h : clamp(g.h + dy, MIN_H, d.area.height - g.y);
+          d.setRect(win.app, { ...g, w, h });
+        }
+      },
+      onEnd: (_event, canceled) => {
+        drag.current = null;
+        setSnap(null);
+        if (canceled) { d.setRect(win.app, start.rect); return; }
+        if (kind !== 'move' || !snapTo) return;
+        // Back to the place the drag began from first: a zoomed window un-zooms to where it was, not to where it was dragged.
+        if (snapTo === 'top') { d.setRect(win.app, start.rect); d.toggleZoom(win.app); }
+        else d.setRect(win.app, snapRect(snapTo, d.area, dock));
+      },
+    });
   };
 
   const edge = (kind: Edge, className: string) => (
-    <div aria-hidden="true" onPointerDown={begin(kind)} onPointerMove={move} onPointerUp={end} onPointerCancel={end} className={cn('absolute z-10 touch-none', className)} />
+    <div aria-hidden="true" onPointerDown={begin(kind)} className={cn('absolute z-10 touch-none', className)} />
   );
 
   const preview = snap ? (snap === 'top' ? { x: 0, y: 0, w: d.area.width, h: Math.max(MIN_H, d.area.height - (dock ? DOCK_RESERVE : 0)) } : snapRect(snap, d.area, dock)) : null;
@@ -172,9 +187,6 @@ export function DesktopWindow({ win, dark, dock, phone }: { win: WindowState; da
         <header
           data-slot="macos-titlebar"
           onPointerDown={begin('move')}
-          onPointerMove={move}
-          onPointerUp={end}
-          onPointerCancel={end}
           onDoubleClick={(e) => { if (!(e.target as HTMLElement).closest('button')) d.toggleZoom(win.app); }}
           className={cn('group/lights relative flex shrink-0 touch-none items-center bg-card px-3 shadow-hairline-b', win.zoomed ? 'cursor-default' : 'cursor-grab active:cursor-grabbing')}
           style={{ height: TITLE_H }}
@@ -190,7 +202,7 @@ export function DesktopWindow({ win, dark, dock, phone }: { win: WindowState; da
           </div>
         </header>
       )}
-      <div className="relative isolate min-h-0 flex-1"><AppBody app={app} dark={dark} /></div>
+      <div data-slot="macos-window-body" className="relative isolate min-h-0 flex-1"><AppBody app={app} dark={dark} /></div>
       {win.zoomed || phone ? null : (
         <>
           {edge('e', 'top-0 right-0 h-full w-1.5 cursor-ew-resize')}
@@ -219,8 +231,7 @@ const LIGHT = {
 
 function Light({ kind, label, active, onClick }: { kind: keyof typeof LIGHT; label: string; active: boolean; onClick: () => void }) {
   return (
-    <button
-      type="button"
+    <PlainButton
       aria-label={label}
       onClick={onClick}
       className={cn(
@@ -229,6 +240,6 @@ function Light({ kind, label, active, onClick }: { kind: keyof typeof LIGHT; lab
       )}
     >
       <span className="opacity-0 transition-opacity group-hover/lights:opacity-100"><Icon name={LIGHT[kind].icon} size={8} sw={3.2} /></span>
-    </button>
+    </PlainButton>
   );
 }

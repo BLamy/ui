@@ -34,7 +34,7 @@ const TINTS: Record<ValueTint, string> = {
 };
 
 const linkButton =
-  'ml-1.5 cursor-default border-0 bg-transparent p-0 font-sans text-caption2 font-medium whitespace-nowrap text-primary outline-none data-hovered:underline data-focus-visible:underline';
+  'ml-1.5 cursor-default border-0 bg-transparent p-0 font-sans text-caption2 font-medium whitespace-nowrap text-primary outline-none hover:underline focus-visible:underline';
 
 export interface ObjectValueProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
   value: ValuePreview;
@@ -80,8 +80,8 @@ export function ObjectValue({ value, maxLength = STRING_PREVIEW_LENGTH, quote, e
       ))}
       {hidden > 0 ? (
         <>
-          <PlainButton className={linkButton} onPress={showMore}>Show more ({formatLength(hidden)})</PlainButton>
-          <PlainButton className={linkButton} onPress={copy}>{copied ? 'Copied' : 'Copy'}</PlainButton>
+          <PlainButton className={linkButton} onClick={showMore}>Show more ({formatLength(hidden)})</PlainButton>
+          <PlainButton className={linkButton} onClick={copy}>{copied ? 'Copied' : 'Copy'}</PlainButton>
         </>
       ) : null}
     </span>

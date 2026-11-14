@@ -1,9 +1,11 @@
 'use client';
-import { Separator as AriaSeparator, type SeparatorProps as AriaSeparatorProps } from 'react-aria-components';
+import type { ComponentProps } from 'react';
+import { Separator as SdkSeparator } from '@ui-sdk/react/separator';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { cx } from '@/lib/utils';
 
-/* ══ Separator — hairline rule on react-aria's Separator ══ */
+/* ══ Separator — hairline rule on UI SDK's Separator ══
+   Announced as a separator (with its orientation) unless it is `decorative`, for a line that is only visual. */
 export const separatorVariants = cva('m-0 shrink-0 border-0 bg-border', {
   variants: {
     orientation: {
@@ -17,14 +19,13 @@ export const separatorVariants = cva('m-0 shrink-0 border-0 bg-border', {
   defaultVariants: { orientation: 'horizontal', inset: false },
 });
 
-export interface SeparatorProps extends Omit<AriaSeparatorProps, 'orientation'>, VariantProps<typeof separatorVariants> {}
+export type SeparatorProps = Omit<ComponentProps<typeof SdkSeparator>, 'orientation'> & VariantProps<typeof separatorVariants>;
 
-export function Separator({ className, orientation = 'horizontal', inset, ...props }: SeparatorProps) {
+export function Separator({ className, orientation, inset, ...props }: SeparatorProps) {
   return (
-    <AriaSeparator
-      data-slot="separator"
+    <SdkSeparator
       orientation={orientation ?? 'horizontal'}
-      className={cn(separatorVariants({ orientation, inset }), className)}
+      className={cx(separatorVariants({ orientation, inset }), className)}
       {...props}
     />
   );

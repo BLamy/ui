@@ -1,27 +1,27 @@
-import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { buttonVariants } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Kbd, KbdGroup } from '@/components/ui/kbd'
 
-const SHORTCUTS: [string, string[]][] = [
-  ['Search', ['⌘', 'K']],
-  ['New tab', ['⌘', 'T']],
-  ['Command palette', ['⇧', '⌘', 'P']],
-  ['Close window', ['⌘', 'W']],
+const SHORTCUTS: [string, string][] = [
+  ['Search', 'mod+k'],
+  ['New tab', 'mod+t'],
+  ['Command palette', 'shift+mod+p'],
+  ['Close window', 'mod+w'],
 ]
 
-// A Kbd is one keycap; a KbdGroup spaces a chord of several. Inside a menu
-// item, pass a single Kbd as the item's `shortcut` — react-aria links it to the
-// item as its description.
+// A Kbd is one keycap; a KbdGroup spaces a chord of several. `keys` takes a
+// UI SDK shortcut string and shows it for the reader's platform (⌘K on Apple,
+// Ctrl+K elsewhere). A menu item draws its own hint from its `shortcut` prop.
 export default function Shortcuts() {
   return (
     <div className="mx-auto grid max-w-sm gap-5">
-      <div className="flex items-center gap-3 text-subhead text-muted-foreground">
+      <div className="flex items-center gap-3 text-subhead text-foreground/70">
         <DropdownMenu>
-          <Button variant="secondary">File</Button>
+          <DropdownMenuTrigger className={buttonVariants({ variant: 'secondary' })}>File</DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem shortcut={<Kbd>⌘N</Kbd>}>New file</DropdownMenuItem>
-            <DropdownMenuItem shortcut={<Kbd>⌘S</Kbd>}>Save</DropdownMenuItem>
-            <DropdownMenuItem shortcut={<Kbd>⌘W</Kbd>}>Close</DropdownMenuItem>
+            <DropdownMenuItem shortcut="mod+n">New file</DropdownMenuItem>
+            <DropdownMenuItem shortcut="mod+s">Save</DropdownMenuItem>
+            <DropdownMenuItem shortcut="mod+w">Close</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <span>
@@ -34,13 +34,17 @@ export default function Shortcuts() {
           {SHORTCUTS.map(([action, keys]) => (
             <li key={action} className="flex items-center justify-between">
               {action}
-              <KbdGroup>
-                {keys.map((k) => (
-                  <Kbd key={k}>{k}</Kbd>
-                ))}
-              </KbdGroup>
+              <Kbd keys={keys} />
             </li>
           ))}
+          <li className="flex items-center justify-between">
+            Spelled out, key by key
+            <KbdGroup>
+              <Kbd>⇧</Kbd>
+              <Kbd>⌘</Kbd>
+              <Kbd>P</Kbd>
+            </KbdGroup>
+          </li>
         </ul>
       </div>
     </div>

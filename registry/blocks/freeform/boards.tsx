@@ -1,8 +1,8 @@
 /* The board gallery: every board as a card with a live thumbnail, favorites, and a card to start a new one. */
 import { useState } from 'react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PlainButton } from '@/components/ui/plain-button';
-import { Segmented } from '@/components/ui/segmented';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { useContainerWidth } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -44,14 +44,12 @@ export function BoardGallery({ compact }: { compact: boolean }) {
   return (
     <div data-slot="freeform-gallery" className="absolute inset-0 flex animate-bl-fade-in flex-col bg-muted">
       <header className="flex h-toolbar shrink-0 items-center gap-3 border-b border-border bg-card px-4">
-        <Segmented
-          aria-label="Show"
-          value={filter}
-          onChange={(v) => setFilter(v as 'all' | 'favorites')}
-          options={[{ id: 'all', label: 'All Boards' }, { id: 'favorites', label: 'Favorites' }]}
-        />
+        <Segmented<'all' | 'favorites'> aria-label="Show" value={filter} onValueChange={(v) => v && setFilter(v)}>
+          <SegmentedItem value="all">All Boards</SegmentedItem>
+          <SegmentedItem value="favorites">Favorites</SegmentedItem>
+        </Segmented>
         <span className="flex-1" />
-        <PlainButton onPress={() => f.newBoard()} className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border-0 bg-primary px-3 text-detail font-semibold text-primary-foreground">
+        <PlainButton aria-label="New Board" onClick={() => f.newBoard()} className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border-0 bg-primary px-3 text-detail font-semibold text-primary-foreground">
           <Icon name="plus" size={18} sw={2.2} />
           {compact ? null : 'New Board'}
         </PlainButton>
@@ -64,7 +62,7 @@ export function BoardGallery({ compact }: { compact: boolean }) {
               <li key={b.id} className="group/card relative flex flex-col gap-2">
                 <PlainButton
                   aria-label={`Open ${b.title}`}
-                  onPress={() => f.open(b.id)}
+                  onClick={() => f.open(b.id)}
                   className="block cursor-pointer overflow-hidden rounded-card border border-border bg-background p-0 text-left shadow-[0_8px_20px_-12px] shadow-black/30 transition-transform duration-spring-snappy ease-spring-snappy hover:scale-[1.02] active:scale-[.98]"
                 >
                   <BoardThumb board={b} />
@@ -76,23 +74,24 @@ export function BoardGallery({ compact }: { compact: boolean }) {
                   </div>
                   {b.favorite ? <Icon name="star-fill" size={15} className="mt-0.5 shrink-0 text-warning" /> : null}
                 </div>
-                <div className={cn('absolute top-2 right-2 opacity-0 transition-opacity group-focus-within/card:opacity-100 group-hover/card:opacity-100')}>
-                  <DropdownMenu>
-                    <PlainButton aria-label={`${b.title} options`} className="grid size-8 cursor-pointer place-items-center rounded-full border-0 bg-card/90 p-0 text-foreground shadow-hairline backdrop-blur-md">
-                      <Icon name="ellipsis" size={18} sw={2} />
-                    </PlainButton>
-                    <DropdownMenuContent
-                      aria-label={b.title}
-                      placement="bottom end"
-                      onAction={(k) => {
-                        if (k === 'favorite') f.toggleFavorite(b.id);
-                        else if (k === 'duplicate') f.duplicateBoard(b.id);
-                        else if (k === 'delete') f.deleteBoard(b.id);
-                      }}
+                <div className={cn('absolute top-2 right-2 opacity-0 transition-opacity group-focus-within/card:opacity-100 group-hover/card:opacity-100 has-[[data-open]]:opacity-100')}>
+                  <DropdownMenu
+                    onAction={(k) => {
+                      if (k === 'favorite') f.toggleFavorite(b.id);
+                      else if (k === 'duplicate') f.duplicateBoard(b.id);
+                      else if (k === 'delete') f.deleteBoard(b.id);
+                    }}
+                  >
+                    <DropdownMenuTrigger
+                      aria-label={`${b.title} options`}
+                      render={<PlainButton className="grid size-8 cursor-pointer place-items-center rounded-full border-0 bg-card/90 p-0 text-foreground shadow-hairline backdrop-blur-md" />}
                     >
-                      <DropdownMenuItem id="favorite" className="min-h-10 py-2">{b.favorite ? 'Remove from Favorites' : 'Add to Favorites'}</DropdownMenuItem>
-                      <DropdownMenuItem id="duplicate" className="min-h-10 py-2">Duplicate</DropdownMenuItem>
-                      <DropdownMenuItem id="delete" variant="destructive" className="min-h-10 py-2">Delete</DropdownMenuItem>
+                      <Icon name="ellipsis" size={18} sw={2} />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="bottom" align="end">
+                      <DropdownMenuItem value="favorite" className="min-h-10 py-2">{b.favorite ? 'Remove from Favorites' : 'Add to Favorites'}</DropdownMenuItem>
+                      <DropdownMenuItem value="duplicate" className="min-h-10 py-2">Duplicate</DropdownMenuItem>
+                      <DropdownMenuItem value="delete" destructive className="min-h-10 py-2">Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

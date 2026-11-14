@@ -1,6 +1,21 @@
 import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CommandEmpty, CommandFooter, CommandGroup, CommandHighlight, CommandInput, CommandItem, CommandList, CommandMenu, CommandPage, useCommandMenu } from '@/components/ui/command-menu';
+import {
+  CommandMenu,
+  CommandMenuDialog,
+  CommandMenuDialogContent,
+  CommandMenuEmpty,
+  CommandMenuFooter,
+  CommandMenuGroup,
+  CommandMenuGroupLabel,
+  CommandMenuInput,
+  CommandMenuItem,
+  CommandMenuList,
+  CommandMenuPage,
+  CommandMenuShortcut,
+  useCommandMenu,
+  type CommandMenuDialogProps,
+} from '@/components/ui/command-menu';
 import {
   CONTENT_INDEX,
   FILES,
@@ -17,7 +32,8 @@ import type { ThreadsState } from '../lib/use-threads';
 
 export interface CommandPaletteProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  /** The dialog's own change details (Escape, the scrim, a pick that closes it…); `details.cancel()` keeps it as it is. */
+  onOpenChange: NonNullable<CommandMenuDialogProps['onOpenChange']>;
   /** Pages to open on (a hotkey like ⌘P opens straight onto "Go to file"). */
   pages?: string[];
   /** Portal target inside the Workbench, so the palette keeps its palette and its scrim covers the block. */
@@ -48,152 +64,160 @@ export function CommandPalette(props: CommandPaletteProps) {
   };
 
   return (
-    <CommandMenu
-      variant="dialog"
-      isOpen={open}
-      onOpenChange={onOpenChange}
-      defaultPages={pages}
-      container={container}
-      aria-label="Command palette"
-      // T3's palette sits a step darker than the popovers, on the app's own background.
-      className="[--command-surface:var(--background)] shadow-[0_24px_80px_color-mix(in_srgb,black_45%,transparent),0_0_0_1px_var(--border)]"
-      style={{ maxWidth: 580 }}
-    >
-      <CommandInput placeholder="Search commands, projects, and threads..." />
-      <CommandList maxHeight={396}>
-        <CommandEmpty>No results</CommandEmpty>
+    <CommandMenuDialog open={open} onOpenChange={onOpenChange} container={container}>
+      <CommandMenuDialogContent aria-label="Command palette" className="max-w-[580px]">
+        <CommandMenu
+          defaultPages={pages}
+          // T3's palette sits a step darker than the popovers, on the app's own background.
+          className="[--command-surface:var(--background)] shadow-[0_24px_80px_color-mix(in_srgb,black_45%,transparent),0_0_0_1px_var(--border)]"
+        >
+          <CommandMenuInput placeholder="Search commands, projects, and threads..." />
+          <CommandMenuEmpty>No results</CommandMenuEmpty>
+          <CommandMenuList className="max-h-99">
+            <CommandMenuPage>
+              <CommandMenuGroup>
+                <CommandMenuGroupLabel>Actions</CommandMenuGroupLabel>
+                <CommandMenuItem
+                  icon="square-pencil"
+                  value={`New thread in ${project}`}
+                  label={`New thread in ${project}`}
+                  title={<>New thread in <b className="font-semibold">{project}</b></>}
+                  trailing={<CommandMenuShortcut shortcut="mod+shift+o" />}
+                  onSelect={() => props.onNewThread(project)}
+                />
+                <CommandMenuItem icon="square-pencil" title="New thread in..." value="New thread in…" keywords={['project']} page="projects" />
+                <CommandMenuItem
+                  icon="link"
+                  title="Copy thread ID"
+                  description={id ?? 'Start a thread first'}
+                  trailing={<CommandMenuShortcut shortcut="mod+shift+c" />}
+                  disabled={!id}
+                  onSelect={() => id && copy(id, 'Copied thread ID')}
+                />
+                <CommandMenuItem icon={<PullRequestIcon />} title="Link pull request to thread" disabled={!thread} page="link-pr" chevron={false} />
+                <CommandMenuItem icon={<PullRequestIcon />} title="Show linked pull requests" disabled={!linked.length} page="linked-prs" chevron={false} />
+                <CommandMenuItem icon={<FileSearchIcon />} title="Go to file" trailing={<CommandMenuShortcut shortcut="mod+p" />} page="files" chevron={false} />
+                <CommandMenuItem icon={<ContentSearchIcon />} title="Search project contents" trailing={<CommandMenuShortcut shortcut="mod+shift+f" />} keywords={['grep', 'find']} page="search" chevron={false} />
+                <CommandMenuItem icon="folder-plus" title="Add project" keywords={['clone', 'open']} page="add-project" chevron={false} />
+                <CommandMenuItem icon={<PaletteIcon />} title="Toggle theme editor" trailing={<CommandMenuShortcut shortcut="mod+alt+shift+t" />} keywords={['appearance', 'dark', 'light', 'tint']} onSelect={props.onToggleThemeEditor} />
+              </CommandMenuGroup>
+              <SearchOnly>
+                <CommandMenuGroup>
+                  <CommandMenuGroupLabel>Projects</CommandMenuGroupLabel>
+                  {projects.map((p) => (
+                    <CommandMenuItem key={p.name} value={`project ${p.name}`} icon={<Monogram project={p} />} title={p.name} description={`Local · ${p.path}`} keywords={[p.name]} onSelect={() => props.onNewThread(p.name)} />
+                  ))}
+                </CommandMenuGroup>
+              </SearchOnly>
+              <CommandMenuGroup>
+                <CommandMenuGroupLabel>Threads</CommandMenuGroupLabel>
+                {threads.threads.slice(0, 8).map((t) => (
+                  <CommandMenuItem key={t.id} value={`thread ${t.id} ${t.title}`} keywords={[t.title]} icon="bubble-left" title={t.title} description={t.age} onSelect={() => threads.select(t.id)} />
+                ))}
+              </CommandMenuGroup>
+            </CommandMenuPage>
 
-        <CommandPage id="root">
-          <CommandGroup heading="Actions">
-            <CommandItem
-              icon="square-pencil"
-              value={`New thread in ${project}`}
-              title={<>New thread in <b className="font-semibold">{project}</b></>}
-              shortcut="⇧⌘O"
-              onSelect={() => props.onNewThread(project)}
-            />
-            <CommandItem icon="square-pencil" title="New thread in..." value="New thread in…" keywords={['project']} page="projects" />
-            <CommandItem
-              icon="link"
-              title="Copy thread ID"
-              description={id ?? 'Start a thread first'}
-              shortcut="⇧⌘C"
-              disabled={!id}
-              onSelect={() => id && copy(id, 'Copied thread ID')}
-            />
-            <CommandItem icon={<PullRequestIcon />} title="Link pull request to thread" disabled={!thread} page="link-pr" chevron={false} />
-            <CommandItem icon={<PullRequestIcon />} title="Show linked pull requests" disabled={!linked.length} page="linked-prs" chevron={false} />
-            <CommandItem icon={<FileSearchIcon />} title="Go to file" shortcut="⌘P" page="files" chevron={false} />
-            <CommandItem icon={<ContentSearchIcon />} title="Search project contents" shortcut="⇧⌘F" keywords={['grep', 'find']} page="search" chevron={false} />
-            <CommandItem icon="folder-plus" title="Add project" keywords={['clone', 'open']} page="add-project" chevron={false} />
-            <CommandItem icon={<PaletteIcon />} title="Toggle theme editor" shortcut="⌥⇧⌘T" keywords={['appearance', 'dark', 'light', 'tint']} onSelect={props.onToggleThemeEditor} />
-          </CommandGroup>
-          <SearchOnly>
-            <CommandGroup heading="Projects">
-              {projects.map((p) => (
-                <CommandItem key={p.name} value={`project ${p.name}`} icon={<Monogram project={p} />} title={p.name} description={`Local · ${p.path}`} keywords={[p.name]} onSelect={() => props.onNewThread(p.name)} />
-              ))}
-            </CommandGroup>
-          </SearchOnly>
-          <CommandGroup heading="Threads">
-            {threads.threads.slice(0, 8).map((t) => (
-              <CommandItem key={t.id} value={`thread ${t.id} ${t.title}`} keywords={[t.title]} icon="bubble-left" title={t.title} description={t.age} onSelect={() => threads.select(t.id)} />
-            ))}
-          </CommandGroup>
-        </CommandPage>
+            <CommandMenuPage value="projects" numbered>
+              <CommandMenuGroup>
+                <CommandMenuGroupLabel>Projects</CommandMenuGroupLabel>
+                {projects.map((p) => (
+                  <CommandMenuItem key={p.name} value={p.name} icon={<Monogram project={p} />} title={p.name} description={`Local · ${p.path}`} onSelect={() => props.onNewThread(p.name)} />
+                ))}
+              </CommandMenuGroup>
+            </CommandMenuPage>
 
-        <CommandPage id="projects" numbered>
-          <CommandGroup heading="Projects">
-            {projects.map((p) => (
-              <CommandItem key={p.name} value={p.name} icon={<Monogram project={p} />} title={p.name} description={`Local · ${p.path}`} onSelect={() => props.onNewThread(p.name)} />
-            ))}
-          </CommandGroup>
-        </CommandPage>
+            <CommandMenuPage value="link-pr" placeholder="Search pull requests...">
+              <CommandMenuGroup>
+                <CommandMenuGroupLabel>Open pull requests</CommandMenuGroupLabel>
+                {PULL_REQUESTS.map((pr) => (
+                  <CommandMenuItem
+                    key={pr.number}
+                    value={`#${pr.number} ${pr.title}`}
+                    keywords={[pr.branch, pr.author]}
+                    icon={<PullRequestIcon />}
+                    title={pr.title}
+                    description={`#${pr.number} · ${pr.branch} · ${pr.author}`}
+                    trailing={linked.includes(pr.number) ? <Badge variant="secondary" className="rounded-md">Linked</Badge> : undefined}
+                    disabled={linked.includes(pr.number)}
+                    onSelect={() => {
+                      props.onLink(pr.number);
+                      props.notify(`Linked #${pr.number}`);
+                    }}
+                  />
+                ))}
+              </CommandMenuGroup>
+            </CommandMenuPage>
 
-        <CommandPage id="link-pr" placeholder="Search pull requests...">
-          <CommandGroup heading="Open pull requests">
-            {PULL_REQUESTS.map((pr) => (
-              <CommandItem
-                key={pr.number}
-                value={`#${pr.number} ${pr.title}`}
-                keywords={[pr.branch, pr.author]}
-                icon={<PullRequestIcon />}
-                title={pr.title}
-                description={`#${pr.number} · ${pr.branch} · ${pr.author}`}
-                badge={linked.includes(pr.number) ? <Badge variant="secondary" className="rounded-md">Linked</Badge> : undefined}
-                disabled={linked.includes(pr.number)}
-                onSelect={() => {
-                  props.onLink(pr.number);
-                  props.notify(`Linked #${pr.number}`);
-                }}
-              />
-            ))}
-          </CommandGroup>
-        </CommandPage>
+            <CommandMenuPage value="linked-prs" placeholder="Search linked pull requests...">
+              <CommandMenuGroup>
+                <CommandMenuGroupLabel>Linked to this thread</CommandMenuGroupLabel>
+                {PULL_REQUESTS.filter((pr) => linked.includes(pr.number)).map((pr) => (
+                  <CommandMenuItem key={pr.number} value={`#${pr.number} ${pr.title}`} icon={<PullRequestIcon />} title={pr.title} description={`#${pr.number} · ${pr.branch}`} trailing={<CommandMenuShortcut shortcut="enter" />} onSelect={() => props.notify(`Opened #${pr.number}`)} />
+                ))}
+              </CommandMenuGroup>
+            </CommandMenuPage>
 
-        <CommandPage id="linked-prs" placeholder="Search linked pull requests...">
-          <CommandGroup heading="Linked to this thread">
-            {PULL_REQUESTS.filter((pr) => linked.includes(pr.number)).map((pr) => (
-              <CommandItem key={pr.number} value={`#${pr.number} ${pr.title}`} icon={<PullRequestIcon />} title={pr.title} description={`#${pr.number} · ${pr.branch}`} shortcut="↵" onSelect={() => props.notify(`Opened #${pr.number}`)} />
-            ))}
-          </CommandGroup>
-        </CommandPage>
+            <CommandMenuPage value="files" placeholder="Go to file...">
+              <CommandMenuGroup>
+                <CommandMenuGroupLabel>Files</CommandMenuGroupLabel>
+                {FILES.map((f) => {
+                  const parts = f.split('/');
+                  return <CommandMenuItem key={f} value={f} keywords={[parts[parts.length - 1]]} icon="doc-text" title={parts[parts.length - 1]} description={parts.slice(0, -1).join('/')} onSelect={() => props.onOpenFile(f)} />;
+                })}
+              </CommandMenuGroup>
+            </CommandMenuPage>
 
-        <CommandPage id="files" placeholder="Go to file...">
-          <CommandGroup heading="Files">
-            {FILES.map((f) => {
-              const parts = f.split('/');
-              return <CommandItem key={f} value={f} keywords={[parts[parts.length - 1]]} icon="doc-text" title={parts[parts.length - 1]} description={parts.slice(0, -1).join('/')} onSelect={() => props.onOpenFile(f)} />;
-            })}
-          </CommandGroup>
-        </CommandPage>
+            <CommandMenuPage value="search" placeholder="Search project contents..." filter={false}>
+              <ContentResults onOpen={props.onOpenFile} />
+            </CommandMenuPage>
 
-        <CommandPage id="search" placeholder="Search project contents..." filter={false}>
-          <ContentResults onOpen={props.onOpenFile} />
-        </CommandPage>
+            <CommandMenuPage value="add-project">
+              <CommandMenuGroup>
+                <CommandMenuGroupLabel>Sources</CommandMenuGroupLabel>
+                <CommandMenuItem icon="folder-plus" title="Local folder" description="Browse a folder on disk" page="local-folder" chevron={false} />
+                <CommandMenuItem icon="link" title="Git URL" description="Clone from a remote URL" page="git-url" chevron={false} />
+                <CommandMenuItem icon={<GitHubIcon />} title="GitHub repository" description="Clone GitHub owner/repo" page="github" chevron={false} />
+                {SETUP.map((s) => (
+                  <CommandMenuItem
+                    key={s.title}
+                    icon={s.icon}
+                    title={s.title}
+                    description={s.description}
+                    dimmed
+                    trailing={<SetupRequired />}
+                    closeOnSelect={false}
+                    onSelect={() => props.notify(`Connect ${s.short} in Settings first`)}
+                  />
+                ))}
+              </CommandMenuGroup>
+            </CommandMenuPage>
 
-        <CommandPage id="add-project">
-          <CommandGroup heading="Sources">
-            <CommandItem icon="folder-plus" title="Local folder" description="Browse a folder on disk" page="local-folder" chevron={false} />
-            <CommandItem icon="link" title="Git URL" description="Clone from a remote URL" page="git-url" chevron={false} />
-            <CommandItem icon={<GitHubIcon />} title="GitHub repository" description="Clone GitHub owner/repo" page="github" chevron={false} />
-            {SETUP.map((s) => (
-              <CommandItem
-                key={s.title}
-                icon={s.icon}
-                title={s.title}
-                description={s.description}
-                dimmed
-                badge={<SetupRequired />}
-                closeOnSelect={false}
-                onSelect={() => props.notify(`Connect ${s.short} in Settings first`)}
-              />
-            ))}
-          </CommandGroup>
-        </CommandPage>
+            <CommandMenuPage value="local-folder" placeholder="Search folders...">
+              <CommandMenuGroup>
+                <CommandMenuGroupLabel>Folders</CommandMenuGroupLabel>
+                {LOCAL_FOLDERS.map((f) => (
+                  <CommandMenuItem key={f} value={f} icon="folder-closed" title={f.split('/').pop()} description={f} onSelect={() => add(f.split('/').pop()!, f)} />
+                ))}
+              </CommandMenuGroup>
+            </CommandMenuPage>
 
-        <CommandPage id="local-folder" placeholder="Search folders...">
-          <CommandGroup heading="Folders">
-            {LOCAL_FOLDERS.map((f) => (
-              <CommandItem key={f} value={f} icon="folder-closed" title={f.split('/').pop()} description={f} onSelect={() => add(f.split('/').pop()!, f)} />
-            ))}
-          </CommandGroup>
-        </CommandPage>
+            <CommandMenuPage value="git-url" placeholder="https://github.com/owner/repo.git" filter={false}>
+              <GitUrl onClone={(url) => add(url.replace(/\.git$/, '').split(/[/:]/).pop() || 'repo', url)} />
+            </CommandMenuPage>
 
-        <CommandPage id="git-url" placeholder="https://github.com/owner/repo.git" filter={false}>
-          <GitUrl onClone={(url) => add(url.replace(/\.git$/, '').split(/[/:]/).pop() || 'repo', url)} />
-        </CommandPage>
-
-        <CommandPage id="github" placeholder="Search owner/repo...">
-          <CommandGroup heading="Repositories">
-            {GITHUB_REPOS.map((r) => (
-              <CommandItem key={r} value={r} icon={<GitHubIcon />} title={r} description={`github.com/${r}`} onSelect={() => add(r.split('/')[1], `~/Code/${r.split('/')[1]}`)} />
-            ))}
-          </CommandGroup>
-        </CommandPage>
-      </CommandList>
-      <CommandFooter />
-    </CommandMenu>
+            <CommandMenuPage value="github" placeholder="Search owner/repo...">
+              <CommandMenuGroup>
+                <CommandMenuGroupLabel>Repositories</CommandMenuGroupLabel>
+                {GITHUB_REPOS.map((r) => (
+                  <CommandMenuItem key={r} value={r} icon={<GitHubIcon />} title={r} description={`github.com/${r}`} onSelect={() => add(r.split('/')[1], `~/Code/${r.split('/')[1]}`)} />
+                ))}
+              </CommandMenuGroup>
+            </CommandMenuPage>
+          </CommandMenuList>
+          <CommandMenuFooter />
+        </CommandMenu>
+      </CommandMenuDialogContent>
+    </CommandMenuDialog>
   );
 }
 
@@ -208,9 +232,10 @@ function ContentResults({ onOpen }: { onOpen: (path: string) => void }) {
   if (!q) return <div className="px-3 py-8 text-center text-detail text-muted-foreground">Type to search {CONTENT_INDEX.length} indexed lines</div>;
   const hits = CONTENT_INDEX.filter((l) => l.text.toLowerCase().includes(q) || l.file.toLowerCase().includes(q));
   return (
-    <CommandGroup heading={`${hits.length} result${hits.length === 1 ? '' : 's'}`}>
+    <CommandMenuGroup>
+      <CommandMenuGroupLabel>{`${hits.length} result${hits.length === 1 ? '' : 's'}`}</CommandMenuGroupLabel>
       {hits.map((l) => (
-        <CommandItem
+        <CommandMenuItem
           key={`${l.file}:${l.line}`}
           value={`${l.file}:${l.line}`}
           icon={<ContentSearchIcon />}
@@ -219,14 +244,14 @@ function ContentResults({ onOpen }: { onOpen: (path: string) => void }) {
           onSelect={() => onOpen(`cookbook/${l.file}`)}
         />
       ))}
-    </CommandGroup>
+    </CommandMenuGroup>
   );
 }
 
 /** Substring highlight (a grep result is literal, not fuzzy). */
 function Exact({ text, query }: { text: string; query: string }) {
   const at = text.toLowerCase().indexOf(query);
-  if (at < 0) return <CommandHighlight text={text} query="" />;
+  if (at < 0) return <>{text}</>;
   return (
     <>
       {text.slice(0, at)}
@@ -241,8 +266,9 @@ function GitUrl({ onClone }: { onClone: (url: string) => void }) {
   const url = query.trim();
   const valid = /^(https?:\/\/|git@|ssh:\/\/)\S+[/:]\S+$/.test(url);
   return (
-    <CommandGroup heading="Clone">
-      <CommandItem
+    <CommandMenuGroup>
+      <CommandMenuGroupLabel>Clone</CommandMenuGroupLabel>
+      <CommandMenuItem
         value="clone"
         icon="link"
         title={url ? `Clone ${url}` : 'Paste a repository URL'}
@@ -250,7 +276,7 @@ function GitUrl({ onClone }: { onClone: (url: string) => void }) {
         disabled={!valid}
         onSelect={() => onClone(url)}
       />
-    </CommandGroup>
+    </CommandMenuGroup>
   );
 }
 

@@ -34,7 +34,7 @@ function MailRail() {
   return (
     <TabView
       orientation="vertical"
-      defaultSelectedKey="inbox"
+      defaultValue="inbox"
       style={{ height: 440, background: 'var(--background)' }}
     >
       <TabViewBar>
@@ -56,14 +56,14 @@ function MailRail() {
         </TabViewHeader>
         <TabViewList aria-label="Mailboxes">
           {mailboxes.map((m) => (
-            <TabViewTab key={m.id} id={m.id} icon={m.icon} title={m.title} />
+            <TabViewTab key={m.id} value={m.id} icon={m.icon} title={m.title} />
           ))}
         </TabViewList>
         <TabViewAction
           icon="compose"
           title="New"
           aria-label="New message"
-          onPress={() => {}}
+          onClick={() => {}}
         />
         <TabViewFooter style={{ paddingBottom: 6 }}>
           <Avatar c={{ f: 'Ada', l: 'Lovelace' }} size={32} />
@@ -71,7 +71,7 @@ function MailRail() {
       </TabViewBar>
       <TabViewPanels>
         {mailboxes.map((m) => (
-          <TabViewPanel key={m.id} id={m.id}>
+          <TabViewPanel key={m.id} value={m.id}>
             <h3 style={{ margin: '18px 20px 10px', fontSize: 20 }}>
               {m.title}
             </h3>
@@ -83,7 +83,7 @@ function MailRail() {
                     title={r}
                     accessory="chevron"
                     divider={i < m.rows.length - 1}
-                    onPress={() => {}}
+                    onClick={() => {}}
                   />
                 ))}
               </ListSection>

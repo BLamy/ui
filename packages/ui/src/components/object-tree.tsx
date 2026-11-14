@@ -1,14 +1,14 @@
 'use client';
-import { createContext, use, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type HTMLAttributes, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
-import {
-  Collection, Dialog as AriaDialog, ListLayout, Tree as AriaTree, TreeItem, TreeItemContent, Virtualizer, type Selection,
-} from 'react-aria-components';
+import { createContext, use, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type HTMLAttributes, type KeyboardEvent, type ReactNode } from 'react';
+import { Tree, TreeItem, TreeItemIndicator, TreeItemLabel, visibleTreeRows, type TreeItemData, type TreeValueChangeReason } from '@ui-sdk/react/tree';
+import { announce, type ChangeDetails } from '@ui-sdk/core';
 import { cva } from 'class-variance-authority';
 import { Button } from '@/components/ui/button';
 import { ObjectValue } from '@/components/ui/object-value';
 import { PlainButton } from '@/components/ui/plain-button';
-import { Popover } from '@/components/ui/popover';
+import { Popover, PopoverContent, createPopoverController, type PopoverController } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
+import { isRowPress } from '@/lib/grid-behaviors';
 import { Icon, type IconName } from '@/lib/icon';
 import {
   applyExpanded, buildRows, childrenOfValue, copyTextOfNode, createTreeState, errorText, invokeGetterOfValue, isValueNode, rebaseTreeState,
@@ -16,16 +16,20 @@ import {
   type ObjectTreeGetterResult, type ObjectTreeNode, type ObjectTreeRoot, type ObjectTreeRow, type ObjectTreeRows, type ObjectTreeState,
 } from '@/lib/object-tree-model';
 import { previewText } from '@/lib/object-tree-value';
+import { useVirtualRows } from '@/lib/use-virtual-rows';
 import { cn } from '@/lib/utils';
 
 /* ══ ObjectTree — values as a debugger shows them: scopes, objects opened level by level, any JSON-like data.
-   Built on react-aria's Tree under its Virtualizer: arrow keys move, open and close, and only rows on screen are in the
-   DOM. Children load when a row opens, and a node with thousands of them groups in ranges (`[0 … 99]`), so a 100,000
-   element array is a few hundred rows.
+   UI SDK's Tree over its virtualizer: arrow keys move, open and close, typing finds a row, and only rows on screen are
+   in the DOM. Children load when a row opens, and a node with thousands of them groups in ranges (`[0 … 99]`), so a
+   100,000 element array is a few hundred rows.
    <ObjectTree aria-label="Scopes" root={scopes} loadChildren={(node) => readProperties(node)} />
-   <ObjectTree aria-label="Response" root={nodeFromValue(json, { defaultExpanded: true })} /> ══ */
+   <ObjectTree aria-label="Response" root={nodeFromValue(json, { defaultExpanded: true })} value={key} onValueChange={(k) => setKey(k)} /> ══ */
 
-export interface ObjectTreeProps<T = unknown> extends Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'onSelect' | 'onCopy'> {
+/** What `onValueChange` gets after the row's key: UI SDK's change details, with the node itself (`null` when cleared). */
+export type ObjectTreeValueChangeDetails<T = unknown> = ChangeDetails<TreeValueChangeReason> & { node: ObjectTreeNode<T> | null };
+
+export interface ObjectTreeProps<T = unknown> extends Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'onSelect' | 'onCopy' | 'defaultValue'> {
   'aria-label': string;
   /** What's at the top level: one node, or several, with `section: true` for Local, Closure and Global. A new `root` is a
    *  new moment: what was loaded goes, and an answer still on its way is dropped. Keep it the same object until it changes. */
@@ -35,8 +39,17 @@ export interface ObjectTreeProps<T = unknown> extends Omit<HTMLAttributes<HTMLDi
   loadChildren?: (node: ObjectTreeNode<T>) => Promise<readonly ObjectTreeNode<T>[]> | readonly ObjectTreeNode<T>[];
   /** Calls a getter: pressing a `(...)`. Return its value, and whether it can open. */
   onInvokeGetter?: (node: ObjectTreeNode<T>) => Promise<ObjectTreeGetterResult<T>> | ObjectTreeGetterResult<T>;
-  /** Rows can be selected, and this hears about it. A press then selects, and the chevron or a double press opens. */
-  onSelect?: (node: ObjectTreeNode<T> | null) => void;
+  /** Whether a value's row can be selected. With `'single'` a press selects, and the chevron, a double press or Return
+   *  opens. Default: `'single'` when `value`, `defaultValue` or `onValueChange` is given, otherwise `'none'`. */
+  mode?: 'single' | 'none';
+  /** The selected row's key (`objectTreeKey(ids)`: the node ids from the top down). Leave it out for a tree that
+   *  remembers its own; `null` selects nothing. */
+  value?: string | null;
+  /** Selected when the tree mounts, when `value` is left out. */
+  defaultValue?: string | null;
+  /** A value was pressed, or cleared. `details.reason` says how, `details.node` is the node, and `details.cancel()`
+   *  refuses it. Sections, ranges and notes are never selected. */
+  onValueChange?: (value: string | null, details: ObjectTreeValueChangeDetails<T>) => void;
   /** The text copying a value gives. Default: a string's text, JSON for `nodeFromValue` values, otherwise the preview. */
   copyValue?: (node: ObjectTreeNode<T>) => Promise<string> | string;
   /** Indexed children to a range before they group. Default 100. */
@@ -49,20 +62,21 @@ export interface ObjectTreeProps<T = unknown> extends Omit<HTMLAttributes<HTMLDi
 
 /* ── Rows ── */
 
-/** A row. The indent stops at a quarter of its width, so deep rows keep room for their name and value. */
+/** A row's label, inside its item. The indent stops at a quarter of its width, so deep rows keep room for their name
+ *  and value. Keyboard focus is on the item around it (`group/row`). */
 export const objectTreeRowVariants = cva(
   [
-    'group/row flex h-full w-full cursor-default items-center gap-1 pr-1 outline-none',
-    'pl-[min(calc((var(--tree-item-level)-1)*var(--object-tree-indent)),25%)]',
+    'flex h-full w-full cursor-default items-center gap-1 pr-1',
+    'pl-[min(calc((var(--tree-level)-1)*var(--object-tree-indent)),25%)]',
     'text-caption leading-none text-foreground',
-    'data-selected:bg-accent data-focus-visible:[box-shadow:inset_0_0_0_2px_var(--ring)]',
+    'data-selected:bg-accent group-focus-visible/row:[box-shadow:inset_0_0_0_2px_var(--ring)]',
   ],
   {
     variants: {
       kind: {
-        node: 'font-mono data-hovered:bg-accent/50',
-        section: 'font-sans font-semibold shadow-hairline-b data-hovered:bg-accent/50',
-        range: 'font-mono text-muted-foreground data-hovered:bg-accent/50',
+        node: 'font-mono hover:bg-accent/50',
+        section: 'font-sans font-semibold shadow-hairline-b hover:bg-accent/50',
+        range: 'font-mono text-muted-foreground hover:bg-accent/50',
         note: 'font-sans text-muted-foreground',
       },
       stale: { true: 'opacity-60' },
@@ -82,18 +96,23 @@ interface TreeApi {
 }
 const TreeApiContext = createContext<TreeApi | null>(null);
 
-function RowButton({ icon, label, onPress, active }: { icon: IconName; label: string; onPress: (el: Element) => void; active?: boolean }) {
+/** A row holds buttons of its own: pressing one, or a key on one, isn't a press on the row. */
+const ownPress = {
+  onKeyDown: (e: KeyboardEvent) => e.stopPropagation(),
+  onDoubleClick: (e: { stopPropagation: () => void }) => e.stopPropagation(),
+};
+
+const rowButton = 'shrink-0 cursor-default rounded-md border-0 bg-transparent outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring';
+
+function RowButton({ icon, label, onUse, active }: { icon: IconName; label: string; onUse: (el: Element) => void; active?: boolean }) {
   return (
     <PlainButton
       aria-label={label}
       title={label}
-      excludeFromTabOrder
-      onPress={(e) => onPress(e.target)}
-      className={cn(
-        'grid size-5 shrink-0 cursor-default place-items-center rounded-md border-0 bg-transparent p-0 text-muted-foreground outline-none',
-        'data-hovered:bg-secondary-strong data-hovered:text-foreground data-focus-visible:ring-2 data-focus-visible:ring-ring',
-        active && 'text-success',
-      )}
+      tabIndex={-1}
+      {...ownPress}
+      onClick={(e) => { e.stopPropagation(); onUse(e.currentTarget); }}
+      className={cn(rowButton, 'grid size-5 place-items-center p-0 text-muted-foreground hover:text-foreground', active && 'text-success')}
     >
       <Icon name={icon} size={13} />
     </PlainButton>
@@ -102,12 +121,9 @@ function RowButton({ icon, label, onPress, active }: { icon: IconName; label: st
 
 function Chevron() {
   return (
-    <PlainButton
-      slot="chevron"
-      className="grid h-full w-4 shrink-0 cursor-default place-items-center border-0 bg-transparent p-0 text-muted-foreground outline-none"
-    >
+    <TreeItemIndicator className="grid h-full w-4 shrink-0 cursor-default place-items-center text-muted-foreground">
       <Icon name="chevron-right" size={10} sw={3} className="transition-transform duration-100 group-data-expanded/row:rotate-90 motion-reduce:transition-none" />
-    </PlainButton>
+    </TreeItemIndicator>
   );
 }
 
@@ -148,10 +164,11 @@ function NodeRow({ row }: { row: ValueRow }) {
             <PlainButton
               aria-label={`Call the getter ${node.name}`}
               title="Call the getter"
-              excludeFromTabOrder
-              isDisabled={!api.canInvokeGetter(row)}
-              onPress={() => api.invokeGetter(row)}
-              className="shrink-0 cursor-default rounded-md border-0 bg-transparent px-1 py-0.5 font-mono text-caption text-muted-foreground outline-none data-hovered:bg-secondary-strong data-hovered:text-foreground data-focus-visible:ring-2 data-focus-visible:ring-ring"
+              tabIndex={-1}
+              disabled={!api.canInvokeGetter(row)}
+              {...ownPress}
+              onClick={(e) => { e.stopPropagation(); api.invokeGetter(row); }}
+              className={cn(rowButton, 'px-1 py-0.5 font-mono text-caption text-muted-foreground hover:text-foreground')}
             >
               (...)
             </PlainButton>
@@ -162,13 +179,13 @@ function NodeRow({ row }: { row: ValueRow }) {
         <ObjectValue value={value} expandable={false} title={text} className="min-w-0 flex-1 truncate leading-5 whitespace-pre" />
       ) : <span className="flex-1" />}
       {value && !isGetter ? (
-        <span className="hidden shrink-0 items-center group-focus-within/row:flex group-data-focused/row:flex group-data-hovered/row:flex">
-          {text.length > LONG_VALUE ? <RowButton icon="ellipsis" label="Show the whole value" onPress={(el) => api.showValue(row, el)} /> : null}
+        <span className="hidden shrink-0 items-center group-focus-within/row:flex group-hover/row:flex">
+          {text.length > LONG_VALUE ? <RowButton icon="ellipsis" label="Show the whole value" onUse={(el) => api.showValue(row, el)} /> : null}
           <RowButton
             icon={api.copiedKey === row.key ? 'check' : 'copy'}
             label={api.copiedKey === row.key ? 'Copied' : 'Copy the value'}
             active={api.copiedKey === row.key}
-            onPress={() => api.copy(row)}
+            onUse={() => api.copy(row)}
           />
         </span>
       ) : null}
@@ -202,9 +219,10 @@ function RowContent({ row }: { row: ObjectTreeRow }) {
           <Icon name="warning" size={13} className="text-destructive" />
           <span className="min-w-0 truncate text-destructive">{row.error}</span>
           <PlainButton
-            excludeFromTabOrder
-            onPress={() => api.retry(row.owner)}
-            className="shrink-0 cursor-default rounded-md border-0 bg-transparent px-1 py-0.5 text-caption font-medium text-primary outline-none data-hovered:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring"
+            tabIndex={-1}
+            {...ownPress}
+            onClick={(e) => { e.stopPropagation(); api.retry(row.owner); }}
+            className={cn(rowButton, 'px-1 py-0.5 text-caption font-medium text-primary')}
           >
             Retry
           </PlainButton>
@@ -224,48 +242,60 @@ function isBranch(row: ObjectTreeRow) {
   return row.kind === 'range' || (row.kind === 'node' && row.expandable);
 }
 
-function renderRow(row: ObjectTreeRow) {
-  const branch = isBranch(row);
-  // react-aria only treats a row as openable (arrow keys, aria-expanded) if it has a child in its collection, and a
-  // closed row's children may not exist yet. So a closed row holds a stand-in, which never shows: its parent is closed.
-  const children = 'children' in row && row.children ? row.children : branch ? [{ kind: 'empty' as const, key: `${row.key}\u001f\u0001closed` }] : null;
+/** The rows as the Tree's data, so it knows every row that shows, in the DOM or not. A closed row that can open is an
+ *  empty branch: its children may not exist yet. Rows that didn't change keep their item. */
+function treeItemsOf(rows: readonly ObjectTreeRow[], cache: WeakMap<ObjectTreeRow, TreeItemData>): TreeItemData[] {
+  return rows.map((row) => {
+    let item = cache.get(row);
+    if (!item) {
+      const children = 'children' in row && row.children ? treeItemsOf(row.children, cache) : isBranch(row) ? [] : undefined;
+      item = { value: row.key, label: rowText(row), ...(children ? { children } : {}) };
+      cache.set(row, item);
+    }
+    return item;
+  });
+}
+
+function Row({ row, top, height, onOpen }: { row: ObjectTreeRow; top: number; height: number; onOpen?: (row: ObjectTreeRow) => void }) {
   return (
-    <TreeItem id={row.key} data-slot="object-tree-row" data-kind={rowKind(row)} textValue={rowText(row)} hasChildItems={branch} isDisabled={!isSelectable(row)} className={objectTreeRowVariants({ kind: rowKind(row), stale: 'stale' in row && row.stale })}>
-      <TreeItemContent>
+    <TreeItem value={row.key} data-key={row.key} data-kind={rowKind(row)} className="group/row absolute inset-x-0 outline-none" style={{ top, height }}>
+      <TreeItemLabel className={objectTreeRowVariants({ kind: rowKind(row), stale: 'stale' in row && row.stale })} onDoubleClick={onOpen ? () => onOpen(row) : undefined}>
         <RowContent row={row} />
-      </TreeItemContent>
-      {children ? <Collection items={children}>{renderRow}</Collection> : null}
+      </TreeItemLabel>
     </TreeItem>
   );
 }
 
 /* ── The whole value ── */
 
-function ValuePopover({ row, anchor, onClose, onCopy, copied }: {
-  row: ValueRow;
-  anchor: RefObject<Element | null>;
+function ValuePopover({ controller, row, onClose, onCopy, copied }: {
+  controller: PopoverController<string>;
+  row: ValueRow | undefined;
   onClose: () => void;
   onCopy: () => void;
   copied: boolean;
 }) {
   return (
-    <Popover
-      isOpen
-      onOpenChange={(open) => { if (!open) onClose(); }}
-      triggerRef={anchor}
-      boundaryElement={anchor.current?.closest<HTMLElement>('[data-slot="bl-provider"]') ?? undefined}
-      placement="bottom end"
-      className="flex w-[min(30rem,calc(100vw-1.5rem))] min-w-0 flex-col"
-    >
-      <AriaDialog aria-label={row.node.name ? `The value of ${row.node.name}` : 'The whole value'} data-slot="object-tree-value" className="flex max-h-[min(60dvh,24rem)] min-h-0 flex-col gap-2 p-3 outline-none">
-        <div className="flex items-center gap-2">
-          <span className="min-w-0 flex-1 truncate font-mono text-caption font-medium">{row.node.name}</span>
-          <Button size="sm" variant="ghost" className="h-6 shrink-0 px-2 text-caption" onPress={onCopy}>{copied ? 'Copied' : 'Copy'}</Button>
-        </div>
-        <div className="bl-scroll min-h-0 overflow-auto">
-          <ObjectValue value={row.node.value!} maxLength={4000} />
-        </div>
-      </AriaDialog>
+    <Popover controller={controller} onOpenChangeComplete={(open) => { if (!open) onClose(); }}>
+      <PopoverContent
+        variant="surface"
+        side="bottom"
+        align="end"
+        aria-label={row?.node.name ? `The value of ${row.node.name}` : 'The whole value'}
+        className="flex max-h-[min(24rem,var(--available-height,24rem))] min-h-0 w-[min(30rem,var(--available-width,30rem))] min-w-0 flex-col gap-2 p-3"
+      >
+        {row?.node.value ? (
+          <>
+            <div className="flex items-center gap-2">
+              <span className="min-w-0 flex-1 truncate font-mono text-caption font-medium">{row.node.name}</span>
+              <Button size="sm" variant="ghost" className="h-6 shrink-0 px-2 text-caption" onClick={onCopy}>{copied ? 'Copied' : 'Copy'}</Button>
+            </div>
+            <div className="bl-scroll min-h-0 overflow-auto">
+              <ObjectValue value={row.node.value} maxLength={4000} />
+            </div>
+          </>
+        ) : null}
+      </PopoverContent>
     </Popover>
   );
 }
@@ -322,7 +352,7 @@ function usePaced<T>(value: T): T {
 }
 
 export function ObjectTree<T = unknown>({
-  'aria-label': ariaLabel, root: rootProp, loadChildren, onInvokeGetter, onSelect, copyValue, groupSize, rowHeight = 24, emptyMessage = 'Nothing to show', className, style, ...props
+  'aria-label': ariaLabel, root: rootProp, loadChildren, onInvokeGetter, mode: modeProp, value, defaultValue, onValueChange, copyValue, groupSize, rowHeight = 24, emptyMessage = 'Nothing to show', className, style, ...props
 }: ObjectTreeProps<T>) {
   const root = usePaced(rootProp);
   const [stored, setModel] = useState<Model<T>>(() => {
@@ -338,8 +368,8 @@ export function ObjectTree<T = unknown>({
   }
   const { rows } = model;
 
-  const live = useRef({ loadChildren, onInvokeGetter, onSelect, copyValue, rows });
-  live.current = { loadChildren, onInvokeGetter, onSelect, copyValue, rows };
+  const live = useRef({ loadChildren, onInvokeGetter, onValueChange, copyValue, rows });
+  live.current = { loadChildren, onInvokeGetter, onValueChange, copyValue, rows };
   const update = useCallback((change: (state: ObjectTreeState<T>) => ObjectTreeState<T>) => {
     setModel((m) => stepModel(m, change(m.state)));
   }, []);
@@ -363,10 +393,12 @@ export function ObjectTree<T = unknown>({
     }
   }, [rows, update]);
 
-  const treeRef = useRef<HTMLDivElement>(null);
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const mode = modeProp ?? (value !== undefined || defaultValue !== undefined || onValueChange ? 'single' : 'none');
+  const [ownValue, setOwnValue] = useState<string | null>(defaultValue ?? null);
+  const selectedKey = value === undefined ? ownValue : value;
   const [shownValue, setShownValue] = useState<string | null>(null);
-  const valueAnchor = useRef<Element | null>(null);
+  const valuePopover = useMemo(() => createPopoverController<string>(), []);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -390,6 +422,7 @@ export function ObjectTree<T = unknown>({
         () => live.current.copyValue?.(node) ?? copyTextOfNode(node),
         (text) => {
           void navigator.clipboard?.writeText(text).then(() => {
+            announce('Copied');
             setCopiedKey(row.key);
             clearTimeout(copiedTimer.current);
             copiedTimer.current = setTimeout(() => setCopiedKey(null), 1200);
@@ -399,40 +432,31 @@ export function ObjectTree<T = unknown>({
       );
     },
     showValue: (row, anchor) => {
-      valueAnchor.current = anchor;
       setShownValue(row.key);
+      void valuePopover.open({ payload: row.key, ...(anchor ? { anchor } : {}) });
     },
-  }), [copiedKey, update]);
+  }), [copiedKey, update, valuePopover]);
 
-  const select = (key: string | null) => {
-    setSelectedKey(key);
-    const row = key == null ? undefined : live.current.rows.byKey.get(key);
-    live.current.onSelect?.(row?.kind === 'node' ? (row.node as ObjectTreeNode<T>) : null);
-  };
+  useEffect(() => () => clearTimeout(copiedTimer.current), []);
 
-  /* A drag that selected text isn't a press. (A double press selects a word too, but it hasn't moved.) */
-  const pressStart = useRef({ x: 0, y: 0 });
-  const dragged = useRef(false);
-
-  const onAction = (key: string | number) => {
-    const row = live.current.rows.byKey.get(String(key));
-    if (!row || (dragged.current && !window.getSelection()?.isCollapsed)) return;
+  /** Opens or closes a row, or does what a row that can't open has to offer. */
+  const act = (row: ObjectTreeRow) => {
     if (row.kind === 'failed') return api.retry(row.owner);
     if (isBranch(row)) {
       const open = live.current.rows.expandedKeys.has(row.key);
       return update((s) => setRowOpen(s, row.key, !open));
     }
     if (row.kind !== 'node' || !row.node.value) return;
-    // Touch taps act rather than select, and a leaf has nothing else to act on.
-    if (live.current.onSelect && selectedKey !== row.key) select(row.key);
     if (row.node.value.type === 'accessor') return api.invokeGetter(row);
     // Nothing to open: if the row cut the value off, show all of it.
-    const shown = treeRef.current?.querySelector(`[data-key="${CSS.escape(row.key)}"] [data-slot="object-value"]`);
+    const shown = rootRef.current?.querySelector(`[data-key="${CSS.escape(row.key)}"] [data-slot="object-value"]`);
     if (shown && shown.scrollWidth > shown.clientWidth) api.showValue(row, shown);
   };
 
+  /** With selection on, a press on a value selects it and no more: a double press or Return acts. */
+  const selects = (row: ObjectTreeRow) => mode === 'single' && isSelectable(row);
+
   const onKeyDownCapture = (e: KeyboardEvent<HTMLDivElement>) => {
-    dragged.current = false;
     if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'c') return;
     // Text the user selected copies as usual.
     if (!window.getSelection()?.isCollapsed) return;
@@ -443,56 +467,95 @@ export function ObjectTree<T = unknown>({
     api.copy(row);
   };
 
+  /* The Tree gets every row that shows as data, and draws the ones in view. */
+  const itemCache = useRef(new WeakMap<ObjectTreeRow, TreeItemData>());
+  const items = useMemo(() => treeItemsOf(rows.rows as readonly ObjectTreeRow[], itemCache.current), [rows]);
+  const expanded = useMemo(() => [...rows.expandedKeys], [rows]);
+  const flat = useMemo(() => visibleTreeRows(items, expanded), [items, expanded]);
+  const indexOf = useMemo(() => new Map(flat.map((r, i) => [r.item.value, i])), [flat]);
+  /** The row with keyboard focus stays in the DOM while it is scrolled away. */
+  const focusedKey = useRef<string | null>(null);
+  const virtual = useVirtualRows({
+    rows: flat,
+    count: flat.length,
+    rowHeight,
+    keyOf: (index) => flat[index]?.item.value ?? String(index),
+    keep: () => {
+      const index = focusedKey.current == null ? undefined : indexOf.get(focusedKey.current);
+      return index === undefined ? [] : [index];
+    },
+  });
+
   const shownRow = shownValue == null ? undefined : rows.byKey.get(shownValue);
-  const layoutOptions = useMemo(() => ({ rowSize: rowHeight }), [rowHeight]);
 
   return (
     <div
+      ref={rootRef}
       data-slot="object-tree"
-      className={cn('flex h-full max-h-dvh min-h-0 w-full min-w-0 flex-col [--object-tree-indent:14px]', className)}
+      className={cn('flex h-full min-h-0 w-full min-w-0 flex-col [--object-tree-indent:14px]', className)}
       style={style}
       onKeyDownCapture={onKeyDownCapture}
-      onPointerDownCapture={(e) => { pressStart.current = { x: e.clientX, y: e.clientY }; dragged.current = false; }}
-      onPointerUpCapture={(e) => { dragged.current = Math.hypot(e.clientX - pressStart.current.x, e.clientY - pressStart.current.y) > 4; }}
       {...props}
     >
-      <span role="status" className="sr-only">{copiedKey == null ? '' : 'Copied'}</span>
       <TreeApiContext.Provider value={api}>
-        <Virtualizer layout={ListLayout} layoutOptions={layoutOptions}>
-          <AriaTree
-            ref={treeRef}
-            aria-label={ariaLabel}
-            items={rows.rows as readonly ObjectTreeRow[]}
-            expandedKeys={rows.expandedKeys}
-            onExpandedChange={(next) => {
-              const before = live.current.rows.expandedKeys;
-              update((s) => applyExpanded(s, before, next as Set<string>));
-            }}
-            selectionMode={onSelect ? 'single' : 'none'}
-            selectionBehavior="replace"
-            disabledBehavior="selection"
-            selectedKeys={selectedKey == null ? [] : [selectedKey]}
-            onSelectionChange={(keys: Selection) => {
-              if (keys === 'all') return;
-              const [key] = keys;
-              select(key == null ? null : String(key));
-            }}
-            onAction={onAction}
-            renderEmptyState={() => <div className="px-3 py-6 text-center text-footnote text-muted-foreground">{emptyMessage}</div>}
-            className="bl-scroll min-h-0 flex-1 overflow-auto outline-none"
-          >
-            {renderRow}
-          </AriaTree>
-        </Virtualizer>
-        {shownRow?.kind === 'node' && shownRow.node.value ? (
-          <ValuePopover
-            row={shownRow}
-            anchor={valueAnchor}
-            onClose={() => setShownValue(null)}
-            onCopy={() => api.copy(shownRow)}
-            copied={copiedKey === shownRow.key}
-          />
-        ) : null}
+        <div
+          ref={virtual.scrollerRef}
+          data-slot="object-tree-scroller"
+          className="bl-scroll min-h-0 flex-1 overflow-auto"
+          onFocusCapture={(e) => { focusedKey.current = (e.target as Element).closest?.('[data-key]')?.getAttribute('data-key') ?? null; }}
+          onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) focusedKey.current = null; }}
+        >
+          {flat.length ? (
+            <Tree
+              aria-label={ariaLabel}
+              items={items}
+              mode={mode}
+              value={mode === 'single' ? selectedKey : null}
+              onValueChange={(key, details) => {
+                const row = key == null ? undefined : live.current.rows.byKey.get(key);
+                // Selected or not, only a value can be chosen.
+                if (row && !isSelectable(row)) return details.cancel();
+                const node = row?.kind === 'node' ? (row.node as ObjectTreeNode<T>) : null;
+                live.current.onValueChange?.(key, Object.assign(details, { node }));
+                if (!details.canceled) setOwnValue(key);
+              }}
+              expanded={expanded}
+              onExpandedChange={(next) => {
+                const before = live.current.rows.expandedKeys;
+                update((s) => applyExpanded(s, before, new Set(next)));
+              }}
+              // What a press does depends on the row, so the tree leaves opening to `onAction`.
+              expandOnPress={false}
+              onAction={(key, details) => {
+                const row = live.current.rows.byKey.get(key);
+                if (!row) return;
+                if (details.event?.type === 'click') {
+                  // A drag that selected text, or a press on a row's own button, isn't a press on the row.
+                  const rowEl = (details.event.target as Element | null)?.closest?.('[data-key]');
+                  if ((rowEl && !isRowPress(details.event, rowEl)) || selects(row)) return;
+                }
+                act(row);
+              }}
+              onHighlight={(_key, { index }) => virtual.scrollToIndex(index)}
+              className="relative w-full outline-none"
+              style={{ height: virtual.size }}
+            >
+              {virtual.items.map(({ index, start }) => {
+                const row = rows.byKey.get(flat[index]?.item.value ?? '');
+                return row ? <Row key={row.key} row={row} top={start} height={rowHeight} onOpen={selects(row) ? act : undefined} /> : null;
+              })}
+            </Tree>
+          ) : (
+            <div className="px-3 py-6 text-center text-footnote text-muted-foreground">{emptyMessage}</div>
+          )}
+        </div>
+        <ValuePopover
+          controller={valuePopover}
+          row={shownRow?.kind === 'node' ? shownRow : undefined}
+          onClose={() => setShownValue(null)}
+          onCopy={() => { if (shownRow?.kind === 'node') api.copy(shownRow); }}
+          copied={shownRow !== undefined && copiedKey === shownRow.key}
+        />
       </TreeApiContext.Provider>
     </div>
   );

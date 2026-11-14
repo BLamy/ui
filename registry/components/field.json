@@ -1,0 +1,29 @@
+{
+  "name": "field",
+  "title": "Field",
+  "description": "UI SDK's Field restyled: the wrapper that links a FieldLabel, a control (Input, Textarea, Select, Checkbox, Switch, RadioGroup), a FieldDescription and a FieldError, names the control and shows validation; plus FieldSet, FieldLegend and FieldGroup for iOS-style grouped sections.",
+  "page": "field",
+  "exports": [
+    "Field",
+    "FieldLabel",
+    "FieldDescription",
+    "FieldError",
+    "FieldSet",
+    "FieldLegend",
+    "FieldGroup",
+    "FieldControl",
+    "useFieldControl"
+  ],
+  "imports": [
+    "Field",
+    "FieldLabel",
+    "FieldDescription",
+    "FieldError",
+    "FieldSet",
+    "FieldLegend",
+    "FieldGroup"
+  ],
+  "types": [
+    "FieldLabelProps"
+  ]
+}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useWorkbenchAppearance, WorkbenchTheme } from '@/components/ui/workbench-theme'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import {
   AssistantMessage,
   MessageMarkdown,
@@ -52,7 +52,13 @@ export default function Scopes() {
   const t = tint === 'default' ? undefined : tint
   return (
     <div className="grid gap-3">
-      <Segmented aria-label="Accent" value={tint} onChange={setTint} options={TINTS} className="mx-auto" />
+      <Segmented aria-label="Accent" value={tint} onValueChange={(v) => v && setTint(v)} className="mx-auto">
+        {TINTS.map((o) => (
+          <SegmentedItem key={o.id} value={o.id}>
+            {o.label}
+          </SegmentedItem>
+        ))}
+      </Segmented>
       <div className="grid gap-3 sm:grid-cols-2">
         {(['light', 'dark'] as const).map((appearance) => (
           <WorkbenchTheme key={appearance} appearance={appearance} tint={t} className="grid gap-3 rounded-card border border-border p-4">

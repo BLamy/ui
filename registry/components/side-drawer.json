@@ -1,9 +1,11 @@
 {
   "name": "side-drawer",
   "title": "SideDrawer",
-  "description": "An inspector column: docked beside the content, or an overlay sheet with a scrim.",
+  "description": "An inspector panel: docked beside the content, an overlay drawer with a scrim, or a page pushed over a compact host that the page under it follows (sideDrawerPageClass).",
   "page": "side-drawer",
   "exports": [
-    "SideDrawer"
+    "SideDrawer",
+    "sideDrawerPageClass",
+    "createSideDrawerController"
   ]
 }

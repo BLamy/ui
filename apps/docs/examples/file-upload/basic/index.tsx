@@ -30,7 +30,7 @@ function mockUpload(file: File, { signal, onProgress }: UploadContext) {
 export default function Basic() {
   return (
     <div className="mx-auto w-full max-w-md">
-      <FileUpload upload={mockUpload} maxSize={10 * 1024 * 1024} />
+      <FileUpload upload={mockUpload} maxSize={10_000_000} />
     </div>
   )
 }

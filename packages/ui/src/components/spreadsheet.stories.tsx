@@ -29,7 +29,7 @@ const base = { defaultValue: parts, engine: 'fallback', 'aria-label': 'Parts', c
 export const Default: Story = { args: base };
 export const Comfortable: Story = { args: { ...base, density: 'comfortable' } };
 export const NoHeader: Story = { args: { ...base, header: false, histograms: false, defaultValue: parts.slice(1) } };
-export const ReadOnly: Story = { args: { ...base, isReadOnly: true } };
+export const ReadOnly: Story = { args: { ...base, readOnly: true } };
 export const Empty: Story = { args: { ...base, defaultValue: [['Name', 'Amount']] } };
 export const Dark: Story = {
   args: base,

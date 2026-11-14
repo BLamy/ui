@@ -13,7 +13,7 @@
   ],
   "dependencies": [
     "class-variance-authority",
-    "framer-motion",
-    "react-aria-components"
+    "@ui-sdk/react",
+    "framer-motion"
   ]
 }

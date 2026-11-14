@@ -1,7 +1,7 @@
 /* The launcher's shared state: the clipboard history, calculator history, Trash, appearance, the power overlay,
    workflow drafts, and the "Copied" HUD — one context, so any page can act on it. */
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { toastApi, type ToastApi, type ToastQueue } from '@/components/ui/toast';
+import { createContext, useContext, useState, type ReactNode } from 'react';
+import type { Hud } from '@/components/ui/toast';
 import { CLIPS, REPOS, TRASH, type Clip } from './data';
 
 export type PowerState = 'lock' | 'sleep' | 'restart' | 'off' | null;
@@ -52,10 +52,10 @@ const INITIAL_HISTORY: CalcEntry[] = [
   { expr: '2^16', result: '65536' },
 ];
 
-export function AlfredProvider({ queue, dark, toggleDark, reset, close, children }: {
-  queue: ToastQueue; dark: boolean; toggleDark: () => void; reset: () => void; close: () => void; children: ReactNode;
+export function AlfredProvider({ hud, dark, toggleDark, reset, close, children }: {
+  /** The desktop's HUD queue (`createHud()`), shown by its `<ToastRegion variant="hud" />`. */
+  hud: Hud; dark: boolean; toggleDark: () => void; reset: () => void; close: () => void; children: ReactNode;
 }) {
-  const toast: ToastApi = useMemo(() => toastApi(queue), [queue]);
   const [clips, setClips] = useState(CLIPS);
   const [history, setHistory] = useState(INITIAL_HISTORY);
   const [trash, setTrash] = useState(TRASH.items);
@@ -65,13 +65,14 @@ export function AlfredProvider({ queue, dark, toggleDark, reset, close, children
   const [timer, setTimer] = useState<RunningTimer | null>(null);
   const [timerDraft, setTimerDraft] = useState(25);
 
+  const showHud = hud;
   const value: Alfred = {
     dark,
     toggleDark,
-    hud: (title, icon) => { toast.hud(title, { tone: 'success', ...(icon ? { icon } : null) }); },
+    hud: (title, icon) => { hud(title, { type: 'success', data: icon ? { icon } : undefined }); },
     copy: (text, hud = 'Copied to Clipboard', from = 'Alfred') => {
       try { void navigator.clipboard?.writeText(text).catch(() => undefined); } catch { /* not allowed here — the HUD still confirms */ }
-      toast.hud(hud, { tone: 'success' });
+      showHud(hud, { type: 'success' });
       setClips((cs) => {
         const existing = cs.find((c) => c.text === text);
         if (existing?.pinned) return cs;

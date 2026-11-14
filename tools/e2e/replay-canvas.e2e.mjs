@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openDemo } from './helpers.mjs';
+import { openDemo, settled } from './helpers.mjs';
 
 /* The Replay Canvas block: four rrweb sessions of Tandem folded into one map. Frames are the recordings paused (a layer
    cropped to its panel, a page to its content, an update to the part it changed, the shared header on its own), the
@@ -88,12 +88,16 @@ test('follows a journey: its steps numbered, the rest faded', async ({ page }) =
 
 test('previews a frame and a recording in hover cards', async ({ page }) => {
   const frame = page.locator('[data-rc-frame^="page-"]').first();
+  // A frame is cropped to its content once its recording has loaded: rest on it where it ends up.
+  await expect(page.locator('[data-replay-stage]')).toHaveCount(19, { timeout: 20_000 });
+  await settled(page, async () => frame.boundingBox());
   await frame.hover({ force: true });
-  const card = page.locator('[data-slot=hover-card]');
+  const card = page.locator('[data-slot=hover-card-content]');
   await expect(card).toContainText(/Seen \d+× in \d+ recording/);
   await page.mouse.move(5, 5);
   await expect(card).toHaveCount(0);
-  await page.locator('[data-slot=replay-canvas-sidebar] [data-slot=hover-card-trigger]').first().hover();
+  // A recording's checkbox is the card's trigger (focusable and named, so focus opens the card as resting does).
+  await page.locator('[data-slot=replay-canvas-sidebar]').getByRole('checkbox', { name: /^Use / }).first().hover();
   await expect(card).toContainText(/\d+ pages? · \d+ layers? · \d+ segues?/);
 });
 
@@ -118,6 +122,6 @@ test('folds a recording added from a file into the same map', async ({ page }) =
     name: 'again.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(events)),
   });
   await expect(page.locator('[data-slot=replay-canvas]')).toContainText('5 recordings → 3 pages · 9 layers');
-  await page.locator('[data-slot=checkbox]', { hasText: 'again' }).click();
+  await page.getByRole('checkbox', { name: /again/ }).click();
   await expect(page.locator('[data-slot=replay-canvas]')).toContainText('4 recordings → 3 pages · 9 layers');
 });

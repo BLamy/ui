@@ -9,16 +9,17 @@ test.beforeEach(async ({ page }) => {
 });
 
 const stack = (page) => page.locator(STACK);
-const labels = (page) => page.$$eval(`${STACK} [data-slot=screen]`, (els) => els.map((e) => e.dataset.screenLabel));
-const top = (page) => stack(page).locator('[data-slot=screen]').last();
+/** The titles of the stack's pages, bottom to top (a page sliding out counts until it has left). */
+const labels = (page) => page.$$eval(`${STACK} > [data-slot=navigation-stack-page]`, (els) => els.map((e) => e.querySelector('[data-slot=navigation-stack-title]')?.textContent));
+const top = (page) => stack(page).locator(':scope > [data-slot=navigation-stack-page]').last();
 
-/** The top screen's left edge relative to the stack, or null while it can't be measured (a leaving screen detaches). */
+/** The top page's left edge relative to the stack, or null while it can't be measured (a leaving page detaches). */
 const topX = async (page) => {
   const [t, s] = await Promise.all([top(page).boundingBox({ timeout: 500 }).catch(() => null), stack(page).boundingBox()]);
   return t && s ? Math.round(t.x - s.x) : null;
 };
 
-/** A push or pop has finished: the flight layer is gone and the top screen is at rest on the stack's origin. */
+/** A push or pop has finished: the flight layer is gone and the top page is at rest on the stack's origin. */
 async function rest(page) {
   await settled(page, async () => ({ flight: await page.locator('[data-slot=navigation-title-flight]').count(), x: await topX(page) }));
   await expect(page.locator('[data-slot=navigation-title-flight]')).toHaveCount(0);
@@ -35,7 +36,7 @@ test.describe('back button', () => {
     // The chevron sits inside the edge-swipe zone (the stack's left 36px): that zone must not swallow the tap.
     await push(page, 'Notifications and Focus');
     expect(await labels(page)).toEqual(['Settings', 'Notifications and Focus']);
-    const chev = await top(page).locator('button.bl-btn svg').boundingBox();
+    const chev = await top(page).locator('[data-slot=navigation-stack-back] svg').boundingBox();
     expect(chev.x - (await stack(page).boundingBox()).x).toBeLessThan(36);
     await page.mouse.click(...Object.values(center(chev)));
     await expect.poll(() => labels(page)).toEqual(['Settings']);
@@ -43,7 +44,7 @@ test.describe('back button', () => {
 
   test('a tap on the label pops', async ({ page }) => {
     await push(page, 'Notifications and Focus');
-    await top(page).locator('button.bl-btn span').click();
+    await top(page).locator('[data-slot=navigation-stack-back] span').click();
     await expect.poll(() => labels(page)).toEqual(['Settings']);
   });
 
@@ -51,7 +52,7 @@ test.describe('back button', () => {
     await push(page, 'Notifications and Focus');
     await push(page, 'Scheduled Summary');
     expect(await labels(page)).toEqual(['Settings', 'Notifications and Focus', 'Scheduled Summary']);
-    const chev = () => top(page).locator('button.bl-btn svg').boundingBox().then(center);
+    const chev = () => top(page).locator('[data-slot=navigation-stack-back] svg').boundingBox().then(center);
     await page.mouse.click(...Object.values(await chev()));
     await expect.poll(() => labels(page)).toEqual(['Settings', 'Notifications and Focus']);
     await rest(page);
@@ -79,7 +80,7 @@ test.describe('edge swipe', () => {
 
   test('a short swipe that starts on the back button and ends over it does not press it', async ({ page }) => {
     await push(page, 'Notifications and Focus');
-    const chev = center(await top(page).locator('button.bl-btn svg').boundingBox());
+    const chev = center(await top(page).locator('[data-slot=navigation-stack-back] svg').boundingBox());
     await drag(page, chev, 24);
     await rest(page);
     expect(await labels(page)).toEqual(['Settings', 'Notifications and Focus']);
@@ -90,7 +91,7 @@ test.describe('edge swipe', () => {
     const s = await stack(page).boundingBox();
     await drag(page, { x: s.x + 10, y: s.y + s.height * 0.7 }, 40);
     await rest(page);
-    await top(page).locator('button.bl-btn span').click();
+    await top(page).locator('[data-slot=navigation-stack-back] span').click();
     await expect.poll(() => labels(page)).toEqual(['Settings']);
   });
 
@@ -103,6 +104,38 @@ test.describe('edge swipe', () => {
     await page.mouse.up();
     await rest(page);
     expect(await labels(page)).toEqual(['Settings', 'Notifications and Focus']);
+  });
+
+  test.describe('touch', () => {
+    test.use({ hasTouch: true });
+    /** A finger swipe through CDP. It starts over the page's own scroller, whose touch-action is the browser's
+     *  default: the swipe must hold the browser's pan off, or the pointer is cancelled as soon as it moves. */
+    async function swipe(page, from, dx, dy = 0) {
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
+      for (let i = 1; i <= 12; i++) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: from.x + (dx * i) / 12, y: from.y + (dy * i) / 12 }] });
+        await page.waitForTimeout(16);
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await cdp.detach();
+    }
+
+    test('a long finger swipe from the left edge pops', async ({ page }) => {
+      await push(page, 'Notifications and Focus');
+      const s = await stack(page).boundingBox();
+      await swipe(page, { x: s.x + 10, y: s.y + s.height * 0.7 }, s.width * 0.7);
+      await expect.poll(() => labels(page)).toEqual(['Settings']);
+      await rest(page);
+    });
+
+    test('a short finger swipe springs back', async ({ page }) => {
+      await push(page, 'Notifications and Focus');
+      const s = await stack(page).boundingBox();
+      await swipe(page, { x: s.x + 10, y: s.y + s.height * 0.7 }, 40);
+      await rest(page);
+      expect(await labels(page)).toEqual(['Settings', 'Notifications and Focus']);
+    });
   });
 });
 
@@ -156,9 +189,9 @@ test.describe('title morph', () => {
   test('a push and a pop leave nothing hidden behind', async ({ page }) => {
     await push(page, 'Notifications and Focus');
     await push(page, 'Scheduled Summary');
-    await top(page).locator('button.bl-btn span').click();
+    await top(page).locator('[data-slot=navigation-stack-back] span').click();
     await rest(page);
-    await top(page).locator('button.bl-btn span').click();
+    await top(page).locator('[data-slot=navigation-stack-back] span').click();
     await rest(page);
     const hidden = await page.$$eval(`${STACK} *`, (els) => els.filter((e) => e.style.visibility === 'hidden').length);
     expect(hidden).toBe(0);
@@ -176,12 +209,12 @@ test.describe('title morph', () => {
 test.describe('keyboard and focus', () => {
   const focusInfo = (page) => page.evaluate(() => {
     const a = document.activeElement;
-    return { screen: a?.closest('[data-slot=screen]')?.dataset.screenLabel ?? null, label: a?.getAttribute('aria-label') ?? a?.textContent?.trim().slice(0, 30) ?? '' };
+    return { screen: a?.closest('[data-slot=navigation-stack-page]')?.querySelector('[data-slot=navigation-stack-title]')?.textContent ?? null, label: a?.getAttribute('aria-label') ?? a?.textContent?.trim().slice(0, 30) ?? '' };
   });
 
-  test('a covered screen is inert, so Tab never reaches it', async ({ page }) => {
+  test('a covered page is inert, so Tab never reaches it', async ({ page }) => {
     await push(page, 'Notifications and Focus');
-    expect(await page.$eval(`${STACK} [data-slot=screen]`, (e) => e.hasAttribute('inert'))).toBe(true);
+    expect(await page.$eval(`${STACK} > [data-slot=navigation-stack-page]`, (e) => e.hasAttribute('inert'))).toBe(true);
     for (let i = 0; i < 10; i++) {
       await page.keyboard.press('Tab');
       const f = await focusInfo(page);
@@ -189,7 +222,7 @@ test.describe('keyboard and focus', () => {
     }
   });
 
-  test('a push moves focus into the new screen, and Escape pops it', async ({ page }) => {
+  test('a push moves focus into the new page, and Escape pops it', async ({ page }) => {
     await push(page, 'Notifications and Focus');
     expect((await focusInfo(page)).screen).toBe('Notifications and Focus');
     await page.keyboard.press('Escape');

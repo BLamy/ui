@@ -3,7 +3,7 @@ import { AssistantMessage, Conversation, ConversationComposer, ConversationMessa
 import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 import { SurfaceAgents } from '@/components/blocks/t3-clone/components/workbench/surfaces'
 import { TerminalBody, TerminalHeader } from '@/components/blocks/t3-clone/components/workbench/terminal'
-import { WorkbenchAction, WorkbenchActions, WorkbenchDock, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchPanel, WorkbenchPanelClose, WorkbenchPanelHeader, WorkbenchPanelTitle, WorkbenchPanelTrigger, WorkbenchShell, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
+import { WorkbenchAction, WorkbenchActions, WorkbenchContent, WorkbenchDock, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchPanel, WorkbenchPanelClose, WorkbenchPanelHeader, WorkbenchPanelTitle, WorkbenchPanelTrigger, WorkbenchShell, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
 import { WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
 const RUNS = [
@@ -77,38 +77,40 @@ function AgentConsole() {
               <WorkbenchPanelTrigger />
             </WorkbenchActions>
           </WorkbenchHeader>
-          <Conversation>
-            <ConversationMessages threadKey="release" streaming>
-              <AssistantMessage key="plan">
-                <WorkLog summary="Running for 1m 2s" defaultOpen>
-                  <ToolCall
-                    title="Applied database migrations"
-                    detail="3 files"
+          <WorkbenchContent>
+            <Conversation>
+              <ConversationMessages threadKey="release" streaming>
+                <AssistantMessage key="plan">
+                  <WorkLog summary="Running for 1m 2s" defaultOpen>
+                    <ToolCall
+                      title="Applied database migrations"
+                      detail="3 files"
+                    />
+                    <ToolCall
+                      title="Deploying the API"
+                      detail="2 of 4 pods"
+                      status="running"
+                    />
+                    <ToolCall icon="clock-dial" title="Smoke tests" detail="queued" />
+                  </WorkLog>
+                  <MessageMarkdown
+                    markdown={
+                      'Deploying **api@2.14**. I’ll run the smoke tests once ' +
+                      'every pod is healthy.'
+                    }
                   />
-                  <ToolCall
-                    title="Deploying the API"
-                    detail="2 of 4 pods"
-                    status="running"
-                  />
-                  <ToolCall icon="clock-dial" title="Smoke tests" detail="queued" />
-                </WorkLog>
-                <MessageMarkdown
-                  markdown={
-                    'Deploying **api@2.14**. I’ll run the smoke tests once ' +
-                    'every pod is healthy.'
-                  }
+                </AssistantMessage>
+              </ConversationMessages>
+              <ConversationComposer>
+                <WorkbenchComposer
+                  options={false}
+                  checkout={false}
+                  placeholder="Steer the run…"
+                  onSubmit={() => {}}
                 />
-              </AssistantMessage>
-            </ConversationMessages>
-            <ConversationComposer>
-              <WorkbenchComposer
-                options={false}
-                checkout={false}
-                placeholder="Steer the run…"
-                onSubmit={() => {}}
-              />
-            </ConversationComposer>
-          </Conversation>
+              </ConversationComposer>
+            </Conversation>
+          </WorkbenchContent>
           <WorkbenchDock>
             <TerminalHeader title="deploy-api — logs" />
             <TerminalBody

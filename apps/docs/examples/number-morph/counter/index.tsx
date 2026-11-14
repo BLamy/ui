@@ -18,16 +18,16 @@ export default function Counter() {
           className="text-title font-semibold"
         />
         <div className="flex flex-wrap justify-center gap-2">
-          <Button variant="secondary" size="sm" onPress={() => bump(-1000)}>
+          <Button variant="secondary" size="sm" onClick={() => bump(-1000)}>
             −1,000
           </Button>
-          <Button variant="secondary" size="sm" onPress={() => bump(-50)}>
+          <Button variant="secondary" size="sm" onClick={() => bump(-50)}>
             −50
           </Button>
-          <Button variant="secondary" size="sm" onPress={() => bump(50)}>
+          <Button variant="secondary" size="sm" onClick={() => bump(50)}>
             +50
           </Button>
-          <Button variant="secondary" size="sm" onPress={() => bump(10000)}>
+          <Button variant="secondary" size="sm" onClick={() => bump(10000)}>
             +10,000
           </Button>
         </div>
@@ -57,10 +57,10 @@ export default function Counter() {
         </div>
       </div>
       <div className="flex justify-center gap-2">
-        <Button variant="secondary" size="sm" onPress={() => setRate((r) => Math.max(0, r - 0.07))}>
+        <Button variant="secondary" size="sm" onClick={() => setRate((r) => Math.max(0, r - 0.07))}>
           Rate −7%
         </Button>
-        <Button variant="secondary" size="sm" onPress={() => setRate((r) => Math.min(1, r + 0.07))}>
+        <Button variant="secondary" size="sm" onClick={() => setRate((r) => Math.min(1, r + 0.07))}>
           Rate +7%
         </Button>
       </div>

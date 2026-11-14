@@ -1,9 +1,9 @@
 import './chat-theme.css';
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewIndicator, TabViewList, TabViewTab } from '@/components/ui/tab-view';
+import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewList, TabViewPill, TabViewTab } from '@/components/ui/tab-view';
 import { Icon } from '@/lib/icon';
 import { type Appearance } from '@/lib/theme';
-import { ChatShell, ChatShellAside, ChatShellBack, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderAction, ChatShellHeaderActions, ChatShellHeaderIcon, ChatShellMain, ChatShellNav, ChatShellNavTrigger, ChatShellPanel, ChatShellSidebar, ChatShellTitle } from './components/chat-shell';
+import { ChatShell, ChatShellAside, ChatShellBack, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderAction, ChatShellHeaderActions, ChatShellHeaderToggle, ChatShellHeaderIcon, ChatShellMain, ChatShellNav, ChatShellNavTrigger, ChatShellPanel, ChatShellSidebar, ChatShellTitle } from './components/chat-shell';
 import { useChatShell } from './components/chat-shell-context';
 import { ChannelGroup, ChannelItem, ChannelList, ChannelThreadItem } from './components/channel-list';
 import { Avatar } from '@/components/ui/avatar';
@@ -41,11 +41,6 @@ const DEFAULT_TINT = '#0A84FF';
 
 const groups = [...new Set(CHANNELS.map((c) => c.group))];
 
-/** react-aria's tabs drop `title`, so the rail's tooltips go on through a ref. */
-const titleRef = (title: string) => (el: HTMLElement | null) => {
-  if (el) el.title = title;
-};
-
 export default function DiscordClone({
   tint = DEFAULT_TINT,
   appearance,
@@ -75,13 +70,13 @@ export default function DiscordClone({
     <ChatUsersProvider users={USERS} presence={PRESENCE}>
       <ChatShell tint={tint} appearance={appearance} className={className} style={style}>
         <ChatShellNav>
-          <TabView orientation="vertical" defaultSelectedKey="blui" className="contents">
+          <TabView orientation="vertical" defaultValue="blui" className="contents">
             <TabViewBar variant="workspace">
               <TabViewList aria-label="Workspaces">
                 {WORKSPACES.map((w) => (
-                  <TabViewTab key={w.id} id={w.id} textValue={w.title} ref={titleRef(w.title)}>
-                    <TabViewIndicator variant="pill" />
-                    <WorkspaceTile color={w.color}>{w.label}</WorkspaceTile>
+                  <TabViewTab key={w.id} value={w.id} aria-label={w.title}>
+                    <TabViewPill />
+                    <WorkspaceTile color={w.color} title={w.title}>{w.label}</WorkspaceTile>
                   </TabViewTab>
                 ))}
               </TabViewList>
@@ -93,8 +88,8 @@ export default function DiscordClone({
           <ChatShellSidebar>
             <ServerHeader>BL UI HQ</ServerHeader>
             <ChannelList
-              selectedKey={channelId}
-              onSelectionChange={(id) => {
+              value={channelId}
+              onValueChange={(id) => {
                 setChannelId(id);
                 setThread(null);
               }}
@@ -105,7 +100,7 @@ export default function DiscordClone({
                     .filter((c) => c.group === group)
                     .map((c) => (
                       <Fragment key={c.id}>
-                        <ChannelItem id={c.id} unread={c.unread} mentions={c.mentions}>
+                        <ChannelItem value={c.id} unread={c.unread} mentions={c.mentions}>
                           {c.name}
                         </ChannelItem>
                         {c.id === channelId &&
@@ -114,8 +109,8 @@ export default function DiscordClone({
                             .map((m) => (
                               <ChannelThreadItem
                                 key={m.id}
-                                isActive={thread?.mode === 'full' && thread.id === m.id}
-                                onPress={() => setThread({ id: m.id, mode: 'full' })}
+                                active={thread?.mode === 'full' && thread.id === m.id}
+                                onClick={() => setThread({ id: m.id, mode: 'full' })}
                               >
                                 {m.thread!.title}
                               </ChannelThreadItem>
@@ -143,13 +138,13 @@ export default function DiscordClone({
             <>
               <ChatShellHeader>
                 <ChatShellNavTrigger />
-                <ChatShellBack onPress={() => setThread(null)}>#{channel.name}</ChatShellBack>
+                <ChatShellBack onClick={() => setThread(null)}>#{channel.name}</ChatShellBack>
                 <ChatShellHeaderIcon>
                   <Icon name="text-bubble" size={14} sw={1.9} className="inline" />
                 </ChatShellHeaderIcon>
                 <ChatShellTitle>{threadMessage.thread!.title}</ChatShellTitle>
                 <ChatShellHeaderActions>
-                  <ChatShellHeaderAction variant="outline" onPress={() => setThread({ id: thread.id, mode: 'panel' })}>
+                  <ChatShellHeaderAction variant="outline" onClick={() => setThread({ id: thread.id, mode: 'panel' })}>
                     Open as drawer
                   </ChatShellHeaderAction>
                 </ChatShellHeaderActions>
@@ -161,7 +156,7 @@ export default function DiscordClone({
               <ChannelHeader
                 channel={channel}
                 membersOn={membersOpen && !thread}
-                onToggleMembers={() => setMembersOpen((o) => !o)}
+                onMembersChange={setMembersOpen}
               />
               <MessageList scrollKey={channel.id}>
                 <ChannelIntro title={<>Welcome to #{channel.name}</>}>Hover a message to react or start a thread.</ChannelIntro>
@@ -211,7 +206,7 @@ export default function DiscordClone({
 }
 
 /** The channel's title bar. Inside the shell, so it can ask whether the member list has room to dock. */
-function ChannelHeader({ channel, membersOn, onToggleMembers }: { channel: Channel; membersOn: boolean; onToggleMembers: () => void }) {
+function ChannelHeader({ channel, membersOn, onMembersChange }: { channel: Channel; membersOn: boolean; onMembersChange: (open: boolean) => void }) {
   const { width } = useChatShell();
   return (
     <ChatShellHeader>
@@ -220,9 +215,9 @@ function ChannelHeader({ channel, membersOn, onToggleMembers }: { channel: Chann
       <ChatShellTitle>{channel.name}</ChatShellTitle>
       <ChatShellDescription>{channel.topic}</ChatShellDescription>
       <ChatShellHeaderActions>
-        <ChatShellHeaderAction aria-label="Members" isActive={membersOn && width >= 1320} onPress={onToggleMembers}>
+        <ChatShellHeaderToggle aria-label="Members" pressed={membersOn && width >= 1320} onPressedChange={onMembersChange}>
           <Icon name="people-simple" size={16} sw={1.9} className="inline" />
-        </ChatShellHeaderAction>
+        </ChatShellHeaderToggle>
       </ChatShellHeaderActions>
     </ChatShellHeader>
   );

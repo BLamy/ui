@@ -32,7 +32,7 @@ function CitySearch() {
           <div style={{ padding: '10px 0' }}>
             <SearchField
               value={q}
-              onChange={setQ}
+              onValueChange={setQ}
               placeholder="Search cities"
             />
           </div>
@@ -46,7 +46,7 @@ function CitySearch() {
                 title={c}
                 leading={<Icon name="pin" size={20} />}
                 divider={i < hits.length - 1}
-                onPress={() => {}}
+                onClick={() => {}}
               />
             ))}
           </ListSection>
@@ -69,7 +69,7 @@ function CitySearch() {
               variant="secondary"
               size="sm"
               style={{ marginTop: 14 }}
-              onPress={() => setQ('')}
+              onClick={() => setQ('')}
             >
               Clear search
             </Button>

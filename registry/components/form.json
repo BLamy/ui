@@ -1,14 +1,12 @@
 {
   "name": "form",
   "title": "Form",
-  "description": "react-aria Form with native constraint validation and server-error mapping, plus FormSection for iOS-style grouped fields.",
+  "description": "A native form as a vertical stack of fields: UI SDK controls submit under their names and validate with the browser's constraints, and each Field shows its own error.",
   "page": "form",
   "exports": [
-    "Form",
-    "FormSection"
+    "Form"
   ],
   "imports": [
-    "Form",
-    "FormSection"
+    "Form"
   ]
 }

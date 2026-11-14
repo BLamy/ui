@@ -1,4 +1,4 @@
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollArea, ScrollAreaContent, ScrollAreaViewport } from '@/components/ui/scroll-area'
 
 const releases = [
   ['3.2.0', 'ThemeScope variables, token scales'],
@@ -26,9 +26,10 @@ const plans = [
   ['Nonprofit', '25', 'Unlimited', '100 GB', 'Email', '–', '90 days'],
 ]
 
-// The region scrolls natively (momentum, overscroll, trackpad) and only the
-// scrollbar is restyled. `orientation` picks which axes may scroll. Every one
-// is a tab stop (tabIndex 0), so the keyboard can scroll it — give it a name.
+// The viewport scrolls natively (momentum, overscroll, trackpad) and only the
+// scrollbar is restyled. `orientation` picks which axes may scroll. A viewport
+// that overflows and holds nothing focusable is a tab stop, so the keyboard can
+// scroll it — give it a name.
 export default function Orientations() {
   return (
     <div className="mx-auto grid max-w-xl gap-6">
@@ -36,74 +37,73 @@ export default function Orientations() {
         <h3 className="m-0 text-footnote font-semibold text-muted-foreground">
           vertical (default)
         </h3>
-        <ScrollArea
-          aria-label="Release notes"
-          className="h-44 rounded-card bg-card shadow-hairline"
-        >
-          {releases.map(([v, note]) => (
-            <div key={v} className="flex gap-3 px-4 py-2.5 shadow-hairline-b">
-              <span className="w-12 shrink-0 text-subhead font-semibold tabular-nums">{v}</span>
-              <span className="text-subhead text-muted-foreground">{note}</span>
-            </div>
-          ))}
+        <ScrollArea className="h-44 rounded-card bg-card shadow-hairline">
+          <ScrollAreaViewport aria-label="Release notes">
+            <ScrollAreaContent>
+              {releases.map(([v, note]) => (
+                <div key={v} className="flex gap-3 px-4 py-2.5 shadow-hairline-b">
+                  <span className="w-12 shrink-0 text-subhead font-semibold tabular-nums">{v}</span>
+                  <span className="text-subhead text-muted-foreground">{note}</span>
+                </div>
+              ))}
+            </ScrollAreaContent>
+          </ScrollAreaViewport>
         </ScrollArea>
       </section>
 
       <section className="grid gap-2">
         <h3 className="m-0 text-footnote font-semibold text-muted-foreground">horizontal</h3>
-        <ScrollArea
-          orientation="horizontal"
-          aria-label="Component tags"
-          className="rounded-card bg-card p-3 shadow-hairline"
-        >
-          <div className="flex w-max gap-2 pb-2">
-            {tags.map((t) => (
-              <span
-                key={t}
-                className="rounded-full bg-secondary px-3 py-1 text-footnote whitespace-nowrap"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
+        <ScrollArea orientation="horizontal" className="rounded-card bg-card shadow-hairline">
+          <ScrollAreaViewport aria-label="Component tags" className="p-3">
+            <ScrollAreaContent className="flex w-max gap-2 pb-2">
+              {tags.map((t) => (
+                <span
+                  key={t}
+                  className="rounded-full bg-secondary px-3 py-1 text-footnote whitespace-nowrap"
+                >
+                  {t}
+                </span>
+              ))}
+            </ScrollAreaContent>
+          </ScrollAreaViewport>
         </ScrollArea>
       </section>
 
       <section className="grid gap-2">
         <h3 className="m-0 text-footnote font-semibold text-muted-foreground">both</h3>
-        <ScrollArea
-          orientation="both"
-          aria-label="Plan comparison"
-          className="h-40 rounded-card bg-card shadow-hairline"
-        >
-          <table className="w-max border-collapse text-footnote">
-            <thead>
-              <tr>
-                {cols.map((c) => (
-                  <th
-                    key={c}
-                    className="sticky top-0 bg-card px-7 py-2 text-left font-semibold shadow-hairline-b"
-                  >
-                    {c}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {plans.map((row) => (
-                <tr key={row[0]}>
-                  {row.map((cell, i) => (
-                    <td
-                      key={i}
-                      className="px-7 py-2 whitespace-nowrap text-muted-foreground shadow-hairline-b"
-                    >
-                      {cell}
-                    </td>
+        <ScrollArea orientation="both" className="h-40 rounded-card bg-card shadow-hairline">
+          <ScrollAreaViewport aria-label="Plan comparison">
+            <ScrollAreaContent>
+              <table className="w-max border-collapse text-footnote">
+                <thead>
+                  <tr>
+                    {cols.map((c) => (
+                      <th
+                        key={c}
+                        className="sticky top-0 bg-card px-7 py-2 text-left font-semibold shadow-hairline-b"
+                      >
+                        {c}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {plans.map((row) => (
+                    <tr key={row[0]}>
+                      {row.map((cell, i) => (
+                        <td
+                          key={i}
+                          className="px-7 py-2 whitespace-nowrap text-muted-foreground shadow-hairline-b"
+                        >
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                </tbody>
+              </table>
+            </ScrollAreaContent>
+          </ScrollAreaViewport>
         </ScrollArea>
       </section>
     </div>

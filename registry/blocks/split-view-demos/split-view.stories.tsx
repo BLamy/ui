@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
+import { NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackPage, NavigationStackTitle } from '@/components/ui/navigation-stack';
 import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar } from '@/components/ui/split-view';
 import { BLProvider } from '@/lib/theme';
 
@@ -58,7 +58,7 @@ export const CompactPushed: Story = {
 export const OverlaySidebar: Story = {
   render: function OverlayStory() {
     const [open, setOpen] = useState(true);
-    return <Phone w={820} h={640}><SplitViewMailDemo sidebarVisible={open} onSidebarVisibleChange={setOpen} /></Phone>;
+    return <Phone w={820} h={640}><SplitViewMailDemo sidebarOpen={open} onSidebarOpenChange={setOpen} /></Phone>;
   },
 };
 
@@ -66,7 +66,7 @@ export const OverlaySidebar: Story = {
 export const DisplaceSidebar: Story = {
   render: function DisplaceStory() {
     const [open, setOpen] = useState(true);
-    return <Phone w={820} h={640}><SplitViewSettingsDemo sidebarBehavior="displace" sidebarVisible={open} onSidebarVisibleChange={setOpen} /></Phone>;
+    return <Phone w={820} h={640}><SplitViewSettingsDemo sidebarBehavior="displace" sidebarOpen={open} onSidebarOpenChange={setOpen} /></Phone>;
   },
 };
 
@@ -84,9 +84,9 @@ export const ResizableFrame: Story = {
   ),
 };
 
-/** Medium width with `sidebarVisibility={{ medium: true }}` and a tiled sidebar: the sidebar starts shown
- *  at medium too. Resize across the breakpoints — each class resets to its own visibility, and the parent
- *  (which controls `sidebarVisible`) hears every reset through `onSidebarVisibleChange`. */
+/** Medium width with `defaultSidebarOpen={{ medium: true }}` and a tiled sidebar: the sidebar starts open
+ *  at medium too. Resize across the breakpoints: each class resets to where it starts, and the parent (which
+ *  mirrors the sidebar's state) hears every reset through `onSidebarOpenChange` (reason `content-resize`). */
 export const MediumSidebarVisible: Story = {
   render: function MediumStory() {
     const [open, setOpen] = useState(true);
@@ -95,7 +95,7 @@ export const MediumSidebarVisible: Story = {
         <BLProvider className="bg-background p-4">
           <div className="mb-2 text-[12.5px] text-muted-foreground">parent state: sidebar {open ? 'visible' : 'hidden'}</div>
           <SplitViewResizableDemo initial={820} height={600}>
-            <SplitViewSettingsDemo sidebarBehavior="tile" sidebarVisibility={{ medium: true }} sidebarVisible={open} onSidebarVisibleChange={setOpen} />
+            <SplitViewSettingsDemo sidebarBehavior="tile" defaultSidebarOpen={{ medium: true }} onSidebarOpenChange={setOpen} />
           </SplitViewResizableDemo>
         </BLProvider>
       </div>
@@ -110,7 +110,7 @@ export const TintedItems: Story = {
 };
 
 export const TintedItemsDark: Story = {
-  render: () => <Phone w={1080} h={640} dark><SplitViewRemindersDemo defaultSelection={{ sidebar: 'work' }} /></Phone>,
+  render: () => <Phone w={1080} h={640} dark><SplitViewRemindersDemo defaultValue={{ sidebar: 'work' }} /></Phone>,
 };
 
 /** Large title after scrolling: the big title has gone under the bar, so the inline title and the hairline
@@ -137,10 +137,10 @@ export const NestedStackCompact: Story = {
   render: () => <Phone w={390} h={760} dark><SplitViewLibraryDemo defaultCompactColumn="detail" initialAlbum="tidewater" /></Phone>,
 };
 
-/** Gallery: `supplementaryVisible={false}` — the list column has slid away and the detail fills its space.
+/** Gallery: `defaultSupplementaryOpen={false}`: the list column has slid away and the detail fills its space.
  *  The list button springs it back. */
 export const Gallery: Story = {
-  render: () => <Phone w={1180} h={660}><SplitViewGalleryDemo defaultSupplementaryVisible={false} /></Phone>,
+  render: () => <Phone w={1180} h={660}><SplitViewGalleryDemo defaultSupplementaryOpen={false} /></Phone>,
 };
 
 export const GalleryDark: Story = {
@@ -148,24 +148,13 @@ export const GalleryDark: Story = {
 };
 
 /** A NavigationStack nested in the compact detail column: the edge swipe (and Esc) pop the NavigationStack's
- *  screen only — the column stays — and once it's at its root the next swipe pops the column. */
+ *  page only (the column stays), and once it's at its root the next swipe pops the column. */
 export const NestedNavigationStack: Story = {
   render: function NestedNavStory() {
-    const [screens, setScreens] = useState(['root', 'album']);
-    const mk = (k: string): Screen => ({
-      key: k,
-      title: k === 'root' ? 'Recently Added' : 'Neon Tidewater',
-      content: (
-        <div className="px-4 py-3 text-[16px]">
-          {k === 'root'
-            ? <button type="button" className="bl-btn cursor-pointer border-0 bg-transparent p-0 text-[16px] text-primary" onClick={() => setScreens(['root', 'album'])}>Open album</button>
-            : 'Swipe from the leading edge: this screen pops, the column stays.'}
-        </div>
-      ),
-    });
+    const [pages, setPages] = useState(['root', 'album']);
     return (
       <Phone w={390} h={640}>
-        <SplitView aria-label="Music" defaultCompactColumn="detail" defaultSelection={{ sidebar: 'recent' }}>
+        <SplitView aria-label="Music" defaultCompactColumn="detail" defaultValue={{ sidebar: 'recent' }}>
           <SplitViewSidebar aria-label="Library">
             <SplitViewHeader title="Library" />
             <SplitViewContent className="px-2.5 pt-2">
@@ -174,7 +163,22 @@ export const NestedNavigationStack: Story = {
           </SplitViewSidebar>
           <SplitViewDetail aria-label="Albums">
             <div className="relative min-h-0 flex-1">
-              <NavigationStack screens={screens.map(mk)} onPop={() => setScreens((s) => s.slice(0, -1))} />
+              <NavigationStack pages={pages} onPagesChange={setPages}>
+                <NavigationStackPage value="root">
+                  <NavigationStackBar><NavigationStackTitle>Recently Added</NavigationStackTitle></NavigationStackBar>
+                  <NavigationStackContent>
+                    <div className="px-4 py-3 text-[16px]">
+                      <button type="button" className="bl-btn cursor-pointer border-0 bg-transparent p-0 text-[16px] text-primary" onClick={() => setPages(['root', 'album'])}>Open album</button>
+                    </div>
+                  </NavigationStackContent>
+                </NavigationStackPage>
+                <NavigationStackPage value="album">
+                  <NavigationStackBar><NavigationStackTitle>Neon Tidewater</NavigationStackTitle></NavigationStackBar>
+                  <NavigationStackContent>
+                    <div className="px-4 py-3 text-[16px]">Swipe from the leading edge: this page pops, the column stays.</div>
+                  </NavigationStackContent>
+                </NavigationStackPage>
+              </NavigationStack>
             </div>
           </SplitViewDetail>
         </SplitView>
@@ -183,32 +187,34 @@ export const NestedNavigationStack: Story = {
   },
 };
 
-/** Collapsed with a NavigationStack at its root: the root screen gets a back button to the sidebar, labelled
+/** Collapsed with a NavigationStack at its root: the root page gets a back button to the sidebar, labelled
  *  with its title (`rootBack` defaults to the previous column inside a collapsed SplitView). */
 export const NavigationStackRootBack: Story = {
-  render: function RootBackStory() {
-    const screens: Screen[] = [{
-      key: 'root', title: 'Recently Added', largeTitle: true,
-      content: <div className="px-4 py-3 text-[16px] text-muted-foreground">The back button returns to the Library column.</div>,
-    }];
-    return (
-      <Phone w={390} h={640}>
-        <SplitView aria-label="Music" defaultCompactColumn="detail" defaultSelection={{ sidebar: 'recent' }}>
-          <SplitViewSidebar aria-label="Library">
-            <SplitViewHeader title="Library" />
-            <SplitViewContent className="px-2.5 pt-2">
-              <SplitViewItem id="recent" title="Recently Added" />
-            </SplitViewContent>
-          </SplitViewSidebar>
-          <SplitViewDetail aria-label="Albums">
-            <div className="relative min-h-0 flex-1">
-              <NavigationStack screens={screens} />
-            </div>
-          </SplitViewDetail>
-        </SplitView>
-      </Phone>
-    );
-  },
+  render: () => (
+    <Phone w={390} h={640}>
+      <SplitView aria-label="Music" defaultCompactColumn="detail" defaultValue={{ sidebar: 'recent' }}>
+        <SplitViewSidebar aria-label="Library">
+          <SplitViewHeader title="Library" />
+          <SplitViewContent className="px-2.5 pt-2">
+            <SplitViewItem id="recent" title="Recently Added" />
+          </SplitViewContent>
+        </SplitViewSidebar>
+        <SplitViewDetail aria-label="Albums">
+          <div className="relative min-h-0 flex-1">
+            <NavigationStack defaultPages={['root']}>
+              <NavigationStackPage value="root">
+                <NavigationStackBar><NavigationStackTitle>Recently Added</NavigationStackTitle></NavigationStackBar>
+                <NavigationStackContent>
+                  <NavigationStackLargeTitle />
+                  <div className="px-4 py-3 text-[16px] text-muted-foreground">The back button returns to the Library column.</div>
+                </NavigationStackContent>
+              </NavigationStackPage>
+            </NavigationStack>
+          </div>
+        </SplitViewDetail>
+      </SplitView>
+    </Phone>
+  ),
 };
 
 /** Header and section options: the sidebar's bar shows its title only once the list scrolls (`titleOnScroll`);
@@ -217,7 +223,7 @@ export const NavigationStackRootBack: Story = {
 export const HeaderOptions: Story = {
   render: () => (
     <Phone w={1100} h={600}>
-      <SplitView aria-label="Reminders" defaultSelection={{ sidebar: 'today' }} sidebarBehavior="tile">
+      <SplitView aria-label="Reminders" defaultValue={{ sidebar: 'today' }} sidebarBehavior="tile">
         <SplitViewSidebar aria-label="Lists" className="bg-muted">
           <SplitViewHeader title="Lists" titleOnScroll className="bg-muted" />
           <SplitViewContent className="px-2.5">

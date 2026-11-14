@@ -1,12 +1,17 @@
 'use client';
 import {
   Fragment, memo, useCallback, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore,
-  type ClipboardEvent, type ComponentProps, type CompositionEvent as ReactCompositionEvent, type CSSProperties, type HTMLAttributes, type KeyboardEvent, type MouseEvent,
-  type PointerEvent as ReactPointerEvent, type ReactNode, type Ref,
+  type ClipboardEvent, type CompositionEvent as ReactCompositionEvent, type CSSProperties, type HTMLAttributes, type KeyboardEvent, type MouseEvent,
+  type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode, type Ref,
 } from 'react';
 import { flushSync } from 'react-dom';
-import { Button as AriaButton } from 'react-aria-components';
+import { bindDrag, bindHold, type ChangeDetails, type ChangeSource } from '@ui-sdk/core';
+import { Button as SdkButton, type ButtonActionDetails } from '@ui-sdk/react/button';
+import { usePart, usePrimitive, type PartProps, type PrimitiveHandle } from '@ui-sdk/react/primitive';
 import { cva } from 'class-variance-authority';
+import { changeDetails } from '@/lib/change-details';
+import { codeEditorControlKey, codeEditorControls, type CodeEditorControlProps } from '@/lib/code-editor-primitive';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 import {
   CodeLexer, CodeTokenStore, DEFAULT_TAB_SIZE, LineCache, LineScanner, alignedScroll, comparePositions, displayPieces,
   extendSelection, hostProducer, identityRowMap, isCollapsed, lexerProducer, lineSet, markersInRange, movePosition, nextCellWindow, nextRowWindow,
@@ -72,10 +77,14 @@ const LONG_PRESS_MS = 450;
 const TOUCH_SLOP = 8;
 const DOUBLE_CLICK_MS = 450;
 const REVEAL_MARGIN = 30;
+/** The fastest a drag past an edge scrolls, in px a frame. */
+const EDGE_SCROLL_MAX = 4000;
 
 const SELECTION_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
 const FOCUSABLE = ':is(button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex])';
 const CONTROL_SELECTOR = `[data-code-editor-cell]${FOCUSABLE},[data-code-editor-cell] ${FOCUSABLE}`;
+
+type Controls = PrimitiveHandle<typeof codeEditorControls>;
 
 /* ── Variants ── */
 
@@ -105,20 +114,26 @@ export const codeEditorGutterCellVariants = cva('box-border flex h-full shrink-0
 });
 
 const MARKER_CLASS =
-  'absolute top-0 z-10 flex h-full w-3.5 -translate-x-1/2 cursor-pointer items-start justify-center border-0 bg-transparent p-0 outline-none data-focus-visible:rounded-sm data-focus-visible:ring-2 data-focus-visible:ring-ring';
+  'absolute top-0 z-10 flex h-full w-3.5 -translate-x-1/2 cursor-pointer items-start justify-center border-0 bg-transparent p-0 outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring';
 
 /* ── Types ── */
+
+/** What a gutter button's `onClick` gets after the event: UI SDK's button details, and the line. */
+export type CodeEditorGutterClickDetails = ButtonActionDetails & { line: number };
 
 export interface CodeEditorGutter {
   id: string;
   /** Width in px. */
   width: number;
-  /** A cell's contents: anything. Interactive things in it take part in the gutter's keyboard navigation. */
+  /** A cell's contents: anything. A control in it (a popover's trigger, an input) takes part in the gutter's keyboard
+      navigation; say which lines have one with `focusable`, so the arrow keys can reach those that aren't on screen. */
   render: (lineNumber: number) => ReactNode;
   /** Makes the cell a button. */
-  onPress?: (lineNumber: number) => void;
-  /** Whether this line's cell can be pressed (default: all of them, given `onPress`). */
-  isPressable?: (lineNumber: number) => boolean;
+  onClick?: (event: MouseEvent<HTMLElement>, details: CodeEditorGutterClickDetails) => void;
+  /** Whether this line's cell can be pressed (default: all of them, given `onClick`). */
+  clickable?: (lineNumber: number) => boolean;
+  /** Without `onClick`: the lines whose cell holds a control of its own, for the arrow keys. */
+  focusable?: (lineNumber: number) => boolean;
   /** The button's accessible name (default: the gutter's id and the line). */
   label?: (lineNumber: number) => string;
   title?: (lineNumber: number) => string | undefined;
@@ -145,14 +160,17 @@ export interface CodeEditorMarker {
   /** Its accessible name. */
   label: string;
   /** Makes it a button. */
-  onPress?: (marker: CodeEditorMarker) => void;
+  onClick?: (event: MouseEvent<HTMLElement>, details: CodeEditorMarkerClickDetails) => void;
   /** Filled in, and announced as pressed. */
-  isActive?: boolean;
+  active?: boolean;
   title?: string;
   className?: string;
   /** Replaces the default dot. */
   children?: ReactNode;
 }
+
+/** What a marker's `onClick` gets after the event: UI SDK's button details, the marker and its line. */
+export type CodeEditorMarkerClickDetails = ButtonActionDetails & { marker: CodeEditorMarker; line: number };
 
 export interface CodeEditorScrollOptions {
   /** Where the line ends up in the view (default `center`). */
@@ -198,8 +216,12 @@ export interface CodeEditorHandle {
   getValue: () => string;
 }
 
-/** An edit, as `onChange` and `onEdit` report it. */
-export interface CodeEditorChange {
+/** What made an edit: typing (`input-change`), a delete key (`delete`), `newline`, `indent`, `paste`, `cut`, an input method
+    (`composition`), `undo`, `redo`, or a call from code (`imperative`: an agent's `setValue`). */
+export type CodeEditorChangeReason = 'input-change' | 'delete' | 'newline' | 'indent' | 'paste' | 'cut' | 'composition' | 'undo' | 'redo' | 'imperative';
+
+/** An edit: what was replaced, and with what. */
+export interface CodeEditorEdit {
   /** Where the replaced range starts and ends, in the text before the change. */
   from: CodeEditorPosition;
   to: CodeEditorPosition;
@@ -209,9 +231,24 @@ export interface CodeEditorChange {
   text: string;
   /** What came out, with `\n` for line ends. */
   removed: string;
-  /** What made it: typing (`input`), a delete key, `newline`, `indent`, `paste`, `cut`, an input method (`composition`), `undo`, or `redo`. */
-  origin: Exclude<CodeEditOrigin, 'value'>;
 }
+
+/** What `onValueChange` and `onEdit` get: UI SDK's change details (`reason`, `event`, `source`, `cancel()`), and the edit.
+    `cancel()` takes the edit back in an editor without `value`; with `value`, what you pass back decides. */
+export type CodeEditorValueChangeDetails = ChangeDetails<CodeEditorChangeReason> & CodeEditorEdit;
+
+/** Why the selection moved: an edit (its reason), a press (`press`: a click, a double or triple click, a long press),
+    a drag, a key that moves the caret or extends the selection (`caret-move`), Select All (`select-all`), Escape, or code
+    and new content (`imperative`). */
+export type CodeEditorSelectionChangeReason = CodeEditorChangeReason | 'press' | 'drag' | 'caret-move' | 'select-all' | 'escape-key' | 'imperative';
+
+/** What `onSelectionChange` gets. `cancel()` keeps the selection as it was, except after an edit or new content, which the
+    caret has to follow. */
+export type CodeEditorSelectionChangeDetails = ChangeDetails<CodeEditorSelectionChangeReason>;
+
+const reasonOf = (origin: CodeEditOrigin): CodeEditorChangeReason => (origin === 'input' || origin === 'value' ? 'input-change' : origin);
+const isEditReason = (reason: CodeEditorSelectionChangeReason) =>
+  reason !== 'press' && reason !== 'drag' && reason !== 'caret-move' && reason !== 'select-all' && reason !== 'escape-key' && reason !== 'imperative';
 
 /** What the windowed renderer takes: the parts of `CodeEditorProps` that reach it, worked out by `CodeEditor`. */
 export interface CodeEditorWindowProps {
@@ -233,15 +270,16 @@ export interface CodeEditorWindowProps {
   selectionStore?: { current: CodeSelection };
   /** What the host says the text is, if it's controlled. */
   value?: string;
-  onChange?: (value: string, change: CodeEditorChange) => void;
-  onEdit?: (change: CodeEditorChange) => void;
+  onValueChange?: (value: string, details: CodeEditorValueChangeDetails) => void;
+  /** Every edit, without the whole text joined. */
+  onEdit?: (details: CodeEditorValueChangeDetails) => void;
   language?: string;
   /** Beside the code, in this order. They stay put when the code scrolls sideways. */
   gutters?: readonly CodeEditorGutter[];
   /** The built-in line number gutter: next to the code (`true`, `end`), first (`start`), or none. */
   lineNumbers?: boolean | 'start' | 'end';
-  onLineNumberPress?: (lineNumber: number) => void;
-  isLineNumberPressable?: (lineNumber: number) => boolean;
+  onLineNumberClick?: (event: MouseEvent<HTMLElement>, details: CodeEditorGutterClickDetails) => void;
+  lineNumberClickable?: (lineNumber: number) => boolean;
   lineNumberLabel?: (lineNumber: number) => string;
   lineNumberTitle?: (lineNumber: number) => string | undefined;
   /** The number of the first line. Every line number in the props and the ref counts from it. */
@@ -285,8 +323,7 @@ export interface CodeEditorWindowProps {
   paddingY?: number;
   /** Copying a selection, with the text that's going on the clipboard. */
   onCopyText?: (copy: CodeEditorCopy) => void;
-  onSelectionChange?: (selection: CodeEditorSelection | null) => void;
-  onFocusChange?: (focused: boolean) => void;
+  onSelectionChange?: (selection: CodeEditorSelection | null, details: CodeEditorSelectionChangeDetails) => void;
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
   onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void;
   'aria-label'?: string;
@@ -296,7 +333,6 @@ export interface CodeEditorWindowProps {
 
 /* ── Rows ── */
 
-const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value));
 
 const noStore = { subscribe: () => () => {}, version: () => 0 };
@@ -376,14 +412,16 @@ interface CodeRowProps {
   columnLeft: number;
   textClassName?: string;
   extra?: HTMLAttributes<HTMLElement>;
-  markers: readonly (CodeEditorMarker & { left: number })[] | null;
+  /** With where each one goes, and its place among the line's markers. */
+  markers: readonly (CodeEditorMarker & { left: number; index: number })[] | null;
+  controls: Controls;
   onFocusLine: (line: number) => void;
   onBlurLine: (line: number) => void;
 }
 
 const CodeRow = memo(function CodeRow({
   metrics, store, row, rowCount, line, lineNumber, top, start, end, left, selectionLeft, selectionWidth, composingLeft, composingWidth, columnLeft, textClassName, extra, markers,
-  onFocusLine, onBlurLine,
+  controls, onFocusLine, onBlurLine,
 }: CodeRowProps) {
   return (
     <div
@@ -413,7 +451,7 @@ const CodeRow = memo(function CodeRow({
       {columnLeft >= 0 ? (
         <div data-slot="code-editor-column" className="absolute top-0.5 bottom-0.5 w-0.5 -translate-x-1/2 rounded-full bg-primary" style={{ left: columnLeft }} />
       ) : null}
-      {markers?.map((marker, i) => <Marker key={`${marker.column}:${i}`} marker={marker} />)}
+      {markers?.map((marker) => <Marker key={marker.index} marker={marker} line={line} lineNumber={lineNumber} controls={controls} />)}
     </div>
   );
 }, (a, b) => {
@@ -432,16 +470,12 @@ const CodeRow = memo(function CodeRow({
   if (m === n) return true;
   if (!m || !n || m.length !== n.length) return false;
   return m.every((marker, i) => marker === n[i] || (
-    marker.column === n[i].column && marker.left === n[i].left && marker.label === n[i].label && marker.isActive === n[i].isActive &&
-    marker.onPress === n[i].onPress && marker.className === n[i].className && marker.children === n[i].children && marker.title === n[i].title
+    marker.column === n[i].column && marker.index === n[i].index && marker.left === n[i].left && marker.label === n[i].label && marker.active === n[i].active &&
+    marker.onClick === n[i].onClick && marker.className === n[i].className && marker.children === n[i].children && marker.title === n[i].title
   ));
 });
 
-/** react-aria's Button drops `title`, so it goes on through `render`. */
-const titled = (title: string | undefined) =>
-  title ? { render: (props: ComponentProps<'button'>) => <button {...props} title={title} /> } : null;
-
-function Marker({ marker }: { marker: CodeEditorMarker & { left: number } }) {
+function Marker({ marker, line, lineNumber, controls }: { marker: CodeEditorMarker & { left: number; index: number }; line: number; lineNumber: number; controls: Controls }) {
   // A notch over the column, in the space above the letters, so it doesn't cover what it points at.
   const dot = marker.children ?? (
     <svg
@@ -449,18 +483,18 @@ function Marker({ marker }: { marker: CodeEditorMarker & { left: number } }) {
       viewBox="0 0 8 5"
       className={cn(
         'mt-0.5 block h-[5px] w-2 fill-current',
-        marker.isActive ? 'text-primary' : 'text-muted-foreground/50 group-data-hovered/marker:text-primary/70',
+        marker.active ? 'text-primary' : 'text-muted-foreground/50 group-hover/marker:text-primary/70',
       )}
     >
       <path d="M0 0h8L4 5z" />
     </svg>
   );
-  if (!marker.onPress) {
+  if (!marker.onClick) {
     return (
       <span
         data-code-editor-cell="marker"
         data-slot="code-editor-marker"
-        data-active={marker.isActive || undefined}
+        data-active={marker.active || undefined}
         role="img"
         aria-label={marker.label}
         title={marker.title}
@@ -471,53 +505,86 @@ function Marker({ marker }: { marker: CodeEditorMarker & { left: number } }) {
       </span>
     );
   }
-  return (
-    <AriaButton
-      data-code-editor-cell="marker"
-      data-slot="code-editor-marker"
-      data-active={marker.isActive || undefined}
-      aria-label={marker.label}
-      aria-pressed={marker.isActive === undefined ? undefined : marker.isActive}
-      onPress={() => marker.onPress?.(marker)}
-      className={cn('group/marker', MARKER_CLASS, marker.className)}
-      style={{ left: marker.left }}
-      {...titled(marker.title)}
-    >
-      {dot}
-    </AriaButton>
-  );
+  return <MarkerButton marker={marker} line={line} lineNumber={lineNumber} controls={controls}>{dot}</MarkerButton>;
 }
 
-function GutterCell({ gutter, lineNumber, gutterClassName }: { gutter: CodeEditorGutter; lineNumber: number; gutterClassName?: string }) {
-  const pressable = !!gutter.onPress && (gutter.isPressable?.(lineNumber) ?? true);
+/** A marker that's a button: one of the editor's controls (lib/code-editor-primitive.ts), rendered as UI SDK's Button. */
+function MarkerButton({ marker, line, lineNumber, controls, children }: {
+  marker: CodeEditorMarker & { left: number; index: number }; line: number; lineNumber: number; controls: Controls; children: ReactNode;
+}) {
+  const column = `marker:${marker.index}`;
+  return usePart(controls, 'control', { value: codeEditorControlKey(line, column), line, column, at: marker.column }, {
+    render: (
+      <SdkButton
+        data-code-editor-cell="marker"
+        data-active={marker.active || undefined}
+        aria-label={marker.label}
+        aria-pressed={marker.active === undefined ? undefined : marker.active}
+        title={marker.title}
+        onClick={(event, details) => marker.onClick?.(event, { ...details, marker, line: lineNumber })}
+        className={cn('group/marker', MARKER_CLASS, marker.className)}
+        style={{ left: marker.left }}
+      />
+    ),
+    children,
+  });
+}
+
+function GutterCell({ gutter, line, lineNumber, gutterClassName, controls }: { gutter: CodeEditorGutter; line: number; lineNumber: number; gutterClassName?: string; controls: Controls }) {
+  const pressable = !!gutter.onClick && (gutter.clickable?.(lineNumber) ?? true);
   const content = gutter.render(lineNumber);
   const className = cn(codeEditorGutterCellVariants({ align: gutter.align }), gutter.className, gutterClassName);
   const style = { width: gutter.width } satisfies CSSProperties;
   const title = gutter.title?.(lineNumber);
-  if (!pressable) {
+  if (!pressable && BUILT_IN_GUTTERS.has(gutter.id)) {
     return (
       <div data-code-editor-cell={gutter.id} data-slot="code-editor-gutter-cell" data-gutter={gutter.id} title={title} className={className} style={style}>
         {content}
       </div>
     );
   }
+  const slotProps = { value: codeEditorControlKey(line, gutter.id), line, column: gutter.id, at: -1 };
+  if (!pressable) {
+    return <GutterCellPart controls={controls} slotProps={slotProps} gutter={gutter} title={title} className={className} style={style}>{content}</GutterCellPart>;
+  }
   return (
-    <AriaButton
-      data-code-editor-cell={gutter.id}
-      data-slot="code-editor-gutter-cell"
-      data-gutter={gutter.id}
-      aria-label={gutter.label?.(lineNumber) ?? `${gutter.id}, line ${lineNumber}`}
-      onPress={() => gutter.onPress?.(lineNumber)}
-      className={cn('cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-inset data-hovered:bg-secondary data-pressed:bg-secondary-strong', className)}
-      style={style}
-      {...titled(title)}
-    >
-      {content}
-    </AriaButton>
+    <GutterButton controls={controls} slotProps={slotProps}>
+      <SdkButton
+        data-code-editor-cell={gutter.id}
+        data-gutter={gutter.id}
+        aria-label={gutter.label?.(lineNumber) ?? `${gutter.id}, line ${lineNumber}`}
+        title={title}
+        onClick={(event, details) => gutter.onClick?.(event, { ...details, line: lineNumber })}
+        className={cn('cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset hover:bg-secondary active:bg-secondary-strong', className)}
+        style={style}
+      >
+        {content}
+      </SdkButton>
+    </GutterButton>
   );
 }
 
-const GutterRow = memo(function GutterRow({ row, line, lineNumber, top, gutters, current, gutterClassName, onFocusLine, onBlurLine }: {
+/** The textarea an editable editor types into: the controls' `input` part, so agents find the editor by its name. */
+function EditorInput({ controls, ...props }: { controls: Controls } & PartProps<'textarea'>) {
+  return usePart(controls, 'input', {}, props, 'textarea');
+}
+
+/** A gutter cell that's a button: the button joins the editor's controls. */
+function GutterButton({ controls, slotProps, children }: { controls: Controls; slotProps: CodeEditorControlProps; children: ReactElement<Record<string, unknown>> }) {
+  return usePart(controls, 'control', slotProps, { render: children });
+}
+
+/** A gutter cell that isn't a button: a control in it, if any, joins the editor's controls. */
+function GutterCellPart({ controls, slotProps, gutter, title, className, style, children }: {
+  controls: Controls; slotProps: CodeEditorControlProps; gutter: CodeEditorGutter; title?: string; className: string; style: CSSProperties; children: ReactNode;
+}) {
+  return usePart(controls, 'gutter-cell', slotProps, { 'data-code-editor-cell': gutter.id, 'data-gutter': gutter.id, title, className, style, children } as Record<string, unknown>, 'div');
+}
+
+/** The editor's own gutters, which hold no controls but a button of their own. */
+const BUILT_IN_GUTTERS = new Set(['line-number', 'diff-sign']);
+
+const GutterRow = memo(function GutterRow({ row, line, lineNumber, top, gutters, current, gutterClassName, controls, onFocusLine, onBlurLine }: {
   row: number;
   line: number;
   lineNumber: number;
@@ -525,6 +592,7 @@ const GutterRow = memo(function GutterRow({ row, line, lineNumber, top, gutters,
   gutters: readonly CodeEditorGutter[];
   current: boolean;
   gutterClassName?: string;
+  controls: Controls;
   onFocusLine: (line: number) => void;
   onBlurLine: (line: number) => void;
 }) {
@@ -539,7 +607,7 @@ const GutterRow = memo(function GutterRow({ row, line, lineNumber, top, gutters,
       onFocus={() => onFocusLine(line)}
       onBlur={() => onBlurLine(line)}
     >
-      {gutters.map((gutter) => <GutterCell key={gutter.id} gutter={gutter} lineNumber={lineNumber} gutterClassName={gutterClassName} />)}
+      {gutters.map((gutter) => <GutterCell key={gutter.id} gutter={gutter} line={line} lineNumber={lineNumber} gutterClassName={gutterClassName} controls={controls} />)}
     </div>
   );
 });
@@ -611,21 +679,25 @@ interface Geometry {
 }
 
 interface Drag {
-  pointerId: number;
   /** What was selected when the drag started: a point, a word or a line. */
   base: CodeSelection;
   granularity: SelectionGranularity;
   x: number;
   y: number;
+  /** The pointer event it's at. */
+  event: PointerEvent;
+  /** The edge scroll's frame. */
   frame: number;
   touch: boolean;
+  /** Ends `bindDrag`'s part. */
+  release: () => void;
 }
 
 export function CodeEditorWindow({
-  handleRef, lines, lineCount, getLine, contentKey, document: textDocument, editable = false, history, selectionStore, value, onChange, onEdit, language,
-  gutters: gutterProp, lineNumbers = true, onLineNumberPress, isLineNumberPressable, lineNumberLabel, lineNumberTitle, startLine = 1, highlightLines, addedLines, removedLines,
+  handleRef, lines, lineCount, getLine, contentKey, document: textDocument, editable = false, history, selectionStore, value, onValueChange, onEdit, language,
+  gutters: gutterProp, lineNumbers = true, onLineNumberClick, lineNumberClickable, lineNumberLabel, lineNumberTitle, startLine = 1, highlightLines, addedLines, removedLines,
   lineProps, currentLine, currentColumn, revealCurrentLine = true, lineDecoration, markers, scrollToLine, highlight: highlightProp, engine, wrap = false, maxHeight,
-  tabSize = DEFAULT_TAB_SIZE, lineHeight = 20, maxLineLength, paddingY = 0, onCopyText, onSelectionChange, onFocusChange, className, style, onKeyDown, onContextMenu,
+  tabSize = DEFAULT_TAB_SIZE, lineHeight = 20, maxLineLength, paddingY = 0, onCopyText, onSelectionChange, className, style, onKeyDown, onContextMenu,
   'aria-label': ariaLabel,
 }: CodeEditorWindowProps) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -765,14 +837,15 @@ export function CodeEditorWindow({
       id: 'line-number',
       width: lineNumberWidth,
       align: 'end',
-      className: 'pr-2 pl-1 text-caption text-tertiary-foreground group-data-current/gutter:text-foreground data-rac:text-muted-foreground data-hovered:text-foreground',
+      // The current line's number reads in full ink; a pressable one (a breakpoint target) stays muted until hovered.
+      className: 'pr-2 pl-1 text-caption text-tertiary-foreground group-data-current/gutter:[&:not(button)]:text-foreground [&:is(button)]:text-muted-foreground [&:is(button)]:hover:text-foreground',
       render: (lineNumber) => <span aria-hidden="true">{lineNumber}</span>,
-      onPress: onLineNumberPress,
-      isPressable: isLineNumberPressable,
+      onClick: onLineNumberClick,
+      clickable: lineNumberClickable,
       label: lineNumberLabel ?? ((lineNumber) => `Line ${lineNumber}`),
       title: lineNumberTitle,
     };
-  }, [lineNumbers, lineNumberWidth, onLineNumberPress, isLineNumberPressable, lineNumberLabel, lineNumberTitle]);
+  }, [lineNumbers, lineNumberWidth, onLineNumberClick, lineNumberClickable, lineNumberLabel, lineNumberTitle]);
   const diffGutter = useMemo<CodeEditorGutter | null>(() => {
     if (!hasDiff) return null;
     return {
@@ -904,7 +977,7 @@ export function CodeEditorWindow({
     const totalWidth = g.virtualWidth + g.gutterWidth;
     const top = target.y === undefined ? undefined : toPhysicalScroll(clamp(target.y, 0, Math.max(0, g.virtualHeight - g.height)), g.virtualHeight, g.height);
     const left = target.x === undefined ? undefined : toPhysicalScroll(clamp(target.x, 0, Math.max(0, totalWidth - g.width)), totalWidth, g.width);
-    if (target.smooth && !reducedMotion()) {
+    if (target.smooth && !prefersReducedMotion()) {
       root.scrollTo({ ...(top === undefined ? null : { top }), ...(left === undefined ? null : { left }), behavior: 'smooth' });
     } else {
       if (top !== undefined) root.scrollTop = top;
@@ -956,17 +1029,23 @@ export function CodeEditorWindow({
   /** The hidden input doesn't hold what it should any more. */
   const inputDirty = useRef(true);
 
-  /* A caret is a selection with both ends at the same place, and only an editor has one. */
-  const select = useCallback((next: CodeSelection | null) => {
+  /* A caret is a selection with both ends at the same place, and only an editor has one. The host hears first, and can keep the
+     selection where it is, except after an edit or new content, which the caret has to follow. */
+  const select = useCallback((next: CodeSelection | null, given: { reason: CodeEditorSelectionChangeReason; event?: Event }) => {
     const value = next && isCollapsed(next) && !editableRef.current ? null : next;
     const prev = selectionRef.current;
     if (prev === value) return;
     if (prev && value && comparePositions(prev.anchor, value.anchor) === 0 && comparePositions(prev.focus, value.focus) === 0) return;
+    const listener = onSelectionChangeRef.current;
+    if (listener) {
+      const details = changeDetails(given);
+      listener(value ? { anchor: toPublic(value.anchor), focus: toPublic(value.focus) } : null, details);
+      if (details.canceled && given.reason !== 'imperative' && !isEditReason(given.reason)) return;
+    }
     selectionRef.current = value;
     if (value && selectionStore) selectionStore.current = value;
     inputDirty.current = true;
     setSelectionState(value);
-    onSelectionChangeRef.current?.(value ? { anchor: toPublic(value.anchor), focus: toPublic(value.focus) } : null);
   }, [selectionStore, toPublic]);
 
   const readLine = useCallback((line: number) => source.get(line) ?? '', [source]);
@@ -977,7 +1056,7 @@ export function CodeEditorWindow({
     if (selectedIn.current === source) return;
     selectedIn.current = source;
     caretRef.current = null;
-    select(editableRef.current ? caretAt({ line: 0, offset: 0 }) : null);
+    select(editableRef.current ? caretAt({ line: 0, offset: 0 }) : null, { reason: 'imperative' });
   }, [source, select]);
 
   // The browser's own selection has to be somewhere for its copy command to be on offer, in a context menu above all.
@@ -1016,23 +1095,25 @@ export function CodeEditorWindow({
   const dragRef = useRef<Drag | null>(null);
   const syncInputRef = useRef<() => void>(() => {});
   const clicks = useRef({ count: 0, time: 0, x: 0, y: 0 });
-  const longPress = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number; pointerId: number } | null>(null);
 
   const updateDrag = useCallback(() => {
     const drag = dragRef.current;
     if (!drag) return;
-    select(extendSelection(drag.base, positionAt(drag.x, drag.y), drag.granularity, readLine, source.count));
+    select(extendSelection(drag.base, positionAt(drag.x, drag.y), drag.granularity, readLine, source.count), { reason: 'drag', event: drag.event });
   }, [positionAt, readLine, select, source]);
   scrolledDuringDrag.current = updateDrag;
 
-  // Dragging past an edge scrolls, faster the further past it the pointer is.
-  const autoScroll = useCallback(() => {
+  /* Dragging past an edge of the view scrolls it, faster the further past the edge the pointer is, so a drag reaches the end
+     of half a million lines. UI SDK's `createAutoScroll` scrolls whatever is under the pointer once it nears an edge from
+     inside, at most 18 px a frame, and goes on to the page: a selection drag goes on past the view's edge, and scrolls only
+     the view (gaps/r3-composites-b.md). */
+  const edgeScroll = useCallback(() => {
     const drag = dragRef.current;
     const clip = clipRef.current;
     const root = rootRef.current;
     if (!drag || !clip || !root) return;
     const rect = clip.getBoundingClientRect();
-    const speed = (past: number) => Math.min(4000, past * past / 8 + past / 2 + 1);
+    const speed = (past: number) => Math.min(EDGE_SCROLL_MAX, past * past / 8 + past / 2 + 1);
     let dy = 0;
     let dx = 0;
     if (drag.y < rect.top) dy = -speed(rect.top - drag.y);
@@ -1045,22 +1126,39 @@ export function CodeEditorWindow({
       sync(true);
       updateDrag();
     }
-    drag.frame = requestAnimationFrame(autoScroll);
+    drag.frame = requestAnimationFrame(edgeScroll);
   }, [sync, updateDrag]);
-
-  const startDrag = useCallback((pointerId: number, x: number, y: number, base: CodeSelection, granularity: SelectionGranularity, touch: boolean) => {
-    dragRef.current = { pointerId, base, granularity, x, y, frame: requestAnimationFrame(autoScroll), touch };
-    clipRef.current?.setPointerCapture?.(pointerId);
-  }, [autoScroll]);
 
   const endDrag = useCallback(() => {
     const drag = dragRef.current;
     if (!drag) return;
     cancelAnimationFrame(drag.frame);
+    drag.release();
     dragRef.current = null;
     syncProxy();
     syncInputRef.current();
   }, [syncProxy]);
+
+  /** Follows the pointer that pressed, with UI SDK's `bindDrag`: pointer capture, a move a frame, the last one before the end. */
+  const startDrag = useCallback((down: PointerEvent, base: CodeSelection, granularity: SelectionGranularity, touch: boolean) => {
+    const clip = clipRef.current;
+    if (!clip) return;
+    const drag: Drag = { base, granularity, x: down.clientX, y: down.clientY, event: down, frame: 0, touch, release: () => {} };
+    dragRef.current = drag;
+    drag.frame = requestAnimationFrame(edgeScroll);
+    drag.release = bindDrag(clip, down, {
+      onMove: ({ x, y, event }) => {
+        if (dragRef.current !== drag) return;
+        drag.x = x;
+        drag.y = y;
+        drag.event = event;
+        updateDrag();
+      },
+      onEnd: () => {
+        if (dragRef.current === drag) endDrag();
+      },
+    });
+  }, [edgeScroll, endDrag, updateDrag]);
 
   const selectFrom = (position: CodePosition, granularity: SelectionGranularity): CodeSelection => {
     if (granularity === 'word') {
@@ -1078,29 +1176,15 @@ export function CodeEditorWindow({
   };
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if ((e.target as Element).closest('[data-code-editor-cell]')) return;
-    if (e.pointerType === 'touch') {
-      const { pointerId, clientX: x, clientY: y } = e;
-      if (longPress.current) clearTimeout(longPress.current.timer);
-      longPress.current = {
-        pointerId, x, y,
-        timer: setTimeout(() => {
-          longPress.current = null;
-          focusEditor();
-          const base = selectFrom(positionAt(x, y), 'word');
-          select(base);
-          startDrag(pointerId, x, y, base, 'word', true);
-        }, LONG_PRESS_MS),
-      };
-      return;
-    }
+    // A finger is UI SDK's `bindHold`'s, below: a tap places the caret, a long press selects a word and drags from it.
+    if (e.pointerType === 'touch' || (e.target as Element).closest('[data-code-editor-cell]')) return;
     if (e.button !== 0 || (e.ctrlKey && isMac())) {
       // A right click inside the selection keeps it, for the context menu's Copy.
       const position = positionAt(e.clientX, e.clientY);
       const current = selectionRef.current;
       if (current) {
         const { from, to } = orderedSelection(current);
-        if (comparePositions(position, from) < 0 || comparePositions(position, to) > 0) select(editable ? caretAt(position) : null);
+        if (comparePositions(position, from) < 0 || comparePositions(position, to) > 0) select(editable ? caretAt(position) : null, { reason: 'press', event: e.nativeEvent });
       }
       if (editable) {
         focusEditor();
@@ -1128,63 +1212,79 @@ export function CodeEditorWindow({
     const current = selectionRef.current;
     const granularity: SelectionGranularity = c.count === 2 ? 'word' : c.count === 3 ? 'line' : 'char';
     const anchor = e.shiftKey ? current?.anchor ?? caretRef.current : null;
+    const event = e.nativeEvent;
     if (anchor) {
       const base = { anchor, focus: anchor };
-      select(extendSelection(base, position, 'char', readLine, source.count));
-      startDrag(e.pointerId, e.clientX, e.clientY, base, 'char', false);
+      select(extendSelection(base, position, 'char', readLine, source.count), { reason: 'press', event });
+      startDrag(event, base, 'char', false);
       return;
     }
     caretRef.current = position;
     const base = selectFrom(position, granularity);
-    select(base);
-    startDrag(e.pointerId, e.clientX, e.clientY, base, granularity, false);
+    select(base, { reason: 'press', event });
+    startDrag(event, base, granularity, false);
   };
 
-  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const press = longPress.current;
-    if (press && (Math.abs(e.clientX - press.x) > TOUCH_SLOP || Math.abs(e.clientY - press.y) > TOUCH_SLOP)) {
-      clearTimeout(press.timer);
-      longPress.current = null;
-    }
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== e.pointerId) return;
-    drag.x = e.clientX;
-    drag.y = e.clientY;
-    updateDrag();
-  };
-
-  const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const press = longPress.current;
-    if (press) {
-      // A tap: not a long press, and no pan took it over.
-      clearTimeout(press.timer);
-      longPress.current = null;
+  // What a touch does, from the latest render's handlers.
+  const touchRef = useRef<{ hold: (down: PointerEvent) => void; tap: (down: PointerEvent, up: Event) => void } | null>(null);
+  touchRef.current = {
+    hold: (down) => {
+      focusEditor();
+      const base = selectFrom(positionAt(down.clientX, down.clientY), 'word');
+      select(base, { reason: 'press', event: down });
+      startDrag(down, base, 'word', true);
+    },
+    tap: (down, up) => {
       if (editable) {
         // In the gesture, or a phone won't bring up its keyboard.
         focusEditor();
         history?.seal();
         goalRef.current = null;
-        select(caretAt(positionAt(press.x, press.y)));
-      } else select(null);
+        select(caretAt(positionAt(down.clientX, down.clientY)), { reason: 'press', event: up });
+      } else select(null, { reason: 'press', event: up });
       syncProxy();
-    }
-    if (dragRef.current?.pointerId === e.pointerId) endDrag();
+    },
   };
 
-  const onPointerCancel = () => {
-    if (longPress.current) clearTimeout(longPress.current.timer);
-    longPress.current = null;
-    endDrag();
-  };
-
-  // While a touch is selecting, moving it mustn't pan. A listener that can cancel has to be attached by hand.
+  /* A finger: UI SDK's `bindHold`. Held still, it selects the word under it and drags from there; lifted first, it's a tap;
+     moved first, it's the browser's, to pan. While it's selecting, moving it mustn't pan: only a `touchmove` listener that
+     can cancel stops that, and one has to be added by hand. */
   useLayoutEffect(() => {
+    const clip = clipRef.current as HTMLDivElement;
     const root = rootRef.current as HTMLDivElement;
+    let down: PointerEvent | null = null;
+    const unbind = bindHold(clip, {
+      delay: LONG_PRESS_MS,
+      tolerance: TOUCH_SLOP,
+      keys: [],
+      onPress: ({ event, input }) => {
+        if (input !== 'touch' || (event.target as Element).closest('[data-code-editor-cell]')) return false;
+        down = event as PointerEvent;
+        return true;
+      },
+      onHold: () => {
+        if (down) touchRef.current?.hold(down);
+      },
+      onEnd: ({ event, held, canceled }) => {
+        if (down && !held && !canceled) touchRef.current?.tap(down, event);
+        down = null;
+      },
+    });
     const onTouchMove = (e: TouchEvent) => {
       if (dragRef.current?.touch && e.cancelable) e.preventDefault();
     };
     root.addEventListener('touchmove', onTouchMove, { passive: false });
-    return () => root.removeEventListener('touchmove', onTouchMove);
+    return () => {
+      unbind();
+      root.removeEventListener('touchmove', onTouchMove);
+    };
+  }, []);
+  // A drag doesn't outlive the editor.
+  useLayoutEffect(() => () => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    cancelAnimationFrame(drag.frame);
+    drag.release();
   }, []);
 
   const handleCopy = (e: ClipboardEvent<HTMLDivElement>) => {
@@ -1197,10 +1297,10 @@ export function CodeEditorWindow({
     onCopyText?.(copied);
   };
 
-  const selectAll = useCallback(() => {
+  const selectAll = useCallback((event?: Event) => {
     if (!source.count) return;
     const last = source.count - 1;
-    select({ anchor: { line: 0, offset: 0 }, focus: { line: last, offset: readLine(last).length } });
+    select({ anchor: { line: 0, offset: 0 }, focus: { line: last, offset: readLine(last).length } }, { reason: event ? 'select-all' : 'imperative', event });
     syncProxy();
     syncInputRef.current();
   }, [readLine, select, source, syncProxy]);
@@ -1220,8 +1320,8 @@ export function CodeEditorWindow({
   const [blink, restartBlink] = useReducer((n: number) => n + 1, 0);
   const [, afterEdit] = useReducer((n: number) => n + 1, 0);
 
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  const onChangeRef = useRef(onValueChange);
+  onChangeRef.current = onValueChange;
   const onEditRef = useRef(onEdit);
   onEditRef.current = onEdit;
   const valueRef = useRef(value);
@@ -1340,21 +1440,30 @@ export function CodeEditorWindow({
     afterEdit();
   }, [cache, runPass, source, tabSize]);
 
-  const changeOf = useCallback((applied: AppliedEdit, origin: CodeEditOrigin): CodeEditorChange => ({
-    from: toPublic(applied.from),
-    to: toPublic(applied.to),
-    newTo: toPublic(applied.newTo),
-    text: applied.text,
-    removed: applied.removed,
-    origin: origin as CodeEditorChange['origin'],
-  }), [toPublic]);
+  /** Tells the host, and asks only for the text if something wants the text. Says whether the host canceled it. */
+  const report = useCallback((applied: AppliedEdit, origin: CodeEditOrigin, event: Event | undefined, source?: ChangeSource) => {
+    const onEdit = onEditRef.current;
+    const onChange = onChangeRef.current;
+    if (!onEdit && !onChange) return false;
+    const details: CodeEditorValueChangeDetails = Object.assign(changeDetails({ reason: reasonOf(origin), event, source }), {
+      from: toPublic(applied.from),
+      to: toPublic(applied.to),
+      newTo: toPublic(applied.newTo),
+      text: applied.text,
+      removed: applied.removed,
+    });
+    onEdit?.(details);
+    // Canceled in `onEdit`: it's taken back, so `onValueChange` never hears of it.
+    if (!details.canceled) onChange?.((textDocument as CodeDocument).getText(), details);
+    return details.canceled;
+  }, [toPublic, textDocument]);
 
-  /** Tells the host, and asks only for the text if something wants the text. */
-  const report = useCallback((applied: AppliedEdit, origin: CodeEditOrigin) => {
-    const change = changeOf(applied, origin);
-    onEditRef.current?.(change);
-    onChangeRef.current?.((textDocument as CodeDocument).getText(), change);
-  }, [changeOf, textDocument]);
+  /** Takes back an edit the host canceled, or didn't take. */
+  const takeBack = useCallback((applied: AppliedEdit, before: CodeSelection, origin: CodeEditOrigin) => {
+    const undone = (textDocument as CodeDocument).replace({ from: applied.from, to: applied.newTo, text: applied.removed });
+    followEdit(undone);
+    select(before, { reason: reasonOf(origin) });
+  }, [followEdit, select, textDocument]);
 
   /** Makes the text what the host says it is. */
   const applyValue = useCallback((next: string) => {
@@ -1366,7 +1475,7 @@ export function CodeEditorWindow({
     const applied = doc.replace(edit);
     followEdit(applied);
     const after = mapSelection(before, applied);
-    select(after);
+    select(after, { reason: 'imperative' });
     history?.record(applied, 'value', before, after);
     history?.seal();
   }, [followEdit, history, select, textDocument]);
@@ -1377,14 +1486,12 @@ export function CodeEditorWindow({
     const doc = textDocument as CodeDocument;
     const current = valueRef.current;
     if (!isUndo && current === valueBefore && current !== doc.getText()) {
-      const undone = doc.replace({ from: applied.from, to: applied.newTo, text: applied.removed });
-      followEdit(undone);
-      select(before);
+      takeBack(applied, before, origin);
       return;
     }
     if (!isUndo) history?.record(applied, origin, before, after, parentLength);
     if (current !== undefined) applyValue(current);
-  }, [applyValue, followEdit, history, select, textDocument]);
+  }, [applyValue, history, takeBack, textDocument]);
 
   /* React finishes updates from this event in a microtask that's queued by now, so a microtask queued next sees the host's answer. If
      it hasn't answered by then, its render may just be running on another schedule, so it gets one more turn before it counts as no.
@@ -1413,7 +1520,7 @@ export function CodeEditorWindow({
   }, []);
 
   /** Makes an edit the writer asked for. */
-  const execute = useCallback((command: EditCommand | null) => {
+  const execute = useCallback((command: EditCommand | null, event?: Event, source?: ChangeSource) => {
     if (!command || !textDocument) return false;
     settleAnswer();
     const before = selectionRef.current ?? caretAt({ line: 0, offset: 0 });
@@ -1422,21 +1529,37 @@ export function CodeEditorWindow({
     const after = command.after ?? caretAt(applied.newTo);
     followEdit(applied);
     goalRef.current = null;
-    select(after);
+    const { origin } = command;
+    select(after, { reason: reasonOf(origin), event });
     needsReveal.current = true;
     restartBlink();
-    const { origin } = command;
     if (valueRef.current !== undefined && onChangeRef.current) {
+      // Controlled: what the host passes back decides, as with an input.
       awaitAnswer({ applied, origin, before, after, parentLength, valueBefore: valueRef.current, isUndo: false });
-      report(applied, origin);
+      report(applied, origin, event, source);
+    } else if (report(applied, origin, event, source)) {
+      takeBack(applied, before, origin);
     } else {
       history?.record(applied, origin, before, after, parentLength);
-      report(applied, origin);
     }
     return true;
-  }, [awaitAnswer, followEdit, history, report, select, settleAnswer, textDocument]);
+  }, [awaitAnswer, followEdit, history, report, select, settleAnswer, takeBack, textDocument]);
 
-  const undoOrRedo = useCallback((redo: boolean) => {
+  /** An agent's `setValue`: the whole text as one edit, through the same path as typing. Cancels `details` when the edit
+      wasn't made (read-only, mid-composition, the same text, or refused in `onEdit` / an uncontrolled `onValueChange`). A
+      controlled host decides by what it passes back. */
+  const writeAll = useCallback((text: string, details: ChangeDetails<'imperative'>) => {
+    const doc = textDocument;
+    const edit = editableRef.current && doc && !composing.current ? editBetween(doc, text) : null;
+    if (!edit || !execute({ edit, origin: 'imperative' }, undefined, details.source)) {
+      details.cancel();
+      return;
+    }
+    if (valueRef.current === undefined && doc?.getText() !== text) details.cancel();
+  }, [execute, textDocument]);
+  const readAll = useCallback(() => textDocument?.getText() ?? Array.from({ length: source.count }, (_, i) => readLine(i)).join('\n'), [readLine, source, textDocument]);
+
+  const undoOrRedo = useCallback((redo: boolean, event?: Event) => {
     if (!history || !textDocument || composing.current) return;
     settleAnswer();
     const step = redo ? history.redo() : history.undo();
@@ -1446,24 +1569,31 @@ export function CodeEditorWindow({
     followEdit(applied);
     goalRef.current = null;
     const after = redo ? step.after : step.before;
-    select(after);
+    const origin = redo ? 'redo' : 'undo';
+    select(after, { reason: origin, event });
     needsReveal.current = true;
     restartBlink();
-    const origin = redo ? 'redo' : 'undo';
-    if (valueRef.current !== undefined) awaitAnswer({ applied, origin, before, after, parentLength: 0, valueBefore: valueRef.current, isUndo: true });
-    report(applied, origin);
-  }, [awaitAnswer, followEdit, history, report, select, settleAnswer, textDocument]);
+    if (valueRef.current !== undefined) {
+      awaitAnswer({ applied, origin, before, after, parentLength: 0, valueBefore: valueRef.current, isUndo: true });
+      report(applied, origin, event);
+    } else if (report(applied, origin, event)) {
+      // Canceled: the text goes back, and the history to where it was.
+      takeBack(applied, before, origin);
+      if (redo) history.undo();
+      else history.redo();
+    }
+  }, [awaitAnswer, followEdit, history, report, select, settleAnswer, takeBack, textDocument]);
 
   const deleteContext = useCallback(() => ({ document: source, metricsOf: (line: number) => cache.get(line), indent: detectIndent(source) }), [cache, source]);
 
   const currentSelection = () => selectionRef.current ?? caretAt({ line: 0, offset: 0 });
 
-  const removeBy = useCallback((backward: boolean, unit: DeleteUnit) => {
+  const removeBy = useCallback((backward: boolean, unit: DeleteUnit, event?: Event) => {
     const current = selectionRef.current ?? caretAt({ line: 0, offset: 0 });
-    return execute(backward ? deleteBackwardCommand(deleteContext(), current, unit) : deleteForwardCommand(deleteContext(), current, unit));
+    return execute(backward ? deleteBackwardCommand(deleteContext(), current, unit) : deleteForwardCommand(deleteContext(), current, unit), event);
   }, [deleteContext, execute]);
 
-  const moveBy = (move: CaretMove, extend: boolean) => {
+  const moveBy = (move: CaretMove, extend: boolean, event: Event) => {
     const current = currentSelection();
     const g = geometryRef.current;
     const context: MoveContext = {
@@ -1486,7 +1616,7 @@ export function CodeEditorWindow({
       goalRef.current = moved.goal;
     }
     history?.seal();
-    select(extend ? { anchor: current.anchor, focus: target } : caretAt(target));
+    select(extend ? { anchor: current.anchor, focus: target } : caretAt(target), { reason: 'caret-move', event });
     needsReveal.current = true;
     restartBlink();
   };
@@ -1498,19 +1628,20 @@ export function CodeEditorWindow({
     const wasEscaped = escaped.current;
     if (e.key !== 'Shift' && e.key !== 'Control' && e.key !== 'Alt' && e.key !== 'Meta' && e.key !== 'Tab') escaped.current = false;
     if (!action) return;
+    const event = e.nativeEvent;
     switch (action.type) {
       case 'move':
         e.preventDefault();
-        moveBy(action.move, action.extend);
+        moveBy(action.move, action.extend, event);
         break;
       case 'deleteBackward':
       case 'deleteForward':
         e.preventDefault();
-        removeBy(action.type === 'deleteBackward', action.unit);
+        removeBy(action.type === 'deleteBackward', action.unit, event);
         break;
       case 'newline':
         e.preventDefault();
-        execute(newlineCommand(source, currentSelection()));
+        execute(newlineCommand(source, currentSelection()), event);
         break;
       case 'tab': {
         // After Esc, Tab is the browser's: the keyboard always has a way out.
@@ -1518,27 +1649,27 @@ export function CodeEditorWindow({
         e.preventDefault();
         const current = currentSelection();
         const indent = detectIndent(source);
-        if (isCollapsed(current) && !action.outdent) execute(tabCommand(current, indent, (line) => cache.get(line)));
-        else execute(indentCommand(source, current, indent, action.outdent));
+        if (isCollapsed(current) && !action.outdent) execute(tabCommand(current, indent, (line) => cache.get(line)), event);
+        else execute(indentCommand(source, current, indent, action.outdent), event);
         break;
       }
       case 'undo':
         e.preventDefault();
-        undoOrRedo(false);
+        undoOrRedo(false, event);
         break;
       case 'redo':
         e.preventDefault();
-        undoOrRedo(true);
+        undoOrRedo(true, event);
         break;
       case 'selectAll':
         e.preventDefault();
         history?.seal();
-        selectAll();
+        selectAll(event);
         break;
       case 'escape': {
         escaped.current = true;
         const current = currentSelection();
-        if (!isCollapsed(current)) select(caretAt(current.focus));
+        if (!isCollapsed(current)) select(caretAt(current.focus), { reason: 'escape-key', event });
         break;
       }
     }
@@ -1552,19 +1683,18 @@ export function CodeEditorWindow({
     e.preventDefault();
     onCopyText?.(copied);
     const { from, to } = orderedSelection(current);
-    execute({ edit: { from, to, text: '' }, origin: 'cut' });
+    execute({ edit: { from, to, text: '' }, origin: 'cut' }, e.nativeEvent);
   };
 
   const handlePaste = (e: ClipboardEvent<HTMLDivElement>) => {
     if (!editable || e.target !== inputRef.current) return;
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
-    if (text) execute(insertCommand(currentSelection(), text, 'paste'));
+    if (text) execute(insertCommand(currentSelection(), text, 'paste'), e.nativeEvent);
   };
 
   const handleInputFocus = () => {
     setFocused(true);
-    onFocusChange?.(true);
     restartBlink();
     inputDirty.current = true;
     syncInput();
@@ -1572,7 +1702,6 @@ export function CodeEditorWindow({
 
   const handleInputBlur = () => {
     setFocused(false);
-    onFocusChange?.(false);
     escaped.current = false;
     history?.seal();
     withdrawInput();
@@ -1595,7 +1724,7 @@ export function CodeEditorWindow({
     const applied = textDocument.replace({ from: composition.from, to: composition.end, text: e.data });
     composition.end = applied.newTo;
     followEdit(applied);
-    select(caretAt(applied.newTo));
+    select(caretAt(applied.newTo), { reason: 'composition', event: e.nativeEvent });
     needsReveal.current = true;
     restartBlink();
   };
@@ -1606,8 +1735,8 @@ export function CodeEditorWindow({
     composing.current = null;
     const restored = textDocument.replace({ from: composition.from, to: composition.end, text: composition.original });
     followEdit(restored);
-    select(composition.before);
-    if (e.data) execute(insertCommand(composition.before, e.data, 'composition'));
+    select(composition.before, { reason: 'composition', event: e.nativeEvent });
+    if (e.data) execute(insertCommand(composition.before, e.data, 'composition'), e.nativeEvent);
     inputDirty.current = true;
     syncInput();
   };
@@ -1620,17 +1749,17 @@ export function CodeEditorWindow({
     const current = selectionRef.current ?? caretAt({ line: 0, offset: 0 });
     const remove = (backward: boolean, unit: DeleteUnit) => {
       e.preventDefault();
-      removeBy(backward, unit);
+      removeBy(backward, unit, e);
     };
     switch (e.inputType) {
       case 'insertText':
         e.preventDefault();
-        if (e.data) execute(insertCommand(current, e.data));
+        if (e.data) execute(insertCommand(current, e.data), e);
         break;
       case 'insertLineBreak':
       case 'insertParagraph':
         e.preventDefault();
-        execute(newlineCommand(source, current));
+        execute(newlineCommand(source, current), e);
         break;
       case 'deleteContentBackward':
         remove(true, 'char');
@@ -1654,18 +1783,18 @@ export function CodeEditorWindow({
         break;
       case 'historyUndo':
         e.preventDefault();
-        undoOrRedo(false);
+        undoOrRedo(false, e);
         break;
       case 'historyRedo':
         e.preventDefault();
-        undoOrRedo(true);
+        undoOrRedo(true, e);
         break;
       default:
     }
   }, [execute, removeBy, source, undoOrRedo]);
 
   /** Whatever got past `beforeinput` changed the stand-in itself: autocorrect, say. The difference is the edit. */
-  const handleInput = useCallback(() => {
+  const handleInput = useCallback((event: Event) => {
     const input = inputRef.current;
     if (!input || composing.current) return;
     const before = standIn.current;
@@ -1673,14 +1802,14 @@ export function CodeEditorWindow({
     if (after === before.text) return;
     const current = selectionRef.current ?? caretAt({ line: 0, offset: 0 });
     if (before.selection) {
-      execute(insertCommand(current, after));
+      execute(insertCommand(current, after), event);
     } else {
       const mark = STAND_IN_MARK.length;
       const a = before.text.slice(mark);
       const b = after.startsWith(STAND_IN_MARK) ? after.slice(mark) : after;
       if (a === b) {
         // Only the mark went: a keyboard's Backspace at the very start of what the input holds.
-        removeBy(true, 'char');
+        removeBy(true, 'char', event);
         inputDirty.current = true;
         syncInput();
         return;
@@ -1696,18 +1825,18 @@ export function CodeEditorWindow({
           text: b.slice(prefix, b.length - suffix),
         },
         origin: 'input',
-      });
+      }, event);
     }
     inputDirty.current = true;
     syncInput();
   }, [execute, removeBy, syncInput]);
 
   /** A Select All from the input's own context menu can only select the stand-in: this makes it mean all of it. */
-  const handleInputSelect = useCallback(() => {
+  const handleInputSelect = useCallback((event: Event) => {
     const input = inputRef.current;
     const current = selectionRef.current;
     if (!input || !menuOffered.current || !current || !isCollapsed(current) || composing.current) return;
-    if (input.value.length > 0 && input.selectionStart === 0 && input.selectionEnd === input.value.length) selectAll();
+    if (input.value.length > 0 && input.selectionStart === 0 && input.selectionEnd === input.value.length) selectAll(event);
   }, [selectAll]);
 
   useLayoutEffect(() => {
@@ -1751,70 +1880,6 @@ export function CodeEditorWindow({
     if (editable && value !== undefined) applyValue(value);
   }, [editable, value, applyValue]);
 
-  /* Keyboard: one tab stop among gutter buttons and markers, arrow keys between them. */
-  const activeControl = useRef<HTMLElement | null>(null);
-  const pendingFocus = useRef<{ key: string; from: number; direction: 1 | -1; tries: number } | null>(null);
-
-  const rowElements = useCallback((row: number) => {
-    const root = rootRef.current as HTMLDivElement;
-    return root.querySelectorAll<HTMLElement>(`[data-slot="code-editor-gutter-row"][data-row="${row}"],[data-slot="code-editor-line"][data-row="${row}"]`);
-  }, []);
-
-  /** The next control with the same key (a gutter's id, or `marker`) going up or down; scrolls if it's past what's rendered. */
-  const moveVertically = useCallback((key: string, from: number, direction: 1 | -1, tries: number) => {
-    const g = geometryRef.current;
-    const v = viewRef.current;
-    const selector = `[data-code-editor-cell="${CSS.escape(key)}"]`;
-    const inRow = (row: number) => {
-      for (const el of rowElements(row)) {
-        const cell = el.querySelector<HTMLElement>(selector);
-        const control = cell && (cell.matches(CONTROL_SELECTOR) ? cell : cell.querySelector<HTMLElement>(CONTROL_SELECTOR));
-        if (control) return control;
-      }
-      return null;
-    };
-    for (let row = from + direction; row >= v.rows.start && row < v.rows.end; row += direction) {
-      const control = inRow(row);
-      if (control) {
-        pendingFocus.current = null;
-        control.focus({ preventScroll: true });
-        return;
-      }
-    }
-    const edge = direction > 0 ? v.rows.end : v.rows.start - 1;
-    const inWindow = from >= v.rows.start && from < v.rows.end;
-    if (tries > 64 || (inWindow && (edge < 0 || edge >= g.map.rowCount))) {
-      pendingFocus.current = null;
-      return;
-    }
-    // Nothing rendered has one: bring in more rows, and look again when they're there. Focus on a row kept out of view
-    // goes back to that row first.
-    pendingFocus.current = { key, from: inWindow ? (direction > 0 ? v.rows.end - 1 : v.rows.start) : from, direction, tries: tries + 1 };
-    const span = Math.max(1, v.rows.end - v.rows.start) * g.lineHeight;
-    pendingScroll.current = { y: inWindow ? scrollRef.current.y + direction * span : alignedScroll(from * g.lineHeight + g.padY, g.lineHeight, g.height, 0, 'center') };
-    applyPendingScroll();
-  }, [applyPendingScroll, rowElements]);
-
-  const moveFocus = (target: HTMLElement, key: string) => {
-    const owner = target.closest<HTMLElement>('[data-row]');
-    if (!owner) return false;
-    const row = Number(owner.dataset.row);
-    const cellKey = target.closest<HTMLElement>('[data-code-editor-cell]')?.dataset.codeEditorCell;
-    if (!cellKey) return false;
-    if (key === 'ArrowUp' || key === 'ArrowDown') {
-      moveVertically(cellKey, row, key === 'ArrowDown' ? 1 : -1, 0);
-      return true;
-    }
-    if (key === 'ArrowLeft' || key === 'ArrowRight') {
-      const controls: HTMLElement[] = [];
-      for (const el of rowElements(row)) controls.push(...el.querySelectorAll<HTMLElement>(CONTROL_SELECTOR));
-      const next = controls[controls.indexOf(target) + (key === 'ArrowRight' ? 1 : -1)];
-      next?.focus({ preventScroll: true });
-      return true;
-    }
-    return false;
-  };
-
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(e);
     if (e.defaultPrevented) return;
@@ -1829,15 +1894,13 @@ export function CodeEditorWindow({
     const mod = e.metaKey || e.ctrlKey;
     if (mod && !e.altKey && e.key.toLowerCase() === 'a') {
       e.preventDefault();
-      selectAll();
+      selectAll(e.nativeEvent);
     } else if (mod && !e.altKey && e.key.toLowerCase() === 'c') {
       // The browser's copy command follows this keydown, and needs a selection to be there.
       syncProxy();
     } else if (e.key === 'Escape' && selectionRef.current) {
-      select(null);
+      select(null, { reason: 'escape-key', event: e.nativeEvent });
       syncProxy();
-    } else if (target !== root && !mod && !e.altKey && target.matches(CONTROL_SELECTOR) && moveFocus(target, e.key)) {
-      e.preventDefault();
     } else if (target === root && e.shiftKey && !mod && !e.altKey && SELECTION_KEYS.has(e.key) && source.count) {
       // From the moving end of the selection; or where the last click landed; or the top of the view.
       e.preventDefault();
@@ -1847,7 +1910,7 @@ export function CodeEditorWindow({
       const anchor = current?.anchor ?? from;
       const focus = movePosition(from, e.key as SelectionKey, (line) => cache.get(line), source.count);
       caretRef.current = anchor;
-      select({ anchor, focus });
+      select({ anchor, focus }, { reason: 'caret-move', event: e.nativeEvent });
       syncProxy();
       scrollLineIntoView(focus.line + 1, { column: focus.offset, reveal: true });
     }
@@ -1880,13 +1943,6 @@ export function CodeEditorWindow({
       pendingScroll.current = { y: alignedScroll(position, g.lineHeight, g.height, y, 'nearest', g.lineHeight) };
       applyPendingScroll();
     }
-    // The tab stop goes where the focus went.
-    const control = active as HTMLElement | null;
-    if (control && control !== activeControl.current && (rootRef.current as HTMLDivElement).contains(control) && control.matches(CONTROL_SELECTOR)) {
-      activeControl.current?.setAttribute('tabindex', '-1');
-      control.setAttribute('tabindex', '0');
-      activeControl.current = control;
-    }
   }, [applyPendingScroll]);
   const onBlurLine = useCallback((line: number) => {
     clearTimeout(unpin.current);
@@ -1916,34 +1972,8 @@ export function CodeEditorWindow({
     sync(false);
     if (pendingScroll.current) applyPendingScroll();
 
-    // Roving tab stop.
-    const root = rootRef.current as HTMLDivElement;
-    const controls = root.querySelectorAll<HTMLElement>(CONTROL_SELECTOR);
-    const first = visibleRows(scrollRef.current.y - geometry.padY, geometry.height, geometry.lineHeight, geometry.map.rowCount);
-    const inView = (el: HTMLElement) => {
-      const row = Number(el.closest<HTMLElement>('[data-row]')?.dataset.row);
-      return row >= first.start && row < first.end;
-    };
-    let active = activeControl.current;
-    if (!active || !active.isConnected || (document.activeElement !== active && !inView(active))) {
-      active = null;
-      for (const el of controls) {
-        if (inView(el)) {
-          active = el;
-          break;
-        }
-      }
-      activeControl.current = active;
-    }
-    for (const el of controls) {
-      const want = el === active ? '0' : '-1';
-      if (el.getAttribute('tabindex') !== want) el.setAttribute('tabindex', want);
-    }
-
-    const focus = pendingFocus.current;
-    if (focus) moveVertically(focus.key, focus.from, focus.direction, focus.tries);
-
     // With no height of its own the view grows with the file, and a row added at the bottom has to be in view before it's seen.
+    const root = rootRef.current as HTMLDivElement;
     const measured = root.clientHeight;
     if (measured !== size.height || root.clientWidth !== size.width) setSize({ width: root.clientWidth, height: measured });
     if (needsReveal.current) {
@@ -1995,7 +2025,7 @@ export function CodeEditorWindow({
       };
       history?.seal();
       goalRef.current = null;
-      select(next ? { anchor: at(next.anchor), focus: at(next.focus) } : editable ? selectionRef.current && caretAt(selectionRef.current.focus) : null);
+      select(next ? { anchor: at(next.anchor), focus: at(next.focus) } : editable ? selectionRef.current && caretAt(selectionRef.current.focus) : null, { reason: 'imperative' });
       syncProxy();
     },
     selectAll,
@@ -2021,6 +2051,39 @@ export function CodeEditorWindow({
     }
     return (lineNumber: number) => byLine.get(lineNumber);
   }, [markers]);
+
+  /* The gutter buttons and the markers that are buttons: one tab stop, and the arrow keys between them, over every line,
+     shown or not (lib/code-editor-primitive.ts). */
+  const controlSource = useRef({ gutters, markerLookup });
+  controlSource.current = { gutters, markerLookup };
+  const sortedMarkers = (lineNumber: number) => {
+    const list = controlSource.current.markerLookup?.(lineNumber);
+    return list?.length ? markersInRange(list, 0, Infinity) : null;
+  };
+  const controlAt = useCallback((line: number, column: string, near: number) => {
+    const lineNumber = line + startLineRef.current;
+    if (column === 'marker') {
+      const sorted = sortedMarkers(lineNumber);
+      let best = -1;
+      sorted?.forEach((marker, i) => {
+        if (marker.onClick && (best < 0 || Math.abs(marker.column - near) < Math.abs(sorted[best].column - near))) best = i;
+      });
+      return best < 0 ? undefined : codeEditorControlKey(line, `marker:${best}`);
+    }
+    const gutter = controlSource.current.gutters.find((g) => g.id === column);
+    if (!gutter) return undefined;
+    const has = (!!gutter.onClick && (gutter.clickable?.(lineNumber) ?? true)) || !!gutter.focusable?.(lineNumber);
+    return has ? codeEditorControlKey(line, column) : undefined;
+  }, []);
+  const revealControl = useCallback((line: number, key: string) => {
+    const index = /:marker:(\d+)$/.exec(key)?.[1];
+    const lineNumber = line + startLineRef.current;
+    const marker = index === undefined ? undefined : sortedMarkers(lineNumber)?.[Number(index)];
+    scrollLineIntoView(lineNumber, { column: marker?.column, reveal: true });
+  }, [scrollLineIntoView]);
+  const controls = usePrimitive(codeEditorControls, {
+    lineCount: source.count, controlAt, reveal: revealControl, read: readAll, onWrite: editable ? writeAll : undefined,
+  });
 
   const ordered = selection ? orderedSelection(selection) : null;
   const composition = composing.current;
@@ -2049,7 +2112,7 @@ export function CodeEditorWindow({
     if (part === 0 && gutters.length) {
       gutterRows.push(
         <GutterRow key={row} row={row} line={line} lineNumber={lineNumber} top={top} gutters={gutters} current={current || (focused && line === caretLine)} gutterClassName={decoration?.gutterClassName}
-          onFocusLine={onFocusLine} onBlurLine={onBlurLine} />,
+          controls={controls} onFocusLine={onFocusLine} onBlurLine={onBlurLine} />,
       );
     }
 
@@ -2102,20 +2165,22 @@ export function CodeEditorWindow({
       if (cell >= (wrap ? firstCell : view.cells.start) && cell < lastCell) columnLeft = CODE_PADDING + (cell - firstCell) * cellWidth;
     }
 
-    let rowMarkers: (CodeEditorMarker & { left: number })[] | null = null;
+    let rowMarkers: (CodeEditorMarker & { left: number; index: number })[] | null = null;
     const lineMarkers = markerLookup?.(lineNumber);
     if (lineMarkers?.length) {
       // Markers past the end of the line are shown at its end.
       const inRange = markersInRange(lineMarkers, span.start, lastRowOfLine ? Infinity : span.end);
       if (inRange.length) {
-        rowMarkers = inRange.map((marker) => ({ ...marker, left: CODE_PADDING + (metrics.cellAt(marker.column) - firstCell) * cellWidth }));
+        // Where they are among the line's markers, which is what keys them.
+        const first = markersInRange(lineMarkers, 0, Infinity).indexOf(inRange[0]);
+        rowMarkers = inRange.map((marker, i) => ({ ...marker, index: first + i, left: CODE_PADDING + (metrics.cellAt(marker.column) - firstCell) * cellWidth }));
       }
     }
 
     codeRows.push(
       <CodeRow key={row} metrics={metrics} store={store} row={row} rowCount={rowCount} line={line} lineNumber={lineNumber} top={top} start={span.start} end={span.end} left={left}
         selectionLeft={selectionLeft} selectionWidth={selectionWidth} composingLeft={composingLeft} composingWidth={composingWidth} columnLeft={columnLeft}
-        textClassName={decoration?.textClassName} extra={part === 0 ? lineProps?.(lineNumber) : undefined} markers={rowMarkers} onFocusLine={onFocusLine} onBlurLine={onBlurLine} />,
+        textClassName={decoration?.textClassName} extra={part === 0 ? lineProps?.(lineNumber) : undefined} markers={rowMarkers} controls={controls} onFocusLine={onFocusLine} onBlurLine={onBlurLine} />,
     );
   }
 
@@ -2175,12 +2240,9 @@ export function CodeEditorWindow({
           } : undefined}
         >
           {editable ? (
-            <textarea
+            <EditorInput
+              controls={controls}
               ref={inputRef}
-              data-slot="code-editor-input"
-              role="textbox"
-              aria-multiline="true"
-              aria-readonly="false"
               aria-label={label}
               autoCapitalize="off"
               autoComplete="off"
@@ -2209,9 +2271,6 @@ export function CodeEditorWindow({
             className="absolute inset-y-0 right-0 cursor-text overflow-clip [-webkit-touch-callout:none]"
             style={{ left: gutterWidth }}
             onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerCancel}
           >
             <div ref={xyLayerRef} role="list" className="absolute top-0 left-0 w-full will-change-transform [unicode-bidi:bidi-override]">
               {codeRows}

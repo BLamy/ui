@@ -7,7 +7,7 @@
    four spaces); Enter keeps the line's indent. Esc, then Tab, moves focus on, so the editor never traps the keyboard.
    ⌘S saves at once (edits also save on their own). */
 import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { TextArea } from 'react-aria-components';
+import { Textarea } from '@ui-sdk/react/textarea';
 import { SyntaxTokens, useSyntaxTokens } from '@/components/ui/code-editor';
 import { cn } from '@/lib/utils';
 
@@ -43,16 +43,16 @@ function insert(el: HTMLTextAreaElement, text: string) {
 
 export interface CodeEditorProps {
   value: string;
-  onChange: (value: string) => void;
+  onValueChange: (value: string) => void;
   /** For labels and `data-language`; gpu-lexer recognizes the language itself. */
   language: string;
   onSave?: () => void;
-  isReadOnly?: boolean;
+  readOnly?: boolean;
   'aria-label': string;
   className?: string;
 }
 
-export function CodeEditor({ value, onChange, language, onSave, isReadOnly, className, 'aria-label': ariaLabel }: CodeEditorProps) {
+export function CodeEditor({ value, onValueChange, language, onSave, readOnly, className, 'aria-label': ariaLabel }: CodeEditorProps) {
   const area = useRef<HTMLTextAreaElement>(null);
   const layer = useRef<HTMLDivElement>(null);
   const numbers = useRef<HTMLDivElement>(null);
@@ -79,7 +79,7 @@ export function CodeEditor({ value, onChange, language, onSave, isReadOnly, clas
     const el = e.currentTarget;
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); onSave?.(); return; }
     if (e.key === 'Escape') { escaped.current = true; return; }
-    if (isReadOnly) return;
+    if (readOnly) return;
     if (e.key === 'Tab' && !escaped.current && !e.metaKey && !e.ctrlKey && !e.altKey) {
       e.preventDefault();
       const { selectionStart: start, selectionEnd: end, value: text } = el;
@@ -122,16 +122,16 @@ export function CodeEditor({ value, onChange, language, onSave, isReadOnly, clas
             {lines.map((tokens, i) => <div key={i} className="min-h-5"><SyntaxTokens tokens={tokens} /></div>)}
           </div>
         ) : null}
-        <TextArea
+        <Textarea
           ref={area}
           aria-label={ariaLabel}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onValueChange={(next) => onValueChange(next)}
           onKeyDown={onKeyDown}
           onScroll={sync}
           onFocus={() => setFocused(true)}
           onBlur={() => { setFocused(false); escaped.current = false; }}
-          readOnly={isReadOnly}
+          readOnly={readOnly}
           spellCheck={false}
           autoCapitalize="off"
           autoCorrect="off"

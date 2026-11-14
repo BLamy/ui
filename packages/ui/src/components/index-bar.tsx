@@ -1,14 +1,19 @@
 'use client';
-import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
+import { createParts, usePart, usePrimitive } from '@ui-sdk/react/primitive';
 import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
+import { indexBar, type IndexBarJumpReason, type IndexBarState } from '@/lib/index-bar-primitive';
+
+export type { IndexBarJumpReason };
 
 /* ══ IndexBar — generic jump rail ══
    Give it jump points of your own:
      <IndexBar items={[{key:'m4', label:'●', preview:'Why is the build slow?'}]} onJump={key => …}/>
    …or give it nothing but `avail` and it falls back to the UIKit A–Z form:
      <IndexBar avail={new Set(['A','B'])} onLetter={L => …}/>
-   Hover peeks the stop under the cursor (no jump); drag commits it.
+   Hover peeks the stop under the cursor (no jump); a press or drag jumps. The rail is a listbox that keeps focus
+   (the arrows, PageUp/PageDown, Home and End move through the stops and jump), built on lib/index-bar-primitive.
    variant="wave" draws one dash per stop that swells around the pointer like the macOS Dock, with a
    title + preview card beside the rail: <IndexBar variant="wave" side="left" value={current} items={…}/>
    Add `panel` and hovering the rail opens a card listing every stop instead (an outline: `panelTitle` on top,
@@ -34,7 +39,6 @@ export interface IndexBarItem<K extends IndexBarKey = IndexBarKey> {
 }
 
 interface IBPoint<K extends IndexBarKey = IndexBarKey> { key: K; label: string; preview: ReactNode | null; caption: string | null; dim: boolean; level: number; trailing: ReactNode | null }
-interface IndexBarGeometry { rTop: number; tTop: number; tH: number }
 
 function ibPoints<K extends IndexBarKey>(items: Array<IndexBarItem<K> | K> | undefined, avail: Set<string> | undefined): Array<IBPoint<K | string>> {
   if (items && items.length) return items.map((it, i) => (it && typeof it === 'object')
@@ -66,8 +70,10 @@ const swell = (d: number) => (d >= WAVE_REACH ? 0 : (1 + Math.cos(Math.PI * d / 
 export interface IndexBarProps<K extends IndexBarKey = string> {
   items?: Array<IndexBarItem<K> | K>;
   avail?: Set<string>;
-  onJump?: (key: K, point: IndexBarItem<K>, index: number) => void;
-  onLetter?: (key: string) => void;
+  /** Each time the rail lands on another stop: a press or scrub (`drag`), a key (`list-navigation`), a click on a
+   *  stop or a `panel` row (`item-press`), or the agent bridge (`imperative`). */
+  onJump?: (key: K, point: IndexBarItem<K>, index: number, details: { reason: IndexBarJumpReason; event?: Event }) => void;
+  onLetter?: (key: string, details: { reason: IndexBarJumpReason; event?: Event }) => void;
   top?: number | string;
   bottom?: number | string;
   width?: number;
@@ -94,6 +100,8 @@ export interface IndexBarProps<K extends IndexBarKey = string> {
   style?: CSSProperties;
 }
 
+const parts = createParts(indexBar, { root: 'div', track: 'div', option: 'div' });
+
 export function IndexBar<K extends IndexBarKey = string>({
   items, avail, onJump, onLetter, top, bottom, width: widthProp, label = 'Jump to section',
   variant = 'default', side = 'right', value, panel = false, panelTitle, previewLines = 2, previewWidth = 260, insetContent = true, className, style,
@@ -101,206 +109,141 @@ export function IndexBar<K extends IndexBarKey = string>({
   const wave = variant === 'wave';
   const width = widthProp ?? (wave ? 40 : 22);
   const pts = ibPoints(items, avail);
-  const optionId = useId();
-  const rail = useRef<HTMLDivElement>(null); const track = useRef<HTMLDivElement>(null); const geo = useRef<IndexBarGeometry | null>(null);
-  const act = useRef(-1); const ptsRef = useRef(pts); ptsRef.current = pts;
-  const [cur, setCur] = useState(-1); const [hov, setHov] = useState(-1); const [on, setOn] = useState(false);
-  const [focused, setFocused] = useState(false); const [keyboardIndex, setKeyboardIndex] = useState(-1);
-  // Continuous pointer position along the track, in stops (0 = top edge, n = bottom edge); drives the wave.
-  const [pu, setPu] = useState<number | null>(null);
-  // The pointer is over the rail or its panel.
-  const [inside, setInside] = useState(false);
-  // Publish how far the rows run under the rail: a row's right edge minus the rail's left edge (the rail's width
-  // for an edge-to-edge list, less — often nothing — for an inset-grouped one). Re-measured as rows mount or the
-  // host resizes; rows' own padding doesn't move their edge, so this never feeds back.
-  useLayoutEffect(() => {
-    const el = rail.current, host = el?.parentElement;
-    if (!el || !host || !insetContent || side !== 'right') return;
-    let raf = 0;
-    const sync = () => {
-      raf = 0;
-      const row = host.querySelector<HTMLElement>('[data-slot="list-row-content"]');
-      const overlap = row ? Math.max(0, row.getBoundingClientRect().right - el.getBoundingClientRect().left) : width;
-      const v = `${Math.round(overlap)}px`;
-      if (host.style.getPropertyValue('--bl-index-bar-inset') !== v) host.style.setProperty('--bl-index-bar-inset', v);
-    };
-    sync();
-    const later = () => { if (!raf) raf = requestAnimationFrame(sync); };
-    const ro = new ResizeObserver(later);
-    ro.observe(host);
-    const mo = new MutationObserver(later);
-    mo.observe(host, { childList: true, subtree: true });
-    return () => {
-      cancelAnimationFrame(raf); ro.disconnect(); mo.disconnect();
-      host.style.removeProperty('--bl-index-bar-inset');
-    };
-  }, [insetContent, side, width]);
-  const measure = () => {
-    const r = rail.current, t = track.current; if (!r || !t) return null;
-    const rb = r.getBoundingClientRect(), tb = t.getBoundingClientRect();
-    return (geo.current = { rTop: rb.top, tTop: tb.top, tH: tb.height });
+  const jump = (i: number, details: { reason: IndexBarJumpReason; event?: Event }) => {
+    const p = pts[i];
+    if (!p) return;
+    if (onJump) onJump(p.key as K, p as IndexBarItem<K>, i, details); else onLetter?.(String(p.key), details);
   };
-  const along = (y: number) => {
-    const g = geo.current; if (!wave || !g || !g.tH) return;
-    const n = ptsRef.current.length;
-    setPu(Math.max(0, Math.min(n, (y - g.tTop) / g.tH * n)));
-  };
-  const at = (y: number) => {
-    const g = geo.current || measure(); if (!g || !g.tH) return -1;
-    const n = ptsRef.current.length;
-    return Math.max(0, Math.min(n - 1, Math.floor((y - g.tTop) / g.tH * n)));
-  };
-  const fire = (i: number) => {
-    const p = ptsRef.current[i];
-    if (!p || i === act.current) return;
-    act.current = i; setCur(i);
-    if (onJump) onJump(p.key as K, p as IndexBarItem<K>, i); else if (onLetter) onLetter(String(p.key));
-  };
-  const down = (e: React.PointerEvent) => {
-    if (e.button) return;
-    measure(); setOn(true); setHov(-1); fire(at(e.clientY)); along(e.clientY);
-    // Window listeners track the scrub (they keep working if the finger leaves the rail).
-    const mm = (ev: PointerEvent) => { fire(at(ev.clientY)); along(ev.clientY); };
-    const uu = () => {
-      window.removeEventListener('pointermove', mm); window.removeEventListener('pointerup', uu);
-      window.removeEventListener('pointercancel', uu); setOn(false); setCur(-1); setPu(null); act.current = -1;
-    };
-    window.addEventListener('pointermove', mm); window.addEventListener('pointerup', uu); window.addEventListener('pointercancel', uu);
-  };
-  const hover = (e: React.PointerEvent) => {
-    if (on || e.pointerType === 'touch') return;
-    if (!geo.current) measure();
-    const i = at(e.clientY); if (i !== hov) setHov(i);
-    along(e.clientY);
-  };
-  const keyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (!pts.length || !['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
-    e.preventDefault();
-    if (!geo.current) measure();
-    const from = keyboardIndex >= 0 ? keyboardIndex : e.key === 'ArrowUp' ? pts.length : -1;
-    const next = e.key === 'Home' ? 0 : e.key === 'End' ? pts.length - 1
-      : Math.max(0, Math.min(pts.length - 1, from + (e.key === 'ArrowUp' ? -1 : 1)));
-    setKeyboardIndex(next);
-    act.current = -1;
-    fire(next);
-  };
-  const idx = on ? cur : hov >= 0 ? hov : focused ? keyboardIndex : -1;
-  const p = idx >= 0 ? pts[idx] : null;
-  const g = geo.current;
-  const cy = g && p ? (g.tTop - g.rTop) + (idx + 0.5) * (g.tH / pts.length) : 0;
-  // Bubble floats beside the rail at the active stop; both come from measured geometry.
-  const bub = cn(
-    'pointer-events-none absolute [transform:translateY(-50%)] bg-card shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)] animate-[blBub_var(--duration-spring-snappy)_var(--ease-spring-bouncy)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:animate-none motion-reduce:transition-none',
-    on ? 'opacity-100' : 'opacity-93',
-  );
-  // Bubble / card position beside the rail: its side comes from `side`, the offset from the measured stop.
-  const bubPos = cn('top-(--ib-y)', side === 'left' ? 'left-[calc(var(--ib-w)+10px)]' : 'right-[calc(var(--ib-w)+10px)]');
+  const handle = usePrimitive(indexBar, { count: pts.length, side, width, insetContent, onJump: jump });
   const len = (v: number | string | undefined) => (typeof v === 'number' ? v + 'px' : v);
   const curIdx = value != null ? pts.findIndex((q) => q.key === value) : -1;
-  // The wave centres on the pointer while it's on the rail, else on the keyboard-active stop.
-  const focal = pu != null ? pu : idx >= 0 ? idx + 0.5 : null;
-  return (
-    <div ref={rail} data-slot="index-bar" data-variant={variant} data-side={side}
-      onPointerDown={down} onPointerMove={hover}
-      onPointerEnter={() => { setInside(true); if (!on) measure(); }}
-      onPointerLeave={() => { setInside(false); setHov(-1); if (!on) setPu(null); }}
-      role="listbox" aria-orientation="vertical" aria-label={label} aria-activedescendant={idx >= 0 ? `${optionId}-${idx}` : undefined}
-      tabIndex={0} onKeyDown={keyDown} onFocus={() => setFocused(true)} onBlur={() => { setFocused(false); setKeyboardIndex(-1); }}
-      className={cn(
-        indexBarVariants({ variant, side }),
-        focused ? '[outline:2px_solid_var(--primary)]' : '[outline:2px_solid_transparent]',
-        'w-(--ib-w)', top != null && 'top-(--ib-top)', bottom != null && 'bottom-(--ib-bottom)',
-        className,
-      )}
-      // Rail geometry (props) and the active stop's measured offset, as variables.
-      style={{
-        '--ib-w': width + 'px', '--ib-y': cy + 'px', '--ib-lines': previewLines, '--ib-card-w': previewWidth + 'px',
-        ...(top != null ? { '--ib-top': len(top) } : null), ...(bottom != null ? { '--ib-bottom': len(bottom) } : null),
-        ...style,
-      } as CSSProperties}
-      >
-      <div ref={track} className={cn('flex w-full flex-col', !wave && 'items-center')}>
-        {pts.map((q, i) => {
-          if (wave) {
-            const full = idx === i || curIdx === i;
-            const f = full ? 1 : focal == null ? 0 : swell(Math.abs(i + 0.5 - focal));
-            const rest = q.level > 1 ? WAVE_REST - 3 : WAVE_REST;
-            const len = rest + (WAVE_PEAK - rest) * f;
+
+  /** The stop being shown (a scrub's, else the one a mouse rests on, else the keyboard's) and its offset. */
+  const view = (s: IndexBarState) => {
+    const keyboardIndex = s.highlighted != null ? Number(s.highlighted) : -1;
+    const idx = s.scrubbing ? s.scrub : s.peek >= 0 ? s.peek : s.focused ? keyboardIndex : -1;
+    const p = idx >= 0 ? pts[idx] : null;
+    const g = s.geometry;
+    const cy = g && p ? (g.tTop - g.rTop) + (idx + 0.5) * (g.tH / pts.length) : 0;
+    return { idx, p, cy };
+  };
+
+  const body = (s: IndexBarState) => {
+    const { idx, p } = view(s);
+    // Bubble floats beside the rail at the active stop; both come from measured geometry.
+    const bub = cn(
+      'pointer-events-none absolute [transform:translateY(-50%)] bg-card shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)] animate-[blBub_var(--duration-spring-snappy)_var(--ease-spring-bouncy)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:animate-none motion-reduce:transition-none',
+      s.scrubbing ? 'opacity-100' : 'opacity-93',
+    );
+    // Bubble / card position beside the rail: its side comes from `side`, the offset from the measured stop.
+    const bubPos = cn('top-(--ib-y)', side === 'left' ? 'left-[calc(var(--ib-w)+10px)]' : 'right-[calc(var(--ib-w)+10px)]');
+    // The wave centres on the pointer while it's on the rail, else on the keyboard-active stop.
+    const focal = s.pointer != null ? s.pointer : idx >= 0 ? idx + 0.5 : null;
+    return (
+      <>
+        <parts.Track className={cn('flex w-full flex-col', !wave && 'items-center')}>
+          {pts.map((q, i) => {
+            const name = q.caption || q.label || `Stop ${i + 1}`;
+            if (wave) {
+              const full = idx === i || curIdx === i;
+              const f = full ? 1 : focal == null ? 0 : swell(Math.abs(i + 0.5 - focal));
+              const rest = q.level > 1 ? WAVE_REST - 3 : WAVE_REST;
+              const dash = rest + (WAVE_PEAK - rest) * f;
+              return (
+                <parts.Option key={String(q.key) + i} value={String(i)} aria-label={name}
+                  aria-current={curIdx === i ? 'true' : undefined}
+                  className={cn('box-border flex h-[10px] w-full items-center px-2', side === 'left' ? 'justify-start' : 'justify-end')}>
+                  <span style={{ '--len': `${dash}px`, '--f': f } as CSSProperties}
+                    className={cn(
+                      'h-[2px] w-(--len) shrink-0 rounded-full transition-[width,background-color] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
+                      idx === i ? 'bg-foreground' : curIdx === i ? 'bg-primary'
+                        : 'bg-[color:color-mix(in_oklab,var(--foreground)_calc(var(--f)*75%),var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent)))]',
+                      q.dim && idx !== i && 'opacity-55',
+                    )} />
+                </parts.Option>
+              );
+            }
+            const hot = idx === i;
             return (
-              <div key={String(q.key) + i} id={`${optionId}-${i}`} role="option" aria-selected={idx === i}
-                aria-current={curIdx === i ? 'true' : undefined} aria-label={q.caption || q.label || `Stop ${i + 1}`}
-                className={cn('box-border flex h-[10px] w-full items-center px-2', side === 'left' ? 'justify-start' : 'justify-end')}>
-                <span style={{ '--len': `${len}px`, '--f': f } as CSSProperties}
-                  className={cn(
-                    'h-[2px] w-(--len) shrink-0 rounded-full transition-[width,background-color] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
-                    idx === i ? 'bg-foreground' : curIdx === i ? 'bg-primary'
-                      : 'bg-[color:color-mix(in_oklab,var(--foreground)_calc(var(--f)*75%),var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent)))]',
-                    q.dim && idx !== i && 'opacity-55',
-                  )} />
-              </div>
+              <parts.Option key={String(q.key) + i} value={String(i)} aria-label={name}
+                className={cn('flex h-[13.5px] w-full items-center justify-center transition-[scale] duration-spring-snappy ease-spring-bouncy motion-reduce:transition-none', hot && 'scale-150')}>
+                {q.label
+                  ? <span className={cn('text-[10.5px] leading-[13.5px] font-bold', q.dim ? 'text-tertiary-foreground' : 'text-primary')}>{q.label}</span>
+                  : <span className={cn('rounded-full', hot ? 'size-1.5' : 'size-[5px]', q.dim ? 'bg-tertiary-foreground opacity-55' : 'bg-primary')} />}
+              </parts.Option>
             );
-          }
-          const hot = idx === i;
-          return (
-            <div key={String(q.key) + i} id={`${optionId}-${i}`} role="option" aria-selected={idx === i}
-              aria-label={q.caption || q.label || `Stop ${i + 1}`}
-              className={cn('flex h-[13.5px] w-full items-center justify-center transition-[scale] duration-spring-snappy ease-spring-bouncy motion-reduce:transition-none', hot && 'scale-150')}>
-              {q.label
-                ? <span className={cn('text-[10.5px] leading-[13.5px] font-bold', q.dim ? 'text-tertiary-foreground' : 'text-primary')}>{q.label}</span>
-                : <span className={cn('rounded-full', hot ? 'size-1.5' : 'size-[5px]', q.dim ? 'bg-tertiary-foreground opacity-55' : 'bg-primary')} />}
+          })}
+        </parts.Track>
+        {wave && panel
+          ? (s.inside || s.focused) && (
+            // A pointer convenience over the rail, which stays the accessible path. A transparent bridge (the padding)
+            // keeps the pointer "inside" while it crosses from the rail to the card. The card is never taller than the
+            // rail (the box the bar overlays), and scrolls inside that.
+            <div data-slot="index-bar-panel" aria-hidden="true"
+              className={cn('absolute top-1/2 flex max-h-full -translate-y-1/2 cursor-default flex-col', side === 'left' ? 'left-(--ib-w) pl-1' : 'right-(--ib-w) pr-1')}>
+              <div className={cn(
+                'bl-scroll box-border min-h-0 w-max max-w-[300px] min-w-[220px] overflow-y-auto rounded-card bg-card p-1.5',
+                'shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)]',
+                'animate-[blWaveCard_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:animate-none',
+                side === 'left' ? 'origin-left' : 'origin-right',
+              )}>
+                {panelTitle != null ? <div className="truncate px-3 pt-1.5 pb-1 text-footnote text-muted-foreground">{panelTitle}</div> : null}
+                {pts.map((q, i) => (
+                  <div key={String(q.key) + i}
+                    onClick={(e) => handle.api.internal.press(i, e.nativeEvent)}
+                    style={{ '--lvl': q.level - 1 } as CSSProperties}
+                    className={cn(
+                      'cursor-pointer truncate rounded-lg py-1.5 pr-3 pl-[calc(12px+var(--lvl)*12px)] text-footnote transition-colors duration-100 hover:bg-secondary',
+                      curIdx === i ? 'bg-secondary text-foreground' : 'text-muted-foreground',
+                      idx === i && 'bg-accent',
+                    )}>
+                    {q.caption || q.label || `Stop ${i + 1}`}
+                  </div>
+                ))}
+              </div>
             </div>
-          );
-        })}
-      </div>
-      {wave && panel
-        ? (inside || focused) && (
-          // A transparent bridge (the padding) keeps the pointer "inside" while it crosses from the rail to the card.
-          <div data-slot="index-bar-panel" aria-hidden="true" onPointerDown={(e) => e.stopPropagation()}
-            onPointerMove={(e) => e.stopPropagation()} onPointerEnter={() => { setHov(-1); setPu(null); }}
-            className={cn('absolute top-1/2 -translate-y-1/2 cursor-default', side === 'left' ? 'left-(--ib-w) pl-1' : 'right-(--ib-w) pr-1')}>
-            <div className={cn(
-              'bl-scroll box-border max-h-[70vh] w-max max-w-[300px] min-w-[220px] overflow-y-auto rounded-card bg-card p-1.5',
-              'shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)]',
-              'animate-[blWaveCard_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:animate-none',
-              side === 'left' ? 'origin-left' : 'origin-right',
-            )}>
-              {panelTitle != null ? <div className="truncate px-3 pt-1.5 pb-1 text-footnote text-muted-foreground">{panelTitle}</div> : null}
-              {pts.map((q, i) => (
-                <div key={String(q.key) + i}
-                  onClick={() => (onJump ? onJump(q.key as K, q as IndexBarItem<K>, i) : onLetter?.(String(q.key)))}
-                  style={{ '--lvl': q.level - 1 } as CSSProperties}
-                  className={cn(
-                    'cursor-pointer truncate rounded-lg py-1.5 pr-3 pl-[calc(12px+var(--lvl)*12px)] text-footnote transition-colors duration-100 hover:bg-secondary',
-                    curIdx === i ? 'bg-secondary text-foreground' : 'text-muted-foreground',
-                    idx === i && 'bg-accent',
-                  )}>
-                  {q.caption || q.label || `Stop ${i + 1}`}
-                </div>
-              ))}
+          )
+          : wave
+          ? p && <div className={cn(
+                'pointer-events-none absolute box-border w-max max-w-(--ib-card-w) min-w-[160px] -translate-y-1/2 rounded-card bg-card px-[13px] py-[9px]',
+                'shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
+                'animate-[blWaveCard_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:animate-none',
+                side === 'left' ? 'origin-left left-[calc(var(--ib-w)+4px)]' : 'origin-right right-[calc(var(--ib-w)+4px)]', 'top-(--ib-y)',
+              )}>
+              <div className="flex items-start gap-2">
+                <div className="min-w-0 flex-1 truncate text-footnote leading-[18px] font-semibold text-foreground">{p.caption || p.label || `Stop ${idx + 1}`}</div>
+                {p.trailing}
+              </div>
+              {p.preview != null
+                ? <div className="mt-[2px] line-clamp-(--ib-lines) text-caption leading-[16px] text-pretty text-muted-foreground">{p.preview}</div>
+                : null}
             </div>
-          </div>
-        )
-        : wave
-        ? p && <div className={cn(
-              'pointer-events-none absolute box-border w-max max-w-(--ib-card-w) min-w-[160px] -translate-y-1/2 rounded-card bg-card px-[13px] py-[9px]',
-              'shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
-              'animate-[blWaveCard_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:animate-none',
-              side === 'left' ? 'origin-left left-[calc(var(--ib-w)+4px)]' : 'origin-right right-[calc(var(--ib-w)+4px)]', 'top-(--ib-y)',
-            )}>
-            <div className="flex items-start gap-2">
-              <div className="min-w-0 flex-1 truncate text-footnote leading-[18px] font-semibold text-foreground">{p.caption || p.label || `Stop ${idx + 1}`}</div>
-              {p.trailing}
+          : p && (p.preview != null)
+          ? <div className={cn(bub, bubPos, 'box-border max-w-[250px] min-w-[120px] rounded-card px-[13px] py-[9px]')}>
+              {p.caption ? <div className="mb-[3px] text-[9.5px] font-extrabold tracking-[.6px] text-primary uppercase">{p.caption}</div> : null}
+              <div className="line-clamp-3 text-footnote leading-[1.35] font-[550] text-pretty text-foreground">{p.preview}</div>
             </div>
-            {p.preview != null
-              ? <div className="mt-[2px] line-clamp-(--ib-lines) text-caption leading-[16px] text-pretty text-muted-foreground">{p.preview}</div>
-              : null}
-          </div>
-        : p && (p.preview != null)
-        ? <div className={cn(bub, bubPos, 'box-border max-w-[250px] min-w-[120px] rounded-card px-[13px] py-[9px]')}>
-            {p.caption ? <div className="mb-[3px] text-[9.5px] font-extrabold tracking-[.6px] text-primary uppercase">{p.caption}</div> : null}
-            <div className="line-clamp-3 text-footnote leading-[1.35] font-[550] text-pretty text-foreground">{p.preview}</div>
-          </div>
-        : p ? <div className={cn(bub, bubPos, 'grid size-[54px] place-items-center rounded-[27px] text-[25px] font-extrabold text-primary')}>{p.label}</div> : null}
-    </div>
-  );
+          : p ? <div className={cn(bub, bubPos, 'grid size-[54px] place-items-center rounded-[27px] text-[25px] font-extrabold text-primary')}>{p.label}</div> : null}
+      </>
+    );
+  };
+
+  return usePart(handle, 'root', {}, {
+    'aria-label': label,
+    'data-variant': variant,
+    'data-side': side,
+    className: cn(
+      indexBarVariants({ variant, side }),
+      '[outline:2px_solid_transparent] focus-visible:[outline:2px_solid_var(--primary)]',
+      'w-(--ib-w)', top != null && 'top-(--ib-top)', bottom != null && 'bottom-(--ib-bottom)',
+      className,
+    ),
+    // Rail geometry (props) and the active stop's measured offset, as variables.
+    style: (s: IndexBarState) => ({
+      '--ib-w': width + 'px', '--ib-y': view(s).cy + 'px', '--ib-lines': previewLines, '--ib-card-w': previewWidth + 'px',
+      ...(top != null ? { '--ib-top': len(top) } : null), ...(bottom != null ? { '--ib-bottom': len(bottom) } : null),
+      ...style,
+    }) as CSSProperties,
+    children: body,
+  } as never);
 }

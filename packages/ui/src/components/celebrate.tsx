@@ -50,14 +50,28 @@ export function Celebrate({ fire, count = 22, spread = 100, colors = PALETTE, cl
   const reduced = useReducedMotion();
   const [bursts, setBursts] = useState<number[]>([]);
   const n = useRef(0);
-  const first = useRef(true);
+  // The value last seen, so only a change fires (the first render, and Strict Mode's second effect run, don't).
+  const seen = useRef(fire);
+  // Each burst removes itself after its animation; a newer burst never cancels an older one's removal.
+  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
   useEffect(() => {
-    if (first.current) { first.current = false; return; }
+    const pending = timers.current;
+    return () => {
+      pending.forEach(clearTimeout);
+      pending.clear();
+    };
+  }, []);
+  useEffect(() => {
+    if (Object.is(seen.current, fire)) return;
+    seen.current = fire;
     if (!fire) return;
     const id = ++n.current;
     setBursts((b) => [...b, id]);
-    const t = setTimeout(() => setBursts((b) => b.filter((x) => x !== id)), 1400);
-    return () => clearTimeout(t);
+    const t = setTimeout(() => {
+      timers.current.delete(t);
+      setBursts((b) => b.filter((x) => x !== id));
+    }, 1400);
+    timers.current.add(t);
   }, [fire]);
   return (
     <span data-slot="celebrate" aria-hidden="true"

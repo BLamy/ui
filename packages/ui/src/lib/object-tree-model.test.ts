@@ -265,7 +265,7 @@ describe('buildRows', () => {
     expect(firstKid(three.rows)).toBe(firstKid(one.rows));
   });
 
-  it('notes what react-aria toggled', () => {
+  it('notes what the tree toggled', () => {
     const state = createTreeState<unknown>([node('a', { hasChildren: true }), node('b', { hasChildren: true, defaultExpanded: true })]);
     const next = applyExpanded(state, new Set(['b']), new Set(['a']));
     expect(next.open.get('a')).toBe(true);

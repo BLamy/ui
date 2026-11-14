@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   CodeEditor, CodeEditorContent, CodeEditorCopyButton, CodeEditorHeader, CodeEditorTitle,
-  type CodeEditorChange, type CodeEditorGutter, type CodeEditorHandle, type CodeEditorProps, type CodeEditorSelection,
+  type CodeEditorEdit, type CodeEditorChangeReason, type CodeEditorGutter, type CodeEditorHandle, type CodeEditorProps, type CodeEditorSelection,
 } from '@/components/ui/code-editor';
 import { lineAfterEdit } from '@/lib/code-document';
 import { MAX_PAGE_LINES } from '@/lib/code-editor-model';
@@ -156,16 +156,16 @@ export const Caret: Story = { render: () => <CaretDemo /> };
 function ControlledDemo() {
   const [value, setValue] = useState(TS);
   const [place, setPlace] = useState('');
-  const [last, setLast] = useState<CodeEditorChange | null>(null);
+  const [last, setLast] = useState<(CodeEditorEdit & { reason: CodeEditorChangeReason }) | null>(null);
   return (
     <WindowFrame>
       <Page>
         <div className="h-[460px]">
           <CodeEditor
             value={value}
-            onChange={(next, change) => {
+            onValueChange={(next, details) => {
               setValue(next);
-              setLast(change);
+              setLast(details);
             }}
             onSelectionChange={(selection) => setPlace(describePlace(selection))}
             language="ts"
@@ -175,7 +175,7 @@ function ControlledDemo() {
         <div className="flex items-center gap-4 font-mono text-caption text-muted-foreground">
           <span data-testid="length">{value.length.toLocaleString('en-US')} characters</span>
           <span data-testid="place">{place}</span>
-          <span data-testid="change" className="ml-auto">{last ? `${last.origin} at ${last.from.line}:${last.from.column}` : 'no changes yet'}</span>
+          <span data-testid="change" className="ml-auto">{last ? `${last.reason} at ${last.from.line}:${last.from.column}` : 'no changes yet'}</span>
         </div>
       </Page>
     </WindowFrame>
@@ -196,7 +196,7 @@ function WithGuttersDemo() {
   const gutters = useMemo<CodeEditorGutter[]>(() => [{
     id: 'breakpoint',
     width: 18,
-    onPress: toggle,
+    onClick: (_event, { line }) => toggle(line),
     label: (line) => `${breakpoints.has(line) ? 'Remove' : 'Add'} a breakpoint on line ${line}`,
     render: (line) => (breakpoints.has(line) ? <span className="size-[9px] rounded-full bg-warning" /> : null),
   }], [breakpoints, toggle]);
@@ -209,7 +209,7 @@ function WithGuttersDemo() {
           language="js"
           gutters={gutters}
           // Whatever a host keeps by line is its own to move, and `lineAfterEdit` says where to.
-          onEdit={(change) => setBreakpoints((set) => new Set([...set].map((line) => lineAfterEdit(line, change))))}
+          onEdit={(edit) => setBreakpoints((set) => new Set([...set].map((line) => lineAfterEdit(line, edit))))}
           aria-label="store.js"
         />
       </Pane>
@@ -374,7 +374,7 @@ export const TypeChecks = () => (
     {/* Fine. */}
     <CodeEditor />
     <CodeEditor defaultValue="a" onEdit={() => {}} />
-    <CodeEditor value="a" onChange={() => {}} />
+    <CodeEditor value="a" onValueChange={() => {}} />
     <CodeEditor readOnly value="a" windowed />
     <CodeEditor readOnly value="a" windowed={false} />
     <CodeEditor readOnly lines={['a']} />
@@ -387,14 +387,14 @@ export const TypeChecks = () => (
     <CodeEditor lineCount={1} getLine={() => 'a'} />
     {/* @ts-expect-error `getLine` needs `lineCount`. */}
     <CodeEditor readOnly getLine={() => 'a'} />
-    {/* @ts-expect-error A controlled editor needs `onChange`, as an input does. */}
+    {/* @ts-expect-error A controlled editor needs `onValueChange`, as an input does. */}
     <CodeEditor value="a" />
     {/* @ts-expect-error One source of text. */}
-    <CodeEditor value="a" defaultValue="b" onChange={() => {}} />
+    <CodeEditor value="a" defaultValue="b" onValueChange={() => {}} />
     {/* @ts-expect-error One source of text. */}
     <CodeEditor readOnly value="a" lines={['b']} />
     {/* @ts-expect-error Read-only doesn't change. */}
-    <CodeEditor readOnly value="a" onChange={() => {}} />
+    <CodeEditor readOnly value="a" onValueChange={() => {}} />
     {/* @ts-expect-error Read-only doesn't change. */}
     <CodeEditor readOnly value="a" onEdit={() => {}} />
     {/* @ts-expect-error Editing is windowed. */}
@@ -406,6 +406,6 @@ export const TypeChecks = () => (
     {/* @ts-expect-error Inline is text in a sentence. */}
     <CodeEditor variant="inline" lines={['a']} />
     {/* @ts-expect-error Inline can't be edited. */}
-    <CodeEditor variant="inline" value="a" onChange={() => {}} />
+    <CodeEditor variant="inline" value="a" onValueChange={() => {}} />
   </>
 );

@@ -1,6 +1,15 @@
 import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { Credenza } from '@/components/ui/credenza'
+import {
+  Credenza,
+  CredenzaBackdrop,
+  CredenzaClose,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaView,
+} from '@/components/ui/credenza'
+import { BLProvider } from '@/lib/theme'
 import { Icon } from '@/lib/icon'
 
 const photos = [
@@ -32,8 +41,8 @@ function ConfirmDelete() {
         <Button
           variant="destructive"
           size="sm"
-          isDisabled={!selected.length}
-          onPress={() => setConfirming(true)}
+          disabled={!selected.length}
+          onClick={() => setConfirming(true)}
         >
           <Icon name="trash" size={17} /> Delete
         </Button>
@@ -59,44 +68,49 @@ function ConfirmDelete() {
           />
         ))}
       </div>
-      {/* Without compact it is a centered dialog. */}
+      {/* `presentation="dialog"`: a centered card, whatever the container. */}
       <Credenza
         open={confirming}
-        title={`Delete ${selected.length} photos?`}
-        onClose={() => setConfirming(false)}
+        onOpenChange={setConfirming}
+        presentation="dialog"
       >
-        <div style={{ padding: '2px 16px 16px' }}>
-          <p
-            style={{
-              margin: '0 0 16px',
-              fontSize: 14.5,
-              lineHeight: 1.45,
-              color: 'var(--muted-foreground)',
-            }}
-          >
-            They move to Recently Deleted and are removed for good after 30
-            days.
-          </p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button
-              variant="secondary"
-              style={{ flex: 1 }}
-              onPress={() => setConfirming(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              style={{ flex: 1 }}
-              onPress={() => {
-                setLeft((l) => (l.length > 3 ? l.slice(3) : photos))
-                setConfirming(false)
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        </div>
+        <CredenzaBackdrop />
+        <CredenzaContent>
+          <CredenzaHeader>
+            <CredenzaTitle>{`Delete ${selected.length} photos?`}</CredenzaTitle>
+            <CredenzaClose />
+          </CredenzaHeader>
+          <CredenzaView>
+            <div style={{ padding: '2px 16px 16px' }}>
+              <p
+                style={{
+                  margin: '0 0 16px',
+                  fontSize: 14.5,
+                  lineHeight: 1.45,
+                  color: 'var(--muted-foreground)',
+                }}
+              >
+                They move to Recently Deleted and are removed for good after 30
+                days.
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <CredenzaClose
+                  render={<Button variant="secondary" style={{ flex: 1 }} />}
+                >
+                  Cancel
+                </CredenzaClose>
+                <CredenzaClose
+                  render={<Button variant="destructive" style={{ flex: 1 }} />}
+                  action={() =>
+                    setLeft((l) => (l.length > 3 ? l.slice(3) : photos))
+                  }
+                >
+                  Delete
+                </CredenzaClose>
+              </div>
+            </div>
+          </CredenzaView>
+        </CredenzaContent>
       </Credenza>
     </div>
   )
@@ -128,7 +142,9 @@ function Window({
         isolation: 'isolate',
       }}
     >
-      {children}
+      {/* Popups render into BLProvider's root: the Credenza and its scrim stay
+          inside this window. */}
+      <BLProvider>{children}</BLProvider>
     </div>
   )
 }

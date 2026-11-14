@@ -5,7 +5,7 @@
    never shows one. */
 import { type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { cn } from '@/lib/utils';
 import type { Commit, Issue, LastCommit, PullRequest, User } from './data';
 import { Branch, DiffStat, LabelChip, Oct, PR_STATE, StateIcon, type Layout } from './parts';
@@ -29,13 +29,16 @@ export function UserCard({ user }: { user: User }) {
   );
 }
 
+/* A preview's trigger set in running text: a button (focus opens the card too) that looks like the words around it. */
+const inlineTrigger = 'cursor-pointer border-0 bg-transparent p-0 text-left align-baseline [font-family:inherit] text-[length:inherit] leading-[inherit] text-inherit outline-none hover:text-primary hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring/45 rounded-xs';
+
 /** A login in bold that shows the person's card. */
 export function UserName({ user, className }: { user: User; className?: string }) {
   return (
-    <HoverCardTrigger className="align-baseline">
-      <b className={cn('font-semibold text-foreground hover:text-primary hover:underline', className)}>{user.login}</b>
-      <HoverCard><UserCard user={user} /></HoverCard>
-    </HoverCardTrigger>
+    <HoverCard>
+      <HoverCardTrigger render={<button type="button" className={cn(inlineTrigger, 'font-semibold text-foreground', className)} />}>{user.login}</HoverCardTrigger>
+      <HoverCardContent><UserCard user={user} /></HoverCardContent>
+    </HoverCard>
   );
 }
 
@@ -137,9 +140,9 @@ export function CommitCard({ commit }: { commit: Commit | LastCommit }) {
 /** A commit message (truncating) that shows the commit's card. */
 export function CommitMessage({ commit, className }: { commit: Commit | LastCommit; className?: string }) {
   return (
-    <HoverCardTrigger className="min-w-0">
-      <span className={cn('min-w-0 truncate hover:text-primary hover:underline', className)}>{commit.message}</span>
-      <HoverCard placement="bottom start"><CommitCard commit={commit} /></HoverCard>
-    </HoverCardTrigger>
+    <HoverCard>
+      <HoverCardTrigger render={<button type="button" className={cn(inlineTrigger, 'block min-w-0 truncate', className)} />}>{commit.message}</HoverCardTrigger>
+      <HoverCardContent side="bottom" align="start"><CommitCard commit={commit} /></HoverCardContent>
+    </HoverCard>
   );
 }

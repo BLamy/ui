@@ -53,10 +53,10 @@ export default function Prf() {
         {passkey.support ? <Badge variant="outline">PRF: {passkey.support.prf}</Badge> : null}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button className={action} isDisabled={unavailable !== null} isPending={passkey.status === 'pending'} onPress={() => void create()}>
+        <Button className={action} disabled={unavailable !== null} onClick={() => create()}>
           Create passkey
         </Button>
-        <Button variant="secondary" isDisabled={!credentialId} onPress={() => void derive()}>
+        <Button variant="secondary" disabled={!credentialId} onClick={() => void derive()}>
           Derive secret again
         </Button>
       </div>

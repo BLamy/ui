@@ -4,7 +4,17 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Celebrate } from '@/components/ui/celebrate'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Credenza } from '@/components/ui/credenza'
+import {
+  Credenza,
+  CredenzaBack,
+  CredenzaBackdrop,
+  CredenzaClose,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaView,
+} from '@/components/ui/credenza'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { FileUploadButton } from '@/components/ui/file-upload'
 import { Form } from '@/components/ui/form'
 import { IconSwap } from '@/components/ui/icon-swap'
@@ -13,10 +23,10 @@ import { Label } from '@/components/ui/label'
 import { ListRow } from '@/components/ui/list'
 import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
-import { FieldError, TextField } from '@/components/ui/text-field'
 import { TextMorph } from '@/components/ui/text-morph'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Icon } from '@/lib/icon'
+import { BLProvider } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 
 const steps = [
@@ -92,24 +102,27 @@ const progressBar = cn(
   'after:ease-spring-smooth motion-reduce:after:transition-none',
 )
 
-// setTimeout, cancelled if the demo unmounts first.
+// setTimeout, cancelled if the demo unmounts first. The promise settles once
+// `run` has, so a Button whose onClick returns it stays pending until then.
 function useLater() {
   const [timers] = useState(() => new Set<ReturnType<typeof setTimeout>>())
   useEffect(() => () => timers.forEach(clearTimeout), [timers])
-  return (ms: number, run: () => void) => {
-    const t = setTimeout(() => {
-      timers.delete(t)
-      run()
-    }, ms)
-    timers.add(t)
-  }
+  return (ms: number, run: () => void) =>
+    new Promise<void>((resolve) => {
+      const t = setTimeout(() => {
+        timers.delete(t)
+        run()
+        resolve()
+      }, ms)
+      timers.add(t)
+    })
 }
 
 // Six steps in one Credenza: each is a `view`, so the card morphs to its
-// height and the views slide the way the flow goes; Back is `canBack` /
-// `onBack`. Each step checks its own fields before it lets you on. Closing it
-// keeps your place.
-function OrbitSignup({ compact }: { compact: boolean }) {
+// height and the views slide the way the flow goes; Back is a CredenzaBack
+// that folds away on the first step. Each step checks its own fields before it
+// lets you on. Closing it keeps your place.
+function OrbitSignup() {
   const later = useLater()
   const [open, setOpen] = useState(true)
   const [step, setStep] = useState<Step>('account')
@@ -136,6 +149,12 @@ function OrbitSignup({ compact }: { compact: boolean }) {
     news: false,
   })
   const [notifying, setNotifying] = useState(false)
+  // Errors show once a step has tried to go on, then follow your typing.
+  const [triedAccount, setTriedAccount] = useState(false)
+  const [triedName, setTriedName] = useState(false)
+  // The demo mounts open on page load: it takes focus only once you reach for
+  // it, so the docs page doesn't jump to it.
+  const [engaged, setEngaged] = useState(false)
 
   const index = steps.indexOf(step)
   const verified = verifiedFor === email
@@ -163,6 +182,19 @@ function OrbitSignup({ compact }: { compact: boolean }) {
     [photo],
   )
 
+  const problems = {
+    email: emailError(email),
+    password: password.length >= 8 ? null : 'Use at least 8 characters.',
+    terms: agreed ? null : 'Accept the terms to continue.',
+  }
+  const nameProblem =
+    name.trim().length > 1 ? null : 'Enter the name people will see.'
+  const shown = (problem: string | null, tried: boolean) =>
+    tried && problem ? true : undefined
+  // Focuses the first control a step is waiting on.
+  const focusField = (form: HTMLFormElement | null, key: string) =>
+    form?.querySelector<HTMLElement>(`[data-onboard="${key}"]`)?.focus()
+
   const sendCode = () => {
     setCode('')
     setCodeError(null)
@@ -177,7 +209,7 @@ function OrbitSignup({ compact }: { compact: boolean }) {
       return
     }
     setBusy(true)
-    later(900, () => {
+    return later(900, () => {
       setBusy(false)
       sendCode()
       setStep('verify')
@@ -202,10 +234,22 @@ function OrbitSignup({ compact }: { compact: boolean }) {
       later(700, () => setStep((s) => (s === 'verify' ? 'profile' : s)))
     })
   }
+  const submitAccount = (form: HTMLFormElement | null) => {
+    if (busy) return
+    const first = (Object.keys(problems) as (keyof typeof problems)[]).find(
+      (k) => problems[k],
+    )
+    if (first) {
+      setTriedAccount(true)
+      focusField(form, first)
+      return
+    }
+    return createAccount()
+  }
   const allowNotifications = () => {
     setBusy(true)
     // Stands in for the browser's permission prompt.
-    later(1000, () => {
+    return later(1000, () => {
       setBusy(false)
       setNotifying(true)
       setStep('done')
@@ -225,6 +269,9 @@ function OrbitSignup({ compact }: { compact: boolean }) {
     setPicked(new Set())
     setTooFew(false)
     setNotifying(false)
+    setTriedAccount(false)
+    setTriedName(false)
+    setEngaged(true)
     setOpen(true)
   }
 
@@ -237,325 +284,366 @@ function OrbitSignup({ compact }: { compact: boolean }) {
         name={name}
         email={email}
         topics={topics.filter((t) => picked.has(t.id)).map((t) => t.label)}
-        onOpen={() => setOpen(true)}
+        onOpen={() => {
+          setEngaged(true)
+          setOpen(true)
+        }}
         onStartOver={startOver}
       />
       {open && step === 'verify' && !verified ? <Email key={mail} /> : null}
       <Credenza
         open={open}
-        onClose={() => setOpen(false)}
-        compact={compact}
+        onOpenChange={(o) => {
+          if (!o) setOpen(false)
+        }}
         view={step}
-        title={titles[step]}
-        canBack={index > 0 && step !== 'done' && !busy}
-        onBack={() => setStep(steps[index - 1])}
-        className={progressBar}
-        style={{ '--progress': Math.min(1, (index + 1) / 5) } as CSSProperties}
       >
-        {step === 'account' ? (
-          <Form
-            onSubmit={(e) => {
-              e.preventDefault()
-              createAccount()
-            }}
-            className="gap-3.5 px-4 pt-1 pb-4"
-          >
-            <StepOf n={1} />
-            <TextField
-              name="email"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              validate={emailError}
-              isDisabled={busy}
-              autoComplete="email"
-            >
-              <Label variant="field">Email</Label>
-              <Input data-autofocus placeholder="you@example.com" />
-              <FieldError />
-            </TextField>
-            <TextField
-              name="password"
-              type="password"
-              value={password}
-              onChange={setPassword}
-              validate={(v) =>
-                v.length >= 8 ? null : 'Use at least 8 characters.'
-              }
-              isDisabled={busy}
-              autoComplete="new-password"
-            >
-              <Label variant="field">Password</Label>
-              <Input placeholder="8 or more characters" />
-              <FieldError />
-            </TextField>
-            <Checkbox
-              name="terms"
-              isSelected={agreed}
-              onChange={setAgreed}
-              isDisabled={busy}
-              validate={(checked) =>
-                checked ? null : 'Accept the terms to continue.'
-              }
-              className="items-start text-subhead"
-            >
-              {({ isInvalid }) => (
-                <span>
-                  I agree to Orbit’s Terms and Privacy Policy
-                  {isInvalid ? (
-                    <span className="block text-footnote text-destructive">
-                      Accept the terms to continue.
-                    </span>
-                  ) : null}
-                </span>
-              )}
-            </Checkbox>
-            <Button type="submit" size="pill" isPending={busy} className="mt-1">
-              {busy ? <Spinner spin size={18} /> : null}
-              <TextMorph>{busy ? 'Creating account…' : 'Continue'}</TextMorph>
-            </Button>
-          </Form>
-        ) : step === 'verify' ? (
-          <div className="grid gap-4 px-4 pt-1 pb-4">
-            <StepOf n={2} />
-            <p className="m-0 text-subhead text-foreground/70">
-              {verified ? 'Verified ' : 'Enter the 6-digit code we sent to '}
-              <b className="font-semibold text-foreground">{email}</b>
-              {verified ? '.' : '. It expires in 10 minutes.'}
-            </p>
-            <CodeField
-              value={code}
-              onChange={enterCode}
-              error={codeError}
-              isBusy={busy}
-              isVerified={verified}
+        <CredenzaBackdrop />
+        <CredenzaContent
+          initialFocus={engaged ? 'auto' : 'none'}
+          onFocusCapture={() => setEngaged(true)}
+          className={progressBar}
+          style={
+            { '--progress': Math.min(1, (index + 1) / 5) } as CSSProperties
+          }
+        >
+          <CredenzaHeader>
+            <CredenzaBack
+              hidden={!(index > 0 && step !== 'done' && !busy)}
+              onClick={() => setStep(steps[index - 1])}
             />
-            {verified ? (
-              <Button
-                data-autofocus
-                size="pill"
-                onPress={() => setStep('profile')}
+            <CredenzaTitle>{titles[step]}</CredenzaTitle>
+            <CredenzaClose />
+          </CredenzaHeader>
+          <CredenzaView>
+            {step === 'account' ? (
+              <Form
+                noValidate
+                onSubmit={(e) => e.preventDefault()}
+                className="gap-3.5 px-4 pt-1 pb-4"
               >
-                Continue
-              </Button>
-            ) : (
-              <Button
-                variant="secondary"
-                size="sm"
-                className="justify-self-center"
-                isDisabled={wait > 0 || busy}
-                onPress={sendCode}
-              >
-                {wait > 0 ? `Resend code in ${wait}s` : 'Resend code'}
-              </Button>
-            )}
-          </div>
-        ) : step === 'profile' ? (
-          <Form
-            onSubmit={(e) => {
-              e.preventDefault()
-              setStep('topics')
-            }}
-            className="gap-4 px-4 pt-1 pb-4"
-          >
-            <StepOf n={3} />
-            <div className="flex flex-col items-center gap-3">
-              {avatar(72)}
-              <div className="flex items-center gap-2">
-                <ToggleGroup
-                  aria-label="Avatar"
-                  disallowEmptySelection
-                  selectedKeys={[look]}
-                  onSelectionChange={(keys) =>
-                    setLook(String([...keys][0] ?? look))
-                  }
-                  className="gap-1"
+                <StepOf n={1} />
+                <Field
+                  name="email"
+                  disabled={busy}
+                  invalid={shown(problems.email, triedAccount)}
                 >
-                  {photo ? (
-                    <ToggleGroupItem
-                      id="photo"
-                      aria-label="Your photo"
-                      className={swatch}
+                  <FieldLabel variant="field">Email</FieldLabel>
+                  <Input
+                    data-onboard="email"
+                    type="email"
+                    value={email}
+                    onValueChange={setEmail}
+                    autoComplete="email"
+                    autoFocus={engaged}
+                    placeholder="you@example.com"
+                  />
+                  <FieldError>{problems.email}</FieldError>
+                </Field>
+                <Field
+                  name="password"
+                  disabled={busy}
+                  invalid={shown(problems.password, triedAccount)}
+                >
+                  <FieldLabel variant="field">Password</FieldLabel>
+                  <Input
+                    data-onboard="password"
+                    type="password"
+                    value={password}
+                    onValueChange={setPassword}
+                    autoComplete="new-password"
+                    placeholder="8 or more characters"
+                  />
+                  <FieldError>{problems.password}</FieldError>
+                </Field>
+                <Label variant="control" className="items-start text-subhead">
+                  <Checkbox
+                    data-onboard="terms"
+                    name="terms"
+                    checked={agreed}
+                    onCheckedChange={(checked) => setAgreed(checked === true)}
+                    disabled={busy}
+                    aria-invalid={shown(problems.terms, triedAccount)}
+                  />
+                  <span>
+                    I agree to Orbit’s Terms and Privacy Policy
+                    {shown(problems.terms, triedAccount) ? (
+                      <span className="block text-footnote text-destructive">
+                        {problems.terms}
+                      </span>
+                    ) : null}
+                  </span>
+                </Label>
+                <Button
+                  type="submit"
+                  size="pill"
+                  className="mt-1"
+                  // Enter in a field clicks this too, so one handler checks the
+                  // step; the promise keeps the button pending while it works.
+                  onClick={(e) => {
+                    e.preventDefault()
+                    return submitAccount(e.currentTarget.closest('form'))
+                  }}
+                >
+                  {busy ? <Spinner spin size={18} /> : null}
+                  <TextMorph>
+                    {busy ? 'Creating account…' : 'Continue'}
+                  </TextMorph>
+                </Button>
+              </Form>
+            ) : step === 'verify' ? (
+              <div className="grid gap-4 px-4 pt-1 pb-4">
+                <StepOf n={2} />
+                <p className="m-0 text-subhead text-foreground/70">
+                  {verified
+                    ? 'Verified '
+                    : 'Enter the 6-digit code we sent to '}
+                  <b className="font-semibold text-foreground">{email}</b>
+                  {verified ? '.' : '. It expires in 10 minutes.'}
+                </p>
+                <CodeField
+                  value={code}
+                  onChange={enterCode}
+                  error={codeError}
+                  isBusy={busy}
+                  isVerified={verified}
+                  autoFocus={engaged}
+                />
+                {verified ? (
+                  <Button
+                    autoFocus={engaged}
+                    size="pill"
+                    onClick={() => setStep('profile')}
+                  >
+                    Continue
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="justify-self-center"
+                    disabled={wait > 0 || busy}
+                    onClick={sendCode}
+                  >
+                    {wait > 0 ? `Resend code in ${wait}s` : 'Resend code'}
+                  </Button>
+                )}
+              </div>
+            ) : step === 'profile' ? (
+              <Form
+                noValidate
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (nameProblem) {
+                    setTriedName(true)
+                    focusField(e.currentTarget, 'name')
+                    return
+                  }
+                  setStep('topics')
+                }}
+                className="gap-4 px-4 pt-1 pb-4"
+              >
+                <StepOf n={3} />
+                <div className="flex flex-col items-center gap-3">
+                  {avatar(72)}
+                  <div className="flex items-center gap-2">
+                    <ToggleGroup
+                      aria-label="Avatar"
+                      deselectable={false}
+                      value={[look]}
+                      onValueChange={([next]) => next && setLook(next)}
+                      className="gap-1"
                     >
-                      <Avatar name={name} src={photo} size={28} />
-                    </ToggleGroupItem>
-                  ) : null}
-                  {looks.map((l) => (
-                    <ToggleGroupItem
-                      key={l.id}
-                      id={l.id}
-                      aria-label={l.label}
-                      className={swatch}
+                      {photo ? (
+                        <ToggleGroupItem
+                          value="photo"
+                          aria-label="Your photo"
+                          className={swatch}
+                        >
+                          <Avatar name={name} src={photo} size={28} />
+                        </ToggleGroupItem>
+                      ) : null}
+                      {looks.map((l) => (
+                        <ToggleGroupItem
+                          key={l.id}
+                          value={l.id}
+                          aria-label={l.label}
+                          className={swatch}
+                        >
+                          <span className={cn('size-7 rounded-full', l.dot)} />
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                    <FileUploadButton
+                      variant="secondary"
+                      size="icon"
+                      aria-label="Choose a photo"
+                      accept={['image/*']}
+                      multiple={false}
+                      onFiles={([file]) => {
+                        if (!file) return
+                        setPhoto(URL.createObjectURL(file))
+                        setLook('photo')
+                      }}
                     >
-                      <span className={cn('size-7 rounded-full', l.dot)} />
+                      <Icon name="camera" size={18} />
+                    </FileUploadButton>
+                  </div>
+                </div>
+                <Field name="name" invalid={shown(nameProblem, triedName)}>
+                  <FieldLabel variant="field">Display name</FieldLabel>
+                  <Input
+                    data-onboard="name"
+                    value={name}
+                    onValueChange={setName}
+                    autoComplete="name"
+                    autoFocus={engaged}
+                    placeholder="Maya Lindqvist"
+                  />
+                  <FieldError>{nameProblem}</FieldError>
+                </Field>
+                <Button type="submit" size="pill">
+                  Continue
+                </Button>
+              </Form>
+            ) : step === 'topics' ? (
+              <div className="grid gap-4 px-4 pt-1 pb-4">
+                <StepOf n={4} />
+                <p className="m-0 text-subhead text-foreground/70">
+                  Pick three or more and we’ll shape your feed around them. You
+                  can change them any time.
+                </p>
+                <ToggleGroup
+                  aria-label="Topics"
+                  multiple
+                  value={[...picked]}
+                  onValueChange={(value) => {
+                    setPicked(new Set(value))
+                    setTooFew(false)
+                  }}
+                  className="w-full flex-wrap justify-center gap-2"
+                >
+                  {topics.map((t) => (
+                    <ToggleGroupItem
+                      key={t.id}
+                      value={t.id}
+                      size="sm"
+                      className={chip}
+                    >
+                      {({ pressed }) => (
+                        <>
+                          <IconSwap id={pressed ? 'on' : 'off'}>
+                            <Icon
+                              name={pressed ? 'check' : t.icon}
+                              size={15}
+                              sw={pressed ? 2.6 : 2}
+                            />
+                          </IconSwap>
+                          {t.label}
+                        </>
+                      )}
                     </ToggleGroupItem>
                   ))}
                 </ToggleGroup>
-                <FileUploadButton
-                  variant="secondary"
-                  size="icon"
-                  aria-label="Choose a photo"
-                  accept={['image/*']}
-                  multiple={false}
-                  onFiles={([entry]) => {
-                    if (!entry) return
-                    setPhoto(URL.createObjectURL(entry.file))
-                    setLook('photo')
-                  }}
-                >
-                  <Icon name="camera" size={18} />
-                </FileUploadButton>
-              </div>
-            </div>
-            <TextField
-              name="name"
-              value={name}
-              onChange={setName}
-              validate={(v) =>
-                v.trim().length > 1 ? null : 'Enter the name people will see.'
-              }
-              autoComplete="name"
-            >
-              <Label variant="field">Display name</Label>
-              <Input data-autofocus placeholder="Maya Lindqvist" />
-              <FieldError />
-            </TextField>
-            <Button type="submit" size="pill">
-              Continue
-            </Button>
-          </Form>
-        ) : step === 'topics' ? (
-          <div className="grid gap-4 px-4 pt-1 pb-4">
-            <StepOf n={4} />
-            <p className="m-0 text-subhead text-foreground/70">
-              Pick three or more and we’ll shape your feed around them. You can
-              change them any time.
-            </p>
-            <ToggleGroup
-              aria-label="Topics"
-              selectionMode="multiple"
-              selectedKeys={picked}
-              onSelectionChange={(keys) => {
-                setPicked(new Set([...keys].map(String)))
-                setTooFew(false)
-              }}
-              className="w-full flex-wrap justify-center gap-2"
-            >
-              {topics.map((t) => (
-                <ToggleGroupItem
-                  key={t.id}
-                  id={t.id}
-                  size="sm"
-                  className={chip}
-                >
-                  {({ isSelected }) => (
-                    <>
-                      <IconSwap id={isSelected ? 'on' : 'off'}>
-                        <Icon
-                          name={isSelected ? 'check' : t.icon}
-                          size={15}
-                          sw={isSelected ? 2.6 : 2}
-                        />
-                      </IconSwap>
-                      {t.label}
-                    </>
+                <p
+                  aria-live="polite"
+                  className={cn(
+                    'm-0 text-center text-footnote',
+                    tooFew ? 'text-destructive' : 'text-foreground/70',
                   )}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-            <p
-              aria-live="polite"
-              className={cn(
-                'm-0 text-center text-footnote',
-                tooFew ? 'text-destructive' : 'text-foreground/70',
-              )}
-            >
-              {tooFew
-                ? 'Pick at least three topics to continue.'
-                : picked.size >= 3
-                  ? `${picked.size} topics picked`
-                  : `Pick ${3 - picked.size} more`}
-            </p>
-            <Button
-              size="pill"
-              onPress={() =>
-                picked.size >= 3 ? setStep('notify') : setTooFew(true)
-              }
-            >
-              Continue
-            </Button>
-          </div>
-        ) : step === 'notify' ? (
-          <div className="grid gap-3 px-4 pt-1 pb-4">
-            <StepOf n={5} />
-            <div className="flex items-start gap-3">
-              <span className="grid size-11 shrink-0 place-items-center rounded-panel bg-primary/12 text-primary">
-                <Icon name="bell-fill" size={22} />
-              </span>
-              <p className="m-0 text-subhead text-foreground/70">
-                Hear when someone replies to you, and get a digest of your
-                topics. Choose what comes through.
-              </p>
-            </div>
-            <div className="overflow-hidden rounded-card shadow-hairline">
-              {alertRows.map(([key, label], i) => (
-                <ListRow
-                  key={key}
-                  title={label}
-                  divider={i < alertRows.length - 1}
-                  accessory={
-                    <Switch
-                      checked={alerts[key]}
-                      onChange={(on) => setAlerts((a) => ({ ...a, [key]: on }))}
-                    />
+                >
+                  {tooFew
+                    ? 'Pick at least three topics to continue.'
+                    : picked.size >= 3
+                      ? `${picked.size} topics picked`
+                      : `Pick ${3 - picked.size} more`}
+                </p>
+                <Button
+                  size="pill"
+                  onClick={() =>
+                    picked.size >= 3 ? setStep('notify') : setTooFew(true)
                   }
-                />
-              ))}
-            </div>
-            <Button
-              size="pill"
-              isPending={busy}
-              className="mt-1"
-              onPress={allowNotifications}
-            >
-              <IconSwap id={busy ? 'busy' : 'idle'}>
-                {busy ? (
-                  <Spinner spin size={18} />
-                ) : (
-                  <Icon name="bell" size={18} sw={2} />
-                )}
-              </IconSwap>
-              <TextMorph>
-                {busy ? 'Waiting for permission…' : 'Turn on notifications'}
-              </TextMorph>
-            </Button>
-            <Button
-              size="pill"
-              variant="ghost"
-              isDisabled={busy}
-              onPress={() => setStep('done')}
-            >
-              Not now
-            </Button>
-          </div>
-        ) : (
-          <AllSet
-            avatar={avatar(72)}
-            name={name}
-            topics={topics.filter((t) => picked.has(t.id)).map((t) => t.label)}
-            note={
-              !notifying
-                ? 'Notifications stay off until you turn them on.'
-                : alerts.replies
-                  ? 'We’ll let you know when people reply.'
-                  : 'Notifications are on.'
-            }
-            onStart={() => {
-              setFinished(true)
-              setOpen(false)
-            }}
-          />
-        )}
+                >
+                  Continue
+                </Button>
+              </div>
+            ) : step === 'notify' ? (
+              <div className="grid gap-3 px-4 pt-1 pb-4">
+                <StepOf n={5} />
+                <div className="flex items-start gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-panel bg-primary/12 text-primary">
+                    <Icon name="bell-fill" size={22} />
+                  </span>
+                  <p className="m-0 text-subhead text-foreground/70">
+                    Hear when someone replies to you, and get a digest of your
+                    topics. Choose what comes through.
+                  </p>
+                </div>
+                <div className="overflow-hidden rounded-card shadow-hairline">
+                  {alertRows.map(([key, label], i) => (
+                    <ListRow
+                      key={key}
+                      title={label}
+                      divider={i < alertRows.length - 1}
+                      accessory={
+                        <Switch
+                          checked={alerts[key]}
+                          onCheckedChange={(on) =>
+                            setAlerts((a) => ({ ...a, [key]: on }))
+                          }
+                        />
+                      }
+                    />
+                  ))}
+                </div>
+                <Button
+                  size="pill"
+                  className="mt-1"
+                  onClick={allowNotifications}
+                >
+                  <IconSwap id={busy ? 'busy' : 'idle'}>
+                    {busy ? (
+                      <Spinner spin size={18} />
+                    ) : (
+                      <Icon name="bell" size={18} sw={2} />
+                    )}
+                  </IconSwap>
+                  <TextMorph>
+                    {busy ? 'Waiting for permission…' : 'Turn on notifications'}
+                  </TextMorph>
+                </Button>
+                <Button
+                  size="pill"
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => setStep('done')}
+                >
+                  Not now
+                </Button>
+              </div>
+            ) : (
+              <AllSet
+                avatar={avatar(72)}
+                name={name}
+                topics={topics
+                  .filter((t) => picked.has(t.id))
+                  .map((t) => t.label)}
+                note={
+                  !notifying
+                    ? 'Notifications stay off until you turn them on.'
+                    : alerts.replies
+                      ? 'We’ll let you know when people reply.'
+                      : 'Notifications are on.'
+                }
+                autoFocus={engaged}
+                onStart={() => {
+                  setFinished(true)
+                  setOpen(false)
+                }}
+              />
+            )}
+          </CredenzaView>
+        </CredenzaContent>
       </Credenza>
     </>
   )
@@ -563,15 +651,15 @@ function OrbitSignup({ compact }: { compact: boolean }) {
 
 // Avatar swatches: a ring marks the chosen one.
 const swatch = cn(
-  'size-9 min-w-0 rounded-full p-0 data-selected:bg-transparent',
-  'data-selected:shadow-[0_0_0_2px_var(--primary)]',
+  'size-9 min-w-0 rounded-full p-0 data-pressed:bg-transparent',
+  'data-pressed:shadow-[0_0_0_2px_var(--primary)]',
 )
 // Topic chips: filled with the text colour once picked.
 const chip = cn(
   'rounded-full bg-secondary px-3',
-  'data-selected:bg-foreground data-selected:text-background',
-  'data-selected:data-hovered:bg-foreground/90',
-  'data-selected:data-pressed:bg-foreground',
+  'data-pressed:bg-foreground data-pressed:text-background',
+  'data-pressed:hover:bg-foreground/90',
+  'data-pressed:active:not-data-disabled:bg-foreground',
 )
 
 // The verification email, dropping in as a notification above everything a
@@ -619,26 +707,19 @@ function CodeField({
   error,
   isBusy,
   isVerified,
+  autoFocus,
 }: {
   value: string
   onChange: (value: string) => void
   error: string | null
   isBusy: boolean
   isVerified: boolean
+  autoFocus: boolean
 }) {
   const [focused, setFocused] = useState(false)
   const at = Math.min(value.length, 5)
   return (
-    <TextField
-      aria-label="Verification code"
-      value={isVerified ? CODE : value}
-      onChange={onChange}
-      isInvalid={!!error}
-      isReadOnly={isBusy || isVerified}
-      inputMode="numeric"
-      autoComplete="one-time-code"
-      className="relative gap-2"
-    >
+    <Field invalid={error ? true : undefined} className="relative gap-2">
       <div aria-hidden="true" className="flex justify-center gap-2">
         {Array.from({ length: 6 }, (_, i) => (
           <span
@@ -663,13 +744,19 @@ function CodeField({
         ))}
       </div>
       <Input
-        data-autofocus={isVerified ? undefined : true}
+        aria-label="Verification code"
+        value={isVerified ? CODE : value}
+        onValueChange={onChange}
+        readOnly={isBusy || isVerified}
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        autoFocus={autoFocus && !isVerified}
         // The current box shows where you are; the field itself draws no ring.
         style={{ outline: 'none' }}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         // Keep the caret at the end: the boxes fill left to right.
-        onSelect={(e) => {
+        onSelectCapture={(e) => {
           const end = e.currentTarget.value.length
           if (e.currentTarget.selectionStart !== end)
             e.currentTarget.setSelectionRange(end, end)
@@ -677,8 +764,8 @@ function CodeField({
         className={cn(
           'absolute inset-x-0 top-0 h-13 cursor-text bg-transparent',
           'text-transparent caret-transparent selection:bg-transparent',
-          'data-focused:bg-transparent data-focused:shadow-none',
-          'data-invalid:shadow-none',
+          'focus:bg-transparent focus:shadow-none',
+          'aria-invalid:shadow-none',
         )}
       />
       {error ? <FieldError className="text-center">{error}</FieldError> : null}
@@ -695,7 +782,7 @@ function CodeField({
           {isVerified ? 'Email verified' : 'Checking…'}
         </p>
       ) : null}
-    </TextField>
+    </Field>
   )
 }
 
@@ -713,12 +800,14 @@ function AllSet({
   name,
   topics,
   note,
+  autoFocus,
   onStart,
 }: {
   avatar: ReactNode
   name: string
   topics: string[]
   note: string
+  autoFocus: boolean
   onStart: () => void
 }) {
   const [landed, setLanded] = useState(false)
@@ -753,7 +842,12 @@ function AllSet({
       <p className="m-0 text-subhead text-foreground/70">
         Your feed follows {new Intl.ListFormat('en').format(feed)}. {note}
       </p>
-      <Button data-autofocus size="pill" className="mt-5" onPress={onStart}>
+      <Button
+        autoFocus={autoFocus}
+        size="pill"
+        className="mt-5"
+        onClick={onStart}
+      >
         Start exploring
       </Button>
     </div>
@@ -793,7 +887,7 @@ function Orbit({
         </span>
         <span className="flex-1 text-callout font-semibold">Orbit</span>
         {finished ? (
-          <Button variant="secondary" size="sm" onPress={onStartOver}>
+          <Button variant="secondary" size="sm" onClick={onStartOver}>
             Start over
           </Button>
         ) : null}
@@ -823,7 +917,7 @@ function Orbit({
           <p className="m-0 max-w-xs text-subhead text-foreground/70">
             Topics, people and conversations worth your time, in one calm feed.
           </p>
-          <Button size="lg" className="mt-3" onPress={onOpen}>
+          <Button size="lg" className="mt-3" onClick={onOpen}>
             {started ? 'Finish setting up' : 'Create your account'}
           </Button>
         </div>
@@ -851,7 +945,9 @@ function Window({
         compact ? 'h-[680px]' : 'h-[600px]',
       )}
     >
-      {children}
+      {/* Popups render into BLProvider's root: the Credenza, its scrim and its
+          focus trap stay inside this window. */}
+      <BLProvider className="bg-background">{children}</BLProvider>
     </div>
   )
 }
@@ -866,7 +962,7 @@ export default function Onboarding({
   const compact = variant === 'tray'
   return (
     <Window compact={compact}>
-      <OrbitSignup compact={compact} />
+      <OrbitSignup />
     </Window>
   )
 }

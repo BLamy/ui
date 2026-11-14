@@ -1,6 +1,6 @@
 # MessageScroller
 
-A chat transcript scroller that ports the shadcn `message-scroller` behaviors: it anchors turns, follows streams, and never moves the reader against their intent.
+A chat transcript scroller that ports the shadcn `message-scroller` behaviors: it anchors turns, follows streams, and never moves the reader against their intent. Following the live edge is UI SDK's `createStickToBottom`; the turn anchoring is a primitive on top of it.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -42,7 +42,7 @@ import { MessageScroller } from '@brett_lamy/ui'
 1. **Anchoring turns** — a newly appended anchor row scrolls near the top with a ~52px peek of the previous turn, so the reply has room to stream in below.
 2. **Follow the live edge** — auto-scroll runs only while you're at the bottom. The reply grows into the reserved room without moving the view.
 3. **Release on intent** — wheel up, touch drag, or PageUp/Home instantly stop following; new chunks land offscreen.
-4. **Jump to latest** — the floating pill returns to the live edge and re-engages following; while streaming it pulses.
+4. **Jump to latest** — the floating pill returns to the live edge and re-engages following; while streaming it widens to say so. It stays mounted and fades out when it isn't needed, `inert` so Tab skips it.
 5. **Open at last anchor** — switching threads opens at the last user message, not the absolute bottom, falling back to the end.
 
 ## Accessibility
@@ -55,7 +55,7 @@ Send a few turns, then scroll up and send another — anchoring, release, and th
 
 {% demo src="message-scroller/turn-anchoring" %}
 
-A reply streaming in. Scroll up and following lets go; the jump pill rises in and widens to say a reply is streaming. Tap it and the view glides back down on a spring — interruptible, so any scroll catches it:
+A reply streaming in. Scroll up and following lets go; the jump pill rises in and widens to say a reply is streaming. Tap it and the view glides back down (a smooth scroll, instant under reduced motion), and any scroll catches it:
 
 {% demo src="message-scroller/streaming-jump-pill" %}
 

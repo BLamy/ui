@@ -34,13 +34,13 @@ export const SubtitleAndLeading: Story = {
       leading={<Avatar c={{ f: 'Wei', l: 'Chen' }} />}
       trailing={<Icon name="starF" size={13} className="text-warning" />}
       divider={false}
-      onPress={() => undefined}
+      onClick={() => undefined}
     />
   ),
 };
 
 export const Chevron: Story = {
-  args: { title: 'Share Contact', accessory: 'chevron', onPress: () => undefined, divider: false },
+  args: { title: 'Share Contact', accessory: 'chevron', onClick: () => undefined, divider: false },
 };
 
 export const Check: Story = {
@@ -49,8 +49,8 @@ export const Check: Story = {
     return (
       <>
         {['Reflection', 'Chimes', 'Circuit'].map((r, i) => (
-          <ListRow key={r} title={r} accessory="check" checked={v === r} rowRole="option"
-            onPress={() => setV(r)} divider={i < 2} />
+          <ListRow key={r} title={r} accessory="check" checked={v === r}
+            onClick={() => setV(r)} divider={i < 2} />
         ))}
       </>
     );
@@ -66,7 +66,7 @@ export const SwipeToDelete: Story = {
         {people.map(([f, l], i) => (
           <ListRow key={f} title={f + ' ' + l} leading={<Avatar c={{ f, l }} size={34} />}
             onDelete={() => setGone((g) => new Set([...g, f]))}
-            onPress={() => undefined}
+            onClick={() => undefined}
             divider={i < people.length - 1} />
         ))}
         <div style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--muted-foreground)', background: 'var(--card)' }}>
@@ -84,12 +84,12 @@ export const EditMode: Story = {
     return (
       <>
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 16px', background: 'var(--card)' }}>
-          <Switch checked={edit} onChange={setEdit} aria-label="Edit mode" />
+          <Switch checked={edit} onCheckedChange={setEdit} aria-label="Edit mode" />
         </div>
         {[['Amelia', 'Adler'], ['Wei', 'Chen'], ['Anya', 'Kowalski']].map(([f, l], i) => (
           <ListRow key={f} title={f + ' ' + l} leading={<Avatar c={{ f, l }} size={34} />}
             edit={edit} checked={picked.has(f)}
-            onPress={() => setPicked((p) => { const n = new Set(p); n.has(f) ? n.delete(f) : n.add(f); return n; })}
+            onClick={() => setPicked((p) => { const n = new Set(p); if (n.has(f)) n.delete(f); else n.add(f); return n; })}
             divider={i < 2} />
         ))}
       </>
@@ -109,7 +109,7 @@ function MailRows() {
   const [rows, setRows] = useState(MAIL);
   const [unread, setUnread] = useState<Set<string>>(() => new Set(['Parallel']));
   const [flag, setFlag] = useState<Set<string>>(() => new Set());
-  const toggle = (set: Set<string>, k: string) => { const n = new Set(set); n.has(k) ? n.delete(k) : n.add(k); return n; };
+  const toggle = (set: Set<string>, k: string) => { const n = new Set(set); if (n.has(k)) n.delete(k); else n.add(k); return n; };
   return (
     <>
       {rows.map(([from, subject], i) => {
@@ -126,12 +126,12 @@ function MailRows() {
             leading={<span aria-hidden style={{ width: 9, height: 9, borderRadius: 5, background: unread.has(from) ? 'var(--primary)' : 'transparent' }} />}
             trailing={flag.has(from) ? <Icon name="starF" size={13} className="text-warning" /> : null}
             leadingActions={leading} trailingActions={trailing}
-            onPress={() => undefined} divider={i < rows.length - 1} />
+            onClick={() => undefined} divider={i < rows.length - 1} />
         );
       })}
       <div style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--muted-foreground)', background: 'var(--card)' }}>
         Swipe right for Unread, left for Trash / Flag / More. A long swipe runs the outermost action (the
-        threshold is 55% of the row width). Keyboard: focus a row, → or ← reveals its actions, Esc closes, Delete trashes.
+        threshold is 55% of the row width). Keyboard: focus a row, ← or → reveals its actions, Esc closes, Delete trashes.
       </div>
     </>
   );
@@ -140,13 +140,13 @@ function MailRows() {
 /** `leadingActions` / `trailingActions`: index 0 is the outermost button, the one a full swipe triggers. */
 export const SwipeActions: Story = { render: () => <MailRows /> };
 
-/** The trailing actions revealed from the keyboard (focus the row, press →). */
+/** The trailing actions revealed from the keyboard (focus the row, press ←). */
 export const SwipeActionsRevealed: Story = {
   render: () => <MailRows />,
   play: async ({ canvasElement }) => {
-    const row = canvasElement.querySelector<HTMLElement>('[data-slot=list-row] [data-tkrow]');
+    const row = canvasElement.querySelector<HTMLElement>('[data-slot=list-row] [data-list-row-focus]');
     row?.focus();
-    row?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    row?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
   },
 };
 
@@ -161,21 +161,21 @@ function ControlRows() {
   const [n, setN] = useState(0);
   return (
     <>
-      {/* No onPress: the row is a plain container. Pressing its label flips the switch. */}
-      <ListRow title="Airplane Mode" accessory={<Switch checked={air} onChange={setAir} />} />
-      <ListRow title="Wi-Fi" subtitle={wifi ? 'Lamy Home' : 'Off'} accessory={<Switch checked={wifi} onChange={setWifi} />} />
+      {/* No onClick: the row is a plain container. Pressing its label flips the switch. */}
+      <ListRow title="Airplane Mode" accessory={<Switch checked={air} onCheckedChange={setAir} />} />
+      <ListRow title="Wi-Fi" subtitle={wifi ? 'Lamy Home' : 'Off'} accessory={<Switch checked={wifi} onCheckedChange={setWifi} />} />
       {/* A slider fills the row; its accessible name comes from the row title. */}
       <ListRow title="Volume" accessory={
-        <Slider value={vol} onChange={(v) => setVol(v as number)} className="w-[150px]" />
+        <Slider value={vol} onValueChange={(v) => setVol(v as number)} className="w-[150px]" />
       } />
-      {/* onPress and a control side by side: the row button and the control are siblings, not nested. */}
-      <ListRow title="Downloads" subtitle={n ? `${n} queued` : 'Nothing queued'} onPress={() => undefined} divider={false}
-        accessory={<Button size="sm" variant="secondary" onPress={() => setN((x) => x + 1)}>Get</Button>} />
+      {/* onClick and a control side by side: the row button and the control are siblings, not nested. */}
+      <ListRow title="Downloads" subtitle={n ? `${n} queued` : 'Nothing queued'} onClick={() => undefined} divider={false}
+        accessory={<Button size="sm" variant="secondary" onClick={() => setN((x) => x + 1)}>Get</Button>} />
     </>
   );
 }
 
-/** A Switch, Slider or Button in `accessory` (or `trailing`) never lands inside a <button>: without `onPress`
+/** A Switch, Slider or Button in `accessory` (or `trailing`) never lands inside a <button>: without `onClick`
  *  the row renders a plain container, and with it the press target sits beneath the content. */
 export const WithControls: Story = { render: () => <ControlRows /> };
 export const WithControlsDark: Story = { render: () => <ControlRows />, parameters: { dark: true } };
@@ -184,7 +184,7 @@ export const WithControlsDark: Story = { render: () => <ControlRows />, paramete
 
 /** A caller's own switch component — ListRow still names it after the row title (RowLabelContext). */
 function SettingSwitch({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
-  return <span className="flex items-center"><Switch checked={on} onChange={onChange} /></span>;
+  return <span className="flex items-center"><Switch checked={on} onCheckedChange={onChange} /></span>;
 }
 
 function LayoutRows() {
@@ -195,7 +195,7 @@ function LayoutRows() {
   return (
     <>
       {/* align="top": the leading circle sits on the first line of a wrapping title. */}
-      <ListRow align="top" onPress={() => setDone((d) => !d)}
+      <ListRow align="top" onClick={() => setDone((d) => !d)}
         leading={<span className={cn('box-border block size-[22px] rounded-full border-[1.6px]', done ? 'border-primary bg-primary' : 'border-tertiary-foreground')} />}
         title={<span className="block whitespace-normal">Book the cabin ferry for the long weekend, and check whether dogs ride free</span>}
         subtitle="Friday, 9:00" />
@@ -203,7 +203,7 @@ function LayoutRows() {
       <ListRow>
         <div className="flex items-center gap-2">
           <Icon name="sun" size={18} className="text-muted-foreground" />
-          <Slider aria-label="Brightness" value={bright} onChange={(v) => setBright(v as number)} className="flex-1" />
+          <Slider aria-label="Brightness" value={bright} onValueChange={(v) => setBright(v as number)} className="flex-1" />
           <Icon name="sun" size={24} className="text-muted-foreground" />
         </div>
       </ListRow>
@@ -211,7 +211,7 @@ function LayoutRows() {
       <ListRow title="Shake to Undo" contentClassName="min-h-[52px]" accessory={<SettingSwitch on={shake} onChange={setShake} />} />
       {/* selected → aria-current on the row button. */}
       {['inbox', 'archive'].map((m, i) => (
-        <ListRow key={m} title={m === 'inbox' ? 'Inbox' : 'Archive'} selected={sel === m} onPress={() => setSel(m)} divider={i === 0} />
+        <ListRow key={m} title={m === 'inbox' ? 'Inbox' : 'Archive'} selected={sel === m} onClick={() => setSel(m)} divider={i === 0} />
       ))}
     </>
   );

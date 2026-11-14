@@ -29,7 +29,7 @@ import { FontPicker, FontStackPicker, FontList } from '@brett_lamy/ui'
 
 ## Live preview
 
-`value` is a family name (`'Fraunces'`), or `null` for the system font, which the list offers first. `onChange` gets the family chosen. `onPreview` is called as the list is hovered or arrowed through: with the family to show for now (`null` again meaning the system font), and with `undefined` when the preview ends (the pointer left the list, or it closed). So what to draw is `preview === undefined ? value : preview`. The list fetches only the glyphs of each name, so load the family for the text that wears it: `useGoogleFont(family)`, then set `fontFamily: fontStack(family)`.
+`value` is a family name (`'Fraunces'`), or `null` for the system font, which the list offers first. `onValueChange(family, details)` gets the family chosen, with UI SDK's change details: `reason` (`item-press` or `enter-key`), the `event`, `source` and `cancel()` (an uncontrolled picker then keeps its family and stays open); `defaultValue` leaves it to the picker. `onPreview` is called as the list is hovered or arrowed through: with the family to show for now (`null` again meaning the system font), and with `undefined` when the preview ends (the pointer left the list, or it closed). So what to draw is `preview === undefined ? value : preview`. The list fetches only the glyphs of each name, so load the family for the text that wears it: `useGoogleFont(family)`, then set `fontFamily: fontStack(family)`.
 
 {% demo src="font-picker/live-preview" %}
 
@@ -59,14 +59,14 @@ Each family is fetched from `fonts.googleapis.com` (the stylesheet) and `fonts.g
 
 ## Accessibility
 
-The trigger is a button named by `aria-label` and the family it holds ("Headline font: Fraunces"); it opens a dialog holding a search field and a `listbox` of the families. Typing searches, the arrow keys move through the families (which previews them) while focus stays in the search field, Enter chooses, and Escape clears the search, then closes the list and returns focus to the trigger. The category filter is a group of toggle buttons. In a stack, each chip is a row of a grid with a drag handle and a remove button; reorder with the handle by pointer or keyboard.
+Built on UI SDK. The trigger is a button named by `aria-label` and the family it holds ("Headline font: Fraunces"); it opens a popover (a dialog) holding a UI SDK Command: a search field (`combobox`) over a `listbox` of the families. Typing searches, the arrow keys move the highlight through the families (which previews them) while focus stays in the search field (`aria-activedescendant`), Enter chooses, and Escape clears the search, then closes the list and returns focus to the trigger. Only the rows on screen are rendered (`createVirtualizer`), but the arrows and Enter reach every family. The category filter is a ToggleGroup of toggle buttons (`aria-pressed`). In a stack, the chips are a `list`; each has a drag handle (a button, one tab stop for all of them) and a remove button. Reordering is UI SDK's `createReorder`: drag a handle, or focus it, press Space or Enter, move with the arrows, and press Space or Enter again to drop (Escape cancels); every step is announced.
 
 | Part | Keys |
 | --- | --- |
 | Trigger | Enter, Space or a press opens the list. |
 | Search | Type to filter; ArrowUp / ArrowDown move through the families (and preview them); Enter chooses; Escape clears, then closes. |
 | Category filter | Arrow keys move between categories; Space or Enter selects. |
-| Stack chips | Arrow keys move between chips and their buttons; on a handle, Enter starts a move, arrows choose the place, Enter drops. |
+| Stack chips | Tab reaches the handles once; arrow keys move between them. On a handle, Space or Enter picks the chip up, arrows (Home, End) choose the place, Space or Enter drops it, Escape cancels; Delete or Backspace removes the chip and focus moves to the next handle (else the one before; with no chip left, to the Add button). |
 
 ## Props
 
@@ -74,35 +74,35 @@ The trigger is a button named by `aria-label` and the family it holds ("Headline
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `value` / `onChange` | — | The family (a name), or `null` for the system font. |
+| `value` / `defaultValue` / `onValueChange(family, details)` | `null` | The family (a name), or `null` for the system font. |
 | `onPreview` | — | The family being previewed (`null`: the system font); `undefined` when the preview ends. |
 | `fonts` | `GOOGLE_FONTS` | The families offered. |
 | `allowSystem` | `true` | Offer the system font first. |
 | `systemLabel` | `System` | What the system font is called. |
 | `defaultCategory` | `all` | The category the filter starts on. |
 | `size` | `default` | `sm` 32px · `default` 44px trigger. |
-| `placement` | `bottom start` | Where the list opens. |
+| `side` / `align` | `bottom` / `start` | Where the list opens. |
 | `aria-label` | `Font` | Names the trigger and the list. |
-| `isDisabled`, `className`, `triggerProps` | — | The trigger button's. |
+| `disabled`, `className`, `triggerProps` | — | The trigger button's. |
 
 ### FontStackPicker
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `value` / `onChange` | — | The families, the one to use first. |
+| `value` / `defaultValue` / `onValueChange(families, details)` | `[]` | The families, the one to use first. `details.reason`: `item-press` / `enter-key` (from the list), `drag` / `move-key` (a reorder), `remove-press` / `delete-key`; `source`, `event` and `cancel()` as on FontPicker (the chips' details are UI SDK's own). |
 | `onPreview` | — | The stack with the hovered family in front; `undefined` when the preview ends. |
 | `maxCount` | `3` | At most this many families. |
-| `fonts`, `defaultCategory`, `placement`, `size` | — | As FontPicker's. |
+| `fonts`, `defaultCategory`, `side`, `align`, `size`, `disabled` | — | As FontPicker's. |
 | `placeholder` | `Add a font` | What the field says while the stack is empty. |
 | `aria-label` | `Font stack` | Names the field and the list. |
 
 ### FontList
 
-`value`, `onChange`, `onPreview`, `fonts`, `allowSystem`, `systemLabel` and `defaultCategory` as FontPicker's, plus `autoFocus` (the search field) and `className`. The list is 288px tall (`h-72`).
+`value`, `defaultValue`, `onValueChange`, `onPreview`, `fonts`, `allowSystem`, `systemLabel` and `defaultCategory` as FontPicker's, plus `autoFocus` (the search field) and `className`. The list is 288px tall (`h-72`).
 
 ## Styling
 
-Slots: `font-picker` (the trigger), `font-stack-picker`, `font-list`, `font-list-items`. A row carries `data-hovered`, `data-focused` and `data-disabled` (an unlisted family Google Fonts doesn't have, or any family once a stack is full); a chip carries `data-dragging` and `data-focus-visible`. The variants are `fontPickerTriggerVariants`, `fontStackPickerVariants` and `fontListItemVariants`.
+Slots: the trigger is UI SDK's `popover-trigger` (marked `data-font-picker`), the list `command` > `command-input` / `command-list` > `command-item`, the stack `font-stack-picker`. A row carries `data-highlighted` (the pointer or the arrow keys are on it) and `data-disabled` (an unlisted family Google Fonts doesn't have, or any family once a stack is full); a chip carries `data-dragging` (while a pointer drags it, translated by `--drag-x` / `--drag-y`) and `data-grabbed` (picked up). The variants are `fontPickerTriggerVariants`, `fontStackPickerVariants` and `fontListItemVariants`.
 
 ## cva recipes
 
@@ -113,7 +113,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/font-picker`. Base classes:
 
 ```text
-h-10 min-h-0 scroll-my-1.5 py-0 data-hovered:bg-accent
+h-10 min-h-0 scroll-my-1.5 py-0 hover:bg-accent
 ```
 
 No variants.
@@ -123,7 +123,7 @@ No variants.
 Defined in `@/components/ui/font-picker`. Base classes:
 
 ```text
-[ 'bl-btn box-border flex w-full cursor-pointer items-center justify-between gap-2 border-0 bg-input px-3 text-left text-foreground outline-none', 'transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy data-pressed:bg-secondary-strong', 'data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 aria-expanded:shadow-[inset_0_0_0_1.5px_var(--primary)]', 'data-disabled:cursor-default data-disabled:opacity-50', ]
+[ 'bl-btn box-border flex w-full cursor-pointer items-center justify-between gap-2 border-0 bg-input px-3 text-left text-foreground outline-none', 'transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy active:bg-secondary-strong', 'focus-visible:ring-[3px] focus-visible:ring-ring/45 aria-expanded:shadow-[inset_0_0_0_1.5px_var(--primary)]', 'data-disabled:cursor-default data-disabled:opacity-50', ]
 ```
 
 **`size`** — default `default`

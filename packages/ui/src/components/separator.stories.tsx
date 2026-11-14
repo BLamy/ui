@@ -16,7 +16,7 @@ export const Horizontal: Story = {
     <div className="flex flex-col gap-3 text-foreground">
       <div className="text-[17px] font-semibold">BL UI</div>
       <Separator />
-      <div className="text-[15px] text-muted-foreground">iOS-flavored primitives on react-aria.</div>
+      <div className="text-[15px] text-muted-foreground">iOS-flavored primitives on UI SDK.</div>
     </div>
   ),
 };
@@ -39,5 +39,14 @@ export const InsetList: Story = {
         </div>
       ))}
     </Card>
+  ),
+};
+
+/** `decorative`: the word already says the two ways are separate, so screen readers skip the lines. */
+export const Decorative: Story = {
+  render: () => (
+    <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
+      <Separator decorative className="w-auto flex-1" />or<Separator decorative className="w-auto flex-1" />
+    </div>
   ),
 };

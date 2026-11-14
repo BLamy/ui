@@ -8,7 +8,7 @@ const answer =
   'edge** only while you are there.\n\n' +
   '- Scroll up mid-reply and following stops.\n- The jump pill rises in and ' +
   'widens to say a reply is streaming.\n- Tap it and the view glides back ' +
-  'to the newest line on a spring — interruptible, so a scroll catches ' +
+  'to the newest line, and a scroll catches ' +
   'it.\n\n' +
   'New turns rise into place rather than appearing, and a thread you open is ' +
   'simply there: nothing replays.\n\n' +
@@ -40,7 +40,7 @@ function UserBubble({ children }: { children: ReactNode }) {
 }
 
 // While `streaming`, the scroller follows the live edge. Scroll up and it lets
-// go; the jump pill rises in ("Streaming ↓"), and tapping it springs the view
+// go; the jump pill rises in ("Streaming ↓"), and tapping it glides the view
 // back down.
 function StreamingJumpPill() {
   const [shown, setShown] = useState(0)

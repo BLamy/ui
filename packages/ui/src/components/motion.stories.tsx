@@ -26,7 +26,7 @@ export const TextMorphLabel: Story = {
     const [i, setI] = useState(0);
     return (
       <div className="flex flex-col items-start gap-4">
-        <Button onPress={() => setI((i + 1) % WORDS.length)}>{WORDS[i]}</Button>
+        <Button onClick={() => setI((i + 1) % WORDS.length)}>{WORDS[i]}</Button>
         <div className="text-[28px] font-bold tracking-[-.4px]"><TextMorph>{WORDS[i]}</TextMorph></div>
       </div>
     );
@@ -43,10 +43,10 @@ export const NumberMorphRoll: Story = {
           <NumberMorph value={v} format={{ style: 'currency', currency: 'USD' }} />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onPress={() => setV((x) => x * 10 + 7)}>×10 + 7</Button>
-          <Button size="sm" variant="secondary" onPress={() => setV((x) => Math.floor(x / 10))}>÷10</Button>
-          <Button size="sm" variant="secondary" onPress={() => setV((x) => x + 1)}>+1</Button>
-          <Button size="sm" variant="secondary" onPress={() => setV((x) => x - 1)}>−1</Button>
+          <Button size="sm" onClick={() => setV((x) => x * 10 + 7)}>×10 + 7</Button>
+          <Button size="sm" variant="secondary" onClick={() => setV((x) => Math.floor(x / 10))}>÷10</Button>
+          <Button size="sm" variant="secondary" onClick={() => setV((x) => x + 1)}>+1</Button>
+          <Button size="sm" variant="secondary" onClick={() => setV((x) => x - 1)}>−1</Button>
         </div>
       </div>
     );
@@ -61,13 +61,13 @@ export const IconsInPlace: Story = {
     const [d, setD] = useState(0);
     return (
       <div className="flex items-center gap-4">
-        <Button variant="secondary" onPress={() => setCopied((c) => !c)}>
+        <Button variant="secondary" onClick={() => setCopied((c) => !c)}>
           <IconSwap id={copied ? 'check' : 'copy'}>
             <Icon name={copied ? 'check' : 'layers'} size={18} sw={2.2} />
           </IconSwap>
           <TextMorph>{copied ? 'Copied' : 'Copy'}</TextMorph>
         </Button>
-        <Button variant="secondary" aria-label="Turn" onPress={() => setD((x) => (x + 1) % 4)}>
+        <Button variant="secondary" aria-label="Turn" onClick={() => setD((x) => (x + 1) % 4)}>
           <Chevron direction={dirs[d]} />
         </Button>
       </div>
@@ -98,8 +98,8 @@ export const TrayHeight: Story = {
           </ContentSwap>
         </AnimatedHeight>
         <div className="flex gap-2 px-4 pb-4">
-          <Button variant="secondary" isDisabled={step === 0} onPress={() => setStep(step - 1)}>Back</Button>
-          <Button className="flex-1" onPress={() => setStep((step + 1) % STEPS.length)}>{step === STEPS.length - 1 ? 'Confirm' : 'Continue'}</Button>
+          <Button variant="secondary" disabled={step === 0} onClick={() => setStep(step - 1)}>Back</Button>
+          <Button className="flex-1" onClick={() => setStep((step + 1) % STEPS.length)}>{step === STEPS.length - 1 ? 'Confirm' : 'Continue'}</Button>
         </div>
       </div>
     );
@@ -113,7 +113,7 @@ export const CelebrateBurst: Story = {
     return (
       <div className="grid place-items-center py-10">
         <span className="relative isolate">
-          <Button size="lg" onPress={() => setN((x) => x + 1)}>Back up wallet</Button>
+          <Button size="lg" onClick={() => setN((x) => x + 1)}>Back up wallet</Button>
           <Celebrate fire={n} />
         </span>
       </div>

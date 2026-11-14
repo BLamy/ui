@@ -34,8 +34,8 @@ export function TestsTab({ project }: { project: Project }) {
         {PLAYWRIGHT_TESTS.map((t) => (
           <li key={t.id} className="border-b border-border last:border-b-0">
             <Pressable aria-current={wide && t.id === selected ? 'true' : undefined}
-              onPress={() => (wide ? setSelected(t.id) : qa.open({ kind: 'test', id: t.id }))}
-              className="flex w-full cursor-pointer items-start justify-start gap-3 rounded-none px-4 py-3 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-100 data-focus-visible:ring-inset aria-[current=true]:bg-primary/8!">
+              onClick={() => (wide ? setSelected(t.id) : qa.open({ kind: 'test', id: t.id }))}
+              className="flex w-full cursor-pointer items-start justify-start gap-3 rounded-none px-4 py-3 text-left whitespace-normal hover:bg-muted! active:not-aria-expanded:not-data-disabled:scale-100 focus-visible:ring-inset aria-[current=true]:bg-primary/8!">
               <Icon name={STATE[t.status].icon} size={14} sw={2.6} className={cn('mt-0.5 shrink-0', t.status === 'passing' ? 'text-success' : t.status === 'failing' ? 'text-destructive' : 'text-warning')} />
               <span className="min-w-0 flex-1">
                 <span className="block text-[13.5px] leading-[18px] font-medium">{t.name}</span>
@@ -55,12 +55,13 @@ export function TestsTab({ project }: { project: Project }) {
 function FromBug({ id }: { id: string }) {
   const qa = useLoopQA();
   const bug = qa.bugs.find((b) => b.id === id);
-  const link = (
-    <Button size="sm" variant="ghost" className="h-7 rounded-md px-2 text-[12.5px]" onPress={() => qa.open({ kind: 'bug', id })}>
-      From <span className="font-mono">{id}</span><Icon name="chevron-right" size={12} sw={2.4} />
-    </Button>
+  const button = { size: 'sm', variant: 'ghost', className: 'h-7 rounded-md px-2 text-[12.5px]', onClick: () => qa.open({ kind: 'bug', id }) } as const;
+  const label = <>From <span className="font-mono">{id}</span><Icon name="chevron-right" size={12} sw={2.4} /></>;
+  return (
+    <span className="ml-auto flex">
+      {bug ? <BugPreview bug={bug} align="end" render={<Button {...button} />}>{label}</BugPreview> : <Button {...button}>{label}</Button>}
+    </span>
   );
-  return <span className="ml-auto flex">{bug ? <BugPreview bug={bug} placement="bottom end">{link}</BugPreview> : link}</span>;
 }
 
 export function TestSource({ test: t }: { test: PlaywrightTest }) {

@@ -20,12 +20,13 @@ function mockUpload(_file: File, { signal, onProgress }: UploadContext) {
   })
 }
 
-// `pasteable` takes images and files from the clipboard (⌘V / Ctrl+V) while
-// the zone's button has focus: copy a screenshot, focus "Browse files", paste.
+// The zone takes images and files pasted from the clipboard (⌘V / Ctrl+V)
+// while focus is inside it: copy a screenshot, focus "Browse files", paste.
+// `pasteTarget="document"` would take pastes anywhere on the page.
 export default function Paste() {
   return (
     <div className="mx-auto w-full max-w-md">
-      <FileUpload pasteable accept={['image/*']} upload={mockUpload}>
+      <FileUpload accept={['image/*']} upload={mockUpload}>
         <FileDropZone
           size="compact"
           icon="photo"

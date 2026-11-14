@@ -52,7 +52,7 @@ function ContactsList() {
               key={letter}
               title={letter}
               sticky
-              innerRef={(el) => {
+              ref={(el) => {
                 sections.current[letter] = el
               }}
             >
@@ -68,7 +68,7 @@ function ContactsList() {
                       </>
                     }
                     divider={i < byLetter[letter].length - 1}
-                    onPress={() => {}}
+                    onClick={() => {}}
                   />
                 )
               })}

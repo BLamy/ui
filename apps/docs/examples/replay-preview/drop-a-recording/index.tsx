@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button'
 import { FileDropZone, FileUploadButton } from '@/components/ui/file-upload'
 import { ReplayPreview, getReplayMeta, replayDemoEvents, type ReplayEvent } from '@/components/ui/replay-preview'
 import { Icon } from '@/lib/icon'
-import type { FileEntry } from '@/lib/file-upload-model'
 
 // Drop an rrweb recording (.rrweb, .json, or either gzipped) on the frame and it
 // plays. Drop another on the player to swap it. No file at hand? Download the
@@ -41,14 +40,14 @@ export default function DropARecording() {
   const [recording, setRecording] = useState<{ name: string; events: ReplayEvent[]; id: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const load = async ([entry]: FileEntry[]) => {
-    if (!entry) return
+  const load = async ([file]: File[]) => {
+    if (!file) return
     try {
-      const events = await readRecording(entry.file)
-      setRecording((r) => ({ name: entry.file.name, events, id: (r?.id ?? 0) + 1 }))
+      const events = await readRecording(file)
+      setRecording((r) => ({ name: file.name, events, id: (r?.id ?? 0) + 1 }))
       setError(null)
     } catch (e) {
-      setError(`${entry.file.name}: ${e instanceof SyntaxError ? 'not JSON.' : (e as Error).message}`)
+      setError(`${file.name}: ${e instanceof SyntaxError ? 'not JSON.' : (e as Error).message}`)
     }
   }
 
@@ -63,16 +62,16 @@ export default function DropARecording() {
         hint=".rrweb or .json, gzipped or not"
         icon="video"
         browseLabel="Choose a recording"
-        isInvalid={!recording && !!error}
+        invalid={!recording && !!error}
         error={error}
         className={recording ? 'block min-h-0 border-0 p-0' : 'min-h-72'}
       >
         {recording
-          ? ({ isDropTarget }) => (
+          ? ({ dragging }) => (
               <div style={{ position: 'relative' }}>
                 {/* A new key remounts the player, so every drop starts from the top. */}
                 <ReplayPreview key={recording.id} events={recording.events} autoplay />
-                {isDropTarget ? (
+                {dragging ? (
                   <div className="absolute inset-0 grid place-items-center rounded-card border-2 border-dashed border-primary bg-background/80 text-subhead font-semibold">
                     Drop to play this recording instead
                   </div>
@@ -91,14 +90,14 @@ export default function DropARecording() {
             <FileUploadButton variant="ghost" size="sm" accept={ACCEPT} multiple={false} onFiles={load}>
               Choose another
             </FileUploadButton>
-            <Button variant="ghost" size="sm" onPress={() => { setRecording(null); setError(null) }}>
+            <Button variant="ghost" size="sm" onClick={() => { setRecording(null); setError(null) }}>
               Clear
             </Button>
           </>
         ) : (
           <>
             <span style={{ flex: 1 }}>No recording handy? Download the demo and drag it in.</span>
-            <Button variant="ghost" size="sm" onPress={downloadDemo}>
+            <Button variant="ghost" size="sm" onClick={downloadDemo}>
               <Icon name="arrow-down" size={14} />
               checkout.rrweb
             </Button>

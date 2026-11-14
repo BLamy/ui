@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
-import { Toaster, createToastQueue } from '@/components/ui/toast'
+import { ToastProvider, ToastRegion, createToaster } from '@/components/ui/toast'
 import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 import { type ComposerAttachment } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
@@ -37,7 +37,7 @@ const seed: ComposerAttachment[] = [
 ]
 
 // The rejection toasts land in this demo's own corner.
-const queue = createToastQueue()
+const queue = createToaster()
 
 // Press + to pick files, drag files from your desktop onto the card, or paste them into the text.
 // Images chip into the draft (click to annotate); other files become tiles — a video's first frame,
@@ -51,7 +51,7 @@ function FilesAndDrop() {
         defaultValue="Here's the repro and the logs ![header.png](attachment:f-shot) — what's going on?"
         maxFileSize={10 * 1024 * 1024}
         maxFiles={8}
-        onSubmit={(markdown, attachments) =>
+        onSubmit={(_markdown, attachments) =>
           setSent(`${attachments.length} file${attachments.length === 1 ? '' : 's'}: ${attachments.map((a) => a.name).join(', ')}`)
         }
       >
@@ -73,11 +73,15 @@ function FilesAndDrop() {
 }
 
 export default function FilesAndDropExample() {
+  const [frame, setFrame] = useState<HTMLDivElement | null>(null)
   return (
     <WorkbenchTheme style={{ padding: 18, position: 'relative' }}>
-      <Toaster queue={queue} inline placement="top" offset={12}>
-        <FilesAndDrop />
-      </Toaster>
+      <div ref={setFrame}>
+        <ToastProvider toaster={queue}>
+          <FilesAndDrop />
+        </ToastProvider>
+        {frame ? <ToastRegion toaster={queue} side="top" offset={12} container={frame} /> : null}
+      </div>
     </WorkbenchTheme>
   )
 }

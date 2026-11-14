@@ -52,12 +52,12 @@ export default function SignaturePad() {
         <Button
           variant="secondary"
           style={{ flex: 1 }}
-          isDisabled={!strokes.length}
-          onPress={() => setStrokes([])}
+          disabled={!strokes.length}
+          onClick={() => setStrokes([])}
         >
           Clear
         </Button>
-        <Button style={{ flex: 1 }} isDisabled={!strokes.length}>
+        <Button style={{ flex: 1 }} disabled={!strokes.length}>
           Accept
         </Button>
       </div>

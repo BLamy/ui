@@ -2,9 +2,10 @@
    Attributes (its props), Layout, Connections (outlet, first responder, actions), Motion and Code; a scene has its
    hooks and its code; a segue, a context, the entry point, a scene's First Responder and Exit each have their own;
    with nothing selected it inspects the storyboard. */
-import { useEffect, useState, type ReactNode } from 'react';
-import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useShortcut, useShortcutHint } from '@ui-sdk/react/shortcuts';
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@ui-sdk/react/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PlainButton } from '@/components/ui/plain-button';
 import { Icon, type IconShape } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -96,42 +97,40 @@ export function Inspector({ onPlay }: { onPlay: () => void }) {
 
   const current = tabs.find((t) => t.id === tabByKind[kind]) ?? tabs[0];
   const setTab = (id: string) => setTabByKind((m) => ({ ...m, [kind]: id }));
-
-  // ⌥⌘1…5 pick a tab, as in Xcode.
-  useEffect(() => {
-    const on = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || !e.altKey) return;
-      const n = Number(e.code.replace('Digit', ''));
-      if (n >= 1 && n <= tabs.length) { e.preventDefault(); setTab(tabs[n - 1].id); }
-    };
-    window.addEventListener('keydown', on);
-    return () => window.removeEventListener('keydown', on);
-  });
+  const root = useRef<HTMLDivElement>(null);
 
   return (
-    <Tabs selectedKey={current.id} onSelectionChange={(k) => setTab(String(k))} className="flex min-h-0 flex-1 flex-col">
-      <TabList aria-label="Inspectors" className="flex h-10 shrink-0 items-center justify-center gap-0.5 border-b border-border px-2">
-        {tabs.map((t, i) => (
-          <Tab
-            key={t.id}
-            id={t.id}
-            aria-label={t.label}
-            className={({ isSelected }) => cn(
-              'grid size-8 cursor-pointer place-items-center rounded-lg text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring data-hovered:text-foreground',
-              isSelected && 'bg-primary/12 text-primary data-hovered:text-primary',
-            )}
-          >
-            <span title={`${t.label} (⌥⌘${i + 1})`}><Icon name={t.icon} shapes={t.shapes} size={17} sw={1.9} /></span>
-          </Tab>
-        ))}
-      </TabList>
+    <Tabs ref={root} value={current.id} onValueChange={(k) => k != null && setTab(k)} className="flex min-h-0 flex-1 flex-col">
+      <TabsList aria-label="Inspectors" className="flex h-10 shrink-0 items-center justify-center gap-0.5 border-b border-border px-2">
+        {tabs.map((t, i) => <InspectorTab key={t.id} tab={t} n={i + 1} root={root} onPick={() => setTab(t.id)} />)}
+      </TabsList>
       {header}
       {tabs.map((t) => (
-        <TabPanel key={t.id} id={t.id} className="bl-scroll min-h-0 flex-1 overflow-y-auto outline-none" shouldForceMount={false}>
+        <TabsPanel key={t.id} value={t.id} className="bl-scroll min-h-0 flex-1 overflow-y-auto outline-none">
           {t.panel}
-        </TabPanel>
+        </TabsPanel>
       ))}
     </Tabs>
+  );
+}
+
+/** A tab, and its ⌥⌘1…5 shortcut, as in Xcode: it works while focus is anywhere in this builder. */
+function InspectorTab({ tab, n, root, onPick }: { tab: TabDef; n: number; root: RefObject<HTMLElement | null>; onPick: () => void }) {
+  const keys = `alt+mod+${n}`;
+  const hint = useShortcutHint(keys);
+  useShortcut(keys, () => onPick(), {
+    when: () => !!root.current?.closest('[data-slot=interface-builder]')?.contains(document.activeElement),
+    description: `${tab.label} inspector`,
+  });
+  return (
+    <TabsTab
+      value={tab.id}
+      aria-label={tab.label}
+      aria-keyshortcuts={hint.ariaKeyshortcuts}
+      className="grid size-8 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-selected:bg-primary/12 data-selected:text-primary"
+    >
+      <span title={`${tab.label} (${hint.text})`}><Icon name={tab.icon} shapes={tab.shapes} size={17} sw={1.9} /></span>
+    </TabsTab>
   );
 }
 
@@ -167,29 +166,29 @@ function NodeHeader({ ctx }: { ctx: NodeCtx }) {
         </span>
         {!isRoot ? (
           <>
-            <DropdownMenu>
-              <PlainButton aria-label="Embed in stack" title="Embed in Stack" className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary hover:text-foreground data-focus-visible:ring-2 data-focus-visible:ring-ring">
+            <DropdownMenu onAction={(k) => b.embed([node.id], k as 'vertical' | 'horizontal' | 'overlay')}>
+              <DropdownMenuTrigger aria-label="Embed in stack" title="Embed in Stack" className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
                 <Icon name="square-on-square" size={13} sw={2.2} />
-              </PlainButton>
-              <DropdownMenuContent aria-label="Embed in" placement="bottom end" onAction={(k) => b.embed([node.id], k as 'vertical' | 'horizontal' | 'overlay')}>
-                <DropdownMenuItem id="vertical">Embed in Vertical Stack</DropdownMenuItem>
-                <DropdownMenuItem id="horizontal">Embed in Horizontal Stack</DropdownMenuItem>
-                <DropdownMenuItem id="overlay">Embed in Overlay Stack</DropdownMenuItem>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem value="vertical">Embed in Vertical Stack</DropdownMenuItem>
+                <DropdownMenuItem value="horizontal">Embed in Horizontal Stack</DropdownMenuItem>
+                <DropdownMenuItem value="overlay">Embed in Overlay Stack</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <IconAction icon="copy" label="Duplicate (⌘D)" onPress={() => b.duplicate([node.id])} />
-            <IconAction icon="trash" label="Delete (⌫)" tone="danger" onPress={() => b.remove([node.id])} />
+            <IconAction icon="copy" label="Duplicate (⌘D)" onClick={() => b.duplicate([node.id])} />
+            <IconAction icon="trash" label="Delete (⌫)" tone="danger" onClick={() => b.remove([node.id])} />
           </>
         ) : null}
       </div>
       <TextInput label="Name" value={node.name ?? ''} placeholder={nodeLabel({ ...node, name: undefined }, b.doc)} onCommit={(v) => ctx.update((n) => ({ ...n, name: v.trim() || undefined }))} />
       {path.length > 1 ? (
         <nav aria-label="Path" className="flex min-w-0 flex-wrap items-center gap-0.5 text-caption2 text-muted-foreground">
-          <PlainButton onPress={() => b.select({ kind: 'scene', scene: scene.id })} className="cursor-pointer rounded border-0 bg-transparent px-0.5 text-muted-foreground outline-none hover:text-primary data-focus-visible:ring-2 data-focus-visible:ring-ring">{scene.name}</PlainButton>
+          <PlainButton onClick={() => b.select({ kind: 'scene', scene: scene.id })} className="cursor-pointer rounded border-0 bg-transparent px-0.5 text-muted-foreground outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring">{scene.name}</PlainButton>
           {path.map((n) => (
             <span key={n.id} className="flex items-center gap-0.5">
               <Icon name="chevron-right" size={9} sw={2.6} />
-              <PlainButton onPress={() => b.selectNode(n.id)} className={cn('max-w-28 cursor-pointer truncate rounded border-0 bg-transparent px-0.5 outline-none hover:text-primary data-focus-visible:ring-2 data-focus-visible:ring-ring', n.id === node.id ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
+              <PlainButton onClick={() => b.selectNode(n.id)} className={cn('max-w-28 cursor-pointer truncate rounded border-0 bg-transparent px-0.5 outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring', n.id === node.id ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
                 {nodeLabel(n, b.doc)}
               </PlainButton>
             </span>
@@ -208,12 +207,12 @@ function MultiHeader({ count }: { count: number }) {
       <span className="text-footnote font-semibold">{count} elements</span>
       <div className="flex flex-wrap gap-1.5">
         {(['vertical', 'horizontal', 'overlay'] as const).map((axis) => (
-          <PlainButton key={axis} onPress={() => b.embed(ids, axis)} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+          <PlainButton key={axis} onClick={() => b.embed(ids, axis)} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
             Embed in {axis === 'vertical' ? 'V' : axis === 'horizontal' ? 'H' : 'Overlay'} Stack
           </PlainButton>
         ))}
-        <PlainButton onPress={() => b.duplicate(ids)} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">Duplicate</PlainButton>
-        <PlainButton onPress={() => b.remove(ids)} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium text-destructive outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">Delete</PlainButton>
+        <PlainButton onClick={() => b.duplicate(ids)} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">Duplicate</PlainButton>
+        <PlainButton onClick={() => b.remove(ids)} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium text-destructive outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">Delete</PlainButton>
       </div>
     </div>
   );

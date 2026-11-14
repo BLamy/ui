@@ -1,107 +1,172 @@
-'use client';
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
-import { springCss } from '@/lib/motion';
+import { announce, sourceOf, type ActionDetails } from '@ui-sdk/core';
+import { rubberBand } from '@ui-sdk/core/gesture';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 
-/* Pull-to-refresh for a scroller at its top: drag down and the content follows (with rubber-band resistance) while a
-   spinner fades in; past the threshold, release holds the content open for the refresh and calls `onRefresh`.
-   The hook writes transforms straight to the content and the spinner during the drag, so React doesn't render per
-   pointer move. */
+/* ══ bindPullToRefresh — pull a scroller down from its top to refresh it ══
+   As a phone's inbox does: the pull resists like a rubber band (UI SDK's `rubberBand`), and letting go past
+   `threshold` runs `onRefresh`, with the pull held open while its Promise is pending. Everything is written on the
+   scroller itself, so nothing re-renders while a finger moves:
+     data-pulling                 a finger is pulling
+     data-pending + aria-busy     a refresh is pending (the pull holds at `threshold`)
+     --pull-distance              how far the pull shows, px (0px with reduced motion)
+     --pull-progress              0..1, reaching 1 at `threshold` (moves with reduced motion too)
+   A pull starts only at the top, from one finger whose first move is down and mostly vertical, outside a nested
+   scroller, so a scroll, a sideways swipe and an inner scroller keep their gestures. The non-passive `touchmove`
+   that lets a pull hold the page still is added only while a touch that can pull is down, so ordinary scrolling
+   never waits on the main thread. The scroller gets `overscroll-behavior-y: contain`, which keeps the browser's own
+   pull to refresh off it. Touch only: `refresh()` on the returned cleanup is the button or key. ══ */
 
-interface Pull { y0: number; x0: number; on: boolean; armed: boolean }
-
-interface Options {
-  /** Called when a pull is released past the threshold. Return a promise to keep the spinner until it settles (it
-   *  always shows for at least a moment). Pull-to-refresh is off without it. */
-  onRefresh?: () => void | Promise<unknown>;
-  /** The scroller the pull starts on (it must be at its top). */
-  scroller: RefObject<HTMLElement | null>;
-  /** The content that follows the finger. */
-  content: RefObject<HTMLElement | null>;
-  /** The spinner that fades in as the pull grows. */
-  spinner: RefObject<HTMLElement | null>;
+/** What `onRefresh` receives. */
+export interface PullToRefreshDetails extends ActionDetails {
+  /** The `touchend` that let go of the pull; undefined for `refresh()` from code. */
+  event?: TouchEvent;
 }
 
-/** The least time the refresh is held open, however fast `onRefresh` finishes. */
-const HOLD_MS = 1100;
-/** How far the content sits while refreshing, px, and the pull (px) past which a release arms a refresh. */
-const HELD = 52;
-const ARM = 54;
+export interface BindPullToRefreshOptions {
+  /** Refreshes the content. Return a Promise to hold the pull open (`data-pending`) until it settles; further
+   *  pulls wait for it. */
+  onRefresh: (details: PullToRefreshDetails) => unknown;
+  /** How far the pull shows, px, before letting go refreshes (the finger travels about twice as far). Default 64. */
+  threshold?: number;
+  /** Whether a pull can't start, and `refresh()` does nothing. Read on every use. */
+  disabled?: () => boolean;
+  /** What screen readers hear once a refresh has been pending for a second. Default "Loading". */
+  pendingAnnouncement?: string;
+}
 
-const report = (e: unknown) => (typeof reportError === 'function' ? reportError(e) : console.error(e));
+/** The cleanup `bindPullToRefresh` returns, with a way to refresh without a gesture. */
+export type PullToRefresh = (() => void) & {
+  /** Refreshes as a pull past the threshold does, from a button or a key. */
+  refresh: () => void;
+};
 
-export function usePullToRefresh({ onRefresh, scroller, content, spinner }: Options) {
-  const pull = useRef<Pull | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
-  const alive = useRef(true);
-  const later = (fn: () => void, ms: number) => {
-    const t = setTimeout(() => { timers.current.delete(t); fn(); }, ms);
-    timers.current.add(t);
+/** How long a refresh is pending before it is announced, ms. */
+const ANNOUNCE_AFTER = 1000;
+
+interface Pull {
+  x: number;
+  y: number;
+  /** The gesture is ours: decided by its first move. */
+  claimed: boolean;
+  /** The content stays put, for someone who prefers reduced motion. */
+  still: boolean;
+  distance: number;
+}
+
+/** Lets a finger pull `scroller` down from its top to refresh it. Returns a cleanup with `refresh()`.
+ *
+ *  ```ts
+ *  list: slot({ bind: (el, { api }) => bindPullToRefresh(el, { onRefresh: () => api.reload() }) })
+ *  ``` */
+export function bindPullToRefresh(scroller: HTMLElement, options: BindPullToRefreshOptions): PullToRefresh {
+  const view = scroller.ownerDocument.defaultView;
+  const threshold = () => options.threshold ?? 64;
+  const reducedMotion = () => prefersReducedMotion(view);
+  let pull: Pull | undefined;
+  let pending = false;
+  let bound = true;
+  let announcing: ReturnType<typeof setTimeout> | undefined;
+
+  const show = (distance: number, still: boolean) => {
+    scroller.style.setProperty('--pull-distance', `${still ? 0 : distance}px`);
+    scroller.style.setProperty('--pull-progress', String(Math.min(1, distance / threshold())));
   };
-  useEffect(() => {
-    alive.current = true;
-    const pending = timers.current;
-    return () => { alive.current = false; pending.forEach(clearTimeout); pending.clear(); };
-  }, []);
 
-  const down = (e: ReactPointerEvent) => {
-    if (!onRefresh || refreshing || e.button) return;
-    if ((scroller.current?.scrollTop ?? 0) > 2) return;
-    pull.current = { y0: e.clientY, x0: e.clientX, on: false, armed: false };
-  };
-
-  const move = (e: ReactPointerEvent) => {
-    const d = pull.current;
-    if (!d) return;
-    const dy = e.clientY - d.y0, dx = e.clientX - d.x0;
-    if (!d.on) {
-      if (dy > 10 && dy > Math.abs(dx) * 1.3 && (scroller.current?.scrollTop ?? 0) <= 1) {
-        d.on = true;
-        try { scroller.current?.setPointerCapture(e.pointerId); } catch { /* no active pointer (synthetic input) */ }
-      } else if (dy < -6) { pull.current = null; return; }
-      else return;
-    }
-    const t = Math.min(110, 56 * Math.log1p(Math.max(0, dy - 10) / 40));
-    const c = content.current, sp = spinner.current;
-    if (c) { c.style.transition = 'none'; c.style.transform = `translateY(${t}px)`; }
-    if (sp) { sp.style.opacity = String(Math.min(1, t / 58)); sp.style.transform = `translateX(-50%) rotate(${t * 3.2}deg) scale(${Math.min(1, 0.5 + t / 90)})`; }
-    d.armed = t > ARM;
-  };
-
-  const end = () => {
-    const d = pull.current;
-    if (!d) return;
-    pull.current = null;
-    if (!d.on) return;
-    const c = content.current, sp = spinner.current;
-    const clearAfter = (ms: number) => later(() => { if (c) { c.style.transition = ''; c.style.transform = ''; } }, ms);
-    if (d.armed) {
-      setRefreshing(true);
-      if (c) { c.style.transition = springCss('transform', 'snappy'); c.style.transform = `translateY(${HELD}px)`; }
-      if (sp) { sp.style.opacity = '1'; sp.style.transform = 'translateX(-50%)'; }
-      // The refresh starts now; the spinner stays for `HOLD_MS` at least, and for as long as a returned promise takes.
-      const held = new Promise<void>((done) => later(done, HOLD_MS));
-      let work: Promise<unknown> = Promise.resolve();
-      try { work = Promise.resolve(onRefresh?.()); } catch (e) { report(e); }
-      void Promise.all([held, work.catch(report)]).then(() => {
-        if (!alive.current) return;
-        setRefreshing(false);
-        if (c) { c.style.transition = springCss('transform', 'smooth'); c.style.transform = 'translateY(0)'; }
-        if (sp) sp.style.opacity = '0';
-        clearAfter(560);
-      });
+  const setPending = (next: boolean) => {
+    pending = next;
+    clearTimeout(announcing);
+    announcing = undefined;
+    if (!bound) return;
+    if (next) {
+      scroller.setAttribute('data-pending', '');
+      scroller.setAttribute('aria-busy', 'true');
+      announcing = setTimeout(
+        () => announce(options.pendingAnnouncement ?? 'Loading', { doc: scroller.ownerDocument }),
+        ANNOUNCE_AFTER,
+      );
     } else {
-      if (c) {
-        c.style.transition = springCss('transform', 'snappy'); c.style.transform = 'translateY(0)';
-        clearAfter(400);
-      }
-      if (sp) sp.style.opacity = '0';
+      scroller.removeAttribute('data-pending');
+      scroller.removeAttribute('aria-busy');
     }
+    show(next ? threshold() : 0, reducedMotion());
   };
 
-  return {
-    refreshing,
-    /** Spread onto the scroller. */
-    bind: { onPointerDown: down, onPointerMove: move, onPointerUp: end, onPointerCancel: end },
+  const refresh = (event?: TouchEvent) => {
+    if (!bound || pending || options.disabled?.()) return;
+    const result = options.onRefresh({ source: event ? sourceOf(event) : 'programmatic', event });
+    if (!result || typeof (result as PromiseLike<unknown>).then !== 'function') return;
+    setPending(true);
+    const settle = () => {
+      if (pending) setPending(false);
+    };
+    (result as PromiseLike<unknown>).then(settle, settle);
   };
+
+  /** A scroller of its own under the finger takes the gesture. */
+  const scrollsInside = (target: EventTarget | null) => {
+    for (let node = target instanceof Element ? target : null; node && node !== scroller; node = node.parentElement) {
+      if (node.scrollHeight > node.clientHeight && /auto|scroll/.test(getComputedStyle(node).overflowY)) return true;
+    }
+    return false;
+  };
+
+  const onMove = (event: TouchEvent) => {
+    const touch = event.touches[0];
+    if (!pull || !touch) return;
+    const down = touch.clientY - pull.y;
+    if (!pull.claimed) {
+      // The first move decides, as it does for the browser: a pull down from the top is ours, anything else its scroll.
+      const pulls = event.cancelable && down > 0 && down >= Math.abs(touch.clientX - pull.x) && scroller.scrollTop <= 0;
+      if (!pulls) {
+        end();
+        return;
+      }
+      pull.claimed = true;
+      scroller.setAttribute('data-pulling', '');
+    }
+    if (event.cancelable) event.preventDefault();
+    pull.distance = rubberBand(down, scroller.clientHeight);
+    show(pull.distance, pull.still);
+  };
+
+  const end = (event?: TouchEvent) => {
+    const ended = pull;
+    pull = undefined;
+    scroller.removeEventListener('touchmove', onMove);
+    if (!ended?.claimed) return;
+    scroller.removeAttribute('data-pulling');
+    show(0, ended.still);
+    if (event?.type === 'touchend' && ended.distance >= threshold()) refresh(event);
+  };
+
+  const onStart = (event: TouchEvent) => {
+    end();
+    const touch = event.touches[0];
+    const starts =
+      event.touches.length === 1 && !pending && !options.disabled?.() && scroller.scrollTop <= 0 && !scrollsInside(event.target);
+    if (!starts || !touch) return;
+    pull = { x: touch.clientX, y: touch.clientY, claimed: false, still: reducedMotion(), distance: 0 };
+    // Only now, for this touch: a non-passive listener makes every scroll wait for the main thread.
+    scroller.addEventListener('touchmove', onMove, { passive: false });
+  };
+  const onEnd = (event: TouchEvent) => end(event);
+
+  const contained = scroller.style.getPropertyValue('overscroll-behavior-y');
+  scroller.style.setProperty('overscroll-behavior-y', 'contain');
+  scroller.addEventListener('touchstart', onStart, { passive: true });
+  scroller.addEventListener('touchend', onEnd);
+  scroller.addEventListener('touchcancel', onEnd);
+
+  const cleanup = () => {
+    end();
+    if (pending) setPending(false);
+    bound = false;
+    scroller.removeEventListener('touchstart', onStart);
+    scroller.removeEventListener('touchend', onEnd);
+    scroller.removeEventListener('touchcancel', onEnd);
+    scroller.style.setProperty('overscroll-behavior-y', contained);
+    scroller.style.removeProperty('--pull-distance');
+    scroller.style.removeProperty('--pull-progress');
+  };
+  return Object.assign(cleanup, { refresh: () => refresh() });
 }

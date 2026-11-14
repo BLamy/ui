@@ -50,10 +50,10 @@ export default function MediaControls() {
           aria-label="Playback position"
           tone="onDark"
           size="sm"
-          minValue={0}
-          maxValue={dur}
+          min={0}
+          max={dur}
           value={pos}
-          onChange={(v) => setPos(v as number)}
+          onValueChange={setPos}
         />
         <div
           style={{
@@ -82,7 +82,7 @@ export default function MediaControls() {
           tone="onDark"
           size="sm"
           value={volume}
-          onChange={(v) => setVolume(v as number)}
+          onValueChange={setVolume}
           style={{ flex: 1 }}
         />
         <Icon name="speaker-high" size={18} />

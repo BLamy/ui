@@ -9,8 +9,7 @@
   ],
   "dependencies": [
     "use-fs",
-    "react-aria-components",
-    "@agent-wasm/core",
+    "@ui-sdk/react",
     "@brett_lamy/docstream",
     "@visual-json/react",
     "@visual-json/yaml"

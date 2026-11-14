@@ -27,8 +27,8 @@ export default function HeaderOptions() {
     >
       <SplitView
         aria-label="Reminders"
-        widthClass="regular"
-        defaultSelection={{ sidebar: 'today' }}
+        sizeClass="regular"
+        defaultValue={{ sidebar: 'today' }}
       >
         <SplitViewSidebar aria-label="Lists" width={240}>
           <SplitViewHeader title="Lists" titleOnScroll />

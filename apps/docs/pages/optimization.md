@@ -4,7 +4,7 @@ Two install paths, one set of source files. This page shows what each costs in a
 
 ## Measured
 
-Numbers from production builds of a fresh shadcn app (`shadcn create --base aria`, Vite 8, Tailwind 4, React 19), gzip level 6, one entry chunk. "Registry" is `npx shadcn add <item>`; "npm" is `npm install @brett_lamy/ui` (3.0.0) with `import '@brett_lamy/ui/styles.css'`. The app imports only what the row says.
+Numbers from production builds of a fresh shadcn app (`shadcn create --base aria`, Vite 8, Tailwind 4, React 19), gzip level 6, one entry chunk. "Registry" is `npx shadcn add <item>`; "npm" is `npm install @brett_lamy/ui` (3.0.0) with `import '@brett_lamy/ui/styles.css'`. The app imports only what the row says. These numbers were measured on 3.0.0, when the parts were built on react-aria-components; 6.0's UI SDK parts have not been re-measured yet, so read them as an order of magnitude.
 
 | App imports | Install | JS (raw / gzip) | CSS (raw / gzip) |
 | --- | --- | --- | --- |
@@ -50,11 +50,11 @@ Start with the registry for a product. Use npm when you want the parts unmodifie
 
   Composer is a family of parts, so lazy-load the module that renders the whole composition (your `PromptBox` component) rather than one part at a time.
 - **Pre-bundle in dev.** Vite discovers dependencies as they are first imported, and a late discovery reloads the page. The docs app lists the TipTap packages in `optimizeDeps.include` for that reason (`apps/docs/vite.config.mts`); do the same for any package Vite reports as newly found.
-- **Chunking.** If one vendor chunk grows, `build.rollupOptions.output.manualChunks` can put `framer-motion` and `react-aria-components` in their own long-cached chunks. Measure before and after: the two are used together by most parts, and splitting them rarely shrinks the total.
+- **Chunking.** If one vendor chunk grows, `build.rollupOptions.output.manualChunks` can put `framer-motion` and `@ui-sdk/react` / `@ui-sdk/core` in their own long-cached chunks. Measure before and after: the two are used together by most parts, and splitting them rarely shrinks the total.
 
 ## Next.js
 
-- **Server and client.** Component modules start with `'use client'` (in both the package and the registry copies), so a server component can import and render them. Props that are functions (`onPress`, `onChange`) have to come from a client component. See [Installation](https://blamy.github.io/ui/#/installation).
+- **Server and client.** Component modules start with `'use client'` (in both the package and the registry copies), so a server component can import and render them. Props that are functions (`onClick`, `onValueChange`) have to come from a client component. See [Installation](https://blamy.github.io/ui/#/installation).
 - **Browser-only parts.** Load anything that touches the browser on first paint with `next/dynamic`:
 
   ```tsx

@@ -2,8 +2,8 @@
    an error page. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
-import { formatBytes } from '@/lib/format-bytes';
+import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import { formatFileSize } from '@ui-sdk/react/file-input';
 import { Icon } from '@/lib/icon';
 import type { TailscalePeer, TailscaleSnapshot } from '@/lib/tailscale';
 import { exitNodeName } from '@/lib/tailscale-exit';
@@ -134,7 +134,7 @@ export function PageView({ page, onNavigate, onVisit }: { page: Page; onNavigate
     );
   }
   return (
-    <Message icon="doc" title="Safari can’t display this file" detail={`${page.title} is ${page.contentType}, ${formatBytes(page.size)}. It was fetched through your tailnet, but there is nothing here that can show it.`} />
+    <Message icon="doc" title="Safari can’t display this file" detail={`${page.title} is ${page.contentType}, ${formatFileSize(page.size)}. It was fetched through your tailnet, but there is nothing here that can show it.`} />
   );
 }
 
@@ -199,9 +199,9 @@ export function ErrorView({ error, address, snapshot, optedOut = false, onRetry 
       {problem === 'failing' && error?.message ? <p data-slot="safari-error-reason" className="m-0 max-w-full text-caption break-words text-foreground/60 select-text">{error.message}</p> : null}
       <Button
         variant="secondary"
-        isDisabled={busy !== null}
+        disabled={busy !== null}
         aria-busy={busy !== null || undefined}
-        onPress={() => {
+        onClick={() => {
           setBusy(problem ? 'connecting' : 'reloading');
           Promise.resolve(onRetry()).finally(() => setBusy(null));
         }}
@@ -274,14 +274,15 @@ export function StartPage({ snapshot, history, totals, onOpen }: {
                 const host = peerHost(p);
                 return (
                   <li key={host} className="contents">
-                    <HoverCardTrigger className="flex w-full">
-                      <Button variant="ghost" onPress={() => onOpen({ url: `http://${host}/` })} aria-label={`${labelOf(host)}, ${host}`}
-                        className="h-auto w-full flex-col gap-1.5 rounded-card p-2 text-foreground">
+                    <HoverCard>
+                      <HoverCardTrigger
+                        render={<Button variant="ghost" onClick={() => onOpen({ url: `http://${host}/` })} aria-label={`${labelOf(host)}, ${host}`}
+                          className="h-auto w-full flex-col gap-1.5 rounded-card p-2 text-foreground" />}>
                         <span className="grid size-14 place-items-center rounded-card bg-secondary text-title font-semibold">{initialOf(host)}</span>
                         <span className="max-w-full truncate text-footnote">{labelOf(host)}</span>
-                      </Button>
-                      <HoverCard><PeerCard peer={p} exitNodeId={snapshot.exitNodeId} /></HoverCard>
-                    </HoverCardTrigger>
+                      </HoverCardTrigger>
+                      <HoverCardContent><PeerCard peer={p} exitNodeId={snapshot.exitNodeId} /></HoverCardContent>
+                    </HoverCard>
                   </li>
                 );
               })}
@@ -297,7 +298,7 @@ export function StartPage({ snapshot, history, totals, onOpen }: {
             <ul className="m-0 flex list-none flex-col overflow-hidden rounded-panel bg-secondary p-0">
               {recent.map((e) => (
                 <li key={e.url} className="contents">
-                  <Button variant="ghost" onPress={() => onOpen({ url: e.url })} className="h-11 justify-start gap-3 rounded-none px-4 text-subhead font-normal text-foreground">
+                  <Button variant="ghost" onClick={() => onOpen({ url: e.url })} className="h-11 justify-start gap-3 rounded-none px-4 text-subhead font-normal text-foreground">
                     <Icon name="clock" size={18} className="shrink-0 text-foreground/70" />
                     <span className="min-w-0 truncate">{e.title || hostOf(e.url)}</span>
                     <span className="ml-auto min-w-0 truncate text-footnote text-foreground/70">{displayAddress(e.url)}</span>
@@ -327,7 +328,7 @@ export function StartPage({ snapshot, history, totals, onOpen }: {
               </div>
             ))}
           </dl>
-          <p className="m-0 text-caption text-foreground/70">{formatBytes(totals.bytes) || '0 B'} received. “Not loaded” counts addresses off your tailnet and files that were too large or over the page’s budget.</p>
+          <p className="m-0 text-caption text-foreground/70">{formatFileSize(totals.bytes)} received. “Not loaded” counts addresses off your tailnet and files that were too large or over the page’s budget.</p>
         </section>
       </div>
     </div>
@@ -340,9 +341,9 @@ function ExitNodeName({ snapshot }: { snapshot: TailscaleSnapshot }) {
   const name = <strong className="font-semibold text-foreground">{peer?.name.split('.')[0] ?? snapshot.exitNodeId}</strong>;
   if (!peer) return name;
   return (
-    <HoverCardTrigger className="inline">
-      <span className="cursor-default underline decoration-foreground/30 decoration-dotted underline-offset-2">{name}</span>
-      <HoverCard placement="top"><PeerCard peer={peer} exitNodeId={snapshot.exitNodeId} /></HoverCard>
-    </HoverCardTrigger>
+    <HoverCard>
+      <HoverCardTrigger render={<button type="button" className="inline cursor-default border-0 bg-transparent p-0 [font:inherit] text-inherit underline decoration-foreground/30 decoration-dotted underline-offset-2 outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring" />}>{name}</HoverCardTrigger>
+      <HoverCardContent side="top"><PeerCard peer={peer} exitNodeId={snapshot.exitNodeId} /></HoverCardContent>
+    </HoverCard>
   );
 }

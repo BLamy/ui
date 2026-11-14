@@ -31,7 +31,6 @@
   ],
   "dependencies": [
     "@agent-wasm/core",
-    "@agent-wasm/tailscale-connect",
-    "react-aria-components"
+    "@agent-wasm/tailscale-connect"
   ]
 }

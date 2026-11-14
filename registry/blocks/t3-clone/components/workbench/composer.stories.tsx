@@ -365,14 +365,14 @@ function PickerFrame({ appearance }: { appearance: Appearance }) {
 }
 const openPicker: Story['play'] = async ({ canvasElement }) => {
   await userEvent.click(within(canvasElement).getByRole('button', { name: /Model:/ }));
-  await waitFor(() => expect(screen.getByRole('grid')).toBeTruthy());
+  await waitFor(() => expect(screen.getByRole('listbox')).toBeTruthy());
 };
 export const ModelPickerOpen: Story = { render: () => <PickerFrame appearance="dark" />, play: openPicker };
 export const ModelPickerOpenLight: Story = { render: () => <PickerFrame appearance="light" />, play: openPicker };
 
 /* the annotate lightbox that opens when an attachment is clicked (PencilKitAnnotator, the default) */
 export const Annotate: Story = {
-  render: () => <Frame><AnnotateLightbox src={SAMPLE_IMG} onClose={() => {}} onSave={() => {}} /></Frame>,
+  render: () => <Frame><AnnotateLightbox src={SAMPLE_IMG} defaultOpen /></Frame>,
 };
 
 /* ── Files: the "+" button, the drop zone, and tiles for every kind of file ── */
@@ -418,7 +418,7 @@ function FilesComposer({ attachments = [], value = '' }: { attachments?: Compose
   );
 }
 
-/** The "+" button (react-aria FileTrigger): pick any files; images chip into the text, others become tiles. */
+/** The "+" button (UI SDK FileInput): pick any files; images chip into the text, others become tiles. */
 export const AddButton: Story = { render: () => <Frame><FilesComposer /></Frame> };
 
 /** Files hovering over the card: the drop overlay springs in (a dragenter + dragover carrying a file). */

@@ -1,7 +1,7 @@
 {
   "name": "sidebar",
   "title": "Sidebar",
-  "description": "Docked, rail, floating or overlay navigation with workspace, search, sections and items.",
+  "description": "Docked, rail, floating or overlay navigation that becomes a contained drawer in a compact provider, with workspace, search, sections and items.",
   "page": "sidebar",
   "exports": [
     "Sidebar",
@@ -16,6 +16,8 @@
     "SidebarTrigger",
     "SidebarInset",
     "SidebarNav",
-    "useSidebar"
+    "useSidebar",
+    "useSidebarCollapsed",
+    "createSidebarController"
   ]
 }

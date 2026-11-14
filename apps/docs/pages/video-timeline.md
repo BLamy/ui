@@ -1,6 +1,6 @@
 # VideoTimeline
 
-A video editor's timeline. A ruler you scrub sits over one lane per track, each behind a header that hides, mutes or locks it. On a lane are clips: drag one along its track or to another track, drag an edge to trim it, and watch the playhead run over them. The main track is **magnetic**: its clips butt end to end, so trimming or removing one closes the gap, and dragging one makes room among the others. Moves and trims land on frames and snap to clip edges and the playhead. It edits a plain `Timeline` value, a model of pure functions you can also drive from code, and the same value plays live in [VideoPreview](https://blamy.github.io/ui/#/video-preview) and renders with [FFmpeg](https://blamy.github.io/ui/#/ffmpeg).
+A video editor's timeline. A ruler you scrub sits over one lane per track, each behind a header that hides, mutes or locks it. On a lane are clips, UI SDK spans (`createSpans`): drag one along its track or to another track, drag an edge to trim it, and watch the playhead run over them. The main track is **magnetic**: its clips butt end to end, so trimming or removing one closes the gap, and dragging one makes room among the others. Moves and trims land on frames and snap to clip edges and the playhead. It edits a plain `Timeline` value, a model of pure functions you can also drive from code, and the same value plays live in [VideoPreview](https://blamy.github.io/ui/#/video-preview) and renders with [FFmpeg](https://blamy.github.io/ui/#/ffmpeg).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -31,7 +31,7 @@ import {
 
 ## An edit
 
-The timeline is controlled. It draws `timeline` and calls `onChange` once per gesture, when the drag ends, so each edit is one undo step: keep the old values and you have undo. A playback clock (`usePlaybackClock`) carries the time it shares with a preview and transport controls. `renderClip` draws a clip's content: a [Filmstrip](https://blamy.github.io/ui/#/filmstrip) for video, a [Waveform](https://blamy.github.io/ui/#/waveform) for sound, a title's text. `clipClassName` tints a kind of clip.
+The timeline edits a `value` (or `defaultValue`) and calls `onValueChange(value, details)` once per gesture, when the drag ends, and once per key, so each edit is one undo step: keep the old values and you have undo. `details` carries UI SDK's `reason` (`drag`, `move-key`, `remove-press` for Delete, `press` for a track toggle, `imperative`), `source` and `cancel()`, plus `id` (the clip, or the track) and `action` (`move`, `resize`, `delete` or `track`). A playback clock (`usePlaybackClock`) carries the time it shares with a preview and transport controls. `renderClip` draws a clip's content: a [Filmstrip](https://blamy.github.io/ui/#/filmstrip) for video, a [Waveform](https://blamy.github.io/ui/#/waveform) for sound, a title's text. `clipClassName` tints a kind of clip.
 
 {% demo src="video-timeline/editor" %}
 
@@ -45,8 +45,8 @@ const [timeline, setTimeline] = useState(start)
 useEffect(() => clock.setDuration(timelineDuration(timeline)), [clock, timeline])
 
 <VideoTimeline
-  timeline={timeline}
-  onChange={setTimeline}
+  value={timeline}
+  onValueChange={setTimeline}
   clock={clock}
   fps={30}
   media={{ beach: { kind: 'video', duration: 12, name: 'Beach' } }}
@@ -54,7 +54,7 @@ useEffect(() => clock.setDuration(timelineDuration(timeline)), [clock, timeline]
 />
 ```
 
-`media` gives each media id its length (a trim can't run past the end of the file; stills have no limit) and the name a clip shows. `selection` / `onSelectionChange` and `zoom` / `onZoomChange` (pixels per second) can be controlled; `fitTimelineZoom(duration, width)` fits an edit to a width. `onDropMedia(id, { trackId, time, index })` reports media dragged in from a library: put `timelineMediaType` on the drag with the media id.
+`media` gives each media id its length (a trim can't run past the end of the file; stills have no limit) and the name a clip shows. `selectedClips` / `defaultSelectedClips` / `onSelectedClipsChange(ids, details)` (reasons `item-press`, `track-press`, `escape-key`, `remove-press`) and `zoom` / `defaultZoom` / `onZoomChange(zoom, details)` (pixels per second, reason `wheel`) can be controlled; `readOnly` shows the edit without letting anything change it; `fitTimelineZoom(duration, width)` fits an edit to a width. `onDropMedia(id, details)` reports media dragged in from a library: put `timelineMediaType` on the drag with the media id. `details` has where it landed (`trackId`, `time` and, on a magnetic track, `index`), the drop's `event` and `source`, and `cancel()` to refuse it. ⌘/Ctrl + wheel zooms with `reason: 'wheel'`; a zoom the host refuses leaves the scroll where it was.
 
 ## The model
 
@@ -83,11 +83,31 @@ Edits are pure: each takes a timeline and returns a new one. `splitClip(tl, id, 
 | Drag a clip | Move it: along a free track, among a magnetic track's clips (they make room), or to another track of its kind. |
 | Drag a clip's edge | Trim it. On a magnetic track the clips after it follow; the playhead follows the edge, so a preview shows that frame. |
 | Hold ⌥ (Alt) while dragging | Place without snapping. |
-| Click or drag the ruler | Move the playhead (it pauses playback and marks the clock as scrubbing). |
+| Click or drag the ruler | Move the playhead (it pauses playback and marks the clock as scrubbing). The ruler is UI SDK's Slider. |
+| Click an empty stretch of a lane | Clear the selection and move the playhead there. |
 | Click a clip; ⇧ or ⌘-click | Select it; add it to the selection or take it out. |
 | ⌘ or Ctrl + wheel, or pinch | Zoom around the pointer. |
 
-From the keyboard, Tab reaches the ruler (a slider: ←/→ a frame, ⇧ a second, Home/End, Page Up/Down ten seconds) and the clips. On a clip, ←/→ nudges it a frame (⇧ a second) or moves it among magnetic clips. Delete removes the selection, Enter selects, Escape clears. A locked track's clips can be selected but not changed.
+From the keyboard, Tab reaches the ruler and then the clips, which are one Tab stop.
+
+| Key | On |  Does |
+| --- | --- | --- |
+| ←/→ | ruler | Move the playhead a frame; ⇧ or Page Up/Down a second; Home/End to either end. |
+| ←/→ | clip | Move it a frame; on a magnetic track, past its neighbour. |
+| ⇧ ←/→ | clip | Move its end a frame (trim). |
+| ⌥ ⇧ ←/→ | clip | Move its start a frame (trim). |
+| ↑/↓ | clip | Move it to the next unlocked track of its kind. |
+| ⌥ + arrow | clip | Focus the clip before or after it, or the nearest one on the track above or below. |
+| Home/End | clip | Focus the track's first or last clip. |
+| Enter or Space | clip | Select it; ⇧ adds it to the selection. |
+| Delete or Backspace | clip | Remove the selection (or this clip). |
+| Escape | clip | Clear the selection; during a drag, put the clip back. |
+
+Every edit is announced ("Beach, Main, 0:03.5 to 0:08.5."). A locked track's clips can be selected but not changed.
+
+## From code and agents
+
+The behavior is a UI SDK primitive, `videoTimeline` in `lib/video-timeline-primitive`. Its api (and the agent bridge) offers `select(ids)`, `move(id, { trackId, start, index })`, `trim(id, 'start' | 'end', time)`, `remove(ids)`, `setTrack(id, { hidden, muted, locked })` and `setZoom(zoom)`, each reported with reason `imperative` (`agent` as the source for an agent).
 
 ## Rendering
 
@@ -102,4 +122,4 @@ From the keyboard, Tab reaches the ruler (a slider: ←/→ a frame, ⇧ a secon
 
 ## Accessibility
 
-The timeline is a group of track groups. Each clip is a button whose name says what it is and where it sits ("Beach, 0:03.5 to 0:08.5"), and `aria-pressed` says whether it's selected. The ruler is a slider whose value text is the timecode. The track toggles are toggle buttons. Thumbnails and waveforms are decorative and hidden from assistive technology.
+The timeline is a group of track groups. Each clip is a button whose name says what it is and where it sits ("Beach, 0:03.5 to 0:08.5"), and `aria-pressed` says whether it's selected; the clips share one Tab stop (UI SDK's roving focus). Moves, trims and removals are announced through UI SDK's live region. The ruler is UI SDK's Slider, named "Playhead", whose value text is the timecode. The track toggles are toggle buttons. Thumbnails and waveforms are decorative and hidden from assistive technology.

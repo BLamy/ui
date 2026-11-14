@@ -11,10 +11,11 @@
    - Double-click a text to edit it where it's drawn, as itself; Return or Esc finishes.
    - Drag the round handle on a selection (or ⌃-drag a node) to another scene for a segue, or from a container to
      embed the scene; drag a dock to move its scene; drag the entry arrow. */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { Canvas, CanvasFrame, CanvasGuides, CanvasMiniMap, useCanvas, type CanvasPointerInfo } from '@/components/ui/canvas';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSection, ContextMenuSeparator, ContextMenuShortcut } from '@/components/ui/context-menu';
-import { snapMove, toBoard, type Camera, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { dragThreshold } from '@ui-sdk/core';
+import { Canvas, CanvasFrame, CanvasGuides, CanvasMiniMap, useCanvas, type CanvasController, type CanvasPointerInfo, type CanvasViewportChangeDetails } from '@/components/ui/canvas';
+import { ContextMenu, ContextMenuContent, ContextMenuGroup, ContextMenuGroupLabel, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { snapMove, toBoard, type Guide, type Pt, type Rect, type Viewport } from '@/lib/canvas-math';
 import { Icon } from '@/lib/icon';
 import type { Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -37,8 +38,8 @@ import { findNode, mapNode, pathTo, placeOf, segueSource, walk as walkTree } fro
 const DOCK_H = 26;
 const DOCK_GAP = 8;
 const HANDLE_PX = 9;
-/** How far (screen px) a press travels before it's a drag. */
-const DRAG_SLOP = 4;
+/** A press is a drag once it travels UI SDK's `dragThreshold` (screen px) along either axis, as `bindDrag` counts it. */
+const dragged = (sp: Pt, sstart: Pt) => Math.abs(sp.x - sstart.x) >= dragThreshold || Math.abs(sp.y - sstart.y) >= dragThreshold;
 
 /** Containers whose handle embeds the scene it's dropped on (a tab, a stack's root, a column), even as a root. */
 const EMBEDS = new Set(['TabView', 'NavigationStack', 'SplitView', 'SceneRef']);
@@ -53,7 +54,7 @@ export const SEGUE_GLYPH: Record<SegueKind, string> = {
 };
 
 type Gesture =
-  | { k: 'scene'; id: string; start: Pt; orig: Pt; began: boolean }
+  | { k: 'scene'; id: string; start: Pt; sstart: Pt; orig: Pt; began: boolean }
   /** A node being dragged. `then`: pressed inside the selection, so a click without a drag selects this. */
   | { k: 'node'; id: string; sstart: Pt; began: boolean; then: At | null }
   /** A segue (or an embed) being dragged out. A ⌃-click that never moves opens the menu instead (`menu`: the
@@ -106,8 +107,10 @@ function textElementIn(root: HTMLElement | null, text: string): HTMLElement | nu
 }
 
 export interface StoryboardProps {
-  camera: Camera;
-  onCameraChange: (c: Camera) => void;
+  viewport: Viewport;
+  onViewportChange: (viewport: Viewport, details: CanvasViewportChangeDetails) => void;
+  /** The editor's zoom menu and navigator drive the canvas through it. */
+  controller: CanvasController;
   appearance: Appearance;
   /** Bump to play the selected scene's appear animations. */
   play: number;
@@ -117,7 +120,7 @@ export interface StoryboardProps {
   timelineScene: string | null;
 }
 
-export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, timelineScene }: StoryboardProps) {
+export function Storyboard({ viewport, onViewportChange, controller, appearance, play, frameAt, timelineScene }: StoryboardProps) {
   const b = useBuilder();
   const { doc, selection } = b;
   const device = DEVICES[doc.device];
@@ -131,13 +134,13 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
   const [focus, setFocus] = useState<At | null>(null);
   const [menu, setMenu] = useState<LayerMenu | null>(null);
   const drag = useLibraryDrag();
-  const z = camera.z;
+  const z = viewport.zoom;
   const index = nodeIndex(doc);
   const patchUi = (p: Partial<Ui>) => setUi((u) => ({ ...u, ...p }));
 
-  /* ── Measuring the rendered nodes (board units survive camera moves; re-measured when content changes) ── */
-  const cam = useRef(camera);
-  cam.current = camera;
+  /* ── Measuring the rendered nodes (board units survive view moves; re-measured when content changes) ── */
+  const cam = useRef(viewport);
+  cam.current = viewport;
   const remeasure = useCallback(() => {
     const el = wrap.current;
     if (!el) return;
@@ -254,7 +257,7 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
   };
 
   /* ── Pointer ── */
-  const onPointerDown = (e: ReactPointerEvent, { board: p, screen: sp }: CanvasPointerInfo) => {
+  const onPointerDown = (e: PointerEvent, { board: p, screen: sp }: CanvasPointerInfo) => {
     finishEdit();
     const near = (q: Pt, px: number) => Math.hypot((q.x - p.x) * z, (q.y - p.y) * z) <= px;
 
@@ -278,7 +281,7 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
         return;
       }
       b.select({ kind: 'scene', scene: s.id });
-      g.current = { k: 'scene', id: s.id, start: p, orig: { x: s.x, y: s.y }, began: false };
+      g.current = { k: 'scene', id: s.id, start: p, sstart: sp, orig: { x: s.x, y: s.y }, began: false };
       return;
     }
     // The entry arrow.
@@ -346,7 +349,7 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
     setUi((u) => (sameAt(u.hover, hit) && u.hoverSegue === seg && u.cursor === cursor ? u : { ...u, hover: hit, hoverSegue: seg, cursor }));
   };
 
-  const onPointerMove = (e: ReactPointerEvent, { board: p, screen: sp }: CanvasPointerInfo) => {
+  const onPointerMove = (e: PointerEvent, { board: p, screen: sp }: CanvasPointerInfo) => {
     const gs = g.current;
     if (!gs) {
       hoverAt.current = { client: { x: e.clientX, y: e.clientY }, p };
@@ -356,7 +359,7 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
     switch (gs.k) {
       case 'scene': {
         if (!gs.began) {
-          if (Math.hypot(p.x - gs.start.x, p.y - gs.start.y) * z < 3) return;
+          if (!dragged(sp, gs.sstart)) return;
           gs.began = true;
           b.begin();
         }
@@ -374,7 +377,7 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
       }
       case 'node': {
         if (!gs.began) {
-          if (Math.hypot(sp.x - gs.sstart.x, sp.y - gs.sstart.y) < DRAG_SLOP) return;
+          if (!dragged(sp, gs.sstart)) return;
           gs.began = true;
         }
         const frame = sceneAt(doc, device, p);
@@ -386,7 +389,7 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
       }
       case 'connect': {
         if (!gs.began) {
-          if (Math.hypot(sp.x - gs.sstart.x, sp.y - gs.sstart.y) < DRAG_SLOP) return;
+          if (!dragged(sp, gs.sstart)) return;
           gs.began = true;
         }
         const s = sceneAt(doc, device, p);
@@ -463,7 +466,7 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
   };
 
   /* ── Double-click: edit a text where it is, as itself (the element it's drawn in becomes editable) ── */
-  const onDoubleClick = (e: ReactMouseEvent, { board: p }: CanvasPointerInfo) => {
+  const onDoubleClick = (e: MouseEvent, { board: p }: CanvasPointerInfo) => {
     const frame = sceneAt(doc, device, p);
     const root = wrap.current;
     if (!frame || !root) return;
@@ -534,7 +537,7 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
   }, [editing]);
 
   /* ── Library drops ── */
-  const libraryTarget = useCallback((d: { x: number; y: number }, docNow: Doc, camNow: Camera): DropTarget | null => {
+  const libraryTarget = useCallback((d: { x: number; y: number }, docNow: Doc, camNow: Viewport): DropTarget | null => {
     const el = wrap.current;
     if (!el) return null;
     const r = el.getBoundingClientRect();
@@ -554,11 +557,11 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
   }, [dropFromLibrary]);
   const [libraryDrop, setLibraryDrop] = useState<DropTarget | null>(null);
   useLayoutEffect(() => {
-    setLibraryDrop(drag ? libraryTarget(drag, doc, camera) : null);
-  }, [drag, doc, camera, libraryTarget]);
+    setLibraryDrop(drag ? libraryTarget(drag, doc, viewport) : null);
+  }, [drag, doc, viewport, libraryTarget]);
 
   /* ── Keys ── */
-  const onKeyDown = (e: ReactKeyboardEvent) => {
+  const onKeyDown = (e: KeyboardEvent) => {
     const mod = e.metaKey || e.ctrlKey;
     const key = e.key.toLowerCase();
     const ids = selection.kind === 'node' ? selection.ids : [];
@@ -627,73 +630,76 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
 
   return (
     <div ref={wrap} data-slot="ib-storyboard" className="absolute inset-0">
-      <ContextMenu
-        className="absolute inset-0"
-        onContextMenu={onContextMenu}
-        onPointerDown={(e) => { lastPointer.current = { x: e.clientX, y: e.clientY }; }}
-        onOpenChange={onMenuOpenChange}
-      >
-        <Canvas
-          camera={camera}
-          onCameraChange={onCameraChange}
-          background="dots"
-          fit={fit}
-          cursor={ui.cursor}
-          aria-label="Storyboard"
-          className="bg-muted"
-          onCanvasPointerDown={onPointerDown}
-          onCanvasPointerMove={onPointerMove}
-          onCanvasPointerUp={onPointerUp}
-          onCanvasDoubleClick={onDoubleClick}
-          onNavigationStart={onNavigationStart}
-          onCanvasKeyDown={onKeyDown}
-          // Every scene in the corner, the one being edited in the tint; press or drag to move the view there.
-          overlay={doc.scenes.length ? (
-            <CanvasMiniMap items={doc.scenes.map((s) => ({ id: s.id, ...sceneRect(s, device), className: primary?.frame === s.id ? 'fill-primary' : undefined }))} />
-          ) : null}
+      <ContextMenu onOpenChange={onMenuOpenChange}>
+        <ContextMenuTrigger
+          className="absolute inset-0"
+          onContextMenu={onContextMenu}
+          onPointerDown={(e) => { lastPointer.current = { x: e.clientX, y: e.clientY }; }}
         >
-          <PreviewContext.Provider value={b.preview}>
-          <RelationLayer rels={[...relGeo.values()]} selected={selectedIds} />
-          <SegueLayer doc={doc} geo={segueGeo} selected={selection.kind === 'segue' ? selection.segue : null} hovered={ui.hoverSegue} />
-          {entryScene ? <EntryArrow path={entryPath(entryScene)} selected={selection.kind === 'entry'} /> : null}
-          {doc.scenes.map((s) => (
-            <SceneFrame
-              key={s.id}
-              scene={s}
-              doc={doc}
-              appearance={appearance}
-              selection={selection}
-              picked={primary?.frame === s.id}
-              play={timelineScene === s.id || (b.scene?.id === s.id) ? play : 0}
-              frameAt={timelineScene === s.id ? frameAt : null}
-              dragging={dragging}
-              editing={editing?.frame === s.id}
-              isEntry={doc.entry === s.id}
-            />
-          ))}
-          </PreviewContext.Provider>
+          <Canvas
+            viewport={viewport}
+            onViewportChange={onViewportChange}
+            controller={controller}
+            background="dots"
+            fit={fit}
+            cursor={ui.cursor}
+            aria-label="Storyboard"
+            className="bg-muted"
+            onCanvasPointerDown={onPointerDown}
+            onCanvasPointerMove={onPointerMove}
+            onCanvasPointerUp={onPointerUp}
+            onCanvasDoubleClick={onDoubleClick}
+            onNavigationStart={onNavigationStart}
+            onCanvasKeyDown={onKeyDown}
+            // Every scene in the corner, the one being edited in the tint; press or drag to move the view there.
+            overlay={doc.scenes.length ? (
+              <CanvasMiniMap items={doc.scenes.map((s) => ({ id: s.id, ...sceneRect(s, device), className: primary?.frame === s.id ? 'fill-primary' : undefined }))} />
+            ) : null}
+          >
+            <PreviewContext.Provider value={b.preview}>
+            <RelationLayer rels={[...relGeo.values()]} selected={selectedIds} />
+            <SegueLayer doc={doc} geo={segueGeo} selected={selection.kind === 'segue' ? selection.segue : null} hovered={ui.hoverSegue} />
+            {entryScene ? <EntryArrow path={entryPath(entryScene)} selected={selection.kind === 'entry'} /> : null}
+            {doc.scenes.map((s) => (
+              <SceneFrame
+                key={s.id}
+                scene={s}
+                doc={doc}
+                appearance={appearance}
+                selection={selection}
+                picked={primary?.frame === s.id}
+                play={timelineScene === s.id || (b.scene?.id === s.id) ? play : 0}
+                frameAt={timelineScene === s.id ? frameAt : null}
+                dragging={dragging}
+                editing={editing?.frame === s.id}
+                isEntry={doc.entry === s.id}
+              />
+            ))}
+            </PreviewContext.Provider>
 
-          {/* Hover and selection: every place a selected node is drawn, the picked one solid. */}
-          {hoverRect ? <HoverFrame rect={hoverRect} /> : null}
-          {selectedIds.map((id) => {
-            const main = rectOf(id);
-            return (m.nodes.get(id) ?? []).map((r, i) => <CanvasFrame key={`${id}-${i}`} frame={{ ...r, rot: 0 }} offset={1} dashed={r !== main} />);
-          })}
-          {primary ? <NameTag doc={doc} at={primary} rect={rectAt(m, primary)} /> : null}
-          {selection.kind === 'scene' || selection.kind === 'responder' || selection.kind === 'exit' ? (
-            <SceneOutline rect={sceneRectOf(doc, selection.scene)} />
-          ) : null}
-          {h && !g.current ? <ConnectHandle at={h.pt} /> : null}
+            {/* Hover and selection: every place a selected node is drawn, the picked one solid. */}
+            {hoverRect ? <HoverFrame rect={hoverRect} /> : null}
+            {selectedIds.map((id) => {
+              const main = rectOf(id);
+              return (m.nodes.get(id) ?? []).map((r, i) => <CanvasFrame key={`${id}-${i}`} frame={{ ...r, rot: 0 }} offset={1} dashed={r !== main} />);
+            })}
+            {primary ? <NameTag doc={doc} at={primary} rect={rectAt(m, primary)} /> : null}
+            {selection.kind === 'scene' || selection.kind === 'responder' || selection.kind === 'exit' ? (
+              <SceneOutline rect={sceneRectOf(doc, selection.scene)} />
+            ) : null}
+            {h && !g.current ? <ConnectHandle at={h.pt} /> : null}
 
-          {/* Gestures */}
-          {drop ? <DropIndicator drop={drop} /> : null}
-          {ui.wire ? <Wire from={ui.wire.from} to={ui.wire.to} target={ui.wire.target ? sceneRectOf(doc, ui.wire.target) : null} /> : null}
-          {ui.entryTo ? <EntryDrag at={ui.entryTo.at} target={ui.entryTo.target ? sceneRectOf(doc, ui.entryTo.target) : null} /> : null}
-          {ui.carry ? <Carry rect={ui.carry.rect} label={ui.carry.label} /> : null}
-          <CanvasGuides guides={ui.guides} />
-        </Canvas>
-        <ContextMenuContent aria-label="Layers under the pointer" popoverClassName="max-w-[320px]">
-          <ContextMenuSection title="Select">
+            {/* Gestures */}
+            {drop ? <DropIndicator drop={drop} /> : null}
+            {ui.wire ? <Wire from={ui.wire.from} to={ui.wire.to} target={ui.wire.target ? sceneRectOf(doc, ui.wire.target) : null} /> : null}
+            {ui.entryTo ? <EntryDrag at={ui.entryTo.at} target={ui.entryTo.target ? sceneRectOf(doc, ui.entryTo.target) : null} /> : null}
+            {ui.carry ? <Carry rect={ui.carry.rect} label={ui.carry.label} /> : null}
+            <CanvasGuides guides={ui.guides} />
+          </Canvas>
+        </ContextMenuTrigger>
+        <ContextMenuContent className="max-w-[320px]">
+          <ContextMenuGroup>
+            <ContextMenuGroupLabel>Select</ContextMenuGroupLabel>
             {(menu?.stack ?? []).map((at) => {
               const e = index.get(at.id);
               if (!e) return null;
@@ -702,29 +708,29 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
               return (
                 <ContextMenuItem
                   key={`${at.id}:${at.k}`}
-                  id={`${at.id}:${at.k}`}
-                  textValue={nodeLabel(e.node, doc)}
+                  value={`${at.id}:${at.k}`}
+                  label={nodeLabel(e.node, doc)}
                   description={owner ? `in ${owner}` : undefined}
                   icon={<Icon name={typeof spec.icon === 'string' ? spec.icon : undefined} shapes={typeof spec.icon === 'string' ? undefined : spec.icon} size={18} sw={1.8} />}
-                  onAction={() => pick(at)}
+                  onSelect={() => pick(at)}
                 >
                   {nodeLabel(e.node, doc)}
                 </ContextMenuItem>
               );
             })}
             {menu ? (
-              <ContextMenuItem id="scene" textValue="Scene" icon={<span style={{ color: DOCK_COLORS.component }}><Icon name="circle-fill" size={16} /></span>} onAction={() => b.select({ kind: 'scene', scene: menu.frame })}>
+              <ContextMenuItem value="scene" label="Scene" icon={<span style={{ color: DOCK_COLORS.component }}><Icon name="circle-fill" size={16} /></span>} onSelect={() => b.select({ kind: 'scene', scene: menu.frame })}>
                 {`Scene “${doc.scenes.find((s) => s.id === menu.frame)?.name ?? ''}”`}
               </ContextMenuItem>
             ) : null}
-          </ContextMenuSection>
+          </ContextMenuGroup>
           <ContextMenuSeparator />
-          <ContextMenuSection>
-            <ContextMenuItem id="copy" isDisabled={!selectedIds.length} onAction={() => b.copy(selectedIds)} shortcut={<ContextMenuShortcut>⌘C</ContextMenuShortcut>}>Copy</ContextMenuItem>
-            <ContextMenuItem id="paste" isDisabled={!b.canPaste} onAction={() => b.paste()} shortcut={<ContextMenuShortcut>⌘V</ContextMenuShortcut>}>Paste</ContextMenuItem>
-            <ContextMenuItem id="duplicate" isDisabled={!selectedIds.length} onAction={() => b.duplicate(selectedIds)} shortcut={<ContextMenuShortcut>⌘D</ContextMenuShortcut>}>Duplicate</ContextMenuItem>
-            <ContextMenuItem id="delete" variant="destructive" isDisabled={!selectedIds.length || selectedIds.every(isRoot)} onAction={() => b.remove(selectedIds)} shortcut={<ContextMenuShortcut>⌫</ContextMenuShortcut>}>Delete</ContextMenuItem>
-          </ContextMenuSection>
+          <ContextMenuGroup>
+            <ContextMenuItem value="copy" disabled={!selectedIds.length} onSelect={() => b.copy(selectedIds)} shortcut="mod+c">Copy</ContextMenuItem>
+            <ContextMenuItem value="paste" disabled={!b.canPaste} onSelect={() => b.paste()} shortcut="mod+v">Paste</ContextMenuItem>
+            <ContextMenuItem value="duplicate" disabled={!selectedIds.length} onSelect={() => b.duplicate(selectedIds)} shortcut="mod+d">Duplicate</ContextMenuItem>
+            <ContextMenuItem value="delete" destructive disabled={!selectedIds.length || selectedIds.every(isRoot)} onSelect={() => b.remove(selectedIds)} shortcut="Backspace">Delete</ContextMenuItem>
+          </ContextMenuGroup>
         </ContextMenuContent>
       </ContextMenu>
     </div>

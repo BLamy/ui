@@ -38,9 +38,22 @@ import { Avatar, AvatarGroup } from '@brett_lamy/ui'
 <Avatar name="Ada" src="/ada.png" />
 ```
 
+## Image and fallback
+
+With no children an Avatar renders an `AvatarImage` for `src` and an `AvatarFallback` with the initials or the `icon`. The image covers the avatar once it has loaded; the fallback shows until then, and instead of it if it fails. Pass the parts yourself for another image (a `srcSet`, lazy loading) or fallback; `AvatarFallback`'s `delay` waits before showing it, so a fast image never flashes the initials:
+
+```tsx
+<Avatar name="Ada">
+  <AvatarImage src="/ada.png" srcSet="/ada@2x.png 2x" loading="lazy" />
+  <AvatarFallback delay={300}>AL</AvatarFallback>
+</Avatar>
+```
+
+`onLoadingStatusChange` on the Avatar reports the image's status.
+
 ## AvatarGroup
 
-`AvatarGroup` wraps `Avatar`s, overlaps them (`overlap` px, 28% of the size by default) and rings each in the surface colour. Past `max` (5 by default) the rest fold into a `+N` bubble. Pressing the group opens a menu listing everyone — avatar and name — and `onSelect` receives the position of the one chosen. `menu={false}` leaves a plain stack.
+`AvatarGroup` wraps `Avatar`s, overlaps them (`overlap` px, 28% of the size by default) and rings each in the surface colour. Past `max` (5 by default) the rest fold into a `+N` bubble. Pressing the group opens a menu listing everyone — avatar and name — and `onSelect` receives the position of the one chosen. `menu={false}` leaves a plain stack. Avatars with a `card` keep it only in a plain stack: inside the menu's button they would be buttons in a button, and the menu lists everyone anyway.
 
 {% demo src="avatar/group" %}
 
@@ -52,7 +65,7 @@ import { Avatar, AvatarGroup } from '@brett_lamy/ui'
 
 ## Accessibility
 
-The initials are the only content and the `span` has no role or label. In a row that also shows the person's name, the avatar is decoration and the name carries the meaning. If it is the only thing identifying someone, pass `aria-label` (the avatar then gets `role="img"`). A pressable `AvatarGroup` is one button named "N people" (set `label`), and its menu is a react-aria menu: arrow keys, typeahead, Esc and focus return come with it.
+The initials are the only content and the `span` has no role or label. In a row that also shows the person's name, the avatar is decoration and the name carries the meaning. If it is the only thing identifying someone, pass `aria-label` (the avatar then gets `role="img"`). With a `card`, the avatar is a button named after the person (UI SDK's interactive avatar): it is in the Tab order, and keyboard focus opens the card after the same delay as the pointer; Esc closes it. The presence dot is an `img` named by its status in words ("Online", "Idle", "Do not disturb", "Offline"). A stack without a menu is a `group` named "N people" unless you set `label`. The image (`AvatarImage`) is decorative (`alt=""`) unless you give it `alt`. A pressable `AvatarGroup` is one button named "N people" (set `label`) that opens a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu): arrow keys, typeahead, Esc and focus return come with it.
 
 ## Props
 
@@ -69,7 +82,8 @@ The initials are the only content and the `span` has no role or label. In a row 
 | `shape` | `circle` | `square` for a rounded square (radius 30% of the size). |
 | `status` | — | `online`, `idle`, `dnd` or `offline`: a presence dot on the lower right. |
 | `size` | `40` | Width and height in px; font size is `size × 0.38`. |
-| `card` | — | A [HoverCard](https://blamy.github.io/ui/#/hover-card)'s content about them (`HoverCardHeader` and a line or two), shown while the pointer rests on the avatar. |
+| `card` | — | A [HoverCard](https://blamy.github.io/ui/#/hover-card)'s content about them (`HoverCardHeader` and a line or two), shown while the pointer rests on the avatar or keyboard focus stays on it. The avatar becomes a button. |
+| `children` | — | Your own `AvatarImage` and `AvatarFallback`, in place of the ones made from `src`, `icon` and the name. |
 | `className` / `style` | — | Merged onto the `span`; `style` is applied after the computed size and gradient, so it can override them. |
 
 With `c`, both names are required: `f[0]` and `l[0]` are read directly, so an empty string yields a missing initial.
@@ -88,7 +102,7 @@ With `c`, both names are required: `f[0]` and `l[0]` are read directly, so an em
 
 ## Styling
 
-The root has `data-slot="avatar"` (the dot is `avatar-status`, the `+N` bubble `avatar-overflow`, the group `avatar-group`). The size, font size, corner radius and gradient (`hsl` hue from the name, lighter at the top; or from `color`) are computed per render and set as the CSS variables `--avatar-size`, `--avatar-font`, `--avatar-radius` and `--avatar-bg`; everything else is classes. Override the gradient with `style`, not a background class. `avatarVariants`, `avatarStatusVariants` and `avatarGroupVariants` are exported.
+The root is UI SDK's Avatar, with `data-slot="avatar"` and `data-loading-status` (`idle`, `loading`, `loaded` or `error`) for its image; the image is `avatar-image` and the fallback `avatar-fallback`. The dot is `avatar-status` (with `data-status`), the `+N` bubble is an avatar with `data-overflow`, and a stack without a menu is `avatar-group` (with a menu, the group is the menu's trigger). The size, font size, corner radius and gradient (`hsl` hue from the name, lighter at the top; or from `color`) are computed per render and set as the CSS variables `--avatar-size`, `--avatar-font`, `--avatar-radius` and `--avatar-bg`; everything else is classes. Override the gradient with `style`, not a background class. `avatarVariants`, `avatarStatusVariants` and `avatarGroupVariants` are exported.
 
 ## cva recipes
 

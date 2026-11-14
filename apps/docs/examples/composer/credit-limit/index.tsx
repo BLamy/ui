@@ -55,9 +55,9 @@ function CreditLimit() {
             <Progress
               aria-label="Project credit limit"
               value={used}
-              minValue={0}
-              maxValue={limit}
-              valueLabel={`${used} of ${limit} credits`}
+              min={0}
+              max={limit}
+              getValueLabel={() => `${used} of ${limit} credits`}
               size="sm"
               tone={tone}
               className="min-w-0 flex-1"
@@ -70,7 +70,7 @@ function CreditLimit() {
               variant="secondary"
               className="h-6 rounded-md px-2 text-caption"
               aria-label={`Increase the limit by ${STEP}`}
-              onPress={() => setLimit((l) => l + STEP)}
+              onClick={() => setLimit((l) => l + STEP)}
             >
               +{STEP}
             </Button>

@@ -35,8 +35,8 @@ function RunRow({ run: r }: { run: Run }) {
   return (
     <li className="border-b border-border last:border-b-0">
       <Pressable
-        onPress={() => qa.open({ kind: 'run', id: r.id })}
-        className="grid w-full cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-x-3.5 gap-y-1 rounded-none px-4 py-3 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-100 data-focus-visible:ring-inset @3xl:grid-cols-[auto_1fr_150px_110px_auto]!"
+        onClick={() => qa.open({ kind: 'run', id: r.id })}
+        className="grid w-full cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-x-3.5 gap-y-1 rounded-none px-4 py-3 text-left whitespace-normal hover:bg-muted! active:not-aria-expanded:not-data-disabled:scale-100 focus-visible:ring-inset @3xl:grid-cols-[auto_1fr_150px_110px_auto]!"
       >
         <RunRing run={r} size={34} />
         <span className="min-w-0">
@@ -107,9 +107,9 @@ export function RunCard({ runId, compact, className, footer }: { runId: string; 
   return (
     <div data-run-status={r.status} className={cn('overflow-hidden rounded-card border border-border bg-card', r.status === 'running' && 'shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_10%,transparent)]', className)}>
       <Pressable
-        onPress={() => qa.open({ kind: 'run', id: r.id })}
+        onClick={() => qa.open({ kind: 'run', id: r.id })}
         aria-label={`Open run ${r.title}`}
-        className={cn('flex w-full cursor-pointer items-center justify-start gap-3 rounded-none text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-100 data-focus-visible:ring-inset', compact ? 'p-3' : 'p-4')}
+        className={cn('flex w-full cursor-pointer items-center justify-start gap-3 rounded-none text-left whitespace-normal hover:bg-muted! active:not-aria-expanded:not-data-disabled:scale-100 focus-visible:ring-inset', compact ? 'p-3' : 'p-4')}
       >
         <RunRing run={r} size={compact ? 38 : 46} />
         <span className="min-w-0 flex-1">

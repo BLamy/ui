@@ -52,7 +52,17 @@ const pkgVersions = (() => {
   // The ui package's optional peers (the PGlite engine) are installed as ordinary dependencies by a registry item, at the peer range.
   return { ...registry.dependencies, ...ui.peerDependencies, ...ui.dependencies, ...root.devDependencies, ...root.dependencies };
 })();
-export const npmVersion = (name) => pkgVersions[name];
+/** The version a consumer installs. A workspace alias (the UI SDK fork, imported under upstream's names) becomes the
+ *  npm alias pnpm publishes it as: `workspace:@brett_lamy/ui-sdk-core@*` → `npm:@brett_lamy/ui-sdk-core@<version>`. */
+export const npmVersion = (name) => {
+  const spec = pkgVersions[name];
+  const alias = /^workspace:(@?[^@]+)@/.exec(spec ?? '');
+  if (!alias) return spec;
+  const dir = readdirSync(abs('packages')).find((d) => {
+    try { return readJson(`packages/${d}/package.json`).name === alias[1]; } catch { return false; }
+  });
+  return `npm:${alias[1]}@${readJson(`packages/${dir}/package.json`).version}`;
+};
 
 /** Real import specifiers of a file (TypeScript's scanner, so strings in sample data don't count). */
 export function importsOf(path) {

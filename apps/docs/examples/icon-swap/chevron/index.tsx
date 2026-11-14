@@ -14,7 +14,7 @@ export default function ChevronDemo() {
       <Button
         variant="ghost"
         aria-expanded={open}
-        onPress={() => setOpen((o) => !o)}
+        onClick={() => setOpen((o) => !o)}
       >
         <Chevron direction={open ? 'down' : 'right'} size={16} />
         Advanced options
@@ -26,7 +26,7 @@ export default function ChevronDemo() {
             key={d}
             size="sm"
             variant={d === dir ? 'default' : 'secondary'}
-            onPress={() => setDir(d)}
+            onClick={() => setDir(d)}
           >
             {d}
           </Button>

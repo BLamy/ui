@@ -25,8 +25,9 @@
    clear it; choosing "None: your devices only" is remembered, and then a public address shows why it fails, and Try Again
    turns an exit node back on. Try Again also swaps an offline or failing exit node for another online one. With no online
    exit node a public address fails with an explanation. */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useContainerSize } from '@/lib/container';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { shortcuts, useShortcut } from '@ui-sdk/react/shortcuts';
+import { useSizeClass } from '@/lib/container';
 import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { webStorageTailscalePersistence, type Tailscale, type TailscaleOptions } from '@/lib/tailscale';
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect';
@@ -69,9 +70,6 @@ export { exitNodesFor };
 /** Where pages run, under the router's scope: `<scope>__tailnet/https/example.com/`. */
 const PROXY_PATH = '__tailnet/';
 
-/** Narrower than this the tab strip steps aside for the tab overview. */
-const COMPACT_W = 560;
-
 function Browser({ initialUrls }: { initialUrls?: string[] }) {
   // Subscribes to the connection: the gate is shown whenever it is not `connected`.
   const tailscale = useTailscale();
@@ -103,9 +101,25 @@ function Browser({ initialUrls }: { initialUrls?: string[] }) {
   }
   useEffect(() => { if (!connected) exitNodes.reset(); }, [connected, exitNodes]);
   const [overview, setOverview] = useState(false);
-  const [sizeRef, size] = useContainerSize<HTMLDivElement>();
+  // Compact (Safari's BLProvider measures its box, as it does for the popups inside): the tab strip steps aside for the
+  // tab overview.
+  const [, sizeClass] = useSizeClass();
+  const compact = sizeClass === 'compact';
   const addressRef = useRef<HTMLInputElement>(null);
-  const compact = size.width < COMPACT_W;
+  // Focus starts in the gate when it comes back (signing out), not on the first visit, where it would take focus from
+  // the page around the block.
+  const [wasConnected, setWasConnected] = useState(false);
+  if (connected && !wasConnected) setWasConnected(true);
+
+  // ⌘L, ⌘R, ⌘[ and ⌘] (Ctrl elsewhere) while focus is in this Safari: a scope of its own, so two on a page don't share
+  // them. The gate, a modal in Safari's host, pauses them.
+  const scope = `safari-${useId()}`;
+  useEffect(() => () => shortcuts.setScope(scope, false), [scope]);
+  const keys = { scope, allowInInput: true };
+  useShortcut('mod+l', () => addressRef.current?.focus(), { ...keys, description: 'Open location' });
+  useShortcut('mod+r', () => browser.reload(), { ...keys, description: 'Reload page' });
+  useShortcut('mod+[', () => browser.back(), { ...keys, description: 'Back' });
+  useShortcut('mod+]', () => browser.forward(), { ...keys, description: 'Forward' });
   const { tab } = browser;
   const entry = tab.history[tab.index];
   const history = useMemo(() => browser.state.tabs.flatMap((t) => t.history), [browser.state.tabs]);
@@ -130,21 +144,14 @@ function Browser({ initialUrls }: { initialUrls?: string[] }) {
 
   return (
     <div
-      ref={sizeRef}
       data-slot="safari"
       data-status={snapshot.status}
       className="absolute inset-0 flex flex-col"
-      onKeyDown={(e) => {
-        if (!(e.metaKey || e.ctrlKey)) return;
-        if (e.key === 'l') { e.preventDefault(); addressRef.current?.focus(); }
-        else if (e.key === 'r') { e.preventDefault(); browser.reload(); }
-        else if (e.key === '[') { e.preventDefault(); browser.back(); }
-        else if (e.key === ']') { e.preventDefault(); browser.forward(); }
-      }}
+      onFocus={() => shortcuts.setScope(scope, true)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) shortcuts.setScope(scope, false); }}
     >
-      {/* Behind the gate nothing can be reached by pointer, keyboard or screen reader. */}
-      <div inert={!connected} aria-hidden={!connected} className="relative flex min-h-0 flex-1 flex-col">
-        <Toolbar browser={browser} snapshot={snapshot} history={history} totals={browser.state.totals} inputRef={addressRef} overview={overview} onOverview={() => setOverview((o) => !o)} compact={compact} onExitNode={chooseExitNode} />
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <Toolbar browser={browser} snapshot={snapshot} history={history} totals={browser.state.totals} inputRef={addressRef} overview={overview} onOverviewChange={setOverview} compact={compact} onExitNode={chooseExitNode} />
         {!compact && browser.state.tabs.length > 1 ? <TabStrip browser={browser} /> : null}
         <main className="relative min-h-0 flex-1 bg-background" aria-busy={tab.status === 'loading'}>
           {tab.status === 'start' ? <StartPage snapshot={snapshot} history={history} totals={browser.state.totals} onOpen={open} />
@@ -154,7 +161,8 @@ function Browser({ initialUrls }: { initialUrls?: string[] }) {
           {overview ? <TabOverview browser={browser} onDone={() => setOverview(false)} /> : null}
         </main>
       </div>
-      {!connected ? <Gate /> : null}
+      {/* While it is up, the browser behind it is inert: not reachable by pointer, keyboard or screen reader. */}
+      <Gate open={!connected} initialFocus={wasConnected ? 'auto' : 'none'} finalFocus={() => addressRef.current} />
     </div>
   );
 }

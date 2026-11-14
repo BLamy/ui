@@ -1,398 +1,565 @@
 'use client';
 import {
-  use, useEffect, useLayoutEffect, useRef, useState,
-  type CSSProperties, type ReactNode,
+  Children, createContext, Fragment, isValidElement, use, useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore,
+  type ComponentProps, type CSSProperties, type ReactElement, type ReactNode,
 } from 'react';
-import { Button as AriaButton } from 'react-aria-components';
+import { createParts, usePart, usePrimitive } from '@ui-sdk/react/primitive';
 import { Icon } from '@/lib/icon';
 import { chromeStore, BLSafeCtx, BLStickyCtx } from '@/lib/theme';
 import { cn, BARH } from '@/lib/utils';
-import { springCss } from '@/lib/motion';
-import { armBackHistory, useBackHistory } from '@/lib/back-history';
-import { useEdgeSwipe } from '@/lib/edge-swipe';
-import { usePullToRefresh } from '@/lib/pull-to-refresh';
-import { backLabel, pushedTitle, shownTitle, useTitleFlight, type ActiveFlight, type TitleParts } from '@/lib/title-flight';
+import { SizeClassProvider } from '@/lib/container';
+import type { SizeClass } from '@/lib/size-class';
+import type { Stack } from '@/lib/stack';
+import {
+  createNavigationStackController,
+  navigationStack,
+  type NavigationStackChangeDetails,
+  type NavigationStackChangeOptions,
+  type NavigationStackController,
+  type NavigationStackOptions,
+  type NavigationStackPageState,
+  type NavigationStackReason,
+  type NavigationStackSwipe,
+} from '@/lib/navigation-stack-primitive';
+import { backLabel, createTitleFlight, pushedTitle, shownTitle, type TitleParts } from '@/lib/title-flight';
 import { Spinner } from '@/components/ui/spinner';
 import { useSplitViewBack } from '@/components/ui/split-view';
 
-/** Screen descriptor consumed by NavigationStack. */
-export interface Screen {
-  key: string;
+export { createNavigationStackController };
+export type {
+  NavigationStackChangeDetails, NavigationStackChangeOptions, NavigationStackController, NavigationStackPageState,
+  NavigationStackReason,
+};
+
+/* ══ NavigationStack — iOS's navigation controller ══
+   A stack of pages in its own box: push slides a page in from the trailing edge over the one under it, which
+   parallaxes back under a shade; pop reverses it. The back button names the page behind (the previous title when it
+   fits beside the centered title, "Back" when only a sliver is left, else the chevron alone) and its title flies
+   into it on a push, and back on a pop. Escape, the platform back and a swipe from the leading edge pop the
+   innermost stack first; focus goes into a pushed page and back to what pushed it. Large titles collapse into the bar
+   on scroll, the bar rides away as the content scrolls down (with any TabBar, through the shared chrome state), and
+   a page can pull to refresh. Built on the `navigationStack` primitive (lib/navigation-stack-primitive.ts).
+
+   <NavigationStack pages={pages} onPagesChange={setPages}>
+     <NavigationStackPage value="list">
+       <NavigationStackBar><NavigationStackTitle>Contacts</NavigationStackTitle></NavigationStackBar>
+       <NavigationStackContent><NavigationStackLargeTitle /> …rows</NavigationStackContent>
+     </NavigationStackPage>
+     {sel && <NavigationStackPage value="detail">…</NavigationStackPage>}
+   </NavigationStack>
+
+   Pages are the stack's direct children (or in fragments and arrays), each with a `value`. Render every page that is
+   in `pages`; a page dropped from the children while it pops is kept on screen until it has slid out. ══ */
+
+const {
+  Page, Bar, Title, Back, Leading, Trailing, Content, LargeTitle, Subheader, RefreshIndicator, Shade,
+} = createParts(navigationStack, {
+  page: 'section', bar: 'div', title: 'div', back: 'button', leading: 'div', trailing: 'div',
+  content: 'div', 'large-title': 'div', subheader: 'div', 'refresh-indicator': 'div', shade: 'div',
+});
+
+type ClassProp<S> = string | ((state: S) => string | undefined) | undefined;
+type StyleProp<S> = CSSProperties | ((state: S) => CSSProperties | undefined) | undefined;
+const classOf = <S,>(c: ClassProp<S>, s: S) => (typeof c === 'function' ? c(s) : c);
+const styleOf = <S,>(c: StyleProp<S>, s: S) => (typeof c === 'function' ? c(s) : c);
+
+/* ── Titles: each page's NavigationStackTitle publishes what it shows, for the large title, the back label of the
+   page above it and a SplitView's back label. ── */
+function createTitles() {
+  const map = new Map<string, ReactNode>();
+  const listeners = new Set<() => void>();
+  const emit = () => listeners.forEach((l) => l());
+  return {
+    get: (key: string | null | undefined) => (key == null ? undefined : map.get(key)),
+    set(key: string, title: ReactNode) {
+      if (map.get(key) === title && map.has(key)) return;
+      map.set(key, title);
+      emit();
+    },
+    delete(key: string, title: ReactNode) {
+      if (map.get(key) !== title) return;
+      map.delete(key);
+      emit();
+    },
+    subscribe(l: () => void) {
+      listeners.add(l);
+      return () => { listeners.delete(l); };
+    },
+  };
+}
+type Titles = ReturnType<typeof createTitles>;
+
+/** A back button on the first page (there is nothing of the stack's own to pop): its label and action. */
+export interface NavigationStackRootBack {
   title?: ReactNode;
-  largeTitle?: boolean;
-  grouped?: boolean;
-  content?: ReactNode;
-  leading?: ReactNode;
-  trailing?: ReactNode;
-  overlay?: ReactNode;
-  subheader?: ReactNode;
-  maxW?: number | string;
-  bottomInset?: number;
-  onRefresh?: () => void | Promise<unknown>;
-  titleOnScroll?: boolean;
-  hideChromeOnScroll?: boolean;
+  onClick: () => void;
 }
 
-interface NavHandle { pop: () => void; canPop: boolean }
-/** Elements a screen hands the stack: its root and dimmer (edge swipe), and its titles (header morph). */
-interface ScreenParts extends TitleParts {
-  el?: HTMLDivElement | null;
-  dim?: HTMLDivElement | null;
-  scroller?: HTMLElement | null;
+interface StackContext {
+  api: NavigationStackController;
+  titles: Titles;
+  rootBack: NavigationStackRootBack | null;
+  bottomInset: number;
 }
-type Reg = (key: string, part: ScreenParts) => void;
+const StackCtx = createContext<StackContext | null>(null);
+const PageCtx = createContext<string | null>(null);
+const BarCtx = createContext(false);
+
+function useStack(part: string): StackContext {
+  const s = use(StackCtx);
+  if (!s) throw new Error(`${part} must be inside a NavigationStack.`);
+  return s;
+}
+function usePageKey(part: string): string {
+  const k = use(PageCtx);
+  if (k == null) throw new Error(`${part} must be inside a NavigationStackPage.`);
+  return k;
+}
+function useTitle(titles: Titles, key: string | null | undefined): ReactNode {
+  return useSyncExternalStore(titles.subscribe, () => titles.get(key), () => titles.get(key));
+}
+
+/** The stack around: its `push`, `pop`, `popTo`, `replace`, `refresh` and `getPages`, for a row that pushes or a
+ *  button that pops. Null outside a NavigationStack. */
+export function useNavigationStack(): NavigationStackController | null {
+  return use(StackCtx)?.api ?? null;
+}
+
+/* ── Root ── */
+
+type SwipeSource = { onSwipe: (fn: (swipe: NavigationStackSwipe) => void) => () => void };
+
+type RootState = { pages: string[]; exiting: { key: string; covered: boolean }[]; sizeClass: SizeClass | undefined };
+
+export interface NavigationStackProps
+  extends Omit<ComponentProps<'div'>, 'className' | 'style' | 'children'>,
+    Omit<NavigationStackOptions, 'onRootBack'> {
+  className?: string | ((state: RootState) => string | undefined);
+  style?: CSSProperties | ((state: RootState) => CSSProperties | undefined);
+  children?: ReactNode;
+  /** A back button on the first page, for a stack that sits under something else to go back to. Inside a
+   *  collapsed SplitView column it defaults to the previous column (the sidebar), labelled with its title;
+   *  `false` turns that off. */
+  rootBack?: NavigationStackRootBack | false;
+  /** Safe-area top for this stack (px). Usually inherited from BLProvider instead. */
+  safeTop?: number | string;
+  /** Room kept under every page's content for bars that ride over it (px), unless a page's content sets its own. */
+  bottomInset?: number;
+}
+
+/** The stack root. `pages` / `defaultPages` / `onPagesChange(pages, details)` hold its pages by key, bottom to top
+ *  (`details.reason`: `trigger-press`, `escape-key`, `back`, `swipe` or `imperative`); `controller` drives it. */
+export function NavigationStack({
+  pages, defaultPages, onPagesChange, controller, onBarHiddenChange,
+  rootBack, safeTop, bottomInset = 0, className, children, ...props
+}: NavigationStackProps) {
+  const [titles] = useState(createTitles);
+  const inheritedSafeTop = use(BLSafeCtx);
+  const safe = safeTop != null ? parseFloat(String(safeTop)) || 0 : inheritedSafeTop;
+  const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
+  const rootBackRef = useRef<NavigationStackRootBack | null>(null);
+  const onRootBack = useCallback(() => rootBackRef.current?.onClick(), []);
+  const onHidden = useCallback((hidden: boolean) => {
+    chromeStore.set(hidden);
+    onBarHiddenChange?.(hidden);
+  }, [onBarHiddenChange]);
+  const userRef = props.ref;
+  const setRef = useCallback((el: HTMLDivElement | null) => {
+    setRootEl(el);
+    if (typeof userRef === 'function') userRef(el);
+    else if (userRef) userRef.current = el;
+  }, [userRef]);
+  const handle = usePrimitive(navigationStack, {
+    pages, defaultPages, controller, onPagesChange, onRootBack, onBarHiddenChange: onHidden,
+  });
+  const api = handle.api as unknown as NavigationStackController;
+  const { stack, internal } = handle.api as unknown as { stack: Stack; internal: SwipeSource };
+  const root = usePart(handle, 'root', {}, {
+    ...props,
+    ref: setRef,
+    className: (s: RootState) => cn('absolute inset-0 touch-pan-y overflow-hidden', classOf(className, s)),
+    children: (state: RootState) => (
+      <SizeClassProvider value={state.sizeClass}>
+        <Pages pages={state.pages} present={(page) => stack.present(state, page)} api={api} titles={titles} rootEl={rootEl}
+          rootBackProp={rootBack} rootBackRef={rootBackRef} swipes={internal} bottomInset={bottomInset}>
+          {children}
+        </Pages>
+      </SizeClassProvider>
+    ),
+  }, 'div');
+  return <BLSafeCtx.Provider value={safe}>{root}</BLSafeCtx.Provider>;
+}
+
+/** The header elements of one of this stack's pages (not those of a stack nested inside it). */
+function own(page: HTMLElement, slot: string): HTMLElement | null {
+  for (const el of page.querySelectorAll<HTMLElement>(`[data-slot=navigation-stack-${slot}]`)) {
+    if (el.closest('[data-slot=navigation-stack-page]') === page) return el;
+  }
+  return null;
+}
+function titleParts(page: HTMLElement | null | undefined): TitleParts | undefined {
+  if (!page) return undefined;
+  return {
+    el: page,
+    large: (own(page, 'large-title')?.firstElementChild?.firstElementChild as HTMLElement | null) ?? null,
+    inline: own(page, 'title'),
+    back: own(page, 'back')?.querySelector<HTMLElement>('[data-mode]') ?? null,
+  };
+}
+
+/** Flattens fragments and arrays: the stack's pages are the elements with a string `value`. */
+function flatten(children: ReactNode, out: ReactNode[] = []): ReactNode[] {
+  Children.forEach(children, (c) => {
+    if (isValidElement(c) && c.type === Fragment) flatten((c.props as { children?: ReactNode }).children, out);
+    else out.push(c);
+  });
+  return out;
+}
+const valueOf = (c: ReactNode) => (isValidElement(c) && typeof (c.props as { value?: unknown }).value === 'string'
+  ? (c.props as { value: string }).value : null);
+
+interface PagesProps {
+  api: NavigationStackController;
+  pages: string[];
+  /** Whether a page renders: in the stack, or leaving (`createStack`'s `present`). */
+  present: (page: string) => boolean;
+  titles: Titles;
+  rootEl: HTMLDivElement | null;
+  rootBackProp: NavigationStackRootBack | false | undefined;
+  rootBackRef: { current: NavigationStackRootBack | null };
+  /** The stack's edge swipe, for the title flight to follow. */
+  swipes: SwipeSource;
+  bottomInset: number;
+  children: ReactNode;
+}
+
+function Pages({ api, pages, present, titles, rootEl, rootBackProp, rootBackRef, swipes, bottomInset, children }: PagesProps) {
+  const rootTitle = useTitle(titles, pages[0]);
+  const split = useSplitViewBack(typeof rootTitle === 'string' ? rootTitle : undefined);
+  const rootBack = rootBackProp === false ? null : rootBackProp ?? (split ? { title: split.title, onClick: split.back } : null);
+  rootBackRef.current = rootBack;
+
+  // The stack says which pages render: those in it and those leaving. A page the children drop while it is still
+  // there stays, where it was, until it has left.
+  const kept = useRef(new Map<string, ReactElement>());
+  const order = useRef<string[]>([]);
+  const list = flatten(children);
+  const shown = new Set<string>();
+  const out: { key: string; node: ReactNode }[] = [];
+  list.forEach((c, i) => {
+    const v = valueOf(c);
+    if (v === null) { out.push({ key: 'c:' + i, node: c }); return; }
+    kept.current.set(v, c as ReactElement);
+    shown.add(v);
+    if (present(v)) out.push({ key: 'p:' + v, node: c });
+  });
+  order.current.forEach((v, i) => {
+    if (shown.has(v)) return;
+    const el = kept.current.get(v);
+    if (!el || !present(v)) { kept.current.delete(v); return; }
+    // After the page that came before it last time.
+    const before = order.current.slice(0, i).reverse().find((b) => out.some((o) => o.key === 'p:' + b));
+    const at = before ? out.findIndex((o) => o.key === 'p:' + before) + 1 : 0;
+    out.splice(at, 0, { key: 'p:' + v, node: el });
+  });
+  order.current = out.map((o) => o.key).filter((k) => k.startsWith('p:')).map((k) => k.slice(2));
+
+  // Titles fly between bars on a push and a pop; a swipe scrubs its own flight.
+  const flight = useRef<ReturnType<typeof createTitleFlight> | null>(null);
+  useLayoutEffect(() => {
+    if (!rootEl) return undefined;
+    const f = createTitleFlight(rootEl, { parts: (p) => titleParts(p) ?? {} });
+    flight.current = f;
+    const off = swipes.onSwipe(f.swipe);
+    return () => { off(); f.destroy(); flight.current = null; };
+  }, [rootEl, swipes]);
+  const prev = useRef(pages);
+  useLayoutEffect(() => {
+    const old = prev.current;
+    prev.current = pages;
+    const from = old.at(-1), to = pages.at(-1);
+    if (!rootEl || from === undefined || to === undefined || from === to) return;
+    const pageEl = (k: string) => [...rootEl.children].find((e): e is HTMLElement => e instanceof HTMLElement && e.dataset.value === k);
+    if (!old.includes(to)) {
+      flight.current?.fly(() => [pushedTitle(titleParts(pageEl(from))), backLabel(titleParts(pageEl(to))), pageEl(to)], pageEl(from));
+    } else {
+      // A pop a swipe made has flown with the finger already: `fly` skips it.
+      flight.current?.fly(() => [backLabel(titleParts(pageEl(from))), shownTitle(titleParts(pageEl(to))), pageEl(to)], pageEl(from));
+    }
+  }, [pages, rootEl]);
+
+  const ctx = { api, titles, rootBack, bottomInset };
+  return <StackCtx value={ctx}>{out.map((o) => <Fragment key={o.key}>{o.node}</Fragment>)}</StackCtx>;
+}
+
+/* ── Page ── */
+
+export interface NavigationStackPageProps extends Omit<ComponentProps<typeof Page>, 'value'> {
+  /** The page's key in `pages`. */
+  value: string;
+  /** The inset-grouped background (`bg-muted`), for pages of grouped lists. */
+  grouped?: boolean;
+}
+
+/** One page: its bar, its content, and anything else that floats over it (an index bar, a tab bar). */
+export function NavigationStackPage({ value, grouped, className, style, children, ...props }: NavigationStackPageProps) {
+  const safeTop = use(BLSafeCtx);
+  return (
+    // Position is CSS: at rest, waiting off the trailing edge to enter or leave, parallaxed under the page on top,
+    // following `--stack-progress` while an edge swipe moves it, and settling on the tray spring once it lets go.
+    // Every offset is times `--stack-dir` (-1 right to left), so the trailing and leading edges follow the reading
+    // direction, as the swipe's edge does.
+    <Page {...props} value={value}
+      className={(s) => cn(
+        'group/page absolute inset-0 z-(--page-z) overflow-hidden outline-none will-change-transform rtl:[--stack-dir:-1]',
+        '[transform:translateX(0)] data-covered:[transform:translateX(calc(-28%*var(--stack-dir,1)))] data-starting-style:[transform:translateX(calc(103%*var(--stack-dir,1)))] data-ending-style:not-data-covered:[transform:translateX(calc(103%*var(--stack-dir,1)))]',
+        'data-swiping:not-data-covered:[transform:translateX(calc(var(--stack-progress,0)*100%*var(--stack-dir,1)))] data-swiping:data-covered:[transform:translateX(calc((-28%_+_var(--stack-progress,0)*28%)*var(--stack-dir,1)))]',
+        'transition-transform duration-spring-smooth ease-spring-smooth data-swiping:transition-none data-swipe-settling:duration-spring-tray data-swipe-settling:ease-spring-tray motion-reduce:transition-none',
+        grouped ? 'bg-muted' : 'bg-background',
+        s.depth > 0 && 'shadow-[-10px_0_30px_black] shadow-black/16 rtl:shadow-[10px_0_30px_black]',
+        s.leaving ? 'pointer-events-none' : 'pointer-events-auto',
+        classOf(className, s),
+      )}
+      style={(s) => ({
+        '--page-z': 10 + s.depth * 2 - (s.leaving && s.covered ? 1 : 0),
+        '--screen-bar-h': safeTop + BARH + 'px',
+        '--screen-safe-top': safeTop + 'px',
+        ...styleOf(style, s),
+      } as CSSProperties)}>
+      <PageCtx value={value}>
+        {children as ReactNode}
+        <Shade value={value}
+          className="pointer-events-none absolute inset-0 z-200 bg-black opacity-0 transition-opacity duration-spring-smooth ease-spring-smooth [[data-covered]>&]:opacity-12 [[data-swiping][data-covered]>&]:opacity-[calc(.12*(1-var(--stack-progress,0)))] [[data-swiping]>&]:transition-none" />
+      </PageCtx>
+    </Page>
+  );
+}
+
+/* ── Bar ── */
+
+export interface NavigationStackBarProps extends Omit<ComponentProps<typeof Bar>, 'value' | 'children'> {
+  /** Scrolling down slides the bar away (and the shared chrome with it). Default true. */
+  hideOnScroll?: boolean;
+  children?: ReactNode;
+}
+
+/** The navigation bar: a back button when there is a page to go back to, then its leading items, title and
+ *  trailing items. Its background fades in once the content scrolls under it. */
+export function NavigationStackBar({ hideOnScroll = true, className, children, ...props }: NavigationStackBarProps) {
+  const value = usePageKey('NavigationStackBar');
+  const { rootBack } = useStack('NavigationStackBar');
+  const safeTop = use(BLSafeCtx);
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  return (
+    <Bar {...props} value={value} hideOnScroll={hideOnScroll}
+      className={(s) => cn(
+        'absolute inset-x-0 top-0 z-30 box-border flex h-(--screen-bar-h) items-end px-1.5 pt-(--screen-safe-top) transition-transform duration-spring-smooth ease-spring-smooth',
+        s.hidden ? '[transform:translateY(calc(var(--screen-safe-top)-var(--screen-bar-h)))]' : '[transform:none]',
+        classOf(className, s),
+      )}>
+      {(s) => {
+        const back = s.previous !== null || (s.depth === 0 && !s.leaving && !!rootBack);
+        return (
+          <>
+            <div className={cn(
+              'absolute inset-0 [border-bottom:1px_solid_var(--border)] bg-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-opacity duration-spring-snappy ease-spring-snappy',
+              s.scrolled ? 'opacity-100' : 'opacity-0',
+            )} />
+            {/* Under-island strip: stays put while the bar slides away, so content never runs under the camera. */}
+            {safeTop ? (
+              <div className={cn(
+                'absolute inset-x-0 top-0 h-(--screen-safe-top) bg-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
+                s.scrolled || s.hidden ? 'opacity-100' : 'opacity-0',
+                s.hidden ? '[transform:translateY(calc(var(--screen-bar-h)-var(--screen-safe-top)))]' : '[transform:none]',
+              )} />
+            ) : null}
+            <div ref={rowRef} className={cn('flex h-toolbar w-full items-center transition-opacity duration-spring-snappy ease-spring-snappy', s.hidden ? 'opacity-0' : 'opacity-100')}>
+              {back ? <AutoBack row={rowRef} state={s} /> : null}
+              <BarCtx value={back}>{children}</BarCtx>
+            </div>
+          </>
+        );
+      }}
+    </Bar>
+  );
+}
 
 /** Back label: the previous title (ellipsized when tight), "Back" when even that has no room, else nothing. */
 type BackMode = 'title' | 'back' | 'none';
 
-/** A back button on the root screen (there is nothing of the stack's own to pop): its label and action. */
-export interface NavigationStackRootBack {
-  title?: ReactNode;
-  onPress: () => void;
-}
-
-export interface ScreenWrapProps {
-  sc: Screen;
-  depth: number;
-  top: number;
-  ghost: boolean;
-  entering: boolean;
-  nav: NavHandle;
-  backTitle?: ReactNode | null;
-  reg: Reg;
-  defIns?: number;
-  z: number;
-  /** Shown on the root screen only (depth 0). */
-  rootBack?: NavigationStackRootBack | null;
-}
-
-/** How NavigationStack pushes and pops, shared with anything that should feel like one (SideDrawer's compact push):
- *  where the leaving/entering screen waits, where the one underneath parallaxes to and how far it dims, and the
- *  edge swipe's zone, commit distance (fraction of the width) and flick velocity (px/ms). The motion itself is the
- *  `smooth` spring (the `tray` spring when a swipe is released). */
-export const navigationPush = {
-  off: '103%',
-  under: '-28%',
-  underPct: -28,
-  dim: 0.12,
-  edge: 36,
-  commit: 0.32,
-  flick: 0.55,
-  settleMs: 580,
-} as const;
-
-export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: prevTitle, reg, defIns, z, rootBack: rootBackProp }: ScreenWrapProps) {
-  const rootBack = depth === 0 && !ghost ? rootBackProp : null;
-  const backTitle = rootBack ? rootBack.title ?? 'Back' : prevTitle;
-  const started = useRef(false);
-  const [in_, setIn] = useState(!entering);
-  const [out, setOut] = useState(false);
-  const [scr, setScr] = useState(false);
-  const [hid, setHid] = useState(false);
-  const safeTop = use(BLSafeCtx);
-  const lastY = useRef(0);
-  const scroller = useRef<HTMLDivElement | null>(null); const inner = useRef<HTMLDivElement | null>(null); const spin = useRef<HTMLDivElement | null>(null);
-  const rowRef = useRef<HTMLDivElement | null>(null); const titleRef = useRef<HTMLDivElement | null>(null);
-  const measFull = useRef<HTMLSpanElement | null>(null); const measBack = useRef<HTMLSpanElement | null>(null);
+/** The bar's own back button, its label measured against what the centered title leaves on its side. */
+function AutoBack({ row, state }: { row: { current: HTMLDivElement | null }; state: NavigationStackPageState }) {
+  const value = usePageKey('NavigationStackBack');
+  const { titles, rootBack } = useStack('NavigationStackBack');
+  const previous = useTitle(titles, state.previous);
+  const own = useTitle(titles, value);
+  const backTitle = state.previous === null && rootBack ? rootBack.title ?? 'Back' : previous;
+  const measFull = useRef<HTMLSpanElement | null>(null);
+  const measBack = useRef<HTMLSpanElement | null>(null);
   const [bk, setBk] = useState<{ mode: BackMode; w: number }>({ mode: 'title', w: 160 });
-  const hasBack = depth > 0 || ghost || !!rootBack;
-  // Measured: the back label gets whatever the centered title leaves on its side of the bar.
   useLayoutEffect(() => {
-    const row = rowRef.current, t = titleRef.current, f = measFull.current, b = measBack.current;
-    if (!hasBack || !row || !f || !b) return undefined;
+    const r = row.current, f = measFull.current, b = measBack.current;
+    if (!r || !f || !b) return undefined;
+    const title = () => [...r.children].find((e): e is HTMLElement => e instanceof HTMLElement && e.dataset.slot === 'navigation-stack-title');
     const m = () => {
-      const tw = sc.title != null && t ? t.offsetWidth : 0;
+      const t = title();
+      const tw = t ? t.offsetWidth : 0;
       // Half the row beside the title, less the chevron (24), the button's end padding (8) and a gap (8).
-      const avail = Math.floor((row.clientWidth - tw) / 2 - 40);
+      const avail = Math.floor((r.clientWidth - tw) / 2 - 40);
       const fw = f.offsetWidth, bw = b.offsetWidth;
       const mode: BackMode = fw > 0 && (avail >= fw || avail >= bw + 14) ? 'title' : avail >= bw ? 'back' : 'none';
       setBk((o) => (o.mode === mode && o.w === avail ? o : { mode, w: Math.max(0, avail) }));
     };
     m();
     if (typeof ResizeObserver === 'undefined') return undefined;
-    const ro = new ResizeObserver(m); [row, f, b].forEach((e) => ro.observe(e)); if (t) ro.observe(t);
+    const ro = new ResizeObserver(m);
+    [r, f, b].forEach((e) => ro.observe(e));
+    const t = title();
+    if (t) ro.observe(t);
     return () => ro.disconnect();
-  }, [hasBack, backTitle, sc.title]);
-  useLayoutEffect(() => {
-    if (entering && !started.current) {
-      started.current = true; setIn(false);
-      requestAnimationFrame(() => requestAnimationFrame(() => setIn(true)));
-    }
-  }, [entering]);
-  useEffect(() => { if (ghost) requestAnimationFrame(() => setOut(true)); }, [ghost]);
-  const isUnder = !ghost && depth < top;
-  const { off, under } = navigationPush;
-  const tx = ghost ? (out ? off : '0%') : (!in_ ? off : isUnder ? under : '0%');
-  const ins = sc.bottomInset != null ? sc.bottomInset : (defIns || 0);
-  const barH = safeTop + BARH;
-  const hideChrome = sc.hideChromeOnScroll !== false;
-  // The shared chrome (tab bar, sticky headers) follows the screen that is live on top, so when a pop brings a
-  // scrolled list back its own hidden bar and the tab bar agree again, rather than the leaving screen resetting them.
-  const live = !ghost && !isUnder;
-  const liveRef = useRef(live); liveRef.current = live;
-  const published = useRef(false);
-  useEffect(() => {
-    if (!live) return;
-    // A root screen mounting at rest has nothing to say; it would only un-hide another stack's chrome.
-    if (!published.current && depth === 0 && !hid) return;
-    published.current = true;
-    chromeStore.set(hid);
-  }, [live, hid, depth]);
-  // Leaving while still on top (a swipe pop unmounts without a ghost) hands the chrome back; the screen revealed
-  // publishes its own state right after. A ghost leaves it alone: the screen under already has.
-  useEffect(() => () => { if (liveRef.current) chromeStore.set(false); }, []);
-  const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const y = e.currentTarget.scrollTop; const s = y > (sc.largeTitle ? 44 : 8); if (s !== scr) setScr(s);
-    if (hideChrome && !ghost) {
-      const dy = y - lastY.current;
-      if (y < barH * 0.7) { if (hid) setHid(false); }
-      else if (dy > 5) { if (!hid) setHid(true); }
-      else if (dy < -5) { if (hid) setHid(false); }
-    }
-    lastY.current = y;
-  };
-  const showTitle = sc.titleOnScroll ? scr : (sc.largeTitle ? scr : true);
-  const onKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape' && nav.canPop && depth > 0) { nav.pop(); return; }
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      const rows = [...e.currentTarget.querySelectorAll<HTMLElement>('[data-tkrow]')].filter((r) => r.offsetParent);
-      const i = rows.indexOf(document.activeElement as HTMLElement);
-      const n = e.key === 'ArrowDown' ? (i < 0 ? 0 : Math.min(i + 1, rows.length - 1)) : (i < 0 ? rows.length - 1 : Math.max(i - 1, 0));
-      if (rows[n]) { rows[n].focus(); e.preventDefault(); }
-    }
-  };
-  const pull = usePullToRefresh({ onRefresh: sc.onRefresh, scroller, content: inner, spinner: spin });
+  }, [row, backTitle, own]);
   return (
-    // Slide position, depth, and bar geometry are per-render values, fed in as CSS variables; the edge-swipe writes
-    // transform/transition inline during a drag and clears them back to these classes.
-    // A covered or leaving screen is inert: its controls take no focus and aren't read out behind the one on top. The
-    // screen itself takes focus (tabIndex -1) when a push lands on it, so the keyboard continues from its top.
-    <div ref={(el) => reg(sc.key, { el })} data-slot="screen" data-screen-key={sc.key} data-screen-label={typeof sc.title === 'string' ? sc.title : sc.key}
-      tabIndex={-1} inert={isUnder || ghost || undefined} onKeyDown={onKey}
-      className={cn(
-        'outline-none absolute inset-0 z-(--screen-z) overflow-hidden will-change-transform [transform:translateX(var(--screen-x))] transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
-        sc.grouped ? 'bg-muted' : 'bg-background',
-        depth > 0 && 'shadow-[-10px_0_30px_black] shadow-black/16',
-        ghost ? 'pointer-events-none' : 'pointer-events-auto',
-      )}
-      data-scrolled={scr ? '' : undefined}
-      style={{
-        '--screen-z': 10 + z, '--screen-x': tx, '--screen-bar-h': barH + 'px', '--screen-safe-top': safeTop + 'px',
-        '--screen-max-w': sc.maxW == null || sc.maxW === 0 || sc.maxW === '' ? 'none' : typeof sc.maxW === 'number' ? sc.maxW + 'px' : sc.maxW,
-        '--screen-inset': ins + 28 + 'px',
-      } as CSSProperties}>
-      <div ref={(e) => { scroller.current = e; reg(sc.key, { scroller: e }); }} className="bl-scroll absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]" onScroll={onScroll}
-        {...pull.bind}>
-        <div ref={inner} className="mx-auto box-border w-full max-w-(--screen-max-w)">
-          {sc.largeTitle
-            ? <div className="px-4 pt-[calc(var(--screen-bar-h)+2px)] pb-1.5">
-                <div className="text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]">
-                  <span ref={(e) => reg(sc.key, { large: e })}>{sc.title}</span>
-                </div>
-                {sc.subheader ? <div className="mt-2.5">{sc.subheader}</div> : null}
-              </div>
-            : <div className="h-(--screen-bar-h)" />}
-          <BLStickyCtx.Provider value={barH}>{sc.content}</BLStickyCtx.Provider>
-          <div className="h-(--screen-inset)" />
-        </div>
-      </div>
-      {sc.onRefresh ? (
-        <div ref={spin}
-          className="pointer-events-none absolute top-[calc(var(--screen-bar-h)+8px)] left-1/2 z-5 [transform:translateX(-50%)] text-muted-foreground opacity-0 transition-opacity duration-spring-snappy ease-spring-snappy"><Spinner spin={pull.refreshing} /></div>
-      ) : null}
-      <div className={cn(
-        'absolute inset-x-0 top-0 z-30 box-border flex h-(--screen-bar-h) items-end px-1.5 pt-(--screen-safe-top) transition-transform duration-spring-smooth ease-spring-smooth',
-        hid ? '[transform:translateY(calc(var(--screen-safe-top)-var(--screen-bar-h)))]' : '[transform:none]',
-      )}>
-        <div className={cn(
-          'absolute inset-0 [border-bottom:1px_solid_var(--border)] bg-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-opacity duration-spring-snappy ease-spring-snappy',
-          scr ? 'opacity-100' : 'opacity-0',
-        )} />
-        {/* Under-island strip: stays put while the bar slides away, so content never runs under the camera. */}
-        {safeTop ? (
-          <div className={cn(
-            'absolute inset-x-0 top-0 h-(--screen-safe-top) bg-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
-            scr || hid ? 'opacity-100' : 'opacity-0',
-            hid ? '[transform:translateY(calc(var(--screen-bar-h)-var(--screen-safe-top)))]' : '[transform:none]',
-          )} />
+    <div className="relative z-1 flex min-w-[44px] items-center">
+      <NavigationStackBack aria-label={bk.mode === 'none' ? 'Back' : undefined}>
+        <Icon name="chevL" size={24} sw={2.4} className="rtl:-scale-x-100" />
+        {bk.mode !== 'none' ? (
+          <span data-mode={bk.mode} className="max-w-(--back-w) truncate" style={{ '--back-w': bk.w + 'px' } as CSSProperties}>
+            {bk.mode === 'title' ? backTitle : 'Back'}
+          </span>
         ) : null}
-        <div ref={rowRef} className={cn('flex h-toolbar w-full items-center transition-opacity duration-spring-snappy ease-spring-snappy', hid ? 'opacity-0' : 'opacity-100')}>
-          <div className="relative z-1 flex min-w-[44px] items-center">
-            {hasBack
-              ? <AriaButton className="bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-body text-primary"
-                  aria-label={bk.mode === 'none' ? 'Back' : undefined}
-                  onPress={rootBack ? rootBack.onPress : nav.canPop ? nav.pop : undefined}>
-                  <Icon name="chevL" size={24} sw={2.4} />
-                  {bk.mode !== 'none' ? (
-                    <span ref={(e) => reg(sc.key, { back: e })} data-mode={bk.mode}
-                      className="max-w-(--back-w) truncate" style={{ '--back-w': bk.w + 'px' } as CSSProperties}>{bk.mode === 'title' ? backTitle : 'Back'}</span>
-                  ) : null}
-                </AriaButton>
-              : (sc.leading || null)}
-            {hasBack ? (
-              // Off-screen rulers for the full previous title and for "Back".
-              <span aria-hidden="true" className="pointer-events-none invisible absolute top-0 left-0 flex text-body whitespace-nowrap">
-                <span ref={measFull}>{backTitle}</span><span ref={measBack}>Back</span>
-              </span>
-            ) : null}
-          </div>
-          <div ref={(e) => { titleRef.current = e; reg(sc.key, { inline: e }); }} className={cn(
-            'pointer-events-none absolute left-1/2 max-w-[52%] -translate-x-1/2 truncate text-body font-semibold text-foreground transition-opacity duration-spring-snappy ease-spring-snappy',
-            showTitle ? 'opacity-100' : 'opacity-0',
-          )}>{sc.title}</div>
-          <div className="relative z-1 ml-auto flex items-center">{sc.trailing || null}</div>
-        </div>
-      </div>
-      {sc.overlay || null}
-      <div ref={(el) => reg(sc.key, { dim: el })}
-        className={cn('pointer-events-none absolute inset-0 z-200 bg-black transition-opacity duration-spring-smooth ease-spring-smooth', isUnder ? 'opacity-12' : 'opacity-0')} />
+      </NavigationStackBack>
+      {/* Off-screen rulers for the full previous title and for "Back". */}
+      <span aria-hidden="true" className="pointer-events-none invisible absolute top-0 left-0 flex text-body whitespace-nowrap">
+        <span ref={measFull}>{backTitle}</span><span ref={measBack}>Back</span>
+      </span>
     </div>
   );
 }
 
-/** Push/pop settle time: the smooth spring (--duration-spring-smooth) plus a frame. */
-const SETTLE_MS = navigationPush.settleMs;
+export type NavigationStackBackProps = Omit<ComponentProps<typeof Back>, 'value'>;
 
-export interface NavigationStackProps {
-  screens: Screen[];
-  onPop?: () => void;
-  /** Default bottom inset applied to screens that don't set `bottomInset`. */
-  defIns?: number;
-  /** Safe-area top override for this stack (px). Usually inherited from BLProvider instead. */
-  safeTop?: number | string;
-  /** A back button on the root screen, for a stack that sits under something else to go back to. Inside a
-   *  collapsed SplitView column it defaults to the previous column (the sidebar), labelled with its title;
-   *  `false` turns that off. */
-  rootBack?: NavigationStackRootBack | false;
-  className?: string;
-  style?: CSSProperties;
+/** A back button: pops the page it is in (`trigger-press`), or on the first page runs the stack's `rootBack`. The
+ *  bar draws one by itself; use this for a back button of your own. */
+export function NavigationStackBack({ className, ...props }: NavigationStackBackProps) {
+  const value = usePageKey('NavigationStackBack');
+  return (
+    <Back {...props} value={value}
+      className={(s) => cn('bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-body text-primary', classOf(className, s))} />
+  );
 }
 
-/** What an edge swipe moves: the top screen, the one under it, and the title flight scrubbing along. */
-interface SwipeCtx {
-  top: ScreenParts & { el: HTMLDivElement };
-  under: ScreenParts & { el: HTMLDivElement };
-  flight: ActiveFlight | null;
-}
+export type NavigationStackTitleProps = Omit<ComponentProps<typeof Title>, 'value' | 'children'> & {
+  /** Fades in only once the content has scrolled (a detail page's title). A page with a large title does this
+   *  by itself. */
+  showOnScroll?: boolean;
+  children?: ReactNode;
+};
 
-export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: rootBackProp, className, style }: NavigationStackProps) {
-  const rootTitle = screens[0]?.title;
-  const split = useSplitViewBack(typeof rootTitle === 'string' ? rootTitle : undefined);
-  const rootBack = rootBackProp === false ? null : rootBackProp ?? (split ? { title: split.title, onPress: split.back } : null);
-  const contRef = useRef<HTMLDivElement | null>(null);
-  const regMap = useRef<Record<string, ScreenParts>>({});
-  const reg: Reg = (k, part) => { regMap.current[k] = { ...regMap.current[k], ...part }; };
-  const [anim, setAnim] = useState<{ enter: string | null; exit: Screen[] | null }>({ enter: null, exit: null });
-  const prevRef = useRef(screens);
-  const skipRef = useRef(false);
-  const tRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const onPopRef = useRef(onPop); onPopRef.current = onPop;
-  const titles = useTitleFlight(contRef);
-  // The control that had focus in each screen, so a pop can hand it back (the row that pushed).
-  const lastFocus = useRef<Record<string, HTMLElement>>({});
-  // Focus moves with a push or pop only when it is in the stack (or nowhere): never pulled from something else.
-  const focusIsOurs = () => !document.activeElement || document.activeElement === document.body || !!contRef.current?.contains(document.activeElement);
-  const keysJ = screens.map((s) => s.key).join('¦');
+/** The bar's centered title. It names the page: the next page's back label, and the large title by default. */
+export function NavigationStackTitle({ showOnScroll, className, children, ...props }: NavigationStackTitleProps) {
+  const value = usePageKey('NavigationStackTitle');
+  const { titles } = useStack('NavigationStackTitle');
   useLayoutEffect(() => {
-    const old = prevRef.current; prevRef.current = screens;
-    const ok = old.map((s) => s.key), nk = screens.map((s) => s.key);
-    if (ok.join('¦') === keysJ) return;
-    clearTimeout(tRef.current);
-    const pref = (a: string[], b: string[]) => a.every((k, i) => b[i] === k);
-    if (nk.length > ok.length && pref(ok, nk)) {
-      setAnim({ enter: nk[nk.length - 1], exit: null });
-      const fromK = ok[ok.length - 1], toK = nk[nk.length - 1];
-      titles.fly(() => [pushedTitle(regMap.current[fromK]), backLabel(regMap.current[toK]), regMap.current[toK]?.el]);
-      armBackHistory();
-      if (focusIsOurs()) requestAnimationFrame(() => regMap.current[toK]?.el?.focus({ preventScroll: true }));
-      tRef.current = setTimeout(() => setAnim({ enter: null, exit: null }), SETTLE_MS);
-    } else if (nk.length < ok.length && pref(nk, ok)) {
-      if (skipRef.current) { skipRef.current = false; setAnim({ enter: null, exit: null }); return; }
-      setAnim({ enter: null, exit: old.slice(nk.length) });
-      const fromK = ok[ok.length - 1], toK = nk[nk.length - 1];
-      titles.fly(() => [backLabel(regMap.current[fromK]), shownTitle(regMap.current[toK]), regMap.current[toK]?.el]);
-      if (focusIsOurs()) {
-        requestAnimationFrame(() => {
-          const back = lastFocus.current[toK];
-          (back?.isConnected ? back : regMap.current[toK]?.el)?.focus({ preventScroll: true });
-        });
-      }
-      tRef.current = setTimeout(() => setAnim({ enter: null, exit: null }), SETTLE_MS);
-    } else setAnim({ enter: null, exit: null });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keysJ]);
-  const ghosts = anim.exit || [];
-  const canPop = screens.length > 1;
-  useBackHistory(screens.length, () => onPopRef.current?.());
-
-  const clean = (c: SwipeCtx) => [c.top, c.under].forEach((r) => {
-    r.el.style.transition = ''; r.el.style.transform = '';
-    if (r.dim) { r.dim.style.transition = ''; r.dim.style.opacity = ''; }
-  });
-  // The edge swipe: the top screen follows the finger while the one under it parallaxes in and un-dims, and the back
-  // label scrubs toward the title it names.
-  const swipe = useEdgeSwipe<SwipeCtx>({
-    target: () => contRef.current,
-    edge: navigationPush.edge, commit: navigationPush.commit, flick: navigationPush.flick,
-    begin: () => {
-      if (anim.enter || anim.exit || screens.length < 2) return null;
-      const top = regMap.current[screens[screens.length - 1].key];
-      const under = regMap.current[screens[screens.length - 2].key];
-      if (!top?.el || !under?.el) return null;
-      return { top: top as SwipeCtx['top'], under: under as SwipeCtx['under'], flight: null };
-    },
-    engage: (c) => { c.flight = titles.scrub(backLabel(c.top), shownTitle(c.under), c.under.el); },
-    move: (c, p, dx) => {
-      c.top.el.style.transition = 'none'; c.top.el.style.transform = `translateX(${dx}px)`;
-      c.under.el.style.transition = 'none'; c.under.el.style.transform = `translateX(${navigationPush.underPct * (1 - p)}%)`;
-      if (c.under.dim) { c.under.dim.style.transition = 'none'; c.under.dim.style.opacity = String(navigationPush.dim * (1 - p)); }
-      if (titles.isCurrent(c.flight)) c.flight.f.set(p);
-    },
-    release: (c, { p, commit }) => {
-      // Release continues on the tray spring from wherever the finger let go (the CSS spring retargets).
-      const ease = springCss('transform', 'tray');
-      titles.release(c.flight, p, commit ? 1 : 0);
-      if (commit) {
-        c.top.el.style.transition = ease; c.top.el.style.transform = 'translateX(104%)';
-        c.under.el.style.transition = ease; c.under.el.style.transform = 'translateX(0%)';
-        if (c.under.dim) { c.under.dim.style.transition = springCss('opacity', 'tray'); c.under.dim.style.opacity = '0'; }
-        skipRef.current = true;
-        setTimeout(() => { onPopRef.current?.(); requestAnimationFrame(() => clean(c)); }, 380);
-      } else {
-        c.top.el.style.transition = ease; c.top.el.style.transform = 'translateX(0px)';
-        c.under.el.style.transition = ease; c.under.el.style.transform = `translateX(${navigationPush.under})`;
-        if (c.under.dim) { c.under.dim.style.transition = springCss('opacity', 'tray'); c.under.dim.style.opacity = String(navigationPush.dim); }
-        setTimeout(() => clean(c), 430);
-      }
-    },
-    abort: clean,
-  });
-  const topIdx = screens.length - 1;
-  // A push is known during render, before the effect below records it: the new screen mounts already off to the
-  // right, so nothing (a layout read in a child's effect, say) can catch it at rest and cancel its slide.
-  const prevKeys = prevRef.current.map((s) => s.key);
-  const pendingEnter = screens.length > prevKeys.length && prevKeys.every((k, i) => screens[i] && screens[i].key === k)
-    ? screens[topIdx].key : null;
-  const rendered = [
-    ...screens.map((sc, i) => ({ sc, i, ghost: false })),
-    ...ghosts.map((sc, j) => ({ sc, i: screens.length + j, ghost: true })),
-  ];
-  const total = rendered.length - 1;
-  const inner = (
-    <div ref={contRef} data-slot="navigation-stack" {...swipe.bind}
-      onFocusCapture={(e) => {
-        const key = (e.target as Element).closest('[data-slot=screen]')?.getAttribute('data-screen-key');
-        if (key && e.target !== e.currentTarget && (e.target as Element).getAttribute('data-slot') !== 'screen') lastFocus.current[key] = e.target as HTMLElement;
-      }}
-      className={cn('absolute inset-0 touch-pan-y overflow-hidden', className)} style={style}>
-      {rendered.map((r) => (
-        <ScreenWrap key={r.sc.key} sc={r.sc} depth={r.i} top={r.ghost ? total : topIdx} ghost={r.ghost}
-          entering={!r.ghost && (anim.enter === r.sc.key || pendingEnter === r.sc.key) && r.i === topIdx}
-          nav={{ pop: () => onPopRef.current?.(), canPop: canPop && !r.ghost }}
-          backTitle={r.i > 0 ? (r.ghost ? (screens[screens.length - 1] && screens[screens.length - 1].title) : screens[r.i - 1].title) : null}
-          reg={reg} defIns={defIns} z={r.i} rootBack={rootBack} />
-      ))}
-    </div>
+    titles.set(value, children);
+    return () => titles.delete(value, children);
+  }, [titles, value, children]);
+  return (
+    <Title {...props} value={value} showOnScroll={showOnScroll}
+      className={(s) => cn(
+        'pointer-events-none absolute left-1/2 max-w-[52%] -translate-x-1/2 truncate text-body font-semibold text-foreground transition-opacity duration-spring-snappy ease-spring-snappy',
+        (showOnScroll || s.large) && !s.scrolled ? 'opacity-0' : 'opacity-100',
+        classOf(className, s),
+      )}>
+      {children}
+    </Title>
   );
-  return safeTop != null ? <BLSafeCtx.Provider value={parseFloat(String(safeTop)) || 0}>{inner}</BLSafeCtx.Provider> : inner;
+}
+
+export type NavigationStackLeadingProps = Omit<ComponentProps<typeof Leading>, 'value'>;
+
+/** Bar items at the leading edge. A page with a back button shows that instead. */
+export function NavigationStackLeading({ className, ...props }: NavigationStackLeadingProps) {
+  const value = usePageKey('NavigationStackLeading');
+  if (use(BarCtx)) return null;
+  return <Leading {...props} value={value} className={(s) => cn('relative z-1 flex min-w-[44px] items-center', classOf(className, s))} />;
+}
+
+export type NavigationStackTrailingProps = Omit<ComponentProps<typeof Trailing>, 'value'>;
+
+/** Bar items at the trailing edge. */
+export function NavigationStackTrailing({ className, ...props }: NavigationStackTrailingProps) {
+  const value = usePageKey('NavigationStackTrailing');
+  return <Trailing {...props} value={value} className={(s) => cn('relative z-1 ml-auto flex items-center', classOf(className, s))} />;
+}
+
+/* ── Content ── */
+
+export interface NavigationStackContentProps extends Omit<ComponentProps<typeof Content>, 'value' | 'children'> {
+  /** Pull to refresh (touch). Return a promise to keep the spinner until it settles; it shows for a moment at
+   *  least. The controller's `refresh()` runs it from a button or a key. */
+  onRefresh?: () => unknown;
+  /** A readable width the content centers at on a wide page. */
+  maxWidth?: number | string;
+  /** Room kept under the content for bars that ride over it (px). Defaults to the stack's `bottomInset`. */
+  bottomInset?: number;
+  children?: ReactNode;
+}
+
+/** The page's scrolling content, under the bar. Sticky section headers inside stick under the bar. */
+export function NavigationStackContent({ onRefresh, maxWidth, bottomInset, className, style, children, ...props }: NavigationStackContentProps) {
+  const value = usePageKey('NavigationStackContent');
+  const stack = useStack('NavigationStackContent');
+  const safeTop = use(BLSafeCtx);
+  const inset = bottomInset ?? stack.bottomInset;
+  return (
+    <Content {...props} value={value} onRefresh={onRefresh}
+      className={(s) => cn('group/nav-scroll bl-scroll absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]', classOf(className, s))}
+      style={(s) => ({
+        '--screen-max-w': maxWidth == null || maxWidth === 0 || maxWidth === '' ? 'none' : typeof maxWidth === 'number' ? maxWidth + 'px' : maxWidth,
+        '--screen-inset': inset + 28 + 'px',
+        ...styleOf(style, s),
+      } as CSSProperties)}>
+      {(s) => (
+        <>
+          {onRefresh ? (
+            <RefreshIndicator value={value}
+              className="pointer-events-none absolute top-[calc(var(--screen-bar-h)+8px)] left-1/2 z-5 text-muted-foreground opacity-[var(--pull-progress,0)] [transform:translateX(-50%)_rotate(calc(var(--pull-progress,0)*166deg))_scale(min(1,calc(.5_+_var(--pull-progress,0)*.58)))] transition-opacity duration-spring-snappy ease-spring-snappy group-data-pulling/nav-scroll:transition-none group-data-pending/nav-scroll:opacity-100 group-data-pending/nav-scroll:[transform:translateX(-50%)]">
+              <Spinner spin={s.refreshing} />
+            </RefreshIndicator>
+          ) : null}
+          {/* The content follows a pull, and holds open while the refresh runs. */}
+          <div className="mx-auto box-border w-full max-w-(--screen-max-w) transition-transform duration-spring-snappy ease-spring-snappy group-data-pulling/nav-scroll:transition-none group-data-pulling/nav-scroll:[transform:translateY(var(--pull-distance,0px))] group-data-pending/nav-scroll:[transform:translateY(var(--pull-distance,0px))]">
+            <div className="h-(--screen-bar-h)" />
+            <BLStickyCtx.Provider value={safeTop + BARH}>{children}</BLStickyCtx.Provider>
+            <div className="h-(--screen-inset)" />
+          </div>
+        </>
+      )}
+    </Content>
+  );
+}
+
+export type NavigationStackLargeTitleProps = Omit<ComponentProps<typeof LargeTitle>, 'value' | 'children'> & {
+  /** Defaults to the page's NavigationStackTitle. */
+  children?: ReactNode;
+};
+
+/** iOS's large title, at the top of the content: it scrolls under the bar, where the inline title takes over. */
+export function NavigationStackLargeTitle({ className, children, ...props }: NavigationStackLargeTitleProps) {
+  const value = usePageKey('NavigationStackLargeTitle');
+  const { titles } = useStack('NavigationStackLargeTitle');
+  const title = useTitle(titles, value);
+  return (
+    <LargeTitle {...props} value={value} className={(s) => cn('px-4 pt-0.5 pb-1.5', classOf(className, s))}>
+      <div className="text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]"><span>{children ?? title}</span></div>
+    </LargeTitle>
+  );
+}
+
+export type NavigationStackSubheaderProps = Omit<ComponentProps<typeof Subheader>, 'value'>;
+
+/** Under the large title: a search field, a segmented control. */
+export function NavigationStackSubheader({ className, ...props }: NavigationStackSubheaderProps) {
+  const value = usePageKey('NavigationStackSubheader');
+  return <Subheader {...props} value={value} className={(s) => cn('mt-1 px-4 pb-1.5', classOf(className, s))} />;
 }

@@ -5,8 +5,10 @@
    a time, pushed like iOS. All sample data is invented. */
 import { useEffect, useMemo, useState } from 'react';
 import { PasskeyEnrollDialog } from '@/components/ui/passkey-enroll-dialog';
-import { SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSupplementary, type SplitViewSelection } from '@/components/ui/split-view';
-import { Toaster, createToastQueue } from '@/components/ui/toast';
+import {
+  SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSupplementary, type SplitViewValue,
+} from '@/components/ui/split-view';
+import { ToastRegion, createHud } from '@/components/ui/toast';
 import { BLProvider, useAppearance } from '@/lib/theme';
 import type { Tailscale } from '@/lib/tailscale';
 import { TailscaleProvider, useOptionalTailscale } from '@/lib/tailscale-react';
@@ -16,7 +18,7 @@ import type { CategoryId } from './data';
 import { Detail } from './detail';
 import { SERVICES, createDeviceAuth, type DeviceAuth, type DeviceGrant, type ServiceId } from './device-auth';
 import { ItemList } from './item-list';
-import { useClock } from './parts';
+import { HudProvider, useClock } from './parts';
 import { Sidebar } from './sidebar';
 import { SignInCredenza, serviceItemId } from './sign-in';
 import { SignInsProvider, useSignInStore } from './sign-ins';
@@ -74,14 +76,13 @@ function Passwords({ initialCategory = 'all', initialItem, live = true, auth: au
   const dark = useAppearance() === 'dark';
   const vault = useVault();
   const now = useClock(live);
-  const [hud] = useState(createToastQueue);
+  const [hud] = useState(() => createHud());
   const [query, setQuery] = useState('');
   const [editing, setEditing] = useState(false);
   const [signIn, setSignIn] = useState<ServiceId | null>(initialSignIn ?? null);
-  const [compact, setCompact] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const signIns = useSignInStore(auth);
-  const [selection, setSelection] = useState<SplitViewSelection>(() => ({
+  const [selection, setSelection] = useState<SplitViewValue>(() => ({
     sidebar: initialCategory,
     supplementary: initialItem ?? firstEntry(sectionsFor(initialCategory, vault, '')),
   }));
@@ -91,7 +92,7 @@ function Passwords({ initialCategory = 'all', initialItem, live = true, auth: au
   const entries = sections.flatMap((s) => s.items);
   const entry = entries.find((e) => e.id === selection.supplementary) ?? null;
 
-  const onSelectionChange = (next: SplitViewSelection) => {
+  const onValueChange = (next: SplitViewValue) => {
     // A new category starts at its first item, with a fresh search.
     if (next.sidebar !== selection.sidebar) {
       setQuery('');
@@ -139,11 +140,10 @@ function Passwords({ initialCategory = 'all', initialItem, live = true, auth: au
 
   return (
     <BLProvider dark={dark} tint={PASSWORDS_TINT[dark ? 'dark' : 'light']} className="bg-background">
-      {/* The "Copied" HUD: the block's own toast queue, drawn inside the block; copy buttons reach it via useToast. */}
+      {/* The "Copied" HUD: the block's own, drawn inside the block; copy buttons reach it through HudProvider. */}
       <SignInsProvider value={{ ...signIns, signIn: setSignIn, savePasskey }}>
-      <Toaster queue={hud} inline aria-label="Passwords notifications">
-        <SplitView aria-label="Passwords" selection={selection} onSelectionChange={onSelectionChange} defaultCompactColumn="sidebar"
-          onWidthClassChange={(wc) => setCompact(wc === 'compact')}>
+      <HudProvider hud={hud}>
+        <SplitView aria-label="Passwords" value={selection} onValueChange={onValueChange} defaultCompactColumn="sidebar">
           <SplitViewSidebar width={296} minWidth={250}>
             <Sidebar vault={vault} onOpenService={show} />
           </SplitViewSidebar>
@@ -153,11 +153,13 @@ function Passwords({ initialCategory = 'all', initialItem, live = true, auth: au
           <SplitViewDetail>
             <Detail entry={entry} vault={vault} now={now} editing={editing} onEditing={setEditing} />
           </SplitViewDetail>
+          {/* Inside the SplitView, whose size class the Credenza follows: a tray in one column, a card beside several. */}
+          <SignInCredenza service={signIn} auth={auth} live={live} onClose={() => setSignIn(null)} onSaved={saveGrant}
+            onSavePasskey={savePasskey} />
         </SplitView>
-        <SignInCredenza service={signIn} auth={auth} compact={compact} live={live} onClose={() => setSignIn(null)} onSaved={saveGrant}
-          onSavePasskey={savePasskey} />
-      </Toaster>
-      <PasskeyEnrollDialog isOpen={enrolling} onOpenChange={setEnrolling} appName="Passwords"
+        <ToastRegion variant="hud" toaster={hud.toaster} aria-label="Passwords notifications" />
+      </HudProvider>
+      <PasskeyEnrollDialog open={enrolling} onOpenChange={setEnrolling} appName="Passwords"
         protects="the developer sign-in tokens Passwords keeps in this browser" />
       </SignInsProvider>
     </BLProvider>

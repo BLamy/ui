@@ -62,7 +62,7 @@ export default defineConfig(() => ({
       // 'use client' directives survive per file. (The stylesheet is still a single dist/index.css.)
       output: { preserveModules: true, preserveModulesRoot: 'src', entryFileNames: '[name].js' },
       // External packages that should not be bundled into your library.
-      // Dependencies stay external so apps share one copy (react-aria's contexts must be shared).
+      // Dependencies stay external so apps share one copy (UI SDK's layer stack and focus state must be shared).
       external: (id: string) =>
         [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.peerDependencies ?? {}), 'react/jsx-runtime']
           .some((dep) => id === dep || id.startsWith(dep + '/')),

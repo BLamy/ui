@@ -2,15 +2,14 @@
 
 Hooks that read the ambient light or dark appearance, the theme scope an overlay should wear, the shared "chrome hidden" flag that nav bars and tab bars follow, and the Workbench's appearance. The theme system itself (tokens, `BLProvider`, `ThemeScope`) is on the [Theming](https://blamy.github.io/ui/#/theming) page; the other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
-All five are public.
+All four are public. 6.0 removed `useScrollHidden`: floating chrome of your own uses `useHideOnScroll` from `FloatingSheet` (see [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)), and anything else reads `useChromeHidden()`.
 
 ```tsx
 // npm
-import { useAppearance, useThemeScopeProps, useChromeHidden, useScrollHidden, useWorkbenchAppearance } from '@brett_lamy/ui'
+import { useAppearance, useThemeScopeProps, useChromeHidden, useWorkbenchAppearance } from '@brett_lamy/ui'
 
 // shadcn registry (aliases)
 import { useAppearance, useThemeScopeProps, useChromeHidden } from '@/lib/theme'            // …/r/theme.json
-import { useScrollHidden } from '@/lib/scroll-hidden'                                        // …/r/scroll-hidden.json
 import { useWorkbenchAppearance } from '@/components/ui/workbench-theme'                    // …/r/workbench-theme.json
 ```
 
@@ -51,7 +50,7 @@ Gotchas:
 
 ## `useThemeScopeProps`
 
-The props a portalled overlay needs to wear the theme scope of the surface that opened it. Popovers, menus, dialogs and tooltips render in a portal, outside the scope's DOM, so CSS inheritance cannot reach them; `ThemeScope` publishes its scope and the overlay primitives spread this onto their root.
+The props a portalled overlay needs to wear the theme scope of the surface that opened it. Popovers, menus, dialogs and tooltips render in the layer host (BLProvider's root), outside the scope's DOM, so CSS inheritance cannot reach them; `ThemeScope` publishes its scope and the kit's popup parts spread this onto themselves.
 
 - **Export:** public. Registry item `theme`.
 - **Needs:** to be rendered inside a `ThemeScope`. **Outside one:** returns `{}`; nothing is applied.
@@ -83,7 +82,7 @@ function Callout({ children }: { children: React.ReactNode }) {
 
 Gotchas:
 
-- **Only `ThemeScope` publishes the context.** `BLProvider` does not, but it portals react-aria overlays into its own root, which already carries its appearance class, so they inherit it. Use this hook for overlays you portal yourself.
+- **Only `ThemeScope` publishes the context.** `BLProvider` does not, but it is the layer host for UI SDK popups (`useLayerHost()`): dialogs, menus, popovers and toasts render inside its root, which already carries its appearance class, so they inherit it. The kit's popup parts also spread this hook's `style` onto themselves, so a popup opened from inside a `ThemeScope` wears that scope. Use this hook for overlays you place yourself.
 - The hook returns a new `style` object each call. `readThemeVars(el)` and `themeScopeProps(...)`, also public, are the non-hook versions for code that has an element or the scope options in hand.
 
 ## `useChromeHidden`
@@ -104,7 +103,7 @@ function FloatingAction() {
 }
 ```
 
-`NavigationStack` publishes it while a screen scrolls: it hides after a downward scroll of more than 5px once the scroll position is past about 70% of the bar height, shows again on an upward scroll of more than 5px or near the top, and resets to visible whenever a screen unmounts (a pop included). A screen can opt out with `hideChromeOnScroll: false`. `TabBar` and `TabView` (`hideOnScroll`), `List`'s sticky headers, and the hide-on-scroll of `FloatingSheet` and `FloatingChat` read it. To drive it from a scroller of your own, set the store: `chromeStore.set(true)` hides, `chromeStore.set(false)` shows.
+`NavigationStack` publishes it while its top page scrolls: the bar hides after a downward scroll of more than 5px once the scroll position is past about 70% of the bar height, and shows again on an upward scroll of more than 5px or near the top. A page opts out with `<NavigationStackBar hideOnScroll={false}>`, and the stack's `onBarHiddenChange(hidden)` reports the same change. `TabBar` and `TabView` (`hideOnScroll`), `List`'s sticky headers, and `useHideOnScroll` (behind `FloatingSheet` and `FloatingChat`) read it. To drive it from a scroller of your own, set the store: `chromeStore.set(true)` hides, `chromeStore.set(false)` shows.
 
 Gotchas:
 
@@ -112,31 +111,6 @@ Gotchas:
 - A fresh subscriber starts from the store's current value and syncs again in an effect, so a component mounted while the chrome is hidden is correct after the first commit.
 - Nothing is published on the server; it is `false` there.
 - `chromeOffset(top, hidden)` turns a bar height into the offset sticky headers stop at: while hidden it moves up by one bar height (`BARH`, 52px), never below zero.
-
-## `useScrollHidden`
-
-Whether floating chrome (a tab bar, a floating sheet, a floating chat) should hide: the shared chrome state says the bars are hidden, or a scroller of your own was scrolled down. It is what `FloatingSheet` and `FloatingChat` use for `hideOnScroll`.
-
-- **Export:** public. Registry item `scroll-hidden` (`@/lib/scroll-hidden`), which depends on `theme`.
-- **Needs:** nothing.
-
-```ts
-function useScrollHidden(hideOnScroll: boolean, scrollRef?: RefObject<HTMLElement | null>): boolean
-```
-
-```tsx
-function Fab({ scrollRef }: { scrollRef: RefObject<HTMLElement | null> }) {
-  const hidden = useScrollHidden(true, scrollRef)
-  return <button className={hidden ? 'translate-y-full' : ''}>New</button>
-}
-```
-
-It is `false` whenever `hideOnScroll` is `false`. Otherwise it is `true` while `useChromeHidden()` is, or while `scrollRef`'s element has been scrolled down: more than 3px of downward scroll hides, more than 3px up shows, and within 4px of the top it always shows. The scroll listener is passive.
-
-Gotchas:
-
-- **The scroller is read once, in an effect.** It re-runs only when `scrollRef` (the ref object) or `hideOnScroll` changes, so `scrollRef.current` must already be set when the component commits. A scroller that mounts later is never listened to, and only the shared chrome state applies.
-- Without a `scrollRef`, it reduces to `hideOnScroll && useChromeHidden()`.
 
 ## `useWorkbenchAppearance`
 

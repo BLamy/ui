@@ -9,7 +9,8 @@ import { clipEnd, layoutTrack, splitClip, timelineDuration, type Timeline } from
 
 // A timeline with a magnetic main track (drag a clip among the others; trim an
 // edge and the rest ripple), a free titles track and music under it. Edits come
-// back through onChange once per gesture, so undo is a stack of timelines.
+// back through onValueChange once per gesture or key, so undo is a stack of
+// timelines.
 // The frames and peaks are drawn here; in an app they come from FFmpeg
 // (useMediaFrames, useMediaPeaks).
 
@@ -65,17 +66,17 @@ export default function TimelineEditor() {
       <div className="flex items-center gap-2 border-b border-border px-2 py-1">
         <PlaybackControls clock={clock} />
         <div className="flex-1" />
-        <Button variant="ghost" size="sm" onPress={split}>Split</Button>
-        <Button variant="ghost" size="sm" isDisabled={history.length < 2} onPress={() => setHistory((h) => h.slice(0, -1))}>Undo</Button>
+        <Button variant="ghost" size="sm" onClick={split}>Split</Button>
+        <Button variant="ghost" size="sm" disabled={history.length < 2} onClick={() => setHistory((h) => h.slice(0, -1))}>Undo</Button>
       </div>
       <VideoTimeline
         className="min-h-0 flex-1"
-        timeline={timeline}
-        onChange={edit}
+        value={timeline}
+        onValueChange={edit}
         clock={clock}
         media={{ ...MEDIA, title: { name: 'Title', kind: 'image', duration: Infinity } }}
-        selection={selection}
-        onSelectionChange={setSelection}
+        selectedClips={selection}
+        onSelectedClipsChange={setSelection}
         defaultZoom={42}
         clipClassName={(clip) => (clip.media === 'title' ? 'border-chart-5/55 bg-chart-5/25' : undefined)}
         renderClip={(clip, track) =>

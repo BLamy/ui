@@ -37,7 +37,7 @@ export default function ActivityDrawer({
             {mode === 'overlay' ? (
               <TintButton
                 label="Show Activity"
-                onPress={() => setOpen(true)}
+                onClick={() => setOpen(true)}
                 style={{ marginTop: 12, fontSize: 13, padding: '8px 14px' }}
               />
             ) : (
@@ -59,9 +59,9 @@ export default function ActivityDrawer({
         {/* overlay slides over the detail with a scrim; fixed docks it as a
             layout column */}
         <SideDrawer
-          mode={mode}
+          presentation={mode}
           open={open}
-          onClose={() => setOpen(false)}
+          onOpenChange={setOpen}
           title="Activity"
           width={230}
         >
@@ -112,16 +112,16 @@ function Frame({
 
 function TintButton({
   label,
-  onPress,
+  onClick,
   style,
 }: {
   label: string
-  onPress: () => void
+  onClick: () => void
   style?: CSSProperties
 }) {
   return (
     <button
-      onClick={onPress}
+      onClick={onClick}
       style={{
         border: 0,
         borderRadius: 10,

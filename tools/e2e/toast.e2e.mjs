@@ -1,25 +1,25 @@
 import { test, expect } from '@playwright/test';
-import { openDemo, settled, drag, center } from './helpers.mjs';
+import { openDemo, settled } from './helpers.mjs';
 
-/* Toast, through its docs demo (banners at the top of a frame): they pile up like Sonner's — the newest in front, the
-   rest peeking out behind — and spread into a list on hover or focus. */
+/* Toast, through its docs demo (banners at the top of a frame): they pile up, the newest in front and the rest peeking
+   out behind, and spread into a list on hover or focus. */
 test.beforeEach(async ({ page }) => {
   await openDemo(page, 'toast/banners', 'button');
 });
 
-const layers = (page) => page.locator('[data-slot=toast-layer]');
-const stack = (page) => page.locator('[data-slot=toast-stack]');
+const layers = (page) => page.locator('[data-slot=toast]');
+const stack = (page) => page.locator('[data-slot=toast-region]');
+const front = (page) => page.locator('[data-slot=toast][data-front]');
 const send = async (page, n) => {
   for (let i = 0; i < n; i++) await page.getByRole('button', { name: 'Banner', exact: true }).click();
 };
 /** Each layer's box and visible state, newest (front) first. */
 const read = (page) => layers(page).evaluateAll((els) =>
   els
-    .sort((a, b) => Number(a.dataset.index) - Number(b.dataset.index))
+    .sort((a, b) => Number(a.style.getPropertyValue('--toast-index')) - Number(b.style.getPropertyValue('--toast-index')))
     .map((el) => {
       const r = el.getBoundingClientRect();
-      const card = el.querySelector('[data-slot=toast]');
-      return { top: Math.round(r.top), height: Math.round(r.height), width: Math.round(r.width), behind: card.dataset.behind === 'true', textOpacity: Number(getComputedStyle(card.firstElementChild).opacity) };
+      return { top: Math.round(r.top), height: Math.round(r.height), width: Math.round(r.width), behind: !el.hasAttribute('data-front') && !el.hasAttribute('data-expanded'), textOpacity: Number(getComputedStyle(el.firstElementChild).opacity) };
     }));
 
 test('banners pile up: the newest in front, the ones behind peek out smaller with their content hidden', async ({ page }) => {
@@ -50,7 +50,7 @@ test('hovering the pile spreads it into a list, and leaving puts it back', async
   const piled = await read(page);
   const box = await stack(page).boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + 20);
-  await expect(stack(page)).toHaveAttribute('data-expanded', 'true');
+  await expect(stack(page)).toHaveAttribute('data-expanded', '');
   await settled(page, () => read(page));
   const spread = await read(page);
   // Full size, a 10px gap between cards, every card readable.
@@ -60,9 +60,9 @@ test('hovering the pile spreads it into a list, and leaving puts it back', async
   expect(spread[2].top).toBeGreaterThan(piled[2].top + 10);
   // The gap between two cards is still "on the stack": moving through it does not collapse the list.
   await page.mouse.move(box.x + box.width / 2, spread[0].top + spread[0].height + 4);
-  await expect(stack(page)).toHaveAttribute('data-expanded', 'true');
+  await expect(stack(page)).toHaveAttribute('data-expanded', '');
   await page.mouse.move(2, 2);
-  await expect(stack(page)).not.toHaveAttribute('data-expanded', 'true');
+  await expect(stack(page)).not.toHaveAttribute('data-expanded');
   await settled(page, () => read(page));
   expect(await read(page)).toEqual(piled);
 });
@@ -70,28 +70,43 @@ test('hovering the pile spreads it into a list, and leaving puts it back', async
 test('moving keyboard focus into the pile spreads it', async ({ page }) => {
   await send(page, 3);
   await settled(page, () => read(page));
-  await page.locator('[data-slot=toast-layer][data-index="0"]').getByRole('button', { name: /close|dismiss/i }).focus();
-  await expect(stack(page)).toHaveAttribute('data-expanded', 'true');
+  await front(page).getByRole('button', { name: /close|dismiss/i }).focus();
+  await expect(stack(page)).toHaveAttribute('data-expanded', '');
 });
 
 test('closing the front card promotes the next one', async ({ page }) => {
   await send(page, 3);
   await settled(page, () => read(page));
   await page.mouse.move(2, 2);
-  await page.locator('[data-slot=toast-layer][data-index="0"]').getByRole('button', { name: /close|dismiss/i }).click();
+  await front(page).getByRole('button', { name: /close|dismiss/i }).click();
   await expect(layers(page)).toHaveCount(2);
+  // Focus was on the closed card's button, so it moves on to the card that took its place (UI SDK's focus
+  // recovery), and focus inside the region keeps the pile spread. Once focus leaves, it piles up again.
+  await expect(front(page)).toBeFocused();
+  await expect(stack(page)).toHaveAttribute('data-expanded', '');
   await page.mouse.move(2, 2);
+  await page.evaluate(() => document.activeElement?.blur());
+  await expect(stack(page)).not.toHaveAttribute('data-expanded');
   await settled(page, () => read(page));
-  const [front, back] = await read(page);
-  expect(front.textOpacity).toBe(1);
-  expect(back.textOpacity).toBe(0);
+  const [first, second] = await read(page);
+  expect(first.textOpacity).toBe(1);
+  expect(second.textOpacity).toBe(0);
 });
 
-test('swiping a card sideways dismisses it', async ({ page }) => {
+test('swiping a card toward the edge dismisses it', async ({ page }) => {
   await send(page, 2);
   await settled(page, () => read(page));
-  const card = await page.locator('[data-slot=toast-layer][data-index="0"] [data-slot=toast]').boundingBox();
-  await drag(page, { x: card.x + 40, y: card.y + card.height / 2 }, 220);
+  // The region sits at the top center, so a card is swiped away upward.
+  const card = await front(page).boundingBox();
+  const x = card.x + 40;
+  const y = card.y + card.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 14; i++) {
+    await page.mouse.move(x, y - (120 * i) / 14);
+    await page.waitForTimeout(12);
+  }
+  await page.mouse.up();
   await expect(layers(page)).toHaveCount(1);
 });
 

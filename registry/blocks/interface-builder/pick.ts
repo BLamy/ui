@@ -4,7 +4,7 @@
    elements, so the frame under the pointer is made hit-testable for as long as the question takes. An instance of a
    node is which of its elements in one scene's frame it is: a scene shown in place inside another scene is drawn in
    that one's frame too, and a repeated row is drawn once per item. */
-import type { Camera, Pt, Rect } from '@/lib/canvas-math';
+import type { Pt, Rect, Viewport } from '@/lib/canvas-math';
 import { specOf } from './catalog';
 import { contains, inflate, nodeIndex, shows, toBoardRect, union, type At, type DropTarget, type Measured } from './geometry';
 import type { Axis, Doc } from './model';
@@ -86,7 +86,7 @@ function boxOf(el: Element): DOMRect {
  * so the index is where it ends up once it has left its old place; and a drop that would show a scene inside itself
  * isn't one.
  */
-export function dropAt(doc: Doc, root: HTMLElement, frame: string, client: Pt, camera: Camera, m: Measured, moving: string | null): DropTarget | null {
+export function dropAt(doc: Doc, root: HTMLElement, frame: string, client: Pt, view: Viewport, m: Measured, moving: string | null): DropTarget | null {
   const f = frameEl(root, frame);
   if (!f) return null;
   const index = nodeIndex(doc);
@@ -98,8 +98,8 @@ export function dropAt(doc: Doc, root: HTMLElement, frame: string, client: Pt, c
     if (n.type === 'SceneRef' && typeof n.props.scene === 'string') shown.push(n.props.scene);
   });
   const base = root.getBoundingClientRect();
-  const board = (r: DOMRect) => toBoardRect(r, base, camera);
-  const p = { x: (client.x - base.left - camera.x) / camera.z, y: (client.y - base.top - camera.y) / camera.z };
+  const board = (r: DOMRect) => toBoardRect(r, base, view);
+  const p = { x: (client.x - base.left - view.x) / view.zoom, y: (client.y - base.top - view.y) / view.zoom };
 
   // The innermost container or slot under the point.
   let target: { el: HTMLElement; id: string; slot: string | null } | null = null;

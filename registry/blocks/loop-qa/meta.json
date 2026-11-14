@@ -26,5 +26,5 @@
     "data.ts",
     "recordings.ts"
   ],
-  "dependencies": ["class-variance-authority"]
+  "dependencies": ["@ui-sdk/react", "class-variance-authority"]
 }

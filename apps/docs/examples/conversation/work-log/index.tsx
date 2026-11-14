@@ -53,7 +53,7 @@ export default function WorkLogExample() {
           ) : (
             <div className="flex items-center justify-between rounded-xl border border-dashed border-border px-3 py-2.5 text-footnote text-muted-foreground">
               Back to Active.
-              <Button size="sm" variant="secondary" onPress={() => setSettled(true)}>
+              <Button size="sm" variant="secondary" onClick={() => setSettled(true)}>
                 Settle again
               </Button>
             </div>

@@ -36,7 +36,8 @@ The demo is real: it runs Tailscale's client and needs a Tailscale account; appr
 ## Variants
 
 ```tsx
-<PopoverContent aria-label="Tailscale connection">
+<PopoverContent>
+  <PopoverTitle className="sr-only">Tailscale connection</PopoverTitle>
   <TailscaleMenu variant="radio" onExitNode={choose} detail="3 pages and 9 requests this session." />
 </PopoverContent>
 
@@ -45,8 +46,8 @@ The demo is real: it runs Tailscale's client and needs a Tailscale account; appr
 
 | `variant` | Exit nodes | Offline device |
 | --- | --- | --- |
-| `radio` (default) | A react-aria `RadioGroup`: "None: your devices only", then one radio per device. | Its name ends in "(offline)"; still selectable. |
-| `networks` | A react-aria `ListBox`, like the Wi-Fi menu: **None** at the top, a leading check on the one in use, the name, a trailing glyph (`glyph` replaces it). | Dimmed, "Offline" underneath, not selectable. |
+| `radio` (default) | A `RadioGroup`: "None: your devices only", then one radio per device. | Its name ends in "(offline)"; still selectable. |
+| `networks` | A `Listbox` (`activation="manual"`: the arrows move, a press, Space or Enter switches), like the Wi-Fi menu: **None** at the top, a leading check on the one in use, the name, a trailing glyph (`glyph` replaces it). | Dimmed, "Offline" underneath, not selectable. |
 
 While a change is under way the row says **Connecting…** (with a spinner in `networks`) and the list ignores further presses; if `onExitNode` rejects, its message shows under the list. Arrow keys move through the rows.
 

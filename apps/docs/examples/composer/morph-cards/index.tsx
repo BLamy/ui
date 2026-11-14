@@ -24,8 +24,8 @@ function MorphCards() {
                   <span className="text-caption2 text-foreground/70">MCP Connector</span>
                   <span className="truncate text-footnote font-semibold text-foreground">Notion</span>
                 </span>
-                <Button size="sm" variant="quiet" onPress={() => setSuggest(false)}>Skip</Button>
-                <Button size="sm" variant="secondary" onPress={() => setSuggest(false)}>Connect</Button>
+                <Button size="sm" variant="quiet" onClick={() => setSuggest(false)}>Skip</Button>
+                <Button size="sm" variant="secondary" onClick={() => setSuggest(false)}>Connect</Button>
               </div>
             </ComposerMorphCard>
           ) : null}
@@ -33,7 +33,7 @@ function MorphCards() {
         <ComposerCard>
           <ComposerInput placeholder="Ask anything…" />
           <ComposerFooter>
-            <ComposerButton aria-label={context ? 'Hide context' : 'Show context'} onPress={() => setContext((c) => !c)}>
+            <ComposerButton aria-label={context ? 'Hide context' : 'Show context'} onClick={() => setContext((c) => !c)}>
               <Icon name="sparkle" size={15} />
             </ComposerButton>
             <ComposerSpacer />
@@ -45,15 +45,15 @@ function MorphCards() {
             <ComposerMorphCard key="context">
               <div className="flex items-center gap-2 px-3 py-2">
                 <ComposerText className="flex-1 text-foreground/70">3 files and the open diff go with this message</ComposerText>
-                <Button size="sm" variant="quiet" onPress={() => setContext(false)}>Clear</Button>
+                <Button size="sm" variant="quiet" onClick={() => setContext(false)}>Clear</Button>
               </div>
             </ComposerMorphCard>
           ) : null}
         </ComposerCards>
       </Composer>
       <div className="flex justify-center gap-2">
-        <Button variant="secondary" onPress={() => setSuggest((s) => !s)}>Toggle top card</Button>
-        <Button variant="secondary" onPress={() => setContext((c) => !c)}>Toggle bottom card</Button>
+        <Button variant="secondary" onClick={() => setSuggest((s) => !s)}>Toggle top card</Button>
+        <Button variant="secondary" onClick={() => setContext((c) => !c)}>Toggle bottom card</Button>
       </div>
     </div>
   )

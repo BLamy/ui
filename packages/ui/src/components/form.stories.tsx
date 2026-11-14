@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Form, FormSection } from '@/components/ui/form';
-import { TextField, FieldDescription, FieldError } from '@/components/ui/text-field';
+import { Form } from '@/components/ui/form';
+import { Field, FieldDescription, FieldError, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,48 +18,55 @@ const meta: Meta<typeof Form> = {
 export default meta;
 type Story = StoryObj<typeof Form>;
 
-function Signup({ dark, errors }: { dark?: boolean; errors?: Record<string, string> }) {
+function Signup({ dark, errors: serverErrors = {} }: { dark?: boolean; errors?: Record<string, string> }) {
   const [sent, setSent] = useState<string | null>(null);
+  // A server's errors, by field name: each shows on its field until the field is edited.
+  const [errors, setErrors] = useState(serverErrors);
   return (
     <Screen dark={dark} h={860} title="Create account">
-      <Form
-        validationErrors={errors}
-        onSubmit={(e) => { e.preventDefault(); setSent(String(new FormData(e.currentTarget).get('email'))); }}
-      >
-        <FormSection title="Account">
-          <TextField name="name" isRequired defaultValue="Jane Appleseed">
-            <Label variant="field">Full name</Label>
-            <Input autoComplete="name" />
+      <Form onSubmit={(e) => { e.preventDefault(); setSent(String(new FormData(e.currentTarget).get('email'))); }}>
+        <FieldSet>
+          <FieldLegend>Account</FieldLegend>
+          <Field name="name">
+            <FieldLabel variant="field">Full name</FieldLabel>
+            <Input required autoComplete="name" defaultValue="Jane Appleseed" />
             <FieldError />
-          </TextField>
-          <TextField name="email" type="email" isRequired defaultValue={errors ? 'jane@example' : ''}>
-            <Label variant="field">Email</Label>
-            <Input placeholder="you@example.com" autoComplete="email" />
-            <FieldError />
-          </TextField>
-          <Select name="role" defaultValue="design" aria-label="Role">
-            <Label variant="field">Role</Label>
-            <SelectTrigger />
-            <SelectContent>
-              <SelectItem id="design">Design</SelectItem>
-              <SelectItem id="eng">Engineering</SelectItem>
-              <SelectItem id="pm">Product</SelectItem>
-            </SelectContent>
-          </Select>
-        </FormSection>
-        <FormSection title="Preferences" description="You can change these later in Settings.">
-          <RadioGroup name="plan" defaultValue="free">
-            <Label variant="field">Plan</Label>
-            <Radio value="free">Free</Radio>
-            <Radio value="pro">Pro · $8/mo</Radio>
-          </RadioGroup>
-          <TextField name="about">
-            <Label variant="field">About you</Label>
+          </Field>
+          <Field name="email" invalid={errors.email ? true : undefined}>
+            <FieldLabel variant="field">Email</FieldLabel>
+            <Input type="email" required placeholder="you@example.com" autoComplete="email" defaultValue={serverErrors.email ? 'jane@example' : ''}
+              onValueChange={() => setErrors({})} />
+            <FieldError>{(state) => errors.email || state.message}</FieldError>
+          </Field>
+          <Field name="role">
+            <FieldLabel variant="field">Role</FieldLabel>
+            <Select defaultValue="design">
+              <SelectTrigger />
+              <SelectContent>
+                <SelectItem value="design">Design</SelectItem>
+                <SelectItem value="eng">Engineering</SelectItem>
+                <SelectItem value="pm">Product</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+        </FieldSet>
+        <FieldSet>
+          <FieldLegend>Preferences</FieldLegend>
+          <Field name="plan">
+            <FieldLabel variant="field">Plan</FieldLabel>
+            <RadioGroup defaultValue="free">
+              <Label variant="control"><Radio value="free" />Free</Label>
+              <Label variant="control"><Radio value="pro" />Pro · $8/mo</Label>
+            </RadioGroup>
+          </Field>
+          <Field name="about">
+            <FieldLabel variant="field">About you</FieldLabel>
             <Textarea size="sm" placeholder="Optional" />
             <FieldDescription>Shown on your profile.</FieldDescription>
-          </TextField>
-          <Checkbox name="terms" isRequired>I agree to the Terms</Checkbox>
-        </FormSection>
+          </Field>
+          <Label variant="control"><Checkbox name="terms" required />I agree to the Terms</Label>
+          <FieldDescription>You can change these later in Settings.</FieldDescription>
+        </FieldSet>
         <Button type="submit" size="pill">Create Account</Button>
         {sent ? <p className="m-0 text-center text-[13px] text-success">Submitted for {sent}</p> : null}
       </Form>

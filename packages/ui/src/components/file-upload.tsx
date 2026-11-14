@@ -1,59 +1,44 @@
 'use client';
-import { createContext, use, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { createContext, use, useId, useMemo, type ComponentProps, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import {
-  DropZone, FileTrigger, Text, composeRenderProps,
-  type DropItem, type DropZoneProps, type DropZoneRenderProps,
-} from 'react-aria-components';
-import { useClipboard } from 'react-aria/useClipboard';
+  FileInput, FileInputDropzone, FileInputItem, FileInputItemRemove, FileInputList, FileInputTrigger,
+  type FileInputDropzoneState, type FileInputState, type FileInputValueChangeDetails, type FileRejection,
+} from '@ui-sdk/react/file-input';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Button, type ButtonProps } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Icon, type IconName } from '@/lib/icon';
-import { formatBytes } from '@/lib/format-bytes';
-import { cn } from '@/lib/utils';
-import {
-  describeRules, entriesFromFileList, fileKind, readDropItems, useFileUpload, useFilePreview,
-  type FileEntry, type FileKind, type FileRules, type FileUploadState, type UploadFile, type UseFileUploadOptions,
-} from '@/lib/file-upload-model';
+import { formatFileSize } from '@ui-sdk/core/file-input';
+import { cn, cx, type ClassProp } from '@/lib/utils';
+import { describeRules, fileKind, type FileKind, type FileUploadRules, type UploadFile } from '@/lib/file-upload-model';
+import type { FileUploadOptions } from '@/lib/file-upload-primitive';
+import { useFileUpload, useFilePreview, type FileUploadState } from '@/lib/use-file-upload';
 
 /* ══ FileUpload — pick, drop or paste files, see them, send them ══
-   Built on react-aria's FileTrigger (the hidden <input type=file>) and DropZone (drag and drop, with a labelled
-   button that keyboard and screen-reader users reach), driven by `useFileUpload` (lib/file-upload).
+   Built on UI SDK's FileInput: the trigger opens the system picker, the drop zone takes drops (folders included)
+   and pastes while focus is inside it, the checks run on every file, and the list has one Tab stop (arrow keys
+   move, Delete removes). The `fileUpload` primitive (lib/file-upload-primitive, through `useFileUpload`) keeps the
+   rows and sends them; its root is the FileInput's element, so agents can remove, retry, clear and start uploads.
 
-     <FileUpload accept={['image/*']} maxSize={5 * MB} upload={xhrUpload('/api/upload')} pasteable>
+     <FileUpload accept={['image/*']} maxSize={5 * MB} upload={xhrUpload('/api/upload')}>
        <FileDropZone />          // the target: drag, browse, paste
        <FileList />              // a row per file: thumbnail, progress, retry, remove
      </FileUpload>
 
-   The parts also work alone: `FileUploadButton` is a Button that opens the chooser, `FileDropZone` takes `onFiles`,
-   and `FileItem` takes an `UploadFile` from your own `useFileUpload`. Inside a `FileUpload` they share its state
-   and rules, a polite live region announces files added, rejected, removed, failed and done (never progress
-   ticks), and removing a row moves focus to its neighbor. */
+   The parts also work alone: `FileUploadButton` is a Button that opens the chooser and `FileDropZone` a zone, each
+   handing the files it takes to `onFiles`; `FileItem` takes an `UploadFile` from your own `useFileUpload`. Inside a
+   `FileUpload` they share its state and rules, and FileInput announces what was added, rejected and removed; the
+   hook announces uploads that finish or fail (never progress ticks). */
 
-export interface FilesInfo {
-  /** How the files arrived. */
-  source: 'drop' | 'browse' | 'paste';
-  /** A dropped folder held more files than were read. */
-  truncated: boolean;
-  /** Dropped folders that were skipped because the target doesn't take folders. */
-  skippedFolders: number;
-}
-type OnFiles = (entries: FileEntry[], info: FilesInfo) => void;
+/** What a part outside a `FileUpload` hands over: the files it took and FileInput's change details. */
+export type OnFiles = (files: File[], details: FileInputValueChangeDetails) => void;
 
 /* ── Context ── */
 
 export interface FileUploadContextValue extends FileUploadState {
   disabled: boolean;
   multiple: boolean;
-  acceptDirectory: boolean;
-  defaultCamera?: 'user' | 'environment';
-  pasteable: boolean;
-  /** A message about the last drop that isn't a per-file rejection (folders skipped, a folder cut short). */
-  notice: string | null;
-  /** Adds files from the zone or button (validates, announces). */
-  addFiles: OnFiles;
-  /** Removes a row and moves focus to its neighbor (the rows' Remove button uses it). */
-  dismiss: (id: string) => void;
+  directory: boolean;
 }
 
 const FileUploadContext = createContext<FileUploadContextValue | null>(null);
@@ -63,194 +48,104 @@ export function useFileUploadContext(): FileUploadContextValue | null {
   return use(FileUploadContext);
 }
 
-/* ── Live announcements ── */
-
-interface Pending { added: number; rejected: UploadFile[]; removed: string[]; failed: string[]; done: string[]; notes: string[] }
-const fresh = (): Pending => ({ added: 0, rejected: [], removed: [], failed: [], done: [], notes: [] });
-const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
-
-/** What changed in the list, as one polite sentence after a short pause: so a batch is one announcement and progress ticks never speak. */
-function useAnnouncements(files: readonly UploadFile[]) {
-  const [message, setMessage] = useState('');
-  const known = useRef<Map<string, { name: string; status: UploadFile['status'] }> | null>(null);
-  const pending = useRef<Pending>(fresh());
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const flip = useRef(false);
-
-  const schedule = () => {
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      const p = pending.current;
-      pending.current = fresh();
-      const parts: string[] = [];
-      if (p.added) parts.push(plural(p.added, '1 file added', `${p.added} files added`));
-      if (p.rejected.length) {
-        parts.push(p.rejected.length === 1 ? `${p.rejected[0].file.name} rejected. ${p.rejected[0].error ?? ''}`.trim() : `${p.rejected.length} files rejected`);
-      }
-      if (p.done.length) parts.push(p.done.length === 1 ? `${p.done[0]} uploaded` : `${p.done.length} files uploaded`);
-      if (p.failed.length) parts.push(p.failed.length === 1 ? `${p.failed[0]} failed to upload` : `${p.failed.length} uploads failed`);
-      if (p.removed.length) parts.push(p.removed.length === 1 ? `${p.removed[0]} removed` : `${p.removed.length} files removed`);
-      parts.push(...p.notes);
-      if (!parts.length) return;
-      // The same sentence twice in a row would not be announced again; a trailing no-break space makes it a new string.
-      flip.current = !flip.current;
-      setMessage(parts.join('. ').replace(/\.$/, '') + '.' + (flip.current ? '' : ' '));
-    }, 300);
-  };
-
-  useEffect(() => {
-    const now = new Map(files.map((f) => [f.id, { name: f.file.name, status: f.status }]));
-    const before = known.current;
-    known.current = now;
-    if (!before) return;
-    const p = pending.current;
-    let changed = false;
-    for (const f of files) {
-      const was = before.get(f.id);
-      if (!was) {
-        if (f.status === 'rejected') p.rejected.push(f);
-        else p.added++;
-        changed = true;
-      } else if (was.status !== f.status) {
-        if (f.status === 'done') p.done.push(f.file.name);
-        else if (f.status === 'error') p.failed.push(f.file.name);
-        else continue;
-        changed = true;
-      }
-    }
-    for (const [id, was] of before) {
-      if (!now.has(id)) {
-        p.removed.push(was.name);
-        changed = true;
-      }
-    }
-    if (changed) schedule();
-  }, [files]);
-
-  useEffect(() => () => clearTimeout(timer.current), []);
-
-  const note = (text: string) => {
-    pending.current.notes.push(text);
-    schedule();
-  };
-  return { message, note };
-}
-
 /* ── FileUpload ── */
 
-export interface FileUploadProps extends UseFileUploadOptions {
-  /** Bring your own `useFileUpload` (to call `uploadAll()` or read the list outside); the rule props here are then ignored. */
+export interface FileUploadProps extends FileUploadOptions {
+  /** Bring your own `useFileUpload` (to read the list outside); the list props here are then ignored. To only call
+   *  `uploadAll()` or `clear()` from outside, pass a `controller` instead. */
   state?: FileUploadState;
   /** Whether several files can be chosen at once. Default: unless `maxFiles` is 1. */
   multiple?: boolean;
-  /** Choose and read whole folders. Dropped and picked files keep their relative paths. */
-  acceptDirectory?: boolean;
+  /** Choose whole folders. Picked and dropped files keep their paths inside the folder. */
+  directory?: boolean;
   /** Open the camera directly on phones (`user` front, `environment` rear). */
-  defaultCamera?: 'user' | 'environment';
-  /** Take files pasted while the zone's buttons are focused. */
-  pasteable?: boolean;
+  capture?: boolean | 'user' | 'environment';
   disabled?: boolean;
+  /** Submit the files with a form under this name. */
+  name?: string;
+  form?: string;
+  required?: boolean;
   /** Default: a `FileDropZone` and a `FileList`. A function receives the context. */
   children?: ReactNode | ((api: FileUploadContextValue) => ReactNode);
   className?: string;
   style?: CSSProperties;
 }
 
-export function FileUpload({ state, children, className, style, multiple, acceptDirectory = false, defaultCamera, pasteable = false, disabled = false, ...options }: FileUploadProps) {
+export function FileUpload({
+  state, children, className, style, multiple, directory = false, capture, disabled = false, name, form, required, ...options
+}: FileUploadProps) {
   // The hook always runs; a `state` from outside simply replaces its result.
   const own = useFileUpload(state ? {} : options);
-  return (
-    <FileUploadRoot
-      api={state ?? own}
-      multiple={multiple ?? (state ? state.rules.maxFiles !== 1 : options.maxFiles !== 1)}
-      acceptDirectory={acceptDirectory}
-      defaultCamera={defaultCamera}
-      pasteable={pasteable}
-      disabled={disabled}
-      className={className}
-      style={style}
-    >
-      {children}
-    </FileUploadRoot>
+  const api = state ?? own;
+  const allowsMultiple = multiple ?? (directory || api.inputProps.multiple);
+  const value = useMemo<FileUploadContextValue>(
+    () => ({ ...api, disabled, multiple: allowsMultiple, directory }),
+    [api, disabled, allowsMultiple, directory],
   );
-}
-
-interface RootProps extends Pick<FileUploadProps, 'children' | 'className' | 'style' | 'defaultCamera'> {
-  api: FileUploadState;
-  multiple: boolean;
-  acceptDirectory: boolean;
-  pasteable: boolean;
-  disabled: boolean;
-}
-
-function FileUploadRoot({ api, children, className, style, multiple, acceptDirectory, defaultCamera, pasteable, disabled }: RootProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const { message, note } = useAnnouncements(api.files);
-  const [notice, setNotice] = useState<string | null>(null);
-  // Which row to focus once a removed row is gone: a neighbor's Remove button, else the zone's button.
-  const focusAfter = useRef<string | 'trigger' | null>(null);
-
-  const dismiss = (id: string) => {
-    const rows = Array.from(rootRef.current?.querySelectorAll<HTMLElement>('[data-slot=file-item]') ?? []);
-    const i = rows.findIndex((row) => row.dataset.fileId === id);
-    const neighbor = rows[i + 1] ?? rows[i - 1];
-    focusAfter.current = neighbor?.dataset.fileId ?? 'trigger';
-    api.remove(id);
-  };
-
-  useEffect(() => {
-    const target = focusAfter.current;
-    if (!target) return;
-    focusAfter.current = null;
-    const root = rootRef.current;
-    const el =
-      target === 'trigger'
-        ? root?.querySelector<HTMLElement>('[data-file-trigger]')
-        : (Array.from(root?.querySelectorAll<HTMLElement>('[data-slot=file-item]') ?? [])
-            .find((row) => row.dataset.fileId === target)
-            ?.querySelector<HTMLElement>('[data-slot=file-item-remove]') ?? root?.querySelector<HTMLElement>('[data-file-trigger]'));
-    el?.focus();
-  }, [api.files]);
-
-  const addFiles: OnFiles = (entries, info) => {
-    if (disabled) return;
-    const notes: string[] = [];
-    if (info.skippedFolders) notes.push('Folders can’t be added here. Choose files instead.');
-    if (info.truncated) notes.push('The folder was too large to read in full. Only the first files were added.');
-    setNotice(notes.join(' ') || null);
-    for (const text of notes) note(text);
-    if (entries.length) api.add(entries);
-  };
-
-  const value: FileUploadContextValue = { ...api, disabled, multiple, acceptDirectory, defaultCamera, pasteable, notice, addFiles, dismiss };
   return (
     <FileUploadContext value={value}>
-      <div ref={rootRef} data-slot="file-upload" className={cn('flex w-full flex-col gap-3', className)} style={style}>
+      {/* `inputProps.render` makes the FileInput's element the list's root too (named for agents, with its rows). */}
+      <FileInput
+        {...api.inputProps}
+        multiple={allowsMultiple}
+        directory={directory}
+        capture={capture}
+        disabled={disabled}
+        name={name}
+        form={form}
+        required={required}
+        className={cn('flex w-full flex-col gap-3', className)}
+        style={style}
+      >
         {typeof children === 'function' ? children(value) : (children ?? <><FileDropZone /><FileList /></>)}
-        <div data-slot="file-upload-status" role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-          {message}
-        </div>
-      </div>
+      </FileInput>
     </FileUploadContext>
   );
 }
 
-/* ── Reading what arrives ── */
+/* ── A FileInput of its own, for a part used outside a FileUpload ── */
 
-/** Turns a drop or paste into entries (folders flattened) and hands them over. */
-async function takeItems(items: Iterable<DropItem>, source: FilesInfo['source'], directories: boolean, deliver: OnFiles, native: File[] = []) {
-  const read = await readDropItems(items, { directories });
-  // `webkitGetAsEntry` can come back empty for files that don't live on disk (a script's DataTransfer, some
-  // sources on some browsers); the drop's own file list still has them.
-  const entries = read.entries.length || read.skippedFolders ? read.entries : native.map((file) => ({ file, path: file.name }));
-  if (!entries.length && !read.skippedFolders) return;
-  deliver(entries, { source, truncated: read.truncated, skippedFolders: read.skippedFolders });
+const NO_FILES: File[] = [];
+
+interface OwnInputProps {
+  onFiles?: OnFiles;
+  onReject?: (rejected: FileRejection[]) => void;
+  rules?: ZoneRules;
+  multiple?: boolean;
+  directory?: boolean;
+  capture?: boolean | 'user' | 'environment';
+  disabled?: boolean;
+  children: ReactNode;
+}
+
+/** Holds nothing: every accepted batch goes straight to `onFiles`. Lays out as if it weren't there. */
+function OwnInput({ onFiles, onReject, rules, multiple = true, directory, capture, disabled, children }: OwnInputProps) {
+  return (
+    <FileInput
+      className="contents"
+      value={NO_FILES}
+      onValueChange={(_value, details) => {
+        if (details.added.length) onFiles?.(details.added, details);
+      }}
+      onReject={onReject}
+      accept={rules?.accept}
+      maxSize={rules?.maxSize}
+      minSize={rules?.minSize}
+      maxFiles={rules?.maxFiles}
+      multiple={multiple}
+      directory={directory}
+      capture={capture}
+      disabled={disabled}
+    >
+      {children}
+    </FileInput>
+  );
 }
 
 /* ── FileDropZone ── */
 
 export const fileDropZoneVariants = cva(
-  'group/zone relative box-border flex border-2 border-dashed border-border text-center outline-none transition-[border-color,background-color,box-shadow,opacity] duration-spring-snappy motion-reduce:transition-none data-drop-target:border-primary data-drop-target:bg-primary/10 data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-offset-2 data-invalid:border-destructive data-disabled:opacity-40',
+  'group/zone relative box-border flex border-2 border-dashed border-border text-center outline-none transition-[border-color,background-color,box-shadow,opacity] duration-spring-snappy motion-reduce:transition-none data-dragging:border-primary data-dragging:bg-primary/10 data-invalid:border-destructive data-disabled:opacity-40',
   {
     variants: {
       size: {
@@ -262,14 +157,16 @@ export const fileDropZoneVariants = cva(
   },
 );
 
-type ZoneRules = Pick<FileRules, 'accept' | 'maxSize' | 'minSize' | 'maxFiles'>;
+type ZoneRules = Pick<FileUploadRules, 'accept' | 'maxSize' | 'minSize' | 'maxFiles'>;
 
 export interface FileDropZoneProps
-  extends Omit<DropZoneProps, 'children' | 'className' | 'onDrop' | 'isDisabled'>,
+  extends Omit<ComponentProps<typeof FileInputDropzone>, 'children' | 'className' | 'title'>,
     VariantProps<typeof fileDropZoneVariants> {
-  /** Called with the chosen, dropped or pasted files. Inside a `FileUpload` the default adds them to its list. */
+  /** Takes the files itself, with a FileInput of its own (also inside a `FileUpload`, which then doesn't list them). */
   onFiles?: OnFiles;
-  /** What the zone takes: sets the chooser's filter and the hint under the title. Defaults to the `FileUpload`'s rules. */
+  /** With `onFiles`: the files the rules turned away. */
+  onReject?: (rejected: FileRejection[]) => void;
+  /** What the zone takes: the hint under the title, and (with `onFiles`) the checks. Defaults to the `FileUpload`'s rules. */
   rules?: ZoneRules;
   /** The line under the title; default is built from the rules ("Images and PDFs · up to 5 MB each"). */
   hint?: ReactNode;
@@ -279,91 +176,35 @@ export interface FileDropZoneProps
   icon?: IconName | ReactNode;
   /** The button's text (default "Browse files"). */
   browseLabel?: string;
+  /** With `onFiles`. Default true. */
   multiple?: boolean;
-  acceptDirectory?: boolean;
-  defaultCamera?: 'user' | 'environment';
-  /** Take files pasted while the zone or its button has focus (⌘V / Ctrl+V). Default false. */
-  pasteable?: boolean;
+  /** With `onFiles`: choose whole folders. */
+  directory?: boolean;
+  /** With `onFiles`: open the camera on phones. */
+  capture?: boolean | 'user' | 'environment';
   /** Red outline and the `error` message (with an icon, so color isn't the only signal). */
-  isInvalid?: boolean;
+  invalid?: boolean;
   error?: ReactNode;
-  isDisabled?: boolean;
-  /** Replace the contents; a function receives react-aria's render state (`isDropTarget`, `isFocusVisible`…). */
-  children?: ReactNode | ((state: DropZoneRenderProps) => ReactNode);
-  className?: string | ((state: DropZoneRenderProps) => string);
+  /** With `onFiles`; inside a `FileUpload`, its `disabled`. */
+  disabled?: boolean;
+  /** Replace the contents; a function receives the zone's state (`dragging`, `dragAccept`, `dragReject`, `disabled`). */
+  children?: ReactNode | ((state: FileInputDropzoneState) => ReactNode);
+  className?: ClassProp<FileInputDropzoneState>;
 }
 
 export function FileDropZone({
-  className, size, onFiles, rules, hint, title = 'Drag files here', icon = 'arrow-up', browseLabel = 'Browse files',
-  multiple, acceptDirectory, defaultCamera, pasteable, isInvalid, error, isDisabled, children, ...props
+  className, size, onFiles, onReject, rules, hint, title = 'Drag files here', icon = 'arrow-up', browseLabel = 'Browse files',
+  multiple, directory, capture, invalid, error, disabled, children, ...props
 }: FileDropZoneProps) {
   const ctx = useFileUploadContext();
-  const disabled = isDisabled ?? ctx?.disabled ?? false;
-  const allowsMultiple = multiple ?? ctx?.multiple ?? true;
-  const directories = acceptDirectory ?? ctx?.acceptDirectory ?? false;
-  const canPaste = pasteable ?? ctx?.pasteable ?? false;
   const effective = rules ?? ctx?.rules ?? {};
-  const deliver: OnFiles = (entries, info) => (onFiles ?? ctx?.addFiles)?.(entries, info);
   const hintText = hint ?? describeRules(effective);
   const hintId = useId();
   const errorId = useId();
-  const noticeId = useId();
-  const notice = ctx?.notice;
-  // A drag, real or keyboard-driven, announces itself with onDropEnter; a paste reaches onDrop without one.
-  const dragging = useRef(false);
-  // The raw file list of a drop or paste, read before react-aria turns it into items (it cannot read pasted files).
-  const zoneRef = useRef<HTMLDivElement>(null);
-  const nativeFiles = useRef<File[]>([]);
-  useEffect(() => {
-    const el = zoneRef.current;
-    const onDrop = (e: DragEvent) => {
-      nativeFiles.current = Array.from(e.dataTransfer?.files ?? []);
-    };
-    const onPaste = (e: ClipboardEvent) => {
-      nativeFiles.current = el?.contains(document.activeElement) ? Array.from(e.clipboardData?.files ?? []) : [];
-    };
-    el?.addEventListener('drop', onDrop, true);
-    document.addEventListener('paste', onPaste, true);
-    return () => {
-      el?.removeEventListener('drop', onDrop, true);
-      document.removeEventListener('paste', onPaste, true);
-    };
-  }, []);
-  const takeNative = () => {
-    const files = nativeFiles.current;
-    nativeFiles.current = [];
-    return files;
-  };
+  const describedBy = [hintText ? hintId : null, invalid && error ? errorId : null].filter(Boolean).join(' ') || undefined;
 
-  const { clipboardProps } = useClipboard({
-    isDisabled: !canPaste || disabled,
-    onPaste: (items) => void takeItems(items, 'paste', directories, deliver, takeNative()),
-  });
-
-  const labelledBy = [hintText ? hintId : null, isInvalid && error ? errorId : null, notice ? noticeId : null].filter(Boolean).join(' ') || undefined;
-  return (
-    <DropZone
-      ref={zoneRef}
-      data-slot="file-drop-zone"
-      data-invalid={isInvalid || undefined}
-      aria-labelledby={labelledBy}
-      {...props}
-      isDisabled={disabled}
-      className={composeRenderProps(className, (cls) => cn(fileDropZoneVariants({ size }), cls))}
-      onDropEnter={(e) => {
-        dragging.current = true;
-        props.onDropEnter?.(e);
-      }}
-      onDropExit={(e) => {
-        dragging.current = false;
-        props.onDropExit?.(e);
-      }}
-      onDrop={(e) => {
-        const source = dragging.current ? 'drop' : 'paste';
-        if (source === 'paste' && !canPaste) return;
-        void takeItems(e.items, source, directories, deliver, takeNative());
-      }}
-    >
+  const zone = (
+    <FileInputDropzone {...props} data-invalid={invalid || undefined} className={cx(fileDropZoneVariants({ size }), className)}>
       {(state) =>
         typeof children === 'function' ? (
           children(state)
@@ -372,84 +213,75 @@ export function FileDropZone({
             <>
               <span
                 data-slot="file-drop-zone-icon"
-                className="grid size-10 shrink-0 place-items-center rounded-full bg-secondary text-muted-foreground transition-colors duration-spring-snappy group-data-drop-target/zone:bg-primary group-data-drop-target/zone:text-primary-foreground motion-reduce:transition-none"
+                className="grid size-10 shrink-0 place-items-center rounded-full bg-secondary text-muted-foreground transition-colors duration-spring-snappy group-data-dragging/zone:bg-primary group-data-dragging/zone:text-primary-foreground motion-reduce:transition-none"
               >
                 {typeof icon === 'string' ? <Icon name={icon as IconName} size={20} sw={2} /> : icon}
               </span>
               <div className={cn('flex min-w-0 flex-col gap-0.5', size === 'compact' ? 'flex-1 items-start' : 'items-center')}>
-                <Text slot="label" className="text-subhead font-semibold text-foreground">
-                  {state.isDropTarget ? 'Drop to add' : title}
-                </Text>
+                <span className="text-subhead font-semibold text-foreground">{state.dragging ? 'Drop to add' : title}</span>
                 {hintText ? (
                   <span id={hintId} className="text-footnote text-foreground/70">
                     {hintText}
                   </span>
                 ) : null}
-                {isInvalid && error ? (
+                {invalid && error ? (
                   <span id={errorId} className="flex items-center gap-1 text-footnote font-medium text-foreground">
                     <Icon name="exclamation-circle-fill" size={14} className="text-destructive" />
                     {error}
                   </span>
                 ) : null}
-                {notice ? (
-                  <span id={noticeId} className="flex items-center gap-1 text-footnote text-foreground">
-                    <Icon name="info-fill" size={14} className="text-muted-foreground" />
-                    {notice}
-                  </span>
-                ) : null}
               </div>
-              <FileTrigger
-                acceptedFileTypes={effective.accept}
-                allowsMultiple={allowsMultiple}
-                acceptDirectory={directories}
-                defaultCamera={defaultCamera ?? ctx?.defaultCamera}
-                onSelect={(list) => {
-                  const entries = entriesFromFileList(list);
-                  if (entries.length) deliver(entries, { source: 'browse', truncated: false, skippedFolders: 0 });
-                }}
-              >
-                <Button variant="secondary" size="sm" isDisabled={disabled} data-file-trigger="" onFocus={(e) => clipboardProps.onFocus?.(e as never)} onBlur={(e) => clipboardProps.onBlur?.(e as never)}>
-                  {browseLabel}
-                </Button>
-              </FileTrigger>
+              <FileInputTrigger aria-describedby={describedBy} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+                {browseLabel}
+              </FileInputTrigger>
             </>
           )
         )
       }
-    </DropZone>
+    </FileInputDropzone>
+  );
+
+  if (ctx && !onFiles) return zone;
+  return (
+    <OwnInput onFiles={onFiles} onReject={onReject} rules={effective} multiple={multiple} directory={directory} capture={capture} disabled={disabled ?? ctx?.disabled}>
+      {zone}
+    </OwnInput>
   );
 }
 
 /* ── FileUploadButton ── */
 
-export interface FileUploadButtonProps extends ButtonProps {
+export interface FileUploadButtonProps
+  extends Omit<ComponentProps<typeof FileInputTrigger>, 'className'>,
+    VariantProps<typeof buttonVariants> {
+  /** Takes the files itself, with a FileInput of its own (also inside a `FileUpload`, which then doesn't list them). */
   onFiles?: OnFiles;
-  accept?: readonly string[];
+  onReject?: (rejected: FileRejection[]) => void;
+  /** With `onFiles`: the types the chooser offers and accepts. */
+  accept?: string | readonly string[];
+  /** With `onFiles`. Default true. */
   multiple?: boolean;
-  acceptDirectory?: boolean;
-  defaultCamera?: 'user' | 'environment';
+  directory?: boolean;
+  capture?: boolean | 'user' | 'environment';
+  disabled?: boolean;
+  className?: ClassProp<FileInputState>;
 }
 
-/** A Button that opens the file chooser — a react-aria FileTrigger around our Button. */
+/** A Button that opens the file chooser: UI SDK's FileInputTrigger with the Button's look. */
 export function FileUploadButton({
-  onFiles, accept, multiple, acceptDirectory, defaultCamera, children = 'Upload files', isDisabled, ...props
+  onFiles, onReject, accept, multiple, directory, capture, disabled, variant, size, active, className, children = 'Upload files', ...props
 }: FileUploadButtonProps) {
   const ctx = useFileUploadContext();
+  const trigger = (
+    <FileInputTrigger data-file-upload-button="" {...props} className={cx(buttonVariants({ variant, size, active }), className)}>
+      {children}
+    </FileInputTrigger>
+  );
+  if (ctx && !onFiles) return trigger;
   return (
-    <FileTrigger
-      acceptedFileTypes={accept ?? ctx?.rules.accept}
-      allowsMultiple={multiple ?? ctx?.multiple ?? true}
-      acceptDirectory={acceptDirectory ?? ctx?.acceptDirectory ?? false}
-      defaultCamera={defaultCamera ?? ctx?.defaultCamera}
-      onSelect={(list) => {
-        const entries = entriesFromFileList(list);
-        if (entries.length) (onFiles ?? ctx?.addFiles)?.(entries, { source: 'browse', truncated: false, skippedFolders: 0 });
-      }}
-    >
-      <Button data-slot="file-upload-button" data-file-trigger="" isDisabled={isDisabled ?? ctx?.disabled} {...props}>
-        {children}
-      </Button>
-    </FileTrigger>
+    <OwnInput onFiles={onFiles} onReject={onReject} rules={{ accept: accept ?? ctx?.rules.accept }} multiple={multiple} directory={directory} capture={capture} disabled={disabled ?? ctx?.disabled}>
+      {trigger}
+    </OwnInput>
   );
 }
 
@@ -474,93 +306,128 @@ export function FileThumbnail({ file, disabled, className }: { file: File; disab
 }
 
 export const fileItemVariants = cva(
-  'box-border flex items-center gap-3 rounded-panel border border-border bg-card p-3 text-card-foreground transition-colors duration-spring-snappy motion-reduce:transition-none data-[status=error]:border-destructive data-[status=rejected]:border-destructive',
+  'box-border flex items-center gap-3 rounded-panel border border-border bg-card p-3 text-card-foreground outline-none transition-colors duration-spring-snappy motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring data-[status=error]:border-destructive data-[status=rejected]:border-destructive',
 );
+
+const removeClass = cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-8 text-muted-foreground');
+const removeLabel = ({ status, file }: UploadFile) =>
+  status === 'uploading' ? `Cancel upload of ${file.name}` : status === 'rejected' ? `Dismiss ${file.name}` : `Remove ${file.name}`;
+
+/** Thumbnail, name, size, status, a progress bar while sending, Retry on failure, then the remove button given. */
+function FileItemBody({ item, nameId, onRetry, remove }: { item: UploadFile; nameId?: string; onRetry?: () => void; remove?: ReactNode }) {
+  const { status, file, path } = item;
+  const name = file.name;
+  const pct = Math.round(item.progress * 100);
+  const folder = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
+  return (
+    <>
+      <FileThumbnail file={file} disabled={status === 'rejected'} />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span id={nameId} title={path} className="truncate text-subhead font-medium text-foreground">
+          {name}
+        </span>
+        <span data-slot="file-item-status" className="flex min-w-0 items-start gap-1.5 text-footnote text-foreground/70">
+          {status === 'done' ? <Icon name="check-circle-fill" size={14} className="mt-px shrink-0 text-success" /> : null}
+          {status === 'error' || status === 'rejected' ? <Icon name="exclamation-circle-fill" size={14} className="mt-px shrink-0 text-destructive" /> : null}
+          {/* A reason is the point of an error row: it wraps instead of truncating. */}
+          <span className={cn('min-w-0', status === 'rejected' || status === 'error' ? 'break-words' : 'truncate')}>
+            {status === 'rejected' || status === 'error' ? (
+              <>
+                <span className="font-medium">{status === 'rejected' ? 'Not added' : 'Upload failed'}</span>
+                {item.error ? ` · ${item.error}` : ''}
+              </>
+            ) : (
+              <>
+                {formatFileSize(file.size)}
+                {folder ? ` · ${folder}` : ''}
+                {status === 'queued' ? ' · Waiting' : ''}
+                {status === 'uploading' ? <span className="tabular-nums"> · Uploading {pct}%</span> : ''}
+                {status === 'done' ? ' · Uploaded' : ''}
+              </>
+            )}
+          </span>
+        </span>
+        {status === 'uploading' ? <Progress aria-label={`Uploading ${name}`} value={pct} size="sm" /> : null}
+      </div>
+      {status === 'error' && onRetry ? (
+        <Button data-file-item-retry="" variant="secondary" size="sm" aria-label={`Retry ${name}`} onClick={onRetry}>
+          Retry
+        </Button>
+      ) : null}
+      {remove}
+    </>
+  );
+}
 
 export interface FileItemProps {
   item: UploadFile;
-  /** Default: the context's `dismiss` (removes the row, moves focus). */
+  /** Default: inside a `FileUpload`, removes the row (FileInput's remove, for a listed file). */
   onRemove?: (item: UploadFile) => void;
   /** Default: the context's `retry`. */
   onRetry?: (item: UploadFile) => void;
-  /** Replaces the row's contents (the labelled group and its status stay). */
+  /** Replaces the row's contents. */
   children?: ReactNode | ((item: UploadFile) => ReactNode);
   className?: string;
   style?: CSSProperties;
 }
 
-/** One file: thumbnail, name, size, status, a progress bar while sending, Retry on failure and Remove. A labelled group. */
+/** The item part's props, when a FileList renders this row as one of the FileInput's list items. */
+const ListedRowContext = createContext<Record<string, unknown> | null>(null);
+
+/**
+ * One file: thumbnail, name, size, status, a progress bar while sending, Retry on failure and Remove. Inside a
+ * `FileUpload`, a listed file is a FileInputItem (arrows move between rows, Delete removes, Remove stays out of the
+ * Tab order); any other row (a rejected file, or one outside a FileUpload) is a labelled group.
+ */
 export function FileItem({ item, onRemove, onRetry, children, className, style }: FileItemProps) {
   const ctx = useFileUploadContext();
+  const slotProps = use(ListedRowContext);
   const nameId = useId();
-  const { status, file, path } = item;
-  const name = file.name;
-  const pct = Math.round(item.progress * 100);
-  const folder = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
-  const remove = () => (onRemove ? onRemove(item) : ctx ? ctx.dismiss(item.id) : undefined);
-  const retry = () => (onRetry ? onRetry(item) : ctx?.retry(item.id));
-  const showRetry = status === 'error' && (onRetry || ctx);
-  const showRemove = onRemove || ctx;
+  const retry = onRetry ? () => onRetry(item) : ctx ? () => ctx.retry(item.id) : undefined;
+  const content = (remove: ReactNode, labelled?: string) =>
+    typeof children === 'function' ? children(item) : (children ?? <FileItemBody item={item} nameId={labelled} onRetry={retry} remove={remove} />);
 
+  if (ctx && !onRemove && item.status !== 'rejected') {
+    const body = content(
+      <FileInputItemRemove file={item.file} aria-label={removeLabel(item)} className={removeClass}>
+        <Icon name="xmark" size={16} sw={2.2} />
+      </FileInputItemRemove>,
+    );
+    // Rendered by a FileList: be its item's element. Placed by hand: an item of its own.
+    if (slotProps) {
+      const own = slotProps as { className?: string; style?: CSSProperties };
+      return (
+        <div {...slotProps} data-file-id={item.id} data-status={item.status} className={cn(own.className, fileItemVariants(), className)} style={{ ...own.style, ...style }}>
+          {body}
+        </div>
+      );
+    }
+    return (
+      <FileInputItem file={item.file} data-file-id={item.id} data-status={item.status} className={cn(fileItemVariants(), className)} style={style}>
+        {body}
+      </FileInputItem>
+    );
+  }
+
+  const dismiss = onRemove
+    ? () => onRemove(item)
+    : ctx
+      ? (event: MouseEvent<HTMLElement>) => {
+          ctx.remove(item.id, { reason: 'remove-press', event: event.nativeEvent });
+          // The row is gone; the trigger is where choosing again starts.
+          ctx.inputController.focus();
+        }
+      : undefined;
   return (
-    <div
-      role="group"
-      aria-labelledby={nameId}
-      data-slot="file-item"
-      data-file-id={item.id}
-      data-status={status}
-      className={cn(fileItemVariants(), className)}
-      style={style}
-    >
-      {typeof children === 'function' ? children(item) : (children ?? (
-        <>
-          <FileThumbnail file={file} disabled={status === 'rejected'} />
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <span id={nameId} title={path} className="truncate text-subhead font-medium text-foreground">
-              {name}
-            </span>
-            <span data-slot="file-item-status" className="flex min-w-0 items-start gap-1.5 text-footnote text-foreground/70">
-              {status === 'done' ? <Icon name="check-circle-fill" size={14} className="mt-px shrink-0 text-success" /> : null}
-              {status === 'error' || status === 'rejected' ? <Icon name="exclamation-circle-fill" size={14} className="mt-px shrink-0 text-destructive" /> : null}
-              {/* A reason is the point of an error row: it wraps instead of truncating. */}
-              <span className={cn('min-w-0', status === 'rejected' || status === 'error' ? 'break-words' : 'truncate')}>
-                {status === 'rejected' || status === 'error' ? (
-                  <>
-                    <span className="font-medium">{status === 'rejected' ? 'Not added' : 'Upload failed'}</span>
-                    {item.error ? ` · ${item.error}` : ''}
-                  </>
-                ) : (
-                  <>
-                    {formatBytes(file.size)}
-                    {folder ? ` · ${folder}` : ''}
-                    {status === 'queued' ? ' · Waiting' : ''}
-                    {status === 'uploading' ? <span className="tabular-nums"> · Uploading {pct}%</span> : ''}
-                    {status === 'done' ? ' · Uploaded' : ''}
-                  </>
-                )}
-              </span>
-            </span>
-            {status === 'uploading' ? <Progress aria-label={`Uploading ${name}`} value={pct} size="sm" /> : null}
-          </div>
-          {showRetry ? (
-            <Button data-slot="file-item-retry" variant="secondary" size="sm" aria-label={`Retry ${name}`} onPress={retry}>
-              Retry
-            </Button>
-          ) : null}
-          {showRemove ? (
-            <Button
-              data-slot="file-item-remove"
-              variant="ghost"
-              size="icon"
-              className="size-8 text-muted-foreground"
-              aria-label={status === 'uploading' ? `Cancel upload of ${name}` : status === 'rejected' ? `Dismiss ${name}` : `Remove ${name}`}
-              onPress={remove}
-            >
-              <Icon name="xmark" size={16} sw={2.2} />
-            </Button>
-          ) : null}
-        </>
-      ))}
+    <div role="group" aria-labelledby={nameId} data-slot="file-item" data-file-id={item.id} data-status={item.status} className={cn(fileItemVariants(), className)} style={style}>
+      {content(
+        dismiss ? (
+          <Button data-file-item-remove="" variant="ghost" size="icon" className="size-8 text-muted-foreground" aria-label={removeLabel(item)} onClick={dismiss}>
+            <Icon name="xmark" size={16} sw={2.2} />
+          </Button>
+        ) : null,
+        nameId,
+      )}
     </div>
   );
 }
@@ -568,25 +435,61 @@ export function FileItem({ item, onRemove, onRetry, children, className, style }
 export interface FileListProps {
   /** Default: the context's files. */
   files?: readonly UploadFile[];
-  /** Render a row yourself; default `<FileItem item={…} />`. */
+  /** Render a row yourself: return a `<FileItem item={…} />` (its props and children are yours). */
   children?: (item: UploadFile) => ReactNode;
   'aria-label'?: string;
   className?: string;
   style?: CSSProperties;
 }
 
-/** The files as a list of `FileItem`s. Renders nothing while it is empty. */
+const listClass = 'm-0 flex list-none flex-col gap-2 p-0';
+
+/**
+ * The files as `FileItem`s. Inside a `FileUpload`, the listed files are the FileInput's list (one Tab stop) and the
+ * files it turned away follow as a list of their own, each with its reason and a Dismiss button. Renders nothing
+ * while empty.
+ */
 export function FileList({ files, children, className, style, 'aria-label': ariaLabel = 'Files' }: FileListProps) {
   const ctx = useFileUploadContext();
   const list = files ?? ctx?.files ?? [];
+  const byFile = useMemo(() => new Map(list.filter((f) => f.status !== 'rejected').map((f) => [f.file, f])), [list]);
   if (!list.length) return null;
+  const row = (item: UploadFile) => (children ? children(item) : <FileItem item={item} />);
+
+  if (!ctx || files) {
+    return (
+      <ul data-slot="file-list" aria-label={ariaLabel} className={cn(listClass, className)} style={style}>
+        {list.map((item) => (
+          <li key={item.id} className="min-w-0">
+            {row(item)}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  const rejected = list.filter((item) => item.status === 'rejected');
   return (
-    <ul data-slot="file-list" aria-label={ariaLabel} className={cn('m-0 flex list-none flex-col gap-2 p-0', className)} style={style}>
-      {list.map((item) => (
-        <li key={item.id} className="min-w-0">
-          {children ? children(item) : <FileItem item={item} />}
-        </li>
-      ))}
-    </ul>
+    <div data-slot="file-list" className={cn('flex flex-col gap-2', className)} style={style}>
+      {byFile.size ? (
+        <FileInputList aria-label={ariaLabel} className={listClass}>
+          <FileInputItem
+            render={(props, state) => {
+              const item = byFile.get(state.file);
+              return <ListedRowContext value={props}>{item ? row(item) : null}</ListedRowContext>;
+            }}
+          />
+        </FileInputList>
+      ) : null}
+      {rejected.length ? (
+        <ul data-slot="file-list-rejected" aria-label="Not added" className={listClass}>
+          {rejected.map((item) => (
+            <li key={item.id} className="min-w-0">
+              {row(item)}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }

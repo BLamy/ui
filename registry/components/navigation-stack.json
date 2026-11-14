@@ -1,13 +1,46 @@
 {
   "name": "navigation-stack",
   "title": "NavigationStack",
-  "description": "A controlled push/pop stack with large titles and edge-swipe back.",
+  "description": "iOS's navigation controller as composable parts, on a UI SDK primitive: pages pushed and popped by key, with large titles that collapse into the bar, a back button that names the page behind and a title that flies into it, a bar that rides away on scroll, pull to refresh, and Escape, platform back and edge-swipe pops that go to the innermost stack first.",
   "page": "navigation-stack",
   "exports": [
     "NavigationStack",
-    "ScreenWrap"
+    "NavigationStackPage",
+    "NavigationStackBar",
+    "NavigationStackTitle",
+    "NavigationStackBack",
+    "NavigationStackLeading",
+    "NavigationStackTrailing",
+    "NavigationStackContent",
+    "NavigationStackLargeTitle",
+    "NavigationStackSubheader",
+    "createNavigationStackController",
+    "useNavigationStack"
+  ],
+  "imports": [
+    "NavigationStack",
+    "NavigationStackPage",
+    "NavigationStackBar",
+    "NavigationStackTitle",
+    "NavigationStackContent",
+    "NavigationStackLargeTitle"
   ],
   "types": [
-    "Screen"
+    "NavigationStackProps",
+    "NavigationStackRootBack",
+    "NavigationStackPageProps",
+    "NavigationStackBarProps",
+    "NavigationStackTitleProps",
+    "NavigationStackBackProps",
+    "NavigationStackLeadingProps",
+    "NavigationStackTrailingProps",
+    "NavigationStackContentProps",
+    "NavigationStackLargeTitleProps",
+    "NavigationStackSubheaderProps",
+    "NavigationStackController",
+    "NavigationStackChangeDetails",
+    "NavigationStackChangeOptions",
+    "NavigationStackReason",
+    "NavigationStackPageState"
   ]
 }

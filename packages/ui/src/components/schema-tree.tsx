@@ -1,16 +1,20 @@
 'use client';
-import { useMemo, type ComponentProps } from 'react';
+import { useMemo, useState, type ComponentProps } from 'react';
+import type { TreeActionDetails } from '@ui-sdk/react/tree';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tree, type TreeNode } from '@/components/ui/tree';
 import { cn } from '@/lib/utils';
 import type { SchemaColumn, SchemaInfo, SchemaTable } from '@/lib/pglite-schema';
 
-/* ══ SchemaTree — schemas → tables → columns on the library's Tree (Trees) ══
-   Arrow keys move, → expands and ← collapses; choosing a table (a click, or Return) fires `onSelectTable` — SqlConsole
-   uses it to paste `select * from …` into the editor — and a column `onSelectColumn`. After each row: a schema's table
+/* ══ SchemaTree — schemas → tables → columns on the kit's Tree ══
+   Arrow keys move, → expands and ← collapses; choosing a table or a column (a press, or Return) fires `onAction` with
+   the table (and column) in its details — SqlConsole uses it to paste `select * from …` into the editor. After each row: a schema's table
    count; a table's kind (when it isn't a plain table) and row count; a column's type, `→ table.column` for a foreign
    key and `not null`. Primary keys wear a key. Schemas start expanded. */
+
+/** A schema and, with `defaultExpandAll`, its tables: what opens when it first shows. */
+const openOf = (n: TreeNode, all?: boolean) => [n.value, ...(all ? (n.children ?? []).map((c) => c.value) : [])];
 
 export const schemaTreeVariants = cva('flex min-h-0 min-w-0 flex-col text-footnote text-foreground outline-none', {
   variants: {
@@ -35,22 +39,22 @@ const KIND: Partial<Record<SchemaTable['kind'], string>> = { view: 'view', 'mate
 
 function nodesOf(schema: SchemaInfo): Node[] {
   return schema.schemas.map((s): Node => ({
-    id: schemaId(s.name),
+    value: schemaId(s.name),
     kind: 'schema',
-    name: s.name,
+    label: s.name,
     detail: String(s.tables.length),
     detailTitle: `${s.tables.length} tables`,
     children: s.tables.map((t): Node => ({
-      id: tableId(t),
+      value: tableId(t),
       kind: 'table',
-      name: t.name,
+      label: t.name,
       table: t,
       detail: [KIND[t.kind], t.rowCount !== null ? t.rowCount.toLocaleString('en-US') : ''].filter(Boolean).join(' · '),
       ...(t.rowCount !== null ? { detailTitle: `${t.rowCount} rows` } : {}),
       children: t.columns.map((c): Node => ({
-        id: columnId(t, c),
+        value: columnId(t, c),
         kind: 'column',
-        name: c.name,
+        label: c.name,
         table: t,
         column: c,
         ...(c.isPrimaryKey ? { icon: 'key' as const } : {}),
@@ -61,42 +65,50 @@ function nodesOf(schema: SchemaInfo): Node[] {
   }));
 }
 
+/** What `onAction` gets after the row's id: UI SDK's action details, with the table and, for a column, the column. */
+export type SchemaTreeActionDetails = TreeActionDetails & { table: SchemaTable; column?: SchemaColumn };
+
 export interface SchemaTreeProps extends Omit<ComponentProps<'div'>, 'children' | 'onSelect'>, VariantProps<typeof schemaTreeVariants> {
   /** From `useSchema()`. `null` while it loads. */
   schema: SchemaInfo | null;
-  isLoading?: boolean;
-  /** A table (or view) was chosen: Enter, or a click. */
-  onSelectTable?: (table: SchemaTable) => void;
-  onSelectColumn?: (table: SchemaTable, column: SchemaColumn) => void;
+  loading?: boolean;
+  /** A table (or view) or a column was chosen: Return, or a press. `value` is the row's id; `details.table` is the
+   *  table, `details.column` the column when one was chosen, and `details.event` the press or key. */
+  onAction?: (value: string, details: SchemaTreeActionDetails) => void;
   /** Expand every table's columns at first (default: only schemas are open). */
   defaultExpandAll?: boolean;
   'aria-label'?: string;
 }
 
 export function SchemaTree({
-  schema, isLoading, onSelectTable, onSelectColumn, defaultExpandAll, variant, className, style, 'aria-label': ariaLabel = 'Database schema', ...props
+  schema, loading, onAction, defaultExpandAll, variant, className, style, 'aria-label': ariaLabel = 'Database schema', ...props
 }: SchemaTreeProps) {
   const nodes = useMemo(() => (schema ? nodesOf(schema) : []), [schema]);
   const index = useMemo(() => {
     const m = new Map<string, Node>();
     const visit = (n: TreeNode) => {
-      m.set(n.id, n as Node);
+      m.set(n.value, n as Node);
       n.children?.forEach(visit);
     };
     nodes.forEach(visit);
     return m;
   }, [nodes]);
-  // A schema that appears later (a `create schema`) opens by itself, without closing what the user toggled.
-  const expanded = useMemo(() => nodes.flatMap((n) => [n.id, ...(defaultExpandAll ? (n.children ?? []).map((c) => c.id) : [])]), [nodes, defaultExpandAll]);
-  const choose = (id: string | undefined) => {
-    const node = id ? index.get(id) : undefined;
-    if (node?.kind === 'table') onSelectTable?.(node.table);
-    else if (node?.kind === 'column') onSelectColumn?.(node.table, node.column);
+  const expanded = useMemo(() => nodes.flatMap((n) => openOf(n, defaultExpandAll)), [nodes, defaultExpandAll]);
+  // A schema that appears later (a `create schema`) opens by itself; what the user closed stays closed.
+  const [seen, setSeen] = useState<{ nodes: readonly Node[]; ids: ReadonlySet<string>; fresh: string[] }>(() => ({ nodes, ids: new Set(nodes.map((n) => n.value)), fresh: [] }));
+  if (seen.nodes !== nodes) {
+    const added = nodes.filter((n) => !seen.ids.has(n.value));
+    setSeen({ nodes, ids: new Set([...seen.ids, ...nodes.map((n) => n.value)]), fresh: added.length ? added.flatMap((n) => openOf(n, defaultExpandAll)) : seen.fresh });
+  }
+  const choose = (value: string, details: TreeActionDetails) => {
+    const node = index.get(value);
+    if (node?.kind === 'table') onAction?.(value, { ...details, table: node.table });
+    else if (node?.kind === 'column') onAction?.(value, { ...details, table: node.table, column: node.column });
   };
 
   return (
-    <div data-slot="schema-tree" aria-busy={isLoading || undefined} className={cn(schemaTreeVariants({ variant }), className)} style={style} {...props}>
-      {isLoading && !schema ? (
+    <div data-slot="schema-tree" aria-busy={loading || undefined} className={cn(schemaTreeVariants({ variant }), className)} style={style} {...props}>
+      {loading && !schema ? (
         <div role="group" aria-label={`${ariaLabel} loading`} className="flex flex-col gap-2 p-2">
           <Skeleton shape="text" className="w-1/3" />
           <Skeleton shape="text" className="ms-4 w-2/3" />
@@ -104,8 +116,8 @@ export function SchemaTree({
         </div>
       ) : (
         nodes.length ? (
-          <Tree aria-label={ariaLabel} items={nodes} icons="none" defaultExpanded={expanded} expandedIds={expanded} density="compact"
-            onSelectionChange={([id]) => choose(id)} onAction={(node) => choose(node.id)} className="min-h-48 flex-1" />
+          <Tree aria-label={ariaLabel} items={nodes} icons={false} defaultExpanded={expanded} autoExpand={seen.fresh} density="compact"
+            onAction={choose} className="min-h-48 flex-1" />
         ) : <div className="px-3 py-6 text-center text-footnote text-foreground/65">No tables yet</div>
       )}
     </div>

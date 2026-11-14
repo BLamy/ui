@@ -149,10 +149,23 @@ test('reduced motion: cards appear and leave without the morph', async ({ browse
   const context = await browser.newContext({ reducedMotion: 'reduce', baseURL: test.info().project.use.baseURL });
   const page = await context.newPage();
   await openDemo(page, 'composer/morph-cards', '[data-slot=composer]');
+  // A slow CPU stretches the frame the card enters from (its starting style) across a paint, where a skin drawn for
+  // it would show.
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 8 });
+  // Every time the skin is shown, even between two frames.
+  await page.evaluate(() => {
+    window.__skins = 0;
+    new MutationObserver((records) => {
+      for (const { target } of records) if (target.dataset?.slot === 'composer-morph-skin' && target.style.display !== 'none') window.__skins++;
+    }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['style'] });
+  });
   const watching = watchMorph(page);
   await page.getByRole('button', { name: 'Toggle bottom card' }).click();
   const seen = await watching;
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   expect(seen.skin).toBe(0);
+  expect(await page.evaluate(() => window.__skins)).toBe(0);
   await expect(page.locator('[data-slot=composer-cards][data-side=bottom] [data-slot=composer-morph-card]')).toHaveCount(1);
   await context.close();
 });

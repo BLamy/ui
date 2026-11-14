@@ -9,7 +9,7 @@ Two ways to use it, from the same source files:
 
 ## Workspace layout
 
-- `packages/ui` — the core library, published as [`@brett_lamy/ui`](https://www.npmjs.com/package/@brett_lamy/ui): restyled react-aria/shadcn primitives, the iOS containers (NavigationStack, SplitView, TabView, sheets and drawers), icons, motion, theme, the Composer and PencilKit. Files import each other as `@/components/ui/<x>` and `@/lib/<x>`, the same paths a registry install uses. Stories and unit tests live next to their sources.
+- `packages/ui` — the core library, published as [`@brett_lamy/ui`](https://www.npmjs.com/package/@brett_lamy/ui): shadcn-style parts on [UI SDK](https://ui-sdk.dev) (our fork, `vendor/ui-sdk`, consumed as `@ui-sdk/core` and `@ui-sdk/react`), the iOS containers (NavigationStack, SplitView, TabView, sheets and drawers), icons, motion, theme, the Composer and PencilKit. Files import each other as `@/components/ui/<x>` and `@/lib/<x>`, the same paths a registry install uses. Stories and unit tests live next to their sources.
 - `registry` — the shadcn registry source. `registry/blocks/<slug>` are the blocks (product-specific compositions with their own components: `t3-clone`, `discord-clone`, `loop-qa`, `map-chat`, …); `registry/components/*.json` are docs metadata for the library's items. See [registry/README.md](registry/README.md).
 - `apps/docs` — the documentation site (`pages/*.md` + `pages/nav.json`, live examples in `examples/<page>/<example>`)
 - `apps/catalog` — the Storybook catalog (stories from `packages/ui`, the registry blocks and `apps/catalog/stories`)

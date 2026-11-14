@@ -56,7 +56,7 @@ function Row({ user, time, text, reactions: initial, thread }: Args) {
         {reactions.length > 0 && (
           <MessageReactions>
             {reactions.map((r) => (
-              <MessageReaction key={r.emoji} emoji={r.emoji} count={r.count} mine={r.mine} onChange={() => toggle(r.emoji)} />
+              <MessageReaction key={r.emoji} emoji={r.emoji} count={r.count} mine={r.mine} onPressedChange={() => toggle(r.emoji)} />
             ))}
           </MessageReactions>
         )}
@@ -67,7 +67,7 @@ function Row({ user, time, text, reactions: initial, thread }: Args) {
         )}
       </MessageBody>
       <MessageActions>
-        <MessageAction label="Add 👍" onPress={() => toggle('👍')}>
+        <MessageAction label="Add 👍" onClick={() => toggle('👍')}>
           👍
         </MessageAction>
         <MessageAction label={thread ? 'Open thread' : 'Start thread'}>

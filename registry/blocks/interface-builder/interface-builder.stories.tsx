@@ -39,3 +39,6 @@ export const Mail: Story = { args: { defaultDocument: SPLIT_SAMPLE } };
 
 /** Running: the storyboard as a live prototype. */
 export const Running: Story = { args: { initialRunning: true } };
+
+/** In a narrow window (below 900px) the navigator and inspector are drawers over the canvas, which stays usable. */
+export const Narrow: Story = { args: { width: 820, height: 760 } };

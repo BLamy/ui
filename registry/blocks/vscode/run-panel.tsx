@@ -26,11 +26,11 @@ export function RunPanel({ store }: { store: VSCodeStore }) {
                   <div className="truncate font-mono text-caption2 text-muted-foreground">{command}</div>
                 </div>
                 {running ? (
-                  <Button variant="quiet" size="icon-sm" aria-label={`Stop ${name}`} title={`Stop ${name}`} onPress={() => store.stopScript(name)}>
+                  <Button variant="quiet" size="icon-sm" aria-label={`Stop ${name}`} title={`Stop ${name}`} onClick={() => store.stopScript(name)}>
                     <Icon name="stop" size={15} className="text-destructive" />
                   </Button>
                 ) : (
-                  <Button variant="quiet" size="icon-sm" aria-label={`Run ${name}`} title={`Run ${name}`} onPress={() => store.runScript(name)}>
+                  <Button variant="quiet" size="icon-sm" aria-label={`Run ${name}`} title={`Run ${name}`} onClick={() => store.runScript(name)}>
                     <Icon name="play" size={15} className="text-success" />
                   </Button>
                 )}

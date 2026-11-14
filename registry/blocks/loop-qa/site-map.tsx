@@ -1,19 +1,22 @@
-/* Site map: every page Loop QA has found, as a tree — how often the agents visited it, and whether it has open
-   bugs or hasn't been reached yet. Branches fold on a spring; a page with bugs jumps to them. */
-import { useState, type CSSProperties } from 'react';
-import { AnimatedHeight } from '@/components/ui/animated-height';
-import { Chevron } from '@/components/ui/icon-swap';
+/* Site map: every page Loop QA has found, as a tree (the kit's Tree: arrow keys move and fold, typing finds a page)
+   — how often the agents visited it, and whether it has open bugs or hasn't been reached yet. Pressing a page with
+   bugs, or Return on it, jumps to them. */
+import type { CSSProperties } from 'react';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { ProgressRing } from '@/components/ui/progress-ring';
+import { Tree, TreeGroup, TreeItem, TreeItemIndicator, TreeItemLabel } from '@/components/ui/tree';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { SITE_MAP, type Project, type SiteNode } from './data';
-import { Empty, Panel, Pill, Pressable } from './parts';
+import { Empty, Panel, Pill } from './parts';
 import { useLoopQA } from './state';
 
 const flatten = (n: SiteNode): SiteNode[] => [n, ...(n.children ?? []).flatMap(flatten)];
+/** Every branch, so the tree opens fully expanded. */
+const BRANCHES = flatten(SITE_MAP).filter((n) => n.children?.length).map((n) => n.path);
 
 export function SiteMapTab({ project }: { project: Project }) {
+  const qa = useLoopQA();
   if (project.id !== 'northwind') {
     return <Empty icon="network" title="Mapping in progress" text="The site map fills in as runs and recorded sessions visit pages. Start a run to map this project." />;
   }
@@ -24,9 +27,11 @@ export function SiteMapTab({ project }: { project: Project }) {
   return (
     <div className="grid gap-5 @4xl:grid-cols-[1fr_240px]!">
       <Panel title="Pages" icon="network" trailing={<span className="text-caption text-muted-foreground">{all.length} pages</span>} bodyClassName="py-2">
-        <ul className="m-0 list-none px-2 py-0" role="tree" aria-label="Site map">
+        <Tree aria-label="Site map" mode="none" density="relaxed" defaultExpanded={BRANCHES} expandOnPress={false}
+          onAction={(path) => { if (all.find((n) => n.path === path)?.bugs) qa.setTab('bugs'); }}
+          className="px-2 text-[length:inherit] [--tree-indent:22px] [--tree-pad-x:8px]">
           <Node node={SITE_MAP} depth={0} max={max} />
-        </ul>
+        </Tree>
       </Panel>
       <div className="flex flex-col gap-3">
         <Panel bodyClassName="flex items-center gap-4 p-4">
@@ -55,17 +60,14 @@ function Legend({ tone, label, n }: { tone: string; label: string; n: number }) 
 }
 
 function Node({ node: n, depth, max }: { node: SiteNode; depth: number; max: number }) {
-  const qa = useLoopQA();
-  const [open, setOpen] = useState(true);
   const kids = n.children ?? [];
   return (
-    <li role="treeitem" aria-expanded={kids.length ? open : undefined} aria-selected={false} className="relative">
-      <div className="group flex min-h-10 items-center gap-2 rounded-ctl pr-2 hover:bg-muted!" style={{ paddingLeft: 8 + depth * 22 } as CSSProperties}>
+    <TreeItem value={n.path} label={n.title}>
+      <TreeItemLabel className="group h-auto min-h-10 gap-2 leading-[normal] hover:not-data-disabled:not-data-selected:bg-muted">
         {kids.length ? (
-          <Pressable aria-label={open ? `Collapse ${n.title}` : `Expand ${n.title}`} onPress={() => setOpen(!open)}
-            className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-md p-0 text-muted-foreground data-hovered:bg-secondary-strong!">
-            <Chevron direction={open ? 'down' : 'right'} size={12} sw={2.6} />
-          </Pressable>
+          <TreeItemIndicator className="size-5">
+            <Icon name="chev" size={12} sw={2.6} className="group-data-expanded/tree-indicator:rotate-90 rtl:-scale-x-100" />
+          </TreeItemIndicator>
         ) : <span className="size-5 shrink-0" />}
         <span className={cn('size-2 shrink-0 rounded-full', n.status === 'bugs' ? 'bg-destructive' : n.status === 'covered' ? 'bg-success' : 'bg-tertiary-foreground/40')} />
         <span className={cn('min-w-0 flex-1 truncate text-[13.5px]', n.status === 'unvisited' ? 'text-muted-foreground' : 'font-medium')}>
@@ -78,22 +80,16 @@ function Node({ node: n, depth, max }: { node: SiteNode; depth: number; max: num
           <span className="w-6 text-right text-[11.5px] text-muted-foreground tabular-nums">{n.visits}</span>
         </span>
         <span className="flex w-[92px] shrink-0 justify-end">
-        {n.bugs ? (
-          <Pressable onPress={() => qa.setTab('bugs')} className="h-auto cursor-pointer rounded-full p-0 data-pressed:not-aria-expanded:scale-95">
-            <Pill tone="danger">{n.bugs} {n.bugs === 1 ? 'bug' : 'bugs'}<Icon name="chevron-right" size={10} sw={2.6} /></Pill>
-          </Pressable>
-        ) : n.status === 'unvisited' ? <Pill tone="outline">Not reached</Pill> : null}
+          {n.bugs ? <Pill tone="danger" className="cursor-pointer">{n.bugs} {n.bugs === 1 ? 'bug' : 'bugs'}<Icon name="chevron-right" size={10} sw={2.6} /></Pill>
+            : n.status === 'unvisited' ? <Pill tone="outline">Not reached</Pill> : null}
         </span>
-      </div>
+      </TreeItemLabel>
       {kids.length ? (
-        <AnimatedHeight>
-          {open ? (
-            <ul role="group" className="relative m-0 list-none p-0 before:absolute before:top-0 before:bottom-3 before:w-px before:bg-border before:content-[''] before:left-(--x)" style={{ '--x': `${18 + depth * 22}px` } as CSSProperties}>
-              {kids.map((k) => <Node key={k.path} node={k} depth={depth + 1} max={max} />)}
-            </ul>
-          ) : null}
-        </AnimatedHeight>
+        // A line down the left of each open branch, under its chevron.
+        <TreeGroup className="relative before:absolute before:top-0 before:bottom-3 before:left-(--x) before:w-px before:bg-border before:content-['']" style={{ '--x': `${18 + depth * 22}px` } as CSSProperties}>
+          {kids.map((k) => <Node key={k.path} node={k} depth={depth + 1} max={max} />)}
+        </TreeGroup>
       ) : null}
-    </li>
+    </TreeItem>
   );
 }

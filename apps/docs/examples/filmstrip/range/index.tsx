@@ -22,8 +22,8 @@ export default function FilmstripRange() {
       <div className="h-8 w-1/2 overflow-hidden rounded-ctl bg-secondary">
         <Filmstrip frames={FRAMES} from={range[0]} to={range[1]} />
       </div>
-      <Slider label={`Media range: ${range[0]}–${range[1]} s`} minValue={0} maxValue={20} step={0.5} value={range}
-        onChange={(v) => setRange(v as number[])} />
+      <Slider label={`Media range: ${range[0]}–${range[1]} s`} min={0} max={20} step={0.5} value={range}
+        onValueChange={(v) => setRange(v as number[])} />
     </div>
   )
 }

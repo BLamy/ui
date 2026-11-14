@@ -19,5 +19,5 @@
     "CRON_FIELDS"
   ],
   "imports": ["CronEditor"],
-  "types": ["CronEditorProps", "CronPreset", "CronValidation", "CronFieldName", "NextCronRunsOptions", "UseCronParseOptions", "CronParseState", "GpuCronMatch"]
+  "types": ["CronEditorProps", "CronPreset", "CronEditorChangeDetails", "CronEditorChangeReason", "CronValidation", "CronFieldName", "NextCronRunsOptions", "UseCronParseOptions", "CronParseState", "GpuCronMatch"]
 }

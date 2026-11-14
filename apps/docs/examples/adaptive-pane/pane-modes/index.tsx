@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
-import { AdaptivePane, type AdaptivePaneMode } from '@/components/ui/adaptive-pane'
+import { AdaptivePane, type AdaptivePanePresentation } from '@/components/ui/adaptive-pane'
 
 const panel: CSSProperties = {
   height: '100%',
@@ -17,8 +17,8 @@ export default function PaneModes({
   // column | drawer | cover | hidden — a real shell picks this from its
   // measured width. `resizable` and `drawer-resizable` add the divider.
   const resizable = variant === 'resizable' || variant === 'drawer-resizable'
-  const mode: AdaptivePaneMode =
-    variant === 'resizable' ? 'column' : variant === 'drawer-resizable' ? 'drawer' : (variant as AdaptivePaneMode)
+  const mode: AdaptivePanePresentation =
+    variant === 'resizable' ? 'column' : variant === 'drawer-resizable' ? 'drawer' : (variant as AdaptivePanePresentation)
   const [open, setOpen] = useState(true)
   const [drawer, setDrawer] = useState(false)
   useEffect(() => {
@@ -28,10 +28,10 @@ export default function PaneModes({
     <Frame height={340}>
       <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
         <AdaptivePane
-          mode={mode}
+          presentation={mode}
           open={open}
-          onClose={() => setOpen(false)}
-          onOpen={() => setOpen(true)}
+          onOpenChange={setOpen}
+          swipeToOpen
           resizable={resizable}
           columnWidth={200}
           drawerWidth={240}
@@ -41,7 +41,7 @@ export default function PaneModes({
           <div style={panel}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Pane</div>
             <div style={{ color: 'var(--muted-foreground)' }}>
-              Same children, mode: {mode}
+              Same children, presentation: {mode}
             </div>
           </div>
         </AdaptivePane>
@@ -58,34 +58,34 @@ export default function PaneModes({
           <div
             style={{ fontSize: 13, color: 'var(--muted-foreground)', lineHeight: 1.5 }}
           >
-            A shell picks the mode from its measured width; the pane never
-            remounts its children within a mode. Switch modes in the header.
+            A shell picks the presentation from its measured width; the pane
+            never remounts its children. Switch presentations in the header.
             A drawer drags shut by its panel and drags open from the left edge;
             the resizable variants have a divider to drag.
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {mode === 'drawer' ? (
-              <TintButton label="Open pane" onPress={() => setOpen(true)} />
+              <TintButton label="Open pane" onClick={() => setOpen(true)} />
             ) : null}
             <TintButton
               label="Open right drawer"
-              onPress={() => setDrawer(true)}
+              onClick={() => setDrawer(true)}
             />
           </div>
         </div>
-        {/* A second pane in drawer mode, from the right edge */}
+        {/* A second pane presented as a drawer, from the end edge (the right in left-to-right text) */}
         <AdaptivePane
-          mode="drawer"
-          side="right"
+          presentation="drawer"
+          side="end"
           open={drawer}
-          onClose={() => setDrawer(false)}
+          onOpenChange={setDrawer}
           drawerWidth={240}
           zIndex={40}
         >
           <div style={panel}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Right drawer</div>
             <div style={{ color: 'var(--muted-foreground)' }}>
-              Scrim + panel. Tap the scrim to close.
+              Scrim + panel. Tap the scrim, press Escape or swipe right to close.
             </div>
           </div>
         </AdaptivePane>
@@ -114,14 +114,14 @@ function Frame({ height, children }: { height: number; children?: ReactNode }) {
 
 function TintButton({
   label,
-  onPress,
+  onClick,
 }: {
   label: string
-  onPress: () => void
+  onClick: () => void
 }) {
   return (
     <button
-      onClick={onPress}
+      onClick={onClick}
       style={{
         border: 0,
         borderRadius: 10,

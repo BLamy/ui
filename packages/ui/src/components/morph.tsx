@@ -1,11 +1,11 @@
 'use client';
 import {
   Children, createContext, forwardRef, isValidElement, useContext, useMemo, useRef,
-  type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode,
+  type ComponentType, type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode,
 } from 'react';
-import {
-  AnimatePresence, LayoutGroup, MotionConfig, motion, useDragControls, useReducedMotion, type PanInfo, type Transition,
-} from 'framer-motion';
+import { AnimatePresence, LayoutGroup, MotionConfig, motion, useReducedMotion, type Transition } from 'framer-motion';
+import { bindDrag, dragThreshold } from '@ui-sdk/core';
+import { createVelocityTracker } from '@ui-sdk/core/gesture';
 import { springs, type SpringName } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
@@ -24,7 +24,13 @@ import { cn } from '@/lib/utils';
      </MorphGroup>
 
    Drag to dismiss: the expanded element follows the finger down (rubber-banded up), and past `dismissDistance`
-   or a downward flick calls `onDismiss` — the element then morphs back from wherever the finger left it.
+   or a downward flick calls `onDismiss` — the element then morphs back from wherever the finger left it. The
+   gesture is UI SDK's `bindDrag`; the offset is the CSS `translate` property (`--morph-drag-y`), apart from the
+   `transform` framer-motion animates, and springs back on the smooth spring token. The flick is UI SDK's velocity
+   tracker (the one Drawer measures a release with).
+   `render` swaps the element, as on UI SDK parts: `<Morph id="card" render={<button type="button" />}>`. The
+   element's type becomes the framer-motion element (`motion.button`, or `motion.create(Component)` for a component
+   that forwards its ref), and its props sit under Morph's.
    Reduced motion: the layouts swap at once with a short cross-fade. */
 
 interface MorphCtx { transition: Transition; reduced: boolean }
@@ -58,15 +64,29 @@ export function MorphGroup({ id, spring = 'smooth', transition, children }: Morp
   );
 }
 
-type MorphTag = 'div' | 'section' | 'article' | 'aside' | 'span' | 'li' | 'button' | 'a' | 'img' | 'figure' | 'header' | 'nav';
+/* motion.create() makes a new component each call: one per rendered component type, kept for the page's life. */
+const motionOf = new Map<unknown, typeof motion.div>();
+function motionElement(type: unknown): typeof motion.div {
+  if (typeof type === 'string') return (motion as unknown as Record<string, typeof motion.div>)[type] ?? motion.div;
+  let m = motionOf.get(type);
+  if (!m) {
+    m = motion.create(type as ComponentType) as unknown as typeof motion.div;
+    motionOf.set(type, m);
+  }
+  return m;
+}
+
+/** A flick faster than this (px/ms, downward) dismisses whatever the distance. */
+const FLICK_SPEED = 0.65;
 
 export interface MorphProps {
   /** The shared identity: the same id in both layouts. */
   id: string;
   /** Corner radius for this layout (px). Animated with the frame and kept undistorted while it scales. */
   radius?: number;
-  /** Element to render (default `div`). */
-  as?: MorphTag;
+  /** The element to render instead of a `div`, like `<button type="button" />` or `<li />`: its type and props
+      are used, Morph's own props win, and `className`s merge. Pass the children to Morph, not to the element. */
+  render?: ReactElement<{ className?: string }>;
   /** Follow a downward drag and dismiss past `dismissDistance` or on a flick. A drag never starts inside a
       `[data-no-drag]` descendant (a scrubber, a slider, a scrolling list) — nor on form controls. */
   dragToDismiss?: boolean;
@@ -98,7 +118,7 @@ export interface MorphProps {
 /** An element that morphs between its layouts. Use inside a `<MorphGroup>`. */
 export const Morph = forwardRef<HTMLElement, MorphProps>(function Morph(
   {
-    id, radius, as = 'div', dragToDismiss, onDismiss, dismissDistance = 120, layout = true, fade = false,
+    id, radius, render, dragToDismiss, onDismiss, dismissDistance = 120, layout = true, fade = false,
     className, style, children, ...rest
   },
   ref,
@@ -107,21 +127,44 @@ export const Morph = forwardRef<HTMLElement, MorphProps>(function Morph(
   const reducedPref = useReducedMotion();
   const reduced = ctx?.reduced ?? !!reducedPref;
   const transition = ctx?.transition ?? (reduced ? { duration: 0 } : springs.smooth);
-  const M = motion[as] as typeof motion.div;
+  const M = motionElement(render?.type ?? 'div');
+  const { className: renderClassName, ...renderProps } = (render?.props ?? {}) as { className?: string; children?: ReactNode };
+  delete renderProps.children;
   const drag = dragToDismiss && !reduced;
-  const controls = useDragControls();
-  const onDragEnd = (_: unknown, info: PanInfo) => {
-    if (info.offset.y > dismissDistance || info.velocity.y > 650) onDismiss?.();
-  };
   const userPointerDown = (rest as { onPointerDown?: (e: ReactPointerEvent) => void }).onPointerDown;
-  const onPointerDown = (e: ReactPointerEvent) => {
+  const onPointerDown = (e: ReactPointerEvent<HTMLElement>) => {
     userPointerDown?.(e);
     const t = e.target as Element | null;
-    if (e.defaultPrevented || t?.closest('[data-no-drag],input,textarea,select,[role=slider]')) return;
-    controls.start(e);
+    if (e.button !== 0 || e.defaultPrevented || t?.closest('[data-no-drag],input,textarea,select,[role=slider]')) return;
+    const el = e.currentTarget;
+    const x0 = e.clientX, y0 = e.clientY;
+    let dy = 0;
+    const velocity = createVelocityTracker();
+    velocity.add(e.timeStamp, y0);
+    bindDrag(el, e.nativeEvent, {
+      threshold: dragThreshold,
+      // Vertical only: a sideways gesture (a carousel, a scrubber) is left alone.
+      onStart: (ev) => {
+        if (Math.abs(ev.clientY - y0) < Math.abs(ev.clientX - x0)) return false;
+        el.setAttribute('data-dragging', '');
+        return true;
+      },
+      onMove: ({ y, event }) => {
+        velocity.add(event.timeStamp, y);
+        dy = y - y0;
+        // Rubber-banded: it barely moves up, and follows most of the way down.
+        el.style.setProperty('--morph-drag-y', `${dy < 0 ? dy * 0.08 : dy * 0.9}px`);
+      },
+      onEnd: (end, canceled) => {
+        el.removeAttribute('data-dragging');
+        el.style.removeProperty('--morph-drag-y');
+        if (!canceled && (dy > dismissDistance || velocity.velocity(end.timeStamp) > FLICK_SPEED)) onDismiss?.();
+      },
+    });
   };
   return (
     <M
+      {...(renderProps as object)}
       ref={ref as never}
       data-slot="morph"
       data-morph-id={id}
@@ -129,20 +172,12 @@ export const Morph = forwardRef<HTMLElement, MorphProps>(function Morph(
       layout={layout}
       transition={{ ...transition, opacity: reduced ? { duration: 0.12 } : { duration: 0.18 } }}
       {...(fade ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } } : null)}
-      className={cn(drag && 'touch-pan-x', className)}
+      className={cn(
+        renderClassName,
+        drag && 'touch-pan-x translate-y-(--morph-drag-y) transition-[translate] duration-spring-smooth ease-spring-smooth data-dragging:transition-none motion-reduce:transition-none',
+        className,
+      )}
       style={{ ...(radius != null ? { borderRadius: radius } : null), ...style }}
-      {...(drag
-        ? {
-          drag: 'y' as const,
-          dragDirectionLock: true,
-          dragConstraints: { top: 0, bottom: 0 },
-          dragElastic: { top: 0.08, bottom: 0.9 },
-          dragSnapToOrigin: true,
-          dragListener: false,
-          dragControls: controls,
-          onDragEnd,
-        }
-        : null)}
       {...(rest as object)}
       {...(drag ? { onPointerDown } : null)}
     >

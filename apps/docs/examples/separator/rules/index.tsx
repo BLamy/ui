@@ -4,7 +4,8 @@ const SETTINGS = ['Wi-Fi', 'Bluetooth', 'Cellular', 'Personal Hotspot']
 
 // Three uses: a full-width rule between blocks of content, an inset rule that
 // stops short of the leading edge like an iOS list, and a vertical rule
-// between inline items (it stretches to the row's height).
+// between inline items (it stretches to the row's height). The list's rules
+// are `decorative`: the rows already read as separate, so screen readers skip them.
 export default function Rules() {
   return (
     <div className="mx-auto grid max-w-md gap-6">
@@ -17,7 +18,7 @@ export default function Rules() {
       <div className="overflow-hidden rounded-card bg-card shadow-hairline">
         {SETTINGS.map((name, i) => (
           <div key={name}>
-            {i > 0 && <Separator inset />}
+            {i > 0 && <Separator inset decorative />}
             <div className="flex h-row items-center px-4 text-body text-foreground">{name}</div>
           </div>
         ))}

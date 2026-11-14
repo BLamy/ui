@@ -16,5 +16,5 @@
     "lib/data.ts",
     "lib/use-codex.ts"
   ],
-  "dependencies": ["react-aria-components"]
+  "dependencies": ["@ui-sdk/core", "@ui-sdk/react"]
 }

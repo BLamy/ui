@@ -33,7 +33,7 @@ export default function AppleNotes({ appearance, initialFolder = 'folders', init
     <AppearanceProvider value={dark ? 'dark' : 'light'}>
       <BLProvider tint={NOTES_TINT[dark ? 'dark' : 'light']} className="bg-background" style={NOTES_ON_TINT}>
         <SplitView aria-label="Notes"
-          selection={{ sidebar: notes.sidebarId, supplementary: notes.selectedId }}>
+          value={{ sidebar: notes.sidebarId, supplementary: notes.selectedId }}>
           <FoldersSidebar notes={notes} />
           <ListColumn notes={notes} />
           <NoteColumn notes={notes} />

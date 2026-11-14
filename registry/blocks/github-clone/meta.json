@@ -19,5 +19,8 @@
     "source.ts",
     "github-api.ts",
     "data.ts"
+  ],
+  "dependencies": [
+    "@ui-sdk/react"
   ]
 }

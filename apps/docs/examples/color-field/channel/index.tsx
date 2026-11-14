@@ -1,35 +1,45 @@
 import { useState } from 'react'
-import { parseColor, type Color } from 'react-aria-components'
-import { ColorField, ColorSwatch } from '@/components/ui/color-field'
-import { Input } from '@/components/ui/input'
+import { formatColor, parseColor } from '@ui-sdk/core/color'
+import { ColorFieldChannelInput, ColorFieldGroup, ColorFieldSwatch } from '@/components/ui/color-field'
+import { ColorPicker } from '@/components/ui/color-picker'
 import { Label } from '@/components/ui/label'
 
-// `channel` turns the field into a number box for one channel of a color in the
-// `colorSpace` you name. Three of them share one Color, so editing any updates
-// the swatch and the other two.
+const channels = [
+  { channel: 'hue', label: 'Hue' },
+  { channel: 'saturation', label: 'Saturation' },
+  { channel: 'lightness', label: 'Lightness' },
+] as const
+
+// A ColorFieldChannelInput is a number box for one channel of the color in the
+// root's `space`. Here one ColorPicker holds the color and three boxes edit it,
+// each in a ColorFieldGroup, so changing any updates the swatch and the value.
 export default function Channel() {
-  const [color, setColor] = useState<Color | null>(parseColor('hsl(262, 83%, 66%)'))
-  const channels = [
-    { channel: 'hue', label: 'Hue' },
-    { channel: 'saturation', label: 'Saturation' },
-    { channel: 'lightness', label: 'Lightness' },
-  ] as const
+  const [color, setColor] = useState('hsl(262 83% 66%)')
+  const parsed = parseColor(color)
   return (
-    <div className="mx-auto grid max-w-sm gap-4">
+    <ColorPicker
+      aria-label="Accent"
+      space="hsl"
+      value={color}
+      onValueChange={setColor}
+      className="mx-auto grid max-w-sm gap-4"
+    >
       <div className="flex items-center gap-3">
-        {color ? <ColorSwatch color={color} className="size-10" /> : null}
+        <ColorFieldSwatch className="size-10" />
         <code className="text-footnote text-foreground/70">
-          {color ? color.toString('hex') : 'no color'}
+          {color}{parsed ? ` · ${formatColor(parsed, 'hex')}` : null}
         </code>
       </div>
       <div className="grid grid-cols-3 gap-3">
         {channels.map(({ channel, label }) => (
-          <ColorField key={channel} colorSpace="hsl" channel={channel} value={color} onChange={setColor}>
-            <Label variant="field">{label}</Label>
-            <Input />
-          </ColorField>
+          <div key={channel} className="flex flex-col gap-1.5">
+            <Label variant="field" htmlFor={`channel-${channel}`}>{label}</Label>
+            <ColorFieldGroup>
+              <ColorFieldChannelInput id={`channel-${channel}`} channel={channel} />
+            </ColorFieldGroup>
+          </div>
         ))}
       </div>
-    </div>
+    </ColorPicker>
   )
 }

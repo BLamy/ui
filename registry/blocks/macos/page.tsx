@@ -14,11 +14,15 @@
    Under 640px wide the desktop becomes an iPhone: a status bar, a springboard of the same apps (Search opens Alfred),
    and full-screen apps that zoom out of their icons; the home bar sends one back, and double-tapping it opens the app
    switcher. The phone never moves or minimizes a window, so widening the container brings every app back where it was. */
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePersistentState } from '@/lib/persistent-state';
-import { useHotkey, type CommandMenuApi } from '@/components/ui/command-menu';
-import { Toaster, createToastQueue } from '@/components/ui/toast';
+import { createCommandMenuController, type CommandMenuController } from '@/components/ui/command-menu';
+import { PlainButton } from '@/components/ui/plain-button';
+import { ToastRegion, createHud, type Hud } from '@/components/ui/toast';
+import { useShortcut } from '@ui-sdk/react/shortcuts';
 import { useContainerSize } from '@/lib/container';
+import { usePresence } from '@/lib/presence';
+import { sizeClassOf } from '@/lib/size-class';
 import { useSessionRecording } from '@/lib/session-recorder';
 import { BLProvider, useAppearance } from '@/lib/theme';
 import type { Tailscale, TailscaleOptions } from '@/lib/tailscale';
@@ -40,8 +44,9 @@ const ALFRED_TINT = { light: '#5B4BD6', dark: '#8E7FFF' } as const;
 /** Menu bar height. */
 const MENU_H = 28;
 
-/** The width below which the desktop is a phone. */
-const PHONE_W = 640;
+/** A compact desktop (under the kit's medium size class, 640px) is a phone. The desktop measures its box anyway, for
+    the windows' room, so the class comes from the same measurement. */
+const isPhone = (width: number) => sizeClassOf(width) === 'compact';
 
 export interface MacOSProps {
   /** Apps to have open on load, by id (see apps.ts): ['reminders'], ['mail', 'notes'] — the last is frontmost. */
@@ -71,36 +76,35 @@ export interface MacOSProps {
   initialMenu?: StatusMenu;
 }
 
-type Phase = 'open' | 'closing' | 'closed';
-
 export default function MacOS({ initialApps, initialPages, initialQuery = '', defaultOpen = true, autoFocus = true, record = true, dock, persist = false, tailscale, controller, initialMenu }: MacOSProps) {
   useSessionRecording({ enabled: record });
   const ambient = useAppearance() === 'dark';
   const key = persist ? (typeof persist === 'string' ? persist : 'bl-macos') : null;
   const [override, setOverride] = usePersistentState<boolean | null>(key && `${key}:dark`, null, (v): v is boolean | null => v === null || typeof v === 'boolean');
   const dark = override ?? ambient;
-  const [queue] = useState(createToastQueue);
-  const [phase, setPhase] = useState<Phase>(defaultOpen ? 'open' : 'closed');
-  // The props seed the first opening; later ones start at the root (a closed bar unmounts, so it mounts fresh).
-  const [boot, setBoot] = useState({ pages: initialPages, query: initialQuery, focus: autoFocus });
-  const menu = useRef<CommandMenuApi | null>(null);
+  const [hud] = useState(() => createHud());
+  const [open, setOpen] = useState(defaultOpen);
+  // The props seed the first opening; later ones start at the root, in a fresh bar (`opening` keys it, so showing it
+  // again while it is still leaving mounts a new one inside the same, interrupted, animation).
+  const [boot, setBoot] = useState({ pages: initialPages, query: initialQuery, focus: autoFocus, opening: 0 });
+  const [menu] = useState(createCommandMenuController);
   // The one Tailscale controller of this desktop, made once on first render; the real Tailscale unless told otherwise.
   const [real] = useState(() => (controller || tailscale ? null : desktopTailnet()));
 
   // Back to the root with an empty query: after a workflow, or reopening a bar that is still animating out.
-  const reset = useCallback(() => menu.current?.reset(), []);
-  const close = useCallback(() => setPhase((p) => (p === 'open' ? 'closing' : p)), []);
+  const reset = useCallback(() => { menu.setPages([]); menu.setQuery(''); }, [menu]);
+  const close = useCallback(() => setOpen(false), []);
   const show = useCallback(() => {
-    setBoot({ pages: [], query: '', focus: true });
+    setBoot((b) => ({ pages: [], query: '', focus: true, opening: b.opening + 1 }));
     reset();
-    setPhase('open');
+    setOpen(true);
   }, [reset]);
 
   return (
     <BLProvider dark={dark} tint={ALFRED_TINT[dark ? 'dark' : 'light']} className="bg-transparent">
       <TailscaleProvider tailscale={controller} options={tailscale ?? real ?? undefined}>
-        <AlfredProvider queue={queue} dark={dark} toggleDark={() => setOverride(!dark)} reset={reset} close={close}>
-          <Desktop dark={dark} phase={phase} setPhase={setPhase} show={show} close={close} boot={boot} menu={menu} queue={queue} initialApps={initialApps} initialDock={dock} persistKey={key} initialMenu={initialMenu} />
+        <AlfredProvider hud={hud} dark={dark} toggleDark={() => setOverride(!dark)} reset={reset} close={close}>
+          <Desktop dark={dark} open={open} show={show} close={close} boot={boot} menu={menu} hud={hud} initialApps={initialApps} initialDock={dock} persistKey={key} initialMenu={initialMenu} />
         </AlfredProvider>
       </TailscaleProvider>
     </BLProvider>
@@ -116,11 +120,11 @@ function Desktop({ initialApps, persistKey, ...rest }: ScreenProps & { initialAp
   // The room windows live in: everything under the menu bar.
   const area = useMemo(() => ({ width: size.width, height: Math.max(0, size.height - MENU_H) }), [size.width, size.height]);
   // The last desktop-sized room, where an app opened on the phone is placed for when the width comes back.
-  const [wide, setWide] = useState(area.width >= PHONE_W ? area : { width: 900, height: 640 - MENU_H });
-  if (area.width >= PHONE_W && (wide.width !== area.width || wide.height !== area.height)) setWide(area);
+  const [wide, setWide] = useState(!isPhone(size.width) ? area : { width: 900, height: 640 - MENU_H });
+  if (!isPhone(size.width) && (wide.width !== area.width || wide.height !== area.height)) setWide(area);
   return (
     <div ref={ref} data-slot="macos" className="relative h-full w-full">
-      <DesktopProvider area={area} openArea={area.width >= PHONE_W ? area : wide} initialApps={initialApps} persistKey={persistKey ? `${persistKey}:desktop` : undefined}>
+      <DesktopProvider area={area} openArea={!isPhone(size.width) ? area : wide} initialApps={initialApps} persistKey={persistKey ? `${persistKey}:desktop` : undefined}>
         <Screen {...rest} persistKey={persistKey} size={size} />
       </DesktopProvider>
     </div>
@@ -128,19 +132,22 @@ function Desktop({ initialApps, persistKey, ...rest }: ScreenProps & { initialAp
 }
 
 interface ScreenProps {
-  dark: boolean; phase: Phase; setPhase: (p: Phase) => void; show: () => void; close: () => void;
-  boot: { pages?: string[]; query: string; focus: boolean }; menu: React.RefObject<CommandMenuApi | null>;
-  queue: ReturnType<typeof createToastQueue>;
+  dark: boolean; open: boolean; show: () => void; close: () => void;
+  boot: { pages?: string[]; query: string; focus: boolean; opening: number }; menu: CommandMenuController;
+  hud: Hud;
   initialDock?: Partial<DockPrefs>;
   persistKey?: string | null;
   initialMenu?: StatusMenu;
 }
 
-function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initialDock, persistKey, initialMenu, size }: ScreenProps & { size: { width: number; height: number } }) {
+function Screen({ dark, open, show, close, boot, menu, hud, initialDock, persistKey, initialMenu, size }: ScreenProps & { size: { width: number; height: number } }) {
   const { power, setPower } = useAlfred();
   const desktop = useDesktop();
   // A phone-sized desktop is an iPhone: its own chrome, a springboard, and one full-screen app at a time.
-  const phone = size.width < PHONE_W;
+  const phone = isPhone(size.width);
+  // Alfred's bar pops in, and out on close (the kit's presence on UI SDK's animateIn / animateOut): it stays mounted,
+  // inert, until its exit has played, and showing it again turns the exit around.
+  const bar = usePresence<HTMLDivElement>(open, { appear: true });
   const layer = useMemo(() => ({ width: size.width, height: Math.max(0, size.height - STATUS_H - HOME_H) }), [size.width, size.height]);
   const [origins, setOrigins] = useState<Record<string, Point>>({});
   const switcher = useSwitcher(layer);
@@ -171,7 +178,7 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initial
   const chrome = phone ? STATUS_H + HOME_H : MENU_H;
   const top = phone ? 12 : Math.round(Math.max(16, Math.min(140, size.height * 0.14)));
   const listHeight = Math.round(Math.max(140, Math.min(400, size.height - chrome - top - 68 - 44 - (reserve ? 88 : 20))));
-  const toggle = () => (phase === 'open' ? close() : show());
+  const toggle = () => (open ? close() : show());
 
   // ⌥Tab brings back the window behind the front one (a Mac's ⌘Tab, which the browser keeps for itself).
   const cycle = () => {
@@ -179,10 +186,20 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initial
     const next = order[1] ?? order[0];
     if (next) desktop.open(next.app);
   };
-  useHotkey('alt+tab', cycle, !power && !phone);
+  useShortcut(!power && !phone ? 'alt+tab' : null, (event) => { event.preventDefault(); cycle(); });
 
-  // ⌥Space, Alfred's hotkey (matchesHotkey compares the physical key: on a Mac ⌥Space types a non-breaking space).
-  useHotkey('alt+space', toggle, !power);
+  // ⌥Space, Alfred's hotkey. Matched by the physical key: on a Mac ⌥Space types a non-breaking space, which UI SDK's
+  // shortcut matcher reads as another key (see the report's UI SDK gaps).
+  useEffect(() => {
+    if (power) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || !e.altKey || e.metaKey || e.ctrlKey || e.shiftKey || e.repeat) return;
+      e.preventDefault();
+      toggle();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [power, toggle]);
 
   const wake = useCallback(() => setPower(null), [setPower]);
 
@@ -225,24 +242,26 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initial
               onBack={() => switcher.hide()}
             />
           ) : null}
-          {phase !== 'closed' ? (
+          {bar.mounted ? (
             <div
+              ref={bar.ref}
+              data-slot="macos-alfred"
               className={cn(
-                'absolute left-1/2 z-20 -translate-x-1/2 [--bl-pop-y:-12px]',
-                phase === 'open' ? 'animate-bl-pop-in motion-reduce:animate-bl-fade-in' : 'pointer-events-none animate-bl-pop-out motion-reduce:animate-bl-fade-out',
+                'absolute left-1/2 z-20 -translate-x-1/2 transition-[opacity,translate,scale] duration-spring-snappy ease-spring-snappy',
+                'data-starting-style:opacity-0 motion-safe:data-starting-style:-translate-y-3 motion-safe:data-starting-style:scale-90',
+                'data-ending-style:pointer-events-none data-ending-style:opacity-0 data-ending-style:duration-exit data-ending-style:ease-exit motion-safe:data-ending-style:scale-96',
               )}
               style={{ top, width }}
-              onAnimationEnd={(e) => { if (e.target === e.currentTarget && phase === 'closing') setPhase('closed'); }}
             >
               <Launcher
-                menuRef={menu} initialPages={boot.pages} initialQuery={boot.query} autoFocus={boot.focus}
+                key={boot.opening}
+                controller={menu} initialPages={boot.pages} initialQuery={boot.query} autoFocus={boot.focus}
                 width={width} listHeight={listHeight} onClose={close}
               />
             </div>
           ) : !desktop.windows.length && !phone ? (
             <div className="absolute left-1/2 -translate-x-1/2" style={{ top: top + 12 }}>
-              <button
-                type="button"
+              <PlainButton
                 onClick={show}
                 className={cn(
                   'inline-flex animate-bl-fade-in cursor-pointer items-center gap-2.5 rounded-full border-0 px-4 py-2 text-[13.5px] font-medium whitespace-nowrap backdrop-blur-xl backdrop-saturate-150 transition-transform duration-spring-snappy ease-spring-snappy active:scale-[.97]',
@@ -256,14 +275,14 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initial
                   <kbd className={cn('rounded-md px-1.5 py-0.5 font-[inherit] text-caption', dark ? 'bg-white/15' : 'bg-black/8')}>Space</kbd>
                 </span>
                 or click to show Alfred
-              </button>
+              </PlainButton>
             </div>
           ) : null}
         </div>
         {phone ? <HomeBar dark={dark} inApp={foreground !== null && !switching} onHome={goHome} onSwitcher={showSwitcher} /> : null}
       </div>
       {dock ? <Dock dark={dark} tile={tile} onAlfred={toggle} prefs={dockPrefs} onPrefs={setDockPrefs} /> : null}
-      <Toaster queue={queue} inline placement={phone ? 'top' : 'bottom'} offset={phone ? STATUS_H + 8 : reserve ? 92 : 24} aria-label="Alfred notifications" />
+      <ToastRegion variant="hud" toaster={hud.toaster} side={phone ? 'top' : 'bottom'} offset={phone ? STATUS_H + 8 : reserve ? 92 : 24} aria-label="Alfred notifications" />
       <PowerOverlay state={power} onWake={wake} dark={dark} />
     </Wallpaper>
   );

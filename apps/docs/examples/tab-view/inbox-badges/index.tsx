@@ -39,8 +39,10 @@ function InboxTabs() {
   return (
     <TabView
       placement="top"
-      selectedKey={tab}
-      onSelectionChange={(k) => setTab(String(k))}
+      value={tab}
+      onValueChange={(next) => {
+        if (next) setTab(next)
+      }}
       style={{ height: 360, background: 'var(--card)' }}
     >
       <TabViewBar
@@ -55,8 +57,7 @@ function InboxTabs() {
           {inboxTabs.map((t) => (
             <TabViewTab
               key={t.id}
-              id={t.id}
-              textValue={t.label}
+              value={t.id}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -66,11 +67,11 @@ function InboxTabs() {
                 fontWeight: 600,
               }}
             >
-              {({ isSelected }) => (
+              {({ selected }) => (
                 <>
                   <span
                     style={{
-                      color: isSelected
+                      color: selected
                         ? 'var(--foreground)'
                         : 'var(--muted-foreground)',
                     }}
@@ -78,15 +79,15 @@ function InboxTabs() {
                     {t.label}
                   </span>
                   {t.count ? (
-                    <Badge variant={isSelected ? 'default' : 'secondary'}>
+                    <Badge variant={selected ? 'default' : 'secondary'}>
                       {t.count}
                     </Badge>
                   ) : null}
-                  <TabViewIndicator />
                 </>
               )}
             </TabViewTab>
           ))}
+          <TabViewIndicator />
         </TabViewList>
         <TabViewFooter>
           <Button size="sm" variant="ghost">
@@ -96,7 +97,7 @@ function InboxTabs() {
       </TabViewBar>
       <TabViewPanels>
         {inboxTabs.map((t) => (
-          <TabViewPanel key={t.id} id={t.id}>
+          <TabViewPanel key={t.id} value={t.id}>
             <List>
               <ListSection>
                 {threads
@@ -111,7 +112,7 @@ function InboxTabs() {
                       leading={<Avatar c={m} size={36} />}
                       title={m.subject}
                       subtitle={`${m.f} · ${m.preview}`}
-                      onPress={() => {}}
+                      onClick={() => {}}
                       trailing={
                         m.unread ? (
                           <span

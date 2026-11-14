@@ -1,15 +1,16 @@
 /* An open board: the canvas with its chrome — a header (back, title, undo and redo, Format, more), the insert bar,
-   the drawing palette, zoom and the bar over a selection. It owns what the canvas and the chrome share: the camera,
+   the drawing palette, zoom and the bar over a selection. It owns what the canvas and the chrome share: the view,
    the active tool, the drawing settings, and which item's text is being edited. */
 import { useLayoutEffect, useRef, useState, type DragEvent } from 'react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { PencilTool } from '@/components/ui/pencilkit/constants';
 import { PlainButton } from '@/components/ui/plain-button';
-import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useContainerSize } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { fitCamera, toBoard, zoomAt, type Camera } from '@/lib/canvas-math';
+import { createCanvasController } from '@/components/ui/canvas';
+import { toBoard, type Viewport } from '@/lib/canvas-math';
 import { BoardSurface, type Tool } from './surface';
 import { boundsOf } from './geometry';
 import { unionRect } from '@/lib/canvas-math';
@@ -23,7 +24,9 @@ export function BoardEditor({ compact, onBack }: { compact: boolean; onBack: () 
   const f = useFreeform();
   const { board, items, byId } = f;
   const [vref, size] = useContainerSize<HTMLDivElement>({ width: 900, height: 600 });
-  const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, z: 1 });
+  const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 });
+  // The zoom buttons and menu drive the canvas's own fit and zoom.
+  const [canvas] = useState(() => createCanvasController());
   const [tool, setTool] = useState<Tool>('select');
   const [draw, setDrawState] = useState<{ tool: PencilTool; ink: number; width: number }>({ tool: 'pen', ink: 0, width: 1 });
   const [editing, setEditing] = useState<string | null>(null);
@@ -31,21 +34,20 @@ export function BoardEditor({ compact, onBack }: { compact: boolean; onBack: () 
 
   // Open with the whole board in view.
   useLayoutEffect(() => {
-    const r = vref.current?.getBoundingClientRect();
-    if (!r) return;
-    setCamera(fitCamera(unionRect(items.map((i) => boundsOf(i, byId))), { width: r.width, height: r.height }));
+    canvas.fit(unionRect(items.map((i) => boundsOf(i, byId))));
     // Once, when the board opens (the editor remounts per board).
   }, []);
 
   if (!board) return null;
 
-  const fit = () => setCamera(fitCamera(unionRect(items.map((i) => boundsOf(i, byId))), size));
-  const zoom = (k: number) => setCamera((c) => zoomAt(c, k, size.width / 2, size.height / 2));
+  const fit = () => canvas.fit(unionRect(items.map((i) => boundsOf(i, byId))));
+  const zoom = (k: number) => canvas.zoomBy(k);
+  const actual = () => canvas.zoomTo(1);
 
   /* ── Inserting ── */
   // New things land in the middle of the view, each a little off the last so they don't stack exactly.
   const spot = (w: number, h: number, at?: { x: number; y: number }) => {
-    const c = at ?? toBoard(camera, size.width / 2, size.height / 2);
+    const c = at ?? toBoard(viewport, size.width / 2, size.height / 2);
     const off = (inserted.current++ % 6) * 22;
     return { x: Math.round(c.x - w / 2 + (at ? 0 : off)), y: Math.round(c.y - h / 2 + (at ? 0 : off)) };
   };
@@ -93,55 +95,53 @@ export function BoardEditor({ compact, onBack }: { compact: boolean; onBack: () 
     if (!files.length) return;
     e.preventDefault();
     const r = vref.current?.getBoundingClientRect();
-    const at = toBoard(camera, e.clientX - (r?.left ?? 0), e.clientY - (r?.top ?? 0));
+    const at = toBoard(viewport, e.clientX - (r?.left ?? 0), e.clientY - (r?.top ?? 0));
     files.forEach((file, n) => addFile(file, { x: at.x + n * 24, y: at.y + n * 24 }));
   };
 
   return (
     <div data-slot="freeform-editor" className="absolute inset-0 flex animate-bl-fade-in flex-col bg-background">
       <header className="flex h-toolbar shrink-0 items-center gap-1 border-b border-border bg-card px-2.5">
-        <PlainButton aria-label="Boards" onPress={onBack} className="flex h-9 cursor-pointer items-center gap-0.5 rounded-lg border-0 bg-transparent pr-2 pl-1 text-detail font-medium text-primary hover:bg-secondary">
+        <PlainButton aria-label="Boards" onClick={onBack} className="flex h-9 cursor-pointer items-center gap-0.5 rounded-lg border-0 bg-transparent pr-2 pl-1 text-detail font-medium text-primary hover:bg-secondary">
           <Icon name="chevron-left" size={22} sw={2.2} />
           {compact ? null : 'Boards'}
         </PlainButton>
         <div className="flex min-w-0 flex-1 justify-center">
           <TitleField key={board.id + board.title} title={board.title} onCommit={(t) => f.renameBoard(board.id, t)} />
         </div>
-        <ToolButton icon="arrow-uturn-backward" label="Undo (⌘Z)" onPress={f.undo} />
-        <ToolButton icon="arrow-uturn-forward" label="Redo (⇧⌘Z)" onPress={f.redo} />
-        <PopoverTrigger>
-          <ToolButton icon="sliders" label="Format" />
-          <PopoverContent placement="bottom end" aria-label="Format" className="w-[300px]"><FormatPanel /></PopoverContent>
-        </PopoverTrigger>
-        <DropdownMenu>
-          <ToolButton icon="ellipsis" label="More" />
-          <DropdownMenuContent
-            aria-label="Board"
-            placement="bottom end"
-            onAction={(k) => {
-              if (k === 'fit') fit();
-              else if (k === 'actual') setCamera((c) => zoomAt(c, 1 / c.z, size.width / 2, size.height / 2));
-              else if (k === 'duplicate') { f.duplicateBoard(board.id); onBack(); }
-              else if (k === 'delete') { f.deleteBoard(board.id); onBack(); }
-            }}
-          >
-            <DropdownMenuItem id="fit" className="min-h-10 py-2">Zoom to Fit</DropdownMenuItem>
-            <DropdownMenuItem id="actual" className="min-h-10 py-2">Actual Size</DropdownMenuItem>
+        <ToolButton icon="arrow-uturn-backward" label="Undo (⌘Z)" onClick={f.undo} />
+        <ToolButton icon="arrow-uturn-forward" label="Redo (⇧⌘Z)" onClick={f.redo} />
+        <Popover>
+          <PopoverTrigger render={<ToolButton icon="sliders" label="Format" />} />
+          <PopoverContent side="bottom" align="end" className="w-[300px]"><FormatPanel /></PopoverContent>
+        </Popover>
+        <DropdownMenu
+          onAction={(k) => {
+            if (k === 'fit') fit();
+            else if (k === 'actual') actual();
+            else if (k === 'duplicate') { f.duplicateBoard(board.id); onBack(); }
+            else if (k === 'delete') { f.deleteBoard(board.id); onBack(); }
+          }}
+        >
+          <DropdownMenuTrigger render={<ToolButton icon="ellipsis" label="More" />} />
+          <DropdownMenuContent side="bottom" align="end">
+            <DropdownMenuItem value="fit" className="min-h-10 py-2">Zoom to Fit</DropdownMenuItem>
+            <DropdownMenuItem value="actual" className="min-h-10 py-2">Actual Size</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem id="duplicate" className="min-h-10 py-2">Duplicate Board</DropdownMenuItem>
-            <DropdownMenuItem id="delete" variant="destructive" className="min-h-10 py-2">Delete Board</DropdownMenuItem>
+            <DropdownMenuItem value="duplicate" className="min-h-10 py-2">Duplicate Board</DropdownMenuItem>
+            <DropdownMenuItem value="delete" destructive className="min-h-10 py-2">Delete Board</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
 
       <div ref={vref} className="relative min-h-0 flex-1" onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) e.preventDefault(); }} onDrop={onDrop}>
-        <BoardSurface camera={camera} onCameraChange={setCamera} tool={tool} setTool={setTool} draw={drawSettings(draw, AUTO_INK)} editing={editing} setEditing={setEditing} />
+        <BoardSurface viewport={viewport} onViewportChange={setViewport} controller={canvas} tool={tool} setTool={setTool} draw={drawSettings(draw, AUTO_INK)} editing={editing} setEditing={setEditing} />
         {tool === 'select' && !editing && f.selection.length ? (
-          <SelectionBar camera={camera} size={size} onEdit={() => { f.begin(); setEditing(f.selection[0]); }} />
+          <SelectionBar viewport={viewport} size={size} onEdit={() => { f.begin(); setEditing(f.selection[0]); }} />
         ) : null}
         {tool === 'draw' ? <DrawBar draw={draw} setDraw={(p) => setDrawState((d) => ({ ...d, ...p }))} /> : null}
         <InsertBar tool={tool} setTool={setTool} inserts={inserts} />
-        {compact ? null : <ZoomCluster camera={camera} onZoom={zoom} onFit={fit} onActual={() => setCamera((c) => zoomAt(c, 1 / c.z, size.width / 2, size.height / 2))} />}
+        {compact ? null : <ZoomCluster zoom={viewport.zoom} onZoom={zoom} onFit={fit} onActual={actual} />}
       </div>
     </div>
   );

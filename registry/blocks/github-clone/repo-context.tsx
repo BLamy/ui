@@ -95,9 +95,9 @@ export function Failed({ error, retry, className }: { error: unknown; retry?: ()
       <h3 className="mt-3 mb-1 text-callout font-semibold">{title}</h3>
       <p className="m-0 max-w-[420px] text-detail text-muted-foreground">{message}</p>
       <div className="mt-4 flex flex-wrap justify-center gap-2">
-        {kind === 'auth' && keychain ? <Button className={ghButton(true)} onPress={keychain.signIn}>Sign in with GitHub</Button> : null}
-        {kind === 'notFound' && openPicker ? <Button className={ghButton()} onPress={openPicker}>Choose a repository</Button> : null}
-        {retry && kind !== 'auth' ? <Button className={ghButton()} onPress={retry}><Oct name="retry" />Try again</Button> : null}
+        {kind === 'auth' && keychain ? <Button className={ghButton(true)} onClick={keychain.signIn}>Sign in with GitHub</Button> : null}
+        {kind === 'notFound' && openPicker ? <Button className={ghButton()} onClick={openPicker}>Choose a repository</Button> : null}
+        {retry && kind !== 'auth' ? <Button className={ghButton()} onClick={retry}><Oct name="retry" />Try again</Button> : null}
       </div>
     </Box>
   );

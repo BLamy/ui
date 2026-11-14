@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Disclosure, DisclosurePanel, DisclosureTrigger } from '@/components/ui/disclosure';
+import {
+  DisclosureGroup, DisclosureGroupHeader, DisclosureGroupItem, DisclosureGroupPanel, DisclosureGroupTrigger, Disclosure, DisclosurePanel, DisclosureTrigger,
+} from '@/components/ui/disclosure';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Disclosure> = {
@@ -18,7 +20,7 @@ const faq = [
 
 export const Single: Story = {
   render: () => (
-    <Disclosure defaultExpanded>
+    <Disclosure defaultOpen>
       <DisclosureTrigger>Advanced</DisclosureTrigger>
       <DisclosurePanel>Proxy, DNS and certificate settings live here.</DisclosurePanel>
     </Disclosure>
@@ -27,31 +29,40 @@ export const Single: Story = {
 
 export const Accordions: Story = {
   render: () => (
-    <Accordion defaultExpandedKeys={['sync']}>
+    <DisclosureGroup defaultValue={['sync']}>
       {faq.map(([id, q, a]) => (
-        <AccordionItem key={id} id={id}><AccordionTrigger>{q}</AccordionTrigger><AccordionContent>{a}</AccordionContent></AccordionItem>
+        <DisclosureGroupItem key={id} value={id}>
+          <DisclosureGroupHeader><DisclosureGroupTrigger>{q}</DisclosureGroupTrigger></DisclosureGroupHeader>
+          <DisclosureGroupPanel>{a}</DisclosureGroupPanel>
+        </DisclosureGroupItem>
       ))}
-    </Accordion>
+    </DisclosureGroup>
   ),
 };
 
 export const Inset: Story = {
   render: () => (
-    <Accordion variant="inset" allowsMultipleExpanded defaultExpandedKeys={['sync', 'export']}>
+    <DisclosureGroup variant="inset" multiple defaultValue={['sync', 'export']}>
       {faq.map(([id, q, a]) => (
-        <AccordionItem key={id} id={id}><AccordionTrigger>{q}</AccordionTrigger><AccordionContent>{a}</AccordionContent></AccordionItem>
+        <DisclosureGroupItem key={id} value={id}>
+          <DisclosureGroupHeader><DisclosureGroupTrigger>{q}</DisclosureGroupTrigger></DisclosureGroupHeader>
+          <DisclosureGroupPanel>{a}</DisclosureGroupPanel>
+        </DisclosureGroupItem>
       ))}
-    </Accordion>
+    </DisclosureGroup>
   ),
 };
 
 export const Dark: Story = {
   decorators: [(Story) => <Panel dark><Story /></Panel>],
   render: () => (
-    <Accordion variant="inset" defaultExpandedKeys={['share']}>
+    <DisclosureGroup variant="inset" defaultValue={['share']}>
       {faq.map(([id, q, a]) => (
-        <AccordionItem key={id} id={id}><AccordionTrigger>{q}</AccordionTrigger><AccordionContent>{a}</AccordionContent></AccordionItem>
+        <DisclosureGroupItem key={id} value={id}>
+          <DisclosureGroupHeader><DisclosureGroupTrigger>{q}</DisclosureGroupTrigger></DisclosureGroupHeader>
+          <DisclosureGroupPanel>{a}</DisclosureGroupPanel>
+        </DisclosureGroupItem>
       ))}
-    </Accordion>
+    </DisclosureGroup>
   ),
 };

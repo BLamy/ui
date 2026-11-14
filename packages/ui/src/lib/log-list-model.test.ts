@@ -1,107 +1,8 @@
 import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import {
-  RowHeights, RowIdIndex, RowTimes, countLogLevels, followTop, formatLogTime, logRowText, nodeText, normalizeLogLevel, rowKeyTarget, rowRange, rowsChange,
+  RowIdIndex, RowTimes, countLogLevels, followTop, formatLogTime, logRowText, nodeText, normalizeLogLevel, rowsChange,
 } from '@/lib/log-list-model';
-
-describe('RowHeights', () => {
-  /** The same answers as adding up an array by hand. */
-  const check = (heights: RowHeights, values: number[]) => {
-    let y = 0;
-    expect(heights.count).toBe(values.length);
-    values.forEach((h, i) => {
-      expect(heights.offsetOf(i)).toBe(y);
-      expect(heights.get(i)).toBe(h);
-      expect(heights.indexAt(y)).toBe(i);
-      if (h > 1) expect(heights.indexAt(y + h - 1)).toBe(i);
-      y += h;
-    });
-    expect(heights.total).toBe(y);
-    expect(heights.offsetOf(values.length)).toBe(y);
-  };
-
-  it('starts with every row at the estimate', () => {
-    const heights = new RowHeights(5, 24);
-    check(heights, [24, 24, 24, 24, 24]);
-    expect(heights.measured).toBe(0);
-  });
-
-  it('keeps offsets right through measurements in any order', () => {
-    const heights = new RowHeights(100, 24);
-    const values = new Array<number>(100).fill(24);
-    for (const [i, h] of [[50, 72], [0, 18], [99, 400], [51, 24], [7, 36], [50, 40]] as const) {
-      heights.set(i, h);
-      values[i] = h;
-      check(heights, values);
-    }
-    expect(heights.isMeasured(50)).toBe(true);
-    expect(heights.isMeasured(1)).toBe(false);
-  });
-
-  it('clamps out-of-range offsets to the first and last rows', () => {
-    const heights = new RowHeights(3, 10);
-    expect(heights.indexAt(-5)).toBe(0);
-    expect(heights.indexAt(29)).toBe(2);
-    expect(heights.indexAt(1000)).toBe(2);
-    expect(new RowHeights(0, 10).indexAt(50)).toBe(0);
-  });
-
-  it("ignores a height of 0, which is a hidden row's, not its real height", () => {
-    const heights = new RowHeights(2, 10);
-    expect(heights.set(0, 0)).toBe(false);
-    expect(heights.get(0)).toBe(10);
-    expect(heights.isMeasured(0)).toBe(false);
-  });
-
-  it('grows and shrinks, keeping what was measured', () => {
-    const heights = new RowHeights(4, 10);
-    heights.set(1, 30);
-    heights.resize(6);
-    check(heights, [10, 30, 10, 10, 10, 10]);
-    heights.resize(2);
-    check(heights, [10, 30]);
-    heights.resize(3);
-    check(heights, [10, 30, 10]);
-    // Past its capacity, and through a large change that rebuilds rather than walks.
-    heights.resize(5000);
-    expect(heights.total).toBe(10 + 30 + 4998 * 10);
-    expect(heights.offsetOf(4999)).toBe(10 + 30 + 4997 * 10);
-    expect(heights.get(1)).toBe(30);
-    heights.resize(2);
-    check(heights, [10, 30]);
-  });
-
-  it('forgets everything on reset, and a rebase only changes what was not measured', () => {
-    const heights = new RowHeights(3, 10);
-    heights.set(1, 50);
-    heights.rebase(20);
-    check(heights, [20, 50, 20]);
-    expect(heights.average).toBe(50);
-    heights.reset(2, 30);
-    check(heights, [30, 30]);
-    expect(heights.measured).toBe(0);
-    expect(heights.average).toBe(30);
-  });
-
-  it('holds 100,000 rows and answers without a per-row walk', () => {
-    const heights = new RowHeights(100_000, 24);
-    heights.set(99_999, 100);
-    heights.set(0, 48);
-    expect(heights.total).toBe(99_998 * 24 + 100 + 48);
-    expect(heights.indexAt(48)).toBe(1);
-    expect(heights.indexAt(heights.total - 1)).toBe(99_999);
-  });
-});
-
-describe('rowRange', () => {
-  it('covers the view and the overscan, and stays in the list', () => {
-    const heights = new RowHeights(100, 10);
-    expect(rowRange(heights, 200, 50, 20)).toEqual({ start: 18, end: 28 });
-    expect(rowRange(heights, 0, 50, 20)).toEqual({ start: 0, end: 8 });
-    expect(rowRange(heights, 950, 50, 20)).toEqual({ start: 93, end: 100 });
-    expect(rowRange(new RowHeights(0, 10), 0, 50, 20)).toEqual({ start: 0, end: 0 });
-  });
-});
 
 describe('rowsChange', () => {
   const rows = (...ids: number[]) => ids.map((id) => ({ id }));
@@ -203,29 +104,6 @@ describe('followTop', () => {
     expect(followTop({ ...base, y: 0, top: 0 })).toBe(0);
     expect(followTop({ ...base, y: 10_000, top: 9900 })).toBe(9900);
     expect(followTop({ view: 500, total: 100, y: 80, top: 0 })).toBe(0);
-  });
-});
-
-describe('rowKeyTarget', () => {
-  const page = (direction: 1 | -1) => (direction > 0 ? 30 : 5);
-  it('moves within the list', () => {
-    expect(rowKeyTarget('ArrowDown', 3, 10, page)).toBe(4);
-    expect(rowKeyTarget('ArrowDown', 9, 10, page)).toBe(9);
-    expect(rowKeyTarget('ArrowUp', 3, 10, page)).toBe(2);
-    expect(rowKeyTarget('ArrowUp', 0, 10, page)).toBe(0);
-    expect(rowKeyTarget('Home', 3, 10, page)).toBe(0);
-    expect(rowKeyTarget('End', 3, 10, page)).toBe(9);
-    expect(rowKeyTarget('PageDown', 3, 100, page)).toBe(30);
-    expect(rowKeyTarget('PageDown', 3, 10, page)).toBe(9);
-    expect(rowKeyTarget('PageUp', 20, 100, page)).toBe(5);
-  });
-  it('always moves on Page keys, even if a row is taller than the view', () => {
-    expect(rowKeyTarget('PageDown', 3, 10, () => 3)).toBe(4);
-    expect(rowKeyTarget('PageUp', 3, 10, () => 3)).toBe(2);
-  });
-  it('ignores other keys and empty lists', () => {
-    expect(rowKeyTarget('a', 3, 10, page)).toBeNull();
-    expect(rowKeyTarget('ArrowDown', 0, 0, page)).toBeNull();
   });
 });
 

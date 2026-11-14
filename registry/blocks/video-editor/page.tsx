@@ -6,7 +6,9 @@
    ⌫ delete · ⌘D duplicate · ⌘A select all · ⌘Z/⇧⌘Z undo/redo · ⌘+/⌘− zoom · ⌥-drag to place without snapping.
    FFmpeg's threads need a cross-origin isolated page; without one the browser reads and plays what it can, and
    exporting is off. The sample clips are made by FFmpeg's test sources when the editor opens. */
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { registerShortcut, useShortcutHint } from '@ui-sdk/react/shortcuts';
+import { AdaptivePane } from '@/components/ui/adaptive-pane';
 import { Button } from '@/components/ui/button';
 import { Filmstrip } from '@/components/ui/filmstrip';
 import { Slider } from '@/components/ui/slider';
@@ -14,7 +16,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { PlaybackControls, VideoPreview, type PreviewMedia } from '@/components/ui/video-preview';
 import { fitTimelineZoom, timelineZoomRange, VideoTimeline, type TimelineMediaInfo } from '@/components/ui/video-timeline';
 import { Waveform } from '@/components/ui/waveform';
-import { useContainerWidth } from '@/lib/container';
+import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { FfmpegProvider, releaseMedia, useFfmpeg, useFfmpegSupport, useMediaFrames, useMediaPeaks } from '@/lib/ffmpeg/react';
 import { Icon, type IconShape } from '@/lib/icon';
 import { usePlaybackClock } from '@/lib/playback';
@@ -68,8 +70,9 @@ function Shell({ samples }: { samples: boolean }) {
   const engine = useFfmpegSupport();
   const clock = usePlaybackClock();
   const act = useActions(clock);
-  const [ref, width] = useContainerWidth<HTMLDivElement>(1200);
-  const wide = width >= 960;
+  // Three columns (library, viewer, inspector) in a regular box; narrower, the side panels are drawers over the viewer.
+  const [ref, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: { medium: 640, regular: 960 } });
+  const wide = sizeClass === 'regular';
   const [panel, setPanel] = useState<'media' | 'inspector' | null>(null);
   const [zoom, setZoom] = useState(60);
   const [snap, setSnap] = useState(true);
@@ -100,7 +103,7 @@ function Shell({ samples }: { samples: boolean }) {
     if (m) { URL.revokeObjectURL(m.url); releaseMedia(m.file); }
   };
   const fit = () => {
-    const w = timelineBox.current?.clientWidth ?? width;
+    const w = timelineBox.current?.clientWidth ?? 1200;
     setZoom(fitTimelineZoom(Math.max(duration, 5), w));
   };
   const makeSampleMedia = async (startEdit: boolean) => {
@@ -122,7 +125,7 @@ function Shell({ samples }: { samples: boolean }) {
         // Fit the edit, and park on a frame under the title rather than the black of the opening fade.
         clock.setDuration(timelineDuration(starter));
         clock.seek(1.5);
-        requestAnimationFrame(() => setZoom(fitTimelineZoom(timelineDuration(starter) + 0.5, timelineBox.current?.clientWidth ?? width)));
+        requestAnimationFrame(() => setZoom(fitTimelineZoom(timelineDuration(starter) + 0.5, timelineBox.current?.clientWidth ?? 1200)));
       }
       setSampling({ status: 'done' });
     } catch (e) {
@@ -135,7 +138,7 @@ function Shell({ samples }: { samples: boolean }) {
     if (!samples || started.current || engine !== null || !ffmpeg) return;
     started.current = true;
     void makeSampleMedia(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Once, when FFmpeg is ready.
   }, [samples, engine, ffmpeg]);
 
   /* ── What the viewer and the timeline see ── */
@@ -149,38 +152,44 @@ function Shell({ samples }: { samples: boolean }) {
   }
 
   /* ── Keys ── */
-  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.defaultPrevented) return;
-    const t = e.target as HTMLElement;
-    if (t.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return;
-    const mod = e.metaKey || e.ctrlKey;
-    const k = e.key.toLowerCase();
-    const run = (fn: () => void) => { e.preventDefault(); fn(); };
-    if (mod) {
-      if (k === 'z') run(e.shiftKey ? ed.redo : ed.undo);
-      else if (k === 'y') run(ed.redo);
-      else if (k === 'a') run(act.selectAll);
-      else if (k === 'd') run(act.duplicate);
-      else if (k === '=' || k === '+') run(() => setZoom((z) => Math.min(timelineZoomRange.max, z * 1.5)));
-      else if (k === '-') run(() => setZoom((z) => Math.max(timelineZoomRange.min, z / 1.5)));
-      return;
-    }
-    const s = clock.getState();
-    switch (e.key) {
-      case ' ': run(clock.toggle); break;
-      case 'k': case 'K': run(clock.pause); break;
-      case 'l': case 'L': run(clock.play); break;
-      case 'j': case 'J': run(() => { clock.pause(); clock.seek(s.time - 2); }); break;
-      case 'ArrowLeft': run(() => { clock.pause(); clock.seek(s.time - (e.shiftKey ? 1 : 1 / fps)); }); break;
-      case 'ArrowRight': run(() => { clock.pause(); clock.seek(s.time + (e.shiftKey ? 1 : 1 / fps)); }); break;
-      case 'Home': run(() => clock.seek(0)); break;
-      case 'End': run(() => clock.seek(s.duration)); break;
-      case 's': case 'S': run(act.split); break;
-      case 't': case 'T': run(() => act.addTitle()); break;
-      case 'Backspace': case 'Delete': run(act.remove); break;
-      case 'Escape': ed.select([]); break;
-    }
-  };
+  // Page shortcuts (UI SDK's registry) that act only while focus is inside this editor; text fields keep their
+  // keys and an open dialog pauses them.
+  const root = useRef<HTMLDivElement | null>(null);
+  const setRoot = useCallback((el: HTMLDivElement | null) => { root.current = el; ref(el); }, [ref]);
+  const step = (by: number) => { clock.pause(); clock.seek(clock.getState().time + by); };
+  const zoomBy = (f: number) => setZoom((z) => Math.min(timelineZoomRange.max, Math.max(timelineZoomRange.min, z * f)));
+  const bindings: [keys: string, run: () => void, description?: string][] = [
+    ['mod+z', ed.undo, 'Undo'],
+    ['shift+mod+z', ed.redo, 'Redo'],
+    ['mod+y', ed.redo],
+    ['mod+a', act.selectAll, 'Select all clips'],
+    ['mod+d', act.duplicate, 'Duplicate'],
+    ['mod+=', () => zoomBy(1.5), 'Zoom in'],
+    ['mod+-', () => zoomBy(1 / 1.5), 'Zoom out'],
+    ['space', clock.toggle, 'Play or pause'],
+    ['k', clock.pause, 'Pause'],
+    ['l', clock.play, 'Play'],
+    ['j', () => step(-2), 'Back two seconds'],
+    ['left', () => step(-1 / fps), 'Back a frame'],
+    ['right', () => step(1 / fps), 'Forward a frame'],
+    ['shift+left', () => step(-1), 'Back a second'],
+    ['shift+right', () => step(1), 'Forward a second'],
+    ['home', () => clock.seek(0), 'Go to the start'],
+    ['end', () => clock.seek(clock.getState().duration), 'Go to the end'],
+    ['s', act.split, 'Split at the playhead'],
+    ['t', () => act.addTitle(), 'Add a title'],
+    ['backspace', act.remove, 'Delete'],
+    ['delete', act.remove],
+    ['escape', () => ed.select([]), 'Deselect'],
+  ];
+  const latest = useRef(bindings);
+  latest.current = bindings;
+  useEffect(() => {
+    const off = latest.current.map(([keys, , description], i) =>
+      registerShortcut(keys, () => latest.current[i][1](), { when: () => !!root.current?.contains(document.activeElement), description }));
+    return () => off.forEach((stop) => stop());
+  }, []);
+  const hint = { undo: useShortcutHint('mod+z'), redo: useShortcutHint('shift+mod+z') };
 
   const media = (
     <MediaPanel items={ready} onFiles={importFiles} onAdd={(id) => act.addMedia(id)} onRemove={removeMedia}
@@ -189,12 +198,13 @@ function Shell({ samples }: { samples: boolean }) {
   const inspector = <Inspector clock={clock} className="h-full" />;
   const side = 'box-border shrink-0 bg-background';
   return (
-    <div ref={ref} data-slot="video-editor" tabIndex={-1} onKeyDown={onKey}
+    <SizeClassProvider value={sizeClass}>
+    <div ref={setRoot} data-slot="video-editor" tabIndex={-1}
       className="flex size-full flex-col overflow-hidden bg-background text-foreground outline-none">
       {/* Toolbar */}
       <header className="flex h-12 shrink-0 items-center gap-1.5 border-b border-border px-2.5">
         {!wide ? (
-          <Toggle size="sm" aria-label="Media" isSelected={panel === 'media'} onChange={(on) => setPanel(on ? 'media' : null)}>
+          <Toggle size="sm" aria-label="Media" pressed={panel === 'media'} onPressedChange={(on) => setPanel(on ? 'media' : null)}>
             <Icon name="photo" size={16} />
           </Toggle>
         ) : null}
@@ -204,14 +214,14 @@ function Shell({ samples }: { samples: boolean }) {
             {project.format.width} × {project.format.height} · {fps} fps · {runner ? 'FFmpeg ready' : engine === undefined ? 'Checking FFmpeg…' : 'Preview only'}
           </div>
         </div>
-        <Button variant="quiet" size="icon-sm" aria-label="Undo" title="Undo (⌘Z)" isDisabled={!ed.canUndo} onPress={ed.undo}>
+        <Button variant="quiet" size="icon-sm" aria-label="Undo" title={`Undo (${hint.undo.text})`} aria-keyshortcuts={hint.undo.ariaKeyshortcuts} disabled={!ed.canUndo} onClick={ed.undo}>
           <Icon name="arrow-uturn-backward" size={17} />
         </Button>
-        <Button variant="quiet" size="icon-sm" aria-label="Redo" title="Redo (⇧⌘Z)" isDisabled={!ed.canRedo} onPress={ed.redo}>
+        <Button variant="quiet" size="icon-sm" aria-label="Redo" title={`Redo (${hint.redo.text})`} aria-keyshortcuts={hint.redo.ariaKeyshortcuts} disabled={!ed.canRedo} onClick={ed.redo}>
           <Icon name="arrow-uturn-forward" size={17} />
         </Button>
         {!wide ? (
-          <Toggle size="sm" aria-label="Inspector" isSelected={panel === 'inspector'} onChange={(on) => setPanel(on ? 'inspector' : null)}>
+          <Toggle size="sm" aria-label="Inspector" pressed={panel === 'inspector'} onPressedChange={(on) => setPanel(on ? 'inspector' : null)}>
             <Icon name="sliders" size={16} />
           </Toggle>
         ) : null}
@@ -220,7 +230,11 @@ function Shell({ samples }: { samples: boolean }) {
 
       {/* Library, viewer, inspector */}
       <div className="relative flex min-h-0 flex-1">
-        {wide ? <div className={cn(side, 'w-64 border-r border-border')}>{media}</div> : null}
+        <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="left" aria-label="Media" open={panel === 'media'}
+          onOpenChange={(open) => setPanel(open ? 'media' : null)} columnWidth={256} columnClassName={cn(side, 'border-r border-border')}
+          drawerWidth="20rem" drawerMaxWidth="85%" className="bg-background">
+          {media}
+        </AdaptivePane>
         <div className="flex min-w-0 flex-1 flex-col bg-muted">
           <VideoPreview timeline={project.timeline} media={preview} clock={clock} format={project.format} className="min-h-0 flex-1 p-3"
             renderClip={(clip) => (isTitle(clip) ? <TitleView clip={clip} format={project.format} /> : undefined)}>
@@ -234,39 +248,39 @@ function Shell({ samples }: { samples: boolean }) {
             <PlaybackControls clock={clock} fps={fps} />
           </div>
         </div>
-        {wide ? <div className={cn(side, 'w-72 border-l border-border')}>{inspector}</div> : null}
-        {!wide && panel ? (
-          <div className={cn(side, 'absolute inset-y-0 z-20 w-[min(20rem,85%)] shadow-xl', panel === 'media' ? 'left-0 border-r border-border' : 'right-0 border-l border-border')}>
-            {panel === 'media' ? media : inspector}
-          </div>
-        ) : null}
+        <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="right" aria-label="Inspector" open={panel === 'inspector'}
+          onOpenChange={(open) => setPanel(open ? 'inspector' : null)} columnWidth={288} columnClassName={cn(side, 'border-l border-border')}
+          drawerWidth="20rem" drawerMaxWidth="85%" className="bg-background">
+          {inspector}
+        </AdaptivePane>
       </div>
 
       {/* Timeline */}
       <div ref={timelineBox} className="flex h-[40%] min-h-52 shrink-0 flex-col border-t border-border">
         <div className="flex h-9 shrink-0 items-center gap-1 border-b border-border px-2">
-          <Button variant="quiet" size="icon-sm" aria-label="Split at the playhead" title="Split at the playhead (S)" onPress={act.split}>
+          <Button variant="quiet" size="icon-sm" aria-label="Split at the playhead" title="Split at the playhead (S)" aria-keyshortcuts="S" onClick={act.split}>
             <Icon shapes={SCISSORS} size={16} />
           </Button>
-          <Button variant="quiet" size="icon-sm" aria-label="Delete" title="Delete (⌫)" isDisabled={!ed.selection.length} onPress={act.remove}>
+          <Button variant="quiet" size="icon-sm" aria-label="Delete" title="Delete (⌫)" aria-keyshortcuts="Backspace Delete" disabled={!ed.selection.length} onClick={act.remove}>
             <Icon name="trash" size={16} />
           </Button>
-          <Button variant="quiet" size="icon-sm" aria-label="Add a title" title="Add a title (T)" onPress={() => act.addTitle()}>
+          <Button variant="quiet" size="icon-sm" aria-label="Add a title" title="Add a title (T)" aria-keyshortcuts="T" onClick={() => act.addTitle()}>
             <Icon name="textformat" size={16} />
           </Button>
           <div className="flex-1" />
-          <Toggle size="sm" isSelected={snap} onChange={setSnap} className="h-7 px-2 text-caption">Snap</Toggle>
-          <Slider aria-label="Zoom" size="sm" className="w-28" minValue={Math.log(timelineZoomRange.min)} maxValue={Math.log(timelineZoomRange.max)} step={0.01}
-            value={Math.log(zoom)} onChange={(v) => setZoom(Math.exp(v as number))} />
-          <Button variant="quiet" size="sm" className="h-7 px-2 text-caption" onPress={fit}>Fit</Button>
+          <Toggle size="sm" pressed={snap} onPressedChange={setSnap} className="h-7 px-2 text-caption">Snap</Toggle>
+          <Slider aria-label="Zoom" size="sm" className="w-28" min={Math.log(timelineZoomRange.min)} max={Math.log(timelineZoomRange.max)} step={0.01}
+            value={Math.log(zoom)} onValueChange={(v) => setZoom(Math.exp(v))} />
+          <Button variant="quiet" size="sm" className="h-7 px-2 text-caption" onClick={fit}>Fit</Button>
         </div>
-        <VideoTimeline className="min-h-0 flex-1" timeline={project.timeline} onChange={(t) => ed.edit(() => t)} media={info} clock={clock} fps={fps}
-          selection={ed.selection} onSelectionChange={ed.select} zoom={zoom} onZoomChange={setZoom} snap={snap}
-          onDropMedia={(id, drop) => act.addMedia(id, drop)}
+        <VideoTimeline className="min-h-0 flex-1" value={project.timeline} onValueChange={(t) => ed.edit(() => t)} media={info} clock={clock} fps={fps}
+          selectedClips={ed.selection} onSelectedClipsChange={ed.select} zoom={zoom} onZoomChange={setZoom} snap={snap}
+          onDropMedia={(id, details) => act.addMedia(id, details)}
           clipClassName={(clip) => (isTitle(clip) ? 'border-chart-5/55 bg-chart-5/25' : ed.media[clip.media]?.kind === 'image' ? 'border-chart-3/50 bg-chart-3/20' : undefined)}
           renderClip={(clip, track, { width }) => <ClipBody clip={clip} track={track} width={width} />} />
       </div>
     </div>
+    </SizeClassProvider>
   );
 }
 

@@ -2,6 +2,7 @@
    on GitHub. */
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { PlainButton } from '@/components/ui/plain-button';
 import { cn } from '@/lib/utils';
 import type { WorkflowRun } from './data';
 import { Box, Oct, ghButton, Branch, type Layout } from './parts';
@@ -28,11 +29,11 @@ function Runs({ ui, data, workflow, setWorkflow }: {
   const runs = data.runs.filter((r) => workflow === 'all' || r.workflow === workflow);
   const workflows = [...new Set([...data.workflows, ...data.runs.map((r) => r.workflow)])];
   const item = (id: string, label: string) => (
-    <button key={id} type="button" onClick={() => setWorkflow(id)}
+    <PlainButton key={id} onClick={() => setWorkflow(id)} aria-current={workflow === id || undefined}
       className={cn('relative flex h-8 w-full cursor-pointer items-center rounded-md border-0 bg-transparent px-2 text-left text-detail text-foreground hover:bg-secondary',
         workflow === id && 'bg-secondary font-semibold before:absolute before:inset-y-1.5 before:-left-2 before:w-1 before:rounded-full before:bg-primary')}>
       {label}
-    </button>
+    </PlainButton>
   );
   return (
     <div className="flex gap-6">

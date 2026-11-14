@@ -1,7 +1,7 @@
 {
   "name": "label",
   "title": "Label",
-  "description": "A field label built on react-aria's Label, which wires itself to the field it sits in, in a default and an iOS grouped-form variant.",
+  "description": "UI SDK's Label, a native label that names any control (by htmlFor or by wrapping it), in default, iOS grouped-form and control-row variants.",
   "page": "label",
   "exports": [
     "Label",
@@ -9,5 +9,8 @@
   ],
   "imports": [
     "Label"
+  ],
+  "types": [
+    "LabelProps"
   ]
 }

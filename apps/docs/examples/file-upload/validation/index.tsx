@@ -20,15 +20,15 @@ function mockUpload(_file: File, { signal, onProgress }: UploadContext) {
   })
 }
 
-// Every rule that fails leaves the file in the list as "Not added", with its
-// reason, until it is dismissed. Try a .zip, a large file, a fourth file, the
+// Every rule that fails lists the file under "Not added", with its reason,
+// until it is dismissed. Try a .zip, a large file, a fourth file, the
 // same file twice, or a name with a space in it. The server still has to check.
 export default function Validation() {
   return (
     <div className="mx-auto w-full max-w-md">
       <FileUpload
         accept={['image/*', '.pdf']}
-        maxSize={2 * 1024 * 1024}
+        maxSize={2_000_000}
         maxFiles={3}
         validate={(file) =>
           /\s/.test(file.name) ? 'Rename it without spaces first.' : undefined

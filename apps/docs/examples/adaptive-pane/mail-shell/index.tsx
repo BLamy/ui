@@ -23,9 +23,9 @@ function MailShell() {
       }}
     >
       <AdaptivePane
-        mode={compact ? 'drawer' : 'column'}
+        presentation={compact ? 'drawer' : 'column'}
         open={open}
-        onClose={() => setOpen(false)}
+        onOpenChange={setOpen}
         columnWidth={200}
         drawerWidth={250}
         columnStyle={{ borderRight: '1px solid var(--border)' }}
@@ -80,7 +80,7 @@ function MailShell() {
               variant="ghost"
               size="icon"
               aria-label="Mailboxes"
-              onPress={() => setOpen(true)}
+              onClick={() => setOpen(true)}
             >
               <Icon name="sidebar" />
             </Button>
@@ -105,7 +105,7 @@ function MailShell() {
                   title={s}
                   subtitle={box}
                   divider={i < 2}
-                  onPress={() => {}}
+                  onClick={() => {}}
                 />
               ),
             )}

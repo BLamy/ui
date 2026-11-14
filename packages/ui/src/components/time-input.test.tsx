@@ -1,22 +1,32 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { announce } from '@ui-sdk/core';
 import { TimeInput, type TimeInputChange } from '@/components/ui/time-input';
 import { resetGpuTime } from '@/lib/gpu-time';
+
+declare global {
+  var __UI_SDK_STRICT__: boolean | undefined;
+}
+globalThis.__UI_SDK_STRICT__ = true;
 
 /* TimeInput with the real gpu-time package (CPU backend), a fixed reference and zone so the answers are exact. */
 
 const REF = '2026-09-09T12:00:00+06:00'; // a Wednesday in Dhaka
 const base = { reference: REF, timeZone: 'Asia/Dhaka', locale: 'en-US', debounceMs: 5, label: 'When' } as const;
 
+// UI SDK's shared announcer, watched: what it was asked to say, in order.
+vi.mock('@ui-sdk/core', async (original) => ({ ...(await original<typeof import('@ui-sdk/core')>()), announce: vi.fn() }));
+const said = () => vi.mocked(announce).mock.calls.map(([text]) => text);
+beforeEach(() => vi.mocked(announce).mockClear());
 afterEach(() => {
   cleanup();
   resetGpuTime();
 });
 
 const field = () => screen.getByRole('textbox', { name: 'When' }) as HTMLInputElement;
-const type = (text: string) => fireEvent.change(field(), { target: { value: text } });
+const type = (text: string) => fireEvent.input(field(), { target: { value: text } });
 const preview = () => document.querySelector('[data-slot=time-input-preview]') as HTMLElement | null;
 const rows = (slot: string) => [...document.querySelectorAll(`[data-slot=${slot}] li`)].map((li) => li.textContent);
 
@@ -46,7 +56,9 @@ describe('TimeInput', () => {
     expect(document.querySelector('[data-slot=time-input-recognized] mark')?.textContent).toBe('Sat Sun 1pm-8pm Mon 10pm-12am');
     expect(preview()?.textContent).toContain('Times in Asia/Dhaka');
     expect(preview()?.hasAttribute('data-stale')).toBe(false);
-    expect(screen.getByRole('status').textContent).toBe('3 dates found.');
+    // Read out once through UI SDK's shared announcer; no live region of its own.
+    await waitFor(() => expect(said()).toEqual(['3 dates found.']));
+    expect(document.querySelector('[data-slot=time-input] [role=status]')).toBeNull();
   });
 
   it('marks only the recognised words, leaving the rest plain', async () => {
@@ -91,7 +103,7 @@ describe('TimeInput', () => {
     type('gibberish xyz');
     await waitFor(() => expect(preview()?.textContent).toContain('No date or time found in that text.'));
     expect(document.querySelector('[data-slot=time-input-occurrences]')).toBeNull();
-    expect(screen.getByRole('status').textContent).toBe('No date or time recognized.');
+    await waitFor(() => expect(said().at(-1)).toBe('No date or time recognized.'));
   });
 
   it('parses a defaultValue on mount', async () => {
@@ -113,10 +125,28 @@ describe('TimeInput', () => {
     expect(preview()).toBeNull();
   });
 
-  it('marks the field invalid with the given message', () => {
-    render(<TimeInput {...base} isInvalid errorMessage="Pick a time in the future." />);
+  it('marks the field invalid with the given message, which shows only while it is invalid', () => {
+    const { rerender } = render(<TimeInput {...base} error="Pick a time in the future." />);
+    expect(field().hasAttribute('aria-invalid')).toBe(false);
+    expect(screen.queryByText('Pick a time in the future.')).toBeNull();
+    rerender(<TimeInput {...base} invalid error="Pick a time in the future." />);
     expect(field().getAttribute('aria-invalid')).toBe('true');
-    expect(screen.getByText('Pick a time in the future.')).toBeTruthy();
+    const error = screen.getByText('Pick a time in the future.').closest('[data-slot=field-error]') as HTMLElement;
+    expect(field().getAttribute('aria-describedby')!.split(' ')).toContain(error.id);
+  });
+
+  it('shows the browser\'s message for a missing required value after a submit attempt', async () => {
+    render(
+      <form onSubmit={(event) => event.preventDefault()}>
+        <TimeInput {...base} required name="when" />
+        <button type="submit">Save</button>
+      </form>,
+    );
+    expect(field().required).toBe(true);
+    expect(document.querySelector('[data-slot=field-error]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(document.querySelector('[data-slot=field-error]')?.textContent).toMatch(/\S/));
+    expect(field().getAttribute('aria-invalid')).toBe('true');
   });
 
   it('shows the backend only when asked', async () => {
@@ -128,9 +158,9 @@ describe('TimeInput', () => {
     expect(preview()?.querySelector('[data-backend-label]')?.textContent).toBe('CPU');
   });
 
-  it('calls onValueChange for each keystroke, then with the result once it settles', async () => {
+  it('calls onParseChange for each keystroke, then with the result once it settles', async () => {
     const calls: TimeInputChange[] = [];
-    render(<TimeInput {...base} onValueChange={(c) => calls.push(c)} />);
+    render(<TimeInput {...base} onParseChange={(c) => calls.push(c)} />);
     type('tomorrow');
     expect(calls).toEqual([{ text: 'tomorrow', result: null, pending: true, error: null }]);
     await waitFor(() => expect(calls).toHaveLength(2));
@@ -141,16 +171,27 @@ describe('TimeInput', () => {
     expect(preview()).toBeNull();
   });
 
-  it('works controlled: the field follows `value`', async () => {
-    const seen: string[] = [];
-    const { rerender } = render(<TimeInput {...base} value="noon" onChange={(t) => seen.push(t)} />);
+  it('works controlled: onValueChange reports the text and why, and the field follows `value`', async () => {
+    const seen: [string, string][] = [];
+    const onValueChange = (text: string, details: { reason: string }) => seen.push([text, details.reason]);
+    const { rerender } = render(<TimeInput {...base} value="noon" onValueChange={onValueChange} />);
     expect(field().value).toBe('noon');
     type('midnight');
-    expect(seen).toEqual(['midnight']);
-    expect(field().value).toBe('noon'); // not updated until the parent says so
-    rerender(<TimeInput {...base} value="midnight" onChange={(t) => seen.push(t)} />);
+    expect(seen).toEqual([['midnight', 'input-change']]);
+    await waitFor(() => expect(field().value).toBe('noon')); // not updated until the parent says so
+    rerender(<TimeInput {...base} value="midnight" onValueChange={onValueChange} />);
     expect(field().value).toBe('midnight');
     await waitFor(() => expect(rows('time-input-occurrences')).toHaveLength(1));
+  });
+
+  it('keeps the text, and parses nothing new, when the change is canceled', async () => {
+    const calls: TimeInputChange[] = [];
+    render(<TimeInput {...base} defaultValue="noon" onValueChange={(_, details) => details.cancel()} onParseChange={(c) => calls.push(c)} />);
+    await waitFor(() => expect(calls.at(-1)).toMatchObject({ text: 'noon', pending: false }));
+    const settled = calls.length;
+    type('midnight');
+    await waitFor(() => expect(field().value).toBe('noon'));
+    expect(calls).toHaveLength(settled);
   });
 
   it('keeps showing the previous answer, dimmed, while a new one is pending', async () => {
@@ -164,7 +205,7 @@ describe('TimeInput', () => {
   });
 
   it('does not parse while disabled', async () => {
-    render(<TimeInput {...base} isDisabled defaultValue="noon" />);
+    render(<TimeInput {...base} disabled defaultValue="noon" />);
     await new Promise((r) => setTimeout(r, 60));
     expect(preview()).toBeNull();
     expect(field().disabled).toBe(true);

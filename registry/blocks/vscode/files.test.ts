@@ -25,24 +25,24 @@ describe('paths', () => {
 describe('buildTree', () => {
   it('nests files and folders under the root, including empty folders', () => {
     const tree = buildTree('/p', ['/p/a.js', '/p/src/b.js', '/p/src/lib/c.js', '/other/x.js'], ['/p/src', '/p/src/lib', '/p/empty']);
-    const names = tree.map((node) => node.name).sort();
+    const names = tree.map((node) => node.label).sort();
     expect(names).toEqual(['a.js', 'empty', 'src']);
-    const src = tree.find((node) => node.name === 'src');
-    expect(src?.id).toBe('/p/src');
-    expect(src?.children?.map((node) => node.name).sort()).toEqual(['b.js', 'lib']);
-    expect(tree.find((node) => node.name === 'empty')?.children).toEqual([]);
+    const src = tree.find((node) => node.label === 'src');
+    expect(src?.value).toBe('/p/src');
+    expect(src?.children?.map((node) => node.label).sort()).toEqual(['b.js', 'lib']);
+    expect(tree.find((node) => node.label === 'empty')?.children).toEqual([]);
   });
 
   it('makes the folder of a file it has not been told about', () => {
     const tree = buildTree('/p', ['/p/deep/er/x.js'], []);
-    expect(tree[0].children?.[0].children?.[0].id).toBe('/p/deep/er/x.js');
+    expect(tree[0].children?.[0].children?.[0].value).toBe('/p/deep/er/x.js');
   });
 
   it('fades node_modules and dotfiles', () => {
     const tree = buildTree('/p', ['/p/.env', '/p/a.js'], ['/p/node_modules']);
-    expect(tree.find((node) => node.name === 'node_modules')?.dimmed).toBe(true);
-    expect(tree.find((node) => node.name === '.env')?.dimmed).toBe(true);
-    expect(tree.find((node) => node.name === 'a.js')?.dimmed).toBeUndefined();
+    expect(tree.find((node) => node.label === 'node_modules')?.dimmed).toBe(true);
+    expect(tree.find((node) => node.label === '.env')?.dimmed).toBe(true);
+    expect(tree.find((node) => node.label === 'a.js')?.dimmed).toBeUndefined();
   });
 });
 

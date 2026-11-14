@@ -43,7 +43,7 @@ Wrap anything whose height changes. It observes its content with a `ResizeObserv
 
 ## ContentSwap
 
-Give it an `id` for the current view and a `direction`: `1` (forward) brings the new view in from the right and sends the old one left, `-1` the reverse, both blurring through the middle; `0` swaps in place with a small scale. `distance` sets the travel in px (default 36) and `blur` the blur at the middle of the swap (default 4px). The leaving view is taken out of flow (`popLayout`), so the swap never adds height; pair it with `AnimatedHeight` to spring to the new size. `useDirection(index)` from `@/lib/motion` returns -1, 0 or 1 from a changing index.
+Give it an `id` for the current view and a `direction`: `1` (forward) brings the new view in from the right and sends the old one left, `-1` the reverse, both blurring through the middle; `0` swaps in place with a small scale. `distance` sets the travel in px (default 36) and `blur` the blur at the middle of the swap (default 4px). The views come and go with UI SDK's presence (`data-starting-style` / `data-ending-style`, through the kit's `usePresenceList`), as CSS transitions on the spring tokens. The leaving view is lifted out of flow while it exits, so the swap never adds height; pair it with `AnimatedHeight` to spring to the new size. `useDirection(index)` from `@/lib/motion` returns -1, 0 or 1 from a changing index.
 
 {% demo src="animated-height/steps" %}
 
@@ -83,4 +83,4 @@ Neither component adds roles. The outgoing view stays in the DOM for the length 
 
 ## Styling
 
-Slots: `animated-height` (the animated wrapper; its inner measured element is a `flow-root`, so children's margins are included) and `content-swap`. The animated views fill the width (`w-full`).
+Slots: `animated-height` (the animated wrapper; its inner measured element is a `flow-root`, so children's margins are included), `content-swap` (with `data-direction`) and each `content-swap-view` inside it, which has `data-starting-style` for its first frame and `data-ending-style` while it leaves. The views fill the width (`w-full`). The travel comes from variables on `content-swap` (`--swap-enter`, `--swap-exit`, `--swap-scale`, `--swap-blur`), so a stylesheet can restyle the swap without JavaScript.

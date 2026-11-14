@@ -7,9 +7,10 @@ const rows = [
   { id: 'beta', title: 'Beta features', hint: 'May change without notice' },
 ]
 
-// Switch is controlled: `checked` + `onChange(boolean)`. It has no built-in
-// text, so name it with aria-label — or aria-labelledby pointing at the row's
-// own title, as here. (Inside a ListRow it finds the row title by itself.)
+// Switch takes `checked` + `onCheckedChange(checked, details)` (or
+// `defaultChecked` on its own). It has no built-in text, so name it with
+// aria-label — or aria-labelledby pointing at the row's own title, as here.
+// (Inside a ListRow it finds the row title by itself.)
 export default function Settings() {
   const [on, setOn] = useState<Record<string, boolean>>({ wifi: true, notify: true, beta: false })
   return (
@@ -20,7 +21,7 @@ export default function Settings() {
             <span id={`sw-${r.id}`} className="text-body text-foreground">{r.title}</span>
             <span className="text-footnote text-muted-foreground">{r.hint}</span>
           </div>
-          <Switch aria-labelledby={`sw-${r.id}`} checked={on[r.id]} onChange={(v) => setOn((s) => ({ ...s, [r.id]: v }))} />
+          <Switch aria-labelledby={`sw-${r.id}`} checked={on[r.id]} onCheckedChange={(v) => setOn((s) => ({ ...s, [r.id]: v }))} />
         </div>
       ))}
     </div>

@@ -1,6 +1,8 @@
 'use client';
-import { useId, useState, type ComponentProps } from 'react';
-import { Input, TextField as AriaTextField } from 'react-aria-components';
+import { useEffect, useId, useState, type ComponentProps } from 'react';
+import { announce } from '@ui-sdk/core';
+import { Input, InputGroup, createInputController, type InputOptions } from '@ui-sdk/react/input';
+import { createParts } from '@ui-sdk/react/primitive';
 import { cva } from 'class-variance-authority';
 import { Button } from '@/components/ui/button';
 import { FilterChip, useOptionalFilterBar } from '@/components/ui/filter';
@@ -8,6 +10,7 @@ import { describeFilter, type Filter, type FilterField } from '@/lib/filter-mode
 import { useFilterQuery, warmFilterQuery, type UseFilterQueryOptions } from '@/lib/filter-query';
 import { Icon, type IconShape } from '@/lib/icon';
 import { selectableText } from '@/lib/primitives';
+import { searchField } from '@/lib/search-field-primitive';
 import { cn } from '@/lib/utils';
 
 /* ══ FilterInput — describe the filters in a sentence ══
@@ -22,7 +25,14 @@ import { cn } from '@/lib/utils';
 
    Under the hood this is `useFilterQuery` (lib/filter-query) over gpu-query, a 29,597-parameter tagger that runs in the
    browser, on the CPU, and downloads ~40 KB the first time the box is focused. It is a feasibility-spike model: it
-   reads simple "and" filters and misses plenty of ordinary phrasing, so the preview is the point — read it. ══ */
+   reads simple "and" filters and misses plenty of ordinary phrasing, so the preview is the point — read it.
+
+   The box is UI SDK's Input in an InputGroup, inside the search-field keys (lib/search-field-primitive): Enter
+   submits the phrase and Escape clears it, claiming the key only when there is text to clear. What was understood
+   is read out with UI SDK's `announce()` once the debounced result settles. ══ */
+
+// The search-field keys around the phrase box: its `input` part renders the Input.
+const { Root: PhraseField, Input: PhraseInput } = createParts(searchField, { root: 'div', input: 'input' });
 
 const SPARKLE: readonly IconShape[] = [
   { d: 'M10.5 4.2l1.5 4.2 4.2 1.5-4.2 1.5-1.5 4.2-1.5-4.2-4.2-1.5 4.2-1.5z', f: 2 },
@@ -41,7 +51,9 @@ export interface FilterInputProps extends Omit<ComponentProps<'div'>, 'onChange'
   /** The phrase, controlled. */
   value?: string;
   defaultValue?: string;
-  onValueChange?: (text: string) => void;
+  /** Every change to the phrase, with the Input's `details`: typing is `input-change`, Escape `clear-press`, and
+      the box emptying after an apply `imperative`. */
+  onValueChange?: InputOptions['onValueChange'];
   placeholder?: string;
   /** Debounce, "now" for relative dates, … — see `useFilterQuery`. */
   query?: UseFilterQueryOptions;
@@ -58,10 +70,9 @@ export function FilterInput({
   const fields = fieldsProp ?? bar?.fields ?? [];
   const [inner, setInner] = useState(defaultValue);
   const text = value ?? inner;
-  const setText = (next: string) => { if (value === undefined) setInner(next); onValueChange?.(next); };
+  const [input] = useState(createInputController);
   const [note, setNote] = useState('');
   const hintId = useId();
-  const previewId = useId();
   const result = useFilterQuery(text, fields, queryOptions);
   const { filters, unresolved, notes, status, pending } = result;
   const trimmed = text.trim();
@@ -72,7 +83,7 @@ export function FilterInput({
     if (!canApply) return;
     if (onApply) onApply(filters);
     else bar?.apply(filters, mode);
-    setText('');
+    input.clear();
     setNote('');
   };
 
@@ -96,34 +107,37 @@ export function FilterInput({
       ? `${filters.length === 1 ? '1 filter' : `${filters.length} filters`} understood: ${sentence(filters)}.${ignored}${notes.length ? ` ${notes.join('. ')}.` : ''} Press Enter to apply.`
       : `No filter understood.${ignored}`;
   const summary = [heard, note].filter(Boolean).join(' ');
+  useEffect(() => {
+    if (summary) announce(summary);
+  }, [summary]);
 
   return (
     <div data-slot="filter-input" className={cn(filterInputVariants(), className)} {...props}>
       <div className="flex items-center gap-2">
-        <AriaTextField
-          value={text}
-          onChange={(next) => { setText(next); if (note) setNote(''); }}
-          aria-label={ariaLabel}
-          className="flex min-w-0 flex-1 items-center"
-        >
-          <div className="box-border flex h-9 w-full min-w-0 items-center gap-2 rounded-ctl bg-secondary px-2.5 focus-within:ring-2 focus-within:ring-ring/45">
+        <PhraseField input={input} onSubmit={submit} className="flex min-w-0 flex-1 items-center">
+          <InputGroup className="box-border flex h-9 w-full min-w-0 items-center gap-2 rounded-ctl bg-secondary px-2.5 focus-within:ring-2 focus-within:ring-ring/45">
             <Icon shapes={SPARKLE} size={16} sw={1.6} className="shrink-0 text-foreground/70" />
-            <Input
+            <PhraseInput render={<Input
+              controller={input}
+              value={text}
+              onValueChange={(next, details) => {
+                onValueChange?.(next, details);
+                if (details.canceled) return;
+                if (value === undefined) setInner(next);
+                if (note) setNote('');
+              }}
+              aria-label={ariaLabel}
               placeholder={placeholder}
-              aria-describedby={`${hintId} ${previewId}`}
+              aria-describedby={hintId}
               autoComplete="off"
               spellCheck={false}
               maxLength={400}
               onFocus={() => { void warmFilterQuery(); }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); submit(); }
-                else if (e.key === 'Escape' && text) { e.preventDefault(); e.stopPropagation(); setText(''); setNote(''); }
-              }}
               className={cn('min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 [font-family:inherit] text-body text-foreground outline-none placeholder:text-tertiary-foreground', selectableText)}
-            />
-          </div>
-        </AriaTextField>
-        <Button variant="secondary" size="sm" isDisabled={!canApply} onPress={apply}>Apply</Button>
+            />} />
+          </InputGroup>
+        </PhraseField>
+        <Button variant="secondary" size="sm" disabled={!canApply} onClick={apply}>Apply</Button>
       </div>
 
       {trimmed ? (
@@ -156,7 +170,6 @@ export function FilterInput({
       <p id={hintId} className="m-0 text-caption text-foreground/70">
         Experimental: a small model that runs in your browser and reads simple filters joined by “and”. It misses plenty. Check the preview, then press Enter.
       </p>
-      <div id={previewId} role="status" aria-live="polite" aria-atomic="true" className="sr-only">{summary}</div>
     </div>
   );
 }

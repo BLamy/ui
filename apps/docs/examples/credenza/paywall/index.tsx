@@ -1,8 +1,24 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Celebrate } from '@/components/ui/celebrate'
-import { Credenza } from '@/components/ui/credenza'
+import {
+  Credenza,
+  CredenzaBack,
+  CredenzaBackdrop,
+  CredenzaClose,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaView,
+} from '@/components/ui/credenza'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Form } from '@/components/ui/form'
 import { IconSwap } from '@/components/ui/icon-swap'
 import { Input } from '@/components/ui/input'
@@ -10,9 +26,9 @@ import { Label } from '@/components/ui/label'
 import { ListRow } from '@/components/ui/list'
 import { Radio, RadioGroup } from '@/components/ui/radio-group'
 import { Spinner } from '@/components/ui/spinner'
-import { FieldError, TextField } from '@/components/ui/text-field'
 import { TextMorph } from '@/components/ui/text-morph'
 import { Icon } from '@/lib/icon'
+import { BLProvider } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 
 type View = 'plans' | 'checkout' | 'done'
@@ -58,11 +74,12 @@ const shots = [
   'from-chart-1 to-chart-3',
   'from-chart-3 to-chart-5',
 ]
-// A plan is a radio drawn as a card; the chosen one is tinted and ringed.
+// A plan is a radio's label drawn as a card; the chosen one is tinted and
+// ringed.
 const planCard = cn(
   'w-full rounded-card bg-secondary px-3.5 py-3 ring-primary',
   'transition-[box-shadow,background-color] duration-spring-snappy',
-  'ease-spring-snappy data-selected:bg-primary/10 data-selected:ring-2',
+  'ease-spring-snappy has-data-checked:bg-primary/10 has-data-checked:ring-2',
 )
 const empty: Card = { number: '', expiry: '', cvc: '', name: '' }
 const DECLINED = '4000000000000002'
@@ -167,11 +184,29 @@ function useLater() {
   }
 }
 
-// `isDismissable={false}`: no close button, and Escape, the scrim and a drag
+// The Pay button is pending while the Promise its press returned runs: `start`
+// hands it one, `settle` ends it (the payment came back, or the form didn't
+// pass its checks).
+function usePending() {
+  const settleRef = useRef<(() => void) | null>(null)
+  return {
+    start: () =>
+      new Promise<void>((resolve) => {
+        settleRef.current = resolve
+      }),
+    settle: () => {
+      settleRef.current?.()
+      settleRef.current = null
+    },
+  }
+}
+
+// `dismissible={false}`: no close button, and Escape, the scrim and a drag
 // down leave the gate up. Subscribing is the only way through: `open` follows
 // `locked`.
 function LumenPaywall({ compact }: { compact: boolean }) {
   const later = useLater()
+  const pending = usePending()
   const [locked, setLocked] = useState(true)
   const [view, setView] = useState<View>('plans')
   const [plan, setPlan] = useState<Plan>('yearly')
@@ -179,18 +214,45 @@ function LumenPaywall({ compact }: { compact: boolean }) {
   // The processing step being shown, while the mock payment runs.
   const [status, setStatus] = useState<string | null>(null)
   const [declined, setDeclined] = useState<Record<string, string>>({})
+  // Checks show once a payment was tried, then follow the typing.
+  const [tried, setTried] = useState(false)
   const edit = (field: keyof Card, value: string) =>
     setCard((c) => ({ ...c, [field]: value }))
   const amex = brandOf(card.number) === 'Amex'
   const busy = status !== null
+  const checks: Record<string, string | null> = {
+    number: numberError(card.number),
+    expiry: expiryError(card.expiry),
+    cvc: cvcError(amex)(card.cvc),
+    name: card.name.trim().length > 1 ? null : 'Enter the name on the card.',
+  }
+  // What a field shows: the decline, else its check once a payment was tried.
+  const problem = (field: string) =>
+    declined[field] || (tried ? checks[field] : null) || null
+  const invalid = (field: string) => (problem(field) ? true : undefined)
 
-  const pay = () => {
+  // Every field is checked on submit; the first that fails takes focus.
+  const submit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
     if (busy) return
+    setTried(true)
+    if (Object.values(checks).some(Boolean)) {
+      pending.settle()
+      const form = e.currentTarget
+      requestAnimationFrame(() =>
+        form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
+      )
+      return
+    }
+    pay()
+  }
+  const pay = () => {
     setDeclined({})
     setStatus('Contacting your bank…')
     later(1100, () => setStatus('Confirming payment…'))
     later(2300, () => {
       setStatus(null)
+      pending.settle()
       // The form maps the "server's" answer onto the card number field.
       if (digits(card.number) === DECLINED)
         setDeclined({ number: 'Your card was declined. Try another card.' })
@@ -200,6 +262,7 @@ function LumenPaywall({ compact }: { compact: boolean }) {
   const relock = () => {
     setView('plans')
     setCard(empty)
+    setTried(false)
     setLocked(true)
   }
 
@@ -208,210 +271,224 @@ function LumenPaywall({ compact }: { compact: boolean }) {
       <Library compact={compact} locked={locked} onRelock={relock} />
       <Credenza
         open={locked}
-        isDismissable={false}
-        compact={compact}
+        dismissible={false}
         view={view}
-        title={titles[view]}
-        canBack={view === 'checkout' && !busy}
-        onBack={() => setView('plans')}
       >
-        {view === 'plans' ? (
-          <div className="px-4 pt-1 pb-4">
-            <p className="m-0 text-subhead text-foreground/70">
-              Your free trial has ended. Choose a plan to keep editing — your
-              library and edits are safe.
-            </p>
-            <div className="my-4 grid gap-2.5">
-              {perks.map(([icon, text]) => (
-                <div
-                  key={text}
-                  className="flex items-center gap-3 text-subhead"
-                >
-                  <span className="grid size-7 shrink-0 place-items-center rounded-ctl bg-primary/12 text-primary">
-                    <Icon name={icon} size={16} sw={2} />
-                  </span>
-                  {text}
+        <CredenzaBackdrop />
+        <CredenzaContent>
+          <CredenzaHeader>
+            <CredenzaBack
+              hidden={!(view === 'checkout' && !busy)}
+              onClick={() => setView('plans')}
+            />
+            <CredenzaTitle>{titles[view]}</CredenzaTitle>
+            <CredenzaClose />
+          </CredenzaHeader>
+          <CredenzaView>
+            {view === 'plans' ? (
+              <div className="px-4 pt-1 pb-4">
+                <p className="m-0 text-subhead text-foreground/70">
+                  Your free trial has ended. Choose a plan to keep editing —
+                  your library and edits are safe.
+                </p>
+                <div className="my-4 grid gap-2.5">
+                  {perks.map(([icon, text]) => (
+                    <div
+                      key={text}
+                      className="flex items-center gap-3 text-subhead"
+                    >
+                      <span className="grid size-7 shrink-0 place-items-center rounded-ctl bg-primary/12 text-primary">
+                        <Icon name={icon} size={16} sw={2} />
+                      </span>
+                      {text}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <RadioGroup
-              aria-label="Plan"
-              value={plan}
-              onChange={(v) => setPlan(v as Plan)}
-              className="gap-2"
-            >
-              {(Object.keys(plans) as Plan[]).map((id) => (
-                <Radio key={id} value={id} className={planCard}>
+                <RadioGroup
+                  aria-label="Plan"
+                  value={plan}
+                  onValueChange={(v) => setPlan(v as Plan)}
+                  className="gap-2"
+                >
+                  {(Object.keys(plans) as Plan[]).map((id) => (
+                    <Label key={id} variant="control" className={planCard}>
+                      <Radio value={id} />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2 font-semibold">
+                          {plans[id].label}
+                          {id === 'yearly' ? (
+                            <Badge variant="outline" className="bg-card">
+                              Save 37%
+                            </Badge>
+                          ) : null}
+                        </span>
+                        <span className="block text-footnote text-foreground/70">
+                          {plans[id].note}
+                        </span>
+                      </span>
+                      <span className="text-right font-semibold tabular-nums">
+                        {usd(plans[id].price)}
+                        <span className="block text-caption font-normal text-foreground/70">
+                          per {plans[id].per}
+                        </span>
+                      </span>
+                    </Label>
+                  ))}
+                </RadioGroup>
+                <Button
+                  size="pill"
+                  className="mt-4"
+                  onClick={() => setView('checkout')}
+                >
+                  Continue
+                </Button>
+                <p className="mt-2.5 mb-0 text-center text-caption text-foreground/70">
+                  Renews automatically. Cancel anytime in Settings.
+                </p>
+              </div>
+            ) : view === 'checkout' ? (
+              // Every field is checked on submit, and live after that; the decline
+              // shows on the number through `invalid` and its FieldError.
+              <Form
+                noValidate
+                onSubmit={submit}
+                className="gap-3 px-4 pt-1 pb-4"
+              >
+                <div className="flex items-center gap-3 rounded-card bg-secondary px-3.5 py-3">
+                  <AppIcon />
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2 font-semibold">
-                      {plans[id].label}
-                      {id === 'yearly' ? (
-                        <Badge variant="outline" className="bg-card">
-                          Save 37%
-                        </Badge>
-                      ) : null}
+                    <span className="block text-subhead font-semibold">
+                      Lumen Pro · {plans[plan].label}
                     </span>
                     <span className="block text-footnote text-foreground/70">
-                      {plans[id].note}
+                      Renews {renewal(plan)}
                     </span>
                   </span>
-                  <span className="text-right font-semibold tabular-nums">
-                    {usd(plans[id].price)}
-                    <span className="block text-caption font-normal text-foreground/70">
-                      per {plans[id].per}
-                    </span>
+                  <span className="text-subhead font-semibold tabular-nums">
+                    {usd(plans[plan].price)}
                   </span>
-                </Radio>
-              ))}
-            </RadioGroup>
-            <Button
-              size="pill"
-              className="mt-4"
-              onPress={() => setView('checkout')}
-            >
-              Continue
-            </Button>
-            <p className="mt-2.5 mb-0 text-center text-caption text-foreground/70">
-              Renews automatically. Cancel anytime in Settings.
-            </p>
-          </div>
-        ) : view === 'checkout' ? (
-          // react-aria's Form checks every field on submit, and each again as
-          // you leave it; `validationErrors` puts the decline on the number.
-          <Form
-            validationErrors={declined}
-            onSubmit={(e) => {
-              e.preventDefault()
-              pay()
-            }}
-            className="gap-3 px-4 pt-1 pb-4"
-          >
-            <div className="flex items-center gap-3 rounded-card bg-secondary px-3.5 py-3">
-              <AppIcon />
-              <span className="min-w-0 flex-1">
-                <span className="block text-subhead font-semibold">
-                  Lumen Pro · {plans[plan].label}
-                </span>
-                <span className="block text-footnote text-foreground/70">
-                  Renews {renewal(plan)}
-                </span>
-              </span>
-              <span className="text-subhead font-semibold tabular-nums">
-                {usd(plans[plan].price)}
-              </span>
-            </div>
-            <TextField
-              name="number"
-              value={card.number}
-              onChange={(v) => {
-                edit('number', formatNumber(v))
-                // A new number answers the decline.
-                if (declined.number) setDeclined({})
-              }}
-              validate={numberError}
-              isDisabled={busy}
-              inputMode="numeric"
-              autoComplete="cc-number"
-            >
-              <div className="flex items-center justify-between">
-                <Label variant="field">Card number</Label>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-7"
-                  isDisabled={busy}
-                  onPress={() => {
-                    setDeclined({})
-                    setCard(testCard())
-                  }}
+                </div>
+                <Field
+                  name="number"
+                  invalid={invalid('number')}
+                  disabled={busy}
                 >
-                  Use a test card
-                </Button>
-              </div>
-              <div className="relative">
-                <Input
-                  data-autofocus
-                  placeholder="1234 1234 1234 1234"
-                  className="pr-28 tabular-nums"
-                />
-                {brandOf(card.number) ? (
-                  <Badge
-                    variant="outline"
-                    className="absolute top-1/2 right-3 -translate-y-1/2"
+                  <div className="flex items-center justify-between">
+                    <FieldLabel variant="field">Card number</FieldLabel>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-7"
+                      disabled={busy}
+                      onClick={() => {
+                        setDeclined({})
+                        setCard(testCard())
+                      }}
+                    >
+                      Use a test card
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      value={card.number}
+                      onValueChange={(v) => {
+                        edit('number', formatNumber(v))
+                        // A new number answers the decline.
+                        if (declined.number) setDeclined({})
+                      }}
+                      inputMode="numeric"
+                      autoComplete="cc-number"
+                      autoFocus
+                      placeholder="1234 1234 1234 1234"
+                      className="pr-28 tabular-nums"
+                    />
+                    {brandOf(card.number) ? (
+                      <Badge
+                        variant="outline"
+                        className="absolute top-1/2 right-3 -translate-y-1/2"
+                      >
+                        {brandOf(card.number)}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <FieldError>{problem('number')}</FieldError>
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field
+                    name="expiry"
+                    invalid={invalid('expiry')}
+                    disabled={busy}
                   >
-                    {brandOf(card.number)}
-                  </Badge>
-                ) : null}
-              </div>
-              <FieldError />
-            </TextField>
-            <div className="grid grid-cols-2 gap-3">
-              <TextField
-                name="expiry"
-                value={card.expiry}
-                onChange={(v) => edit('expiry', formatExpiry(v))}
-                validate={expiryError}
-                isDisabled={busy}
-                inputMode="numeric"
-                autoComplete="cc-exp"
-              >
-                <Label variant="field">Expires</Label>
-                <Input placeholder="MM / YY" className="tabular-nums" />
-                <FieldError />
-              </TextField>
-              <TextField
-                name="cvc"
-                value={card.cvc}
-                onChange={(v) => edit('cvc', digits(v).slice(0, amex ? 4 : 3))}
-                validate={cvcError(amex)}
-                isDisabled={busy}
-                inputMode="numeric"
-                autoComplete="cc-csc"
-              >
-                <Label variant="field">Security code</Label>
-                <Input
-                  placeholder={amex ? '1234' : '123'}
-                  className="tabular-nums"
-                />
-                <FieldError />
-              </TextField>
-            </div>
-            <TextField
-              name="name"
-              value={card.name}
-              onChange={(v) => edit('name', v)}
-              validate={(v) =>
-                v.trim().length > 1 ? null : 'Enter the name on the card.'
-              }
-              isDisabled={busy}
-              autoComplete="cc-name"
-            >
-              <Label variant="field">Name on card</Label>
-              <Input placeholder="Maya Lindqvist" />
-              <FieldError />
-            </TextField>
-            <Button type="submit" size="pill" isPending={busy} className="mt-1">
-              <IconSwap id={busy ? 'busy' : 'idle'}>
-                {busy ? (
-                  <Spinner spin size={18} />
-                ) : (
-                  <Icon name="lock-fill" size={16} sw={2} />
-                )}
-              </IconSwap>
-              <TextMorph>
-                {busy ? 'Processing…' : `Pay ${usd(plans[plan].price)}`}
-              </TextMorph>
-            </Button>
-            <p
-              role="status"
-              className="m-0 text-center text-footnote text-foreground/70"
-            >
-              {status ?? 'Nothing is charged. 4000 0000 0000 0002 is declined.'}
-            </p>
-          </Form>
-        ) : (
-          <Unlocked plan={plan} card={card} onStart={() => setLocked(false)} />
-        )}
+                    <FieldLabel variant="field">Expires</FieldLabel>
+                    <Input
+                      value={card.expiry}
+                      onValueChange={(v) => edit('expiry', formatExpiry(v))}
+                      inputMode="numeric"
+                      autoComplete="cc-exp"
+                      placeholder="MM / YY"
+                      className="tabular-nums"
+                    />
+                    <FieldError>{problem('expiry')}</FieldError>
+                  </Field>
+                  <Field name="cvc" invalid={invalid('cvc')} disabled={busy}>
+                    <FieldLabel variant="field">Security code</FieldLabel>
+                    <Input
+                      value={card.cvc}
+                      onValueChange={(v) =>
+                        edit('cvc', digits(v).slice(0, amex ? 4 : 3))
+                      }
+                      inputMode="numeric"
+                      autoComplete="cc-csc"
+                      placeholder={amex ? '1234' : '123'}
+                      className="tabular-nums"
+                    />
+                    <FieldError>{problem('cvc')}</FieldError>
+                  </Field>
+                </div>
+                <Field name="name" invalid={invalid('name')} disabled={busy}>
+                  <FieldLabel variant="field">Name on card</FieldLabel>
+                  <Input
+                    value={card.name}
+                    onValueChange={(v) => edit('name', v)}
+                    autoComplete="cc-name"
+                    placeholder="Maya Lindqvist"
+                  />
+                  <FieldError>{problem('name')}</FieldError>
+                </Field>
+                <Button
+                  type="submit"
+                  size="pill"
+                  onClick={() => pending.start()}
+                  className="mt-1"
+                >
+                  <IconSwap id={busy ? 'busy' : 'idle'}>
+                    {busy ? (
+                      <Spinner spin size={18} />
+                    ) : (
+                      <Icon name="lock-fill" size={16} sw={2} />
+                    )}
+                  </IconSwap>
+                  <TextMorph>
+                    {busy ? 'Processing…' : `Pay ${usd(plans[plan].price)}`}
+                  </TextMorph>
+                </Button>
+                <p
+                  role="status"
+                  className="m-0 text-center text-footnote text-foreground/70"
+                >
+                  {status ??
+                    'Nothing is charged. 4000 0000 0000 0002 is declined.'}
+                </p>
+              </Form>
+            ) : (
+              <Unlocked
+                plan={plan}
+                card={card}
+                onStart={() => setLocked(false)}
+              />
+            )}
+          </CredenzaView>
+        </CredenzaContent>
       </Credenza>
     </>
   )
@@ -482,7 +559,7 @@ function Unlocked({
           divider={false}
         />
       </div>
-      <Button data-autofocus size="pill" className="mt-4" onPress={onStart}>
+      <Button autoFocus size="pill" className="mt-4" onClick={onStart}>
         Start editing
       </Button>
     </div>
@@ -540,7 +617,7 @@ function Library({
       </div>
       {locked ? null : (
         <div className="p-4 pt-0">
-          <Button variant="secondary" size="pill" onPress={onRelock}>
+          <Button variant="secondary" size="pill" onClick={onRelock}>
             Show the paywall again
           </Button>
         </div>
@@ -568,14 +645,16 @@ function Window({
         compact ? 'h-[680px]' : 'h-[600px]',
       )}
     >
-      {children}
+      {/* Popups render into BLProvider's root: the Credenza, its scrim and its
+          focus trap stay inside this window. */}
+      <BLProvider className="bg-background">{children}</BLProvider>
     </div>
   )
 }
 
 // The variant picks the host: a desktop gets the dialog, a phone the tray. In
-// an app, `compact` comes from your layout (a width class), and the flow keeps
-// its place when it changes.
+// an app, leave `presentation` out and it follows the container's size class;
+// the flow keeps its place when it changes.
 export default function Paywall({ variant = 'dialog' }: { variant?: string }) {
   const compact = variant === 'tray'
   return (

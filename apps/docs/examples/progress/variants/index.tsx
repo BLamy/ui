@@ -12,10 +12,10 @@ export default function Variants() {
         label="Songs synced"
         showValue
         value={18}
-        maxValue={24}
-        formatOptions={{ style: 'decimal' }}
+        max={24}
+        format={{ style: 'decimal' }}
       />
-      <Progress label="Preparing…" isIndeterminate />
+      <Progress label="Preparing…" />
       <Progress aria-label="Without a visible label" value={64} size="sm" />
     </div>
   )

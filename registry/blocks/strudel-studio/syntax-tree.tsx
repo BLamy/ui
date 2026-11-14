@@ -13,8 +13,8 @@ type Mini = Extract<StrudelArg, { kind: 'mini' }>;
 type Previews = Map<string, { kind: 'track'; track: StrudelTrack } | { kind: 'mini'; arg: Mini }>;
 
 /** A row, and a folder when it has anything under it. */
-const node = (id: string, name: string, detail: string, children: TreeNode[] = []): TreeNode =>
-  ({ id, name, ...(detail ? { detail } : {}), ...(children.length ? { children } : {}) });
+const node = (value: string, label: string, detail: string, children: TreeNode[] = []): TreeNode =>
+  ({ value, label, ...(detail ? { detail } : {}), ...(children.length ? { children } : {}) });
 
 function miniNode(g: MiniGroup, id: string): TreeNode {
   if (g.type !== 'sequence') return node(id, g.type, `${g.layers.length} layers`, g.layers.map((l, i) => miniNode(l, `${id}.${i}`)));
@@ -123,10 +123,10 @@ export function SyntaxTree({ song }: { song: StrudelSong }) {
     return [items, previews] as const;
   }, [song]);
   const preview = (row: TreeNode) => {
-    const p = previews.get(row.id);
+    const p = previews.get(row.value);
     if (!p) return null;
     return p.kind === 'track' ? <TrackCard track={p.track} song={song} /> : <MiniCard arg={p.arg} />;
   };
-  return <Tree aria-label="Syntax tree" items={items} icons="none" search preview={preview}
+  return <Tree aria-label="Syntax tree" items={items} icons={false} search preview={preview}
     defaultExpanded={['song', ...song.tracks.map((t) => `t${t.index}`)]} className="h-96" />;
 }

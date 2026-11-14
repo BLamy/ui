@@ -1,6 +1,6 @@
 # Label
 
-The name of a form field. It is react-aria's `Label`, so inside a field (`TextField`, `Select`, `Checkbox`, …) it is linked to the control automatically: no `htmlFor` or `id` to wire, clicking it focuses the control, and assistive technology announces it as the control's name. Two looks: `default` for inline labels and `field` for the small grouped-form header that sits above an input. Pair it with [TextField](https://blamy.github.io/ui/#/text-field) and [Input](https://blamy.github.io/ui/#/input).
+The name of a control: UI SDK's `Label`, a native `<label>`. Point `htmlFor` at the control's `id`, or wrap the control; pressing it focuses, checks or toggles the control as a native label would, and assistive technology announces it as the control's name. It reaches what a plain `<label>` can't (a radio group, a slider, a checkbox group). Three looks: `default` for inline labels, `field` for the small grouped-form header above an input, and `control` for the line around a checkbox, radio or switch. Inside a [Field](https://blamy.github.io/ui/#/field) use `FieldLabel` (same variants), which also ties the field's description and errors to the control. Pair it with [Input](https://blamy.github.io/ui/#/input) and [Checkbox](https://blamy.github.io/ui/#/checkbox).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -25,39 +25,48 @@ import { Label } from '@brett_lamy/ui'
 {% endtab %}
 {% endtabs %}
 
-## In a field
+## Naming a control
 
-Put the `Label` inside the field and leave the wiring to react-aria. `variant="field"` is the iOS grouped-form header; with no `variant`, the label is 15px foreground.
+Give the control an `id` and the label its `htmlFor`, or put the control inside the label. `variant="field"` is the iOS grouped-form header; with no `variant`, the label is 15px foreground; `variant="control"` lays a checkbox, radio or switch and its text in one pressable line.
 
 {% demo src="label/fields" %}
 
 ```tsx
-<TextField isRequired>
-  <Label variant="field">Email</Label>
-  <Input type="email" />
-  <FieldDescription>Receipts and sign-in links go here.</FieldDescription>
-  <FieldError />
-</TextField>
+<Label variant="field" htmlFor="email">Email</Label>
+<Input id="email" type="email" />
+
+<Label variant="control"><Checkbox defaultChecked />Remember me</Label>
 ```
 
-The disabled dimming is `group-data-disabled:opacity-50`, so it needs an ancestor with the `group` class that carries `data-disabled`. `TextField` has both, so a disabled field dims its label as in the third field above. If you use a react-aria field of your own, add `group` to it.
+In a [Field](https://blamy.github.io/ui/#/field), the `FieldLabel` is linked to the control with no `htmlFor`:
+
+```tsx
+<Field>
+  <FieldLabel variant="field">Email</FieldLabel>
+  <Input type="email" required />
+  <FieldDescription>Receipts and sign-in links go here.</FieldDescription>
+  <FieldError />
+</Field>
+```
+
+A `control` label dims with its control (`has-data-disabled:`). The other variants dim with `group-data-disabled:opacity-50`, so they need an ancestor with the `group` class that carries `data-disabled`, as a disabled Field has.
 
 ## Accessibility
 
-A label outside a react-aria field is just a `<label>` with no target. Wrap it in the field it names, or give the control its own `aria-label`. Keep the label text visible and short; use `FieldDescription` for help and `FieldError` for errors, both of which react-aria ties to the input.
+A label with no `htmlFor` and no control inside has no target. Name the control with a label, or give it its own `aria-label`. Keep the label text visible and short; use `FieldDescription` for help and `FieldError` for errors, which a Field ties to the control.
 
 ## Props
 
-Extends react-aria `LabelProps` (`elementType`, `htmlFor`, `id`, and any `<label>` attribute).
+UI SDK's `Label` props (`htmlFor`, `id`, `render`, and any `<label>` attribute), plus:
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `default` | `default` (15px, foreground, medium) or `field` (13px, muted, 4px side padding). |
-| `className` | — | Merged after the recipe. |
+| `variant` | `default` | `default` (15px, foreground, medium), `field` (13px, muted, 4px side padding) or `control` (17px, a 12px gap, pressable). |
+| `className` | — | Merged after the recipe; may be a function of the state. |
 
 ## Styling
 
-`data-slot="label"`. The label is `inline-flex` with a 6px gap, so an icon or a "required" marker placed inside aligns with the text. `labelVariants({ variant })` returns the classes for another element.
+`data-slot="label"`. The label is `inline-flex`, with a 6px gap (`control`: 12px), so an icon, a "required" marker or a control placed inside aligns with the text. `labelVariants({ variant })` returns the classes for another element.
 
 ## cva recipes
 
@@ -68,12 +77,13 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/label`. Base classes:
 
 ```text
-inline-flex items-center gap-1.5 font-medium group-data-disabled:opacity-50
+inline-flex items-center group-data-disabled:opacity-50
 ```
 
 **`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `default` (default) | `text-subhead text-foreground` |
-| `field` | `px-1 text-footnote text-muted-foreground` |
+| `default` (default) | `gap-1.5 text-subhead font-medium text-foreground` |
+| `field` | `gap-1.5 px-1 text-footnote font-medium text-muted-foreground` |
+| `control` | `cursor-pointer gap-3 text-body text-foreground has-data-disabled:cursor-default has-data-disabled:text-foreground/40` |

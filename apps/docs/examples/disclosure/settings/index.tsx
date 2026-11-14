@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import type { Key } from 'react-aria-components'
 import { Button } from '@/components/ui/button'
 import {
   DisclosureGroup,
-  Disclosure,
-  DisclosurePanel,
-  DisclosureTrigger,
+  DisclosureGroupHeader,
+  DisclosureGroupItem,
+  DisclosureGroupPanel,
+  DisclosureGroupTrigger,
 } from '@/components/ui/disclosure'
 
 const sections = [
@@ -29,34 +29,31 @@ const sections = [
 const ids = sections.map((s) => s.id)
 
 // The inset variant is an iOS grouped card. Several sections can be open
-// (`allowsMultipleExpanded`), and `expandedKeys` makes it controlled, so the
-// buttons above can open or close all of them.
+// (`multiple`), and `value` makes it controlled, so the buttons above can open
+// or close all of them.
 export default function Settings() {
-  const [open, setOpen] = useState<Set<Key>>(new Set(['privacy']))
+  const [open, setOpen] = useState(['privacy'])
   return (
     <div className="mx-auto grid max-w-lg gap-3 rounded-card bg-muted p-4">
       <div className="flex items-center gap-2">
         <span className="flex-1 text-footnote text-muted-foreground">
-          {open.size} of {ids.length} open
+          {open.length} of {ids.length} open
         </span>
-        <Button size="sm" variant="secondary" onPress={() => setOpen(new Set(ids))}>
+        <Button size="sm" variant="secondary" onClick={() => setOpen(ids)}>
           Expand all
         </Button>
-        <Button size="sm" variant="secondary" onPress={() => setOpen(new Set())}>
+        <Button size="sm" variant="secondary" onClick={() => setOpen([])}>
           Collapse all
         </Button>
       </div>
-      <DisclosureGroup
-        variant="inset"
-        allowsMultipleExpanded
-        expandedKeys={open}
-        onExpandedChange={setOpen}
-      >
+      <DisclosureGroup variant="inset" multiple value={open} onValueChange={setOpen}>
         {sections.map((s) => (
-          <Disclosure key={s.id} id={s.id}>
-            <DisclosureTrigger>{s.title}</DisclosureTrigger>
-            <DisclosurePanel>{s.body}</DisclosurePanel>
-          </Disclosure>
+          <DisclosureGroupItem key={s.id} value={s.id}>
+            <DisclosureGroupHeader>
+              <DisclosureGroupTrigger>{s.title}</DisclosureGroupTrigger>
+            </DisclosureGroupHeader>
+            <DisclosureGroupPanel>{s.body}</DisclosureGroupPanel>
+          </DisclosureGroupItem>
         ))}
       </DisclosureGroup>
     </div>

@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TerminalHandle } from '@/components/ui/terminal';
 import { createTerminalShell } from '@/lib/terminal-line';
 
+(globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
+
 /* wterm needs a real layout and WebAssembly, so the real thing is tested in Chromium (see the docs page). This is what
    Terminal adds around it. */
 const instances: Array<{ props: Record<string, unknown>; instance: FakeInstance }> = [];

@@ -45,22 +45,22 @@ export function ChannelMessage({ message, onToggleReaction, onOpenThread, appear
         {message.reactions.length > 0 && (
           <MessageReactions>
             {message.reactions.map((r) => (
-              <MessageReaction key={r.emoji} emoji={r.emoji} count={r.count} mine={r.mine} onChange={() => onToggleReaction?.(r.emoji)} />
+              <MessageReaction key={r.emoji} emoji={r.emoji} count={r.count} mine={r.mine} onPressedChange={() => onToggleReaction?.(r.emoji)} />
             ))}
           </MessageReactions>
         )}
         {thread && (
-          <ThreadPreview title={thread.title} count={thread.replies.length} onPress={onOpenThread}>
+          <ThreadPreview title={thread.title} count={thread.replies.length} onClick={onOpenThread}>
             {last && <ThreadPreviewReply user={users[last.user]}>{last.text}</ThreadPreviewReply>}
           </ThreadPreview>
         )}
       </MessageBody>
       <MessageActions>
-        <MessageAction label="Add 👍" onPress={() => onToggleReaction?.('👍')}>
+        <MessageAction label="Add 👍" onClick={() => onToggleReaction?.('👍')}>
           👍
         </MessageAction>
         {onOpenThread && (
-          <MessageAction label={thread ? 'Open thread' : 'Start thread'} onPress={onOpenThread}>
+          <MessageAction label={thread ? 'Open thread' : 'Start thread'} onClick={onOpenThread}>
             <Icon name="text-bubble" size={14} sw={1.9} className="inline" />
           </MessageAction>
         )}

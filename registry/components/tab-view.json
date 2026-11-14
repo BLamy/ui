@@ -1,7 +1,7 @@
 {
   "name": "tab-view",
   "title": "TabView",
-  "description": "Tabs as parts: a bar at any edge, sliding indicator, directional panels, swipe between panels.",
+  "description": "Tabs as parts, on UI SDK: a bar at any edge (iOS bar, rail, workspace rail or plain), a sliding indicator, directional panels.",
   "page": "tab-view",
   "exports": [
     "TabView",
@@ -9,6 +9,7 @@
     "TabViewList",
     "TabViewTab",
     "TabViewIndicator",
+    "TabViewPill",
     "TabViewSeparator",
     "TabViewAction",
     "TabViewHeader",

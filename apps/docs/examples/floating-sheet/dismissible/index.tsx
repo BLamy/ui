@@ -15,14 +15,14 @@ const places = [
 
 // A docked bottom sheet you can put away, like the Maps or Find My sheet.
 // `peek` and `detents` are shares of the host's height; dragging below the
-// resting height slides the sheet off the edge and calls `onDismiss`.
+// resting height slides the sheet off the edge and calls `onVisibleChange(false)`.
 export default function Dismissible() {
   const [visible, setVisible] = useState(false)
   return (
     <div className="relative mx-auto h-[480px] max-w-sm overflow-hidden rounded-card bg-muted shadow-hairline">
       <div className="grid h-full place-content-center justify-items-center gap-3">
         <p className="m-0 text-subhead text-muted-foreground">Map goes here</p>
-        <Button onPress={() => setVisible(true)}>Nearby places</Button>
+        <Button onClick={() => setVisible(true)}>Nearby places</Button>
       </div>
       <FloatingSheet
         appearance="sheet"
@@ -30,7 +30,7 @@ export default function Dismissible() {
         radius={16}
         dismissible
         visible={visible}
-        onDismiss={() => setVisible(false)}
+        onVisibleChange={setVisible}
         peek="40%"
         detents={['70%']}
         topGap="5%"
@@ -42,7 +42,7 @@ export default function Dismissible() {
           <div className="flex h-full min-h-0 flex-col">
             <div className="flex items-center justify-between px-5 pb-2">
               <h2 className="m-0 text-title font-bold">Nearby</h2>
-              <Button size="sm" variant="ghost" onPress={() => setVisible(false)}>
+              <Button size="sm" variant="ghost" onClick={() => setVisible(false)}>
                 Done
               </Button>
             </div>

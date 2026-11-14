@@ -1,31 +1,28 @@
-import { I18nProvider } from 'react-aria-components'
-import { parseDateTime, Time } from '@internationalized/date'
-import { DateField, DateInput, TimeField } from '@/components/ui/date-field'
-import { Label } from '@/components/ui/label'
+import { DateField, TimeField } from '@/components/ui/date-field'
+import { Field, FieldLabel } from '@/components/ui/field'
 
-// TimeField edits a time of day (a `Time`); a DateField with a `granularity`
-// finer than a day edits a date and a time (a `CalendarDateTime`). Values are
-// fixed so the demo reads the same for everyone; the locale decides the
-// 12- or 24-hour clock unless `hourCycle` says otherwise.
+// TimeField edits a time of day: its value is 24-hour ("14:45") whatever clock
+// it shows. A DateField with a `granularity` finer than a day edits a date and a
+// time ("2026-09-09T09:30"). Values are fixed so the demo reads the same for
+// everyone; the locale decides the 12- or 24-hour clock unless `hourCycle` says
+// otherwise.
 export default function WithTime() {
   return (
-    <I18nProvider locale="en-US">
-      <div className="mx-auto grid max-w-sm gap-5">
-        <TimeField defaultValue={new Time(9, 30)}>
-          <Label variant="field">Alarm</Label>
-          <DateInput />
-        </TimeField>
+    <div className="mx-auto grid max-w-sm gap-5">
+      <Field>
+        <FieldLabel variant="field">Alarm</FieldLabel>
+        <TimeField locale="en-US" defaultValue="09:30" />
+      </Field>
 
-        <TimeField defaultValue={new Time(14, 45, 10)} hourCycle={24} granularity="second">
-          <Label variant="field">Departure (24-hour, with seconds)</Label>
-          <DateInput />
-        </TimeField>
+      <Field>
+        <FieldLabel variant="field">Departure (24-hour, with seconds)</FieldLabel>
+        <TimeField locale="en-US" hourCycle={24} granularity="second" defaultValue="14:45:10" />
+      </Field>
 
-        <DateField granularity="minute" defaultValue={parseDateTime('2026-09-09T09:30')}>
-          <Label variant="field">Starts</Label>
-          <DateInput />
-        </DateField>
-      </div>
-    </I18nProvider>
+      <Field>
+        <FieldLabel variant="field">Starts</FieldLabel>
+        <DateField locale="en-US" granularity="minute" defaultValue="2026-09-09T09:30" />
+      </Field>
+    </div>
   )
 }

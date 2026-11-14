@@ -6,7 +6,7 @@
    the scene as the canvas draws it, a segue's two ends and what it hands over, a context's fields. */
 import { useMemo, useState } from 'react';
 import { PlainButton } from '@/components/ui/plain-button';
-import { Segmented } from '@/components/ui/segmented';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Tree, type TreeNode } from '@/components/ui/tree';
 import { Icon, type IconName } from '@/lib/icon';
 import { nodeLabel, specOf } from './catalog';
@@ -100,17 +100,17 @@ function selectionOf(key: string, doc: Doc): Selection {
 function toNode(item: Item): TreeNode {
   const kids = 'children' in item && item.children.length ? { children: item.children.map(toNode) } : {};
   switch (item.kind) {
-    case 'entry': return { id: item.id, name: item.label, icon: 'arrow-right' };
-    case 'contexts': return { id: item.id, name: 'Contexts', ...kids };
-    case 'context': return { id: item.id, name: item.ctx.name, icon: 'circle-fill', detail: item.ctx.alias, detailTitle: 'Read it as' };
-    case 'scene': return { id: item.id, name: item.scene.name, ...kids };
+    case 'entry': return { value: item.id, label: item.label, icon: 'arrow-right' };
+    case 'contexts': return { value: item.id, label: 'Contexts', ...kids };
+    case 'context': return { value: item.id, label: item.ctx.name, icon: 'circle-fill', detail: item.ctx.alias, detailTitle: 'Read it as' };
+    case 'scene': return { value: item.id, label: item.scene.name, ...kids };
     case 'responder': {
       const handles = Object.keys(item.scene.responds ?? {}).length;
-      return { id: item.id, name: 'First Responder', icon: 'bolt-fill', ...(handles ? { detail: String(handles), detailTitle: 'Commands it handles' } : {}) };
+      return { value: item.id, label: 'First Responder', icon: 'bolt-fill', ...(handles ? { detail: String(handles), detailTitle: 'Commands it handles' } : {}) };
     }
-    case 'exit': return { id: item.id, name: 'Exit', icon: 'arrow-uturn-backward' };
-    case 'segue': return { id: item.id, name: `${SEGUE_KINDS.find((k) => k.id === item.segue.kind)?.label} → ${item.to}`, icon: SEGUE_GLYPH[item.segue.kind] as IconName };
-    case 'slot': return { id: item.id, name: item.label.toUpperCase(), dimmed: true, ...kids };
+    case 'exit': return { value: item.id, label: 'Exit', icon: 'arrow-uturn-backward' };
+    case 'segue': return { value: item.id, label: `${SEGUE_KINDS.find((k) => k.id === item.segue.kind)?.label} → ${item.to}`, icon: SEGUE_GLYPH[item.segue.kind] as IconName };
+    case 'slot': return { value: item.id, label: item.label.toUpperCase(), dimmed: true, ...kids };
     case 'node': {
       const n = item.node, spec = specOf(n.type);
       const actions = Object.values(n.on ?? {}).reduce((k, l) => k + l.length, 0);
@@ -125,7 +125,7 @@ function toNode(item: Item): TreeNode {
         ...(moves ? [['✦', 'Animated'] as [string, string]] : []),
       ];
       return {
-        id: item.id, name: item.root ? `${item.label} (root)` : item.label,
+        value: item.id, label: item.root ? `${item.label} (root)` : item.label,
         ...(typeof spec.icon === 'string' ? { icon: spec.icon as IconName } : {}),
         ...(badges.length ? { detail: badges.map(([b]) => b).join(' '), detailTitle: badges.map(([, t]) => t).join('; ') } : {}),
         ...kids,
@@ -141,7 +141,7 @@ export function Outline({ onFocusScene }: { onFocusScene: (id: string) => void }
   const nodes = useMemo(() => items.map(toNode), [items]);
   const index = useMemo(() => byId(items), [items]);
   const preview = (row: TreeNode) => {
-    const it = index.get(row.id);
+    const it = index.get(row.value);
     switch (it?.kind) {
       case 'scene': return <SceneCard scene={it.scene} doc={b.doc} />;
       case 'segue': return <SegueCard segue={it.segue} doc={b.doc} />;
@@ -171,34 +171,34 @@ export function Outline({ onFocusScene }: { onFocusScene: (id: string) => void }
       <Tree
         aria-label="Document outline"
         items={nodes}
-        icons="none"
+        icons={false}
         density="compact"
         defaultExpanded={['contexts', ...b.doc.scenes.map((s) => `scene:${s.id}`)]}
-        expandedIds={opened}
-        selectedIds={selected ? [selected] : []}
-        onSelectionChange={([k]) => { if (k != null) b.select(selectionOf(k, b.doc)); }}
-        onAction={(node) => { if (node.id.startsWith('scene:')) onFocusScene(node.id.slice(6)); }}
+        autoExpand={opened}
+        value={selected}
+        onValueChange={(k) => { if (k != null) b.select(selectionOf(k, b.doc)); }}
+        onAction={(k) => { if (k.startsWith('scene:')) onFocusScene(k.slice(6)); }}
         preview={preview}
         className="min-h-0 flex-1 px-1.5 py-1"
       />
       <div className="flex shrink-0 items-center gap-1 border-t border-border p-1.5">
         <PlainButton
-          onPress={() => {
+          onClick={() => {
             const last = b.doc.scenes.reduce((m, s) => (s.x > m.x ? s : m), b.doc.scenes[0]);
             const s = newScene(b.doc, (last?.x ?? 0) + 640, last?.y ?? 0);
             b.commit((d) => ({ ...d, scenes: [...d.scenes, s] }), { kind: 'scene', scene: s.id });
             onFocusScene(s.id);
           }}
-          className="flex h-7 cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-2 text-footnote font-medium text-primary outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring"
+          className="flex h-7 cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-2 text-footnote font-medium text-primary outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Icon name="plus" size={14} sw={2.4} /> Scene
         </PlainButton>
         <PlainButton
-          onPress={() => {
+          onClick={() => {
             const c = newContext(b.doc);
             b.commit((d) => ({ ...d, contexts: [...d.contexts, c] }), { kind: 'context', context: c.id });
           }}
-          className="flex h-7 cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-2 text-footnote font-medium text-primary outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring"
+          className="flex h-7 cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-2 text-footnote font-medium text-primary outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Icon name="plus" size={14} sw={2.4} /> Context
         </PlainButton>
@@ -215,9 +215,11 @@ export function Navigator({ onFocusScene }: { onFocusScene: (id: string) => void
         <Segmented
           aria-label="Navigator"
           value={tab}
-          onChange={(v) => setTab(v as 'outline' | 'library')}
-          options={[{ id: 'outline', label: 'Outline' }, { id: 'library', label: 'Library' }]}
-        />
+          onValueChange={(v) => v && setTab(v as 'outline' | 'library')}
+        >
+          <SegmentedItem value="outline">Outline</SegmentedItem>
+          <SegmentedItem value="library">Library</SegmentedItem>
+        </Segmented>
       </div>
       {tab === 'outline' ? <Outline onFocusScene={onFocusScene} /> : <LibraryList className="flex-1" />}
     </div>

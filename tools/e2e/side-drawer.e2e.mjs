@@ -10,7 +10,10 @@ test.beforeEach(async ({ page }) => {
 
 const panel = (page) => page.locator(PANEL);
 const hostBox = (page) => page.locator('[data-slot=side-drawer]').boundingBox();
-const isOpen = async (page) => (await panel(page).getAttribute('aria-hidden')) !== 'true' && !(await panel(page).evaluate((e) => e.hasAttribute('inert')));
+// The pushed page is rendered while it is in the stack or animating out (`data-ending-style`).
+const isOpen = async (page) =>
+  (await panel(page).count()) > 0 &&
+  !(await panel(page).evaluate((e) => e.hasAttribute('data-ending-style') || e.hasAttribute('inert')).catch(() => true));
 
 async function open(page) {
   await page.getByRole('button', { name: /^\s*3\s*$|message/i }).first().click();

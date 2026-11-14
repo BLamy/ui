@@ -2,7 +2,16 @@ import { useState, type ReactNode } from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { List, ListRow, ListSection } from '@/components/ui/list'
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import {
+  NavigationStack,
+  NavigationStackBar,
+  NavigationStackContent,
+  NavigationStackLargeTitle,
+  NavigationStackPage,
+  NavigationStackSubheader,
+  NavigationStackTitle,
+  NavigationStackTrailing,
+} from '@/components/ui/navigation-stack'
 import { SearchField } from '@/components/ui/search-field'
 import { Icon } from '@/lib/icon'
 
@@ -51,84 +60,90 @@ function ContactsLargeTitle() {
   const hits = contacts.filter((c) =>
     `${c.f} ${c.l}`.toLowerCase().includes(q.toLowerCase()),
   )
-  const screens: Screen[] = [
-    {
-      key: 'list',
-      title: 'Contacts',
-      largeTitle: true, // collapses into the bar as you scroll
-      hideChromeOnScroll: false,
-      subheader: <SearchField value={q} onChange={setQ} />,
-      content: (
-        <List>
-          <ListSection>
-            {hits.map((c, i) => (
-              <ListRow
-                key={c.l}
-                leading={<Avatar c={c} size={36} />}
-                title={`${c.f} ${c.l}`}
-                divider={i < hits.length - 1}
-                onPress={() => setOpen(c)}
-              />
-            ))}
-          </ListSection>
-        </List>
-      ),
-    },
-  ]
-  if (open)
-    screens.push({
-      key: 'detail',
-      title: `${open.f} ${open.l}`,
-      // the bar title fades in once the header scrolls away
-      titleOnScroll: true,
-      grouped: true,
-      hideChromeOnScroll: false,
-      trailing: (
-        <Button variant="link" style={{ padding: '0 12px' }}>
-          Edit
-        </Button>
-      ),
-      content: (
-        <>
-          <div style={{ textAlign: 'center', padding: '8px 0 18px' }}>
-            <Avatar c={open} size={84} style={{ margin: '0 auto' }} />
-            <div style={{ fontSize: 26, fontWeight: 700, marginTop: 10 }}>
-              {open.f} {open.l}
-            </div>
-          </div>
-          <List inset>
-            <ListSection>
-              <ListRow
-                title="Phone"
-                subtitle={open.phone}
-                trailing={
-                  <Icon
-                    name="phone"
-                    size={20}
-                    style={{ color: 'var(--primary)' }}
-                  />
-                }
-              />
-              <ListRow
-                title="Email"
-                subtitle={open.email}
-                divider={false}
-                trailing={
-                  <Icon
-                    name="mail"
-                    size={20}
-                    style={{ color: 'var(--primary)' }}
-                  />
-                }
-              />
-            </ListSection>
-          </List>
-        </>
-      ),
-    })
   return (
     <div style={{ position: 'relative', height: 460 }}>
-      <NavigationStack screens={screens} onPop={() => setOpen(null)} />
+      <NavigationStack
+        pages={open ? ['list', 'detail'] : ['list']}
+        onPagesChange={(pages) => {
+          if (pages.length === 1) setOpen(null)
+        }}
+      >
+        <NavigationStackPage value="list">
+          <NavigationStackBar hideOnScroll={false}>
+            <NavigationStackTitle>Contacts</NavigationStackTitle>
+          </NavigationStackBar>
+          <NavigationStackContent>
+            {/* collapses into the bar as you scroll */}
+            <NavigationStackLargeTitle />
+            <NavigationStackSubheader>
+              <SearchField value={q} onValueChange={setQ} />
+            </NavigationStackSubheader>
+            <List>
+              <ListSection>
+                {hits.map((c, i) => (
+                  <ListRow
+                    key={c.l}
+                    leading={<Avatar c={c} size={36} />}
+                    title={`${c.f} ${c.l}`}
+                    divider={i < hits.length - 1}
+                    onClick={() => setOpen(c)}
+                  />
+                ))}
+              </ListSection>
+            </List>
+          </NavigationStackContent>
+        </NavigationStackPage>
+        {open ? (
+          <NavigationStackPage value="detail" grouped>
+            <NavigationStackBar hideOnScroll={false}>
+              {/* the bar title fades in once the header scrolls away */}
+              <NavigationStackTitle showOnScroll>
+                {open.f} {open.l}
+              </NavigationStackTitle>
+              <NavigationStackTrailing>
+                <Button variant="link" style={{ padding: '0 12px' }}>
+                  Edit
+                </Button>
+              </NavigationStackTrailing>
+            </NavigationStackBar>
+            <NavigationStackContent>
+              <div style={{ textAlign: 'center', padding: '8px 0 18px' }}>
+                <Avatar c={open} size={84} style={{ margin: '0 auto' }} />
+                <div style={{ fontSize: 26, fontWeight: 700, marginTop: 10 }}>
+                  {open.f} {open.l}
+                </div>
+              </div>
+              <List inset>
+                <ListSection>
+                  <ListRow
+                    title="Phone"
+                    subtitle={open.phone}
+                    trailing={
+                      <Icon
+                        name="phone"
+                        size={20}
+                        style={{ color: 'var(--primary)' }}
+                      />
+                    }
+                  />
+                  <ListRow
+                    title="Email"
+                    subtitle={open.email}
+                    divider={false}
+                    trailing={
+                      <Icon
+                        name="mail"
+                        size={20}
+                        style={{ color: 'var(--primary)' }}
+                      />
+                    }
+                  />
+                </ListSection>
+              </List>
+            </NavigationStackContent>
+          </NavigationStackPage>
+        ) : null}
+      </NavigationStack>
     </div>
   )
 }

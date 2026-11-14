@@ -1,13 +1,13 @@
-'use client';
-import { useEffect, useRef, type RefObject } from 'react';
-import { animate, type AnimationPlaybackControls } from 'framer-motion';
+import { solveSpring } from '@ui-sdk/core/gesture';
 import { springs } from '@/lib/motion';
+import { prefersReducedMotion as reducedMotion } from '@/lib/reduced-motion';
 
 /* ══ Header title morph ══
    On push the previous screen's title (large or inline, whichever is showing) flies into the new screen's back
    button; on pop the back label flies back into the title it names. The two real labels hide while a pair of
    copies (one styled as the source, one as the destination) travels between them on the same spring as the
-   screens, scaling and cross-fading from one style to the other. An edge swipe scrubs it with the finger. */
+   screens, scaling and cross-fading from one style to the other. An edge swipe scrubs it with the finger: the stack
+   reports its swipe (start, progress, end) to `swipe()`. No React in here. */
 
 /** The elements of a screen's header the morph reads. */
 export interface TitleParts {
@@ -21,11 +21,10 @@ export interface TitleParts {
 interface Flight { set: (t: number) => void; done: () => void }
 
 /** A flight in progress: `run` is its spring once released. */
-export interface ActiveFlight { f: Flight; run?: AnimationPlaybackControls }
+export interface ActiveFlight { f: Flight; run?: { stop: () => void } }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** The title a screen is showing right now: its large title until it scrolls under the bar, else the inline one. */
 export function shownTitle(r: TitleParts | undefined): HTMLElement | null {
@@ -113,50 +112,113 @@ function titleFlight(cont: HTMLElement, from: HTMLElement, to: HTMLElement, toSc
   };
 }
 
-/** Owns the stack's one flight at a time: starting another (or unmounting) ends the one in progress, so a push or
- *  pop that lands mid-flight simply takes over. `cont` is the element the flight layer is drawn in. */
-export function useTitleFlight(cont: RefObject<HTMLElement | null>) {
-  const current = useRef<ActiveFlight | null>(null);
+/** What a stack tells its title flight: how to read a page's header. */
+export interface TitleFlightSource {
+  /** The header elements of a page element. */
+  parts: (page: HTMLElement) => TitleParts;
+}
+
+/** A stack's edge swipe as the flight follows it: started on the top page over the one under it, moved to
+ *  `progress` (0..1), or ended, having popped the page or not. */
+export type TitleFlightSwipe =
+  | { phase: 'start'; top: HTMLElement; under: HTMLElement | null }
+  | { phase: 'move'; progress: number }
+  | { phase: 'end'; popped: boolean };
+
+type Spring = typeof springs.smooth | typeof springs.tray;
+
+/** Runs a 0..1 progress from `from` to `to` on one of the kit's springs (UI SDK's `solveSpring`, sampled every
+ *  frame), calling `set` with each value and `done` once it is at rest. Returns what stops it. */
+function springTo(from: number, to: number, { stiffness, damping, mass }: Spring, set: (value: number) => void, done: () => void) {
+  // The preset in UI SDK's terms: its period (s) and its damping ratio.
+  const solver = solveSpring((2 * Math.PI) / Math.sqrt(stiffness / mass), damping / (2 * Math.sqrt(stiffness * mass)), from - to, 0);
+  let frame = 0;
+  let start: number | undefined;
+  const tick = (now: number) => {
+    start ??= now;
+    const t = now - start;
+    // At rest: within a thousandth of the way, and all but still (per ms).
+    if (Math.abs(solver.position(t)) < 1e-3 && Math.abs(solver.velocity(t)) < 1e-5) {
+      set(to);
+      done();
+      return;
+    }
+    set(to + solver.position(t));
+    frame = requestAnimationFrame(tick);
+  };
+  frame = requestAnimationFrame(tick);
+  return { stop: () => cancelAnimationFrame(frame) };
+}
+
+/** One stack's title flight, drawn in `cont` (the stack's root, whose children are its pages). One flight runs at a
+ *  time: starting another (or `destroy`) ends the one in progress, so a push or pop that lands mid-flight simply
+ *  takes over. While a page swipes, the flight from its back label to the title under it scrubs with the swipe's
+ *  progress and, once it ends, settles on the tray spring toward where it was let go to. A pop the swipe made has
+ *  flown already: the `fly` for it (naming the page that left) is skipped. */
+export function createTitleFlight(cont: HTMLElement, source: TitleFlightSource) {
+  let current: ActiveFlight | null = null;
+  let frame = 0;
   const end = () => {
-    const c = current.current;
-    current.current = null;
+    cancelAnimationFrame(frame);
+    const c = current;
+    current = null;
     if (c) { c.run?.stop(); c.f.done(); }
   };
-  const isCurrent = (c: ActiveFlight | null | undefined): c is ActiveFlight => !!c && current.current === c;
-  const settle = (c: ActiveFlight, from: number, to: 0 | 1, spring: typeof springs.smooth | typeof springs.tray) => {
-    c.run = animate(from, to, { ...spring, onUpdate: c.f.set, onComplete: () => { if (current.current === c) end(); } });
+  const settle = (c: ActiveFlight, from: number, to: 0 | 1, spring: Spring) => {
+    c.run = springTo(from, to, spring, c.f.set, () => { if (current === c) end(); });
   };
 
-  /** Plays a flight on the smooth spring, after a frame (once the new screen has laid out its bar). */
-  const fly = (pick: () => [HTMLElement | null, HTMLElement | null, HTMLElement | null | undefined]) => {
+  // The swipe under way, and the page the last committed swipe popped.
+  let swiping: { flight: ActiveFlight | null; p: number; top: HTMLElement } | null = null;
+  let swiped: HTMLElement | null = null;
+
+  /** Plays a flight on the smooth spring, after a frame (once the new page has laid out its bar). `leaving` is the
+   *  page that was on top: a pop a swipe already flew is not flown again. */
+  const fly = (pick: () => [HTMLElement | null, HTMLElement | null, HTMLElement | null | undefined], leaving?: HTMLElement | null) => {
+    const after = swiped;
+    swiped = null;
+    if (after && leaving === after) return;
     end();
     if (reducedMotion()) return;
-    requestAnimationFrame(() => {
+    frame = requestAnimationFrame(() => {
       const [from, to, toScreen] = pick();
-      if (!from || !to || !cont.current) return;
-      const f = titleFlight(cont.current, from, to, toScreen);
+      if (!from || !to) return;
+      const f = titleFlight(cont, from, to, toScreen);
       if (!f) return;
       f.set(0);
       const c: ActiveFlight = { f };
-      current.current = c;
+      current = c;
       settle(c, 0, 1, springs.smooth);
     });
   };
 
-  /** Starts a flight the finger drives (an edge swipe): `set(p)` on the result follows the drag, and `release` hands
-   *  it to the tray spring from wherever it was let go. Null when there is nothing to fly or motion is reduced. */
-  const scrub = (from: HTMLElement | null, to: HTMLElement | null, toScreen: HTMLElement | null | undefined) => {
-    end();
-    const f = !reducedMotion() && from && to && cont.current ? titleFlight(cont.current, from, to, toScreen) : null;
-    if (!f) return null;
-    f.set(0);
-    current.current = { f };
-    return current.current;
-  };
-  const release = (c: ActiveFlight | null | undefined, p: number, to: 0 | 1) => {
-    if (isCurrent(c)) settle(c, p, to, springs.tray);
+  /** Follows the stack's edge swipe. */
+  const swipe = (event: TitleFlightSwipe) => {
+    if (event.phase === 'start') {
+      end();
+      swiped = null;
+      const from = backLabel(source.parts(event.top));
+      const to = event.under ? shownTitle(source.parts(event.under)) : null;
+      const f = !reducedMotion() && from && to ? titleFlight(cont, from, to, event.under) : null;
+      let flight: ActiveFlight | null = null;
+      if (f) { f.set(0); flight = current = { f }; }
+      swiping = { flight, p: 0, top: event.top };
+    } else if (event.phase === 'move') {
+      if (!swiping) return;
+      swiping.p = event.progress;
+      if (swiping.flight && current === swiping.flight) swiping.flight.f.set(event.progress);
+    } else if (swiping) {
+      const { flight, p, top } = swiping;
+      swiping = null;
+      if (event.popped) swiped = top;
+      if (flight && current === flight) settle(flight, p, event.popped ? 1 : 0, springs.tray);
+    }
   };
 
-  useEffect(() => end, []);
-  return { fly, scrub, release, end, isCurrent };
+  return {
+    fly,
+    swipe,
+    end,
+    destroy() { swiping = null; end(); },
+  };
 }

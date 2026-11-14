@@ -1,6 +1,6 @@
 # CommandMenu
 
-A cmdk-style command palette: a search input over grouped, fuzzy-ranked results, with nested pages you drill into and back out of, a keyboard legend, and ⌘1–⌘9 quick picks. It renders inline or as a ⌘K dialog; react-aria supplies the modal (focus trap, focus return, portal) and the keycaps, and the input keeps focus the whole time — the active row is virtual (`aria-activedescendant`), so typing, arrows and Enter never fight over focus.
+A command palette: a search field over grouped, fuzzy-matched commands, with nested pages you open and go back from, shortcuts, a keyboard legend and ⌘1–⌘9 quick picks. It renders inline, or in a ⌘K dialog. It is UI SDK's [Command](https://ui-sdk.dev/docs/react/components/command) with the kit's look: the field keeps focus the whole time and the highlighted command follows with `aria-activedescendant`, so typing, arrows and Enter never fight over focus.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -10,8 +10,8 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  CommandMenu, CommandInput, CommandList, CommandGroup,
-  CommandItem,
+  CommandMenu, CommandMenuInput, CommandMenuList,
+  CommandMenuGroup, CommandMenuGroupLabel, CommandMenuItem,
 } from '@/components/ui/command-menu'
 ```
 {% endtab %}
@@ -24,8 +24,8 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  CommandMenu, CommandInput, CommandList, CommandGroup,
-  CommandItem,
+  CommandMenu, CommandMenuInput, CommandMenuList,
+  CommandMenuGroup, CommandMenuGroupLabel, CommandMenuItem,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
@@ -33,128 +33,144 @@ import {
 
 ```tsx
 import {
-  CommandMenu, CommandInput, CommandList, CommandPage,
-  CommandGroup, CommandItem, CommandEmpty, CommandFooter,
+  CommandMenu, CommandMenuInput, CommandMenuEmpty, CommandMenuList, CommandMenuPage,
+  CommandMenuGroup, CommandMenuGroupLabel, CommandMenuItem, CommandMenuFooter,
+  CommandMenuDialog, CommandMenuDialogTrigger, CommandMenuDialogContent,
 } from '@brett_lamy/ui'
 
-<CommandMenu
-  variant="dialog"
-  isOpen={open}
-  onOpenChange={setOpen}
-  hotkey="mod+k"
-  aria-label="Command menu"
->
-  <CommandInput placeholder="Search commands..." />
-  <CommandList>
-    <CommandEmpty>No results</CommandEmpty>
-    <CommandPage id="root">
-      <CommandGroup heading="Actions">
-        <CommandItem
-          icon="square-pencil"
-          title="New thread"
-          shortcut="⇧⌘O"
-          onSelect={newThread}
-        />
-        <CommandItem icon="square-pencil" title="New thread in..." page="projects" />
-        <CommandItem icon="link" title="Copy thread ID" description={id} onSelect={copyId} />
-      </CommandGroup>
-    </CommandPage>
-    <CommandPage id="projects" numbered>
-      <CommandGroup heading="Projects">…</CommandGroup>
-    </CommandPage>
-  </CommandList>
-  <CommandFooter />
-</CommandMenu>
+<CommandMenuDialog>
+  <CommandMenuDialogTrigger shortcut="mod+k" className={buttonVariants({ variant: 'secondary' })}>
+    Search…
+  </CommandMenuDialogTrigger>
+  <CommandMenuDialogContent aria-label="Command menu">
+    <CommandMenu onAction={run}>
+      <CommandMenuInput placeholder="Search commands..." />
+      <CommandMenuEmpty>No results</CommandMenuEmpty>
+      <CommandMenuList>
+        <CommandMenuPage>
+          <CommandMenuGroup>
+            <CommandMenuGroupLabel>Actions</CommandMenuGroupLabel>
+            <CommandMenuItem value="new-thread" icon="square-pencil" title="New thread" shortcut="mod+shift+o" />
+            <CommandMenuItem icon="square-pencil" title="New thread in..." page="projects" />
+            <CommandMenuItem icon="link" title="Copy thread ID" description={id} onSelect={copyId} />
+          </CommandMenuGroup>
+        </CommandMenuPage>
+        <CommandMenuPage value="projects" title="Projects" numbered>
+          <CommandMenuGroup>…</CommandMenuGroup>
+        </CommandMenuPage>
+      </CommandMenuList>
+      <CommandMenuFooter />
+    </CommandMenu>
+  </CommandMenuDialogContent>
+</CommandMenuDialog>
 ```
+
+Leave out the three dialog parts and the same `CommandMenu` renders in place.
+
+## Running commands
+
+Enter, a click or a command's `shortcut` runs it: its `onSelect(event)` first, then the menu's `onAction(value, details)`, or, when it has a `page`, that page opens. `event.preventDefault()` in `onSelect` skips the rest. Return a Promise from either and the command is pending until it settles (`data-pending`, `aria-busy`); a rejection lands in its `error` state.
+
+A command's `value` identifies it (default: its `title`, when that is a string). `shortcut` (`"mod+shift+o"`, `mod` being ⌘ on Apple platforms and Ctrl elsewhere) runs the command while the list is mounted, even when the search or the current page hides it, sets `aria-keyshortcuts`, and shows the keys for the platform (⇧⌘O, or Ctrl+Shift+O). To show keys the app handles itself, without registering them, pass `trailing={<CommandMenuShortcut shortcut="mod+p" />}`.
+
+Inside a CommandMenuDialog, a command that runs closes the dialog (`closeOnSelect`, default true; a command's own `closeOnSelect` overrides it). A command that opens a page never closes it, and one whose action returns a Promise closes it once that settles.
 
 ## Keyboard
 
-With the input focused (it always is):
+With the field focused (it always is):
 
 | Keys | Effect |
 | --- | --- |
-| `↑` `↓` · `Ctrl` `P` / `N` · `Ctrl` `K` / `J` | Move the active row, wrapping at the ends (`loop`). Disabled rows are skipped. |
-| `Alt` `↑` `↓` | Start of the previous / next group. |
-| `Home` `End` · `PageUp` `PageDown` | First / last row, or five rows at a time. |
-| `←` `→` | Inside a `columns` group: move within the grid (`↑` `↓` move a row and leave it at its edges). |
-| `Enter` | Select the active row. A row with `page` pushes that page. |
-| `⌘1`–`⌘9` (`Ctrl` elsewhere) | Select the Nth visible row. `numbered` pages show the keycaps. |
-| `Backspace` on an empty input | Back one page. Only a fresh press: holding Backspace to clear a query stops at empty instead of popping pages. |
-| `Esc` | Clears a typed query first; with an empty query it closes the whole menu from any depth — the footer's "Esc Close". `escapeBehavior="pop"` steps back a page before closing instead. |
-
-The mouse makes a row active only when it moves — a list scrolling under a resting cursor never steals the keyboard's row — and clicking selects without taking focus from the input. Keyboard moves scroll the active row into view (the first row of a group brings its heading along); hovering does not scroll.
+| Typing | Filters the commands and highlights the best match. |
+| `↑` `↓` · `Ctrl` `P` / `N` on Apple platforms | Move the highlight, wrapping at the ends unless `loop={false}`. Disabled commands are skipped. |
+| `⌘` `↑` / `↓` · `PageUp` `PageDown` | The first / last command, or ten at a time. |
+| `←` `→` | Inside a `columns` group: move within the grid (`↑` `↓` move a row and leave the grid at its edges). |
+| `Enter` | Run the highlighted command, or open its `page`. |
+| `⌘1`–`⌘9` (`Ctrl` elsewhere) | Run the Nth visible command. `numbered` pages show the keys. |
+| `Backspace` in the empty field | Back one page, with that page's search text put back. Only a fresh press: holding Backspace to clear the search stops at empty. |
+| `Esc` | Clears the search, then goes back a page, then closes the dialog. |
 
 ## Pages
 
-`CommandPage` elements are direct children of `CommandList`; only the current one renders. Selecting a row with `page="…"` pushes it: the query clears, the input's icon becomes a back arrow, and the footer adds Backspace Back. Popping restores the parent page's query, scroll position and active row, so you land exactly where you left.
+`CommandMenuPage` elements go inside `CommandMenuList`; the one without a `value` is the first page, and only the current page's commands are mounted. Choosing a command with `page="…"` opens that page: the search clears, the search icon becomes a back button, the page's `title` shows as a chip before the field, and the footer adds Backspace Back. Going back puts back the search text you had typed and highlights the command you came from.
 
-Page changes move in the direction of travel — a push slides the new page in from the right and the old one out to the left, a pop reverses it — on the smooth spring, blurred through the middle, while the list's height springs to the new page (the tray spring). With reduced motion the pages cross-fade and the height changes at once.
+A page change moves in the direction of travel — the new page slides in from the right going forward and from the left going back — on the smooth spring, blurred at first, while the list's height springs to the new page (the tray spring). With reduced motion the page only fades.
 
 | Prop | Effect |
 | --- | --- |
-| `id` | `root` for the first page. |
-| `placeholder` / `title` | The input's placeholder on this page, and a chip before the input. |
-| `filter` | `false` for rows computed from the query (a calculator, a URL) instead of filtered by it. |
-| `numbered` | Show `⌘1`–`⌘9` on the first nine visible rows. |
-| `onKeyDown(e, menu)` | Runs before the menu's keys; `preventDefault()` to take a key over. `menu` has `select`, `move`, `push`, `pop`, `close`, `query`, `setQuery`. |
+| `value` | The page's name, which a command's `page` opens. Leave it out for the first page. |
+| `placeholder` / `title` | The field's placeholder on this page, and a chip before the field. |
+| `filter` | How typing narrows this page (see Filtering). `false` for rows computed from the search text (a calculator, a URL). |
+| `numbered` | Show `⌘1`–`⌘9` on the first nine visible commands (the keys run them on every page). |
+| `onKeyDown(event, controller)` | Runs before the menu's own keys; `event.preventDefault()` takes a key over. |
 
-`useCommandMenu()` returns the same API from inside the menu — plus `popTo(id)`, `reset()` (back to a fresh root without remounting) and `setActive(value)` (move the highlight without selecting). Every step sees the one before it, so a handler can pop twice or push then pop. `menuRef` hands the API to code outside the menu, and `defaultPages` opens on a page (`['projects']`, with Back to the root).
-
-When the active row goes away — deleted, disabled — its neighbour takes its place rather than the top row.
+The pages are a stack: `pages` / `defaultPages` / `onPagesChange(pages, details)` on `CommandMenu` (`defaultPages={['projects']}` opens on a page, with Back to the first). `useCommandMenu()` returns `{ query, pages, page, controller }` from inside the menu, and `createCommandMenuController()` makes a controller to pass as `controller` and drive the menu from outside: `push(page)`, `pop()`, `setPages`, `setQuery`, `setValue` (move the highlight), `run(value?)`, `focus()`, and their getters. Every change callback gets `details.reason` (`'back'`, `'escape'`, `'list-navigation'`, …).
 
 ## Filtering
 
-Every whitespace-separated word of the query must match a row's `value` (default: its `title`), one of its `keywords`, or its `description` — as a substring, else as a fuzzy subsequence. Rows rank within their group by how well they match (a prefix beats a word start beats anywhere; runs beat scattered letters) — or, with `ranking="global"`, groups also reorder by their best match so the strongest result always leads. `boost` scales a row's score (a favourite, or a fallback like "Search the web" at `0.4`), `keywordWeight` sets how much keyword matches count, and `searchDescription={false}` keeps ids and URLs out of the search. Groups with no matches hide, and string titles highlight the matched letters. `commandMatch(query, text)` is the scorer, and `CommandHighlight` the highlighter, for custom rows.
+Typing narrows the commands with UI SDK's fuzzy matcher (the letters of the search, in order, in a command's text or its `keywords`), and string titles show what matched in bold. `filter` on `CommandMenu` or a page picks another rule: `'contains'`, `'startsWith'`, a function returning a score (0 hides) or a boolean, or `false` to keep every command (results a server already filtered). A command searches its title and description; when its content isn't plain text, `label` says what to search. Groups with no match hide, and separators hide while the list is filtered.
+
+Commands written as children keep their order while filtering, with the best match highlighted. Pass them as data instead — `items` on `CommandMenu` (commands, plain strings, `{ type: 'group', label, items }` and `{ type: 'separator' }`; a command with its own `items` opens a page of them) and an empty `CommandMenuList` — and they are ranked as you type, best match first. `emptyItems` shows other commands (recent, suggested) while the search is empty.
+
+For async results, pass `status` (`'loading'`, `'error'`, `'idle'`) and `filter={false}`, and render a `CommandMenuStatus` for the announcement: `{(state) => (state.loading ? 'Searching…' : null)}`. `onLoadMore` asks for more as the highlight or scrolling reaches the end.
 
 ## Parts
 
 | Part | Props |
 | --- | --- |
-| `CommandMenu` | `variant` (`inline` · `dialog`), `isOpen` / `defaultOpen` / `onOpenChange`, `hotkey` (`'mod+k'`), `query` / `onQueryChange`, `defaultPages`, `onPageChange`, `loop`, `closeOnSelect` (dialogs default true), `escapeBehavior`, `filter`, `ranking`, `menuRef`, `container` (where the dialog portals). |
-| `CommandInput` | `placeholder`, `backButton`, `pageTitle`, `trailing`. |
-| `CommandList` | `maxHeight` (360), `stickyHeadings`, or a function child `(page) => …`. |
-| `CommandGroup` | `heading`, `columns` (a grid), `forceMount`. |
-| `CommandItem` | `icon` (an Icon name or a node), `title`, `description`, `shortcut` (`'⇧⌘O'` or an array of caps), `badge`, `page`, `chevron`, `disabled` (skipped, unselectable), `dimmed` (grey but selectable), `onSelect`, `closeOnSelect`, `keywords`, `value`, `boost`, `keywordWeight`, `searchDescription`; or custom `children`. |
-| `CommandEmpty` | Shown when a query matches nothing on the page. |
-| `CommandFooter` | `legend` (`true`, `false` or your own `{ keys, label }[]`), children on the right. |
+| `CommandMenu` | `query` / `defaultQuery` / `onQueryChange`, `pages` / `defaultPages` / `onPagesChange`, `value` / `defaultValue` / `onValueChange` (the highlight), `onAction`, `items`, `emptyItems`, `filter`, `autoHighlight`, `loop`, `status`, `onLoadMore`, `closeOnSelect`, `controller`. |
+| `CommandMenuInput` | `placeholder` (first page), `backButton`, `pageTitle`, `trailing`, `autoFocus` (inline; in a dialog the dialog focuses it). |
+| `CommandMenuList` | `stickyHeadings`; at most 360px tall (`className="max-h-…"` to change it). Without children it renders the menu's `items`. |
+| `CommandMenuPage` | `value`, `placeholder`, `title`, `filter`, `numbered`, `onKeyDown`. |
+| `CommandMenuGroup` · `CommandMenuGroupLabel` | `columns` (a grid) on the group; the label names it and sticks over its rows. |
+| `CommandMenuItem` | `value`, `icon` (an Icon name or a node), `title`, `description`, `trailing` (a Badge, keys), `shortcut`, `page`, `chevron`, `disabled` (skipped, can't run), `dimmed` (grey but runnable), `onSelect`, `closeOnSelect`, `label`, `keywords`; or custom `children` (a node or a function of the command's state). |
+| `CommandMenuItemIcon` · `CommandMenuItemText` · `CommandMenuItemDescription` · `CommandMenuShortcut` | The row's pieces, for custom rows. `CommandMenuItemText` bolds what matched; `CommandMenuShortcut` shows its command's `shortcut`, or its own. |
+| `CommandMenuItems` | Renders data (`CommandMenuData`) as the kit's rows. |
+| `CommandMenuEmpty` | Shown, and announced, while nothing matches. Goes beside the list. |
+| `CommandMenuStatus` | A polite live region for loading and result counts. |
+| `CommandMenuSeparator` | A line between groups. |
+| `CommandMenuFooter` | `legend` (`true`, `false` or your own `{ keys, label }[]`), children on the right. The default legend says Esc closes in a dialog, and Esc clears inline (only while there is a search). |
+| `CommandMenuDialog` | The dialog's `open` / `defaultOpen` / `onOpenChange(open, details)`, `controller`, `container`. |
+| `CommandMenuDialogTrigger` | `shortcut` (`"mod+k"`) opens it from anywhere; `className={buttonVariants({ … })}` for the kit's look. |
+| `CommandMenuDialogContent` | The card hanging from the top of its host, and its scrim (`overlayClassName`). It is at most 640px tall and leaves 160px of its host free, so in a framed app it fits the frame. Name it with `aria-label` (default "Command menu"). |
 
-`useCommandActive()` returns the active row's `value`, for preview panes. `useHotkey(hotkey, handler)` and `matchesHotkey(event, hotkey)` handle `mod+k`-style shortcuts (`mod` is ⌘ on Apple platforms, Ctrl elsewhere). Letters, digits and named keys (`space`, `enter`, `escape`, arrows…) match by physical key, so `alt+space` works on a Mac, where ⌥Space types a non-breaking space.
+`useCommandMenuValue()` returns the highlighted command's `value`, for preview panes and footers that follow the highlight.
 
-The card's fill is the `--command-surface` variable (default `--popover`); sticky group headings share it, so recolour the menu by setting the variable rather than a background class. A translucent card would tint twice under a sticky heading: give headings an opaque `--command-heading-surface`, or pass `stickyHeadings={false}` so they scroll with their rows.
+The dialog renders into BLProvider's root, so its scrim covers the app it opened in; pass `container` to render it somewhere else. The card's fill is the `--command-surface` variable (default `--popover`); sticky group labels share it, so recolour the menu by setting the variable rather than a background class. A translucent card would tint twice under a sticky label: give labels an opaque `--command-heading-surface`, or pass `stickyHeadings={false}` so they scroll with their rows.
 
 ## Examples
 
 ### Nested pages
 
-"New thread in…" drills into a numbered project list; "Add project" into sources where one is dimmed behind a Setup Required badge. Backspace or the back arrow returns with the row you came from still active.
+"New thread in…" opens a numbered project list; "Add project" opens sources where one is dimmed behind a Setup Required badge. Backspace or the back button returns with the command you came from highlighted.
 
 {% demo src="command-menu/nested-pages" %}
 
 ### ⌘K dialog
 
-`variant="dialog"` with `hotkey="mod+k"`. `container` portals it into a layer inside the host, so the scrim covers just this frame and the palette keeps the host's theme.
+`CommandMenuDialogTrigger shortcut="mod+k"` opens it from anywhere on the page. `container` renders it into a layer inside the host, so the scrim covers just this frame and the palette keeps the host's theme.
 
 {% demo src="command-menu/dialog" %}
 
 ### Emoji grid
 
-`columns` turns a group into a grid with two-dimensional arrows; the footer reads the active cell with `useCommandActive()`.
+`columns` turns a group into a grid with two-dimensional arrows; the footer reads the highlighted cell with `useCommandMenuValue()`.
 
 {% demo src="command-menu/emoji-grid" %}
 
 ### Computed results
 
-A calculator page: `filter={false}` because its rows are computed from the query, and its `onKeyDown` makes `=` commit like Enter. Backspace on the empty input goes back to the apps.
+A calculator page: `filter={false}` because its rows are computed from the search text, and its `onKeyDown` makes `=` run the result like Enter. Backspace in the empty field goes back to the apps.
 
 {% demo src="command-menu/computed-results" %}
 
 ## In the blocks
 
-Two blocks are built around CommandMenu end to end. Open the file list in either preview to read how the pages, hotkeys and actions are wired.
+Two blocks are built around CommandMenu end to end. Open the file list in either preview to read how the pages, shortcuts and actions are wired.
 
 ### Alfred on a macOS desktop
 
-Alfred as the launcher of a macOS desktop: type an app's name — Reminders, Mail, Notes, Music, GitHub and the rest of the examples — and press Enter, and it opens in a window you can drag, resize, zoom and minimize (the Dock does the same on a click). Beyond apps it is eight pages you open with Enter, a click or ⌘1–⌘9 — Calculator, Clipboard, Emoji, Snippets, Files, System, Web search and Workflows — each with its own keys, a preview pane beside the list, and a footer legend that follows the page. Backspace on the empty input goes back; ⌥Space hides and shows the bar.
+Alfred as the launcher of a macOS desktop: type an app's name — Reminders, Mail, Notes, Music, GitHub and the rest of the examples — and press Enter, and it opens in a window you can drag, resize, zoom and minimize (the Dock does the same on a click). Beyond apps it is eight pages you open with Enter, a click or ⌘1–⌘9 — Calculator, Clipboard, Emoji, Snippets, Files, System, Web search and Workflows — each with its own keys, a preview pane beside the list, and a footer legend that follows the page. Backspace in the empty field goes back; ⌥Space hides and shows the bar.
 
 {% demo src="blocks/macos" layout="multi" %}
 
@@ -162,7 +178,7 @@ Alfred as the launcher of a macOS desktop: type an app's name — Reminders, Mai
 
 ### T3 Code palette
 
-The ⌘K dialog after T3 Code's: Actions at the root, "New thread in…" drilling into projects with ⌘1–⌘6, and "Add project" with sources dimmed behind a Setup Required badge. Click into the preview and press ⌘K, or use the search button in its header.
+The ⌘K dialog after T3 Code's: Actions on the first page, "New thread in…" opening projects with ⌘1–⌘6, and "Add project" with sources dimmed behind a Setup Required badge. Click into the preview and press ⌘K, or use the search button in its header.
 
 {% demo src="blocks/t3-clone" layout="multi" %}
 

@@ -17,7 +17,7 @@ export default function SendButton() {
     >
       <Button
         size="lg"
-        onPress={() => setReady((r) => !r)}
+        onClick={() => setReady((r) => !r)}
       >
         {ready ? 'Confirm' : 'Continue'}
       </Button>

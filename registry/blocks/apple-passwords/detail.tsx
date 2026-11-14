@@ -4,13 +4,15 @@
 import { useState, type ReactNode } from 'react';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Button } from '@/components/ui/button';
-import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
+import { PlainButton } from '@/components/ui/plain-button';
 import { QRSvg } from '@/components/ui/qr-svg';
 import { SplitViewContent, SplitViewEmpty, SplitViewHeader } from '@/components/ui/split-view';
 import { Textarea } from '@/components/ui/textarea';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
 import { GROUPS, SEVERITY, type Account, type WifiNetwork } from './data';
 import {
   Card, CodeValue, CopyButton, DetailHeader, Field, PasswordValue, RevealButton, SiteTile, WifiTile, useCode, type CodeClock,
@@ -74,7 +76,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
     <>
       <SplitViewHeader
         trailing={deleted || service ? null : (
-          <Button variant={edit ? 'default' : 'ghost'} size="sm" onPress={toggleEdit} className={cn('mr-1 min-w-[58px]', !edit && 'text-primary')}>
+          <Button variant={edit ? 'default' : 'ghost'} size="sm" onClick={toggleEdit} className={cn('mr-1 min-w-[58px]', !edit && 'text-primary')}>
             {edit ? 'Done' : 'Edit'}
           </Button>
         )} />
@@ -94,9 +96,9 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
               Recently deleted passwords can be recovered for 30 days. After that, they’re permanently removed from all your devices.
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onPress={() => vault.recover(a.id)}>Recover</Button>
+              <Button size="sm" onClick={() => vault.recover(a.id)}>Recover</Button>
               <Button size="sm" variant="secondary" className="text-destructive"
-                onPress={() => vault.purge(a.id)}>Delete Now</Button>
+                onClick={() => vault.purge(a.id)}>Delete Now</Button>
             </div>
           </Card>
         ) : null}
@@ -112,7 +114,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
             <Field label={a.token ? 'Token' : 'Password'} last={!a.passkey && !a.otp && !edit}
               trailing={!edit ? (
                 <>
-                  <RevealButton revealed={pinned} onToggle={() => setPinned((p) => !p)} />
+                  <RevealButton revealed={pinned} onRevealedChange={setPinned} />
                   <CopyButton label={a.token ? 'Token' : 'Password'} value={a.password} />
                 </>
               ) : null}>
@@ -137,7 +139,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
             </Field>
           ) : edit ? (
             <Field label="Verification Code" last>
-              <button type="button" className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">Set Up Verification Code…</button>
+              <PlainButton className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">Set Up Verification Code…</PlainButton>
             </Field>
           ) : null}
         </Card>
@@ -148,11 +150,11 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
               <Field key={i} label={i === 0 ? 'Website' : ''} last={i === list.length - 1 && !edit}>
                 {edit ? (
                   <span className="flex items-center gap-2">
-                    <button type="button" aria-label={`Remove ${w || 'website'}`}
+                    <PlainButton aria-label={`Remove ${w || 'website'}`}
                       onClick={() => setDraft({ ...draft, websites: draft.websites.filter((_, j) => j !== i) })}
                       className="bl-btn grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-destructive p-0 text-white">
                       <span className="h-[2px] w-2.5 rounded-full bg-white" />
-                    </button>
+                    </PlainButton>
                     <InlineInput label="Website" value={w} onChange={(v) => setDraft({ ...draft, websites: draft.websites.map((x, j) => (j === i ? v : x)) })} />
                   </span>
                 ) : (
@@ -162,11 +164,11 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
             ))}
             {edit ? (
               <Field label="" last>
-                <button type="button" onClick={() => setDraft({ ...draft, websites: [...draft.websites, ''] })}
+                <PlainButton onClick={() => setDraft({ ...draft, websites: [...draft.websites, ''] })}
                   className="bl-btn inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">
                   <span className="grid size-5 place-items-center rounded-full bg-success text-white"><Icon name="plus" size={13} sw={3} /></span>
                   Add Website
-                </button>
+                </PlainButton>
               </Field>
             ) : null}
           </Card>
@@ -188,10 +190,12 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
             <Card>
               <Field label="Shared In" last>
                 {group ? (
-                  <HoverCardTrigger>
-                    <span className="inline-flex items-center gap-1.5"><Icon name="people" size={16} className="text-primary" />{group.name} · {group.members.length + 1} people</span>
-                    <HoverCard placement="bottom start"><GroupPreview group={group} vault={vault} /></HoverCard>
-                  </HoverCardTrigger>
+                  <HoverCard>
+                    <HoverCardTrigger render={<span className="inline-flex items-center gap-1.5" />}>
+                      <Icon name="people" size={16} className="text-primary" />{group.name} · {group.members.length + 1} people
+                    </HoverCardTrigger>
+                    <HoverCardContent side="bottom" align="start"><GroupPreview group={group} vault={vault} /></HoverCardContent>
+                  </HoverCard>
                 ) : <span className="text-muted-foreground">Only You</span>}
               </Field>
             </Card>
@@ -201,7 +205,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
         <AnimatedHeight>
           {edit ? (
             <Button variant="secondary" size="pill" className="bg-card text-destructive"
-              onPress={() => { vault.remove(a.id); onEditing(false); }}>
+              onClick={() => { vault.remove(a.id); onEditing(false); }}>
               Delete Password
             </Button>
           ) : null}
@@ -258,31 +262,30 @@ function WifiDetail({ network: n }: { network: WifiNetwork }) {
         <Card>
           <Field label="Network Name" trailing={<CopyButton label="Network Name" value={n.ssid} />}>{n.ssid}</Field>
           <Field label="Password"
-            trailing={<><RevealButton revealed={pinned} onToggle={() => setPinned((p) => !p)} /><CopyButton label="Password" value={n.password} /></>}>
+            trailing={<><RevealButton revealed={pinned} onRevealedChange={setPinned} /><CopyButton label="Password" value={n.password} /></>}>
             <PasswordValue password={n.password} revealed={pinned} />
           </Field>
           <Field label="Security" last>{n.security}</Field>
         </Card>
         <Card>
-          <button type="button" aria-expanded={qr}
-            onClick={() => setQr((v) => !v)}
-            className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-3.5 text-left [font-family:inherit] text-subhead text-primary">
-            <Icon name="qrcode" size={20} />
-            <span className="flex-1">{qr ? 'Hide Network QR Code' : 'Show Network QR Code'}</span>
-            <Icon name="chevron-right" size={15} weight="bold" className={cn('text-tertiary-foreground transition-transform duration-spring-snappy ease-spring-snappy', qr && 'rotate-90')} />
-          </button>
-          <AnimatedHeight>
-            {qr ? (
+          <Collapsible open={qr} onOpenChange={setQr}>
+            <CollapsibleTrigger
+              className="bl-btn group flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-3.5 text-left [font-family:inherit] text-subhead text-primary">
+              <Icon name="qrcode" size={20} />
+              <span className="flex-1">{qr ? 'Hide Network QR Code' : 'Show Network QR Code'}</span>
+              <Icon name="chevron-right" size={15} weight="bold" className="text-tertiary-foreground transition-transform duration-spring-snappy ease-spring-snappy group-data-open:rotate-90" />
+            </CollapsibleTrigger>
+            <CollapsiblePanel className="h-(--collapsible-panel-height) overflow-clip transition-[height] duration-spring-smooth ease-spring-smooth data-starting-style:h-0 data-ending-style:h-0 motion-reduce:transition-none">
               <div className="flex flex-col items-center gap-3 px-4 pt-1 pb-5 text-center">
                 <div className="rounded-sheet bg-white p-4 text-black shadow-[0_0_0_.5px_black] shadow-black/12">
-                  <QRSvg seed={`WIFI:S:${n.ssid};T:WPA;P:${n.password};;`} size={184} />
+                  <QRSvg value={`WIFI:S:${n.ssid};T:WPA;P:${n.password};;`} size={184} />
                 </div>
                 <div className="max-w-[300px] text-footnote text-muted-foreground">
                   Point another device’s camera at this code to join “{n.ssid}”.
                 </div>
               </div>
-            ) : null}
-          </AnimatedHeight>
+            </CollapsiblePanel>
+          </Collapsible>
         </Card>
       </Page>
     </>

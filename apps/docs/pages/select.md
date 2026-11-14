@@ -1,6 +1,6 @@
 # Select
 
-A pop-up button that opens a list of options and keeps one of them. It is react-aria's `Select` — a button, a hidden native `<select>` for forms, and a [ListBox](https://blamy.github.io/ui/#/list-box) in a [Popover](https://blamy.github.io/ui/#/popover) — drawn as an iOS filled field. Use it when the choices are a short, fixed set the user picks from; reach for [ComboBox](https://blamy.github.io/ui/#/combobox) when they need to type to filter, or [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) when choosing runs an action instead of setting a value.
+A pop-up button that opens a list of options and keeps one of them. It is UI SDK's `Select` — a button, a hidden form input, and a list of options in a popup drawn like a [Listbox](https://blamy.github.io/ui/#/list-box)'s `popup` variant — drawn as an iOS filled field. Use it when the choices are a short, fixed set the user picks from; reach for [Combobox](https://blamy.github.io/ui/#/combobox) when they need to type to filter, or [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) when choosing runs an action instead of setting a value.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -31,70 +31,86 @@ import {
 
 ## Anatomy
 
-A `Select` is a column holding a label, the trigger, the list and any help or error text. Items need an `id`; their text (or `textValue`) is what the trigger shows and what typeahead matches.
+The `Select` root renders no element: it holds the value and the open state. Lay the label, the button and any help or error text out with a [Field](https://blamy.github.io/ui/#/field), which also names the select and gives it its `name`, its disabled and invalid state. `SelectTrigger` is the button, `SelectContent` the popup and its list. Options need a `value`; their text (or `label`) is what the button shows and what typeahead matches.
 
 ```tsx
-<Select placeholder="Choose…" defaultValue="week">
-  <Label variant="field">Repeat</Label>
+<Field>
+  <FieldLabel variant="field">Repeat</FieldLabel>
+  <Select placeholder="Choose…" defaultValue="week">
+    <SelectTrigger />
+    <SelectContent>
+      <SelectItem value="never">Never</SelectItem>
+      <SelectItem value="week">Every week</SelectItem>
+    </SelectContent>
+  </Select>
+</Field>
+```
+
+For data, give the root `items` (strings, `{ value, label, disabled }`, `{ type: 'group', label, items }` and `{ type: 'separator' }`) and leave `SelectContent` empty: it draws them with the same rows. With `items` the select knows its options before the list has ever opened, so the button shows the label of its value and typing on the closed button selects from the first key.
+
+```tsx
+<Select items={[{ value: 'never', label: 'Never' }, { value: 'week', label: 'Every week' }]} placeholder="Choose…">
   <SelectTrigger />
-  <SelectContent>
-    <SelectItem id="never">Never</SelectItem>
-    <SelectItem id="week">Every week</SelectItem>
-  </SelectContent>
+  <SelectContent />
 </Select>
 ```
 
-For data, give `SelectContent` an `items` array and a render function; every item needs an `id` (or pass `key`s) and, when it is not a plain string, a `textValue`.
+A select whose options are written as `SelectItem`s and that has never been opened ignores the first key typed on its closed button (from the second key on it selects); give it `items`, or `keepMounted` on `SelectContent`, where that matters.
 
-```tsx
-<SelectContent items={repeats}>
-  {(item) => <SelectItem>{item.name}</SelectItem>}
-</SelectContent>
-```
+## Controlled, groups, validation
 
-## Controlled, sections, validation
-
-`value` and `onChange` work on item ids (`null` is "nothing selected"). Group options with `SelectSection title="…"`. A field that is `isRequired` and `isInvalid` turns its outline red, and a [FieldError](https://blamy.github.io/ui/#/text-field) inside the `Select` is announced with it. `isDisabled` dims the trigger and keeps the list closed.
+`value` / `defaultValue` / `onValueChange(value, details)` work on option values (`null` is "nothing selected"); `details.reason` says why (`item-press`, `list-navigation` on the closed button, …). `multiple` makes the value a list and keeps the popup open while you toggle. Group options with `SelectGroup` and a `SelectGroupLabel`; `SelectSeparator` draws a hairline. A Field with `invalid` turns the outline red and announces its `FieldError` with the button; `required` on the select takes part in native form validation. `disabled` (on the Field or the select) dims the button and keeps the list closed.
 
 {% demo src="select/fields" %}
 
 ## Plain variant in a row
 
-`variant="plain"` drops the fill and the full width: a muted value and the up-down glyph, right-aligned — the iOS pop-up button at the trailing edge of a settings row. Make the `Select` itself the row (`flex-row`), give it an `aria-label`, and open the list toward the edge with `placement="bottom end"`.
+`variant="plain"` drops the fill and the full width: a muted value and the up-down glyph, right-aligned — the iOS pop-up button at the trailing edge of a settings row. Put the select at the end of the row, give its trigger an `aria-label`, and open the list toward the edge with `align="end"`.
 
 {% demo src="select/settings-rows" %}
 
 ```tsx
-<Select aria-label="Repeat" className="flex-row items-center justify-between gap-2">
+<div className="flex items-center justify-between gap-2">
   <span aria-hidden="true">Repeat</span>
-  <SelectTrigger variant="plain" />
-  <SelectContent placement="bottom end">…</SelectContent>
-</Select>
+  <Select items={repeats} value={repeat} onValueChange={setRepeat}>
+    <SelectTrigger aria-label="Repeat" variant="plain" />
+    <SelectContent align="end" />
+  </Select>
+</div>
 ```
 
 ## Sizes
 
 `size="sm"` is a 32px trigger (`text-subhead`); the default is 44px. To show something other than the selected text, pass children to `SelectTrigger` — it always appends the up-down glyph, and `<SelectValue />` is what it renders when you pass none.
 
+## Small screens
+
+`presentation="auto"` on the root shows the list as a bottom sheet on small touch screens (shaped like the kit's Sheet), `"sheet"` always does.
+
 ## Accessibility
 
-react-aria wires the whole pattern: the trigger is a button with `aria-haspopup="listbox"` and `aria-expanded`, the list is a `listbox` of `option`s labelled by the field's label, and a hidden native select carries the value for form submission and autofill. On the closed trigger Left/Right step through the options and typing a letter jumps to a match; Enter, Space, Up/Down or a press opens the list, arrows and typeahead move through it, Enter or a press chooses, Esc closes, and focus returns to the trigger.
+UI SDK wires the whole pattern: the button is a `combobox` with `aria-haspopup="listbox"` and `aria-expanded`, the list is a `listbox` of `option`s labelled by the field's label, and a hidden input carries the value for form submission and autofill. On the closed button typing a letter jumps to a match; Enter, Space, Up/Down or a press opens the list, arrows and typeahead move through it (the active option is `data-highlighted`), Enter or a press chooses, Esc closes, and focus returns to the button.
 
-You supply the name: a visible `Label` is associated automatically, otherwise pass `aria-label`. Give items with non-text children a `textValue`. Put `FieldDescription` and `FieldError` inside the `Select` so they are announced with the field.
+You supply the name: a `FieldLabel` in a Field is associated automatically, else a `SelectLabel` beside the select, else an `aria-label` on the trigger. Give options with non-text children a `label`.
 
 ## Props
 
 ### Select
 
-The root is react-aria's `Select`; every prop passes through, with `className` merged onto `group flex flex-col gap-1.5`.
+UI SDK's `Select` props. The popup renders into BLProvider's root unless you pass `container`.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `value` / `defaultValue` / `onChange` | — | Selected item id (controlled / uncontrolled). |
-| `placeholder` | localized "Select an item" | Text while nothing is selected. |
-| `isDisabled` / `isRequired` / `isInvalid` | `false` | State; the trigger reads them for its dimming and its red outline. |
-| `name` | — | Form field name for the hidden native select. |
-| `isOpen` / `defaultOpen` / `onOpenChange` | closed | Control the list's visibility. |
+| `value` / `defaultValue` / `onValueChange` | `null` | Selected value (a list with `multiple`); `onValueChange(value, details)`. |
+| `multiple` | `false` | Several values. |
+| `items` | — | Options as data, drawn by an empty `SelectContent`. |
+| `placeholder` | — | Text while nothing is selected. |
+| `disabled` / `required` / `readOnly` | `false` | State. |
+| `name` / `form` / `autoComplete` | — | The hidden form input (a Field's `name` also reaches it). |
+| `open` / `defaultOpen` / `onOpenChange` | closed | Control the list's visibility. |
+| `presentation` | `popover` | `auto` or `sheet` for a bottom sheet. |
+| `itemToValue` / `itemToLabel` / `isItemEqualToValue` | — | For object values. |
+| `controller` | — | `createSelectController()`: open, set and clear from outside. |
 
 ### SelectTrigger
 
@@ -102,26 +118,25 @@ The root is react-aria's `Select`; every prop passes through, with `className` m
 | --- | --- | --- |
 | `variant` | `default` | `default` filled field · `plain` iOS pop-up button (no fill, auto width, muted). |
 | `size` | `default` | `default` 44px · `sm` 32px. |
-| `children` | `<SelectValue />` | Custom contents (before the glyph). |
-
-Other props go to react-aria's `Button` (`className` may be a function).
+| `children` | `<SelectValue />` | Custom contents (before the glyph); a function receives the trigger's state. |
 
 ### SelectContent and SelectItem
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `placement` | `bottom start` | Popover placement. |
-| `popoverClassName` | — | Classes for the popover (its minimum width is the larger of the trigger's and 200px). |
-| `items` / `renderEmptyState` | — | Dynamic collection; the list's empty message. |
-| `className` | — | Classes for the list (`ListBox` popup variant, max 320px then scrolls). |
+| `side` / `align` | `bottom` / `start` | Starting position; it flips to fit. |
+| `sideOffset` | `8` | Gap to the button, px. |
+| `keepMounted` | `false` | Keep the closed list in the DOM, hidden. |
+| `className` | — | Classes for the popup (at least as wide as the button and 200px; scrolls past 320px). |
+| `SelectItem` `value` / `label` | — | The option's value; its text when the children are not plain text. |
 | `SelectItem` `icon` / `description` | — | A leading icon and a secondary line under the label. |
-| `SelectItem` `isDisabled` | `false` | Dims the row (40% opacity) and skips it. |
+| `SelectItem` `disabled` | `false` | Dims the row (40% opacity) and skips it. |
 
-`SelectSection` is [ListBox](https://blamy.github.io/ui/#/list-box)'s section (`title` for a header). `SelectValue` accepts `className` and render props.
+`SelectGroup`, `SelectGroupLabel` and `SelectSeparator` structure the list; `SelectLabel` (Label's `variant`s) names a select outside a Field. `SelectValue` accepts `className` and a `placeholder`.
 
 ## Styling
 
-Slots: `select`, `select-trigger`, `select-value`, `select-content` (the popover), `select-item`. The root carries `data-open`, `data-invalid`, `data-disabled`, and the trigger styles its open and invalid outlines off those (`group-data-open`, `group-data-invalid`); the trigger itself has `data-pressed`, `data-focus-visible`. The value carries `data-placeholder` while empty. Inside a [ThemeScope](https://blamy.github.io/ui/#/theming) the list wears the scope — see [Popover](https://blamy.github.io/ui/#/popover).
+Parts carry UI SDK's slots: `select-trigger`, `select-value`, `select-content`, `select-item`, `select-group`, `select-group-label`, `select-separator`. The trigger has `data-open`, `data-invalid`, `data-disabled` and styles its open and invalid outlines off them; hold-to-press is `:active`, focus is `:focus-visible`. The value carries `data-placeholder` while empty. Options expose `data-highlighted`, `data-selected` and `data-disabled`. Inside a [ThemeScope](https://blamy.github.io/ui/#/theming) the list wears the scope — see [Popover](https://blamy.github.io/ui/#/popover).
 
 ## cva recipes
 
@@ -132,7 +147,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/select`. Base classes:
 
 ```text
-[ 'bl-btn box-border flex w-full cursor-pointer items-center justify-between gap-2 border-0 px-3 text-left [font-family:inherit] text-foreground outline-none', 'transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy data-pressed:bg-secondary-strong', 'data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 group-data-open:shadow-[inset_0_0_0_1.5px_var(--primary)]', 'group-data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] data-disabled:cursor-default data-disabled:opacity-50', ]
+[ 'bl-btn box-border flex w-full cursor-pointer items-center justify-between gap-2 border-0 px-3 text-left [font-family:inherit] text-foreground outline-none', 'transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy active:not-data-disabled:bg-secondary-strong', 'focus-visible:ring-[3px] focus-visible:ring-ring/45 data-open:shadow-[inset_0_0_0_1.5px_var(--primary)]', 'data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] data-disabled:cursor-default data-disabled:opacity-50', ]
 ```
 
 **`variant`** — default `default`
@@ -140,7 +155,7 @@ Defined in `@/components/ui/select`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `bg-input` |
-| `plain` | `w-auto justify-end bg-transparent px-1 text-muted-foreground data-pressed:bg-transparent data-pressed:opacity-60 group-data-open:shadow-none` |
+| `plain` | `w-auto justify-end bg-transparent px-1 text-muted-foreground active:not-data-disabled:bg-transparent active:not-data-disabled:opacity-60 data-open:shadow-none` |
 
 **`size`** — default `default`
 

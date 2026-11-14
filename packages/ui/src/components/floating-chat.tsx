@@ -11,20 +11,36 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { Button } from 'react-aria-components';
+import { bindLayer, type ChangeDetails } from '@ui-sdk/core';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { collectSlots, defineSlot } from '@/lib/container';
 import { springCss } from '@/lib/motion';
 import { themeScopeClass, useAppearance } from '@/lib/theme';
-import { useControllableState } from '@/lib/controllable-state';
-import { useScrollHidden } from '@/lib/scroll-hidden';
+import { useControllableChange } from '@/lib/controllable-state';
 import { cva } from 'class-variance-authority';
 import { ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerFab, ComposerOutlet, type ComposerBumpProgress } from '@/components/ui/composer/composer';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { sheetToneProps, type FloatingSheetAppearance, type FloatingSheetFabPosition, type FloatingSheetTone } from '@/components/ui/floating-sheet';
+import { sheetToneProps, useHideOnScroll, type FloatingSheetAppearance, type FloatingSheetFabPosition, type FloatingSheetTone } from '@/components/ui/floating-sheet';
 import { ChatHostContext } from '@/lib/persistent-host';
 
 export type FloatingChatFabPosition = FloatingSheetFabPosition;
+
+/** Why the chat opened or closed: its handle was pressed or dragged (`swipe`), Escape, a press outside the chat
+    (on the scrim or anywhere else), the FAB, or code (`setOpen` from `useFloatingChat`). */
+export type FloatingChatOpenChangeReason = 'handle-press' | 'swipe' | 'escape-key' | 'outside-press' | 'trigger-press' | 'imperative';
+/** What `onOpenChange` receives: `reason`, the `event` behind it when there is one, `source`, and `cancel()`. */
+export type FloatingChatOpenChangeDetails = ChangeDetails<FloatingChatOpenChangeReason>;
+
+/** Why the chat folded into its FAB or unfolded: dragged below rest (`swipe`), the FAB or the folded bump pressed
+    (`trigger-press`), or code (`setMinimized`, or opening the chat while it is folded). */
+export type FloatingChatMinimizedChangeReason = 'swipe' | 'trigger-press' | 'imperative';
+export type FloatingChatMinimizedChangeDetails = ChangeDetails<FloatingChatMinimizedChangeReason>;
+
+/** Why the real composer came back or went: the working status pressed (`trigger-press`), the chat opened by its
+    handle (`handle-press`) or a drag (`swipe`), or code (`setComposing`, or `working` starting or stopping). */
+export type FloatingChatComposingChangeReason = 'trigger-press' | 'handle-press' | 'swipe' | 'imperative';
+export type FloatingChatComposingChangeDetails = ChangeDetails<FloatingChatComposingChangeReason>;
 
 export interface FloatingChatContextValue {
   /** Whether the full transcript is revealed. */
@@ -54,7 +70,8 @@ export interface FloatingChatProps {
   /** Controlled state for the revealed full chat. */
   open?: boolean;
   defaultOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  /** The chat opened or closed. Call `details.cancel()` to keep it as it is. */
+  onOpenChange?: (open: boolean, details: FloatingChatOpenChangeDetails) => void;
   /** Collapses the composer card into a tappable working status. */
   working?: boolean;
   workingLabel?: ReactNode;
@@ -62,7 +79,8 @@ export interface FloatingChatProps {
   onAdd?: () => void;
   /** Controlled composer visibility while `working`; defaults to hiding the composer whenever work starts. */
   composing?: boolean;
-  onComposingChange?: (composing: boolean) => void;
+  /** The composer showing or hiding while `working`. Call `details.cancel()` to keep it as it is. */
+  onComposingChange?: (composing: boolean, details: FloatingChatComposingChangeDetails) => void;
   /** Follow NavigationStack/List scroll chrome, like TabBar. */
   hideOnScroll?: boolean;
   /** A scroller whose direction also hides and restores the floating composer. */
@@ -72,7 +90,8 @@ export interface FloatingChatProps {
   /** Controlled fold into the FAB (dragging below rest folds it; the FAB unfolds it). */
   minimized?: boolean;
   defaultMinimized?: boolean;
-  onMinimizedChange?: (minimized: boolean) => void;
+  /** The chat folding into its FAB or unfolding. Call `details.cancel()` to keep it as it is. */
+  onMinimizedChange?: (minimized: boolean, details: FloatingChatMinimizedChangeDetails) => void;
   /** Inset of the floating composer from the host edges. */
   gutter?: number;
   /**
@@ -152,8 +171,9 @@ export function glassScopeProps(tone: FloatingSheetTone) {
  * The floating chat: the host's Workbench `Composer` floats over any positioned host, and the transcript
  * hangs off a draggable top bump of that composer (added through a `ComposerOutlet`, so the composer itself
  * is whatever the host composed). Drag the bump's handle up and the transcript grows to the top of the host
- * over a scrim; release snaps open or closed; Escape or the scrim closes it. Drag it down past rest to fold
- * everything into a FAB.
+ * over a scrim; release snaps open or closed. Open, the chat is a layer in UI SDK's stack (`bindLayer`): Escape or
+ * a press outside it (the scrim included) closes it, after any popup opened from inside it. Drag it down past rest to
+ * fold everything into a FAB.
  */
 export function FloatingChat({
   open: controlledOpen,
@@ -184,39 +204,41 @@ export function FloatingChat({
   const toneProps = sheetToneProps(tone);
   const glassScope = glassScopeProps(tone);
   const layerRef = useRef<HTMLDivElement>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
   const [bump, setBump] = useState<ComposerBumpProgress>({ progress: 0, reveal: 0, minimize: 0, dragging: false, settling: false });
   // Inside ArtifactChatContainer the composer and transcript are shared with the docked layout: this chat
   // gives them docks and reports its outlet instead of rendering its own copies.
   const shared = useContext(ChatHostContext);
-  const [open, setOpen] = useControllableState(controlledOpen, defaultOpen, onOpenChange);
-  const [uncontrolledComposing, setUncontrolledComposing] = useState(!working);
-  const composing = controlledComposing ?? uncontrolledComposing;
-  const setComposing = (next: boolean) => {
-    if (controlledComposing == null) setUncontrolledComposing(next);
-    onComposingChange?.(next);
-  };
-  const [minimized, setMinimized] = useControllableState(controlledMinimized, defaultMinimized, onMinimizedChange);
-
+  // Every change goes through these with its reason: the consumer hears it first and may cancel it.
+  const [open, changeOpen] = useControllableChange<boolean, FloatingChatOpenChangeReason>(controlledOpen, defaultOpen, onOpenChange);
+  const setOpen = (next: boolean) => changeOpen(next);
+  // The bump reports only the new state: a change while it was being dragged is a swipe, any other a handle press
+  // (whose click is kept here on its way to the bump).
+  const bumpRef = useRef(bump);
+  bumpRef.current = bump;
+  const handleClick = useRef<Event | undefined>(undefined);
+  const [composing, setComposing] = useControllableChange<boolean, FloatingChatComposingChangeReason>(controlledComposing, !working, onComposingChange);
+  const [minimized, setMinimized] = useControllableChange<boolean, FloatingChatMinimizedChangeReason>(controlledMinimized, defaultMinimized, onMinimizedChange);
   useEffect(() => {
-    if (controlledComposing == null) setUncontrolledComposing(!working);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only resync when work starts or stops
+    // Work starting hides the composer and work stopping brings it back (uncontrolled; a controlled parent decides).
+    if (controlledComposing === undefined) setComposing(!working);
   }, [working]);
   useEffect(() => {
+    // Opening the chat unfolds it.
     if (open && minimized) setMinimized(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- opening the chat unfolds it
   }, [open]);
 
   const slots = collectSlots(children);
   const idle = working && !composing;
   const expanded = bump.reveal > 0;
-  const hidden = useScrollHidden(hideOnScroll, scrollRef) && !expanded;
+  const hidden = useHideOnScroll(hideOnScroll, scrollRef) && !expanded;
   const glass = appearance === 'glass';
   // Glass blurs what's behind the card; an opaque sheet gives the card the host's card colour.
   const composerClass = cn('ck-floating-chat__composer', glass ? '[&_[data-slot=composer-card]]:backdrop-blur-[16px]' : '[--card:var(--ck-host-card)]');
   const fold = bump.minimize;
 
-  const revealComposer = () => {
-    setComposing(true);
+  const revealComposer = (event: Event) => {
+    setComposing(true, { reason: 'trigger-press', event });
     onAdd?.();
   };
 
@@ -231,14 +253,14 @@ export function FloatingChat({
     (card: ReactNode) =>
       idle ? (
         <div data-slot="floating-chat-card" className="relative z-1 min-w-0">
-          <Button
-            data-slot="floating-chat-working"
+          <SdkButton
+            data-floating-chat-working=""
             // Swaps in for the card with a soft rise; the real card waits, mounted, underneath.
             className={cn(
-              'box-border flex min-h-row w-full animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] cursor-pointer items-center gap-[10px] rounded-[15px] border border-border bg-card px-[15px] py-1.5 text-left [font:inherit] text-foreground shadow-[0_6px_24px_black] shadow-black/7 dark:shadow-black/28 outline-none motion-reduce:animate-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
+              'box-border flex min-h-row w-full animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] cursor-pointer items-center gap-[10px] rounded-[15px] border border-border bg-card px-[15px] py-1.5 text-left [font:inherit] text-foreground shadow-[0_6px_24px_black] shadow-black/7 dark:shadow-black/28 outline-none motion-reduce:animate-none focus-visible:ring-2 focus-visible:ring-primary/60',
               glass && 'backdrop-blur-[16px]',
             )}
-            onPress={() => revealRef.current()}
+            onClick={(event) => revealRef.current(event.nativeEvent)}
           >
             <span className="grid animate-[ck-floating-working_1.8s_ease-in-out_infinite] place-items-center text-muted-foreground motion-reduce:animate-none" aria-hidden="true">
               <Icon name="sparkle" size={18} sw={1.9} />
@@ -246,7 +268,7 @@ export function FloatingChat({
             <span className="min-w-0 flex-1 truncate text-subhead font-[560] text-muted-foreground">{labelRef.current}</span>
             <Icon name="plus" size={20} sw={1.9} />
             <span className="sr-only">Add something new</span>
-          </Button>
+          </SdkButton>
           <div data-inactive="" aria-hidden inert className="pointer-events-none invisible absolute inset-x-0 bottom-0">
             {card}
           </div>
@@ -254,7 +276,7 @@ export function FloatingChat({
       ) : (
         card
       ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Rebuilt only when the card's look changes; the label and reveal are read through refs.
     [idle, workingLabel, glass],
   );
 
@@ -264,19 +286,27 @@ export function FloatingChat({
       draggable
       open={open}
       onOpenChange={(next) => {
+        const event = handleClick.current;
+        handleClick.current = undefined;
+        const why = bumpRef.current.dragging ? ({ reason: 'swipe' } as const) : ({ reason: 'handle-press', event } as const);
         // Opening the chat while the agent works always brings the composer back.
         if (next && idleRef.current) {
-          setComposing(true);
+          setComposing(true, why);
           onAdd?.();
         }
-        setOpen(next);
+        changeOpen(next, why);
       }}
+      // Escape belongs to the chat's own layer (below), which also hears outside presses.
+      closeOnEscape={false}
       peek={peek}
       bounds={layerRef}
       boundsInset={gutter}
       minimizable
       minimized={minimized}
-      onMinimizedChange={setMinimized}
+      // The bump folds on a drag below rest and unfolds on a press of the folded bump.
+      onMinimizedChange={(next, details) => {
+        if (!setMinimized(next, { reason: details.reason === 'drag' ? 'swipe' : 'trigger-press', event: details.event })) details.cancel();
+      }}
       onProgressChange={setBump}
       data-slot="floating-chat-bump"
       className={floatingChatBumpVariants({ appearance })}
@@ -292,7 +322,13 @@ export function FloatingChat({
           </div>
         )}
       </ComposerBumpContent>
-      <ComposerBumpHandle label={open ? 'Collapse chat' : 'Expand chat'} className="pt-px [&>[data-bump-grip]]:top-px" />
+      <ComposerBumpHandle
+        label={open ? 'Collapse chat' : 'Expand chat'}
+        className="pt-px [&>[data-bump-grip]]:top-px"
+        onClick={(event) => {
+          handleClick.current = event.nativeEvent;
+        }}
+      />
     </ComposerBump>
   );
 
@@ -302,7 +338,21 @@ export function FloatingChat({
   });
   useLayoutEffect(() => () => shared?.outlet.set(null), [shared]);
 
-  const driving = bump.dragging || bump.settling;
+  // Open, the chat is a layer: Escape and presses outside the dock (the scrim, the page) close it, and a popup
+  // opened from the composer or transcript closes first.
+  useEffect(() => {
+    const el = dockRef.current;
+    if (!open || !el) return;
+    return bindLayer(el, {
+      onDismiss: (reason, event) => {
+        if (reason === 'window-blur') return;
+        changeOpen(false, { reason, event });
+      },
+    });
+  }, [open]);
+
+  // Follow the finger while it drags; on release the scrim and the dock spring to rest (their transitions run again).
+  const driving = bump.dragging;
   // Folding into the FAB, the dock shrinks toward where the FAB sits while the FAB grows out of it.
   const foldOrigin = fabPosition.endsWith('left') ? 'bottom left' : fabPosition.endsWith('right') ? 'bottom right' : 'bottom center';
 
@@ -330,27 +380,25 @@ export function FloatingChat({
         data-minimized={minimized || undefined}
         data-hidden={hidden || undefined}
         className={cn(floatingChatVariants({ tone }), toneProps.className, className)}
-        style={{ '--ck-chat-gutter': `${gutter}px`, '--ck-chat-fold': fold, ...style } as CSSProperties}
+        style={{ '--ck-chat-gutter': `${gutter}px`, '--ck-chat-fold': fold, '--ck-chat-progress': bump.progress, ...style } as CSSProperties}
       >
-        {/* Dims the host as far as the transcript has grown. Mounted only while the chat is open or growing, so a
-            closed chat leaves nothing over the host. */}
+        {/* Dims the host as far as the transcript has grown, and keeps presses off the host while open: a press on it
+            is an outside press of the chat's layer, which closes it. Decorative, so it is out of the tab order and the
+            accessibility tree. Mounted only while the chat is open or growing. */}
         {open || bump.progress > 0 ? (
-        <button
-          type="button"
-          aria-label="Close"
-          aria-hidden={!open}
-          tabIndex={open ? 0 : -1}
-          data-slot="floating-chat-scrim"
-          className={cn(
-            'absolute inset-0 z-0 block border-0 bg-black p-0 motion-reduce:[transition:none]',
-            open ? 'pointer-events-auto' : 'pointer-events-none',
-          )}
-          // The bump's spring writes progress every frame; only other changes transition.
-          style={{ opacity: 0.16 * bump.progress, transition: driving ? 'none' : springCss('opacity', 'smooth') }}
-          onClick={() => setOpen(false)}
-        />
+          <div
+            aria-hidden="true"
+            data-slot="floating-chat-scrim"
+            className={cn(
+              'absolute inset-0 z-0 bg-black opacity-[calc(.16*var(--ck-chat-progress))] motion-reduce:[transition:none]',
+              open ? 'pointer-events-auto' : 'pointer-events-none',
+            )}
+            // The bump's spring writes progress every frame; only other changes transition.
+            style={{ transition: driving ? 'none' : springCss('opacity', 'smooth') }}
+          />
         ) : null}
         <div
+          ref={dockRef}
           data-slot="floating-chat-dock"
           className={cn(
             'ck-floating-chat__dock absolute inset-x-(--ck-chat-gutter) bottom-(--ck-chat-gutter) z-2 min-w-0 motion-reduce:[transition:none]!',
@@ -398,9 +446,9 @@ export function FloatingChat({
             transition: driving ? 'none' : springCss(['opacity', 'scale'], 'snappy'),
             ...(glass ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } : null),
           }}
-          onPress={() => {
-            setOpen(false);
-            setMinimized(false);
+          onClick={(event) => {
+            changeOpen(false, { reason: 'trigger-press', event: event.nativeEvent });
+            setMinimized(false, { reason: 'trigger-press', event: event.nativeEvent });
           }}
         >
           <Icon name="sparkle" size={22} sw={1.9} />

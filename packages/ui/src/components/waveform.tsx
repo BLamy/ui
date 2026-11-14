@@ -1,12 +1,13 @@
 'use client';
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { useAppearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 /* ══ Waveform — audio peaks drawn across a stretch of media time ══
    Give it peaks (the loudest sample of each slice, 0…1, `rate` slices per second, e.g. from `useMediaPeaks`) and the
    range it stands for (`from`…`to`, a clip's in and out points). It draws one bar per device pixel on a canvas, in the
-   text colour (`text-…` classes tint it), mirrored around the middle or rising from the bottom, scaled by `gain` (a
+   text colour (`text-…` classes tint it; read again when the appearance changes), mirrored around the middle or rising from the bottom, scaled by `gain` (a
    clip's volume). Decorative: it is hidden from assistive tech; the clip it sits in carries the label. ══ */
 
 export const waveformVariants = cva('relative block h-full w-full', {
@@ -41,6 +42,9 @@ export interface WaveformProps extends VariantProps<typeof waveformVariants> {
 export function Waveform({ peaks, rate, from = 0, to, gain = 1, variant = 'mirror', tone, className, style }: WaveformProps) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const end = to ?? peaks.length / Math.max(1e-6, rate);
+  // The canvas holds the colour it was drawn in, so a change of appearance draws it again. Without a provider to say
+  // so, the host's class, `data-theme` or style on <html> is all there is to watch.
+  const appearance = useAppearance();
   useLayoutEffect(() => {
     const canvas = ref.current;
     if (!canvas) return undefined;
@@ -68,10 +72,14 @@ export function Waveform({ peaks, rate, from = 0, to, gain = 1, variant = 'mirro
       }
     };
     draw();
-    if (typeof ResizeObserver === 'undefined') return undefined;
-    const ro = new ResizeObserver(draw);
-    ro.observe(canvas);
-    return () => ro.disconnect();
-  }, [peaks, rate, from, end, gain, variant, tone, className]);
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(draw);
+    ro?.observe(canvas);
+    const watcher = appearance || typeof MutationObserver === 'undefined' ? null : new MutationObserver(draw);
+    watcher?.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'style'] });
+    return () => {
+      ro?.disconnect();
+      watcher?.disconnect();
+    };
+  }, [peaks, rate, from, end, gain, variant, tone, className, appearance]);
   return <canvas ref={ref} data-slot="waveform" aria-hidden className={cn(waveformVariants({ tone }), className)} style={style} />;
 }

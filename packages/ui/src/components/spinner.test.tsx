@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Spinner, spinnerAnimations, type SpinnerAnimation, type SpinnerVariant } from '@/components/ui/spinner';
 
+(globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
+
 /** How many animated parts each loader has. */
 const PARTS: Record<string, [selector: string, count: number | number[]]> = {
   orbit: ['.bl-ld-orbit-dot', 8],

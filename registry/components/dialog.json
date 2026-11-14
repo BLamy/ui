@@ -1,27 +1,39 @@
 {
   "name": "dialog",
   "title": "Dialog",
-  "description": "A modal dialog on react-aria: the centered iOS alert card or a general dialog with header, scrolling body and footer actions.",
+  "description": "Modal dialogs on UI SDK: Dialog, a card with a header, a scrolling body and footer actions that can present as a bottom sheet, and AlertDialog, the centered iOS alert that waits for an answer.",
   "page": "dialog",
   "exports": [
+    "Dialog",
     "DialogTrigger",
+    "DialogBackdrop",
     "DialogContent",
     "DialogHeader",
     "DialogTitle",
     "DialogDescription",
     "DialogBody",
     "DialogFooter",
-    "DialogAction",
     "DialogClose",
-    "Dialog",
     "dialogVariants",
-    "dialogActionVariants",
-    "dialogOverlayClass"
+    "createDialogController",
+    "AlertDialog",
+    "AlertDialogTrigger",
+    "AlertDialogBackdrop",
+    "AlertDialogContent",
+    "AlertDialogHeader",
+    "AlertDialogTitle",
+    "AlertDialogDescription",
+    "AlertDialogFooter",
+    "AlertDialogClose",
+    "alertDialogCloseVariants",
+    "createAlertDialogController",
+    "createConfirm"
   ],
   "imports": [
+    "Dialog",
     "DialogTrigger",
+    "DialogBackdrop",
     "DialogContent",
-    "DialogHeader",
     "DialogTitle"
   ]
 }

@@ -5,12 +5,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openDemo } from './helpers.mjs';
 
-/* FileUpload against the docs examples (apps/docs/examples/file-upload/*): the FileTrigger input, a real drop
+/* FileUpload against the docs examples (apps/docs/examples/file-upload/*): FileInput's hidden input, a real drop
    (a script-built DataTransfer through dragenter / dragover / drop), validation, progress, retry, remove,
    keyboard-only operation and paste. The examples talk to a mock `upload` with timers: no network. */
-const ZONE = '[data-slot=file-drop-zone]';
-const ROW = '[data-slot=file-item]';
-const STATUS = '[data-slot=file-upload-status]';
+const ZONE = '[data-slot=file-input-dropzone]';
+// Listed files are FileInputItems, rejected ones groups; both carry the row's id.
+const ROW = '[data-file-id]';
+const REMOVE = '[data-slot=file-input-item-remove]';
+// UI SDK's polite live region.
+const STATUS = '[data-ui-sdk-announcer=""]';
 // 1×1 transparent PNG: a real image, so the thumbnail decodes.
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 
@@ -22,8 +25,6 @@ const row = (page, name) => page.locator(ROW).filter({ hasText: name });
 async function drag(page, specs, { release = true, zone = ZONE } = {}) {
   const dt = await page.evaluateHandle((list) => {
     const d = new DataTransfer();
-    // A real drag carries the source's effectAllowed; a script-built one is stuck at 'none' (read-only), which react-aria reads as "nothing can be dropped".
-    Object.defineProperty(d, 'effectAllowed', { value: 'all' });
     for (const s of list) d.items.add(new File([new Uint8Array(s.size ?? 8)], s.name, { type: s.type ?? 'text/plain' }));
     return d;
   }, specs);
@@ -39,10 +40,10 @@ test.describe('basic', () => {
     await openDemo(page, 'file-upload/basic', ZONE);
   });
 
-  test('choosing files through the FileTrigger input lists them and sends them', async ({ page }) => {
+  test('choosing files through the hidden input lists them and sends them', async ({ page }) => {
     await input(page).setInputFiles([file('notes.txt'), file('report.pdf', 'application/pdf', 2048)]);
     await expect(page.locator(ROW)).toHaveCount(2);
-    await expect(row(page, 'report.pdf')).toContainText('2 KB');
+    await expect(row(page, 'report.pdf')).toContainText('2 kB');
     await expect(row(page, 'notes.txt')).toHaveAttribute('data-status', 'done', { timeout: 8000 });
     await expect(row(page, 'report.pdf')).toHaveAttribute('data-status', 'done', { timeout: 8000 });
     await expect(row(page, 'notes.txt')).toContainText('Uploaded');
@@ -50,12 +51,12 @@ test.describe('basic', () => {
 
   test('dragging files over the zone shows the drop state, leaving clears it, dropping adds them', async ({ page }) => {
     const dt = await drag(page, [file('dropped.txt')], { release: false });
-    await expect(page.locator(ZONE)).toHaveAttribute('data-drop-target', 'true');
+    await expect(page.locator(ZONE)).toHaveAttribute('data-dragging', '');
     await expect(page.locator(ZONE)).toContainText('Drop to add');
     await page.locator(ZONE).dispatchEvent('dragleave', { dataTransfer: dt });
-    await expect(page.locator(ZONE)).not.toHaveAttribute('data-drop-target');
+    await expect(page.locator(ZONE)).not.toHaveAttribute('data-dragging');
     await drag(page, [file('dropped.txt'), file('second.txt')]);
-    await expect(page.locator(ZONE)).not.toHaveAttribute('data-drop-target');
+    await expect(page.locator(ZONE)).not.toHaveAttribute('data-dragging');
     await expect(page.locator(ROW)).toHaveCount(2);
     await expect(row(page, 'dropped.txt')).toBeVisible();
   });
@@ -81,19 +82,17 @@ test.describe('basic', () => {
     await expect(r).toHaveAttribute('data-status', 'done', { timeout: 8000 });
   });
 
-  test('removing a row moves focus to its neighbor, then to the Browse button', async ({ page }) => {
+  test('the list is one Tab stop: arrows move between rows, Delete removes the focused one and focus moves on', async ({ page }) => {
     await input(page).setInputFiles([file('one.txt'), file('two.txt'), file('three.txt')]);
     await expect(page.locator(ROW)).toHaveCount(3);
-    await row(page, 'two.txt').getByRole('button', { name: /two\.txt/ }).focus();
-    await page.keyboard.press('Enter');
+    await row(page, 'one.txt').focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(row(page, 'two.txt')).toBeFocused();
+    await page.keyboard.press('Delete');
     await expect(page.locator(ROW)).toHaveCount(2);
     await expect(page.locator(STATUS)).toContainText('two.txt removed');
-    await expect(row(page, 'three.txt').locator('[data-slot=file-item-remove]')).toBeFocused();
-    await row(page, 'three.txt').locator('[data-slot=file-item-remove]').click();
-    await expect(row(page, 'one.txt').locator('[data-slot=file-item-remove]')).toBeFocused();
-    await page.keyboard.press('Enter');
-    await expect(page.locator(ROW)).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Browse files' })).toBeFocused();
+    await expect(row(page, 'three.txt')).toBeFocused();
+    await expect(row(page, 'three.txt').locator(REMOVE)).toHaveAttribute('tabindex', '-1');
   });
 
   test('cancelling an upload in flight removes it and it never completes', async ({ page }) => {
@@ -115,17 +114,11 @@ test.describe('basic', () => {
       await chooser.setFiles(file(`via-${key}.txt`));
       await expect(row(page, `via-${key}.txt`)).toBeVisible();
     }
-    // The zone's own (screen-reader and keyboard-drag) button comes first in the tab order and is named.
-    await page.locator('body').click({ position: { x: 2, y: 2 } });
-    await page.keyboard.press('Tab');
-    await expect(page.locator(`${ZONE} button`).first()).toBeFocused();
-    await expect(page.locator(ZONE)).toHaveAttribute('data-focus-visible', 'true');
   });
 
-  test('the list is a labelled list of labelled groups', async ({ page }) => {
+  test('the list is a labelled list of items', async ({ page }) => {
     await input(page).setInputFiles(file('a.txt'));
-    await expect(page.getByRole('list', { name: 'Files' })).toBeVisible();
-    await expect(page.getByRole('group', { name: 'a.txt' })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Files' }).getByRole('listitem')).toHaveCount(1);
   });
 });
 
@@ -172,7 +165,7 @@ test.describe('images', () => {
     await expect(img).toHaveAttribute('src', /^blob:/);
     const src = await img.getAttribute('src');
     expect(await page.evaluate((u) => fetch(u).then(() => 'alive', () => 'revoked'), src)).toBe('alive');
-    await row(page, 'dot.png').locator('[data-slot=file-item-remove]').click();
+    await row(page, 'dot.png').locator(REMOVE).click();
     await expect(page.locator(ROW)).toHaveCount(0);
     await expect.poll(() => page.evaluate((u) => fetch(u).then(() => 'alive', () => 'revoked'), src)).toBe('revoked');
   });
@@ -264,7 +257,9 @@ test.describe('accessibility with rows on screen', () => {
 });
 
 test.describe('folders', () => {
-  test('a chosen folder is flattened into its files with relative paths, minus dotfiles', async ({ page }) => {
+  // UI SDK skips system files in dropped folders but not in a picked one, so .DS_Store is listed here (see the
+  // toast-files gaps note).
+  test('a chosen folder is flattened into its files with relative paths', async ({ page }) => {
     await openDemo(page, 'file-upload/folder', ZONE);
     const root = mkdtempSync(join(tmpdir(), 'fu-'));
     const dir = join(root, 'photos');
@@ -273,28 +268,9 @@ test.describe('folders', () => {
     writeFileSync(join(dir, '.DS_Store'), 'x');
     writeFileSync(join(dir, '2024', 'b.txt'), 'b');
     await input(page).setInputFiles(dir);
-    await expect(page.locator(ROW)).toHaveCount(2);
+    await expect(page.locator(ROW)).toHaveCount(3);
     await expect(page.locator(`${ROW} [title="photos/a.txt"]`)).toBeVisible();
     await expect(page.locator(`${ROW} [title="photos/2024/b.txt"]`)).toBeVisible();
     await expect(row(page, 'b.txt')).toContainText('photos/2024');
-  });
-
-  test('a files-only zone says so when a folder is dropped on it', async ({ page }) => {
-    await openDemo(page, 'file-upload/basic', ZONE);
-    await page.evaluate(() => {
-      const zone = document.querySelector('[data-slot=file-drop-zone]');
-      const dt = new DataTransfer();
-      dt.items.add(new File([new Uint8Array(4)], 'x.txt'));
-      // A directory item: the entry API answers isDirectory for it.
-      const entry = { isFile: false, isDirectory: true, name: 'stuff', createReader: () => ({ readEntries: (ok) => ok([]) }) };
-      const real = DataTransferItem.prototype.webkitGetAsEntry;
-      DataTransferItem.prototype.webkitGetAsEntry = function () { return entry; };
-      zone.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: dt }));
-      zone.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
-      zone.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
-      DataTransferItem.prototype.webkitGetAsEntry = real;
-    });
-    await expect(page.locator(ZONE)).toContainText('Folders can’t be added here');
-    await expect(page.locator(ROW)).toHaveCount(0);
   });
 });

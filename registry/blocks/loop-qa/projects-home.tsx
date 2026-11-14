@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Morph, MorphGroup, MorphPresence } from '@/components/ui/morph';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { SearchField } from '@/components/ui/search-field';
-import { Segmented } from '@/components/ui/segmented';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { isOpen } from './agent';
 import { MemberPreview } from './cards';
-import { CREDITS, PROJECTS, SEVERITIES, host, relativeTime, type Project, type Severity } from './data';
+import { CREDITS, MEMBERS, PROJECTS, SEVERITIES, host, relativeTime, type Project, type Severity } from './data';
 import { Leading, PageActions } from './header';
 import { Empty, Pill, SeverityBar, SiteThumb, Sparkline, StatTile, Pressable } from './parts';
 import { useLoopQA } from './state';
@@ -50,16 +50,14 @@ export function ProjectsHome() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <SearchField aria-label="Filter projects" placeholder="Filter projects" value={query} onChange={setQuery} className="max-w-[340px] min-w-[200px] flex-1" />
-            <Segmented
-              aria-label="Status"
-              value={filter}
-              onChange={(v) => setFilter(v as typeof filter)}
-              options={[{ id: 'all', label: 'All' }, { id: 'active', label: 'Active' }, { id: 'paused', label: 'Paused' }]}
-              className="w-[220px]"
-            />
+            <SearchField aria-label="Filter projects" placeholder="Filter projects" value={query} onValueChange={setQuery} className="max-w-[340px] min-w-[200px] flex-1" />
+            <Segmented<typeof filter> aria-label="Status" value={filter} onValueChange={(v) => { if (v) setFilter(v); }} className="w-[220px]">
+              <SegmentedItem value="all">All</SegmentedItem>
+              <SegmentedItem value="active">Active</SegmentedItem>
+              <SegmentedItem value="paused">Paused</SegmentedItem>
+            </Segmented>
             <span className="flex-1" />
-            <Button size="sm" variant="secondary" className="h-8 rounded-[9px]" onPress={() => qa.setDialog('new-project')}>
+            <Button size="sm" variant="secondary" className="h-8 rounded-[9px]" onClick={() => qa.setDialog('new-project')}>
               <Icon name="plus" size={13} sw={2.4} />New project
             </Button>
           </div>
@@ -69,7 +67,7 @@ export function ProjectsHome() {
               <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(248px,1fr))] gap-4 p-0">
                 <MorphPresence>
                   {shown.map((p) => (
-                    <Morph key={p.id} id={p.id} as="li" layout="position" fade>
+                    <Morph key={p.id} id={p.id} render={<li />} layout="position" fade>
                       <ProjectCard project={p} />
                     </Morph>
                   ))}
@@ -92,12 +90,12 @@ function ProjectCard({ project: p }: { project: Project }) {
   const running = qa.runs.some((r) => r.projectId === p.id && r.status === 'running');
   return (
     <Pressable
-      onPress={() => qa.openSection(p.id)}
+      onClick={() => qa.openSection(p.id)}
       aria-label={`${p.name}, ${open.length} open bugs`}
-      className="group flex w-full cursor-pointer flex-col items-stretch justify-start gap-0 overflow-hidden rounded-[16px] border border-solid border-border bg-card p-0 text-left whitespace-normal outline-none shadow-[0_1px_2px_--alpha(black/4%)] transition-[translate,box-shadow,scale] duration-spring-smooth ease-spring-smooth data-hovered:-translate-y-0.5 data-hovered:shadow-[0_12px_32px_-12px_--alpha(black/22%)] data-pressed:not-aria-expanded:scale-[.985] data-focus-visible:ring-2 data-focus-visible:ring-ring motion-reduce:transition-none"
+      className="group flex w-full cursor-pointer flex-col items-stretch justify-start gap-0 overflow-hidden rounded-[16px] border border-solid border-border bg-card p-0 text-left whitespace-normal outline-none shadow-[0_1px_2px_--alpha(black/4%)] transition-[translate,box-shadow,scale] duration-spring-smooth ease-spring-smooth hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-12px_--alpha(black/22%)] active:not-aria-expanded:not-data-disabled:scale-[.985] focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
     >
       <div className="relative m-1.5 mb-0 overflow-hidden rounded-[11px] border border-border">
-        <SiteThumb kind={p.site} brand={p.brand} className="aspect-[16/10] w-full transition-[scale] duration-spring-smooth ease-spring-smooth group-data-hovered:scale-[1.025] motion-reduce:transition-none" />
+        <SiteThumb kind={p.site} brand={p.brand} className="aspect-[16/10] w-full transition-[scale] duration-spring-smooth ease-spring-smooth group-hover:scale-[1.025] motion-reduce:transition-none" />
         <div className="absolute top-2 left-2 flex gap-1.5">
           {running ? (
             <Pill tone="primary" className="bg-card shadow-[0_2px_8px_--alpha(black/12%)]"><span className="size-1.5 animate-pulse rounded-full bg-primary motion-reduce:animate-none" />Running</Pill>
@@ -127,8 +125,9 @@ function ProjectCard({ project: p }: { project: Project }) {
           <span className="inline-flex items-center gap-1"><Icon name="clock" size={12} sw={2} />{relativeTime(p.lastRun)}</span>
           <span className="flex -space-x-1">
             {p.members.map((m, i) => (
-              <MemberPreview key={m} initials={m} tone={i}>
-                <span className="grid size-6 place-items-center rounded-full bg-secondary-strong text-[9.5px] font-semibold tracking-[-.02em] text-foreground ring-2 ring-card" style={{ zIndex: 5 - i } as CSSProperties}>{m}</span>
+              <MemberPreview key={m} initials={m} tone={i}
+                render={<span aria-label={MEMBERS[m]?.name ?? m} className="grid size-6 place-items-center rounded-full bg-secondary-strong text-[9.5px] font-semibold tracking-[-.02em] text-foreground ring-2 ring-card" style={{ zIndex: 5 - i } as CSSProperties} />}>
+                {m}
               </MemberPreview>
             ))}
           </span>

@@ -1,44 +1,36 @@
 import { useState } from 'react'
-import { I18nProvider, type DateValue } from 'react-aria-components'
-import { parseDate } from '@internationalized/date'
-import { DateField, DateInput } from '@/components/ui/date-field'
-import { Label } from '@/components/ui/label'
-import { FieldDescription, FieldError } from '@/components/ui/text-field'
+import { weekday } from '@ui-sdk/core/date'
+import { Button } from '@/components/ui/button'
+import { DateField } from '@/components/ui/date-field'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
+import { Form } from '@/components/ui/form'
 
-// With `validationBehavior="aria"` the field validates live: `minValue`,
-// `maxValue` and your own `validate` all feed the same FieldError. The bounds
-// are fixed dates (not "today") so the demo reads the same for everyone.
+// Two kinds of error. The first field is checked by the browser: `required`,
+// `min` and `max` turn its outline red at once and block the form, and the
+// FieldError shows the message after a submit attempt. The second is decided by
+// your code: `invalid` on the Field shows its FieldError straight away. The
+// bounds are fixed dates (not "today") so the demo reads the same for everyone.
 export default function Validation() {
-  const [date, setDate] = useState<DateValue | null>(parseDate('2026-08-20'))
+  const [delivery, setDelivery] = useState<string | null>('2026-09-12')
+  const saturday = delivery !== null && weekday(delivery) === 6
   return (
-    <I18nProvider locale="en-US">
-      <div className="mx-auto grid max-w-sm gap-5">
-        <DateField
-          value={date}
-          onChange={setDate}
-          validationBehavior="aria"
-          minValue={parseDate('2026-09-01')}
-          maxValue={parseDate('2026-12-31')}
-          isRequired
-        >
-          <Label variant="field">Check-in</Label>
-          <DateInput />
-          <FieldDescription>Between 1 September and 31 December 2026.</FieldDescription>
-          <FieldError />
-        </DateField>
+    <Form className="mx-auto max-w-sm" onSubmit={(event) => event.preventDefault()}>
+      <Field name="check-in">
+        <FieldLabel variant="field">Check-in</FieldLabel>
+        <DateField locale="en-US" required min="2026-09-01" max="2026-12-31" defaultValue="2026-08-20" />
+        <FieldDescription>Between 1 September and 31 December 2026.</FieldDescription>
+        <FieldError />
+      </Field>
 
-        <DateField
-          defaultValue={parseDate('2026-09-12')}
-          validationBehavior="aria"
-          validate={(d) =>
-            d && d.toDate('UTC').getUTCDay() === 6 ? 'We do not deliver on Saturdays.' : null
-          }
-        >
-          <Label variant="field">Delivery</Label>
-          <DateInput />
-          <FieldError />
-        </DateField>
-      </div>
-    </I18nProvider>
+      <Field name="delivery" invalid={saturday ? true : undefined}>
+        <FieldLabel variant="field">Delivery</FieldLabel>
+        <DateField locale="en-US" value={delivery} onValueChange={setDelivery} />
+        <FieldError>We do not deliver on Saturdays.</FieldError>
+      </Field>
+
+      <Button type="submit" size="pill">
+        Book
+      </Button>
+    </Form>
   )
 }

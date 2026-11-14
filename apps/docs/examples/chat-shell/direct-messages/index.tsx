@@ -77,7 +77,7 @@ function Conversations({
               label={people[id].f}
               active={who === id}
               badge={id === 'jonas' ? 1 : undefined}
-              onPress={() => {
+              onClick={() => {
                 onPick(id)
                 shell.setNavOpen(false)
               }}

@@ -2,11 +2,11 @@
    text, step validation, the step heading (which takes focus when a step opens) and its Back / submit row, the
    order's money lines, the plan's hover card, and the hook that keeps the caret in place while a field formats itself
    (`4242 4242 …`, `12 / 28`). */
-import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { HoverCardHeader } from '@/components/ui/hover-card';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { FieldDescription, FieldError } from '@/components/ui/text-field';
+import { FieldDescription, FieldError } from '@/components/ui/field';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { MONEY_FORMAT, money, percent, type CardBrand, type Quote } from './checkout';
@@ -107,7 +107,8 @@ export function BrandMark({ brand, className }: { brand: CardBrand; className?: 
    A step's errors appear when it is submitted (focus goes to the first invalid field, whose message is its
    description) and from then on follow each value as it is typed, appearing and clearing live. Nothing validates on
    blur: an error that appeared or cleared as you left a field would move the button you were pressing. `server`
-   errors (a decline) show regardless. Use with `<Form validationBehavior="aria">`; fields are found by `name`. */
+   errors (a decline) show regardless. Use with `<Form noValidate>` (the step checks itself, so the browser's own
+   bubbles never show) and give each `Field` `invalid={v.invalid(k) || undefined}`; fields are found by `name`. */
 export function useStepErrors<K extends string>(errors: Record<K, string | null>, server?: Partial<Record<K, string>>) {
   const [submitted, setSubmitted] = useState(false);
   const error = (k: K) => server?.[k] ?? (submitted ? errors[k] : null);
@@ -128,7 +129,6 @@ export function useStepErrors<K extends string>(errors: Record<K, string | null>
 export function StepHeading({ title, description, focus }: { title: string; description?: ReactNode; focus: boolean }) {
   const ref = useRef<HTMLHeadingElement | null>(null);
   // Mount-only on purpose: the heading takes focus once, when its step arrives.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (focus) ref.current?.focus({ preventScroll: true }); }, []);
   return (
     <div className="flex flex-col gap-1">
@@ -142,7 +142,7 @@ export function StepHeading({ title, description, focus }: { title: string; desc
 export function StepActions({ onBack, backDisabled, children }: { onBack: () => void; backDisabled?: boolean; children: ReactNode }) {
   return (
     <div className="flex flex-col-reverse gap-2 pt-1 @md:flex-row @md:items-center @md:justify-between">
-      <Button variant="ghost" size="lg" onPress={onBack} isDisabled={backDisabled} className="text-link @md:-ml-3">
+      <Button variant="ghost" size="lg" onClick={onBack} disabled={backDisabled} className="text-link @md:-ml-3">
         <Icon name="chevron-left" size={18} sw={2.4} /> Back
       </Button>
       {children}
@@ -187,7 +187,7 @@ export function Totals({ quote: q, totalLabel, taxHint }: { quote: Quote; totalL
 /* ── Formatting fields ──
    A formatter that inserts spaces or a slash moves the caret to the end on every keystroke. This keeps it after the
    same number of letters and digits it was after, so editing the middle of a card number works. Pass the returned
-   handler as the Input's `onChange` and keep the TextField controlled (`value`, no `onChange`). */
+   handler as the Input's `onValueChange`, with the formatted `value`. */
 const isMark = (ch: string) => /[0-9A-Za-z]/.test(ch);
 
 export function useFormattedInput(format: (raw: string) => string, onValue: (value: string) => void) {
@@ -197,13 +197,15 @@ export function useFormattedInput(format: (raw: string) => string, onValue: (val
     caret.current = null;
     if (c && c.el === document.activeElement) c.el.setSelectionRange(c.at, c.at);
   });
-  return (e: ChangeEvent<HTMLInputElement>) => {
-    const el = e.target;
-    const next = format(el.value);
-    const marks = Array.from(el.value.slice(0, el.selectionStart ?? el.value.length)).filter(isMark).length;
-    let at = 0;
-    for (let seen = 0; at < next.length && seen < marks; at++) if (isMark(next[at])) seen++;
-    caret.current = { el, at };
+  return (raw: string, details: { event?: Event }) => {
+    const next = format(raw);
+    const el = details.event?.target;
+    if (el instanceof HTMLInputElement) {
+      const marks = Array.from(raw.slice(0, el.selectionStart ?? raw.length)).filter(isMark).length;
+      let at = 0;
+      for (let seen = 0; at < next.length && seen < marks; at++) if (isMark(next[at])) seen++;
+      caret.current = { el, at };
+    }
     onValue(next);
   };
 }

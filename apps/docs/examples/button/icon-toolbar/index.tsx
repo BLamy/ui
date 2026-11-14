@@ -22,19 +22,19 @@ export default function IconToolbar() {
   return (
     <div className="mx-auto grid max-w-md gap-3">
       <div className="flex h-toolbar items-center gap-1 rounded-card bg-card px-3 shadow-hairline">
-        <Tool icon="pencil" label="Edit" onPress={() => setLog('Edit')} />
-        <Tool icon="copy" label="Copy link" onPress={() => setLog('Link copied')} />
-        <Tool icon="share" label="Share" onPress={() => setLog('Share sheet opened')} />
+        <Tool icon="pencil" label="Edit" onClick={() => setLog('Edit')} />
+        <Tool icon="copy" label="Copy link" onClick={() => setLog('Link copied')} />
+        <Tool icon="share" label="Share" onClick={() => setLog('Share sheet opened')} />
         <Separator orientation="vertical" className="mx-1 my-3" />
         <Tool
           icon={starred ? 'star-fill' : 'star'}
           label={starred ? 'Remove star' : 'Star'}
           active={starred}
-          onPress={() => setStarred((v) => !v)}
+          onClick={() => setStarred((v) => !v)}
         />
-        <Tool icon="bookmark" label="Bookmark" active={saved} onPress={() => setSaved((v) => !v)} />
+        <Tool icon="bookmark" label="Bookmark" active={saved} onClick={() => setSaved((v) => !v)} />
         <span className="flex-1" />
-        <Tool icon="trash" label="Delete" glyph={20} onPress={() => setLog('Deleted')} />
+        <Tool icon="trash" label="Delete" glyph={20} onClick={() => setLog('Deleted')} />
       </div>
       <p className="m-0 px-1 text-footnote text-foreground" aria-live="polite">
         {log} · {starred ? 'starred' : 'not starred'} · {saved ? 'bookmarked' : 'not bookmarked'}

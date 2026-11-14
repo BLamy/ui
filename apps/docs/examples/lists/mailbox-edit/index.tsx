@@ -45,7 +45,7 @@ function MailboxEdit() {
         <Button
           size="sm"
           variant="ghost"
-          onPress={() => {
+          onClick={() => {
             setEditing(!editing)
             setPicked(new Set())
           }}
@@ -69,7 +69,7 @@ function MailboxEdit() {
                 </span>
               }
               divider={i < mail.length - 1}
-              onPress={() => editing && toggle(m.id)}
+              onClick={() => editing && toggle(m.id)}
               onDelete={() => remove([m.id])}
             />
           ))}
@@ -79,7 +79,7 @@ function MailboxEdit() {
         <Button
           variant="link"
           style={{ display: 'block', margin: '0 auto' }}
-          onPress={() => setMail(initialMail)}
+          onClick={() => setMail(initialMail)}
         >
           Restore mail
         </Button>

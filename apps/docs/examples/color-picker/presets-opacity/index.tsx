@@ -1,38 +1,44 @@
 import { useState } from 'react'
-import { parseColor, type Color } from 'react-aria-components'
-import { ColorSwatch } from '@/components/ui/color-field'
+import { formatColor, parseColor } from '@ui-sdk/core/color'
 import {
   ColorPicker,
-  ColorSlider,
-  ColorSwatchPicker,
-  ColorSwatchPickerItem,
+  ColorPickerSlider,
+  ColorPickerSwatches,
+  ColorPickerSwatchItem,
 } from '@/components/ui/color-picker'
+import { ColorFieldSwatch } from '@/components/ui/color-field'
 import { Label } from '@/components/ui/label'
 
 const presets = ['#ff453a', '#ff9f0a', '#ffd60a', '#30d158', '#0a84ff', '#bf5af2']
 
-// A preset row plus an opacity slider. Choosing a preset replaces the hue,
-// saturation and brightness; the picker's color keeps going in `hexa` (with the
-// opacity) for output. The value starts as a fixed hsla color so the demo
-// reads the same for everyone.
+// A preset row plus an opacity slider. Choosing a preset sets the whole color,
+// its opacity included; the slider then edits the opacity alone. The value is
+// written as hex, with two more digits once the opacity is below 1. It starts
+// as a fixed hsl() color so the demo reads the same for everyone.
 export default function PresetsOpacity() {
-  const [color, setColor] = useState<Color>(parseColor('hsla(262, 83%, 66%, 0.6)'))
+  const [color, setColor] = useState('hsl(262 83% 66% / 0.6)')
+  const parsed = parseColor(color)
   return (
-    <ColorPicker value={color} onChange={setColor}>
-      <div className="mx-auto grid max-w-xs gap-4">
-        <div>
-          <Label variant="field">Presets</Label>
-          <ColorSwatchPicker aria-label="Presets" className="mt-2">
-            {presets.map((c) => (
-              <ColorSwatchPickerItem key={c} color={c} />
-            ))}
-          </ColorSwatchPicker>
-        </div>
-        <ColorSlider channel="alpha" label="Opacity" showValue />
-        <div className="flex items-center gap-3">
-          <ColorSwatch className="size-10 rounded-ctl" />
-          <code className="text-footnote text-foreground/70">{color.toString('hexa')}</code>
-        </div>
+    <ColorPicker
+      aria-label="Label color"
+      value={color}
+      onValueChange={setColor}
+      className="mx-auto grid max-w-xs gap-4"
+    >
+      <div>
+        <Label variant="field" htmlFor="label-color-presets">Presets</Label>
+        <ColorPickerSwatches id="label-color-presets" className="mt-2">
+          {presets.map((c) => (
+            <ColorPickerSwatchItem key={c} value={c} />
+          ))}
+        </ColorPickerSwatches>
+      </div>
+      <ColorPickerSlider channel="alpha" label="Opacity" showValue />
+      <div className="flex items-center gap-3">
+        <ColorFieldSwatch className="size-10 rounded-ctl" />
+        <code className="text-footnote text-foreground/70">
+          {parsed ? formatColor(parsed, 'hex') : color}
+        </code>
       </div>
     </ColorPicker>
   )

@@ -6,6 +6,9 @@ import { createTailscale, type Tailscale } from '@/lib/tailscale';
 import { createFakeTailscaleClient, type FakeTailscaleOptions } from '@/lib/tailscale-fake';
 import { TailscaleProvider } from '@/lib/tailscale-react';
 
+declare global { var __UI_SDK_STRICT__: boolean | undefined }
+globalThis.__UI_SDK_STRICT__ = true;
+
 afterEach(cleanup);
 
 /** A connected controller on the fake tailnet: an online exit node, an offline one, and a plain device. */
@@ -51,7 +54,8 @@ describe('TailscaleExitNodes, radio', () => {
     await act(async () => { await tailscale.setExitNode('node-bretts-macbook-pro'); });
     shell(tailscale, <TailscaleExitNodes />);
     expect(screen.getAllByRole('radio').map((r) => r.closest('label')?.textContent)).toEqual(['None: your devices only', 'bretts-macbook-air (offline)', 'bretts-macbook-pro']);
-    expect((screen.getByRole('radio', { name: 'bretts-macbook-pro' }) as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByRole('radiogroup', { name: 'Exit node' })).toBeTruthy();
+    expect(screen.getAllByRole('radio').map((r) => r.getAttribute('aria-checked'))).toEqual(['false', 'false', 'true']);
   });
 
   it('chooses a node through onExitNode, showing Connecting… until it settles, and None clears it', async () => {
@@ -107,6 +111,22 @@ describe('TailscaleExitNodes, networks', () => {
     await waitFor(() => expect(rows()[2].getAttribute('aria-selected')).toBe('true'));
     fireEvent.click(rows()[0]);
     await waitFor(() => expect(fake.exitNodeId).toBeNull());
+  });
+
+  it('moves with the arrow keys without switching, and switches on Enter', async () => {
+    const { tailscale, fake } = await connected();
+    const onExitNode = vi.fn((id: string | null) => tailscale.setExitNode(id));
+    shell(tailscale, <TailscaleExitNodes variant="networks" onExitNode={onExitNode} />);
+    const none = rows()[0];
+    expect(none.getAttribute('tabindex')).toBe('0');
+    none.focus();
+    fireEvent.keyDown(none, { key: 'ArrowDown' });
+    // The offline device is skipped; landing on a device does not make it the exit node.
+    await waitFor(() => expect(document.activeElement).toBe(rows()[2]));
+    expect(onExitNode).not.toHaveBeenCalled();
+    fireEvent.keyDown(rows()[2], { key: 'Enter' });
+    await waitFor(() => expect(fake.exitNodeId).toBe('node-bretts-macbook-pro'));
+    expect(onExitNode).toHaveBeenCalledTimes(1);
   });
 
   it('does not choose an offline node', async () => {

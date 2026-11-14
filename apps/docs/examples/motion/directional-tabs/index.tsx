@@ -1,4 +1,4 @@
-import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
 
 const TABS = [
   {
@@ -43,17 +43,17 @@ export default function Wallet({
       <Tabs
         key={variant}
         variant={variant === 'underline' ? 'underline' : 'segmented'}
-        defaultSelectedKey="tokens"
+        defaultValue="tokens"
       >
-        <TabList aria-label="Wallet">
+        <TabsList aria-label="Wallet">
           {TABS.map((t) => (
-            <Tab key={t.id} id={t.id}>
+            <TabsTab key={t.id} value={t.id}>
               {t.title}
-            </Tab>
+            </TabsTab>
           ))}
-        </TabList>
+        </TabsList>
         {TABS.map((t) => (
-          <TabPanel key={t.id} id={t.id}>
+          <TabsPanel key={t.id} value={t.id}>
             <div
               style={{
                 background: 'var(--card)',
@@ -77,7 +77,7 @@ export default function Wallet({
                 </div>
               ))}
             </div>
-          </TabPanel>
+          </TabsPanel>
         ))}
       </Tabs>
     </div>

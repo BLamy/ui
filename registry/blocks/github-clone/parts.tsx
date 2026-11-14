@@ -1,7 +1,8 @@
 /* Small GitHub-flavoured pieces the page composes: the palette, octicon-style glyphs, label chips, state icons,
    underline tabs, a line-numbered code view, a unified diff view and a file tree. Code is highlighted by the
    library's CodeEditor (gpu-lexer on WebGPU), recolored with Primer's syntax palette below. */
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useMemo, type CSSProperties, type ReactNode } from 'react';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
 import { Avatar } from '@/components/ui/avatar';
 import { CodeEditor, SyntaxTokens, useSyntaxTokens } from '@/components/ui/code-editor';
 import { TabViewIndicator, TabViewPanel, TabViewTab } from '@/components/ui/tab-view';
@@ -198,24 +199,28 @@ export function AvatarStack({ users, size = 20, card }: { users: User[]; size?: 
   );
 }
 
-/* ── Underline tabs ── a TabViewTab styled as GitHub's UnderlineNav: icon, label, count, coral underline. */
-export function UnderlineTab({ id, icon, label, count }: { id: string; icon?: OctName; label: string; count?: ReactNode }) {
+/* ── Underline tabs ── a TabViewTab styled as GitHub's UnderlineNav: icon, label, count, and one coral underline
+   (UnderlineIndicator, last in the TabViewList) that slides to the selected tab. */
+export function UnderlineTab({ value, icon, label, count }: { value: string; icon?: OctName; label: string; count?: ReactNode }) {
   return (
-    <TabViewTab id={id} textValue={label} className="group relative flex shrink-0 items-center py-2 outline-none data-selected:font-semibold">
-      <span className="flex items-center gap-2 rounded-md px-2 py-1.5 text-detail leading-5 text-foreground group-data-hovered:bg-secondary group-data-focus-visible:ring-2 group-data-focus-visible:ring-primary">
+    <TabViewTab value={value} className="group relative flex shrink-0 items-center py-2 outline-none data-selected:font-semibold">
+      <span className="flex items-center gap-2 rounded-md px-2 py-1.5 text-detail leading-5 text-foreground group-hover:bg-secondary group-focus-visible:ring-2 group-focus-visible:ring-primary">
         {icon ? <Oct name={icon} className="text-muted-foreground" /> : null}
         <span className="whitespace-nowrap">{label}</span>
         {count != null ? <Counter>{count}</Counter> : null}
       </span>
-      <TabViewIndicator className="inset-x-1 -bottom-px z-1 h-0.5 rounded-full bg-[var(--gh-tab)]" />
     </TabViewTab>
   );
 }
 
+export function UnderlineIndicator() {
+  return <TabViewIndicator className="inset-x-1 -bottom-px z-1 h-0.5 rounded-full bg-[var(--gh-tab)]" />;
+}
+
 /** A tab panel that flows with the page (TabViewPanel is absolutely positioned by default). */
-export function FlowPanel({ id, className, children }: { id: string; className?: string; children: ReactNode }) {
+export function FlowPanel({ value, className, children }: { value: string; className?: string; children: ReactNode }) {
   return (
-    <TabViewPanel id={id} className={cn('relative inset-auto overflow-visible data-exiting:hidden', className)}>
+    <TabViewPanel value={value} className={cn('relative inset-auto overflow-visible data-ending-style:hidden', className)}>
       {children}
     </TabViewPanel>
   );
@@ -235,10 +240,10 @@ export function Box({ header, children, className }: { header?: ReactNode; child
 export const ghButton = (primary?: boolean) =>
   cn(
     'inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-detail font-medium outline-none whitespace-nowrap',
-    'data-focus-visible:ring-2 data-focus-visible:ring-primary data-focus-visible:ring-offset-1',
+    'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
     primary
-      ? 'border-(--gh-merge-border) bg-(--gh-merge) text-white data-hovered:bg-(--gh-merge-hover)'
-      : 'border-border bg-(--gh-btn) text-foreground data-hovered:bg-(--gh-btn-hover)',
+      ? 'border-(--gh-merge-border) bg-(--gh-merge) text-white hover:bg-(--gh-merge-hover)'
+      : 'border-border bg-(--gh-btn) text-foreground hover:bg-(--gh-btn-hover)',
   );
 
 /** MarkdownView overrides for GitHub's markdown look. Docstream's sheet is unlayered, so these need `!`. */
@@ -296,8 +301,9 @@ export function DiffStat({ add, del }: { add: number; del: number }) {
 
 const ROW_BG = { add: 'bg-[var(--gh-add)]', del: 'bg-[var(--gh-del)]', hunk: 'bg-[var(--gh-hunk)]', ctx: '' };
 const NUM_BG = { add: 'bg-[var(--gh-add-num)]', del: 'bg-[var(--gh-del-num)]', hunk: 'bg-[var(--gh-hunk)]', ctx: '' };
+/** A changed file: its header, and the diff in a UI SDK Collapsible (the chevron folds it away; find in page still
+    reaches a folded file's lines). */
 export function DiffView({ path, patch, add, del, note }: { path: string; patch: string; add: number; del: number; note?: string }) {
-  const [open, setOpen] = useState(true);
   const rows = useMemo(() => parsePatch(patch), [patch]);
   /* The diff's code lines are lexed as one source (hunk headers left out), so strings and comments that span
      lines keep their context; each row then shows its own line's tokens inside the +/- backgrounds. */
@@ -305,19 +311,20 @@ export function DiffView({ path, patch, add, del, note }: { path: string; patch:
   const { lines, highlighter } = useSyntaxTokens(source, { language: languageFromPath(path) });
   let k = 0;
   return (
-    <div id={'diff-' + path} className="overflow-hidden rounded-md border border-border">
-      <div className="sticky top-0 z-2 flex min-h-11 items-center gap-2 border-b border-border bg-muted px-2 py-1.5">
-        <button type="button" onClick={() => setOpen(!open)} aria-label={open ? 'Collapse file' : 'Expand file'}
-          className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground hover:bg-secondary">
-          <Oct name={open ? 'chevDown' : 'chevRight'} />
-        </button>
+    <Collapsible defaultOpen id={'diff-' + path} className="group/diff overflow-hidden rounded-md border border-border">
+      <div className="sticky top-0 z-2 flex min-h-11 items-center gap-2 border-b border-border bg-muted px-2 py-1.5 group-data-closed/diff:border-b-0">
+        <CollapsibleTrigger aria-label={path}
+          className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary">
+          <Oct name="chevDown" className="-rotate-90 transition-transform duration-spring-snappy ease-spring-snappy group-data-open/diff:rotate-0 motion-reduce:transition-none" />
+        </CollapsibleTrigger>
         <DiffStat add={add} del={del} />
         <span className="min-w-0 truncate font-mono text-caption font-semibold text-foreground">{path}</span>
         <Oct name="copy" size={14} className="shrink-0 text-muted-foreground" />
       </div>
-      {open && !patch ? (
+      <CollapsiblePanel hiddenUntilFound className="h-(--collapsible-panel-height) overflow-clip transition-[height] duration-spring-tray ease-spring-tray data-starting-style:h-0 data-ending-style:h-0 motion-reduce:transition-none">
+      {!patch ? (
         <div className="px-4 py-6 text-center text-caption text-muted-foreground">{note ?? 'No changes to show.'}</div>
-      ) : open ? (
+      ) : (
         <div className="overflow-x-auto font-mono text-caption leading-5">
           <table className="w-full border-collapse" data-highlighter={highlighter} data-language={languageFromPath(path)}>
             <tbody>
@@ -340,14 +347,15 @@ export function DiffView({ path, patch, add, del, note }: { path: string; patch:
             </tbody>
           </table>
         </div>
-      ) : null}
-    </div>
+      )}
+      </CollapsiblePanel>
+    </Collapsible>
   );
 }
 
 /* ── File tree ── the library's Tree (Trees): folders open to the selected file; choosing a file opens it. */
 const treeNodes = (nodes: readonly FileNode[]): TreeNode[] =>
-  nodes.map((n) => ({ id: n.path, name: n.name, ...(n.type === 'dir' ? { children: treeNodes(n.children ?? []) } : {}) }));
+  nodes.map((n) => ({ value: n.path, label: n.name, ...(n.type === 'dir' ? { children: treeNodes(n.children ?? []) } : {}) }));
 
 export function FileTree({ nodes, selected, onSelect, defaultOpen }: {
   nodes: FileNode[]; selected?: string; onSelect: (node: FileNode) => void; defaultOpen?: boolean;
@@ -362,9 +370,9 @@ export function FileTree({ nodes, selected, onSelect, defaultOpen }: {
   // The folders on the way to the selection.
   const ancestors = selected ? selected.split('/').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('/')) : [];
   return (
-    <Tree aria-label="Files" items={items} defaultExpanded={defaultOpen ? 'all' : ancestors} expandedIds={ancestors}
-      selectedIds={selected ? [selected] : []}
-      onSelectionChange={([path]) => { const n = path ? byPath.get(path) : undefined; if (n?.type === 'file') onSelect(n); }}
+    <Tree aria-label="Files" items={items} defaultExpanded={defaultOpen ? 'all' : ancestors} autoExpand={ancestors}
+      value={selected ?? null}
+      onValueChange={(path) => { const n = path ? byPath.get(path) : undefined; if (n?.type === 'file') onSelect(n); }}
       className="h-[min(70vh,640px)]" />
   );
 }

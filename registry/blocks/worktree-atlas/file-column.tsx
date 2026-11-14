@@ -83,14 +83,13 @@ function FileTree({ atlas, files, gitStatus, search, preview }: {
   const items = useMemo(() => treeOf(files), [files]);
   return (
     <Tree aria-label={atlas.view === 'files' ? 'Files' : 'Changed files'} items={items} sort={atlas.view === 'files'} search={search}
-      defaultExpanded={atlas.view === 'changes' ? 'all' : 'none'} flatten gitStatus={gitStatus}
-      selectedIds={atlas.filePath ? [atlas.filePath] : []} preview={preview}
+      defaultExpanded={atlas.view === 'changes' ? 'all' : undefined} flatten gitStatus={gitStatus}
+      value={atlas.filePath} preview={preview}
       className="min-h-0 flex-1 px-1.5 py-1"
-      onSelectionChange={(ids) => {
-        const id = ids.find((i) => !isFolder(i));
-        if (!id) return;
-        atlas.openFile(id);
-        s.select('supplementary', id);
+      onValueChange={(value) => {
+        if (!value || isFolder(value)) return;
+        atlas.openFile(value);
+        s.select('supplementary', value);
       }} />
   );
 }
@@ -107,7 +106,7 @@ function ChangesBody({ atlas, w, diff }: { atlas: AtlasState; w: Worktree; diff:
   const rows = useMemo(() => diff.files.map((f) => ({ path: f.path, dimmed: !!f.skipped })), [diff.files]);
   const byPath = useMemo(() => new Map(diff.files.map((f) => [f.path, f])), [diff.files]);
   const preview = (node: TreeNode) => {
-    const file = byPath.get(node.id);
+    const file = byPath.get(node.value);
     return file ? <ChangeCard file={file} diff={diff} worktreeId={w.id} /> : null;
   };
   return (
@@ -130,9 +129,9 @@ export function FileColumn({ atlas }: { atlas: AtlasState }) {
           <span className={cn('truncate', !w.branch && 'italic')}>{branchLabel(w)}</span>
         </span> : atlas.view === 'files' ? 'Files' : 'Changes'}
         trailing={w ? <>
-          <BarButton label="Reload" isDisabled={state?.status === 'loading'} onPress={atlas.reload}><Icon name="arrow-clockwise" size={20} /></BarButton>
+          <BarButton label="Reload" disabled={state?.status === 'loading'} onClick={atlas.reload}><Icon name="arrow-clockwise" size={20} /></BarButton>
           {atlas.deletable(w) ? (
-            <BarButton label={w.clone ? 'Delete clone' : 'Delete worktree'} className="text-destructive" onPress={() => atlas.requestDelete([w])}><Icon name="trash" size={20} /></BarButton>
+            <BarButton label={w.clone ? 'Delete clone' : 'Delete worktree'} className="text-destructive" onClick={() => atlas.requestDelete([w])}><Icon name="trash" size={20} /></BarButton>
           ) : null}
         </> : null} />
       {w ? <div className="truncate px-4 pt-2 pb-1 font-mono text-caption text-muted-foreground" title={w.path}>{shortPath(w.path)}</div> : null}
@@ -142,14 +141,14 @@ export function FileColumn({ atlas }: { atlas: AtlasState }) {
             : <Placeholder icon="folder" title="No Worktree Selected" detail="Pick a worktree in the sidebar." />
         ) : w.unreachable ? (
           <Placeholder icon="folder" title="Outside your folders" detail={`Open a folder that contains ${shortPath(w.path)} to read it.`}>
-            {atlas.source.addLocation ? <Button size="sm" onPress={() => void atlas.addLocation()}>Add Folder…</Button> : null}
+            {atlas.source.addLocation ? <Button size="sm" onClick={() => void atlas.addLocation()}>Add Folder…</Button> : null}
           </Placeholder>
         ) : !state || state.status === 'loading' ? (
           <Loading label={atlas.view === 'files' ? 'Reading files' : 'Reading changes'} />
         ) : state.status === 'error' ? (
           <Placeholder icon="warning" title="Couldn’t read this worktree" detail={state.error}>
-            <Button size="sm" variant="secondary" onPress={atlas.reload}>Try Again</Button>
-            {w.missing && atlas.deletable(w) ? <Button size="sm" variant="destructive" onPress={() => atlas.requestDelete([w])}>Prune</Button> : null}
+            <Button size="sm" variant="secondary" onClick={atlas.reload}>Try Again</Button>
+            {w.missing && atlas.deletable(w) ? <Button size="sm" variant="destructive" onClick={() => atlas.requestDelete([w])}>Prune</Button> : null}
           </Placeholder>
         ) : atlas.view === 'files' ? (
           <FilesBody key={w.id} atlas={atlas} files={state.value as FileEntry[]} />

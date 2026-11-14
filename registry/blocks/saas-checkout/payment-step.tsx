@@ -2,16 +2,15 @@
    brand, the security code follows the brand's length, the postal code follows the country (and sets the tax).
    Paying waits on the mock processor; a decline puts its message under the field it is about and focus on it. The
    test cards fill the form in one press; resting on one shows its whole number and what the processor will answer. */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Form } from '@/components/ui/form';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger, createHoverCardController } from '@/components/ui/hover-card';
 import { IconSwap } from '@/components/ui/icon-swap';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { Select, SelectContent, SelectTrigger } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { TextField } from '@/components/ui/text-field';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import {
@@ -23,6 +22,8 @@ import { BrandMark, ErrorText, SOFT_INK, StepActions, StepHeading, useFormattedI
 import { useCheckoutCtx } from './use-checkout';
 
 const ACCEPTED = ['visa', 'mastercard', 'amex', 'discover'] as const;
+const COUNTRY_ITEMS = COUNTRIES.map((x) => ({ value: x.id, label: x.name }));
+type TestCard = (typeof TEST_CARDS)[number];
 
 export function PaymentStep() {
   const c = useCheckoutCtx();
@@ -64,7 +65,7 @@ export function PaymentStep() {
 
   return (
     <div ref={box}>
-      <Form validationBehavior="aria" className="gap-5" onSubmit={(e) => {
+      <Form noValidate className="gap-5" onSubmit={(e) => {
         e.preventDefault();
         if (!v.check(e.currentTarget)) return;
         // Keep focus on the Pay button while the fields lock (Enter may have come from one of them).
@@ -74,10 +75,10 @@ export function PaymentStep() {
         <StepHeading title="Payment" description="Billed in US dollars. Cancel any time from Settings&nbsp;›&nbsp;Billing." focus={c.moved} />
         <TestCards disabled={busy} onPick={fillTestCard} />
 
-        <TextField name="cardNumber" isRequired isDisabled={busy} value={card.number} isInvalid={v.invalid('cardNumber')}>
-          <Label>Card number</Label>
+        <Field name="cardNumber" disabled={busy} invalid={v.invalid('cardNumber') || undefined}>
+          <FieldLabel>Card number</FieldLabel>
           <div className="relative">
-            <Input inputMode="numeric" autoComplete="cc-number" placeholder="1234 1234 1234 1234" onChange={onNumber}
+            <Input required value={card.number} onValueChange={onNumber} inputMode="numeric" autoComplete="cc-number" placeholder="1234 1234 1234 1234"
               className={cn('tabular-nums', card.number ? 'pr-14' : 'pr-[136px]')} />
             <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
               <IconSwap id={card.number ? brand : 'accepted'}>
@@ -88,39 +89,41 @@ export function PaymentStep() {
             </span>
           </div>
           <ErrorText>{v.error('cardNumber')}</ErrorText>
-        </TextField>
+        </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <TextField name="expiry" isRequired isDisabled={busy} value={card.expiry} isInvalid={v.invalid('expiry')}>
-            <Label>Expiration</Label>
-            <Input inputMode="numeric" autoComplete="cc-exp" placeholder="MM / YY" onChange={onExpiry} className="tabular-nums" />
+          <Field name="expiry" disabled={busy} invalid={v.invalid('expiry') || undefined}>
+            <FieldLabel>Expiration</FieldLabel>
+            <Input required value={card.expiry} onValueChange={onExpiry} inputMode="numeric" autoComplete="cc-exp" placeholder="MM / YY" className="tabular-nums" />
             <ErrorText>{v.error('expiry')}</ErrorText>
-          </TextField>
-          <TextField name="cvc" isRequired isDisabled={busy} value={card.cvc} isInvalid={v.invalid('cvc')}>
-            <Label>Security code</Label>
-            <Input inputMode="numeric" autoComplete="cc-csc" placeholder={brand === 'amex' ? '4 digits' : '3 digits'} onChange={onCvc} className="tabular-nums" />
+          </Field>
+          <Field name="cvc" disabled={busy} invalid={v.invalid('cvc') || undefined}>
+            <FieldLabel>Security code</FieldLabel>
+            <Input required value={card.cvc} onValueChange={onCvc} inputMode="numeric" autoComplete="cc-csc" placeholder={brand === 'amex' ? '4 digits' : '3 digits'} className="tabular-nums" />
             <ErrorText>{v.error('cvc')}</ErrorText>
-          </TextField>
+          </Field>
         </div>
 
-        <TextField name="cardName" isRequired isDisabled={busy} value={card.name} onChange={(name) => c.setCard({ name })} isInvalid={v.invalid('cardName')}>
-          <Label>Name on card</Label>
-          <Input autoComplete="cc-name" placeholder="Jane Appleseed" />
+        <Field name="cardName" disabled={busy} invalid={v.invalid('cardName') || undefined}>
+          <FieldLabel>Name on card</FieldLabel>
+          <Input required value={card.name} onValueChange={(name) => c.setCard({ name })} autoComplete="cc-name" placeholder="Jane Appleseed" />
           <ErrorText>{v.error('cardName')}</ErrorText>
-        </TextField>
+        </Field>
 
         <div className="grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] gap-3">
-          <Select name="country" isDisabled={busy} value={billing.country}
-            onChange={(id) => { if (id) c.setBilling({ country: id as CountryId, postal: '' }); }}>
-            <Label>Country or region</Label>
-            <SelectTrigger />
-            <SelectContent items={COUNTRIES}>{(item) => <SelectItem id={item.id}>{item.name}</SelectItem>}</SelectContent>
-          </Select>
-          <TextField name="postal" isRequired isDisabled={busy} value={billing.postal} isInvalid={v.invalid('postal')}>
-            <Label>{country.postal.label}</Label>
-            <Input autoComplete="postal-code" inputMode={billing.country === 'US' ? 'numeric' : 'text'} placeholder={country.postal.placeholder} onChange={onPostal} />
+          <Field name="country" disabled={busy}>
+            <FieldLabel>Country or region</FieldLabel>
+            <Select<CountryId> items={COUNTRY_ITEMS} value={billing.country}
+              onValueChange={(id) => { if (id) c.setBilling({ country: id, postal: '' }); }}>
+              <SelectTrigger />
+              <SelectContent />
+            </Select>
+          </Field>
+          <Field name="postal" disabled={busy} invalid={v.invalid('postal') || undefined}>
+            <FieldLabel>{country.postal.label}</FieldLabel>
+            <Input required value={billing.postal} onValueChange={onPostal} autoComplete="postal-code" inputMode={billing.country === 'US' ? 'numeric' : 'text'} placeholder={country.postal.placeholder} />
             <ErrorText>{v.error('postal')}</ErrorText>
-          </TextField>
+          </Field>
         </div>
 
         <StepActions onBack={() => c.goTo('account')} backDisabled={busy}>
@@ -143,7 +146,7 @@ export function PaymentStep() {
 }
 
 /** A test card's hover card: the full number (selectable, to paste elsewhere), its brand, and the processor's answer. */
-function TestCardPreview({ test }: { test: (typeof TEST_CARDS)[number] }) {
+function TestCardPreview({ test }: { test: TestCard }) {
   const brand = cardBrand(test.number);
   return (
     <div className="flex flex-col gap-2">
@@ -156,8 +159,10 @@ function TestCardPreview({ test }: { test: (typeof TEST_CARDS)[number] }) {
   );
 }
 
-/** Test mode: the processor's cards, each with a different ending. Pressing one fills the card fields. */
+/** Test mode: the processor's cards, each with a different ending. Pressing one fills the card fields; one hover card
+ *  previews whichever the pointer or focus rests on. */
 function TestCards({ disabled, onPick }: { disabled: boolean; onPick: (number: string) => void }) {
+  const [preview] = useState(() => createHoverCardController<TestCard>());
   return (
     <div className="flex flex-col gap-2 rounded-panel border border-dashed border-border p-3">
       <p className="m-0 flex items-center gap-1.5 text-footnote leading-[18px] text-foreground">
@@ -166,16 +171,17 @@ function TestCards({ disabled, onPick }: { disabled: boolean; onPick: (number: s
       </p>
       <div role="group" aria-label="Test cards" className="flex flex-wrap gap-1.5">
         {TEST_CARDS.map((t) => (
-          <HoverCardTrigger key={t.number}>
-            <Button size="sm" variant="secondary" isDisabled={disabled} onPress={() => onPick(t.number)}
-              aria-label={`Use test card ending ${t.number.slice(-4)}: ${t.label.toLowerCase()}`} className="h-7 gap-1.5 px-2.5 font-medium">
-              <span className="tabular-nums">{t.number.slice(-4)}</span>
-              <span className={SOFT_INK}>{t.label}</span>
-            </Button>
-            <HoverCard placement="top"><TestCardPreview test={t} /></HoverCard>
+          <HoverCardTrigger key={t.number} controller={preview} payload={t}
+            render={<Button size="sm" variant="secondary" disabled={disabled} onClick={() => onPick(t.number)}
+              aria-label={`Use test card ending ${t.number.slice(-4)}: ${t.label.toLowerCase()}`} className="h-7 gap-1.5 px-2.5 font-medium" />}>
+            <span className="tabular-nums">{t.number.slice(-4)}</span>
+            <span className={SOFT_INK}>{t.label}</span>
           </HoverCardTrigger>
         ))}
       </div>
+      <HoverCard controller={preview}>
+        <HoverCardContent<TestCard> side="top">{({ payload }) => (payload ? <TestCardPreview test={payload} /> : null)}</HoverCardContent>
+      </HoverCard>
     </div>
   );
 }

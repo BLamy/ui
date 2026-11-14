@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { announce } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Badge } from '@/components/ui/badge';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input, type InputProps } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { FieldDescription, FieldError, TextField, type TextFieldProps } from '@/components/ui/text-field';
 import {
   browserTimeZone,
   describeRecurrence,
@@ -22,9 +22,10 @@ import { cn } from '@/lib/utils';
    "Sat Sun 1pm-8pm") with gpu-time, and shows what it understood as you type: the words it recognised, the
    occurrences it resolved (formatted in the field's time zone), a "Repeats" chip for recurrences, and any
    diagnostics. It works with or without WebGPU (the model runs on the CPU unless the GPU is worth using), and the
-   package loads on first use.
+   package loads on first use. The field itself is the kit's Input in a Field, so the label, description and error
+   are wired to it and every native input attribute passes through. (For a time typed part by part, see TimeField.)
 
-   <TimeInput label="When" timeZone="Europe/Paris" onValueChange={({ text, result }) => … } />
+   <TimeInput label="When" timeZone="Europe/Paris" onParseChange={({ text, result, pending }) => … } />
 
    gpu-time is a small model and can resolve a wrong date without any diagnostic, so the preview lists the actual dates
    for the person to check; do not schedule anything consequential from the result unreviewed. ══ */
@@ -67,23 +68,22 @@ export interface TimeInputChange {
 }
 
 export interface TimeInputProps
-  extends Omit<TextFieldProps, 'value' | 'defaultValue' | 'children' | 'className' | 'style'>,
+  extends Omit<InputProps, 'value' | 'defaultValue' | 'children' | 'className' | 'style' | 'render'>,
     VariantProps<typeof timeInputVariants>,
     Pick<UseTimeParseOptions, 'reference' | 'timeZone' | 'dateOrder' | 'backend' | 'weekStart' | 'bareWeekday' | 'bareWeekdays' | 'nextWeekday' | 'dayParts' | 'until' | 'debounceMs'> {
-  /** Controlled text. */
+  /** Controlled text. Follow it with `onValueChange(text, details)`, the Input's own callback. */
   value?: string;
   /** Initial text when uncontrolled. */
   defaultValue?: string;
   /** Called on every keystroke with `result: null` and `pending: true`, and again with the result when the parse of
-      that text settles (the first call is what a controlled `value` follows; the second carries the answer). */
-  onValueChange?: (change: TimeInputChange) => void;
+      that text settles. Read `result` only when `pending` is false. */
+  onParseChange?: (change: TimeInputChange) => void;
   label?: ReactNode;
   description?: ReactNode;
-  /** Shown under the field while it is invalid (`isInvalid`, or the parser failed). */
-  errorMessage?: ReactNode;
-  placeholder?: string;
-  /** Size of the text field. Default: `default`. */
-  size?: InputProps['size'];
+  /** Marks the field invalid. A parser failure (an unknown time zone, say) does too. */
+  invalid?: boolean;
+  /** Shown under the field while it is invalid (`invalid`, or the parser failed). */
+  error?: ReactNode;
   /** How many occurrences to list (the rest of a repeating schedule is summarised by its "Repeats" chip). Default: 5. */
   maxOccurrences?: number;
   /** BCP 47 locale for dates and times in the preview. Default: the browser's. */
@@ -96,16 +96,17 @@ export interface TimeInputProps
 
 const SAMPLE = 'tomorrow at 3pm';
 
-/** A natural-language time field with a live preview. Compose it into a form like any react-aria TextField: `name`,
-    `isRequired`, `isDisabled` and the rest pass through. */
+/** A natural-language time field with a live preview: the text is parsed (gpu-time) into dates and schedules. It goes
+    in a form like any Input: `name`, `required`, `disabled` and the rest pass through. Not UI SDK's `TimeInput`, the
+    segmented hour/minute field, which the kit ships as `TimeField` in `@/components/ui/date-field`. */
 export function TimeInput({
   value,
   defaultValue = '',
-  onChange,
   onValueChange,
+  onParseChange,
   label,
   description,
-  errorMessage,
+  error: errorProp,
   placeholder = `e.g. ${SAMPLE}`,
   size,
   maxOccurrences = 5,
@@ -125,56 +126,64 @@ export function TimeInput({
   dayParts,
   until,
   debounceMs,
-  isInvalid,
-  isDisabled,
-  ...fieldProps
+  invalid: invalidProp,
+  disabled,
+  ...inputProps
 }: TimeInputProps) {
   const [inner, setInner] = useState(defaultValue);
   const text = value ?? inner;
   const zone = useMemo(() => timeZone ?? browserTimeZone(), [timeZone]);
   const state = useTimeParse(text, {
     reference, timeZone: zone, dateOrder, backend, weekStart, bareWeekday, bareWeekdays, nextWeekday, dayParts, until, debounceMs,
-    limit: maxOccurrences, enabled: !isDisabled,
+    limit: maxOccurrences, enabled: !disabled,
   });
   const { result, error, pending, backend: usedBackend, parsedText } = state;
 
-  const emit = useRef(onValueChange);
-  emit.current = onValueChange;
-  const change = (next: string) => {
+  const emit = useRef(onParseChange);
+  emit.current = onParseChange;
+  const change: NonNullable<InputProps['onValueChange']> = (next, details) => {
+    onValueChange?.(next, details);
+    if (details.canceled) return;
     if (value === undefined) setInner(next);
-    onChange?.(next);
     emit.current?.({ text: next, result: null, pending: next.trim() !== '', error: null });
   };
-  // The answer for the latest text: reported once per settled parse.
+  const latest = useRef(text);
+  latest.current = text;
+  // The answer for the latest text: reported once per settled parse, and read out through UI SDK's announcer while it
+  // still matches what is in the field.
   useEffect(() => {
     if (pending || parsedText === null) return;
     emit.current?.({ text: parsedText, result, pending: false, error });
+    if (result && parsedText === latest.current && parsedText.trim() !== '') announce(summarize(result));
   }, [pending, parsedText, result, error]);
 
   const previewId = useId();
   const trimmed = text.trim();
   const fresh = parsedText === text;
   const hasPreview = trimmed !== '' && result !== null;
-  const invalid = isInvalid || error !== null;
-  const message = errorMessage ?? error?.message;
+  const invalid = error !== null ? true : invalidProp;
+  const message = errorProp ?? error?.message;
 
   return (
     <div data-slot="time-input" data-backend={usedBackend ?? undefined} data-pending={pending || undefined} className={cn(timeInputVariants({ variant }), className)} style={style}>
-      <TextField
-        value={text}
-        onChange={change}
-        isInvalid={invalid}
-        isDisabled={isDisabled}
-        aria-label={label ? undefined : 'Date or time'}
-        aria-describedby={hasPreview ? previewId : undefined}
-        {...fieldProps}
-      >
-        {label ? <Label variant="field" className={subtleText}>{label}</Label> : null}
-        <Input size={size} placeholder={placeholder} autoComplete="off" spellCheck={false} />
+      <Field invalid={invalid} disabled={disabled}>
+        {label ? <FieldLabel variant="field" className={subtleText}>{label}</FieldLabel> : null}
+        <Input
+          value={value}
+          defaultValue={value === undefined ? defaultValue : undefined}
+          onValueChange={change}
+          size={size}
+          placeholder={placeholder}
+          autoComplete="off"
+          spellCheck={false}
+          aria-label={label ? undefined : 'Date or time'}
+          aria-describedby={hasPreview ? previewId : undefined}
+          {...inputProps}
+        />
         {description ? <FieldDescription className={subtleText}>{description}</FieldDescription> : null}
-        <FieldError className="text-foreground">{message ? <ErrorLine>{message}</ErrorLine> : null}</FieldError>
-      </TextField>
-      <span role="status" className="sr-only">{fresh && result ? summarize(result) : ''}</span>
+        {/* Without a message of ours it shows the browser's (a missing required value). */}
+        <FieldError className="text-foreground">{message ? <ErrorLine>{message}</ErrorLine> : undefined}</FieldError>
+      </Field>
       {hasPreview ? (
         <TimeInputPreview
           id={previewId}

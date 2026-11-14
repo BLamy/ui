@@ -45,9 +45,9 @@ test('a slowed speed stretches CSS transitions too (the screen slide)', async ({
     await row.click();
     // Wait for the new screen to exist first (until then the last screen is the old one, already on the origin), then
     // for it to come to rest on the stack's origin.
-    await expect.poll(() => page.locator(`${STACK} [data-slot=screen]`).count()).toBe(2);
+    await expect.poll(() => page.locator(`${STACK} > [data-slot=navigation-stack-page]`).count()).toBe(2);
     await expect.poll(async () => {
-      const [s, st] = await Promise.all([page.locator(`${STACK} [data-slot=screen]`).last().boundingBox(), page.locator(STACK).boundingBox()]);
+      const [s, st] = await Promise.all([page.locator(`${STACK} > [data-slot=navigation-stack-page]`).last().boundingBox(), page.locator(STACK).boundingBox()]);
       return s && st ? Math.abs(s.x - st.x) < 1 : false;
     }, { timeout: 20_000 }).toBe(true);
     return Date.now() - t0;
@@ -86,7 +86,7 @@ test('?reduce=1 makes the kit see reduced motion: the title flight is skipped', 
       .observe(document.body, { childList: true, subtree: true });
   });
   await page.locator(`${STACK} [data-slot=list-row]`, { hasText: 'Notifications' }).click();
-  await expect.poll(() => page.locator(`${STACK} [data-slot=screen]`).count()).toBe(2);
+  await expect.poll(() => page.locator(`${STACK} > [data-slot=navigation-stack-page]`).count()).toBe(2);
   await page.waitForTimeout(800);
   expect(await page.evaluate(() => window.__flights)).toBe(0);
 });

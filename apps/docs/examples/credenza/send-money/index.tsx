@@ -2,10 +2,20 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Celebrate } from '@/components/ui/celebrate'
-import { Credenza } from '@/components/ui/credenza'
+import {
+  Credenza,
+  CredenzaBack,
+  CredenzaBackdrop,
+  CredenzaClose,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaView,
+} from '@/components/ui/credenza'
 import { ListRow } from '@/components/ui/list'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Icon } from '@/lib/icon'
+import { BLProvider } from '@/lib/theme'
 
 type Step = 'amount' | 'review' | 'sent'
 const titles: Record<Step, string> = {
@@ -54,7 +64,7 @@ function Sent({ amount, onDone }: { amount: string; onDone: () => void }) {
         size="pill"
         variant="secondary"
         style={{ marginTop: 18 }}
-        onPress={onDone}
+        onClick={onDone}
       >
         Done
       </Button>
@@ -75,63 +85,87 @@ function SendMoneyTray() {
         placeItems: 'center',
       }}
     >
-      <Button onPress={() => setStep('amount')}>Send money</Button>
-      {/* compact: a floating bottom tray you can drag down to dismiss */}
+      <Button onClick={() => setStep('amount')}>Send money</Button>
+      {/* presentation="sheet": a floating bottom tray you can drag down to
+          dismiss */}
       <Credenza
-        compact
+        presentation="sheet"
         open={step !== null}
+        onOpenChange={(open) => {
+          if (!open) setStep(null)
+        }}
         view={step ?? 'amount'}
-        title={titles[step ?? 'amount']}
-        canBack={step === 'review'}
-        onBack={() => setStep('amount')}
-        onClose={() => setStep(null)}
       >
-        {step === 'sent' ? (
-          <Sent amount={amount} onDone={() => setStep(null)} />
-        ) : step === 'review' ? (
-          <div style={{ padding: '6px 16px 16px' }}>
-            <ListRow
-              leading={<Avatar c={{ f: 'Maya', l: 'Lindqvist' }} size={36} />}
-              title="Maya Lindqvist"
-              subtitle="maya@example.com"
+        <CredenzaBackdrop />
+        <CredenzaContent>
+          <CredenzaHeader>
+            <CredenzaBack
+              hidden={step !== 'review'}
+              onClick={() => setStep('amount')}
             />
-            <ListRow title="Amount" trailing={<strong>${amount}</strong>} />
-            <ListRow
-              title="Fee"
-              trailing={<span style={{ color: 'var(--muted-foreground)' }}>Free</span>}
-              divider={false}
-            />
-            <Button size="pill" style={{ marginTop: 12 }} onPress={send}>
-              Send ${amount}
-            </Button>
-          </div>
-        ) : (
-          <div style={{ padding: '6px 16px 16px' }}>
-            <div
-              style={{
-                fontSize: 44,
-                fontWeight: 750,
-                textAlign: 'center',
-                margin: '8px 0 14px',
-              }}
-            >
-              ${amount}
-            </div>
-            <Segmented
-              aria-label="Amount"
-              options={amounts}
-              value={amount}
-              onChange={setAmount}
-            />
-            <Button
-              size="pill"
-              style={{ marginTop: 16 }}
-              onPress={() => setStep('review')}
-            >
-              Continue
-            </Button>
-          </div>
-        )}
+            <CredenzaTitle>{titles[step ?? 'amount']}</CredenzaTitle>
+            <CredenzaClose />
+          </CredenzaHeader>
+          <CredenzaView>
+            {step === 'sent' ? (
+              <Sent amount={amount} onDone={() => setStep(null)} />
+            ) : step === 'review' ? (
+              <div style={{ padding: '6px 16px 16px' }}>
+                <ListRow
+                  leading={
+                    <Avatar c={{ f: 'Maya', l: 'Lindqvist' }} size={36} />
+                  }
+                  title="Maya Lindqvist"
+                  subtitle="maya@example.com"
+                />
+                <ListRow title="Amount" trailing={<strong>${amount}</strong>} />
+                <ListRow
+                  title="Fee"
+                  trailing={
+                    <span style={{ color: 'var(--muted-foreground)' }}>
+                      Free
+                    </span>
+                  }
+                  divider={false}
+                />
+                <Button size="pill" style={{ marginTop: 12 }} onClick={send}>
+                  Send ${amount}
+                </Button>
+              </div>
+            ) : (
+              <div style={{ padding: '6px 16px 16px' }}>
+                <div
+                  style={{
+                    fontSize: 44,
+                    fontWeight: 750,
+                    textAlign: 'center',
+                    margin: '8px 0 14px',
+                  }}
+                >
+                  ${amount}
+                </div>
+                <Segmented
+                  aria-label="Amount"
+                  value={amount}
+                  onValueChange={(v) => v && setAmount(v)}
+                >
+                  {amounts.map((a) => (
+                    <SegmentedItem key={a.id} value={a.id}>
+                      {a.label}
+                    </SegmentedItem>
+                  ))}
+                </Segmented>
+                <Button
+                  size="pill"
+                  style={{ marginTop: 16 }}
+                  onClick={() => setStep('review')}
+                >
+                  Continue
+                </Button>
+              </div>
+            )}
+          </CredenzaView>
+        </CredenzaContent>
       </Credenza>
     </div>
   )
@@ -163,7 +197,9 @@ function Window({
         isolation: 'isolate',
       }}
     >
-      {children}
+      {/* Popups render into BLProvider's root: the Credenza and its scrim stay
+          inside this window. */}
+      <BLProvider>{children}</BLProvider>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { SideDrawer } from '@/components/ui/side-drawer'
+import { SideDrawer, sideDrawerPageClass } from '@/components/ui/side-drawer'
 import { Icon } from '@/lib/icon'
 
 const comments = [
@@ -17,11 +17,11 @@ function Article() {
   const [open, setOpen] = useState(false)
   return (
     <div style={{ position: 'relative', height: 520, overflow: 'hidden', background: 'var(--background)' }}>
-      {/* the page: everything before the drawer in the host */}
-      <article style={{ position: 'absolute', inset: 0, padding: '28px 20px' }}>
+      {/* the page under the push: `sideDrawerPageClass` makes it parallax */}
+      <article className={sideDrawerPageClass} style={{ position: 'absolute', inset: 0, padding: '28px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
           <h3 style={{ flex: 1, margin: 0, fontSize: 22 }}>Launch announcement</h3>
-          <Button variant="secondary" size="sm" onPress={() => setOpen(true)}>
+          <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
             <Icon name="message" size={16} /> {comments.length}
           </Button>
         </div>
@@ -32,9 +32,8 @@ function Article() {
       </article>
       {/* below 520px of host width the overlay becomes a push */}
       <SideDrawer
-        mode="overlay"
         open={open}
-        onClose={() => setOpen(false)}
+        onOpenChange={setOpen}
         title="Comments"
         backLabel="Article"
       >

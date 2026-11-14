@@ -3,13 +3,14 @@
    slides the views, and the tracker view is one step "into" settings, so it comes back the way it went. */
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Credenza } from '@/components/ui/credenza';
+import {
+  Credenza, CredenzaBack, CredenzaBackdrop, CredenzaClose, CredenzaContent, CredenzaHeader, CredenzaTitle, CredenzaView,
+} from '@/components/ui/credenza';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { List, ListRow } from '@/components/ui/list';
-import { Segmented } from '@/components/ui/segmented';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Switch } from '@/components/ui/switch';
-import { TextField } from '@/components/ui/text-field';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { MemberPreview } from './cards';
@@ -21,22 +22,34 @@ const TITLES: Record<Exclude<DialogName, null>, string> = {
   share: 'Share project', settings: 'Project settings', tracker: 'Connect issue tracker', 'new-project': 'New project',
 };
 
-export function Dialogs({ compact }: { compact: boolean }) {
+/** The views in a centred card, or in a bottom tray when the block is phone-sized (Credenza's `auto`, from the
+    block's size-class scope). */
+export function Dialogs() {
   const qa = useLoopQA();
   const [last, setLast] = useState<Exclude<DialogName, null>>('share');
   const view = qa.dialog ?? last;
   if (qa.dialog && qa.dialog !== last) setLast(qa.dialog);
   return (
-    <Credenza open={!!qa.dialog} onClose={() => qa.setDialog(null)} view={view} title={TITLES[view]} compact={compact}
-      canBack={view === 'tracker'} onBack={() => qa.setDialog('settings')}>
-      <div className="px-4 pt-1 pb-4">
-        {view === 'share' ? <Share /> : view === 'settings' ? <Settings /> : view === 'tracker' ? <Trackers /> : <NewProject />}
-      </div>
+    <Credenza open={!!qa.dialog} onOpenChange={(o) => { if (!o) qa.setDialog(null); }} view={view}>
+      <CredenzaBackdrop />
+      <CredenzaContent>
+        <CredenzaHeader>
+          <CredenzaBack hidden={view !== 'tracker'} onClick={() => qa.setDialog('settings')} />
+          <CredenzaTitle>{TITLES[view]}</CredenzaTitle>
+          <CredenzaClose />
+        </CredenzaHeader>
+        <CredenzaView>
+          <div className="px-4 pt-1 pb-4">
+            {view === 'share' ? <Share /> : view === 'settings' ? <Settings /> : view === 'tracker' ? <Trackers /> : <NewProject />}
+          </div>
+        </CredenzaView>
+      </CredenzaContent>
     </Credenza>
   );
 }
 
-const field = 'flex flex-col gap-1.5 [&_[data-slot=label]]:text-[12.5px] [&_[data-slot=label]]:font-medium [&_[data-slot=label]]:text-muted-foreground';
+/** The small grey caption over each settings field. */
+const caption = 'text-[12.5px] font-medium text-muted-foreground';
 
 function Share() {
   const qa = useLoopQA();
@@ -48,18 +61,18 @@ function Share() {
       <div className="flex h-10 items-center gap-2 rounded-ctl bg-secondary pr-1 pl-3">
         <Icon name="link" size={14} sw={2} className="shrink-0 text-muted-foreground" />
         <code className="min-w-0 flex-1 truncate font-mono text-[12.5px]">{link}</code>
-        <Button size="sm" className="h-8 rounded-lg" onPress={() => qa.copy(link, 'Copied project link')}>Copy</Button>
+        <Button size="sm" className="h-8 rounded-lg" onClick={() => qa.copy(link, 'Copied project link')}>Copy</Button>
       </div>
       <List className="overflow-hidden rounded-xl border border-border">
         <ListRow title="Public replays" subtitle="Anyone with a bug's link can watch its replay" divider={false}
-          className="[&_[data-slot=list-row-content]]:text-detail" trailing={<Switch checked={publicReplays} onChange={setPublic} />} />
+          className="[&_[data-slot=list-row-content]]:text-detail" trailing={<Switch checked={publicReplays} onCheckedChange={setPublic} />} />
       </List>
       <div>
         <div className="mb-2 text-[12.5px] font-medium text-muted-foreground">Members</div>
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {p.members.map((m, i) => (
             <li key={m} className="flex items-center gap-2.5">
-              <MemberPreview initials={m} tone={i}><Avatar initials={m} tone={i} /></MemberPreview>
+              <MemberPreview initials={m} tone={i} render={<Avatar initials={m} tone={i} aria-label={MEMBERS[m]?.name ?? m} />} />
               <span className="flex-1 text-[13.5px]">{MEMBERS[m]?.name ?? m}</span>
               <span className="text-caption text-muted-foreground">{i === 0 ? 'Owner' : 'Member'}</span>
             </li>
@@ -82,19 +95,26 @@ function Settings() {
   const tracker = TRACKERS.find((t) => qa.trackers.includes(t.id));
   return (
     <form className="flex flex-col gap-3.5" onSubmit={(e) => { e.preventDefault(); qa.setDialog(null); qa.toast.success('Settings saved'); }}>
-      <TextField className={field} defaultValue={p.name}><Label>Name</Label><Input size="sm" className="text-detail" /></TextField>
-      <TextField className={field} defaultValue={p.url}><Label>Target URL</Label><Input size="sm" className="font-mono text-footnote" /></TextField>
-      <TextField className={field} defaultValue={`https://hooks.${host(p.url).replace(/^[^.]+\./, '')}/loopqa`}><Label>Bug webhook</Label><Input size="sm" className="font-mono text-footnote" /></TextField>
-      <div className={field}>
-        <span data-slot="label">Test schedule</span>
-        <Segmented aria-label="Test schedule" value={schedule} onChange={setSchedule}
-          options={[{ id: '1h', label: 'Hourly' }, { id: '6h', label: '6 hours' }, { id: 'nightly', label: 'Nightly' }, { id: 'deploy', label: 'Deploys' }]} />
+      <Field><FieldLabel className={caption}>Name</FieldLabel><Input size="sm" defaultValue={p.name} className="text-detail" /></Field>
+      <Field><FieldLabel className={caption}>Target URL</FieldLabel><Input size="sm" defaultValue={p.url} className="font-mono text-footnote" /></Field>
+      <Field>
+        <FieldLabel className={caption}>Bug webhook</FieldLabel>
+        <Input size="sm" defaultValue={`https://hooks.${host(p.url).replace(/^[^.]+\./, '')}/loopqa`} className="font-mono text-footnote" />
+      </Field>
+      <div className="flex flex-col gap-1.5">
+        <span className={caption}>Test schedule</span>
+        <Segmented aria-label="Test schedule" value={schedule} onValueChange={(v) => { if (v) setSchedule(v); }}>
+          <SegmentedItem value="1h">Hourly</SegmentedItem>
+          <SegmentedItem value="6h">6 hours</SegmentedItem>
+          <SegmentedItem value="nightly">Nightly</SegmentedItem>
+          <SegmentedItem value="deploy">Deploys</SegmentedItem>
+        </Segmented>
       </div>
       <List className="overflow-hidden rounded-xl border border-border">
         <ListRow title="Active" subtitle={active ? 'Runs on schedule and on deploys' : 'Paused — no runs'} className="[&_[data-slot=list-row-content]]:text-detail"
-          trailing={<Switch checked={active} onChange={setActive} />} />
+          trailing={<Switch checked={active} onCheckedChange={setActive} />} />
         <ListRow title="Issue tracker" subtitle={tracker ? `${tracker.name} · connected` : 'Not connected'} accessory="chevron" divider={false}
-          className="[&_[data-slot=list-row-content]]:text-detail" onPress={() => qa.setDialog('tracker')} />
+          className="[&_[data-slot=list-row-content]]:text-detail" onClick={() => qa.setDialog('tracker')} />
       </List>
       <Button type="submit" className="mt-1 h-10 rounded-[11px]">Save changes</Button>
     </form>
@@ -117,7 +137,7 @@ function Trackers() {
                 <span className="block truncate text-caption text-muted-foreground">{t.detail}</span>
               </span>
               <Button size="sm" variant={on ? 'secondary' : 'default'} className={cn('h-8 min-w-[92px] rounded-[9px]', on && 'text-success')}
-                isDisabled={on} onPress={() => qa.connectTracker(t.id, t.name)}>
+                disabled={on} onClick={() => qa.connectTracker(t.id, t.name)}>
                 {on ? 'Connected' : 'Connect'}
               </Button>
             </li>
@@ -138,9 +158,12 @@ function NewProject() {
       qa.toast.success('Project created', { description: `Exploring ${url.replace(/^https?:\/\//, '') || 'your app'} — first findings in about 10 minutes.` });
     }}>
       <p className="m-0 text-footnote text-muted-foreground">Point Loop QA at a URL. It explores the app, maps its pages, and starts filing bugs — no test code needed.</p>
-      <TextField className={field} value={url} onChange={setUrl} autoFocus><Label>App URL</Label><Input size="sm" placeholder="https://app.example.com" className="font-mono text-footnote" /></TextField>
-      <TextField className={field}><Label>Name (optional)</Label><Input size="sm" placeholder="Taken from the page title" className="text-detail" /></TextField>
-      <Button type="submit" className="mt-1 h-10 rounded-[11px]" isDisabled={!/^https?:\/\/\S+\.\S+/.test(url)}>Create and explore</Button>
+      <Field>
+        <FieldLabel className={caption}>App URL</FieldLabel>
+        <Input size="sm" value={url} onValueChange={setUrl} autoFocus placeholder="https://app.example.com" className="font-mono text-footnote" />
+      </Field>
+      <Field><FieldLabel className={caption}>Name (optional)</FieldLabel><Input size="sm" placeholder="Taken from the page title" className="text-detail" /></Field>
+      <Button type="submit" className="mt-1 h-10 rounded-[11px]" disabled={!/^https?:\/\/\S+\.\S+/.test(url)}>Create and explore</Button>
     </form>
   );
 }

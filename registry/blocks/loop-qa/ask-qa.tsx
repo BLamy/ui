@@ -38,11 +38,11 @@ export function AskQA() {
           <span className="truncate">{project.name}</span>
         </span>
         <span className="flex-1" />
-        <BarButton label="New chat" icon="square-pencil" className="size-8" isDisabled={empty} onPress={qa.newChat} />
+        <BarButton label="New chat" icon="square-pencil" className="size-8" disabled={empty} onClick={qa.newChat} />
         {chat.compact ? (
-          <BarButton label="Collapse chat" icon="chevron-down" className="size-8" onPress={() => qa.setChatOpen(false)} />
+          <BarButton label="Collapse chat" icon="chevron-down" className="size-8" onClick={() => qa.setChatOpen(false)} />
         ) : (
-          <BarButton label="Hide Ask QA (⌘J)" icon="sidebar-right" className="size-8" onPress={() => qa.setAskOpen(false)} />
+          <BarButton label="Hide Ask QA (⌘J)" icon="sidebar-right" className="size-8" onClick={() => qa.setAskOpen(false)} />
         )}
       </div>
       <Conversation empty={empty} className={empty ? 'px-4 py-6' : undefined}>
@@ -69,7 +69,7 @@ export function AskQA() {
           ))}
         </ConversationMessages>
         <ConversationSuggestions>
-          {SUGGESTIONS.map((s) => <Suggestion key={s} onPress={() => qa.send(s)}>{s}</Suggestion>)}
+          {SUGGESTIONS.map((s) => <Suggestion key={s} onClick={() => qa.send(s)}>{s}</Suggestion>)}
         </ConversationSuggestions>
       </Conversation>
     </div>

@@ -42,10 +42,10 @@ export function Chat() {
   return (
     <ChatShell breakpoint={880} tint="#0A84FF">
       <ChatShellNav>
-        <TabView orientation="vertical" defaultSelectedKey="hq" className="contents">
+        <TabView orientation="vertical" defaultValue="hq" className="contents">
           <TabViewBar variant="workspace">
             <TabViewList aria-label="Workspaces">
-              <TabViewTab id="hq" textValue="HQ">
+              <TabViewTab value="hq" aria-label="HQ">
                 <TabViewIndicator variant="pill" />
                 <span className="…">H</span>
               </TabViewTab>
@@ -57,7 +57,7 @@ export function Chat() {
           <SidebarContent>
             <SidebarSection title="Team">
               <SidebarItem icon={<Icon name="number" size={13} />} label="general"
-                active={channel === 'general'} onPress={() => setChannel('general')} />
+                active={channel === 'general'} onClick={() => setChannel('general')} />
             </SidebarSection>
           </SidebarContent>
         </ChatShellSidebar>
@@ -79,7 +79,7 @@ export function Chat() {
         </ChatShellFooter>
       </ChatShellMain>
       <ChatShellAside>{/* members */}</ChatShellAside>
-      <ChatShellPanel open={!!thread} onOpenChange={closeThread}>
+      <ChatShellPanel open={!!thread} onOpenChange={(open) => { if (!open) closeThread() }}>
         …
       </ChatShellPanel>
     </ChatShell>
@@ -103,15 +103,15 @@ The full Discord layout is a registry block — `npx shadcn add` copies `page.ts
 
 | Part | What it is |
 | --- | --- |
-| `ChatShell` | Root. Measures itself (`breakpoint`, default 880), holds the compact drawer (`defaultNavOpen` / `navOpen` / `onNavOpenChange`), opens the `chat` theme scope for `appearance` (default: the ambient `AppearanceProvider`, else dark) and the `tint` accent. |
+| `ChatShell` | Root. Measures itself (`breakpoint`, default 880) and is a size-class scope (compact below `breakpoint`, so `presentation="auto"` popups inside are trays there; `data-size-class` on the root), holds the compact drawer (`defaultNavOpen` / `navOpen` / `onNavOpenChange(open, details)`, with the drawer's `details.reason` and `cancel()`), opens the `chat` theme scope for `appearance` (default: the ambient `AppearanceProvider`, else dark) and the `tint` accent. |
 | `ChatShellNav` | Rail + sidebar. A docked column when wide; one left drawer over a scrim when compact. |
 | `ChatShellNavTrigger` | The hamburger that opens the drawer. Renders nothing while the navigation is docked. |
 | `ChatShellSidebar` | The 222px channel column (a header, the channel list, the signed-in user). |
 | `ChatShellMain` | The conversation column; takes the remaining width. |
-| `ChatShellHeader` | 46px title bar. Holds `ChatShellHeaderIcon` (a # by default), `ChatShellTitle`, `ChatShellDescription` (the topic, fills the middle) and `ChatShellHeaderActions` › `ChatShellHeaderAction` (`variant="icon"` with `isActive`, or `"outline"`). `ChatShellBack` is a tinted back button for views that replace the channel. |
+| `ChatShellHeader` | 46px title bar. Holds `ChatShellHeaderIcon` (a # by default), `ChatShellTitle`, `ChatShellDescription` (the topic, fills the middle) and `ChatShellHeaderActions` › `ChatShellHeaderAction` (`variant="icon"` or `"outline"`) and `ChatShellHeaderToggle` (UI SDK's Toggle: `pressed` / `onPressedChange`; the icon variant tints while pressed). `ChatShellBack` is a tinted back button for views that replace the channel. |
 | `ChatShellFooter` | Pins the composer under the transcript. |
 | `ChatShellAside` | A docked trailing column (the member list). Shows from `minWidth` (1320) and while `open`. |
-| `ChatShellPanel` | Thread / details panel. Docks as a column from `dockWidth` (1180), overlays below it. `open`, `onOpenChange`, `title`, `width`. |
+| `ChatShellPanel` | Thread / details panel. Docks as a column from `dockWidth` (1180), overlays below it. `open`, `onOpenChange(open, details)` (the SideDrawer's details: close button, Escape, swipe…), `title`, `width`. |
 
 ## Context
 
@@ -120,7 +120,7 @@ Anything inside the shell can call `useChatShell()`:
 | Field | Meaning |
 | --- | --- |
 | `width` | Measured shell width |
-| `compact` | `width < breakpoint` |
+| `compact` | `width < breakpoint` (the shell's size class is `compact`) |
 | `navOpen` / `setNavOpen` | The compact drawer — call `setNavOpen(false)` when a channel is picked |
 
 `useOptionalChatShell()` returns the same, or `null` outside a shell — for parts that also render standalone.

@@ -39,13 +39,13 @@ export default function Rings() {
             />
           )}
         </ProgressRing>
-        <ProgressRing aria-label="Loading" size="lg" isIndeterminate />
+        <ProgressRing aria-label="Loading" size="lg" />
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
-        <Button variant="secondary" onPress={() => step(-20)}>
+        <Button variant="secondary" onClick={() => step(-20)}>
           −20
         </Button>
-        <Button variant="secondary" onPress={() => step(20)}>
+        <Button variant="secondary" onClick={() => step(20)}>
           +20
         </Button>
       </div>

@@ -66,7 +66,7 @@ function Caption({ children }: { children: ReactNode }) {
   )
 }
 
-// The grid button calls setSupplementaryVisible(false): the list column slides
+// The grid button calls setSupplementaryOpen(false): the list column slides
 // away under the sidebar and the detail springs across to fill its space.
 export default function NotesGallery({
   variant = 'gallery',
@@ -77,7 +77,7 @@ export default function NotesGallery({
     <div>
       <Scaled width={1100} height={560}>
         <SplitViewGalleryDemo
-          defaultSupplementaryVisible={variant !== 'gallery'}
+          defaultSupplementaryOpen={variant !== 'gallery'}
         />
       </Scaled>
       <Caption>

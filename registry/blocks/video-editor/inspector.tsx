@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { TextField } from '@/components/ui/text-field';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Icon } from '@/lib/icon';
 import type { Playback } from '@/lib/playback';
@@ -49,8 +48,6 @@ function frameAt(spot: Spot, size: number): ClipFrame | undefined {
   return { x, y, width: size, height: size };
 }
 
-/** The one key of a single-selection change (react-aria hands over a Set, or 'all'). */
-const one = (keys: 'all' | Set<string | number>) => (keys === 'all' ? undefined : String([...keys][0] ?? ''));
 const seconds: Intl.NumberFormatOptions = { style: 'unit', unit: 'second', unitDisplay: 'narrow', maximumFractionDigits: 1 };
 
 function Section({ title, children }: { title?: ReactNode; children: ReactNode }) {
@@ -91,28 +88,26 @@ function ProjectInspector() {
   return (
     <>
       <Section title="Project">
-        <TextField value={p.name} onChange={(name) => ed.commit({ ...p, name }, 'name')} aria-label="Project name">
-          <Input />
-        </TextField>
+        <Input value={p.name} onValueChange={(name) => ed.commit({ ...p, name }, 'name')} aria-label="Project name" />
         <p className="m-0 text-caption text-muted-foreground tabular-nums">
           {clips} {clips === 1 ? 'clip' : 'clips'} · {formatTimecode(timelineDuration(p.timeline), p.format.fps)}
         </p>
       </Section>
       <Section title="Format">
-        <ToggleGroup aria-label="Frame size" variant="filled" size="sm" selectionMode="single" disallowEmptySelection className="w-full flex-wrap"
-          selectedKeys={current ? [current] : []}
-          onSelectionChange={(keys) => {
-            const f = FORMATS.find((x) => x.id === one(keys));
+        <ToggleGroup aria-label="Frame size" variant="filled" size="sm" deselectable={false} className="w-full flex-wrap"
+          value={current ? [current] : []}
+          onValueChange={([id]) => {
+            const f = FORMATS.find((x) => x.id === id);
             if (f) ed.commit({ ...p, format: { ...p.format, width: f.width, height: f.height } });
           }}>
-          {FORMATS.map((f) => <ToggleGroupItem key={f.id} id={f.id} className="flex-1" aria-label={`${f.label}, ${f.detail}`}>{f.label}</ToggleGroupItem>)}
+          {FORMATS.map((f) => <ToggleGroupItem key={f.id} value={f.id} className="flex-1" aria-label={`${f.label}, ${f.detail}`}>{f.label}</ToggleGroupItem>)}
         </ToggleGroup>
         <p className="m-0 text-caption text-muted-foreground tabular-nums">{p.format.width} × {p.format.height} pixels</p>
         <Row label="Frame rate">
-          <ToggleGroup aria-label="Frame rate" variant="filled" size="sm" selectionMode="single" disallowEmptySelection
-            selectedKeys={[String(p.format.fps)]}
-            onSelectionChange={(keys) => { const fps = Number(one(keys)); if (fps) ed.commit({ ...p, format: { ...p.format, fps } }); }}>
-            {[24, 25, 30, 60].map((f) => <ToggleGroupItem key={f} id={String(f)}>{f}</ToggleGroupItem>)}
+          <ToggleGroup aria-label="Frame rate" variant="filled" size="sm" deselectable={false}
+            value={[String(p.format.fps)]}
+            onValueChange={([next]) => { const fps = Number(next); if (fps) ed.commit({ ...p, format: { ...p.format, fps } }); }}>
+            {[24, 25, 30, 60].map((f) => <ToggleGroupItem key={f} value={String(f)}>{f}</ToggleGroupItem>)}
           </ToggleGroup>
         </Row>
       </Section>
@@ -131,8 +126,8 @@ function Many({ count, clock }: { count: number; clock: Playback }) {
   return (
     <Section title={`${count} clips`}>
       <div className="flex gap-2">
-        <Button variant="secondary" size="sm" onPress={act.duplicate}>Duplicate</Button>
-        <Button variant="secondary" size="sm" className="text-destructive" onPress={act.remove}>Delete</Button>
+        <Button variant="secondary" size="sm" onClick={act.duplicate}>Duplicate</Button>
+        <Button variant="secondary" size="sm" className="text-destructive" onClick={act.remove}>Delete</Button>
       </div>
     </Section>
   );
@@ -160,10 +155,10 @@ function ClipInspector({ clip, track, index, clock }: { clip: TimelineClip; trac
           <Icon name={title ? 'textformat' : m?.kind === 'audio' ? 'waveform' : m?.kind === 'image' ? 'photo' : 'video'} size={16} className="shrink-0 text-muted-foreground" />
           {/* The clip's name previews its source file, as the library's card does. */}
           {m && !title ? (
-            <HoverCardTrigger className="min-w-0 flex-1">
-              <h2 className="m-0 min-w-0 flex-1 cursor-default truncate text-subhead font-semibold">{name}</h2>
-              <HoverCard placement="start top" className="w-64"><MediaPreview item={m} /></HoverCard>
-            </HoverCardTrigger>
+            <HoverCard>
+              <HoverCardTrigger render={<h2 className="m-0 min-w-0 flex-1 cursor-default truncate text-subhead font-semibold" />}>{name}</HoverCardTrigger>
+              <HoverCardContent side="start" align="start" className="w-64"><MediaPreview item={m} /></HoverCardContent>
+            </HoverCard>
           ) : <h2 className="m-0 min-w-0 flex-1 truncate text-subhead font-semibold">{name}</h2>}
           {locked ? <Icon name="lock" size={14} aria-label="Locked track" className="text-muted-foreground" /> : null}
         </div>
@@ -182,75 +177,73 @@ function ClipInspector({ clip, track, index, clock }: { clip: TimelineClip; trac
       </Section>
         {title ? (
           <Section title="Title">
-            <TextField value={titleData(clip).text} isDisabled={locked} aria-label="Title text"
-              onChange={(text) => set({ data: { ...clip.data, text } }, 'text')}>
-              <Textarea rows={2} />
-            </TextField>
-            <ToggleGroup aria-label="Title style" variant="filled" size="sm" selectionMode="single" disallowEmptySelection className="w-full" isDisabled={locked}
-              selectedKeys={[titleData(clip).style]}
-              onSelectionChange={(keys) => { const style = one(keys) as TitleStyle | undefined; if (style) set({ data: { ...clip.data, style } }); }}>
-              {titleStyles.map((s) => <ToggleGroupItem key={s.id} id={s.id} className="flex-1">{s.label}</ToggleGroupItem>)}
+            <Textarea rows={2} value={titleData(clip).text} disabled={locked} aria-label="Title text"
+              onValueChange={(text) => set({ data: { ...clip.data, text } }, 'text')} />
+            <ToggleGroup<TitleStyle> aria-label="Title style" variant="filled" size="sm" deselectable={false} className="w-full" disabled={locked}
+              value={[titleData(clip).style]}
+              onValueChange={([style]) => { if (style) set({ data: { ...clip.data, style } }); }}>
+              {titleStyles.map((s) => <ToggleGroupItem key={s.id} value={s.id} className="flex-1">{s.label}</ToggleGroupItem>)}
             </ToggleGroup>
           </Section>
         ) : null}
         {sound ? (
           <Section title="Audio">
-            <Slider label="Volume" showValue minValue={0} maxValue={2} step={0.05} formatOptions={{ style: 'percent' }} isDisabled={locked || clip.muted}
-              value={clip.volume ?? 1} onChange={(v) => set({ volume: v as number }, 'volume')} />
+            <Slider label="Volume" showValue min={0} max={2} step={0.05} format={{ style: 'percent' }} disabled={locked || clip.muted}
+              value={clip.volume ?? 1} onValueChange={(v) => set({ volume: v }, 'volume')} />
             <Row label="Mute">
-              <Switch checked={!!clip.muted} onChange={(muted) => set({ muted })} aria-label="Mute clip" />
+              <Switch checked={!!clip.muted} onCheckedChange={(muted) => set({ muted })} aria-label="Mute clip" />
             </Row>
           </Section>
         ) : null}
         {!title && m?.kind !== 'image' ? (
           <Section title="Speed">
-            <ToggleGroup aria-label="Speed" variant="filled" size="sm" selectionMode="single" disallowEmptySelection className="w-full" isDisabled={locked}
-              selectedKeys={[String(clip.speed ?? 1)]}
-              onSelectionChange={(keys) => { const s = Number(one(keys)); if (s) set({ speed: s === 1 ? undefined : s }); }}>
-              {SPEEDS.map((s) => <ToggleGroupItem key={s} id={String(s)} className="flex-1">{s}×</ToggleGroupItem>)}
+            <ToggleGroup aria-label="Speed" variant="filled" size="sm" deselectable={false} className="w-full" disabled={locked}
+              value={[String(clip.speed ?? 1)]}
+              onValueChange={([next]) => { const s = Number(next); if (s) set({ speed: s === 1 ? undefined : s }); }}>
+              {SPEEDS.map((s) => <ToggleGroupItem key={s} value={String(s)} className="flex-1">{s}×</ToggleGroupItem>)}
             </ToggleGroup>
           </Section>
         ) : null}
         <Section title="Fades">
-          <Slider label="Fade in" showValue minValue={0} maxValue={Math.min(3, d / 2)} step={0.1} formatOptions={seconds} isDisabled={locked}
-            value={Math.min(clip.fadeIn ?? 0, d / 2)} onChange={(v) => set({ fadeIn: (v as number) || undefined }, 'fadeIn')} />
-          <Slider label="Fade out" showValue minValue={0} maxValue={Math.min(3, d / 2)} step={0.1} formatOptions={seconds} isDisabled={locked}
-            value={Math.min(clip.fadeOut ?? 0, d / 2)} onChange={(v) => set({ fadeOut: (v as number) || undefined }, 'fadeOut')} />
+          <Slider label="Fade in" showValue min={0} max={Math.min(3, d / 2)} step={0.1} format={seconds} disabled={locked}
+            value={Math.min(clip.fadeIn ?? 0, d / 2)} onValueChange={(v) => set({ fadeIn: (v) || undefined }, 'fadeIn')} />
+          <Slider label="Fade out" showValue min={0} max={Math.min(3, d / 2)} step={0.1} format={seconds} disabled={locked}
+            value={Math.min(clip.fadeOut ?? 0, d / 2)} onValueChange={(v) => set({ fadeOut: (v) || undefined }, 'fadeOut')} />
           {track.magnetic && index > 0 ? (
-            <Slider label="Dissolve from previous" showValue minValue={0} maxValue={2} step={0.1} formatOptions={seconds} isDisabled={locked}
-              value={clip.transition ?? 0} onChange={(v) => set({ transition: (v as number) || undefined }, 'transition')} />
+            <Slider label="Dissolve from previous" showValue min={0} max={2} step={0.1} format={seconds} disabled={locked}
+              value={clip.transition ?? 0} onValueChange={(v) => set({ transition: (v) || undefined }, 'transition')} />
           ) : null}
         </Section>
         {picture && !title ? (
           <Section title="Look">
-            <ToggleGroup aria-label="Look" size="sm" selectionMode="single" disallowEmptySelection className="w-full flex-wrap" isDisabled={locked}
-              selectedKeys={[clip.look ?? 'none']}
-              onSelectionChange={(keys) => { const look = one(keys) as TimelineLook | undefined; if (look) set({ look: look === 'none' ? undefined : look }); }}>
-              {timelineLooks.map((l) => <ToggleGroupItem key={l.id} id={l.id} variant="outline" className="rounded-md">{l.label}</ToggleGroupItem>)}
+            <ToggleGroup<TimelineLook> aria-label="Look" size="sm" deselectable={false} className="w-full flex-wrap" disabled={locked}
+              value={[clip.look ?? 'none']}
+              onValueChange={([look]) => { if (look) set({ look: look === 'none' ? undefined : look }); }}>
+              {timelineLooks.map((l) => <ToggleGroupItem key={l.id} value={l.id} variant="outline" className="rounded-md">{l.label}</ToggleGroupItem>)}
             </ToggleGroup>
             <Row label="Fill the frame">
-              <Switch checked={clip.fit === 'cover'} onChange={(on) => set({ fit: on ? 'cover' : undefined })} aria-label="Fill the frame (crop)" />
+              <Switch checked={clip.fit === 'cover'} onCheckedChange={(on) => set({ fit: on ? 'cover' : undefined })} aria-label="Fill the frame (crop)" />
             </Row>
           </Section>
         ) : null}
         {picture && !track.magnetic ? (
           <Section title="Position">
-            <ToggleGroup aria-label="Position" size="sm" selectionMode="single" disallowEmptySelection className="w-full flex-wrap" isDisabled={locked}
-              selectedKeys={[spot]}
-              onSelectionChange={(keys) => { const s = one(keys) as Spot | undefined; if (s) set({ frame: frameAt(s, pipSize) }); }}>
-              {SPOTS.map((s) => <ToggleGroupItem key={s} id={s} variant="outline" className="rounded-md">{SPOT_LABEL[s]}</ToggleGroupItem>)}
+            <ToggleGroup<Spot> aria-label="Position" size="sm" deselectable={false} className="w-full flex-wrap" disabled={locked}
+              value={[spot]}
+              onValueChange={([s]) => { if (s) set({ frame: frameAt(s, pipSize) }); }}>
+              {SPOTS.map((s) => <ToggleGroupItem key={s} value={s} variant="outline" className="rounded-md">{SPOT_LABEL[s]}</ToggleGroupItem>)}
             </ToggleGroup>
             {spot !== 'full' ? (
-              <Slider label="Size" showValue minValue={0.15} maxValue={0.7} step={0.01} formatOptions={{ style: 'percent' }} isDisabled={locked}
-                value={pipSize} onChange={(v) => set({ frame: frameAt(spot, v as number) }, 'pip')} />
+              <Slider label="Size" showValue min={0.15} max={0.7} step={0.01} format={{ style: 'percent' }} disabled={locked}
+                value={pipSize} onValueChange={(v) => set({ frame: frameAt(spot, v) }, 'pip')} />
             ) : null}
           </Section>
         ) : null}
       <Section>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="sm" isDisabled={locked} onPress={act.split}>Split at playhead</Button>
-          <Button variant="secondary" size="sm" isDisabled={locked} onPress={act.duplicate}>Duplicate</Button>
-          <Button variant="secondary" size="sm" isDisabled={locked} className="text-destructive" onPress={act.remove}>Delete</Button>
+          <Button variant="secondary" size="sm" disabled={locked} onClick={act.split}>Split at playhead</Button>
+          <Button variant="secondary" size="sm" disabled={locked} onClick={act.duplicate}>Duplicate</Button>
+          <Button variant="secondary" size="sm" disabled={locked} className="text-destructive" onClick={act.remove}>Delete</Button>
         </div>
       </Section>
     </>

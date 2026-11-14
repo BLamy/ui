@@ -2,7 +2,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewHeader, TabViewIndicator, TabViewList, TabViewPanel,
-  TabViewPanels, TabViewSeparator, TabViewTab, type TabViewPlacement,
+  TabViewPanels, TabViewPill, TabViewSeparator, TabViewTab, type TabViewPlacement,
 } from '@/components/ui/tab-view';
 import { Icon } from '@/lib/icon';
 import { BLProvider, ThemeScope } from '@/lib/theme';
@@ -43,14 +43,14 @@ function PanelBody({ title, body }: { title: string; body: string }) {
 export const Bottom: Story = {
   render: () => (
     <Phone w={390} h={420}>
-      <TabView defaultSelectedKey="contacts" className="absolute inset-0">
+      <TabView defaultValue="contacts" className="absolute inset-0">
         <TabViewBar>
           <TabViewList aria-label="Sections">
-            {sections.map((s) => <TabViewTab key={s.id} id={s.id} icon={s.icon} title={s.title} />)}
+            {sections.map((s) => <TabViewTab key={s.id} value={s.id} icon={s.icon} title={s.title} />)}
           </TabViewList>
         </TabViewBar>
         <TabViewPanels>
-          {sections.map((s) => <TabViewPanel key={s.id} id={s.id}><PanelBody title={s.title} body={s.body} /></TabViewPanel>)}
+          {sections.map((s) => <TabViewPanel key={s.id} value={s.id}><PanelBody title={s.title} body={s.body} /></TabViewPanel>)}
         </TabViewPanels>
       </TabView>
     </Phone>
@@ -64,32 +64,32 @@ export const VerticalRail: Story = {
   argTypes: { placement: { control: 'inline-radio', options: ['start', 'end'] } },
   render: ({ placement, dark }) => (
     <Panel dark={dark}>
-      <TabView placement={placement} defaultSelectedKey="recents" className="absolute inset-0 bg-background">
+      <TabView placement={placement} defaultValue="recents" className="absolute inset-0 bg-background">
         <TabViewBar>
           <TabViewHeader className="mb-1 h-10">
             <div className="grid size-8 place-items-center rounded-[9px] bg-primary text-[15px] font-extrabold text-white">B</div>
           </TabViewHeader>
           <TabViewList aria-label="Sections" className="flex-1">
             {sections.map((s) => (
-              <TabViewTab key={s.id} id={s.id} textValue={s.title} className={cn(s.id === 'settings' && 'mt-auto')}>
-                {({ isSelected }) => (
+              <TabViewTab key={s.id} value={s.id} className={cn(s.id === 'settings' && 'mt-auto')}>
+                {({ selected }) => (
                   <>
-                    <TabViewIndicator className="-start-1.5" />
-                    <Icon name={s.icon} size={24} sw={isSelected ? 2.1 : 1.8} />
+                    <Icon name={s.icon} size={24} sw={selected ? 2.1 : 1.8} />
                     <span className="text-[10.5px] font-semibold tracking-[.1px]">{s.title}</span>
                   </>
                 )}
               </TabViewTab>
             ))}
+            <TabViewIndicator className="-start-1.5" />
           </TabViewList>
           <TabViewFooter className="pt-1 pb-1">
-            <TabViewAction aria-label="Account" className="grid size-9 place-items-center rounded-full bg-secondary-strong text-[13px] font-bold text-muted-foreground data-hovered:bg-secondary">
+            <TabViewAction aria-label="Account" className="grid size-9 place-items-center rounded-full bg-secondary-strong text-[13px] font-bold text-muted-foreground hover:bg-secondary">
               BL
             </TabViewAction>
           </TabViewFooter>
         </TabViewBar>
         <TabViewPanels>
-          {sections.map((s) => <TabViewPanel key={s.id} id={s.id}><PanelBody title={s.title} body={s.body} /></TabViewPanel>)}
+          {sections.map((s) => <TabViewPanel key={s.id} value={s.id}><PanelBody title={s.title} body={s.body} /></TabViewPanel>)}
         </TabViewPanels>
       </TabView>
     </Panel>
@@ -107,7 +107,7 @@ const servers = [
 function RailTile({ color, children, badge }: { color: string; children: ReactNode; badge?: number }) {
   return (
     <span style={{ '--tile': color } as CSSProperties}
-      className="relative box-border grid size-10 place-items-center rounded-[14px] bg-secondary-strong text-[14px] font-extrabold text-foreground transition-[border-radius,background-color,color] duration-200 ease-ios group-data-hovered:rounded-[12px] group-data-selected:rounded-[12px] group-data-selected:bg-(--tile) group-data-selected:text-white group-data-hovered:bg-(--tile) group-data-hovered:text-white group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-primary">
+      className="relative box-border grid size-10 place-items-center rounded-[14px] bg-secondary-strong text-[14px] font-extrabold text-foreground transition-[border-radius,background-color,color] duration-200 ease-ios group-hover:rounded-[12px] group-data-selected:rounded-[12px] group-data-selected:bg-(--tile) group-data-selected:text-white group-hover:bg-(--tile) group-hover:text-white group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-primary">
       {children}
       {!!badge && (
         <span className="absolute -right-1.5 -bottom-1 box-border flex h-[19px] min-w-[19px] items-center justify-center rounded-full border-[3px] border-muted bg-destructive px-[3px] text-[10px] leading-none font-bold text-white">
@@ -123,23 +123,23 @@ function DiscordRailDemo({ dark }: { dark: boolean }) {
   const current = sel === 'home' ? 'Direct Messages' : servers.find((s) => s.id === sel)?.title;
   return (
     <Panel dark={dark} w={520} h={440}>
-      <TabView orientation="vertical" selectedKey={sel} onSelectionChange={(k) => setSel(String(k))} className="absolute inset-0 bg-background">
+      <TabView orientation="vertical" value={sel} onValueChange={(next) => { if (next) setSel(next); }} className="absolute inset-0 bg-background">
         <TabViewBar variant="plain" className="w-[64px] items-center gap-2 bg-muted py-3 [border-right:1px_solid_var(--border)]">
           <TabViewList aria-label="Servers" className="w-full items-center gap-2">
-            <TabViewTab id="home" textValue="Direct Messages" className="group flex w-full justify-center">
-              <TabViewIndicator variant="pill" className="h-0 data-hovered:h-4 data-selected:h-8" />
+            <TabViewTab value="home" aria-label="Direct Messages" className="group flex w-full justify-center">
+              <TabViewPill className="h-0 group-hover/tab:not-data-selected:h-4 data-selected:h-8" />
               <RailTile color="var(--primary)"><Icon name="message" size={20} /></RailTile>
             </TabViewTab>
             <TabViewSeparator className="h-0.5 w-6 rounded-full" />
             {servers.map((s) => (
-              <TabViewTab key={s.id} id={s.id} textValue={s.title} className="group flex w-full justify-center">
-                <TabViewIndicator variant="pill" attention={s.unread} className="data-attention:h-2 data-hovered:h-4 data-selected:h-8" />
+              <TabViewTab key={s.id} value={s.id} aria-label={s.title} className="group flex w-full justify-center">
+                <TabViewPill attention={s.unread} className="data-attention:h-2 group-hover/tab:not-data-selected:h-4 data-selected:h-8" />
                 <RailTile color={s.color} badge={s.mentions}>{s.label}</RailTile>
               </TabViewTab>
             ))}
           </TabViewList>
           <TabViewAction aria-label="Add a server"
-            className="group grid size-10 place-items-center rounded-[14px] bg-secondary-strong text-[#32D74B] transition-[border-radius,background-color,color] duration-200 ease-ios data-hovered:rounded-[12px] data-hovered:bg-[#32D74B] data-hovered:text-white">
+            className="group grid size-10 place-items-center rounded-[14px] bg-secondary-strong text-[#32D74B] transition-[border-radius,background-color,color] duration-200 ease-ios hover:rounded-[12px] hover:bg-[#32D74B] hover:text-white">
             <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round"><path d="M12 5.5v13M5.5 12h13" /></svg>
           </TabViewAction>
         </TabViewBar>
@@ -152,7 +152,7 @@ function DiscordRailDemo({ dark }: { dark: boolean }) {
   );
 }
 
-/** A Discord server rail built from TabView parts: custom tiles as tabs, the `pill` indicator (a nub for
+/** A Discord server rail built from TabView parts: custom tiles as tabs, a `TabViewPill` in each (a nub for
     unread, taller on hover, full when selected), mention badges, a separator under Home, and an Add action. */
 export const DiscordRail: Story = {
   args: { dark: true },
@@ -167,40 +167,38 @@ const filters = [
   { id: 'archived', title: 'Archived', count: 0 },
 ];
 
-/** `placement="top"` with a plain bar and fully custom tabs: the render prop hands each tab its state
-    (isSelected, isHovered, isFocusVisible…), and `TabViewIndicator` slides the underline between them. */
+/** `placement="top"` with a plain bar and fully custom tabs: a function as children gets each tab's state
+    (`selected`, `disabled`), and one `TabViewIndicator` in the list slides the underline between them. */
 export const CustomTabs: Story = {
   args: { dark: false },
   render: ({ dark }) => (
     <Panel dark={dark} w={560} h={300}>
-      <TabView placement="top" defaultSelectedKey="unread" className="absolute inset-0 bg-background">
+      <TabView placement="top" defaultValue="unread" className="absolute inset-0 bg-background">
         <TabViewBar variant="plain" className="gap-1 px-4 pt-3 shadow-[inset_0_-1px_0_var(--border)]">
           <TabViewList aria-label="Inbox filters" className="gap-1">
             {filters.map((f) => (
-              <TabViewTab key={f.id} id={f.id} textValue={f.title} className="group px-2.5 pt-1.5 pb-3">
-                {({ isSelected }) => (
-                  <>
-                    <span className={cn('flex items-center gap-1.5 text-[14px] font-semibold transition-colors duration-150',
-                      isSelected ? 'text-foreground' : 'text-tertiary-foreground group-data-hovered:text-muted-foreground')}>
-                      {f.title}
-                      <span className={cn('rounded-full px-1.5 py-px text-[11px] font-bold tabular-nums',
-                        isSelected ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground')}>{f.count}</span>
-                    </span>
-                    <TabViewIndicator className="inset-x-2.5" />
-                  </>
+              <TabViewTab key={f.id} value={f.id} className="group px-2.5 pt-1.5 pb-3">
+                {({ selected }) => (
+                  <span className={cn('flex items-center gap-1.5 text-[14px] font-semibold transition-colors duration-150',
+                    selected ? 'text-foreground' : 'text-tertiary-foreground group-hover:text-muted-foreground')}>
+                    {f.title}
+                    <span className={cn('rounded-full px-1.5 py-px text-[11px] font-bold tabular-nums',
+                      selected ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground')}>{f.count}</span>
+                  </span>
                 )}
               </TabViewTab>
             ))}
+            <TabViewIndicator className="inset-x-2.5" />
           </TabViewList>
           <TabViewFooter>
-            <TabViewAction aria-label="Filter settings" className="grid size-8 place-items-center rounded-lg text-tertiary-foreground data-hovered:bg-secondary">
+            <TabViewAction aria-label="Filter settings" className="grid size-8 place-items-center rounded-lg text-tertiary-foreground hover:bg-secondary">
               <Icon name="sliders" size={18} />
             </TabViewAction>
           </TabViewFooter>
         </TabViewBar>
         <TabViewPanels>
           {filters.map((f) => (
-            <TabViewPanel key={f.id} id={f.id}>
+            <TabViewPanel key={f.id} value={f.id}>
               <PanelBody title={f.title} body={f.count ? `${f.count} conversations.` : 'Nothing here.'} />
             </TabViewPanel>
           ))}
@@ -210,19 +208,18 @@ export const CustomTabs: Story = {
   ),
 };
 
-/** Order-independent: the panels are written before the bar. TabView moves a direct-child bar ahead of the
-    panels (so react-aria has minted its tab ids, and `placement` still puts the bar at the bottom) — this
-    renders exactly like `Bottom`, with no "There is no tab id" error. */
+/** Order-independent: the panels are written before the bar. A bar that is a direct child and comes after the
+    panels is laid out ahead of them, so `placement` still puts it at the bottom: this renders exactly like `Bottom`. */
 export const PanelsFirst: Story = {
   render: () => (
     <Phone w={390} h={420}>
-      <TabView defaultSelectedKey="contacts" className="absolute inset-0">
+      <TabView defaultValue="contacts" className="absolute inset-0">
         <TabViewPanels>
-          {sections.map((s) => <TabViewPanel key={s.id} id={s.id}><PanelBody title={s.title} body={s.body} /></TabViewPanel>)}
+          {sections.map((s) => <TabViewPanel key={s.id} value={s.id}><PanelBody title={s.title} body={s.body} /></TabViewPanel>)}
         </TabViewPanels>
         <TabViewBar>
           <TabViewList aria-label="Sections">
-            {sections.map((s) => <TabViewTab key={s.id} id={s.id} icon={s.icon} title={s.title} />)}
+            {sections.map((s) => <TabViewTab key={s.id} value={s.id} icon={s.icon} title={s.title} />)}
           </TabViewList>
         </TabViewBar>
       </TabView>
@@ -230,25 +227,25 @@ export const PanelsFirst: Story = {
   ),
 };
 
-/** Panels first with the bar nested in a wrapper: TabViewPanels waits one layout pass (before paint) for the
-    tablist, so this works too. Here the wrapper is laid out by hand (the panels fill, the bar pins to the top). */
+/** Panels first with the bar nested in a wrapper: tabs and panels find each other wherever they sit. Here the
+    wrapper is laid out by hand (the panels fill, the bar pins to the top). */
 export const PanelsFirstNested: Story = {
   render: () => (
     <Panel w={560} h={320}>
-      <TabView placement="top" defaultSelectedKey="recents" className="absolute inset-0 bg-background">
+      <TabView placement="top" defaultValue="recents" className="absolute inset-0 bg-background">
         <TabViewPanels className="order-2">
-          {sections.map((s) => <TabViewPanel key={s.id} id={s.id}><PanelBody title={s.title} body={s.body} /></TabViewPanel>)}
+          {sections.map((s) => <TabViewPanel key={s.id} value={s.id}><PanelBody title={s.title} body={s.body} /></TabViewPanel>)}
         </TabViewPanels>
         <div className="order-1 flex shrink-0 items-center gap-3 px-4 pt-3 shadow-[inset_0_-1px_0_var(--border)]">
           <span className="text-[15px] font-bold text-foreground">Address Book</span>
           <TabViewBar variant="plain">
             <TabViewList aria-label="Sections" className="gap-1">
               {sections.map((s) => (
-                <TabViewTab key={s.id} id={s.id} className="relative px-3 py-2 text-[14px] font-semibold text-tertiary-foreground data-selected:text-primary">
+                <TabViewTab key={s.id} value={s.id} className="relative px-3 py-2 text-[14px] font-semibold text-tertiary-foreground data-selected:text-primary">
                   {s.title}
-                  <TabViewIndicator />
                 </TabViewTab>
               ))}
+              <TabViewIndicator />
             </TabViewList>
           </TabViewBar>
         </div>
@@ -266,11 +263,11 @@ const workspaces = [
 ];
 
 /** Discord's tile: a circle at rest that morphs to a rounded square when hovered or selected (filling with its
-    color), with a mention badge. Styled from the tab's state through `group-data-*`. */
+    color), with a mention badge. Styled from the tab through `group-hover:`, `group-active:` and `group-data-selected:`. */
 function WorkspaceTile({ color = 'var(--primary)', mentions, children }: { color?: string; mentions?: number; children: ReactNode }) {
   return (
     <span style={{ '--tile': color } as CSSProperties}
-      className="relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-sans text-[14px] leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-data-hovered:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--tile) group-data-selected:bg-(--tile) group-data-selected:text-white group-data-pressed:scale-[.94] motion-reduce:transition-none group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-link">
+      className="relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-sans text-[14px] leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-hover:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--tile) group-data-selected:bg-(--tile) group-data-selected:text-white group-active:scale-[.94] motion-reduce:transition-none group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-link">
       {children}
       {mentions ? (
         <span className="absolute -right-[7px] -bottom-[6px] box-border flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-[3px] border-muted bg-destructive px-[3px] font-sans text-[10px] leading-none font-bold text-white">
@@ -283,17 +280,17 @@ function WorkspaceTile({ color = 'var(--primary)', mentions, children }: { color
 
 function WorkspaceRailDemo() {
   return (
-    <TabView orientation="vertical" defaultSelectedKey="blui" className="flex h-full">
+    <TabView orientation="vertical" defaultValue="blui" className="flex h-full">
       <TabViewBar variant="workspace">
         <TabViewList aria-label="Workspaces">
-          <TabViewTab id="home" textValue="Direct Messages">
-            <TabViewIndicator variant="pill" />
+          <TabViewTab value="home" aria-label="Direct Messages">
+            <TabViewPill />
             <WorkspaceTile mentions={2}><Icon name="bubble-oval" size={17} sw={2} /></WorkspaceTile>
           </TabViewTab>
           <TabViewSeparator />
           {workspaces.map((w) => (
-            <TabViewTab key={w.id} id={w.id} textValue={w.title}>
-              <TabViewIndicator variant="pill" attention={w.unread} />
+            <TabViewTab key={w.id} value={w.id} aria-label={w.title}>
+              <TabViewPill attention={w.unread} />
               <WorkspaceTile color={w.color} mentions={w.mentions}>{w.label}</WorkspaceTile>
             </TabViewTab>
           ))}
@@ -308,9 +305,9 @@ function WorkspaceRailDemo() {
 
 /** The workspace switcher (replaces 1.x's `WorkspaceRail`): a vertical TabView with `TabViewBar
     variant="workspace"` in the chat scope. Home is the first tab over a separator; tiles are custom tab content
-    with the leading-edge `pill` indicator (a nub for unread, taller on hover, full when selected) and mention
+    with the leading-edge `TabViewPill` (a nub for unread, taller on hover, full when selected) and mention
     badges; "Add workspace" is a `TabViewAction` in the footer, which follows the list — the list scrolls once
-    the tiles outgrow the rail. Up/Down move between tiles; the separator and the action are skipped. */
+    the tiles outgrow the rail. Up/Down move between tiles; the separator and the action aren't tabs. */
 export const WorkspaceRail: Story = {
   args: { dark: true },
   render: ({ dark }) => (
@@ -326,13 +323,13 @@ export const WorkspaceRailLight: Story = { ...WorkspaceRail, args: { dark: false
 export const WorkspaceRailScrolling: Story = {
   render: () => (
     <ThemeScope scope="chat" appearance="dark" className="flex h-[300px] w-[200px] overflow-hidden bg-background text-foreground">
-      <TabView orientation="vertical" defaultSelectedKey="w0" className="flex h-full">
+      <TabView orientation="vertical" defaultValue="w0" className="flex h-full">
         <TabViewBar variant="workspace">
           <TabViewHeader className="font-sans text-[10px] font-bold tracking-[.4px] text-tertiary-foreground uppercase">Chat</TabViewHeader>
           <TabViewList aria-label="Workspaces">
             {Array.from({ length: 12 }, (_, i) => (
-              <TabViewTab key={i} id={`w${i}`} textValue={`Workspace ${i + 1}`}>
-                <TabViewIndicator variant="pill" />
+              <TabViewTab key={i} value={`w${i}`} aria-label={`Workspace ${i + 1}`}>
+                <TabViewPill />
                 <WorkspaceTile color={workspaces[i % 4].color}>{String.fromCharCode(65 + i)}</WorkspaceTile>
               </TabViewTab>
             ))}

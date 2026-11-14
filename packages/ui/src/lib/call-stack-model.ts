@@ -86,7 +86,7 @@ export function buildCallStackRows(frames: readonly CallStackFrame[], options: C
   const { selectedId, expandedRuns, minRun = 2, collapse = true } = options;
   const sections: CallStackSection[] = [];
   let rows: CallStackRow[] = [];
-  // Sections and frames share react-aria's keys, so a frame called `top` mustn't meet a section called `top`.
+  // Sections and frames are rows of one tree, so a frame called `top` mustn't meet a section called `top`.
   let sectionKey = SECTION_MARK;
   let sectionLabel: string | undefined;
   const flush = () => {

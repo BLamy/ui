@@ -15,16 +15,16 @@ interface MenuItemProps {
  * overlay.
  */
 function MenuItem({ icon, label, badge, page, onPick }: MenuItemProps) {
-  const { narrow, setOpen } = useSidebar()
+  const { compact, setOpen } = useSidebar()
   return (
     <Sidebar.Item
       icon={icon}
       label={label}
       badge={badge}
       active={page === label}
-      onPress={() => {
+      onClick={() => {
         onPick(label)
-        if (narrow) setOpen(false)
+        if (compact) setOpen(false)
       }}
     />
   )

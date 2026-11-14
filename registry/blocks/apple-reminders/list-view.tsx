@@ -4,12 +4,14 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Button } from '@/components/ui/button';
 import { Celebrate } from '@/components/ui/celebrate';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { NumberMorph } from '@/components/ui/number-morph';
+import { PlainButton } from '@/components/ui/plain-button';
 import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
+import { Input } from '@ui-sdk/react/input';
 import { SYSTEM, type Reminder } from './data';
 import { ListPreview, ReminderRow } from './reminder-row';
 import { useReminders } from './store';
@@ -35,8 +37,8 @@ function Composer({ color, onAdd, onClose }: { color: string; onAdd: (title: str
   return (
     <div className="flex items-start gap-3 pl-4 animate-bl-fade-in">
       <span className="mt-[11px] size-6 shrink-0 rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))]" />
-      <input autoFocus value={text} placeholder="New Reminder" aria-label="New reminder"
-        onChange={(e) => setText(e.target.value)}
+      <Input autoFocus value={text} placeholder="New Reminder" aria-label="New reminder"
+        onValueChange={setText}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && text.trim()) { onAdd(text.trim()); setText(''); }
           else if (e.key === 'Escape') onClose();
@@ -51,7 +53,7 @@ function Composer({ color, onAdd, onClose }: { color: string; onAdd: (title: str
 export function ListView() {
   const api = useReminders();
   const s = useSplitView();
-  const id = api.query && !s.collapsed ? 'search' : s.selection.sidebar ?? 'today';
+  const id = api.query && !s.collapsed ? 'search' : s.value.sidebar ?? 'today';
   const view = buildView(id, api.items, api.lists, api.recent, api.showCompleted, api.query);
   const fire = useClearedBurst(view);
   const [adding, setAdding] = useState(false);
@@ -74,15 +76,17 @@ export function ListView() {
       <SplitViewHeader title={<span style={{ color: view.color }}>{view.title}</span>} largeTitle leading={<SplitViewToggle />} backLabel="Lists"
         trailing={list ? (
           <DropdownMenu>
-            <Button variant="ghost" size="icon" aria-label="List options" className="size-9 text-primary"><Icon name="ellipsis-circle" size={24} weight="light" /></Button>
-            <DropdownMenuContent aria-label="List options" placement="bottom end">
-              <DropdownMenuItem onAction={() => api.setShowCompleted(list.id, !shown)} icon={<Icon name="check" size={20} />}>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="List options" className="size-9 text-primary" />}>
+              <Icon name="ellipsis-circle" size={24} weight="light" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="bottom" align="end">
+              <DropdownMenuItem onSelect={() => api.setShowCompleted(list.id, !shown)} icon={<Icon name="check" size={20} />}>
                 {shown ? 'Hide Completed' : 'Show Completed'}
               </DropdownMenuItem>
               {/* A file's completed tasks stay in the file. */}
               {list.file ? null : <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" isDisabled={!view.completed} onAction={() => api.clearCompleted(list.id)}>
+                <DropdownMenuItem destructive disabled={!view.completed} onSelect={() => api.clearCompleted(list.id)}>
                   {`Clear ${view.completed} Completed`}
                 </DropdownMenuItem>
               </>}
@@ -105,11 +109,11 @@ export function ListView() {
               <span>{view.completed} Completed</span>
               {list.file ? null : <>
                 <span aria-hidden="true">·</span>
-                <button type="button" onClick={() => api.clearCompleted(list.id)} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">Clear</button>
+                <PlainButton onClick={() => api.clearCompleted(list.id)} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">Clear</PlainButton>
               </>}
-              <button type="button" onClick={() => api.setShowCompleted(list.id, !shown)} className="bl-btn ml-auto cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">
+              <PlainButton onClick={() => api.setShowCompleted(list.id, !shown)} className="bl-btn ml-auto cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">
                 {shown ? 'Hide' : 'Show'}
-              </button>
+              </PlainButton>
             </div>
           ) : null}
 
@@ -128,7 +132,10 @@ export function ListView() {
             return (
               <section key={g.key} className={cn(g.title && 'pt-4')}>
                 {g.title ? <h2 className="m-0 px-5 pb-1 text-title font-bold tracking-[-.2px]" style={{ color: g.color }}>
-                  {of ? <HoverCardTrigger><span>{g.title}</span><HoverCard placement="bottom start"><ListPreview list={of} items={api.items} /></HoverCard></HoverCardTrigger> : g.title}
+                  {of ? <HoverCard>
+                    <HoverCardTrigger render={<span />}>{g.title}</HoverCardTrigger>
+                    <HoverCardContent side="bottom" align="start"><ListPreview list={of} items={api.items} /></HoverCardContent>
+                  </HoverCard> : g.title}
                 </h2> : null}
                 {g.items.map((r) => (
                   <ReminderRow key={r.id} r={r} leaving={view.leaving(r)} phone={s.collapsed}
@@ -143,11 +150,11 @@ export function ListView() {
       </SplitViewContent>
       {canAdd ? (
         <div className="flex h-[54px] shrink-0 items-center px-4">
-          <button type="button" onClick={() => setAdding(true)} style={{ color: view.color }}
+          <PlainButton onClick={() => setAdding(true)} style={{ color: view.color }}
             className="bl-btn flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-body font-semibold transition-[scale] duration-spring-snappy ease-spring-snappy active:scale-95">
             <span className="grid size-[23px] place-items-center rounded-full text-white" style={{ background: view.color }}><Icon name="plus" size={15} sw={2.8} /></span>
             New Reminder
-          </button>
+          </PlainButton>
         </div>
       ) : null}
     </SplitViewDetail>

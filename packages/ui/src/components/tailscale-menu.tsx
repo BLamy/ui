@@ -1,8 +1,8 @@
 'use client';
 import { useState, type ComponentProps, type ReactNode } from 'react';
-import type { Key, Selection } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { ListBox, ListBoxItem } from '@/components/ui/list-box';
+import { Label } from '@/components/ui/label';
+import { Listbox, ListboxItem } from '@/components/ui/list-box';
 import { Radio, RadioGroup } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
 import { TailscaleLoginButton } from '@/components/ui/tailscale-login-button';
@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
    chooser, and sign out. It reads the nearest TailscaleProvider (or the `tailscale` you pass) and changes the exit node
    through `onExitNode` (default: `tailscale.setExitNode`).
 
-   <PopoverContent aria-label="Tailscale"><TailscaleMenu variant="radio" onExitNode={choose} /></PopoverContent>   // Safari's shield
+   <PopoverContent><PopoverTitle className="sr-only">Tailscale</PopoverTitle><TailscaleMenu variant="radio" onExitNode={choose} /></PopoverContent>   // Safari's shield
    <TailscaleMenu variant="networks" />                                                                          // like macOS's Wi-Fi menu
 
    `variant` is how the exit nodes read: `radio` is a radio list ("None: your devices only", then one radio per device);
@@ -99,7 +99,7 @@ export interface TailscaleExitNodesProps extends Omit<ComponentProps<'div'>, 'ch
   glyph?: (peer: TailscalePeer, state: TailscaleExitNodeState) => ReactNode;
 }
 
-/** The exit node chooser: which device carries your traffic to the public internet. A react-aria RadioGroup (`radio`) or ListBox (`networks`); arrow keys move, a switch in progress is shown on its row. */
+/** The exit node chooser: which device carries your traffic to the public internet. A RadioGroup (`radio`) or a Listbox (`networks`); arrow keys move, Space or Enter chooses, a switch in progress is shown on its row. */
 export function TailscaleExitNodes({ tailscale, onExitNode, variant: variantProp, labels: labelsProp, glyph = defaultGlyph, className, ...props }: TailscaleExitNodesProps) {
   const t = useTailscale(tailscale);
   const variant = variantProp ?? 'radio';
@@ -127,47 +127,45 @@ export function TailscaleExitNodes({ tailscale, onExitNode, variant: variantProp
   return (
     <div data-slot="tailscale-exit-nodes" data-variant={variant} aria-busy={busy || undefined} className={cn(tailscaleExitNodesVariants({ variant }), className)} {...props}>
       {variant === 'networks' ? (
-        <ListBox
+        <Listbox
           variant="popup"
           aria-label={labels.group}
-          selectionMode="single"
-          disallowEmptySelection
-          selectedKeys={[exitNodeId ?? 'none']}
-          onSelectionChange={(keys: Selection) => {
-            const key: Key | undefined = keys === 'all' ? undefined : [...keys][0];
-            if (key !== undefined) choose(String(key));
-          }}
+          // Moving through the devices must not switch the exit node: only a press, Space or Enter does.
+          activation="manual"
+          value={exitNodeId ?? 'none'}
+          onValueChange={(value) => { if (value !== null) choose(value); }}
           className="max-h-60 p-0"
         >
-          <ListBoxItem id="none" textValue={labels.none} description={pending === 'none' ? labels.connecting : labels.noneDetail || undefined}>
+          <ListboxItem value="none" label={labels.none} description={pending === 'none' ? labels.connecting : labels.noneDetail || undefined}>
             {labels.none}
-          </ListBoxItem>
+          </ListboxItem>
           {exits.map((p) => {
             const state: TailscaleExitNodeState = { active: p.id === exitNodeId, connecting: p.id === pending, online: p.online };
             const name = exitNodeName(p);
             return (
-              <ListBoxItem key={p.id} id={p.id as string} textValue={name} isDisabled={!p.online} description={state.connecting ? labels.connecting : p.online ? undefined : labels.offline}>
+              <ListboxItem key={p.id} value={p.id as string} label={name} disabled={!p.online} description={state.connecting ? labels.connecting : p.online ? undefined : labels.offline}>
                 <span className="flex min-w-0 items-center gap-2">
                   <span className="min-w-0 flex-1 truncate">{name}</span>
                   <span aria-hidden="true" className="grid shrink-0 place-items-center">{glyph(p, state)}</span>
                 </span>
-              </ListBoxItem>
+              </ListboxItem>
             );
           })}
-        </ListBox>
+        </Listbox>
       ) : (
         <RadioGroup
           aria-label={labels.group}
           value={exitNodeId ?? 'none'}
-          isDisabled={busy}
-          onChange={choose}
+          disabled={busy}
+          onValueChange={(value) => { if (value !== null) choose(value); }}
           className="flex-col gap-1"
         >
-          <Radio value="none">{labels.none}</Radio>
+          <Label variant="control"><Radio value="none" />{labels.none}</Label>
           {exits.map((p) => (
-            <Radio key={p.id} value={p.id as string}>
+            <Label key={p.id} variant="control">
+              <Radio value={p.id as string} />
               {exitNodeName(p)}{p.online ? '' : ` ${labels.offline}`}{p.id === pending ? <span className="text-foreground/70"> {labels.connecting}</span> : null}
-            </Radio>
+            </Label>
           ))}
         </RadioGroup>
       )}

@@ -20,7 +20,7 @@ function DocsSidebar() {
                   icon="doc"
                   label={g}
                   active={page === g}
-                  onPress={() => setPage(g)}
+                  onClick={() => setPage(g)}
                 />
               ))}
             </Sidebar.Section>
@@ -31,7 +31,7 @@ function DocsSidebar() {
                   icon="box"
                   label={c}
                   active={page === c}
-                  onPress={() => setPage(c)}
+                  onClick={() => setPage(c)}
                 />
               ))}
             </Sidebar.Section>

@@ -9,8 +9,8 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { ArtifactChatContainer } from '@/components/ui/artifact-chat-container';
 import { SplitView, SplitViewDetail, SplitViewStack, useSplitView, useSplitViewStack } from '@/components/ui/split-view';
-import { Toaster } from '@/components/ui/toast';
-import { useContainerWidth } from '@/lib/container';
+import { ToastRegion } from '@/components/ui/toast';
+import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { AskComposer, AskQA } from './ask-qa';
 import { BugPage } from './bug-detail';
@@ -46,14 +46,18 @@ export interface LoopQAProps {
   chatExpanded?: boolean;
 }
 
+/** Block widths (px) where the medium (tablet) and regular (desktop, Ask QA docked) classes start. */
+const SIZE_CLASSES = { medium: 640, regular: 1180 };
+
 export default function LoopQA({ appearance, initialProject, initialTab, initialPage, askOpen, palette, liveRunAt, emptyChat, chatExpanded }: LoopQAProps) {
   const ambient = useAppearance();
   const qa = useLoopQAState({ appearance, project: initialProject, tab: initialTab, push: initialPage, askOpen, palette, liveRunAt, emptyChat, chatExpanded });
   const dark = (qa.look ?? appearance ?? ambient) === 'dark';
   const mode = dark ? 'dark' : 'light';
-  const [ref, width] = useContainerWidth<HTMLDivElement>(1280);
-  const phone = width < 640;
-  const dock = width >= 1180;
+  // Compact is a phone; regular is wide enough to dock Ask QA beside the page.
+  const [ref, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: SIZE_CLASSES });
+  const phone = sizeClass === 'compact';
+  const dock = sizeClass === 'regular';
   const { setWide } = qa;
   useEffect(() => setWide(dock), [dock, setWide]);
 
@@ -62,42 +66,46 @@ export default function LoopQA({ appearance, initialProject, initialTab, initial
       <BLProvider tint={LOOP_TINT[mode]} style={LOOP_THEME[mode]} className="min-h-0 bg-background">
         <LoopQAProvider value={qa}>
           <div ref={ref} data-slot="loop-qa" className="relative flex h-full min-h-0 w-full bg-background text-detail text-foreground">
-            <ArtifactChatContainer
-              layout={dock && qa.askOpen ? 'split' : 'floating'}
-              chatSide="right"
-              chatWidth={384}
-              chatOpen={!dock && qa.askOpen && qa.chatOpen}
-              onChatOpenChange={qa.setChatOpen}
-              minimized={!qa.askOpen}
-              onMinimizedChange={(m) => qa.setAskPref(!m)}
-              peek={phone ? 0 : 168}
-              fabPosition="bottom-right"
-              className="min-w-0 flex-1"
-            >
-              <ArtifactChatContainer.Content>
-                <div className="relative h-full min-h-0">
-                  <SplitView
-                    aria-label="Loop QA"
-                    selection={{ sidebar: qa.section }}
-                    onSelectionChange={(s) => { if (s.sidebar) qa.setSection(s.sidebar); }}
-                    defaultCompactColumn={initialProject || initialPage ? 'detail' : 'sidebar'}
-                  >
-                    <SplitBridge />
-                    <AppSidebar />
-                    <SplitViewDetail aria-label="Page">
-                      <SplitViewStack resetKey={qa.section}>
-                        <StackBridge>{qa.project ? <ProjectPage project={qa.project} /> : <ProjectsHome />}</StackBridge>
-                      </SplitViewStack>
-                    </SplitViewDetail>
-                  </SplitView>
-                </div>
-              </ArtifactChatContainer.Content>
-              <ArtifactChatContainer.Chat><AskQA /></ArtifactChatContainer.Chat>
-              <ArtifactChatContainer.Composer><AskComposer /></ArtifactChatContainer.Composer>
-            </ArtifactChatContainer>
-            <Commands />
-            <Dialogs compact={phone} />
-            <Toaster queue={qa.hud} inline aria-label="Loop QA notifications" />
+            {/* The block is a size-class scope (its compact break is BLProvider's 640px): its dialogs are trays on a phone. */}
+            <SizeClassProvider value={sizeClass}>
+              <ArtifactChatContainer
+                layout={dock && qa.askOpen ? 'split' : 'floating'}
+                chatSide="right"
+                chatWidth={384}
+                chatOpen={!dock && qa.askOpen && qa.chatOpen}
+                onChatOpenChange={qa.setChatOpen}
+                minimized={!qa.askOpen}
+                onMinimizedChange={(m) => qa.setAskPref(!m)}
+                peek={phone ? 0 : 168}
+                fabPosition="bottom-right"
+                className="min-w-0 flex-1"
+              >
+                <ArtifactChatContainer.Content>
+                  <div className="relative h-full min-h-0">
+                    <SplitView
+                      aria-label="Loop QA"
+                      value={{ sidebar: qa.section }}
+                      onValueChange={(v) => { if (v.sidebar) qa.setSection(v.sidebar); }}
+                      defaultCompactColumn={initialProject || initialPage ? 'detail' : 'sidebar'}
+                    >
+                      <SplitBridge />
+                      <AppSidebar />
+                      <SplitViewDetail aria-label="Page">
+                        <SplitViewStack resetKey={qa.section}>
+                          <StackBridge>{qa.project ? <ProjectPage project={qa.project} /> : <ProjectsHome />}</StackBridge>
+                        </SplitViewStack>
+                      </SplitViewDetail>
+                    </SplitView>
+                  </div>
+                </ArtifactChatContainer.Content>
+                <ArtifactChatContainer.Chat><AskQA /></ArtifactChatContainer.Chat>
+                <ArtifactChatContainer.Composer><AskComposer /></ArtifactChatContainer.Composer>
+              </ArtifactChatContainer>
+              <Commands />
+              <Dialogs />
+              <ToastRegion toaster={qa.toast} aria-label="Loop QA notifications" />
+              <ToastRegion variant="hud" toaster={qa.hud.toaster} aria-label="Loop QA status" />
+            </SizeClassProvider>
           </div>
         </LoopQAProvider>
       </BLProvider>

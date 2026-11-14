@@ -104,7 +104,7 @@ function Scopes({ selectable }: { selectable?: boolean }) {
   const [selected, setSelected] = useState('');
   return (
     <div className="flex h-full flex-col">
-      <ObjectTree aria-label="Scopes" root={SCOPES} loadChildren={loadHeld} onInvokeGetter={answerGetter} onSelect={selectable ? (n) => setSelected(n?.name ?? '') : undefined} />
+      <ObjectTree aria-label="Scopes" root={SCOPES} loadChildren={loadHeld} onInvokeGetter={answerGetter} mode={selectable ? 'single' : 'none'} onValueChange={(_key, { node }) => setSelected(node?.name ?? '')} />
       {selectable ? <div className="shrink-0 px-3 py-2 text-caption text-muted-foreground shadow-hairline-t">Selected: {selected || 'nothing'}</div> : null}
     </div>
   );
@@ -150,7 +150,7 @@ function SteppingDemo() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 items-center gap-2 p-2 shadow-hairline-b">
-        <Button size="sm" variant="secondary" onPress={() => setStep((s) => s + 1)}>Step</Button>
+        <Button size="sm" variant="secondary" onClick={() => setStep((s) => s + 1)}>Step</Button>
         <span className="text-caption text-muted-foreground">Answers take 600 ms. Step while one is on its way: only the last step's answer shows.</span>
       </div>
       <ObjectTree

@@ -63,7 +63,7 @@ Behaviors to know:
 
 ## `useCodeEditor`
 
-The `getValue`, `language`, `variant`, `title` and `engine` of the enclosing `CodeEditor`, for custom parts inside it (a toolbar with its own copy button, a status chip). `getValue()` is the text as it is when you ask. On a huge document that takes a while, so ask when you need it rather than while rendering. `useSyntaxHighlighting` is the old name, and still returns `code`.
+The `getValue`, `language`, `variant`, `title` and `engine` of the enclosing `CodeEditor`, for custom parts inside it (a toolbar with its own copy button, a status chip). `getValue()` is the text as it is when you ask. On a huge document that takes a while, so ask when you need it rather than while rendering.
 
 - **Export:** public. Registry item `code-editor`.
 - **Needs:** a `CodeEditor` ancestor. **Outside it:** returns `null` (it does not throw).
@@ -76,7 +76,7 @@ function useCodeEditor(): { getValue: () => string; language?: string; variant: 
 function DownloadButton() {
   const editor = useCodeEditor()
   if (!editor) return null
-  return <Button onPress={() => download(editor.getValue())}>Download</Button>
+  return <Button onClick={() => download(editor.getValue())}>Download</Button>
 }
 ```
 
@@ -197,7 +197,7 @@ function SessionList() {
       {sessions.map((s) => (
         <li key={s.id}>
           {s.title || s.url} · {new Date(s.startedAt).toLocaleString()} {s.live ? '(recording)' : ''}
-          <Button onPress={() => deleteSession(s.id)} isDisabled={s.live}>Delete</Button>
+          <Button onClick={() => deleteSession(s.id)} disabled={s.live}>Delete</Button>
         </li>
       ))}
     </ul>
@@ -241,7 +241,7 @@ function CloudSwitch() {
   const { status, settings, configure } = useSessionCloud()
   return (
     <>
-      <Switch aria-label="Sync sessions" checked={settings.enabled} onChange={(enabled) => configure({ enabled })} />
+      <Switch aria-label="Sync sessions" checked={settings.enabled} onCheckedChange={(enabled) => configure({ enabled })} />
       <span>{status.state === 'error' ? status.error : `${status.pending} pending`}</span>
     </>
   )

@@ -1,8 +1,29 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Credenza } from '@/components/ui/credenza'
+import {
+  Credenza,
+  CredenzaBack,
+  CredenzaBackdrop,
+  CredenzaClose,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaView,
+} from '@/components/ui/credenza'
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from '@/components/ui/field'
 import { Form } from '@/components/ui/form'
 import { IconSwap } from '@/components/ui/icon-swap'
 import { Input } from '@/components/ui/input'
@@ -10,14 +31,10 @@ import { Label } from '@/components/ui/label'
 import { ListRow } from '@/components/ui/list'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
-import {
-  FieldDescription,
-  FieldError,
-  TextField,
-} from '@/components/ui/text-field'
 import { TextMorph } from '@/components/ui/text-morph'
 import { Toggle } from '@/components/ui/toggle'
 import { Icon } from '@/lib/icon'
+import { BLProvider } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 
 type View = 'signin' | 'register' | 'reset' | 'sent' | 'welcome'
@@ -80,25 +97,71 @@ function useLater() {
   }
 }
 
+// The submit button is pending while the Promise its press returned runs:
+// `start` hands it one, `settle` ends it (the round trip came back, or the
+// form didn't pass its checks).
+function usePending() {
+  const settleRef = useRef<(() => void) | null>(null)
+  return {
+    start: () =>
+      new Promise<void>((resolve) => {
+        settleRef.current = resolve
+      }),
+    settle: () => {
+      settleRef.current?.()
+      settleRef.current = null
+    },
+  }
+}
+
 // A sign-in gate over the app. Sign in, Register and Reset are views of one
-// non-dismissable Credenza: switching morphs the card and slides the views,
+// non-dismissible Credenza: switching morphs the card and slides the views,
 // and the email carries across. Nothing but signing in takes it down.
-function AtlasGate({ compact }: { compact: boolean }) {
+function AtlasGate() {
   const later = useLater()
+  const pending = usePending()
   const [view, setView] = useState<View>('signin')
   const [user, setUser] = useState<User | null>(null)
   const [entered, setEntered] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [terms, setTerms] = useState(false)
   const [shown, setShown] = useState(false)
   const [busy, setBusy] = useState(false)
+  // Checks show once a submit was tried, then follow the typing.
+  const [tried, setTried] = useState(false)
   // What the pretend server said, mapped onto fields by name.
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  // Each view's checks, by field name.
+  const checks: Record<string, string | null> =
+    view === 'signin'
+      ? {
+          email: emailError(email),
+          password: password ? null : 'Enter your password.',
+        }
+      : view === 'register'
+        ? {
+            name: name.trim() ? null : 'Enter your name.',
+            email: emailError(email),
+            password:
+              password.length >= 8 ? null : 'Use at least 8 characters.',
+            terms: terms ? null : 'Accept the terms to continue.',
+          }
+        : view === 'reset'
+          ? { email: emailError(email) }
+          : {}
+  // What a field shows: the server's answer, else its check once tried.
+  const problem = (field: string) =>
+    errors[field] || (tried ? checks[field] : null) || null
+  const invalid = (field: string) => (problem(field) ? true : undefined)
+
   const go = (next: View) => {
     setErrors({})
+    setTried(false)
     setPassword('')
+    setTerms(false)
     setShown(false)
     setView(next)
   }
@@ -108,6 +171,7 @@ function AtlasGate({ compact }: { compact: boolean }) {
     setErrors({})
     later(1200, () => {
       setBusy(false)
+      pending.settle()
       answer()
     })
   }
@@ -119,7 +183,9 @@ function AtlasGate({ compact }: { compact: boolean }) {
   const register = () =>
     request(() => {
       if (email.trim().toLowerCase() === TAKEN) {
-        setErrors({ email: 'There’s already an Atlas account for this email.' })
+        setErrors({
+          email: 'There’s already an Atlas account for this email.',
+        })
         return
       }
       setUser({ name: name.trim(), email, isNew: true })
@@ -133,44 +199,57 @@ function AtlasGate({ compact }: { compact: boolean }) {
     go('signin')
   }
 
-  const submit = (send: () => void) => (e: { preventDefault: () => void }) => {
+  // Every field is checked on submit; the first that fails takes focus.
+  const submit = (send: () => void) => (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!busy) send()
+    if (busy) return
+    setTried(true)
+    if (Object.values(checks).some(Boolean)) {
+      pending.settle()
+      const form = e.currentTarget
+      requestAnimationFrame(() =>
+        form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
+      )
+      return
+    }
+    send()
   }
   const emailField = (
-    <TextField
-      name="email"
-      type="email"
-      value={email}
-      onChange={(v) => {
-        setEmail(v)
-        // Editing the address answers the server's complaint about it.
-        if (errors.email) setErrors({})
-      }}
-      validate={emailError}
-      isDisabled={busy}
-      autoComplete="email"
-    >
-      <Label variant="field">Email</Label>
+    <Field name="email" invalid={invalid('email')} disabled={busy}>
+      <FieldLabel variant="field">Email</FieldLabel>
       <Input
-        data-autofocus={view !== 'register' ? '' : undefined}
+        type="email"
+        value={email}
+        onValueChange={(v) => {
+          setEmail(v)
+          // Editing the address answers the server's complaint about it.
+          if (errors.email) setErrors({})
+        }}
+        autoComplete="email"
+        autoFocus={view !== 'register'}
         placeholder="you@company.com"
       />
-      <FieldError />
-    </TextField>
+      <FieldError>{problem('email')}</FieldError>
+    </Field>
   )
-  const passwordInput = (
+  const passwordInput = (autoComplete: string) => (
     <div className="relative">
-      <Input className="pr-12" />
+      <Input
+        type={shown ? 'text' : 'password'}
+        value={password}
+        onValueChange={setPassword}
+        autoComplete={autoComplete}
+        className="pr-12"
+      />
       {/* A toggle button, so "pressed" is announced with its name. */}
       <Toggle
         size="sm"
         aria-label="Show password"
-        isSelected={shown}
-        onChange={setShown}
+        pressed={shown}
+        onPressedChange={setShown}
         className={cn(
           'absolute top-1/2 right-1.5 -translate-y-1/2 text-foreground/70',
-          'data-selected:bg-transparent data-selected:text-foreground',
+          'data-pressed:bg-transparent data-pressed:text-foreground',
         )}
       >
         <IconSwap id={shown ? 'shown' : 'hidden'}>
@@ -180,7 +259,12 @@ function AtlasGate({ compact }: { compact: boolean }) {
     </div>
   )
   const submitButton = (idle: string, working: string) => (
-    <Button type="submit" size="pill" isPending={busy} className="mt-1">
+    <Button
+      type="submit"
+      size="pill"
+      onClick={() => pending.start()}
+      className="mt-1"
+    >
       {busy ? <Spinner spin size={18} /> : null}
       <TextMorph>{busy ? working : idle}</TextMorph>
     </Button>
@@ -192,8 +276,8 @@ function AtlasGate({ compact }: { compact: boolean }) {
         variant="link"
         size="sm"
         className="h-auto px-0"
-        isDisabled={busy}
-        onPress={() => go(next)}
+        disabled={busy}
+        onClick={() => go(next)}
       >
         {label}
       </Button>
@@ -205,160 +289,159 @@ function AtlasGate({ compact }: { compact: boolean }) {
       <Atlas user={entered ? user : null} onSignOut={signOut} />
       <Credenza
         open={!entered}
-        isDismissable={false}
-        compact={compact}
+        dismissible={false}
         view={view}
-        title={
-          view === 'welcome' && user?.isNew ? 'Account created' : titles[view]
-        }
-        canBack={(view === 'reset' && !busy) || view === 'sent'}
-        onBack={() => go('signin')}
       >
-        {view === 'signin' ? (
-          <Form
-            validationErrors={errors}
-            onSubmit={submit(signIn)}
-            className="gap-3.5 px-4 pt-1 pb-4"
-          >
-            {emailField}
-            <TextField
-              name="password"
-              type={shown ? 'text' : 'password'}
-              value={password}
-              onChange={setPassword}
-              validate={(v) => (v ? null : 'Enter your password.')}
-              isDisabled={busy}
-              autoComplete="current-password"
-            >
-              <Label variant="field">Password</Label>
-              {passwordInput}
-              <FieldError />
-            </TextField>
-            <Button
-              variant="link"
-              size="sm"
-              className="-mt-1.5 h-auto self-end px-1"
-              isDisabled={busy}
-              onPress={() => go('reset')}
-            >
-              Forgot password?
-            </Button>
-            {submitButton('Sign in', 'Signing in…')}
-            {switchTo('New to Atlas?', 'Create an account', 'register')}
-          </Form>
-        ) : view === 'register' ? (
-          <Form
-            validationErrors={errors}
-            onSubmit={submit(register)}
-            className="gap-3.5 px-4 pt-1 pb-4"
-          >
-            <TextField
-              name="name"
-              value={name}
-              onChange={setName}
-              validate={(v) => (v.trim() ? null : 'Enter your name.')}
-              isDisabled={busy}
-              autoComplete="name"
-            >
-              <Label variant="field">Full name</Label>
-              <Input data-autofocus placeholder="Maya Lindqvist" />
-              <FieldError />
-            </TextField>
-            {emailField}
-            <TextField
-              name="password"
-              type={shown ? 'text' : 'password'}
-              value={password}
-              onChange={setPassword}
-              validate={(v) =>
-                v.length >= 8 ? null : 'Use at least 8 characters.'
-              }
-              isDisabled={busy}
-              autoComplete="new-password"
-            >
-              <Label variant="field">Password</Label>
-              {passwordInput}
-              <Strength password={password} />
-              <FieldError />
-            </TextField>
-            <Checkbox
-              name="terms"
-              isDisabled={busy}
-              validate={(checked) =>
-                checked ? null : 'Accept the terms to continue.'
-              }
-              className="items-start text-subhead"
-            >
-              {({ isInvalid }) => (
-                <span>
-                  I agree to the Terms of Service and Privacy Policy
-                  {isInvalid ? (
-                    <span className="block text-footnote text-destructive">
-                      Accept the terms to continue.
-                    </span>
-                  ) : null}
+        <CredenzaBackdrop />
+        <CredenzaContent>
+          <CredenzaHeader>
+            <CredenzaBack
+              hidden={!((view === 'reset' && !busy) || view === 'sent')}
+              onClick={() => go('signin')}
+            />
+            <CredenzaTitle>
+              {view === 'welcome' && user?.isNew
+                ? 'Account created'
+                : titles[view]}
+            </CredenzaTitle>
+            <CredenzaClose />
+          </CredenzaHeader>
+          <CredenzaView>
+            {view === 'signin' ? (
+              <Form
+                noValidate
+                onSubmit={submit(signIn)}
+                className="gap-3.5 px-4 pt-1 pb-4"
+              >
+                {emailField}
+                <Field
+                  name="password"
+                  invalid={invalid('password')}
+                  disabled={busy}
+                >
+                  <FieldLabel variant="field">Password</FieldLabel>
+                  {passwordInput('current-password')}
+                  <FieldError>{problem('password')}</FieldError>
+                </Field>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="-mt-1.5 h-auto self-end px-1"
+                  disabled={busy}
+                  onClick={() => go('reset')}
+                >
+                  Forgot password?
+                </Button>
+                {submitButton('Sign in', 'Signing in…')}
+                {switchTo('New to Atlas?', 'Create an account', 'register')}
+              </Form>
+            ) : view === 'register' ? (
+              <Form
+                noValidate
+                onSubmit={submit(register)}
+                className="gap-3.5 px-4 pt-1 pb-4"
+              >
+                <Field name="name" invalid={invalid('name')} disabled={busy}>
+                  <FieldLabel variant="field">Full name</FieldLabel>
+                  <Input
+                    value={name}
+                    onValueChange={setName}
+                    autoComplete="name"
+                    autoFocus
+                    placeholder="Maya Lindqvist"
+                  />
+                  <FieldError>{problem('name')}</FieldError>
+                </Field>
+                {emailField}
+                <Field
+                  name="password"
+                  invalid={invalid('password')}
+                  disabled={busy}
+                >
+                  <FieldLabel variant="field">Password</FieldLabel>
+                  {passwordInput('new-password')}
+                  <Strength password={password} />
+                  <FieldError>{problem('password')}</FieldError>
+                </Field>
+                <Label variant="control" className="items-start text-subhead">
+                  <Checkbox
+                    name="terms"
+                    checked={terms}
+                    onCheckedChange={(checked) => setTerms(checked === true)}
+                    disabled={busy}
+                    aria-invalid={invalid('terms')}
+                  />
+                  <span>
+                    I agree to the Terms of Service and Privacy Policy
+                    {problem('terms') ? (
+                      <span className="block text-footnote text-destructive">
+                        {problem('terms')}
+                      </span>
+                    ) : null}
+                  </span>
+                </Label>
+                {submitButton('Create account', 'Creating account…')}
+                {switchTo('Already have an account?', 'Sign in', 'signin')}
+              </Form>
+            ) : view === 'reset' ? (
+              <Form
+                noValidate
+                onSubmit={submit(() => request(() => setView('sent')))}
+                className="gap-3.5 px-4 pt-1 pb-4"
+              >
+                <p className="m-0 text-subhead text-foreground/70">
+                  Enter the email you sign in with and we’ll send a link to
+                  choose a new password.
+                </p>
+                {emailField}
+                {submitButton('Send reset link', 'Sending…')}
+              </Form>
+            ) : view === 'sent' ? (
+              <div className="px-4 pt-2 pb-4 text-center">
+                <span className="mx-auto grid size-14 place-items-center rounded-full bg-primary/12 text-primary">
+                  <Icon name="envelope-badge" size={28} />
                 </span>
-              )}
-            </Checkbox>
-            {submitButton('Create account', 'Creating account…')}
-            {switchTo('Already have an account?', 'Sign in', 'signin')}
-          </Form>
-        ) : view === 'reset' ? (
-          <Form
-            onSubmit={submit(() => request(() => setView('sent')))}
-            className="gap-3.5 px-4 pt-1 pb-4"
-          >
-            <p className="m-0 text-subhead text-foreground/70">
-              Enter the email you sign in with and we’ll send a link to choose a
-              new password.
-            </p>
-            {emailField}
-            {submitButton('Send reset link', 'Sending…')}
-          </Form>
-        ) : view === 'sent' ? (
-          <div className="px-4 pt-2 pb-4 text-center">
-            <span className="mx-auto grid size-14 place-items-center rounded-full bg-primary/12 text-primary">
-              <Icon name="envelope-badge" size={28} />
-            </span>
-            <p
-              role="status"
-              className="mt-3 mb-4 text-subhead text-foreground/70"
-            >
-              We sent a reset link to{' '}
-              <b className="font-semibold text-foreground">{email}</b>. It works
-              for one hour.
-            </p>
-            <Button
-              data-autofocus
-              size="pill"
-              variant="secondary"
-              onPress={() => go('signin')}
-            >
-              Back to sign in
-            </Button>
-          </div>
-        ) : user ? (
-          <div className="px-4 pt-3 pb-4 text-center">
-            <Avatar name={user.name} size={64} className="mx-auto" />
-            <p role="status" className="mt-3 mb-1 text-title font-bold">
-              {user.isNew ? 'Welcome' : 'Welcome back'},{' '}
-              {user.name.split(' ')[0]}
-            </p>
-            <p className="m-0 text-subhead text-foreground/70">
-              {user.isNew
-                ? `We sent a link to ${user.email} to confirm it.`
-                : `Signed in as ${user.email}`}
-            </p>
-            <Button
-              data-autofocus
-              size="pill"
-              className="mt-5"
-              onPress={() => setEntered(true)}
-            >
-              Continue to Atlas
-            </Button>
-          </div>
-        ) : null}
+                <p
+                  role="status"
+                  className="mt-3 mb-4 text-subhead text-foreground/70"
+                >
+                  We sent a reset link to{' '}
+                  <b className="font-semibold text-foreground">{email}</b>. It
+                  works for one hour.
+                </p>
+                <Button
+                  autoFocus
+                  size="pill"
+                  variant="secondary"
+                  onClick={() => go('signin')}
+                >
+                  Back to sign in
+                </Button>
+              </div>
+            ) : user ? (
+              <div className="px-4 pt-3 pb-4 text-center">
+                <Avatar name={user.name} size={64} className="mx-auto" />
+                <p role="status" className="mt-3 mb-1 text-title font-bold">
+                  {user.isNew ? 'Welcome' : 'Welcome back'},{' '}
+                  {user.name.split(' ')[0]}
+                </p>
+                <p className="m-0 text-subhead text-foreground/70">
+                  {user.isNew
+                    ? `We sent a link to ${user.email} to confirm it.`
+                    : `Signed in as ${user.email}`}
+                </p>
+                <Button
+                  autoFocus
+                  size="pill"
+                  className="mt-5"
+                  onClick={() => setEntered(true)}
+                >
+                  Continue to Atlas
+                </Button>
+              </div>
+            ) : null}
+          </CredenzaView>
+        </CredenzaContent>
       </Credenza>
     </>
   )
@@ -407,7 +490,7 @@ function Atlas({
         {user ? (
           <>
             <Avatar name={user.name} size={28} />
-            <Button variant="secondary" size="sm" onPress={onSignOut}>
+            <Button variant="secondary" size="sm" onClick={onSignOut}>
               Sign out
             </Button>
           </>
@@ -466,7 +549,9 @@ function Window({
         compact ? 'h-[680px]' : 'h-[620px]',
       )}
     >
-      {children}
+      {/* Popups render into BLProvider's root: the Credenza, its scrim and its
+          focus trap stay inside this window. */}
+      <BLProvider className="bg-background">{children}</BLProvider>
     </div>
   )
 }
@@ -478,7 +563,7 @@ export default function AuthGate({ variant = 'dialog' }: { variant?: string }) {
   const compact = variant === 'tray'
   return (
     <Window compact={compact}>
-      <AtlasGate compact={compact} />
+      <AtlasGate />
     </Window>
   )
 }

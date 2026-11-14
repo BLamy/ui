@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
@@ -11,7 +11,7 @@ export interface ProgressStep {
 
 export type ProgressStepState = 'done' | 'active' | 'todo';
 
-export interface ProgressStepperProps {
+export interface ProgressStepperProps extends Omit<ComponentProps<'ol'>, 'children'> {
   steps: ProgressStep[];
   /** Index of the step in progress. Everything before it is done, everything after is to do. */
   current: number;
@@ -20,8 +20,6 @@ export interface ProgressStepperProps {
   /** Whether the active segment shimmers while it waits. */
   animated?: boolean;
   labels?: boolean;
-  className?: string;
-  style?: CSSProperties;
 }
 
 export const progressStepperVariants = cva(
@@ -51,7 +49,8 @@ function fillClass(state: ProgressStepState, animated: boolean) {
 /**
  * A row of milestones for a multi-step process (an order, a checkout, a deploy). Each step
  * exposes `data-state="done|active|todo"` so hosts can restyle any of the three, and the
- * accent follows `--ck-stepper-accent` (defaults to the host tint).
+ * accent follows `--ck-stepper-accent` (defaults to the host tint). The list is named "Progress" unless you name
+ * it (`aria-label`, `aria-labelledby`), as you should when a page has more than one.
  */
 export function ProgressStepper({
   steps,
@@ -60,16 +59,17 @@ export function ProgressStepper({
   animated = true,
   labels = false,
   className,
-  style,
+  'aria-label': ariaLabel,
+  ...rest
 }: ProgressStepperProps) {
   return (
     <ol
       data-slot="progress-stepper"
       data-variant={variant}
       data-animated={animated || undefined}
+      aria-label={ariaLabel ?? (rest['aria-labelledby'] ? undefined : 'Progress')}
+      {...rest}
       className={cn(progressStepperVariants({ variant }), className)}
-      style={style}
-      aria-label="Progress"
     >
       {steps.map((step, index) => {
         const state: ProgressStepState = index < current ? 'done' : index === current ? 'active' : 'todo';

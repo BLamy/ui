@@ -8,6 +8,7 @@ import { createTailscale, memoryTailscalePersistence, type Tailscale } from '@/l
 import { createFakeTailscaleClient } from '@/lib/tailscale-fake';
 import { TailscaleProvider, useTailscaleFetch, useTailscaleStatus } from '@/lib/tailscale-react';
 
+(globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
 afterEach(cleanup);
 
 function make(opts: Parameters<typeof createFakeTailscaleClient>[0] = {}) {
@@ -76,7 +77,7 @@ describe('TailscaleLoginButton', () => {
     );
     const b = screen.getByRole('button', { name: 'Disconnect' });
     expect(b.className).toContain('w-full');
-    expect(b.getAttribute('data-slot')).toBe('tailscale-login-button');
+    expect(b.getAttribute('data-slot')).toBe('button');
     act(() => b.click());
     expect(onSignOut).toHaveBeenCalled();
     expect(screen.getByRole('status').getAttribute('data-status')).toBe('connected');

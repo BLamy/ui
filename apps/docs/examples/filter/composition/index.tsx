@@ -19,11 +19,9 @@ export default function Composition() {
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <FilterMenu fields={fields} state={state} hotkey="g">
-          <Button variant="secondary" size="sm" aria-keyshortcuts="G">
-            <Icon name="plus" size={14} sw={2.4} />
-            Add filter
-          </Button>
+        <FilterMenu fields={fields} state={state} hotkey="g" render={<Button variant="secondary" size="sm" />}>
+          <Icon name="plus" size={14} sw={2.4} />
+          Add filter
         </FilterMenu>
         {state.filters.map((filter) => (
           <FilterChip

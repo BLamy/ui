@@ -35,8 +35,8 @@ function FromBump() {
         </ComposerCard>
       </Composer>
       <div className="flex justify-center gap-2">
-        <Button variant="secondary" isDisabled={shown >= STEPS.length} onPress={() => setShown((n) => n + 1)}>Add step</Button>
-        <Button variant="secondary" isDisabled={shown === 0} onPress={() => setShown((n) => n - 1)}>Remove step</Button>
+        <Button variant="secondary" disabled={shown >= STEPS.length} onClick={() => setShown((n) => n + 1)}>Add step</Button>
+        <Button variant="secondary" disabled={shown === 0} onClick={() => setShown((n) => n - 1)}>Remove step</Button>
       </div>
     </div>
   )

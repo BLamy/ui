@@ -12,7 +12,6 @@
     "sidebar-demo.tsx"
   ],
   "dependencies": [
-    "react-aria",
-    "react-aria-components"
+    "@ui-sdk/react"
   ]
 }

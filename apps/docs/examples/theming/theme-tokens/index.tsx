@@ -61,7 +61,7 @@ export default function Appearance() {
                   <Switch
                     aria-label="Dark Mode"
                     checked={dark}
-                    onChange={setDark}
+                    onCheckedChange={setDark}
                   />
                 }
               />

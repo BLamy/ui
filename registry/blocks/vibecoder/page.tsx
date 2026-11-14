@@ -5,9 +5,11 @@ import type { OpenCodeHostBridge } from '@/lib/open-code-host';
 import { OpenCode, type OpenCodeProps } from '@/components/ui/open-code';
 import {
   HoverCard,
+  HoverCardContent,
   HoverCardHeader,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
+import { Button } from '@/components/ui/button';
 import { Icon } from '@/lib/icon';
 import { ThemeScope } from '@/lib/theme';
 import { createVibecoderHost } from './host';
@@ -132,16 +134,21 @@ function Workspace({
     <ThemeScope
       scope="terminal"
       appearance={theme}
-      className="flex h-full min-h-0 w-full flex-col"
+      className="flex h-full min-h-0 w-full flex-col bg-background text-foreground"
     >
       {keychain && (
         <div className="flex shrink-0 flex-wrap items-center gap-3 px-3 py-2 text-sm">
-          <HoverCardTrigger>
-            <button
-              type="button"
-              className="rounded-lg border border-separator px-3 py-2 disabled:opacity-50"
-              disabled={
-                vault?.status === 'loading' || vault?.status === 'unsupported'
+          <HoverCard>
+            <HoverCardTrigger
+              render={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={
+                    vault?.status === 'loading' ||
+                    vault?.status === 'unsupported'
+                  }
+                />
               }
               onClick={() =>
                 vault?.status === 'unlocked'
@@ -154,12 +161,12 @@ function Workspace({
                 : vault?.status === 'empty'
                   ? 'Set up Passwords keychain'
                   : 'Unlock Passwords keychain'}
-            </button>
-            <HoverCard placement="bottom start">
+            </HoverCardTrigger>
+            <HoverCardContent side="bottom" align="start">
               <KeychainCard status={vault?.status} />
-            </HoverCard>
-          </HoverCardTrigger>
-          <span className="text-xs text-secondary-label">
+            </HoverCardContent>
+          </HoverCard>
+          <span className="text-caption text-muted-foreground">
             {vault?.status === 'unlocked'
               ? 'Connections saved in Passwords'
               : vault?.status === 'unsupported'

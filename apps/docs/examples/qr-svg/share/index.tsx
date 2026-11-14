@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { QRSvg } from '@/components/ui/qr-svg'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Switch } from '@/components/ui/switch'
 
 type Level = 'L' | 'M' | 'Q' | 'H'
@@ -33,11 +33,14 @@ export default function Share() {
         <Segmented
           aria-label="Error correction level"
           value={level}
-          onChange={(v) => setLevel(v as Level)}
-          options={(['L', 'M', 'Q', 'H'] as const).map((l) => ({ id: l, label: l }))}
-        />
+          onValueChange={(v) => v && setLevel(v)}
+        >
+          {(['L', 'M', 'Q', 'H'] as const).map((l) => (
+            <SegmentedItem key={l} value={l}>{l}</SegmentedItem>
+          ))}
+        </Segmented>
         <label className="flex items-center gap-3 text-subhead">
-          <Switch checked={rounded} onChange={setRounded} aria-label="Rounded modules" />
+          <Switch checked={rounded} onCheckedChange={setRounded} aria-label="Rounded modules" />
           rounded modules
         </label>
       </div>

@@ -1,7 +1,14 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { HoverCardHeader } from '@/components/ui/hover-card';
 import { Spinner } from '@/components/ui/spinner';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
@@ -82,13 +89,9 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
 
   const pick = (c: Chat) => () => codex.select(c.id);
   const row = (c: Chat, nested = false) => (
-    <SplitViewItem key={c.id} id={c.id} variant="pill" className={cn(ROW, nested && 'pl-8!')} onPress={pick(c)}>
+    <SplitViewItem key={c.id} id={c.id} variant="pill" className={cn(ROW, nested && 'pl-8!')} onClick={pick(c)} preview={<ChatCard chat={c} />}>
       {c.kind === 'dot' && !nested && <DotOrb size={16} />}
-      {/* The title carries the chat's hover card, beside the sidebar. */}
-      <HoverCardTrigger className="min-w-0 flex-1">
-        <span className="min-w-0 flex-1 truncate">{c.title}</span>
-        <HoverCard placement="right" offset={16}><ChatCard chat={c} /></HoverCard>
-      </HoverCardTrigger>
+      <span className="min-w-0 flex-1 truncate">{c.title}</span>
       {c.unread > 0 && <span className="grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-caption2 font-semibold text-primary-foreground">{c.unread}</span>}
       <Status status={c.status} />
     </SplitViewItem>
@@ -100,10 +103,10 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
 
   const withInbox = (
     <>
-      <SplitViewSection title="Priority" collapsible defaultExpanded>
+      <SplitViewSection title="Priority" collapsible defaultOpen>
         {priority.length ? priority.map((c) => row(c)) : <div className="px-2.5 py-1.5 text-footnote text-tertiary-foreground">Nothing needs attention</div>}
       </SplitViewSection>
-      <SplitViewSection title="Chats" collapsible defaultExpanded>
+      <SplitViewSection title="Chats" collapsible defaultOpen>
         {[...dots, ...threads].filter((c) => !waiting.has(c.id)).map((c) => row(c))}
       </SplitViewSection>
     </>
@@ -118,18 +121,20 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
         const expanded = open.has(p);
         const shown = all.has(p) ? list : list.slice(0, 5);
         return (
-          <div key={p}>
-            <Button variant="ghost" aria-expanded={expanded} onPress={() => setOpen((o) => toggle(o, p))} className="h-9 w-full justify-start gap-2.5 rounded-ctl px-2.5 text-detail font-normal">
+          <Collapsible key={p} open={expanded} onOpenChange={() => setOpen((o) => toggle(o, p))}>
+            <CollapsibleTrigger render={<Button variant="ghost" className="h-9 w-full justify-start gap-2.5 rounded-ctl px-2.5 text-detail font-normal" />}>
               <Icon name={expanded ? 'folder-fill' : 'folder'} size={16} className="text-muted-foreground" />
               {p}
-            </Button>
-            {expanded && shown.map((c) => row(c, true))}
-            {expanded && list.length > shown.length && (
-              <Button variant="ghost" onPress={() => setAll((a) => toggle(a, p))} className="h-8 w-full justify-start rounded-ctl pl-8! text-detail font-normal text-tertiary-foreground">
-                Show more
-              </Button>
-            )}
-          </div>
+            </CollapsibleTrigger>
+            <CollapsiblePanel>
+              {shown.map((c) => row(c, true))}
+              {list.length > shown.length && (
+                <Button variant="ghost" onClick={() => setAll((a) => toggle(a, p))} className="h-8 w-full justify-start rounded-ctl pl-8! text-detail font-normal text-tertiary-foreground">
+                  Show more
+                </Button>
+              )}
+            </CollapsiblePanel>
+          </Collapsible>
         );
       })}
       <Label>Recents</Label>
@@ -150,16 +155,20 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
             title={s.collapsed ? 'Chats' : undefined}
             leading={
               <DropdownMenu>
-                <Button variant="ghost" aria-label="Workspace" className="h-8 gap-1 rounded-lg px-2 text-callout font-semibold data-hovered:bg-secondary">
+                <DropdownMenuTrigger
+                  render={<Button variant="ghost" aria-label="Workspace" className="h-8 gap-1 rounded-lg px-2 text-callout font-semibold hover:bg-secondary" />}
+                >
                   {workspace}
                   <Icon name="chevron-down" size={12} sw={2.4} className="text-muted-foreground" />
-                </Button>
-                <DropdownMenuContent aria-label="Workspaces" placement="bottom start" selectionMode="single" selectedKeys={[workspace]} onAction={(k) => setWorkspace(String(k))}>
-                  {WORKSPACES.map((w) => (
-                    <DropdownMenuItem key={w} id={w}>
-                      {w}
-                    </DropdownMenuItem>
-                  ))}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="bottom" align="start">
+                  <DropdownMenuRadioGroup value={workspace} onValueChange={(w) => w && setWorkspace(w)}>
+                    {WORKSPACES.map((w) => (
+                      <DropdownMenuRadioItem key={w} value={w} closeOnSelect>
+                        {w}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
             }
@@ -179,7 +188,7 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
           />
           <SplitViewContent>
             <div className="px-2 pb-6">
-              <Button variant="ghost" onPress={() => { codex.newChat(); s.show('supplementary'); }} className="h-9 w-full justify-start gap-2.5 rounded-ctl px-2.5 text-detail font-normal">
+              <Button variant="ghost" onClick={() => { codex.newChat(); s.show('supplementary'); }} className="h-9 w-full justify-start gap-2.5 rounded-ctl px-2.5 text-detail font-normal">
                 <Icon name="compose" size={16} className="text-muted-foreground" />
                 New chat
               </Button>

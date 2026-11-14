@@ -1,6 +1,6 @@
 # Checkbox
 
-react-aria's `Checkbox` with the iOS selection mark: a 22px circle that fills with the tint and draws its tick on, or a rounded square (`shape="square"`) for the shadcn look. `Checkbox` is one boolean, `CheckboxGroup` ties several to an array of values, and either can be indeterminate. For an on/off setting that takes effect immediately use [Switch](https://blamy.github.io/ui/#/switch); for one choice out of many use [RadioGroup](https://blamy.github.io/ui/#/radio-group).
+UI SDK's `Checkbox` with the iOS selection mark: a 22px circle that fills with the tint and draws its tick on, or a rounded square (`shape="square"`) for the shadcn look. `Checkbox` is one boolean, `CheckboxGroup` ties several to an array of values, and either can be indeterminate. For an on/off setting that takes effect immediately use [Switch](https://blamy.github.io/ui/#/switch); for one choice out of many use [RadioGroup](https://blamy.github.io/ui/#/radio-group).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -27,60 +27,70 @@ import { Checkbox, CheckboxGroup } from '@brett_lamy/ui'
 
 ## Shapes and states
 
-Children are the label. `defaultSelected` / `isSelected` + `onChange(boolean)` control it; `isIndeterminate` shows a dash instead of a tick; `isDisabled` dims the row. A `required` checkbox in a [Form](https://blamy.github.io/ui/#/form) blocks the submit until it is checked and then turns red.
+The root is the box itself; with no children it renders its `CheckboxIndicator`, the tick. Put it and its text in a [Label](https://blamy.github.io/ui/#/label) with `variant="control"` so the whole line presses it, or give it an `aria-label`. `checked` / `defaultChecked` + `onCheckedChange(checked, details)` control it, where `checked` is `true`, `false` or `'indeterminate'` (a dash instead of a tick); `disabled` dims it and its label. A `required` checkbox in a [Form](https://blamy.github.io/ui/#/form) blocks the submit until it is checked; inside a [Field](https://blamy.github.io/ui/#/field) marked `invalid` the box turns red.
 
 {% demo src="checkbox/states" %}
 
 ```tsx
-<Checkbox defaultSelected>Circle</Checkbox>
-<Checkbox shape="square" isIndeterminate>Some selected</Checkbox>
-<Checkbox shape="square" name="terms" isRequired>I agree to the Terms</Checkbox>
+<Label variant="control"><Checkbox defaultChecked />Circle</Label>
+<Label variant="control"><Checkbox shape="square" defaultChecked="indeterminate" />Some selected</Label>
+<Label variant="control"><Checkbox shape="square" name="terms" required />I agree to the Terms</Label>
 ```
 
 ## Groups and select all
 
-`CheckboxGroup` holds a `value` array (or `defaultValue`) and calls `onChange(string[])`; each child `Checkbox` has a `value`. Put a `Label` first, or give the group an `aria-label`. A "select all" box is an ordinary `Checkbox` whose `isSelected`, `isIndeterminate` and `onChange` you derive from the array.
+`CheckboxGroup` holds a `value` array (or `defaultValue`) and calls `onValueChange(values, details)`; each `Checkbox` inside gives its `value`. Name the group with `aria-label`, or a `Label` whose `htmlFor` is the group's `id`. A "select all" box is a `Checkbox` with `parent`: checked when every value is, indeterminate while some are, and it checks or clears the enabled ones. Pass `allValues` so it is right on the first render.
 
 {% demo src="checkbox/select-all" %}
 
 ```tsx
-<CheckboxGroup value={selected} onChange={setSelected}>
-  <Label>Notification channels</Label>
-  <Checkbox value="email">Email</Checkbox>
-  <Checkbox value="push">Push</Checkbox>
+<CheckboxGroup aria-label="Notification channels" value={selected} onValueChange={setSelected} allValues={['email', 'push']}>
+  <Label variant="control"><Checkbox parent />All channels</Label>
+  <Label variant="control"><Checkbox value="email" />Email</Label>
+  <Label variant="control"><Checkbox value="push" />Push</Label>
 </CheckboxGroup>
 ```
 
+To check a box or a group from elsewhere, pass a controller from `createCheckboxController()` or `createCheckboxGroupController()` as `controller`.
+
 ## Accessibility
 
-A native `<input type="checkbox">` sits inside the label, so Space toggles, Tab moves between boxes and the whole row is the click target. The indeterminate state is exposed to assistive technology as "mixed". The visible text is the accessible name; for an icon-only or text-less box add `aria-label`. The focus ring shows for keyboard focus only (`data-focus-visible`). A group needs its own name (`Label` or `aria-label`).
+Each box is a `<button>` with the `checkbox` role and `aria-checked` (`mixed` while indeterminate), plus a hidden native checkbox that takes part in forms, so Space toggles it and Tab moves between boxes. A wrapping `Label` names it and makes the text a click target; a box with no text needs `aria-label`. A parent box points at its children with `aria-controls`. The focus ring shows for keyboard focus only (`focus-visible`). A group needs its own name.
 
 ## Props
 
 ### Checkbox
 
-Every react-aria `Checkbox` prop applies, plus:
+UI SDK's `Checkbox` props, plus:
 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `shape` | `circle` | `circle` or `square` (rounded 6px). |
-| `isSelected` / `defaultSelected` / `onChange` | — | Controlled / uncontrolled boolean. |
-| `isIndeterminate` | `false` | Dash instead of tick; takes precedence visually over `isSelected`. |
-| `isDisabled` / `isRequired` / `isInvalid` | `false` | Disabled dims to 40%; invalid turns the mark red. |
+| `checked` / `defaultChecked` / `onCheckedChange` | — | `true`, `false` or `'indeterminate'`; the callback gets `(checked, details)` with `details.reason` and `details.cancel()`. |
+| `disabled` / `readOnly` / `required` | `false` | Disabled dims to 40%; read-only shows the state but can't change it. |
 | `value`, `name` | — | The value inside a group; the form field name. |
-| `className` | — | Merged onto the row; may be a function of the render state. |
+| `parent` | `false` | Inside a group: checks or clears every enabled box. |
+| `controller` | — | From `createCheckboxController()`. |
+| `children` | `<CheckboxIndicator />` | Replace the mark. |
+| `className` | — | Merged onto the box; may be a function of the state. |
+
+### CheckboxIndicator
+
+The tick (or dash) inside the box. It stays mounted (`keepMounted`) so the tick draws itself on and off; children replace the mark, and may be a function of `{ checked, indeterminate }`.
 
 ### CheckboxGroup
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `value` / `defaultValue` / `onChange` | — | The array of selected `value`s. |
-| `isDisabled` / `isRequired` / `name` | — | Applied to every box. |
+| `value` / `defaultValue` / `onValueChange` | — | The array of checked `value`s; `(values, details)`. |
+| `allValues` | — | Every value, so a `parent` box knows the set before the boxes mount. |
+| `disabled` / `readOnly` / `required` / `name` | — | Applied to every box. |
+| `controller` | — | From `createCheckboxGroupController()`. |
 | `className` | — | Merged onto the vertical `gap-3` stack. |
 
 ## Styling
 
-The row is `data-slot="checkbox"`, the mark `data-slot="checkbox-indicator"` and the group `data-slot="checkbox-group"`. The mark reads the row's `data-selected`, `data-indeterminate`, `data-pressed`, `data-focus-visible` and `data-invalid` with `group-data-*` classes. The tick animates by stroke-dashoffset and stays still under reduced motion. `checkboxVariants({ shape })` styles the mark on its own.
+The box is `data-slot="checkbox"`, the mark `data-slot="checkbox-indicator"` and the group `data-slot="checkbox-group"`. The box carries `data-checked`, `data-unchecked`, `data-indeterminate`, `data-disabled`, `data-readonly` and `data-required`; pressed is `active:` and keyboard focus `focus-visible:`. Invalid is `aria-invalid` (which a Field writes) on the box or the group around it. The tick animates by stroke-dashoffset and stays still under reduced motion. `checkboxVariants({ shape })` styles the box on its own.
 
 ## cva recipes
 
@@ -91,7 +101,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/checkbox`. Base classes:
 
 ```text
-[ 'box-border grid size-[22px] shrink-0 place-items-center border-[1.5px] border-tertiary-foreground text-white', 'transition-[background-color,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'group-data-selected:border-primary group-data-selected:bg-primary', 'group-data-indeterminate:border-primary group-data-indeterminate:bg-primary', 'group-data-pressed:scale-90 group-data-focus-visible:ring-[3px] group-data-focus-visible:ring-ring/45', 'group-data-invalid:border-destructive group-data-invalid:group-data-selected:bg-destructive', ]
+[ 'box-border grid size-[22px] shrink-0 cursor-pointer place-items-center border-[1.5px] border-tertiary-foreground bg-transparent p-0 text-white outline-none', 'transition-[background-color,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'data-checked:border-primary data-checked:bg-primary', 'data-indeterminate:border-primary data-indeterminate:bg-primary', 'active:not-data-disabled:scale-90 focus-visible:ring-[3px] focus-visible:ring-ring/45', // Invalid: the box itself (`aria-invalid`, which a Field writes on its control) or the group around it. 'aria-invalid:border-destructive group-aria-invalid:border-destructive', 'aria-invalid:data-checked:border-destructive aria-invalid:data-checked:bg-destructive group-aria-invalid:data-checked:border-destructive group-aria-invalid:data-checked:bg-destructive', 'data-disabled:cursor-default data-disabled:opacity-40', ]
 ```
 
 **`shape`** — default `circle`

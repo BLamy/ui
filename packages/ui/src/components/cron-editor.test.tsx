@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CronEditor, CRON_PRESETS } from '@/components/ui/cron-editor';
@@ -13,6 +13,8 @@ vi.mock('gpu-cron', () => {
   mocks.loads += 1;
   return { isAvailable: mocks.isAvailable, parse: mocks.parse };
 });
+
+(globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
 
 const FROM = '2026-10-02T10:00:00Z'; // a Friday
 const base = { from: FROM, timeZone: 'UTC', locale: 'en-US', debounceMs: 5 } as const;
@@ -34,7 +36,7 @@ afterEach(() => {
 });
 
 const expressionField = () => screen.getByRole('textbox', { name: 'Cron expression' }) as HTMLInputElement;
-const type = (value: string) => fireEvent.change(expressionField(), { target: { value } });
+const type = (value: string) => fireEvent.input(expressionField(), { target: { value } });
 const cell = (name: string) => document.querySelector(`[data-field=${name}]`) as HTMLElement;
 const runs = () => [...document.querySelectorAll('[data-slot=cron-editor-next] li')].map((li) => li.textContent);
 const description = () => document.querySelector('[data-slot=cron-editor-description]')?.textContent;
@@ -158,6 +160,33 @@ describe('CronEditor (raw expression)', () => {
     expect(screen.getAllByRole('button')).toHaveLength(CRON_PRESETS.length);
   });
 
+  it('makes the presets a toggle group: one tab stop, arrows between them, one pressed', () => {
+    render(<CronEditor {...base} defaultValue="0 * * * *" naturalLanguage={false} />);
+    const group = screen.getByRole('group', { name: 'Presets' });
+    const buttons = [...group.querySelectorAll<HTMLButtonElement>('button')];
+    expect(buttons.filter((b) => b.getAttribute('tabindex') === '0').map((b) => b.textContent)).toEqual(['Hourly']);
+    act(() => { buttons[1].focus(); });
+    act(() => { fireEvent.keyDown(buttons[1], { key: 'ArrowRight' }); });
+    expect(document.activeElement).toBe(buttons[2]);
+    // Pressing the pressed preset again keeps it.
+    fireEvent.click(screen.getByRole('button', { name: 'Hourly' }));
+    expect(expressionField().value).toBe('0 * * * *');
+    expect(screen.getByRole('button', { name: 'Hourly' }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('reports why the expression changed, and lets the callback refuse it', () => {
+    const onValueChange = vi.fn();
+    const { unmount } = render(<CronEditor {...base} defaultValue="" onValueChange={onValueChange} naturalLanguage={false} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Hourly' }));
+    expect(onValueChange).toHaveBeenLastCalledWith('0 * * * *', expect.objectContaining({ reason: 'item-press' }));
+    type('5 4 * * *');
+    expect(onValueChange).toHaveBeenLastCalledWith('5 4 * * *', expect.objectContaining({ reason: 'input-change' }));
+    unmount();
+    render(<CronEditor {...base} defaultValue="0 9 * * *" onValueChange={(_, details) => details.cancel()} naturalLanguage={false} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Hourly' }));
+    expect(expressionField().value).toBe('0 9 * * *');
+  });
+
   it('takes custom presets, or none', () => {
     const { unmount } = render(<CronEditor {...base} presets={[{ label: 'Nightly', value: '0 2 * * *' }]} naturalLanguage={false} />);
     expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['Nightly']);
@@ -181,9 +210,10 @@ describe('CronEditor (raw expression)', () => {
   });
 
   it('disables everything', () => {
-    render(<CronEditor {...base} isDisabled defaultValue="0 9 * * *" />);
+    render(<CronEditor {...base} disabled defaultValue="0 9 * * *" />);
     expect(expressionField().disabled).toBe(true);
-    expect((screen.getByRole('button', { name: 'Hourly' }) as HTMLButtonElement).disabled).toBe(true);
+    // A disabled toggle group keeps its toggles findable, marked disabled.
+    expect(screen.getByRole('button', { name: 'Hourly' }).getAttribute('aria-disabled')).toBe('true');
   });
 
   it('renders on the server without next runs (they depend on the clock)', () => {
@@ -198,7 +228,12 @@ describe('CronEditor (natural language)', () => {
   it('leaves the box out, with a note, when the browser has no WebGPU — and never loads gpu-cron', async () => {
     const loads = mocks.loads;
     render(<CronEditor {...base} />);
-    await waitFor(() => expect(document.querySelector('[data-slot=cron-editor-note]')).not.toBeNull());
+    // The note comes from the box as soon as it knows; the editor hears it from the box one render later and then
+    // brings the raw expression back. Wait for both, not just the first.
+    await waitFor(() => {
+      expect(document.querySelector('[data-slot=cron-editor-note]')).not.toBeNull();
+      expect(screen.queryByRole('textbox', { name: 'Cron expression' })).not.toBeNull();
+    });
     expect(document.querySelector('[data-slot=cron-editor-note]')?.textContent).toContain('needs WebGPU');
     expect(screen.queryByRole('textbox', { name: 'Describe the schedule' })).toBeNull();
     expect(mocks.isAvailable).not.toHaveBeenCalled();
@@ -248,14 +283,16 @@ describe('CronEditor (natural language)', () => {
   it('applies each answer as the value while you type, and the next runs follow', async () => {
     setWebGPU(true);
     const seen: string[] = [];
-    render(<CronEditor {...base} onValueChange={(v) => seen.push(v)} />);
+    const onValueChangeDetails: { reason: string }[] = [];
+    render(<CronEditor {...base} onValueChange={(v, d) => { seen.push(v); onValueChangeDetails.push(d); }} />);
     mocks.parse.mockImplementation(async (text: string) => ({ expression: text.includes('15') ? '*/15 * * * *' : '0 9 * * 1-5', next: [] }));
     const box = screen.getByRole('textbox', { name: 'Describe the schedule' }) as HTMLInputElement;
     await waitFor(() => expect(box.disabled).toBe(false));
-    fireEvent.change(box, { target: { value: 'every weekday at 9am' } });
+    fireEvent.input(box, { target: { value: 'every weekday at 9am' } });
     await waitFor(() => expect(seen).toEqual(['0 9 * * 1-5']));
+    expect(onValueChangeDetails.at(-1)).toMatchObject({ reason: 'input-change' });
     await waitFor(() => expect(runs()).toHaveLength(5));
-    fireEvent.change(box, { target: { value: 'every 15 minutes' } });
+    fireEvent.input(box, { target: { value: 'every 15 minutes' } });
     await waitFor(() => expect(seen.at(-1)).toBe('*/15 * * * *'));
   });
 
@@ -265,12 +302,12 @@ describe('CronEditor (natural language)', () => {
     render(<CronEditor {...base} defaultValue="0 9 * * 1-5" onValueChange={(v) => seen.push(v)} />);
     const box = screen.getByRole('textbox', { name: 'Describe the schedule' }) as HTMLInputElement;
     await waitFor(() => expect(box.disabled).toBe(false));
-    fireEvent.change(box, { target: { value: 'weekdays at nine' } });
+    fireEvent.input(box, { target: { value: 'weekdays at nine' } });
     await new Promise((r) => setTimeout(r, 50));
     expect(seen).toEqual([]);
 
     mocks.parse.mockRejectedValueOnce(new Error('prompt is 900 characters; the model fits 200 alongside its answer'));
-    fireEvent.change(box, { target: { value: 'a very long description' } });
+    fireEvent.input(box, { target: { value: 'a very long description' } });
     await waitFor(() => expect(document.querySelector('[data-slot=cron-editor-natural] [data-slot=field-error]')?.textContent).toMatch(/too long/));
   });
 });

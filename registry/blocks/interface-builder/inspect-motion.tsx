@@ -4,9 +4,9 @@
    leaves (AnimatePresence); Variants are named states that state picks (`animate={liked ? 'liked' : 'idle'}`) or an
    action plays on an outlet; Layout animates its own layout changes, and a Magic Motion id (layoutId) makes it a shared
    element that flies between scenes; Children staggers what appears inside it. Each has its own transition. */
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PlainButton } from '@/components/ui/plain-button';
-import { Segmented } from '@/components/ui/segmented';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
 import { TransitionButton } from './curves';
 import { physicsSpec, springSpec, tweenSpec, type TransitionSpec } from './easing';
@@ -65,19 +65,19 @@ export function TargetEditor({ target, onChange, onBegin, help }: { target: Targ
               <NumberInput className="min-w-0 flex-1" label={ki.label} value={Number(v)} unit={ki.unit} step={ki.step} min={ki.min} max={ki.max} onBegin={onBegin} onChange={(n, live) => set(k, n, live)} />
             )}
             {k !== 'backgroundColor' ? (
-              <IconAction icon={Array.isArray(v) ? 'minus' : 'ellipsis'} label={Array.isArray(v) ? 'One value' : 'Keyframes'} onPress={() => set(k, Array.isArray(v) ? v[0] : [v, typeof v === 'number' ? v : v, ki.key === 'scale' ? 1.1 : typeof v === 'number' ? v / 2 : v])} />
+              <IconAction icon={Array.isArray(v) ? 'minus' : 'ellipsis'} label={Array.isArray(v) ? 'One value' : 'Keyframes'} onClick={() => set(k, Array.isArray(v) ? v[0] : [v, typeof v === 'number' ? v : v, ki.key === 'scale' ? 1.1 : typeof v === 'number' ? v / 2 : v])} />
             ) : null}
-            <IconAction icon="xmark" label={`Remove ${ki.label}`} tone="danger" onPress={() => remove(k)} />
+            <IconAction icon="xmark" label={`Remove ${ki.label}`} tone="danger" onClick={() => remove(k)} />
           </div>
         );
       })}
       {left.length ? (
-        <DropdownMenu>
-          <PlainButton aria-label="Add property" className="flex h-6 cursor-pointer items-center gap-1 self-start rounded-md border-0 bg-transparent px-1.5 text-caption font-medium text-primary outline-none hover:bg-primary/10 data-focus-visible:ring-2 data-focus-visible:ring-ring">
+        <DropdownMenu onAction={(k) => set(k as MotionKey, keyInfo(k as MotionKey).base)}>
+          <DropdownMenuTrigger aria-label="Add property" className="flex h-6 cursor-pointer items-center gap-1 self-start rounded-md border-0 bg-transparent px-1.5 text-caption font-medium text-primary outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring">
             <Icon name="plus" size={11} sw={2.6} /> Property
-          </PlainButton>
-          <DropdownMenuContent aria-label="Properties" placement="bottom start" onAction={(k) => set(k as MotionKey, keyInfo(k as MotionKey).base)}>
-            {left.map((k) => <DropdownMenuItem key={k.key} id={k.key}>{k.label}</DropdownMenuItem>)}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="bottom" align="start">
+            {left.map((k) => <DropdownMenuItem key={k.key} value={k.key}>{k.label}</DropdownMenuItem>)}
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
@@ -142,15 +142,17 @@ export function MotionPanel({ ctx, onPlay }: { ctx: NodeCtx; onPlay: () => void 
             <Segmented
               aria-label="Trigger"
               value={m.appear.trigger}
-              onChange={(t) => setM({ appear: { ...m.appear!, trigger: t as 'mount' | 'inView' } })}
-              options={[{ id: 'mount', label: 'On appear' }, { id: 'inView', label: 'Scrolled into view' }]}
+              onValueChange={(t) => t && setM({ appear: { ...m.appear!, trigger: t as 'mount' | 'inView' } })}
               className="[&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption"
-            />
+            >
+              <SegmentedItem value="mount">On appear</SegmentedItem>
+              <SegmentedItem value="inView">Scrolled into view</SegmentedItem>
+            </Segmented>
             {m.appear.trigger === 'inView' ? <Field label="Once"><SwitchInput label="Only the first time" value={m.appear.once} onChange={(v) => setM({ appear: { ...m.appear!, once: v } })} /></Field> : null}
             <TargetEditor target={m.appear.target} onBegin={ctx.begin} onChange={(t, live) => setM({ appear: { ...m.appear!, target: t } }, live)} help="From these values to the node’s own. A list is keyframes on the way." />
             <TransitionButton spec={m.appear.transition} onBegin={ctx.begin} onChange={(s, live) => setM({ appear: { ...m.appear!, transition: s } }, live)} />
             <div className="flex items-center gap-2">
-              <PlainButton onPress={onPlay} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-primary px-2.5 text-caption font-semibold text-primary-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring">
+              <PlainButton onClick={onPlay} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-primary px-2.5 text-caption font-semibold text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <Icon name="play" size={11} sw={2.4} /> Preview on canvas
               </PlainButton>
             </div>
@@ -167,7 +169,7 @@ export function MotionPanel({ ctx, onPlay }: { ctx: NodeCtx; onPlay: () => void 
         {m.drag ? (
           <>
             <Field label="Axis">
-              <Segmented aria-label="Axis" value={m.drag.axis} onChange={(v) => setM({ drag: { ...m.drag!, axis: v as DragSpec['axis'] } })} options={[{ id: 'x', label: 'X' }, { id: 'y', label: 'Y' }, { id: 'both', label: 'Both' }]} className="[&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption" />
+              <Segmented aria-label="Axis" value={m.drag.axis} onValueChange={(v) => v && setM({ drag: { ...m.drag!, axis: v as DragSpec['axis'] } })} className="[&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption"><SegmentedItem value="x">X</SegmentedItem><SegmentedItem value="y">Y</SegmentedItem><SegmentedItem value="both">Both</SegmentedItem></Segmented>
             </Field>
             <Field label="Keep inside">
               <ChoiceInput label="Constraints" value={m.drag.constraints} onChange={(v) => setM({ drag: { ...m.drag!, constraints: v } })} options={[{ id: 'none', label: 'Anywhere' }, { id: 'parent', label: 'Its parent' }, ...outlets.map((o) => ({ id: o, label: `@${o}` }))]} />
@@ -184,7 +186,7 @@ export function MotionPanel({ ctx, onPlay }: { ctx: NodeCtx; onPlay: () => void 
 
       {effect('exit', 'Exit', 'exit', 'When it leaves: its condition turns false, its row goes, or its scene is dismissed (AnimatePresence).')}
 
-      <Section title="Variants" help="Named states: state picks one, or an action plays one on an outlet" action={<AddButton label="Add variant" onPress={() => {
+      <Section title="Variants" help="Named states: state picks one, or an action plays one on an outlet" action={<AddButton label="Add variant" onClick={() => {
         const names = Object.keys(m.variants ?? {});
         let name = 'pop';
         for (let i = 2; names.includes(name); i++) name = `pop${i}`;
@@ -198,7 +200,7 @@ export function MotionPanel({ ctx, onPlay }: { ctx: NodeCtx; onPlay: () => void 
                 <NameInput label="Variant name" value={name} taken={Object.keys(m.variants ?? {}).filter((x) => x !== name)}
                   onCommit={(to) => setM({ variants: Object.fromEntries(Object.entries(m.variants!).map(([k, x]) => [k === name ? to : k, x])) })} />
               </div>
-              <IconAction icon="trash" label={`Remove ${name}`} tone="danger" onPress={() => { const vs = { ...m.variants }; delete vs[name]; setM({ variants: Object.keys(vs).length ? vs : undefined }); }} />
+              <IconAction icon="trash" label={`Remove ${name}`} tone="danger" onClick={() => { const vs = { ...m.variants }; delete vs[name]; setM({ variants: Object.keys(vs).length ? vs : undefined }); }} />
             </div>
             <TargetEditor target={v.target} onBegin={ctx.begin} onChange={(t, live) => setM({ variants: { ...m.variants, [name]: { ...v, target: t } } }, live)} />
             <TransitionButton spec={v.transition} onBegin={ctx.begin} onChange={(s, live) => setM({ variants: { ...m.variants, [name]: { ...v, transition: s } } }, live)} />
@@ -229,7 +231,7 @@ export function MotionPanel({ ctx, onPlay }: { ctx: NodeCtx; onPlay: () => void 
               <NumberInput label="Each" value={m.stagger.each} min={0} max={2} step={0.01} unit="s" onBegin={ctx.begin} onChange={(v, live) => setM({ stagger: { ...m.stagger!, each: v } }, live)} />
               <NumberInput label="Delay" value={m.stagger.delay} min={0} max={5} step={0.01} unit="s" onBegin={ctx.begin} onChange={(v, live) => setM({ stagger: { ...m.stagger!, delay: v } }, live)} />
               <Field label="From">
-                <Segmented aria-label="Stagger from" value={m.stagger.from} onChange={(v) => setM({ stagger: { ...m.stagger!, from: v as 'first' | 'last' } })} options={[{ id: 'first', label: 'First' }, { id: 'last', label: 'Last' }]} className="[&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption" />
+                <Segmented aria-label="Stagger from" value={m.stagger.from} onValueChange={(v) => v && setM({ stagger: { ...m.stagger!, from: v as 'first' | 'last' } })} className="[&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption"><SegmentedItem value="first">First</SegmentedItem><SegmentedItem value="last">Last</SegmentedItem></Segmented>
               </Field>
               <Help>Children with an Appear effect start one after another.</Help>
             </>

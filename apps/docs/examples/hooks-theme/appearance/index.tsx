@@ -32,7 +32,7 @@ export default function Appearance() {
         <span id="ap-dark" className="text-body text-foreground">
           AppearanceProvider: dark
         </span>
-        <Switch aria-labelledby="ap-dark" checked={dark} onChange={setDark} />
+        <Switch aria-labelledby="ap-dark" checked={dark} onCheckedChange={setDark} />
       </div>
       <AppearanceProvider value={dark ? 'dark' : 'light'}>
         <ThemeScope>

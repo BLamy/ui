@@ -1,15 +1,15 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Button, composeRenderProps } from 'react-aria-components';
 import { Avatar } from '@/components/ui/avatar';
 import { chatUserAvatar, type ChatUser } from './chat-users';
-import { cn } from '@/lib/utils';
+import { PlainButton } from '@/components/ui/plain-button';
+import { cn, cx } from '@/lib/utils';
 
 /* ══ ThreadPreview — the card under a message that opens its thread ══
-   <ThreadPreview title="More relevant bugs" count={2} onPress={open}>
+   <ThreadPreview title="More relevant bugs" count={2} onClick={open}>
      <ThreadPreviewReply user={ada}>Testing and Network are getting results too.</ThreadPreviewReply>
    </ThreadPreview> */
 
-export interface ThreadPreviewProps extends Omit<ComponentProps<typeof Button>, 'children'> {
+export interface ThreadPreviewProps extends Omit<ComponentProps<typeof PlainButton>, 'children' | 'title'> {
   title: ReactNode;
   /** number of replies */
   count: number;
@@ -19,13 +19,10 @@ export interface ThreadPreviewProps extends Omit<ComponentProps<typeof Button>, 
 
 export function ThreadPreview({ title, count, className, children, ...props }: ThreadPreviewProps) {
   return (
-    <Button
-      data-slot="thread-preview"
-      className={composeRenderProps(className, (c) =>
-        cn(
-          'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-ctl border border-border bg-card px-[11px] py-[8px] text-left font-sans [transition:border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:border-secondary-strong motion-reduce:transition-none',
-          c,
-        ),
+    <PlainButton
+      className={cx(
+        'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-ctl border border-border bg-card px-[11px] py-[8px] text-left font-sans [transition:border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] hover:border-secondary-strong motion-reduce:transition-none',
+        className,
       )}
       {...props}
     >
@@ -36,7 +33,7 @@ export function ThreadPreview({ title, count, className, children, ...props }: T
         </span>
       </span>
       {children}
-    </Button>
+    </PlainButton>
   );
 }
 

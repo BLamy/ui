@@ -1,28 +1,123 @@
 # Layout hooks
 
-Hooks for sizing from a container instead of the viewport, and for reading the state of the layout containers: `SplitView`, `SidebarProvider`, `TabView`, `FloatingSheet`, `FloatingChat` and `ArtifactChatContainer`. They are all listed with their siblings in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
+Hooks for sizing from a container instead of the viewport (a size class first, pixels when you really need them), the size-class scope that `presentation="auto"` popups follow, and for reading the state of the layout containers: `SplitView`, `SidebarProvider`, `TabView`, `FloatingSheet`, `FloatingChat` and `ArtifactChatContainer`. They are all listed with their siblings in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
 Each hook below is public: import it from the package root, or from the alias path a registry copy creates.
 
 ```tsx
 // npm: import '@brett_lamy/ui/styles.css' once, then
 import {
-  useContainerWidth, useContainerSize, useSplitView, useSidebar, useTabView, useFloatingSheet, useArtifactChatContainer,
+  useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation, useContainerWidth, useContainerSize, useSplitView, useSidebar, useTabView, useFloatingSheet,
+  useHideOnScroll, useArtifactChatContainer,
 } from '@brett_lamy/ui'
 
 // shadcn registry: each part is its own item, imported from its alias
-import { useContainerWidth, useContainerSize } from '@/lib/container'        // npx shadcn@latest add https://blamy.github.io/ui/r/container.json
+import { useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation, useContainerWidth, useContainerSize } from '@/lib/container' // npx shadcn@latest add https://blamy.github.io/ui/r/container.json
 import { useSplitView } from '@/components/ui/split-view'                    // …/r/split-view.json
 import { useSidebar } from '@/components/ui/sidebar'                         // …/r/sidebar.json
 import { useTabView, useTabViewTab } from '@/components/ui/tab-view'         // …/r/tab-view.json
-import { useFloatingSheet } from '@/components/ui/floating-sheet'            // …/r/floating-sheet.json
+import { useFloatingSheet, useHideOnScroll } from '@/components/ui/floating-sheet' // …/r/floating-sheet.json
 import { useFloatingChat } from '@/components/ui/floating-chat'              // …/r/floating-chat.json
 import { useArtifactChatContainer } from '@/components/ui/artifact-chat-container' // …/r/artifact-chat-container.json
 ```
 
+## `useSizeClass`
+
+The size class of an element's own box: `compact`, `medium` or `regular`. This is the hook to reach for when a component only needs to know whether it is small, middling or wide; the containers (`BLProvider`, `SplitView`, `SidebarProvider`, `NavigationStack`, `SideDrawer`, `ArtifactChatContainer`) use the same classes. It is the kit's `bindSizeClass` (`@/lib/size-class`), which also writes `data-size-class` on the element, so CSS can style from it. It does not make the element a size-class scope: wrap what it renders in [`SizeClassProvider`](#sizeclassprovider-and-usesizeclassscope) when popups inside with `presentation="auto"` should follow it.
+
+- **Export:** public, with the `UseSizeClassOptions` type. Registry item `container` (`@/lib/container`).
+- **Needs:** nothing.
+
+```ts
+function useSizeClass<T extends HTMLElement = HTMLDivElement>(options?: UseSizeClassOptions): [(el: T | null) => void, SizeClass]
+
+interface UseSizeClassOptions {
+  breakpoints?: { medium?: number; regular?: number }   // px the classes start at; default 640 and 1024
+  initial?: SizeClass                                   // until the element is measured (and on the server); default: the nearest scope's, else 'regular'
+}
+// SizeClass: 'compact' | 'medium' | 'regular'
+```
+
+It returns `[ref, sizeClass]`: put `ref` (a ref callback) on the element to measure. Until the ref is attached, or if you never attach it, `sizeClass` is `initial`, else the nearest scope's class, so `const [, sizeClass] = useSizeClass()` reads the size class of where a component sits.
+
+```tsx
+function Inbox() {
+  const [ref, sizeClass] = useSizeClass()
+  return (
+    <div ref={ref} className="grid data-[size-class=compact]:grid-cols-1 grid-cols-[240px_1fr]">
+      <SizeClassProvider value={sizeClass}>
+        <Mailboxes />
+        {sizeClass === 'compact' ? <MessageListWithBack /> : <MessageList />}
+      </SizeClassProvider>
+    </div>
+  )
+}
+```
+
+Gotchas:
+
+- Prefer the `data-size-class` attribute in classes (`data-[size-class=compact]:…`) over branching in render where the difference is only styling: it changes without a React render.
+- It renders only when the class changes, not on every pixel, unlike `useContainerWidth`.
+- Server render and the first client render use `initial` (else the scope's class), then a layout effect measures before paint. A component that starts compact (a phone frame) should pass `initial: 'compact'` to avoid a jump. A box with no width (`display: none`) isn't measured until it has one.
+- The ref is a ref callback, so an element that renders later (behind a condition) is measured when it mounts.
+- Reach for pixels (`useContainerWidth`, `useContainerSize`) only when you need them: a column count, a canvas size.
+- A `<div data-size-class="compact">` wrapper doesn't change how popups present: only a `SizeClassProvider` does.
+
+## `SizeClassProvider` and `useSizeClassScope`
+
+The size-class scope: a React context that says what size class everything rendered inside lives in, popups included. Every kit container that measures its size class provides it (`BLProvider`'s root, `SplitView`, `NavigationStack`, `SidebarProvider`, `SideDrawer` with `presentation="auto"`, `ArtifactChatContainer`); `AdaptivePane` and `FloatingSheet` don't measure one, so they pass the outer scope through. React context crosses portals, so a popup whose content renders into `BLProvider`'s root still sees the scope it was written in, such as a compact SplitView column.
+
+- **Export:** public. Registry item `container` (`@/lib/container`).
+- **Needs:** nothing. **Outside every scope:** `useSizeClassScope()` returns `undefined`.
+
+```ts
+function SizeClassProvider(props: { value: SizeClass | undefined; children?: ReactNode }): JSX.Element
+function useSizeClassScope(): SizeClass | undefined
+```
+
+```tsx
+// A phone frame of your own: measure it, and make it the scope of what it renders.
+function PhoneFrame({ children }: { children: ReactNode }) {
+  const [ref, sizeClass] = useSizeClass<HTMLDivElement>({ initial: 'compact' })
+  return (
+    <div ref={ref} className="h-[720px] w-[390px] overflow-clip">
+      <SizeClassProvider value={sizeClass}>{children}</SizeClassProvider>
+    </div>
+  )
+}
+```
+
+Gotchas:
+
+- `value={undefined}` (not measured yet) passes the scope around it through instead of clearing it.
+- To keep popups inside the frame too, make it a layer host (`data-layer-host=""` and `[contain:layout]`, or a `BLProvider`): see [Layer hosts](https://blamy.github.io/ui/#/behaviors-layer-hosts).
+
+## `usePresentation`
+
+What a popup wrapper passes to UI SDK for `presentation`. `"auto"` becomes `"sheet"` inside a compact scope and `fallback` (the component's own presentation) inside a medium or regular one; with no scope at all `"auto"` goes through, and UI SDK's own rule decides (`(max-width: 640px) and (pointer: coarse)`). Any other value is returned as it is. The kit's `Dialog` (so `Credenza`), `Popover`, `DropdownMenu`, `Select`, `Combobox` and `DatePicker` call it; call it in a wrapper of your own around a UI SDK popup.
+
+- **Export:** public. Registry item `container` (`@/lib/container`).
+- **Needs:** nothing.
+
+```ts
+function usePresentation<P extends string>(presentation: P | undefined, fallback: P): P | undefined
+```
+
+```tsx
+import { Popover as SdkPopover } from '@ui-sdk/react/popover'
+
+function MyPopover({ presentation, ...props }: ComponentProps<typeof SdkPopover>) {
+  return <SdkPopover presentation={usePresentation(presentation, 'popover')} {...props} />
+}
+```
+
+Gotchas:
+
+- The decision is made when the popup opens; resizing the scope while it is open doesn't switch it.
+
 ## `useContainerWidth`
 
-Measures an element's width with a `ResizeObserver`, so a component sizes itself from the box it is in. Every adaptive shell (`SplitView`, `SidebarProvider`, `ArtifactChatContainer`) is built on it.
+Measures an element's width with a `ResizeObserver`, so a component sizes itself from the box it is in. Use it when you need pixels; when you only need compact / medium / regular, use `useSizeClass`.
 
 - **Export:** public. Registry item `container` (`@/lib/container`).
 - **Needs:** nothing.
@@ -89,34 +184,36 @@ Differences from `useContainerWidth`, from the source:
 
 ## `useSplitView`
 
-The state and actions of the nearest [SplitView](https://blamy.github.io/ui/#/split-view): the width class, which columns are showing, the selection and navigation.
+The state and actions of the nearest [SplitView](https://blamy.github.io/ui/#/split-view): the size class, which columns are showing, the value per column and navigation.
 
 - **Export:** public. Registry item `split-view`.
 - **Needs:** a `SplitView` ancestor. **Outside it:** throws `<useSplitView> must be rendered inside <SplitView>`.
 
 ```ts
-function useSplitView(): SplitViewState
+function useSplitView(): SplitViewContextValue   // SplitViewState plus the actions below
 ```
 
 | Member | Meaning |
 | --- | --- |
-| `widthClass`, `collapsed`, `width` | The width class in effect (`compact`, `medium` or `regular`), whether the view is collapsed to one column at a time (compact), and its measured width in px. |
-| `columns` | The columns that are shown, in order (a hidden supplementary is left out). |
-| `sidebarVisible`, `setSidebarVisible(visible)`, `toggleSidebar()` | Sidebar visibility. `sidebarVisible` is `false` when there is no sidebar column. |
-| `sidebarBehavior` | The resolved behavior for this width class: `tile`, `overlay` or `displace`. |
-| `selection`, `select(column, id \| null)`, `isSelected(column, id)` | The selection per column. `select` shows the next column (a push when collapsed); `null` clears. `isSelected` is always `false` while collapsed, where rows are navigation. |
-| `topColumn`, `show(column)`, `back()`, `canGoBack` | Which column is on top when collapsed, and how to move between them. `canGoBack` is true only while collapsed and not on the first column. |
-| `widths`, `setColumnWidth(column, width)` | Resized column widths in px. |
-| `supplementaryVisible`, `setSupplementaryVisible(visible)` | Whether the middle column is showing, or has slid away so the detail takes its space. |
+| `sizeClass`, `collapsed` | The size class in effect (`compact`, `medium` or `regular`, measured from the split view's own box unless its `sizeClass` prop forces one), and whether the view is collapsed to one column at a time (compact). |
+| `columns` | The columns that are shown, in order (a closed supplementary is left out). |
+| `sidebarOpen`, `setSidebarOpen(open)`, `toggleSidebar()` | Whether the sidebar is open. |
+| `sidebarBehavior` | The resolved behavior for this size class: `tile`, `overlay` or `displace`. |
+| `value`, `select(column, id \| null)`, `isSelected(column, id)` | The value per column. `select` shows the next column (a push when collapsed); `null` clears. `isSelected` is always `false` while collapsed, where rows are navigation. |
+| `compactColumn`, `show(column)`, `back()`, `canGoBack` | Which column is on top of the compact stack, and how to move between them. `canGoBack` is true only while collapsed and not on the first column. |
+| `columnWidths`, `setColumnWidth(column, width)` | Resized column widths in px. |
+| `supplementaryOpen`, `setSupplementaryOpen(open)` | Whether the middle column is showing, or has slid away so the detail takes its space. |
+
+Every action takes an optional last argument `{ reason?, event? }`, goes through the matching `on…Change(value, details)` callback on `SplitView` like a user's change, and returns `false` when nothing changed or the change was canceled.
 
 ```tsx
 function DetailToolbar() {
   const split = useSplitView()
   return (
     <div className="flex items-center gap-2">
-      {split.canGoBack ? <Button onPress={split.back}>Back</Button> : null}
-      <Button onPress={split.toggleSidebar}>{split.sidebarVisible ? 'Hide' : 'Show'} sidebar</Button>
-      <span>{split.selection.detail ?? 'Nothing selected'}</span>
+      {split.canGoBack ? <Button onClick={() => split.back()}>Back</Button> : null}
+      <Button onClick={() => split.toggleSidebar()}>{split.sidebarOpen ? 'Hide' : 'Show'} sidebar</Button>
+      <span>{split.value.detail ?? 'Nothing selected'}</span>
     </div>
   )
 }
@@ -125,7 +222,7 @@ function DetailToolbar() {
 Gotchas:
 
 - `select('sidebar', id)` also closes a floating sidebar (any behavior except `tile`) when the view is not collapsed.
-- The returned object is rebuilt each render. `select`, `isSelected` and `toggleSidebar` are memoized (`isSelected` changes when the selection or `collapsed` does), so they are safe in dependency arrays; the object itself is not.
+- The returned object and its functions are kept while the split view's state is unchanged and rebuilt when it changes, so a dependency on them re-runs on every change. For code outside the split view, pass a controller to `SplitView` instead.
 
 ## `useSplitViewColumn`
 
@@ -166,7 +263,7 @@ It returns `null` unless the split view is collapsed, the caller is in a column 
 function InboxScreen() {
   // In a custom screen with its own bar
   const back = useSplitViewBack('Mailboxes')
-  return back ? <Button onPress={back.back}>‹ {back.title}</Button> : null
+  return back ? <Button onClick={back.back}>‹ {back.title}</Button> : null
 }
 ```
 
@@ -192,7 +289,7 @@ interface SplitViewStackApi {
 ```tsx
 function ThreadRow({ thread }: { thread: Thread }) {
   const stack = useSplitViewStack()
-  return <Button onPress={() => stack.push(<ThreadPage id={thread.id} />, { key: thread.id })}>{thread.title}</Button>
+  return <Button onClick={() => stack.push(<ThreadPage id={thread.id} />, { key: thread.id })}>{thread.title}</Button>
 }
 ```
 
@@ -210,23 +307,25 @@ function useSidebar(): SidebarContextValue
 
 interface SidebarContextValue {
   open: boolean
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>
-  toggle: () => void
-  narrow: boolean   // the provider is narrower than its `breakpoint` (default 560px)
+  setOpen: (open: boolean, options?: { reason?: SidebarOpenChangeReason; event?: Event }) => boolean
+  toggle: (options?: { reason?: SidebarOpenChangeReason; event?: Event }) => boolean
+  sizeClass: 'compact' | 'medium' | 'regular' // measured on the provider (`bindSizeClass` from `@/lib/size-class`)
+  compact: boolean // sizeClass === 'compact': narrower than `breakpoint` (default 560px)
 }
 ```
 
 ```tsx
 function MenuButton() {
-  const { toggle, open, narrow } = useSidebar()
-  return <Button onPress={toggle} aria-expanded={open}>{narrow ? 'Menu' : 'Sidebar'}</Button>
+  const { toggle, open, compact } = useSidebar()
+  return <Button onClick={() => toggle()} aria-expanded={open}>{compact ? 'Menu' : 'Sidebar'}</Button>
 }
 ```
 
 Gotchas:
 
-- `open` is reset whenever `narrow` changes: closed when the provider becomes narrow, and back to `defaultOpen` when it becomes wide again. A manual open or close is overwritten at that moment. The first measurement counts too: `narrow` starts `false` (the provider measures with `useContainerWidth`, whose initial width is 1200), so a narrow provider closes its sidebar on the first layout.
-- `toggle` and the context object are rebuilt each render.
+- `open` is reset whenever the provider crosses into or out of `compact`: closed when it becomes compact, and back to `defaultOpen` when it grows again, reported to `onOpenChange` with `reason: 'content-resize'` (cancel it to keep the state). The first measurement is where it starts, not a change: an uncontrolled sidebar mounted compact starts closed, and a controlled parent hears nothing at mount.
+- `setOpen` and `toggle` go through `onOpenChange` like the user's own changes and return `false` when nothing changed or the change was canceled. For code outside the provider, pass a `createSidebarController()` as its `controller`.
+- `useSidebarCollapsed()` says whether the sidebar around is a collapsed rail, for custom items that hide their labels.
 
 ## `useTabView`
 
@@ -250,25 +349,27 @@ function TabBadge() {
 
 ## `useTabViewTab`
 
-Inside a `TabViewTab`: its react-aria render state, for custom tab content.
+Inside a `TabViewTab`: its UI SDK tab state, for custom tab content.
 
 - **Export:** public. Registry item `tab-view`.
 - **Needs:** to be called from the content of a `TabViewTab` (its `children`). **Outside it:** returns `null`.
 
 ```ts
-function useTabViewTab(): TabRenderProps | null   // isSelected, isHovered, isPressed, isFocused, isFocusVisible, isDisabled, …
+function useTabViewTab(): TabsTabState | null   // { selected: boolean; disabled: boolean }
 ```
 
 ```tsx
 function InboxLabel() {
   const tab = useTabViewTab()
-  return <span className={tab?.isSelected ? 'font-semibold' : undefined}>Inbox</span>
+  return <span className={tab?.selected ? 'font-semibold' : undefined}>Inbox</span>
 }
 
-<TabViewTab id="inbox"><InboxLabel /></TabViewTab>
+<TabViewTab value="inbox"><InboxLabel /></TabViewTab>
 ```
 
-`TabViewTab` also passes the same state to a render-function child: `<TabViewTab>{({ isSelected }) => …}</TabViewTab>`. The hook is for a nested component that cannot take it as a parameter.
+`TabViewTab` also passes the same state to a render-function child: `<TabViewTab value="inbox">{({ selected }) => …}</TabViewTab>`. The hook is for a nested component that cannot take it as a parameter.
+
+Hover, press and keyboard focus are not part of the state: style them with the pseudo-classes. Every tab is a `group/tab`, so content inside it uses `group-hover/tab:`, `group-active/tab:` and `group-focus-visible/tab:`.
 
 ## `useFloatingSheet`
 
@@ -283,7 +384,7 @@ function useFloatingSheet(): FloatingSheetContextValue
 interface FloatingSheetContextValue {
   open: boolean                      // grown to full height
   setOpen: (open: boolean) => void
-  progress: number                   // 0 at rest (foot plus peek), 1 when the surface fills the host
+  progress: number                   // the resting stop: 0 at the peek, 1 fully grown, a detent in between
   peek: number                       // body height visible while closed, px
   minimized: boolean                 // folded into its FAB
   setMinimized: (minimized: boolean) => void
@@ -301,7 +402,20 @@ function SheetTitle() {
 }
 ```
 
-`progress` is the growth past the resting height, so a sheet with a `peek` stays at `0` while it only shows its peek. `setOpen` goes through the component's controllable state: when you control `open`, it calls `onOpenChange` and your state decides.
+`progress` is where the sheet rests, not where the finger is: it changes when a drag settles, not per frame. For styling that follows the drag, read the `--fs-grown` CSS variable on the surface (0 to 1, inherited by everything inside it). `setOpen` goes through the component's controllable state: when you control `open`, it calls `onOpenChange` and your state decides.
+
+## `useHideOnScroll`
+
+Whether floating chrome should hide: the shared chrome state says the bars are hidden (`useChromeHidden()`), or the scroller you pass was scrolled down. It shows again on a scroll up and at the top. `FloatingSheet` and `FloatingChat` use it for their `hideOnScroll` prop; use it for chrome of your own that should behave the same.
+
+- **Export:** public. Registry item `floating-sheet`.
+- **Needs:** nothing.
+
+```ts
+function useHideOnScroll(hideOnScroll: boolean, scrollRef?: RefObject<HTMLElement | null>): boolean
+```
+
+It is always `false` when `hideOnScroll` is `false`. The scroller is read from `scrollRef` in an effect, so it must be mounted when the component commits.
 
 ## `useFloatingChat`
 
@@ -363,7 +477,7 @@ interface ArtifactChatContainerContextValue {
 function ChatToggle() {
   const { compact, chatOpen, setChatOpen } = useArtifactChatContainer()
   if (!compact) return null            // docked: the transcript is always visible
-  return <Button onPress={() => setChatOpen(!chatOpen)}>{chatOpen ? 'Hide chat' : 'Show chat'}</Button>
+  return <Button onClick={() => setChatOpen(!chatOpen)}>{chatOpen ? 'Hide chat' : 'Show chat'}</Button>
 }
 ```
 

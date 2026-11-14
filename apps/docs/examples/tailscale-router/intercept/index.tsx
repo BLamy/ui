@@ -76,8 +76,8 @@ function Console() {
         <Button type="submit" variant="secondary">Fetch</Button>
       </form>
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" onPress={() => void send(new URL(`${import.meta.env.BASE_URL}favicon.ico`, location.origin).href)}>Same origin</Button>
-        <Button size="sm" variant="ghost" onPress={() => void router.router?.unregister()}>Remove service worker</Button>
+        <Button size="sm" variant="secondary" onClick={() => void send(new URL(`${import.meta.env.BASE_URL}favicon.ico`, location.origin).href)}>Same origin</Button>
+        <Button size="sm" variant="ghost" onClick={() => void router.router?.unregister()}>Remove service worker</Button>
       </div>
       <output aria-live="polite" className="grid gap-1 rounded-ctl bg-secondary px-3 py-2 text-footnote">
         {result ? (

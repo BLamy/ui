@@ -1,6 +1,6 @@
 # Switch
 
-The iOS on/off switch on react-aria's `Switch`: a 51 by 31 track that goes green, and a white thumb that springs across and stretches toward the far side while pressed, so the press already hints where it will land. It is for a setting that takes effect immediately; for a choice that is submitted with a form use [Checkbox](https://blamy.github.io/ui/#/checkbox).
+The iOS on/off switch on UI SDK's `Switch`: a 51 by 31 track that goes green, and a white thumb that springs across and stretches toward the far side while pressed, so the press already hints where it will land. It is for a setting that takes effect immediately; for a choice that is submitted with a form use [Checkbox](https://blamy.github.io/ui/#/checkbox).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -27,33 +27,45 @@ import { Switch } from '@brett_lamy/ui'
 
 ## Controlled
 
-`Switch` is controlled: `checked` and `onChange(boolean)` are required, and it renders only the control. The text that names it is yours to lay out.
+`checked` and `onCheckedChange(checked, details)` control it; `defaultChecked` leaves the state to the switch. `details.reason` says what changed it (a press, the keyboard, a label or a controller) and `details.cancel()` keeps it as it was. With no children it renders its `SwitchThumb`. The text that names it is yours to lay out.
 
 {% demo src="switch/settings" %}
 
 ```tsx
 <span id="sw-wifi">Wi-Fi sync</span>
-<Switch aria-labelledby="sw-wifi" checked={on} onChange={setOn} />
+<Switch aria-labelledby="sw-wifi" checked={on} onCheckedChange={setOn} />
 ```
 
-Inside a `ListRow` (see [Lists](https://blamy.github.io/ui/#/lists)) the switch is labelled by the row's title automatically, so `<ListRow title="Wi-Fi" accessory={<Switch checked={on} onChange={setOn} />} />` needs no extra label.
+Wrap it and its text in a [Label](https://blamy.github.io/ui/#/label) and the whole line presses it:
+
+```tsx
+<Label variant="control"><Switch defaultChecked />Wi-Fi sync</Label>
+```
+
+Inside a `ListRow` (see [Lists](https://blamy.github.io/ui/#/lists)) the switch is labelled by the row's title automatically, so `<ListRow title="Wi-Fi" accessory={<Switch checked={on} onCheckedChange={setOn} />} />` needs no extra label.
+
+To flip it from elsewhere (a keyboard shortcut, a test), pass a controller from `createSwitchController()` as `controller` and call its methods.
 
 ## Accessibility
 
-react-aria renders `role="switch"` on a native checkbox input, so Space toggles it and assistive technology announces its state. A switch has no text of its own: name it with `aria-label` or `aria-labelledby`. If you pass neither (and it is not in a `ListRow`) it falls back to the label "Toggle", which says nothing about what it controls. The thumb stops animating under reduced motion.
+The root is a `<button>` with `role="switch"` and `aria-checked`, so Space and Enter toggle it and assistive technology announces its state; with a `name` a hidden native checkbox submits it with a form. A switch has no text of its own: name it with `aria-label`, `aria-labelledby`, a wrapping `Label`, or a `ListRow`. The thumb stops animating under reduced motion.
 
 ## Props
 
+UI SDK's `Switch` props, the main ones:
+
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `checked` | — | Whether the switch is on. |
-| `onChange` | — | Called with the new boolean. |
-| `aria-label` | `Toggle` (unless labelled by a row) | Accessible name. |
-| `aria-labelledby` | the enclosing `ListRow` title | Id of the element that names it. |
-| `className` / `style` | — | Merged onto the 51 by 31 root. |
-
-Only these props are forwarded; there is no `isDisabled` or `name` on this component.
+| `checked` / `defaultChecked` | `false` | Whether the switch is on. |
+| `onCheckedChange` | — | `(checked, details)` with the new boolean; `details.reason`, `details.cancel()`. |
+| `disabled` | `false` | Dims to 40% and ignores presses. |
+| `readOnly` / `required` | `false` | Shows the state but can't change it / must be on to submit. |
+| `name` / `value` | — | Submits with a form. |
+| `controller` | — | From `createSwitchController()`, to drive it from outside. |
+| `aria-label` / `aria-labelledby` | the enclosing `ListRow` title | Accessible name. |
+| `children` | `<SwitchThumb />` | Replace the thumb. |
+| `className` / `style` | — | Merged onto the 51 by 31 track (`className` may be a function of the state). |
 
 ## Styling
 
-The root is `data-slot="switch"` (a `group`), the track `data-slot="switch-track"` (`bg-secondary-strong`, `bg-success` when selected) and the thumb `data-slot="switch-thumb"`. They react to the root's `data-selected` and `data-pressed`.
+The root is the track, `data-slot="switch"` (a `group`: `bg-secondary-strong`, `bg-success` when `data-checked`), and `SwitchThumb` is `data-slot="switch-thumb"`. Both carry `data-checked` / `data-unchecked`, `data-disabled`, `data-readonly` and `data-required`; the thumb's stretch while held is `group-active:`.

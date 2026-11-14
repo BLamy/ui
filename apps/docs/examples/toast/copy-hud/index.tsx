@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Toaster, createToastQueue, useToast } from '@/components/ui/toast'
+import { ToastRegion, createHud, type Hud } from '@/components/ui/toast'
+import { BLProvider } from '@/lib/theme'
 
 const fields = [
   { label: 'User Name', value: 'amelia@example.com' },
@@ -8,8 +9,7 @@ const fields = [
   { label: 'Code', value: '482 913' },
 ]
 
-function Fields() {
-  const toast = useToast()
+function Fields({ hud }: { hud: Hud }) {
   return (
     <div style={{ display: 'grid', gap: 8, width: 'min(320px, 100%)' }}>
       {fields.map((f) => (
@@ -36,11 +36,11 @@ function Fields() {
           <Button
             variant="secondary"
             size="sm"
-            onPress={() => {
+            onClick={() => {
               void navigator.clipboard?.writeText(f.value).catch(() => {})
-              // Copying again while the HUD is up updates it in place: the
-              // label morphs.
-              toast.hud(`${f.label} Copied`, { tone: 'success' })
+              // Copying again while the pill is up replaces what it says:
+              // the label morphs.
+              hud(`${f.label} Copied`, { type: 'success' })
             }}
           >
             Copy
@@ -52,24 +52,17 @@ function Fields() {
 }
 
 export default function CopyHud() {
-  // A queue of its own, shown inside this box (`inline`), so the demo's HUD
-  // stays in the demo.
-  const [queue] = useState(() => createToastQueue())
+  // A HUD of its own. Its region renders into the BLProvider around it, so
+  // the demo's pill stays in the demo.
+  const [hud] = useState(() => createHud())
   return (
-    <div
-      style={{
-        position: 'relative',
-        height: 300,
-        display: 'grid',
-        placeItems: 'center',
-        overflow: 'hidden',
-        borderRadius: 14,
-        background: 'var(--background)',
-      }}
-    >
-      <Toaster queue={queue} placement="bottom" inline offset={18}>
-        <Fields />
-      </Toaster>
+    <div style={{ height: 300, overflow: 'hidden', borderRadius: 14 }}>
+      <BLProvider className="bg-background">
+        <div style={{ height: '100%', display: 'grid', placeItems: 'center' }}>
+          <Fields hud={hud} />
+        </div>
+        <ToastRegion variant="hud" toaster={hud.toaster} offset={18} />
+      </BLProvider>
     </div>
   )
 }

@@ -40,7 +40,7 @@ export default function Lazy() {
   return (
     <ThemeScope className="mx-auto flex h-64 max-w-2xl flex-col overflow-hidden rounded-card bg-card shadow-hairline">
       <div className="flex shrink-0 items-center gap-3 p-2 shadow-hairline-b">
-        <Button size="sm" variant="secondary" onPress={() => setStep((s) => s + 1)}>Step</Button>
+        <Button size="sm" variant="secondary" onClick={() => setStep((s) => s + 1)}>Step</Button>
         <span className="text-footnote text-muted-foreground">Step {step}</span>
       </div>
       <ObjectTree aria-label="State at this step" root={root} loadChildren={loadChildren} className="min-h-0 flex-1" />

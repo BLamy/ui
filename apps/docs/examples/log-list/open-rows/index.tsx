@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { LogList } from '@/components/ui/log-list'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import type { LogRow } from '@/lib/log-list-model'
 
 const TRACE = ['at readPrice (cart.tsx:118:24)', 'at CartRow (cart.tsx:96:12)', 'at renderWithHooks (react-dom.js:15486:18)'].join('\n')
@@ -23,8 +23,10 @@ export default function OpenRows() {
   const [overflow, setOverflow] = useState<'wrap' | 'expand'>('wrap')
   return (
     <div className="flex h-[420px] w-full flex-col gap-2">
-      <Segmented aria-label="Long messages" className="self-start" value={overflow} onChange={(id) => setOverflow(id as 'wrap' | 'expand')}
-        options={[{ id: 'wrap', label: 'Wrap' }, { id: 'expand', label: 'Cut' }]} />
+      <Segmented aria-label="Long messages" className="self-start" value={overflow} onValueChange={(v) => v && setOverflow(v)}>
+        <SegmentedItem value="wrap">Wrap</SegmentedItem>
+        <SegmentedItem value="expand">Cut</SegmentedItem>
+      </Segmented>
       <LogList aria-label="Console" rows={ROWS} overflow={overflow} className="min-h-0 flex-1" />
     </div>
   )

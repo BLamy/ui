@@ -53,7 +53,7 @@ function manifest(name) {
   return {
     name: wrapperName(name),
     version: `${src.version}.bl.${revision}`,
-    description: `${src.description} BL fork of ${src.name}: upstream plus the few behaviors @brett_lamy/ui needs.`,
+    description: `${src.description} BL fork of ${src.name}: upstream plus layer hosts.`,
     keywords: src.keywords,
     type: src.type,
     license: src.license,
@@ -63,7 +63,8 @@ function manifest(name) {
     exports,
     sideEffects: src.sideEffects ?? false,
     files: ['dist', 'docs', 'LICENSE', 'README.md'],
-    scripts: { build: `node ../../tools/ui-sdk/build.mjs --only ${name}` },
+    // `--if-stale`: a task runner building everything at once must not wipe `dist` under a typecheck that is reading it.
+    scripts: { build: `node ../../tools/ui-sdk/build.mjs --only ${name} --if-stale` },
     ...(has(dependencies) ? { dependencies } : {}),
     ...(has(peers) ? { peerDependencies: peers } : {}),
     ...(src.peerDependenciesMeta ? { peerDependenciesMeta: src.peerDependenciesMeta } : {}),
@@ -77,8 +78,10 @@ function readme(name) {
   return `# ${wrapperName(name)}
 
 The BL fork of [\`@ui-sdk/${name}\`](https://ui-sdk.dev), built from [BLamy/ui-sdk](https://github.com/BLamy/ui-sdk).
-It is upstream UI SDK plus the small set of behaviors \`@brett_lamy/ui\` is built on (size classes, edge
-swipes, navigation stacks, back navigation, pull to refresh). Each addition is written to be proposed upstream.
+It is upstream UI SDK plus the one thing \`@brett_lamy/ui\` cannot build from its public API: layer hosts
+(an element with \`data-layer-host\` keeps the popups rendered inside it out of the top layer, placed against its
+box and modal to it alone), \`active\` on \`bindLayer\`, and two exported kernel types. Each is written to be
+proposed upstream.
 
 Install it under upstream's name, so imports read like the UI SDK docs:
 

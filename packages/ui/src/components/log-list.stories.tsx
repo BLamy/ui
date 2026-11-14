@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
 import { FilterBar, FilterToolbar } from '@/components/ui/filter';
 import { FilterInput } from '@/components/ui/filter-input';
-import { LogList, LogRowContent, type LogListHandle, type LogRowState } from '@/components/ui/log-list';
-import { Slider, SliderThumb, SliderTrack } from '@/components/ui/slider';
+import { LogList, LogRowContent, createLogListController, type LogListController, type LogRowState } from '@/components/ui/log-list';
+import { Slider } from '@/components/ui/slider';
 import { matchFilters, type Filter, type FilterField } from '@/lib/filter-model';
 import { Icon } from '@/lib/icon';
 import {
@@ -152,26 +152,24 @@ export const PhoneDark: Story = {
   ),
 };
 
-/** A clock and its transport. The list hears every tick through its handle, so nothing renders per frame but the time
+/** A clock and its transport. The list hears every tick through its controller, so nothing renders per frame but the time
  *  readout, a few times a second. Play it and the marker walks down the list; scroll away and a button offers the way back. */
-function Transport({ rows, handle, rate, children }: { rows: readonly LogRow[]; handle: RefObject<LogListHandle | null>; rate: number; children?: ReactNode }) {
+function Transport({ rows, controller, rate, children }: { rows: readonly LogRow[]; controller: LogListController; rate: number; children?: ReactNode }) {
   const duration = END_OF(rows) / 1000;
   const clock = usePlaybackClock({ duration, time: duration * 0.4, rate });
   const playing = usePlaybackState(clock, (s) => s.playing);
   const shown = usePlaybackState(clock, (s) => Math.round(s.time * 4) / 4);
   useEffect(() => {
-    const tick = () => handle.current?.setCurrentTime(clock.getState().time * 1000);
+    const tick = () => controller.setCurrentTime(clock.getState().time * 1000);
     tick();
     return clock.subscribe(tick);
-  }, [clock, handle]);
+  }, [clock, controller]);
   return (
     <div className="flex shrink-0 items-center gap-2 px-1">
-      <Button variant="quiet" size="icon-sm" aria-label={playing ? 'Pause' : 'Play'} data-testid="play" onPress={clock.toggle}>
+      <Button variant="quiet" size="icon-sm" aria-label={playing ? 'Pause' : 'Play'} data-testid="play" onClick={clock.toggle}>
         <Icon name={playing ? 'pause' : 'play'} size={14} />
       </Button>
-      <Slider<number> aria-label="Time" size="sm" className="min-w-0 flex-1" minValue={0} maxValue={duration} step={0.01} value={shown} onChange={(t) => clock.seek(t)}>
-        <SliderTrack><SliderThumb /></SliderTrack>
-      </Slider>
+      <Slider<number> aria-label="Time" size="sm" className="min-w-0 flex-1" min={0} max={duration} step={0.01} value={shown} onValueChange={(t) => clock.seek(t)} />
       <span className="shrink-0 text-caption text-muted-foreground tabular-nums">{formatLogTime(shown * 1000)}</span>
       {children}
     </div>
@@ -179,11 +177,11 @@ function Transport({ rows, handle, rate, children }: { rows: readonly LogRow[]; 
 }
 
 function MovingMarkerDemo({ rows, rate }: { rows: readonly LogRow[]; rate: number }) {
-  const handle = useRef<LogListHandle>(null);
+  const [controller] = useState(createLogListController);
   return (
     <>
-      <Transport rows={rows} handle={handle} rate={rate} />
-      <LogList ref={handle} aria-label="Console" rows={rows} markerLabel="Now" className="min-h-0 flex-1" />
+      <Transport rows={rows} controller={controller} rate={rate} />
+      <LogList controller={controller} aria-label="Console" rows={rows} markerLabel="Now" className="min-h-0 flex-1" />
     </>
   );
 }
@@ -211,12 +209,12 @@ function ByPropDemo({ rows, rate }: { rows: readonly LogRow[]; rate: number }) {
   return (
     <>
       <div className="flex shrink-0 items-center gap-2 px-1">
-        <Button variant="quiet" size="icon-sm" aria-label={playing ? 'Pause' : 'Play'} data-testid="play" onPress={() => setPlaying((p) => !p)}>
+        <Button variant="quiet" size="icon-sm" aria-label={playing ? 'Pause' : 'Play'} data-testid="play" onClick={() => setPlaying((p) => !p)}>
           <Icon name={playing ? 'pause' : 'play'} size={14} />
         </Button>
         <span className="text-caption text-muted-foreground tabular-nums">{formatLogTime(time)}</span>
       </div>
-      <LogList aria-label="Console" rows={rows} currentTime={time} markerLabel="Now" onRowPress={(row) => setTime(row.time ?? 0)} className="min-h-0 flex-1" />
+      <LogList aria-label="Console" rows={rows} currentTime={time} markerLabel="Now" onAction={(_id, { row }) => setTime(row.time ?? 0)} className="min-h-0 flex-1" />
     </>
   );
 }
@@ -243,7 +241,7 @@ export const HundredThousandPhone: Story = {
 export const ExpandOnPress: Story = {
   render: () => (
     <Desktop>
-      <LogList aria-label="Console" rows={SMALL} overflow="expand" defaultExpandedIds={[SMALL.find((r) => r.detail)?.id ?? '']} className="min-h-0 flex-1" />
+      <LogList aria-label="Console" rows={SMALL} overflow="expand" defaultExpanded={[SMALL.find((r) => r.detail)?.id ?? '']} className="min-h-0 flex-1" />
     </Desktop>
   ),
 };
@@ -263,7 +261,7 @@ export const Levels: Story = {
     ];
     return (
       <Desktop>
-        <LogList aria-label="Levels" rows={rows} defaultSelectedId={8} defaultExpandedIds={[4]} className="min-h-0 flex-1" />
+        <LogList aria-label="Levels" rows={rows} defaultValue={8} defaultExpanded={[4]} className="min-h-0 flex-1" />
       </Desktop>
     );
   },
@@ -309,7 +307,7 @@ function FilteredDemo() {
               active={on}
               size="sm"
               aria-pressed={on}
-              onPress={() => {
+              onClick={() => {
                 const next = new Set(hidden);
                 if (!next.delete(level)) next.add(level);
                 setHidden(next);
@@ -360,7 +358,7 @@ function RichDemo() {
     <>
       <LogRowContent row={row} expanded={state.expanded} cut={state.cut} disclosure={state.disclosure} formatTime={state.formatTime} />
       {state.index % 16 === 0 ? (
-        <Button variant="quiet" size="sm" className="-my-0.5 h-5 shrink-0 rounded-md px-1.5 text-caption2" onPress={() => setPressed(`Pressed the button in row ${state.index}`)}>
+        <Button variant="quiet" size="sm" className="-my-0.5 h-5 shrink-0 rounded-md px-1.5 text-caption2" onClick={() => setPressed(`Pressed the button in row ${state.index}`)}>
           Inspect
         </Button>
       ) : null}
@@ -373,7 +371,7 @@ function RichDemo() {
         aria-label="Console"
         rows={rows}
         renderRow={renderRow}
-        onRowPress={(row, index) => setPressed(`Pressed row ${index}: ${nodeText(row.message)}`)}
+        onAction={(_id, { row, index }) => setPressed(`Pressed row ${index}: ${nodeText(row.message)}`)}
         className="min-h-0 flex-1"
       />
     </>
@@ -404,14 +402,12 @@ function DevtoolsDemo() {
   const later = entries.length - shown.length;
   return (
     <>
-      <Slider<number> aria-label="Playhead" size="sm" className="shrink-0" minValue={0} maxValue={entries[entries.length - 1].time} value={at} onChange={setAt}>
-        <SliderTrack><SliderThumb /></SliderTrack>
-      </Slider>
+      <Slider<number> aria-label="Playhead" size="sm" className="shrink-0" min={0} max={entries[entries.length - 1].time} value={at} onValueChange={(value) => setAt(value)} />
       <LogList
         aria-label="Console messages"
         rows={shown}
         followTail
-        onRowPress={(row) => setAt(row.time)}
+        onAction={(_id, { row }) => setAt(row.time)}
         footer={later ? `${later} more later in the recording` : undefined}
         emptyState="Nothing logged yet"
         className="min-h-0 flex-1"

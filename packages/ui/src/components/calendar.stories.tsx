@@ -1,76 +1,100 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { I18nProvider, type DateValue } from 'react-aria-components';
-import { CalendarDate, isWeekend, parseDate } from '@internationalized/date';
-import { Calendar, RangeCalendar } from '@/components/ui/calendar';
+import { Calendar, CalendarGrid, CalendarHeader, CalendarHeading, CalendarMonthSelect, CalendarYearSelect, type CalendarValue } from '@/components/ui/calendar';
 import { Caption, Panel } from '../stories/primitive-frame';
 
-/* The locale and every date are pinned (September 2026) so these look the same on any day, in any browser. */
+/* The locale, the month on show and "today" are pinned (September 2026, with today outside it) so these look the
+   same on any day, in any browser. */
 const meta: Meta<typeof Calendar> = {
   title: 'Molecules/Calendar',
   component: Calendar,
-  args: { 'aria-label': 'Appointment', defaultFocusedValue: parseDate('2026-09-09'), visibleMonths: 1, variant: 'plain' },
+  args: { locale: 'en-US', defaultMonth: '2026-09', today: '2026-01-01', months: 1, variant: 'plain' },
   argTypes: {
     variant: { control: 'inline-radio', options: ['plain', 'card'] },
-    visibleMonths: { control: 'inline-radio', options: [1, 2, 3] },
+    months: { control: 'inline-radio', options: [1, 2, 3] },
+    mode: { control: 'inline-radio', options: ['single', 'multiple', 'range'] },
   },
-  decorators: [(Story) => <I18nProvider locale="en-US"><Panel w={340}><Story /></Panel></I18nProvider>],
+  decorators: [(Story) => <Panel w={340}><Story /></Panel>],
 };
 export default meta;
 type Story = StoryObj<typeof Calendar>;
 
-export const Default: Story = { args: { defaultValue: parseDate('2026-09-09') } };
+export const Default: Story = { args: { defaultValue: '2026-09-09' } };
 
-export const Card: Story = { args: { variant: 'card', defaultValue: parseDate('2026-09-16') } };
+export const Card: Story = { args: { variant: 'card', defaultValue: '2026-09-16' } };
 
 export const Empty: Story = {};
 
+export const Today: Story = { args: { today: '2026-09-16', defaultValue: '2026-09-09' } };
+
 export const MinMax: Story = {
   name: 'Min and max',
-  args: { defaultValue: parseDate('2026-09-15'), minValue: parseDate('2026-09-08'), maxValue: parseDate('2026-09-24') },
+  args: { defaultValue: '2026-09-15', min: '2026-09-08', max: '2026-09-24' },
 };
 
 export const Unavailable: Story = {
   name: 'Unavailable weekends',
-  args: { defaultValue: parseDate('2026-09-09'), isDateUnavailable: (d: DateValue) => isWeekend(d, 'en-US') },
+  args: { defaultValue: '2026-09-09', unavailable: { weekday: [0, 6] } },
 };
 
-export const Disabled: Story = { args: { isDisabled: true, defaultValue: parseDate('2026-09-09') } };
+export const Disabled: Story = { args: { disabled: true, defaultValue: '2026-09-09' } };
+
+export const OutsideDays: Story = {
+  name: 'Outside days, six weeks',
+  args: { showOutsideDays: true, fixedWeeks: true, defaultValue: '2026-09-09' },
+};
 
 export const TwoMonths: Story = {
-  decorators: [(Story) => <I18nProvider locale="en-US"><Panel w={600}><Story /></Panel></I18nProvider>],
-  args: { visibleMonths: 2, defaultValue: parseDate('2026-09-30') },
+  decorators: [(Story) => <Panel w={600}><Story /></Panel>],
+  args: { months: 2, defaultValue: '2026-09-30' },
+};
+
+export const MonthAndYearSelects: Story = {
+  name: 'Month and year selects',
+  args: { defaultValue: '1990-05-17', defaultMonth: '1990-05', min: '1950-01-01', max: '2026-12-31' },
+  render: (args) => (
+    <Calendar {...args}>
+      <CalendarHeader>
+        <CalendarHeading className="sr-only" />
+        <CalendarMonthSelect className="flex-1" />
+        <CalendarYearSelect />
+      </CalendarHeader>
+      <CalendarGrid />
+    </Calendar>
+  ),
 };
 
 export const Controlled: Story = {
-  render: (args) => {
-    const [value, setValue] = useState<DateValue | null>(new CalendarDate(2026, 9, 21));
+  render: ({ variant, months, locale, defaultMonth, today }) => {
+    const [value, setValue] = useState<CalendarValue<'single'>>('2026-09-21');
     return (
       <>
-        <Calendar {...args} value={value} onChange={setValue} />
-        <Caption>{value ? value.toString() : 'No date'}</Caption>
+        <Calendar variant={variant} months={months} locale={locale} defaultMonth={defaultMonth} today={today} value={value} onValueChange={setValue} />
+        <Caption>{value ?? 'No date'}</Caption>
       </>
     );
   },
 };
 
-const stay = { start: parseDate('2026-09-08'), end: parseDate('2026-09-13') };
+export const Multiple: Story = { args: { mode: 'multiple', defaultValue: ['2026-09-03', '2026-09-09', '2026-09-22'] } };
 
-export const Range: Story = { render: ({ variant, visibleMonths }) => <RangeCalendar variant={variant} visibleMonths={visibleMonths} aria-label="Stay" defaultValue={stay} /> };
+const stay: CalendarValue<'range'> = ['2026-09-08', '2026-09-13'];
 
-export const RangeCard: Story = { render: ({ visibleMonths }) => <RangeCalendar visibleMonths={visibleMonths} variant="card" aria-label="Stay" defaultValue={stay} /> };
+export const Range: Story = { args: { mode: 'range', defaultValue: stay } };
+
+export const RangeCard: Story = { args: { mode: 'range', variant: 'card', defaultValue: stay } };
 
 export const RangeOneDay: Story = {
   name: 'Range, one day',
-  render: ({ variant, visibleMonths }) => <RangeCalendar variant={variant} visibleMonths={visibleMonths} aria-label="Stay" defaultValue={{ start: parseDate('2026-09-10'), end: parseDate('2026-09-10') }} />,
+  args: { mode: 'range', defaultValue: ['2026-09-10', '2026-09-10'] },
 };
 
 export const RangeTwoMonths: Story = {
-  decorators: [(Story) => <I18nProvider locale="en-US"><Panel w={600}><Story /></Panel></I18nProvider>],
-  render: ({ variant }) => <RangeCalendar variant={variant} visibleMonths={2} aria-label="Stay" defaultValue={{ start: parseDate('2026-09-24'), end: parseDate('2026-10-06') }} />,
+  decorators: [(Story) => <Panel w={600}><Story /></Panel>],
+  args: { mode: 'range', months: 2, defaultValue: ['2026-09-24', '2026-10-06'] },
 };
 
 export const Dark: Story = {
-  decorators: [(Story) => <I18nProvider locale="en-US"><Panel w={340} dark><Story /></Panel></I18nProvider>],
-  render: ({ variant, visibleMonths }) => <RangeCalendar variant={variant} visibleMonths={visibleMonths} aria-label="Stay" defaultValue={stay} />,
+  decorators: [(Story) => <Panel w={340} dark><Story /></Panel>],
+  args: { mode: 'range', defaultValue: stay },
 };

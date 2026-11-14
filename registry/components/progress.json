@@ -1,10 +1,14 @@
 {
   "name": "progress",
   "title": "Progress",
-  "description": "iOS progress bar on react-aria's ProgressBar: a label, a springing fill with a rolling percentage, three sizes, tones and an indeterminate sliding bar.",
+  "description": "iOS progress bar on UI SDK's Progress: a label, a springing fill with a rolling percentage, three sizes, tones and an indeterminate sliding bar.",
   "page": "progress",
   "exports": [
     "Progress",
+    "ProgressLabel",
+    "ProgressValue",
+    "ProgressTrack",
+    "ProgressIndicator",
     "progressVariants",
     "progressIndicatorVariants"
   ],

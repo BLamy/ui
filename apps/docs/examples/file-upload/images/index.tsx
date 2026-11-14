@@ -21,21 +21,34 @@ function mockUpload(_file: File, { signal, onProgress }: UploadContext) {
 }
 
 // Image files get a thumbnail made from an object URL, revoked when the row
-// goes away. `defaultCamera` opens the camera straight from a phone.
+// goes away. The camera button has a FileInput of its own (`capture` opens the
+// camera straight from a phone) and hands what it takes to the upload's `add`,
+// so the photos are checked and listed like the rest.
 export default function Images() {
   return (
     <div className="mx-auto w-full max-w-md">
       <FileUpload
         accept={['image/*']}
-        maxSize={8 * 1024 * 1024}
+        maxSize={8_000_000}
         maxFiles={6}
         upload={mockUpload}
       >
-        <FileDropZone title="Drop photos here" icon="photo" />
-        <FileUploadButton variant="ghost" size="sm" defaultCamera="environment" className="self-start">
-          Take a photo
-        </FileUploadButton>
-        <FileList aria-label="Photos" />
+        {(up) => (
+          <>
+            <FileDropZone title="Drop photos here" icon="photo" />
+            <FileUploadButton
+              variant="ghost"
+              size="sm"
+              accept={['image/*']}
+              capture="environment"
+              onFiles={(files) => up.add(files)}
+              className="self-start"
+            >
+              Take a photo
+            </FileUploadButton>
+            <FileList aria-label="Photos" />
+          </>
+        )}
       </FileUpload>
     </div>
   )

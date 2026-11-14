@@ -1,6 +1,6 @@
 import { Breadcrumb, BreadcrumbItem, type BreadcrumbItemData } from '@/components/ui/breadcrumb'
 
-// Every item but the last is a link (`href`) or a button (`onPress`); the last
+// Every item but the last is a link (`href`) or a button (`onClick`); the last
 // is the current page (aria-current), plain text unless it has a handler.
 const PATH: BreadcrumbItemData[] = [
   { id: 'home', label: 'Home', icon: 'house', href: '#home' },

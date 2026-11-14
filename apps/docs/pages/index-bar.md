@@ -86,15 +86,15 @@ const stops: IndexBarItem<number>[] = turns.map((t, i) => ({
 
 ## Accessibility
 
-The rail is a `role="listbox"` with one `option` per stop, named by its `caption`, else its `label`, else "Stop N"; `label` is the listbox's name (default "Jump to section" — set a specific one). It is a tab stop: Up and Down move through the stops and jump to each, Home and End jump to the first and last, and `aria-activedescendant` tracks the active one. The rail shows an outline while focused. The hover bubble, the wave preview card and the `panel` are pointer conveniences (the panel is `aria-hidden`); jumping to any stop is also available from the keyboard. Touch scrubs on press and drag (hover previews don't apply to touch). A dimmed stop is only dimmed — it stays focusable and jumpable.
+The rail is a `role="listbox"` with one `option` per stop, named by its `caption`, else its `label`, else "Stop N"; `label` is the listbox's name (default "Jump to section" — set a specific one). It is a tab stop that keeps focus (UI SDK's listbox behavior with virtual focus): Up and Down, Page Up and Page Down move through the stops and jump to each, Home and End jump to the first and last, it stops at either end, and `aria-activedescendant` tracks the active one. A press jumps to the stop under it and a drag scrubs through the stops, following the pointer even off the rail (UI SDK's `bindDrag`). The rail shows an outline while it has keyboard focus (`:focus-visible`), not after a press. The hover bubble, the wave preview card and the `panel` are pointer conveniences (the panel is `aria-hidden`); jumping to any stop is also available from the keyboard. Touch scrubs on press and drag (hover previews don't apply to touch). A dimmed stop is only dimmed — it stays focusable and jumpable.
 
 ## Props
 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `items` | — | Stops: `K` (string or number) or `{ key?, label?, preview?, caption?, dim?, level?, trailing? }`. Falls back to A–Z when empty. |
-| `onJump` | — | `(key, stop, index)` on commit. Takes precedence over `onLetter`. |
-| `avail` / `onLetter` | — | A–Z fallback only: letters that have content / `(letter) => void`. |
+| `onJump` | — | `(key, stop, index, details)` each time the rail lands on another stop. `details.reason` is `drag` (press or scrub), `list-navigation` (keys), `item-press` (a `panel` row, or a stop clicked by assistive tech) or `imperative`. Takes precedence over `onLetter`. |
+| `avail` / `onLetter` | — | A–Z fallback only: letters that have content / `(letter, details) => void`. |
 | `variant` | `default` | `default` letters and dots with a bubble; `wave` dashes. |
 | `side` | `right` | Edge the rail sits on; previews open on the inner side. |
 | `value` | — | Key of the current stop (wave). |
@@ -112,7 +112,7 @@ A right-side rail measures how far the `ListRow`s in its parent run under it and
 
 ## Styling
 
-`data-slot="index-bar"` with `data-variant` and `data-side`; the wave's outline card is `data-slot="index-bar-panel"`. Letters use the tint (`text-primary`) and dimmed ones `text-tertiary-foreground`; the wave's dashes use the foreground color. `indexBarVariants({ variant, side })` returns the positioning classes.
+`data-slot="index-bar"` with `data-variant`, `data-side` and `data-scrubbing` while a press or drag is on it; the stops are `index-bar-option` (with `data-highlighted` for the keyboard's) inside `index-bar-track`; the wave's outline card is `data-slot="index-bar-panel"`, never taller than the rail (it scrolls inside that). Letters use the tint (`text-primary`) and dimmed ones `text-tertiary-foreground`; the wave's dashes use the foreground color. `indexBarVariants({ variant, side })` returns the positioning classes.
 
 ## cva recipes
 

@@ -1,14 +1,17 @@
 'use client';
 import { useEffect, useId, useRef, useState, type ComponentProps, type ReactNode } from 'react';
-import { VisuallyHidden } from 'react-aria';
+import { announce } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog, DialogBackdrop, DialogBody, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  type DialogProps,
+} from '@/components/ui/dialog';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { FieldError, TextField } from '@/components/ui/text-field';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { type Vault } from '@/lib/vault';
@@ -18,11 +21,13 @@ import { useVault, vaultErrorMessage } from '@/lib/vault-react';
    Three steps in one dialog: explain what is protected → run the passkey ceremony → show the recovery key with Copy
    and Save-as-file, and make the person confirm they kept it (optionally by typing it back). The recovery key step
    cannot be dismissed by Esc or an outside press: the key is shown once, and closing by accident would lose it.
-   `mode="regenerate"` runs the same steps to replace a recovery key.
+   `mode="regenerate"` runs the same steps to replace a recovery key. Cancel and Done are the dialog's Close parts, so
+   `onOpenChange` hears `close-press` for Cancel and `action` (with `returnValue: "done"`) for Done; Done stays open,
+   showing the error, if confirming the key fails.
 
    <BLProvider>
      <VaultProvider options={{ id: 'notes', rp: { name: 'Notes' } }}>
-       <PasskeyEnrollDialog isOpen={open} onOpenChange={setOpen} appName="Notes" />
+       <PasskeyEnrollDialog open={open} onOpenChange={setOpen} appName="Notes" />
      </VaultProvider>
    </BLProvider> */
 
@@ -35,8 +40,9 @@ export const vaultErrorClass = 'text-[color-mix(in_oklab,var(--destructive)_72%,
 export const vaultMutedClass = 'text-foreground/70';
 
 export interface PasskeyEnrollDialogProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
+  open: boolean;
+  /** Runs when the dialog wants to open or close; `details.reason` says why. */
+  onOpenChange: NonNullable<DialogProps['onOpenChange']>;
   /** Defaults to the nearest `VaultProvider`'s vault. */
   vault?: Vault;
   /** `enroll` creates the passkey and the first recovery key; `regenerate` replaces the recovery key of an existing vault. */
@@ -93,16 +99,16 @@ function download(filename: string, text: string) {
 }
 
 export function PasskeyEnrollDialog({
-  isOpen, onOpenChange, vault, mode = 'enroll', appName, protects, requireVerification = false, onDone, className, style,
+  open, onOpenChange, vault, mode = 'enroll', appName, protects, requireVerification = false, onDone, className, style,
 }: PasskeyEnrollDialogProps) {
   const v = useVault(vault);
+  const primary = useRef<HTMLButtonElement>(null);
   const [step, setStep] = useState<Step>('intro');
   const [error, setError] = useState<string | null>(null);
   const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [typed, setTyped] = useState('');
   const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle');
-  const [announce, setAnnounce] = useState('');
   const abort = useRef<AbortController | null>(null);
   const errorId = useId();
   const regenerate = mode === 'regenerate';
@@ -110,10 +116,10 @@ export function PasskeyEnrollDialog({
 
   // Leaving the dialog (closed from outside, or unmounted) forgets the key and cancels an open prompt.
   useEffect(() => {
-    if (isOpen) return;
+    if (open) return;
     abort.current?.abort();
-    setStep('intro'); setError(null); setRecoveryKey(null); setSaved(false); setTyped(''); setCopied('idle'); setAnnounce('');
-  }, [isOpen]);
+    setStep('intro'); setError(null); setRecoveryKey(null); setSaved(false); setTyped(''); setCopied('idle');
+  }, [open]);
   useEffect(() => () => abort.current?.abort(), []);
 
   const verified = !requireVerification || (recoveryKey !== null && typed.replace(/[\s-]/g, '').toUpperCase() === recoveryKey.replace(/-/g, ''));
@@ -123,17 +129,17 @@ export function PasskeyEnrollDialog({
     abort.current = ac;
     setError(null);
     setStep('working');
-    setAnnounce("Waiting for your passkey. Follow your browser's prompt.");
+    // UI SDK's polite live region says where the ceremony is (one region per page, so it outlives the dialog).
+    announce("Waiting for your passkey. Follow your browser's prompt.");
     try {
       const key = regenerate ? await v.regenerateRecoveryKey({ signal: ac.signal }) : (await v.enroll({ signal: ac.signal })).recoveryKey;
       setRecoveryKey(key);
       setStep('recovery');
-      setAnnounce('Your recovery key is ready. It is shown only once.');
+      announce('Your recovery key is ready. It is shown only once.');
     } catch (e) {
       if (ac.signal.aborted) return;
       setError(vaultErrorMessage(e));
       setStep('intro');
-      setAnnounce('');
     }
   }
 
@@ -141,7 +147,6 @@ export function PasskeyEnrollDialog({
   function cancel() {
     abort.current?.abort();
     setStep('intro');
-    setAnnounce('');
   }
 
   async function copy() {
@@ -153,27 +158,24 @@ export function PasskeyEnrollDialog({
     }
   }
 
+  /** Done's action: the dialog closes (reason `action`) once the key is confirmed; a failure keeps it open. */
   async function finish() {
+    setError(null);
     try {
       await v.confirmRecoveryKey();
-      onDone?.();
-      onOpenChange(false);
     } catch (e) {
       setError(vaultErrorMessage(e));
+      throw e;
     }
+    onDone?.();
   }
 
   const recoveryStep = step === 'recovery';
 
   return (
-    <DialogContent
-      isOpen={isOpen}
-      onOpenChange={onOpenChange}
-      isDismissable={!recoveryStep}
-      isKeyboardDismissDisabled={recoveryStep}
-      className={className}
-    >
-      {({ close }) => (
+    <Dialog open={open} onOpenChange={onOpenChange} dismissible={!recoveryStep}>
+      <DialogBackdrop />
+      <DialogContent className={className} initialFocus={() => primary.current}>
         <div data-slot="passkey-enroll-dialog" className="flex min-h-0 flex-1 flex-col" style={style}>
           <DialogHeader>
             <DialogTitle>
@@ -212,11 +214,11 @@ export function PasskeyEnrollDialog({
               <>
                 <RecoveryKey value={recoveryKey ?? ''} />
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="secondary" size="sm" autoFocus onPress={() => void copy()}>
+                  <Button variant="secondary" size="sm" autoFocus onClick={() => void copy()}>
                     <Icon name={copied === 'copied' ? 'check' : 'copy'} size={15} />
                     {copied === 'copied' ? 'Copied' : 'Copy'}
                   </Button>
-                  <Button variant="secondary" size="sm" onPress={() => download(`${(appName ?? 'vault').toLowerCase().replace(/\s+/g, '-')}-recovery-key.txt`, `${name} recovery key\n\n${recoveryKey}\n\nAnyone with this key can read the data it protects. Keep it somewhere safe and private.\n`)}>
+                  <Button variant="secondary" size="sm" onClick={() => download(`${(appName ?? 'vault').toLowerCase().replace(/\s+/g, '-')}-recovery-key.txt`, `${name} recovery key\n\n${recoveryKey}\n\nAnyone with this key can read the data it protects. Keep it somewhere safe and private.\n`)}>
                     <Icon name="download" size={15} />
                     Save as file
                   </Button>
@@ -226,15 +228,16 @@ export function PasskeyEnrollDialog({
                 </p>
                 {copied === 'failed' ? <p role="alert" className={cn('m-0 text-footnote', vaultErrorClass)}>Copying was blocked. Select the key and copy it by hand.</p> : null}
                 {requireVerification ? (
-                  <TextField value={typed} onChange={setTyped} isInvalid={typed.length > 0 && !verified && typed.replace(/[\s-]/g, '').length >= 32} autoComplete="off">
-                    <Label variant="field" className={vaultMutedClass}>Type the key to confirm you saved it</Label>
-                    <Input className="font-mono" spellCheck={false} autoCapitalize="characters" autoCorrect="off" />
+                  <Field invalid={typed.length > 0 && !verified && typed.replace(/[\s-]/g, '').length >= 32}>
+                    <FieldLabel variant="field" className={vaultMutedClass}>Type the key to confirm you saved it</FieldLabel>
+                    <Input value={typed} onValueChange={setTyped} autoComplete="off" className="font-mono" spellCheck={false} autoCapitalize="characters" autoCorrect="off" />
                     <FieldError>That does not match the recovery key above.</FieldError>
-                  </TextField>
+                  </Field>
                 ) : null}
-                <Checkbox isSelected={saved} onChange={setSaved} shape="square" className="text-subhead">
+                <Label variant="control" className="text-subhead">
+                  <Checkbox checked={saved} onCheckedChange={(checked) => setSaved(checked === true)} shape="square" />
                   I saved my recovery key somewhere safe
-                </Checkbox>
+                </Label>
                 {error ? <p role="alert" className={cn('m-0 text-footnote', vaultErrorClass)}>{error}</p> : null}
               </>
             )}
@@ -243,22 +246,26 @@ export function PasskeyEnrollDialog({
           <DialogFooter>
             {!recoveryStep ? (
               <>
-                <Button variant="ghost" onPress={step === 'working' ? cancel : close}>Cancel</Button>
-                <Button className={vaultActionClass} autoFocus isPending={step === 'working'} onPress={() => void start()} aria-describedby={error ? errorId : undefined}>
+                {step === 'working' ? (
+                  <Button variant="ghost" onClick={cancel}>Cancel</Button>
+                ) : (
+                  <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+                )}
+                {/* Pending for as long as the passkey prompt is up: the press returns its Promise. */}
+                <Button ref={primary} className={vaultActionClass} onClick={() => start()} aria-describedby={error ? errorId : undefined}>
                   {regenerate ? 'Continue with passkey' : 'Create passkey'}
                 </Button>
               </>
             ) : (
-              <Button className={vaultActionClass} isDisabled={!saved || !verified} onPress={() => void finish()}>Done</Button>
+              <DialogClose value="done" action={finish} disabled={!saved || !verified} render={<Button className={vaultActionClass} />}>
+                Done
+              </DialogClose>
             )}
           </DialogFooter>
 
-          <VisuallyHidden>
-            <span role="status" aria-live="polite">{announce}</span>
-          </VisuallyHidden>
         </div>
-      )}
-    </DialogContent>
+      </DialogContent>
+    </Dialog>
   );
 }
 

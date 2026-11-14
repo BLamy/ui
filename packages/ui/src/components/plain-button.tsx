@@ -1,28 +1,15 @@
 'use client';
-import * as React from 'react';
-import {
-  Button as AriaButton,
-  ToggleButton as AriaToggleButton,
-  type ButtonProps as AriaButtonProps,
-  type ToggleButtonProps as AriaToggleButtonProps,
-} from 'react-aria-components';
+import type { ComponentProps } from 'react';
+import { Button } from '@ui-sdk/react/button';
+import { Toggle } from '@ui-sdk/react/toggle';
 
-/* ══ PlainButton / PlainToggleButton — react-aria's buttons with no styling of their own ══
-   For surfaces that draw their own pressables (icon buttons, pills, rows). They keep `title`: react-aria's buttons
-   drop it, and icon buttons rely on it for their tooltip. Use `Button` for the styled, cva-driven one. */
-const withTitle = (title: string | undefined) =>
-  title ? { render: (props: React.JSX.IntrinsicElements['button']) => <button {...props} title={title} /> } : {};
+/* ══ PlainButton / PlainToggleButton — UI SDK's Button and Toggle, as they are ══
+   For surfaces that draw their own pressables (icon buttons, pills, rows): the behavior (`onClick`, pending while
+   its Promise runs, `disabled`, `render` for a link; `pressed` / `onPressedChange` and `data-pressed` on the
+   toggle) with whatever classes you give it. These are UI SDK's own parts under the kit's names, not wrappers.
+   Use `Button` and `Toggle` from the kit for the styled, cva-driven ones. */
+export { Button as PlainButton } from '@ui-sdk/react/button';
+export { Toggle as PlainToggleButton } from '@ui-sdk/react/toggle';
 
-export interface PlainButtonProps extends Omit<AriaButtonProps, 'render'> {
-  title?: string;
-}
-export function PlainButton({ title, ...props }: PlainButtonProps) {
-  return <AriaButton {...props} {...withTitle(title)} />;
-}
-
-export interface PlainToggleButtonProps extends Omit<AriaToggleButtonProps, 'render'> {
-  title?: string;
-}
-export function PlainToggleButton({ title, ...props }: PlainToggleButtonProps) {
-  return <AriaToggleButton {...props} {...withTitle(title)} />;
-}
+export type PlainButtonProps = ComponentProps<typeof Button>;
+export type PlainToggleButtonProps = ComponentProps<typeof Toggle>;

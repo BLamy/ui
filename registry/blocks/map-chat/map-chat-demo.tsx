@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ArtifactChatContainer, type ArtifactChatContainerProps } from '@/components/ui/artifact-chat-container';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import { PlainButton as Button } from '@/components/ui/plain-button';
 import { Composer, ComposerAddon, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer';
 import { MarkdownView, type ReferenceNode } from '@/components/ui/markdown-view';
 import { useAppearance, type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
-import { Button } from 'react-aria-components';
 
 import { distanceMeters, formatDistance, formatMinutes, walkingMinutes, type MapTarget, type MapView } from './geo';
 import {
@@ -103,8 +103,8 @@ const CHROME = {
   toolDone: 'bg-success/16 text-success',
   toolRunning: 'bg-primary/13 text-primary dark:bg-primary/20',
   banner: 'border-black/8 bg-card/88 text-foreground shadow-[0_8px_24px_black] shadow-black/14 dark:border-white/12 dark:bg-card/82 dark:shadow-black/35',
-  bannerClose: 'bg-black/6 text-foreground data-hovered:bg-black/10 dark:bg-white/10 dark:data-hovered:bg-white/18',
-  chip: 'border-black/10 bg-white/90 data-hovered:bg-black/5 dark:border-white/14 dark:bg-white/8 dark:data-hovered:bg-white/16',
+  bannerClose: 'bg-black/6 text-foreground hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/18',
+  chip: 'border-black/10 bg-white/90 hover:bg-black/5 dark:border-white/14 dark:bg-white/8 dark:hover:bg-white/16',
   ref: 'text-foreground dark:text-white',
 };
 type Chrome = typeof CHROME;
@@ -333,7 +333,6 @@ export function MapChatDemo({
     initialSent.current = true;
     void send(initialPrompt);
     // Fire once on mount only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const focusPlace = useCallback(
@@ -368,26 +367,28 @@ export function MapChatDemo({
       if (!place) return null;
       const meta = CATEGORY_META[place.category];
       return (
-        <HoverCardTrigger className="align-baseline">
-          <Button
-            data-slot="map-chat-ref"
+        <HoverCard>
+          <HoverCardTrigger
+            render={<Button />}
             className={cn(
               'mx-px inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border py-px pr-2 pl-1 align-baseline text-[.92em] leading-[1.35] font-semibold',
               chrome.ref,
               FONT_INHERIT,
               'border-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_45%,transparent)] bg-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_16%,transparent)]',
-              '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:bg-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_30%,transparent)]',
+              '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] hover:bg-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_30%,transparent)]',
             )}
             style={{ '--ck-ref-color': meta.color } as CSSProperties}
-            onPress={() => focusPlace(place)}
+            onClick={() => focusPlace(place)}
           >
             <span className="grid size-4 place-items-center rounded-[50%] bg-[color:var(--ck-ref-color,var(--primary))] text-white">
               <Icon name={meta.icon} size={11} stroke={2.4} />
             </span>
             {place.name}
-          </Button>
-          <HoverCard placement="top"><PlaceCard place={place} stop={stopIndex.get(place.id)} /></HoverCard>
-        </HoverCardTrigger>
+          </HoverCardTrigger>
+          <HoverCardContent side="top">
+            <PlaceCard place={place} stop={stopIndex.get(place.id)} />
+          </HoverCardContent>
+        </HoverCard>
       );
     },
     [focusPlace, chrome, stopIndex],
@@ -473,7 +474,7 @@ export function MapChatDemo({
               <Button
                 aria-label="Clear route"
                 className={cn('grid size-7 shrink-0 cursor-pointer place-items-center rounded-[50%] border-0 p-0', chrome.bannerClose)}
-                onPress={() => setTrip(null)}
+                onClick={() => setTrip(null)}
               >
                 <Icon name="x" size={14} stroke={2.4} />
               </Button>
@@ -540,7 +541,7 @@ export function MapChatDemo({
                           '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
                           chrome.chip,
                         )}
-                        onPress={() => void send(s)}
+                        onClick={() => void send(s)}
                       >
                         {s}
                       </Button>

@@ -6,6 +6,11 @@ import { FilterBar, FilterToolbar } from '@/components/ui/filter';
 import { FilterInput } from '@/components/ui/filter-input';
 import type { Filter, FilterField } from '@/lib/filter-model';
 
+declare global {
+  var __UI_SDK_STRICT__: boolean | undefined;
+}
+globalThis.__UI_SDK_STRICT__ = true;
+
 afterEach(cleanup);
 
 const fields: FilterField[] = [
@@ -28,9 +33,10 @@ function Harness({ onChange }: { onChange?: (f: Filter[]) => void }) {
 }
 
 const box = () => screen.getByRole('textbox', { name: 'Describe the filters you want' });
-const type = (text: string) => fireEvent.change(box(), { target: { value: text } });
+const type = (text: string) => fireEvent.input(box(), { target: { value: text } });
 const preview = () => document.querySelector('[data-slot=filter-input-preview]');
-const spoken = () => document.querySelector('[data-slot=filter-input] [role=status]')?.textContent ?? '';
+// What a screen reader hears: UI SDK's one polite live region, written by announce().
+const spoken = () => document.querySelector('[data-ui-sdk-announcer=""]')?.textContent ?? '';
 
 describe('FilterInput', () => {
   it('shows what it understood as chips before anything is applied', async () => {
@@ -40,8 +46,11 @@ describe('FilterInput', () => {
     type('priority urgent assigned to bob');
     await waitFor(() => expect(preview()?.textContent).toContain('Will apply'));
     expect(within(preview() as HTMLElement).getAllByRole('group', { hidden: true }).map((g) => g.getAttribute('aria-label'))).toEqual(['Priority is Urgent', 'Assignee is Bob']);
-    expect(spoken()).toContain('2 filters understood: Priority is Urgent; Assignee is Bob');
+    await waitFor(() => expect(spoken()).toContain('2 filters understood: Priority is Urgent; Assignee is Bob'));
     expect(spoken()).toContain('Press Enter to apply');
+    // The field's description is its hint only, not the changing result.
+    expect(box().getAttribute('aria-describedby')?.split(' ')).toHaveLength(1);
+    expect(document.querySelector('[data-slot=filter-input] [role=status]')).toBeNull();
     expect(onChange).not.toHaveBeenCalled(); // never applied silently
     expect(screen.queryByRole('list', { name: 'Active filters' })).toBeNull();
   });
@@ -56,7 +65,8 @@ describe('FilterInput', () => {
     expect(onChange).toHaveBeenCalledWith([expect.objectContaining({ field: 'status', operator: 'is', value: ['open'] })]);
     expect((box() as HTMLInputElement).value).toBe('');
     expect(preview()).toBeNull();
-    expect(document.querySelector('[data-slot=filter-announcer]')?.textContent).toContain('Filter applied: Status is Open');
+    // The bar says it through UI SDK's one polite live region (announce()).
+    await waitFor(() => expect(document.querySelector('[data-ui-sdk-announcer=""]')?.textContent).toContain('Filter applied: Status is Open'), { timeout: 2000 });
     // …and they edit like any other
     fireEvent.click(screen.getByRole('button', { name: 'Status operator: is' }));
     fireEvent.click(await screen.findByRole('menuitemradio', { name: 'is not' }));
@@ -95,10 +105,10 @@ describe('FilterInput', () => {
     type('qwerty zxcvb');
     await waitFor(() => expect(preview()?.textContent).toContain('Nothing understood yet'));
     expect(preview()?.textContent).toContain('Ignored');
-    expect(spoken()).toContain('No filter understood');
+    await waitFor(() => expect(spoken()).toContain('No filter understood'));
     fireEvent.keyDown(box(), { key: 'Enter' });
     expect(onChange).not.toHaveBeenCalled();
-    expect(spoken()).toContain('Nothing to apply');
+    await waitFor(() => expect(spoken()).toContain('Nothing to apply'));
     expect((screen.getByRole('button', { name: 'Apply' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
@@ -129,6 +139,49 @@ describe('FilterInput', () => {
     await waitFor(() => expect(spoken()).toContain('Priority is High'));
     fireEvent.keyDown(box(), { key: 'Enter' });
     expect(onApply).toHaveBeenCalledWith([expect.objectContaining({ field: 'priority', value: ['high'] })]);
+  });
+
+  it('reports every change to the phrase with its reason, and Escape claims the key only when there is text', async () => {
+    const onValueChange = vi.fn();
+    const onApply = vi.fn();
+    const outer = vi.fn((event: KeyboardEvent) => event.defaultPrevented);
+    document.addEventListener('keydown', outer);
+    try {
+      render(<FilterInput fields={fields} onApply={onApply} onValueChange={onValueChange} query={query} />);
+      type('priority high');
+      expect(onValueChange).toHaveBeenLastCalledWith('priority high', expect.objectContaining({ reason: 'input-change' }));
+      fireEvent.keyDown(box(), { key: 'Escape' });
+      expect((box() as HTMLInputElement).value).toBe('');
+      expect(onValueChange).toHaveBeenLastCalledWith('', expect.objectContaining({ reason: 'clear-press' }));
+      expect(outer).toHaveLastReturnedWith(true);
+      fireEvent.keyDown(box(), { key: 'Escape' });
+      expect(outer).toHaveLastReturnedWith(false);
+
+      // The live region keeps what it last read until the next announcement.
+      const region = document.querySelector('[data-ui-sdk-announcer=""]');
+      if (region) region.textContent = '';
+      type('priority high');
+      await waitFor(() => expect(spoken()).toContain('Priority is High'));
+      fireEvent.keyDown(box(), { key: 'Enter' });
+      expect(onApply).toHaveBeenCalledTimes(1);
+      expect((box() as HTMLInputElement).value).toBe('');
+      expect(onValueChange).toHaveBeenLastCalledWith('', expect.objectContaining({ reason: 'imperative' }));
+    } finally {
+      document.removeEventListener('keydown', outer);
+    }
+  });
+
+  it('is controlled with value, and a canceled change keeps the phrase', () => {
+    function Controlled() {
+      const [text, setText] = useState('status');
+      return <FilterInput fields={fields} onApply={() => undefined} value={text} onValueChange={(next, details) => { if (next.length > 12) details.cancel(); else setText(next); }} query={query} />;
+    }
+    render(<Controlled />);
+    expect((box() as HTMLInputElement).value).toBe('status');
+    type('status open');
+    expect((box() as HTMLInputElement).value).toBe('status open');
+    type('status open and more');
+    expect((box() as HTMLInputElement).value).toBe('status open');
   });
 
   it('states its limits where the user can read them', () => {

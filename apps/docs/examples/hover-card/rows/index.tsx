@@ -12,12 +12,12 @@ const people = [
 
 const FILES: TreeNode[] = [
   {
-    id: 'src', name: 'src', children: [
-      { id: 'src/app.tsx', name: 'app.tsx' },
-      { id: 'src/theme.css', name: 'theme.css' },
+    value: 'src', label: 'src', children: [
+      { value: 'src/app.tsx', label: 'app.tsx' },
+      { value: 'src/theme.css', label: 'theme.css' },
     ],
   },
-  { id: 'README.md', name: 'README.md' },
+  { value: 'README.md', label: 'README.md' },
 ]
 const INFO: Record<string, { size: string; changed: string; by: string }> = {
   'src/app.tsx': { size: '4.2 KB', changed: '2 hours ago', by: 'Jonas Ito' },
@@ -26,10 +26,9 @@ const INFO: Record<string, { size: string; changed: string; by: string }> = {
 }
 
 // A ListRow's `preview` and a Tree's `preview(node)` open a hover card beside
-// the row; sweeping down the list moves it from row to row at once.
+// the row. The tree shares one card between its rows, so sweeping down it
+// moves the card from row to row at once.
 export default function Rows() {
-  // The ThemeScope is only here so the portalled cards wear this demo's
-  // light / dark appearance; in an app, BLProvider or your root class does it.
   return (
     <ThemeScope className="mx-auto grid max-w-2xl gap-6 py-4 sm:grid-cols-[1fr_220px]">
       <List inset>
@@ -41,7 +40,7 @@ export default function Rows() {
               title={`${p.f} ${p.l}`}
               subtitle={p.role}
               accessory="chevron"
-              onPress={() => {}}
+              onClick={() => {}}
               preview={
                 <>
                   <HoverCardHeader media={<Avatar c={p} size={44} />} title={`${p.f} ${p.l}`} subtitle={p.role} />
@@ -55,10 +54,10 @@ export default function Rows() {
       <div className="flex h-48 flex-col">
         <Tree aria-label="Files" items={FILES} defaultExpanded="all" className="min-h-0 flex-1"
           preview={(node) => {
-            const info = INFO[node.id]
+            const info = INFO[node.value]
             return info ? (
               <>
-                <HoverCardHeader title={node.name} subtitle={node.id} />
+                <HoverCardHeader title={node.label} subtitle={node.value} />
                 <p className="mt-2 mb-0 text-footnote text-muted-foreground">{info.size} · changed {info.changed} by {info.by}</p>
               </>
             ) : null

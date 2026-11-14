@@ -2,6 +2,8 @@
 
 A grid of cells for CSV files and other tables, from ten rows up to millions. Only the cells in view are in the page, so a million-row file scrolls as smoothly as a short one. You can edit cells in place, select ranges, copy and paste to and from other spreadsheets, undo, and resize columns. Sorting a number or date column runs as a WebGPU compute shader, and each number column's header shows a histogram tallied on the GPU. Without WebGPU, both run on the CPU and give the same answers.
 
+It's one primitive built from UI SDK behaviors: [`createGridFocus`](https://ui-sdk.dev/docs/core/behaviors/focus) moves the active cell, [`createCellRange`](https://ui-sdk.dev/docs/core/behaviors/selection) selects blocks and reads them as tab-separated text (`cellsToText` / `textToCells`), [`createInlineEdit`](https://ui-sdk.dev/docs/core/behaviors/lists) edits a cell in place, `createUndoStack` keeps the history, [`createResize`](https://ui-sdk.dev/docs/core/behaviors/direct-manipulation) sizes the columns, and two [`createVirtualizer`](https://ui-sdk.dev/docs/core/behaviors/lists)s render only the rows and columns in view.
+
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/spreadsheet.json{% endcommand %}
@@ -37,7 +39,7 @@ import { parseCsv } from '@/lib/csv'
 
 const [rows, setRows] = useState(() => parseCsv(text).rows)
 
-<Spreadsheet aria-label="Parts" value={rows} onChange={setRows} />
+<Spreadsheet aria-label="Parts" value={rows} onValueChange={setRows} />
 ```
 
 Cells are strings and are shown as written: `1,234.50` stays `1,234.50`. A column whose values all read as numbers (thousands commas, a currency sign, `%` and `(12)` negatives included) or as ISO dates is right-aligned, sorts by value and gets a histogram. Any other column sorts as text, in natural order ("file 2" before "file 10"), ignoring case. Empty cells sort last in both directions.
@@ -66,7 +68,7 @@ When you sort a number or date column, each value becomes an exact 64-bit key: t
 
 The histograms use one GPU thread per value. Each workgroup tallies its values in shared memory, then adds its tally to the output once. The bin edges are computed in 32-bit floats on both paths.
 
-Sorting is a view: `onChange` always gets rows in the file's order, and editing a sorted table doesn't move rows around. Sort again to re-sort.
+Sorting is a view: `onValueChange` always gets rows in the file's order, and editing a sorted table doesn't move rows around. Sort again to re-sort.
 
 {% hint style="info" %}
 **When the GPU runs.** With `engine="auto"` (the default), the GPU handles sorts and histograms of at least `gpuMinRows` rows (20,000 by default) on a hardware adapter. Smaller jobs stay on the CPU, because uploading the data and reading it back costs more than the GPU saves. A software adapter (SwiftShader in headless CI, llvmpipe), no WebGPU at all, or a GPU error also means the CPU. `engine="gpu"` uses any adapter at any size; `engine="fallback"` never touches the GPU. Text columns always sort on the CPU, and so do tables over 8 million rows (the most one 128 MiB buffer holds). The status bar and `onSort` say which engine ran and how long it took, upload and readback included.
@@ -78,8 +80,9 @@ The grid is one tab stop. Inside it:
 
 | Keys | Action |
 | --- | --- |
-| Arrow keys | Move; with ⇧, extend the selection; with ⌘ / Ctrl, jump to the edge |
-| Home / End, Page Up / Page Down | Start or end of the row (⌘ for the whole table), a screen up or down |
+| Arrow keys | Move; with ⇧, extend the selection; with ⌘ / Ctrl, jump to the edge (with ⇧ too, extend to it). Left and right swap in right-to-left text |
+| Home / End, Page Up / Page Down | Start or end of the row (⌘ for the whole table, ⇧ to extend), a screen up or down |
+| ⇧ Space, Ctrl Space | Select the rows, or the columns, the selection covers |
 | Enter, F2, or typing | Edit the cell (typing replaces it) |
 | Enter / ⇧ Enter, Tab / ⇧ Tab | While editing: save and move down / up, right / left |
 | Esc | Cancel the edit, or shrink the selection to one cell |
@@ -87,18 +90,20 @@ The grid is one tab stop. Inside it:
 | ⌘C, ⌘X, ⌘V | Copy, cut and paste tab-separated text. Pasting one value into a larger selection fills it, and a paste past the last row adds rows |
 | ⌘A | Select all |
 | ⌘Z, ⇧⌘Z (or ⌘Y) | Undo, redo (100 steps) |
-| ⌥← / ⌥→ | Narrow or widen the column |
+| ⌥← / ⌥→ | Narrow or widen the column (16 px, 64 px with ⇧) |
 
-With the mouse, click a column's title to select the column, a row number to select the row, and the corner to select everything. Drag a column's right edge to resize it, or double-click the edge to fit the column again. With `header`, double-click a title to rename the column.
+Screen readers hear each change of the selection from the keyboard ("2 rows by 2 columns selected"), and the result of a sort.
+
+With the mouse, click a column's title to select the column, a row number to select the row, and the corner to select everything; ⇧-click stretches the selection from the active cell, and dragging across cells paints it, scrolling near the edges. Drag a column's right edge to resize it, or double-click the edge to fit the column again. With `header`, double-click a title to rename the column.
 
 ## Props
 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `value` / `defaultValue` | — | Rows of string cells; rows may differ in length. With `header`, row 0 holds the titles. |
-| `onChange` | — | Every edit, paste, cut, undo and added row, in the data's own order. |
+| `onValueChange` | — | `(rows, details)`: every edit, paste, cut, undo and added row, in the data's own order. `details.reason` is `cell-edit`, `paste`, `cut`, `clear`, `add-row`, `undo`, `redo` or `imperative`; `details.source` says whether a person or an agent did it, and `details.cancel()` refuses it. |
 | `header` | `true` | The first row is column titles. Without it, columns are lettered A, B, C… |
-| `isReadOnly` | `false` | No editing, pasting or Add Row. Selecting, copying and sorting still work. |
+| `readOnly` | `false` | No editing, pasting or Add Row. Selecting, copying and sorting still work. |
 | `engine` | `auto` | Where sorts and histograms run: `auto`, `gpu` or `fallback` (see above). |
 | `gpuMinRows` | `20000` | The smallest job `auto` sends to the GPU. |
 | `histograms` | `true` | A histogram under each number or date column's title. |
@@ -107,9 +112,36 @@ With the mouse, click a column's title to select the column, a row number to sel
 | `footer` | `true` | The status bar: size, sort timing, the selection's sum and average, Add Row. |
 | `actions` | — | Extra controls at the end of the status bar. |
 | `columnWidth` | `120` | Width of an empty column. Other columns start sized to their title and first rows (up to 320 px). |
-| `ref` | — | `focus()`, `select(anchor, focus?)`, `undo()`, `redo()`. |
+| `columnWidths` / `defaultColumnWidths` | — | Widths set so far, in px by column index (`{ "0": 180 }`). A column with none keeps its estimated size. |
+| `onColumnWidthsChange` | — | `(widths, details)` after a drag ends (`drag`), a key moves an edge (`resize-key`), a double-click fits a column (`handle-press`), or code sets them (`imperative`). |
+| `controller` | — | A `createSpreadsheetController()` handle (see below). |
 
 Give the Spreadsheet a height (`h-[420px]`, or `flex-1` in a flex column), because it scrolls inside itself.
+
+## Drive it from outside
+
+A controller calls the grid's own actions, the same ones an agent gets through UI SDK's agent bridge. Cells are in view coordinates: `{ row, col }`, where `row` counts the displayed rows (after sorting) from 0, and row `-1` is the titles.
+
+```tsx
+import { Spreadsheet, createSpreadsheetController } from '@/components/ui/spreadsheet'
+
+const sheet = createSpreadsheetController()
+
+<Spreadsheet controller={sheet} value={rows} onValueChange={setRows} />
+
+sheet.select({ row: 0, col: 0 }, { row: 9, col: 2 })   // a block, scrolled into view
+sheet.copy()                                            // its tab-separated text
+sheet.edit({ row: 3, col: 1 }, '42')
+sheet.paste('a\tb\nc\td')
+await sheet.sort(2, 'descending')                       // or null to clear; no direction steps like the button
+sheet.undo()
+```
+
+It also has `focus()`, `clear()`, `redo()`, `addRow()` and `setColumnWidths(widths)`.
+
+## Parts and attributes
+
+The root is `data-slot="spreadsheet"`, and inside it `spreadsheet-grid` (`role="grid"`), two `spreadsheet-rowgroup`s, `spreadsheet-row`s, `spreadsheet-corner`, `spreadsheet-column` (a title, with `data-selected` when the selection covers it, and its `spreadsheet-resizer`, with `data-dragging`), `spreadsheet-rowheader` (`data-selected`), `spreadsheet-cell`, `spreadsheet-editor` and `spreadsheet-footer`. A cell has `data-active` while it is the active cell, `data-editing`, and from the cell range `aria-selected`, `data-selected` and `data-range-edge` (`top`, `right`, `bottom`, `left`), which draws the selection's outline.
 
 ## The model
 

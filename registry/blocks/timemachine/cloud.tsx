@@ -1,20 +1,23 @@
 /* Where sessions live: this browser alone (the default — nothing leaves it), or also on a Durable Streams server
    (Rivet), which syncs them live and lets another device watch them. */
 import { useState, type ReactNode } from 'react';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { PlainButton } from '@/components/ui/plain-button';
-import { Segmented } from '@/components/ui/segmented';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
 import { useSessionCloud } from '@/lib/session-recorder';
 import { cn } from '@/lib/utils';
+import { Input } from '@ui-sdk/react/input';
 import { timeLabel } from './format';
 
-function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
+/** A labelled setting: the Field names its Input and reads the hint out with it. */
+function Setting({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-footnote font-medium">{label}</span>
+    <Field className="gap-1">
+      <FieldLabel className="text-footnote">{label}</FieldLabel>
       {children}
-      {hint ? <span className="text-caption text-muted-foreground">{hint}</span> : null}
-    </label>
+      {hint ? <FieldDescription className="px-0 text-caption leading-normal">{hint}</FieldDescription> : null}
+    </Field>
   );
 }
 
@@ -32,12 +35,14 @@ export function CloudPanel() {
 
   return (
     <div className="flex flex-col gap-3.5">
-      <Segmented
+      <Segmented<'private' | 'cloud'>
         aria-label="Where sessions are stored"
         value={mode}
-        onChange={(v) => { setMode(v as 'private' | 'cloud'); if (v === 'private' && on) configure({ enabled: false }); }}
-        options={[{ id: 'private', label: 'Private' }, { id: 'cloud', label: 'Cloud' }]}
-      />
+        onValueChange={(v) => { if (!v) return; setMode(v); if (v === 'private' && on) configure({ enabled: false }); }}
+      >
+        <SegmentedItem value="private">Private</SegmentedItem>
+        <SegmentedItem value="cloud">Cloud</SegmentedItem>
+      </Segmented>
 
       {mode === 'private' ? (
         <p className="m-0 flex gap-2 text-footnote text-muted-foreground">
@@ -46,18 +51,18 @@ export function CloudPanel() {
         </p>
       ) : (
         <>
-          <Field label="Server" hint="A Durable Streams endpoint, e.g. your Rivet project’s /durable-streams URL.">
-            <input className={input} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://your-project.rivet.run/durable-streams" spellCheck={false} autoCapitalize="off" />
-          </Field>
-          <Field label="Access token" hint="Sent as a bearer token. Stored in this browser.">
-            <input className={input} type="password" value={token} onChange={(e) => setToken(e.target.value)} placeholder="Optional" autoComplete="off" />
-          </Field>
-          <Field label="Stream prefix" hint="Keeps this computer’s streams apart from others on the same server.">
-            <input className={input} value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="my-mac" spellCheck={false} autoCapitalize="off" />
-          </Field>
+          <Setting label="Server" hint="A Durable Streams endpoint, e.g. your Rivet project’s /durable-streams URL.">
+            <Input className={input} value={url} onValueChange={setUrl} placeholder="https://your-project.rivet.run/durable-streams" spellCheck={false} autoCapitalize="off" />
+          </Setting>
+          <Setting label="Access token" hint="Sent as a bearer token. Stored in this browser.">
+            <Input className={input} type="password" value={token} onValueChange={setToken} placeholder="Optional" autoComplete="off" />
+          </Setting>
+          <Setting label="Stream prefix" hint="Keeps this computer’s streams apart from others on the same server.">
+            <Input className={input} value={prefix} onValueChange={setPrefix} placeholder="my-mac" spellCheck={false} autoCapitalize="off" />
+          </Setting>
           <PlainButton
-            onPress={() => save(!on)}
-            isDisabled={!on && !url.trim()}
+            onClick={() => save(!on)}
+            disabled={!on && !url.trim()}
             className={cn('h-9 cursor-pointer rounded-ctl border-0 px-3 text-detail font-semibold data-disabled:opacity-40', on ? 'bg-secondary text-foreground hover:bg-secondary-strong' : 'bg-primary text-primary-foreground')}
           >
             {on ? 'Stop syncing' : 'Turn on Cloud sync'}

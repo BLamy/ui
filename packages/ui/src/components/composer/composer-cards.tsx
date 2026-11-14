@@ -1,13 +1,16 @@
 'use client';
 import * as React from 'react';
 import { useRef, useState } from 'react';
-import { animate, AnimatePresence, usePresence } from 'framer-motion';
+import { animateIn, animateOut, createFocusRecovery, type ChangeDetails, type FocusRecovery } from '@ui-sdk/core';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/lib/icon';
-import { prefersReducedMotion, springs } from '@/lib/motion';
 import { insertMarkdown } from '@/components/ui/markdown-editor';
 import { MORPH_REACH as REACH, morphNeck as neck, roundedRectPath as roundedRect, toDropShadow, type MorphBox as Box } from '@/lib/morph-path';
 import { ComposerButton, useComposer, type ComposerAttachment } from '@/components/ui/composer/composer';
+import { usePresenceList } from '@/lib/presence';
+import { prefersReducedMotion } from '@/lib/motion';
+import { useAppearance } from '@/lib/theme';
+import { useControllableChange } from '@/lib/controllable-state';
 
 /* ══ ComposerCards — cards that morph out of the composer like a drop of liquid ══
 
@@ -30,9 +33,6 @@ import { ComposerButton, useComposer, type ComposerAttachment } from '@/componen
    ComposerQueue builds on it: sending while a reply streams turns the draft into a card that morphs out of the top,
    and when the reply ends the card merges back in and is sent into the chat. */
 
-/** How far a card's content is blurred while it is still inside its source (px). */
-const INSIDE_BLUR = 10;
-
 interface Look {
   bg: string;
   border: string;
@@ -50,8 +50,19 @@ interface TrayValue {
   draw: () => void;
   /** False while the tray's first render lays out: cards that are there from the start don't morph in. */
   mounted: React.RefObject<boolean>;
+  /** Keeps focus in the tray when a card leaves holding it. */
+  recovery: FocusRecovery;
 }
 const TrayContext = React.createContext<TrayValue | null>(null);
+
+/** Whether a tray's card is still among its children, or leaving (and what to call once it has sunk back). */
+const CardPresenceContext = React.createContext<{ key: string; present: boolean; exited: () => void } | null>(null);
+
+/** The controls of a tray's cards that are staying (not sinking back), in DOM order per card. */
+function stayingCards(tray: HTMLElement | null): HTMLElement[] {
+  return Array.from(tray?.querySelectorAll<HTMLElement>(':scope > [data-slot="composer-morph-frame"] > [data-slot="composer-morph-card"]:not([inert])') ?? []);
+}
+const CONTROLS = 'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 function useTray(): TrayValue {
   const ctx = React.useContext(TrayContext);
@@ -142,6 +153,7 @@ export function ComposerCards({ side = 'top', gap = 8, animateOnMount = false, c
   const mounted = useRef(animateOnMount);
   const merged = useRef(new Set<HTMLElement>());
   const look = useRef<Look | null>(null);
+  const refreshLook = useRef<(() => void) | null>(null);
   const [cardLook, setCardLook] = useState<Look | null>(null);
   const restGap = Math.max(REACH, gap);
 
@@ -174,7 +186,8 @@ export function ComposerCards({ side = 'top', gap = 8, animateOnMount = false, c
       return (side === 'top' ? inner.top - box.bottom : box.top - inner.bottom) < REACH;
     });
     const inSkin = chain.map((_, i) => joined[i] || !!joined[i + 1]);
-    if (!inSkin.some(Boolean)) {
+    // Reduced motion has no morph: a card is joined to the source only while it grows out or sinks back.
+    if (!inSkin.some(Boolean) || prefersReducedMotion()) {
       svg.style.display = 'none';
       merged.current.forEach((el) => setMerged(el, false));
       merged.current.clear();
@@ -228,20 +241,50 @@ export function ComposerCards({ side = 'top', gap = 8, animateOnMount = false, c
     // A theme change restyles the source.
     const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(refresh);
     mo?.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'data-theme'] });
-    const scheme = typeof matchMedia === 'undefined' ? null : matchMedia('(prefers-color-scheme: dark)');
-    scheme?.addEventListener('change', refresh);
+    refreshLook.current = refresh;
     const settle = merged.current;
     return () => {
+      refreshLook.current = null;
       ro?.disconnect();
       mo?.disconnect();
-      scheme?.removeEventListener('change', refresh);
       settle.forEach((el) => setMerged(el, false));
       settle.clear();
       root.style.isolation = isolation;
     };
   }, [side, draw]);
 
-  const value = React.useMemo<TrayValue>(() => ({ side, gap: restGap, draw, mounted }), [side, restGap, draw]);
+  // A ThemeScope or BLProvider switching appearance restyles the source too.
+  const appearance = useAppearance();
+  React.useLayoutEffect(() => refreshLook.current?.(), [appearance]);
+
+  // Focus on a card that leaves (removed, sent, merged back) goes to the same control on the next card that stays,
+  // else on the one before it, else to the composer's editor: never to the page.
+  const composer = useComposer();
+  const editorRef = useRef(composer.editor);
+  editorRef.current = composer.editor;
+  const lastFocused = useRef<HTMLElement | null>(null);
+  const recovery = React.useMemo(
+    () =>
+      createFocusRecovery({
+        fallback: (lost) => {
+          const cards = stayingCards(trayRef.current).filter((c) => c !== lost.el);
+          const next = cards.find((c) => lost.el.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING) ?? cards[cards.length - 1];
+          if (next) {
+            const was = lastFocused.current && lost.el.contains(lastFocused.current) ? lastFocused.current : null;
+            const label = was?.getAttribute('aria-label');
+            const controls = Array.from(next.querySelectorAll<HTMLElement>(CONTROLS));
+            return (label ? controls.find((c) => c.getAttribute('aria-label') === label) : undefined) ?? controls[0] ?? null;
+          }
+          const editor = editorRef.current;
+          if (editor && !editor.isDestroyed) editor.commands.focus('end');
+          return null;
+        },
+      }),
+    [],
+  );
+  const value = React.useMemo<TrayValue>(() => ({ side, gap: restGap, draw, mounted, recovery }), [side, restGap, draw, recovery]);
+  // Removed cards stay until they have sunk back in.
+  const cards = usePresenceList(React.Children.toArray(children).filter(React.isValidElement), (child) => String(child.key));
   const lookStyle = cardLook
     ? ({
         '--composer-morph-bg': cardLook.bg,
@@ -262,11 +305,18 @@ export function ComposerCards({ side = 'top', gap = 8, animateOnMount = false, c
         }}
         data-slot="composer-cards"
         data-side={side}
+        onFocusCapture={(event) => {
+          lastFocused.current = event.target as HTMLElement;
+        }}
         className={cn('flex min-w-0 flex-col', side === 'top' ? 'order-[-2]' : 'order-2', className)}
         style={{ ...lookStyle, ...style }}
         {...props}
       >
-        <AnimatePresence initial={animateOnMount}>{children}</AnimatePresence>
+        {cards.map((entry) => (
+          <CardPresenceContext.Provider key={entry.key} value={entry}>
+            {entry.item}
+          </CardPresenceContext.Provider>
+        ))}
       </div>
       {/* The joined outline: positioned against the Composer root (the tray is not positioned), under its content. */}
       <svg ref={svgRef} aria-hidden="true" data-slot="composer-morph-skin" className="pointer-events-none absolute top-0 left-0 -z-1 size-px overflow-visible" style={{ display: 'none' }}>
@@ -286,94 +336,76 @@ export interface ComposerMorphCardProps extends React.HTMLAttributes<HTMLDivElem
 /** A card in a ComposerCards tray. Give it a stable `key`; it morphs out when added and sinks back when removed. */
 export function ComposerMorphCard({ onExited, className, children, ref, ...props }: ComposerMorphCardProps) {
   const tray = useTray();
-  const [isPresent, safeToRemove] = usePresence();
+  const presence = React.useContext(CardPresenceContext);
+  const present = presence?.present ?? true;
   const frameRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const bodyRef = useRef<HTMLDivElement | null>(null);
-  const progress = useRef(tray.mounted.current ? 0 : 1);
-  const control = useRef<{ stop: () => void } | null>(null);
+  const appear = useRef(tray.mounted.current);
+  const [morphing, setMorphing] = useState(appear.current);
   const exited = useRef(onExited);
   exited.current = onExited;
-  const { side, gap, draw } = tray;
+  const done = useRef(presence?.exited);
+  done.current = presence?.exited;
+  const { side, gap, draw, recovery } = tray;
+  const key = presence?.key ?? '';
 
-  /** Lays the card out `t` of the way from inside its source (0) to its resting place (1). */
-  const apply = React.useCallback(
-    (t: number) => {
-      progress.current = t;
-      const frame = frameRef.current;
-      const card = cardRef.current;
-      const body = bodyRef.current;
-      if (!frame || !card || !body) return;
-      if (t >= 1) {
-        frame.style.removeProperty('height');
-        frame.style.removeProperty('padding');
-        frame.style.removeProperty('pointer-events');
-        card.style.removeProperty('position');
-        card.style.removeProperty('inset');
-        body.style.removeProperty('filter');
-        body.style.removeProperty('opacity');
-      } else {
-        const height = card.offsetHeight;
-        // The frame holds the card plus the gap; it grows from nothing, so the card starts inside its source.
-        frame.style.height = `${Math.max(0, (height + gap) * t)}px`;
-        frame.style.padding = '0';
-        frame.style.pointerEvents = 'none';
-        card.style.position = 'absolute';
-        card.style.inset = side === 'top' ? '0 0 auto 0' : 'auto 0 0 0';
-        body.style.filter = `blur(${(INSIDE_BLUR * (1 - t)).toFixed(2)}px)`;
-        body.style.opacity = Math.min(1, Math.max(0, (t - 0.1) / 0.6)).toFixed(3);
-      }
-      draw();
-    },
-    [draw, gap, side],
-  );
-
-  const run = React.useCallback(
-    (to: number, done?: () => void) => {
-      control.current?.stop();
-      if (prefersReducedMotion()) {
-        apply(to);
-        done?.();
-        return;
-      }
-      control.current = animate(progress.current, to, {
-        ...springs.smooth,
-        restDelta: 0.001,
-        onUpdate: apply,
-        onComplete: () => {
-          apply(to);
-          done?.();
-        },
-      });
-    },
-    [apply],
-  );
-
+  // While it stays, the card is in the tray's focus recovery: leaving with focus inside, it hands focus on.
   React.useLayoutEffect(() => {
-    if (progress.current < 1) {
-      apply(progress.current);
-      run(1);
-    }
-    return () => control.current?.stop();
-    // Mount only: later changes go through presence.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const card = cardRef.current;
+    if (!present || !card) return;
+    return recovery.bind(card, { key, props: null });
+  }, [present, recovery, key]);
 
+  // While it morphs, the joined outline follows the card every frame.
   React.useEffect(() => {
-    if (isPresent) {
-      if (progress.current < 1) run(1);
-      return;
-    }
-    run(0, () => {
+    if (!morphing) return;
+    let frame = requestAnimationFrame(function tick() {
+      draw();
+      frame = requestAnimationFrame(tick);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      draw();
+    };
+  }, [morphing, draw]);
+
+  // In, the frame grows from nothing (UI SDK's data-starting-style) so the card slides out of its source; out, it
+  // shrinks back (data-ending-style) and the card sinks in.
+  React.useLayoutEffect(() => {
+    const frame = frameRef.current;
+    const card = cardRef.current;
+    if (!frame || !card) return;
+    if (present && !appear.current) return;
+    appear.current = true;
+    frame.style.setProperty('--composer-morph-height', `${card.offsetHeight}px`);
+    // The frame takes its explicit height before the transition starts, so the exit runs from it (not from `auto`).
+    frame.setAttribute('data-morphing', '');
+    void frame.offsetHeight;
+    setMorphing(true);
+    if (present) return animateIn(frame, () => setMorphing(false));
+    return animateOut(frame, () => {
+      setMorphing(false);
       exited.current?.();
-      safeToRemove?.();
+      done.current?.();
       // The source may still be marked merged with this card; draw once more without it.
       requestAnimationFrame(draw);
     });
-  }, [isPresent, run, safeToRemove, draw]);
+  }, [present, draw]);
 
   return (
-    <div ref={frameRef} data-slot="composer-morph-frame" className={cn('relative min-w-0 shrink-0', side === 'top' ? 'pb-(--composer-morph-gap)' : 'pt-(--composer-morph-gap)')} style={{ '--composer-morph-gap': `${gap}px` } as React.CSSProperties}>
+    <div
+      ref={frameRef}
+      data-slot="composer-morph-frame"
+      data-morphing={morphing || undefined}
+      className={cn(
+        'group/morph relative min-w-0 shrink-0',
+        side === 'top' ? 'pb-(--composer-morph-gap)' : 'pt-(--composer-morph-gap)',
+        // Morphing, the frame holds the card plus the gap, and grows from nothing (or shrinks back) on the smooth spring.
+        'data-morphing:pointer-events-none data-morphing:h-[calc(var(--composer-morph-height,0px)+var(--composer-morph-gap))] data-morphing:p-0',
+        'transition-[height] duration-spring-smooth ease-spring-smooth data-starting-style:h-0! data-ending-style:h-0! motion-reduce:transition-none',
+      )}
+      style={{ '--composer-morph-gap': `${gap}px` } as React.CSSProperties}
+    >
       <div
         ref={(el) => {
           cardRef.current = el;
@@ -381,17 +413,22 @@ export function ComposerMorphCard({ onExited, className, children, ref, ...props
           else if (ref) ref.current = el;
         }}
         data-slot="composer-morph-card"
-        data-state={isPresent ? 'open' : 'closing'}
         className={cn(
           'box-border min-w-0 overflow-hidden border-solid',
           'border-(length:--composer-morph-border-width,1px) border-(--composer-morph-border,var(--border)) bg-(--composer-morph-bg,var(--card))',
           'rounded-(--composer-morph-radius,15px) [box-shadow:var(--composer-morph-shadow,none)]',
+          // It starts inside its source: pinned to the frame's edge that faces away from it.
+          side === 'top' ? 'group-data-morphing/morph:absolute group-data-morphing/morph:inset-x-0 group-data-morphing/morph:top-0' : 'group-data-morphing/morph:absolute group-data-morphing/morph:inset-x-0 group-data-morphing/morph:bottom-0',
           className,
         )}
-        inert={!isPresent || undefined}
+        inert={!present || undefined}
         {...props}
       >
-        <div ref={bodyRef} data-slot="composer-morph-body" className="min-w-0">
+        {/* Inside its source the content is blurred and clear; it sharpens as the card comes out. */}
+        <div
+          data-slot="composer-morph-body"
+          className="min-w-0 transition-[opacity,filter] duration-spring-smooth ease-spring-smooth group-data-starting-style/morph:opacity-0 group-data-starting-style/morph:blur-[10px] group-data-ending-style/morph:opacity-0 group-data-ending-style/morph:blur-[10px] motion-reduce:transition-none"
+        >
           {children}
         </div>
       </div>
@@ -407,24 +444,31 @@ export interface ComposerQueueItem {
   attachments: ComposerAttachment[];
 }
 
+/** Why the queue changed: a draft queued while a reply streams, one sent (by itself or "Send now"), merged back
+    to edit, removed, or code. */
+export type ComposerQueueItemsChangeReason = 'queue' | 'send' | 'edit' | 'remove' | 'imperative';
+export type ComposerQueueItemsChangeDetails = ChangeDetails<ComposerQueueItemsChangeReason>;
+
 export interface ComposerQueueProps extends Omit<ComposerCardsProps, 'children' | 'onChange'> {
   /** Controlled queue. */
   items?: ComposerQueueItem[];
   defaultItems?: ComposerQueueItem[];
-  onItemsChange?: (items: ComposerQueueItem[]) => void;
+  /** Called before the queue changes; `details.cancel()` keeps the card where it is. */
+  onItemsChange?: (items: ComposerQueueItem[], details: ComposerQueueItemsChangeDetails) => void;
   /** Send the first queued message by itself once the reply ends (default true). */
   autoSend?: boolean;
   /** Draws a queued message's card (default: its text, attachment count, and Edit / Send now / Remove). */
   renderItem?: (item: ComposerQueueItem, actions: ComposerQueueActions) => React.ReactNode;
 }
 
+/** A queued card's actions. Pass the event that triggered one (a click) so `onItemsChange` reports its source. */
 export interface ComposerQueueActions {
-  /** Merges the card back into the composer and puts its text back in the draft. */
-  edit: () => void;
+  /** Merges the card back into the composer and puts its text back in the draft (focus goes to the editor). */
+  edit: (event?: Event) => void;
   /** Stops the reply (if one is streaming) and sends this message now. */
-  sendNow: () => void;
+  sendNow: (event?: Event) => void;
   /** Takes the card out of the queue. */
-  remove: () => void;
+  remove: (event?: Event) => void;
 }
 
 let queueSeq = 0;
@@ -456,18 +500,9 @@ export function ComposerQueue({
 }: ComposerQueueProps) {
   const ctx = useComposer();
   const { streaming, setQueue, submit, stop } = ctx;
-  const [inner, setInner] = useState(defaultItems);
-  const items = itemsProp ?? inner;
+  const [items, change] = useControllableChange<ComposerQueueItem[], ComposerQueueItemsChangeReason>(itemsProp, defaultItems, onItemsChange);
   const itemsRef = useRef(items);
   itemsRef.current = items;
-  const change = React.useCallback(
-    (next: ComposerQueueItem[]) => {
-      itemsRef.current = next;
-      if (itemsProp === undefined) setInner(next);
-      onItemsChange?.(next);
-    },
-    [itemsProp, onItemsChange],
-  );
   // Why a card left, so its exit knows what to do once it has merged back in.
   const leaving = useRef(new Map<string, { item: ComposerQueueItem; reason: 'send' | 'edit' | 'remove' }>());
   const feeding = useRef(false);
@@ -476,17 +511,21 @@ export function ComposerQueue({
   ctxRef.current = ctx;
 
   React.useEffect(() => {
-    setQueue((markdown, attachments) => change([...itemsRef.current, { id: queueId(), markdown, attachments }]));
+    setQueue((markdown, attachments, event) => change((all) => [...all, { id: queueId(), markdown, attachments }], { reason: 'queue', event }));
     return () => setQueue(null);
   }, [setQueue, change]);
 
   const leave = React.useCallback(
-    (id: string, reason: 'send' | 'edit' | 'remove') => {
+    (id: string, reason: 'send' | 'edit' | 'remove', event?: Event) => {
       const item = itemsRef.current.find((i) => i.id === id);
-      if (!item) return;
+      if (!item) return false;
       leaving.current.set(id, { item, reason });
       if (reason === 'send') feeding.current = true;
-      change(itemsRef.current.filter((i) => i.id !== id));
+      if (change((all) => all.filter((i) => i.id !== id), { reason, event })) return true;
+      // Canceled: the card stays.
+      leaving.current.delete(id);
+      if (reason === 'send') feeding.current = false;
+      return false;
     },
     [change],
   );
@@ -502,7 +541,7 @@ export function ComposerQueue({
       setSettled((n) => n + 1);
     } else if (reason === 'edit') {
       const { editor, addAttachment, setValue } = ctxRef.current;
-      item.attachments.forEach(addAttachment);
+      item.attachments.forEach((a) => addAttachment(a));
       if (editor && !editor.isDestroyed) {
         editor.commands.clearContent(true);
         insertMarkdown(editor, item.markdown);
@@ -523,12 +562,17 @@ export function ComposerQueue({
           out of the one before. Above the composer that is the reverse of the list. */}
       {(side === 'top' ? [...items].reverse() : items).map((item) => {
         const actions: ComposerQueueActions = {
-          edit: () => leave(item.id, 'edit'),
-          sendNow: () => {
-            if (streaming) stop();
-            leave(item.id, 'send');
+          edit: (event) => {
+            // Editing goes to the draft: focus moves there now, not to the next card.
+            if (leave(item.id, 'edit', event)) {
+              const editor = ctxRef.current.editor;
+              if (editor && !editor.isDestroyed) editor.commands.focus('end');
+            }
           },
-          remove: () => leave(item.id, 'remove'),
+          sendNow: (event) => {
+            if (leave(item.id, 'send', event) && streaming) stop();
+          },
+          remove: (event) => leave(item.id, 'remove', event),
         };
         return (
           <ComposerMorphCard key={item.id} role="listitem" data-queue-id={item.id} onExited={() => exited(item.id)}>
@@ -554,13 +598,13 @@ function QueuedMessage({ item, actions }: { item: ComposerQueueItem; actions: Co
           </span>
         ) : null}
       </div>
-      <ComposerButton aria-label="Edit queued message" onPress={actions.edit}>
+      <ComposerButton aria-label="Edit queued message" onClick={(event) => actions.edit(event.nativeEvent)}>
         <Icon name="square-pencil" size={14} />
       </ComposerButton>
-      <ComposerButton aria-label="Send now" onPress={actions.sendNow}>
+      <ComposerButton aria-label="Send now" onClick={(event) => actions.sendNow(event.nativeEvent)}>
         <Icon name="arrow-up-compact" size={14} sw={2.2} />
       </ComposerButton>
-      <ComposerButton aria-label="Remove from queue" onPress={actions.remove}>
+      <ComposerButton aria-label="Remove from queue" onClick={(event) => actions.remove(event.nativeEvent)}>
         <Icon name="xmark-large" size={12} />
       </ComposerButton>
     </div>

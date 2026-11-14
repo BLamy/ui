@@ -33,11 +33,11 @@ export default function ContainerSize() {
     <div className="mx-auto grid max-w-md gap-4">
       <Slider
         label="Frame width"
-        minValue={160}
-        maxValue={420}
+        min={160}
+        max={420}
         step={10}
         value={frameWidth}
-        onChange={(v) => setFrameWidth(v as number)}
+        onValueChange={(v) => setFrameWidth(v as number)}
       />
       <div
         ref={frameRef}

@@ -4,7 +4,7 @@ BL UI brings Cocoa Touch-style composition to a typed React package. Containers 
 
 ## What it is
 
-BL UI is a generic component library in the shadcn style, with an iOS accent, plus a set of **blocks** that show how the parts compose. The parts are React Aria Components styled with Tailwind v4 and [cva](https://blamy.github.io/ui/#/styling); colors, radius, type and shadows come from CSS variables you own ([Theming](https://blamy.github.io/ui/#/theming)).
+BL UI is a generic component library in the shadcn style, with an iOS accent, plus a set of **blocks** that show how the parts compose. The parts are [UI SDK](https://ui-sdk.dev) parts styled with Tailwind v4 and [cva](https://blamy.github.io/ui/#/styling): UI SDK owns the behavior (keyboard, focus, selection, dismissal, popups, drag and drop, ARIA), BL UI owns the look, the tokens and the iOS containers, which are primitives built from UI SDK's behaviors. Colors, radius, type and shadows come from CSS variables you own ([Theming](https://blamy.github.io/ui/#/theming)). BL UI needs React 19; [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk) explains the layers, and [Migrating to 6.0](https://blamy.github.io/ui/#/migrating-to-6) what changed from the react-aria-based 5.x.
 
 | Layer | What is in it |
 | --- | --- |
@@ -39,7 +39,7 @@ Twenty-odd lines of composition: a `TabView` with a bar, a `NavigationStack` ins
 
 ## How the docs are organized
 
-The sidebar groups pages by what a part does, not by how big it is. **Foundations** covers theming, styling, variants, motion and icons. Then come the parts: **Buttons and toggles**, **Forms and inputs**, **Menus and overlays**, **Feedback and status**, **Lists and content**, **Navigation and layout**, **Motion components**, **Chat**, and **Editors and workbench**. **Hooks** documents every hook the library exports.
+The sidebar groups pages by what a part does, not by how big it is. **Foundations** covers theming, styling, variants, motion and icons. Then come the parts: **Buttons and toggles**, **Forms and inputs**, **Menus and overlays**, **Feedback and status**, **Lists and content**, **Navigation and layout**, **Motion components**, **Chat**, and **Editors and workbench**. **Hooks** documents every hook the library exports, and **Behaviors** the UI SDK behaviors the containers are built from, for building parts of your own.
 
 The shells that belong to one product (the Discord-style `ChatShell`, the T3-style `WorkbenchShell`) live in [blocks](https://blamy.github.io/ui/#/blocks). Every one is built from the parts documented here, so a shell that does not fit can be recomposed from them.
 
@@ -48,6 +48,7 @@ The shells that belong to one product (the Discord-style `ChatShell`, the T3-sty
 - [Installation](https://blamy.github.io/ui/#/installation): the registry (copy source) or npm, for Vite and Next.js.
 - [Styling and variants](https://blamy.github.io/ui/#/styling): every component is a cva recipe you can reuse and extend.
 - [Theming](https://blamy.github.io/ui/#/theming): variables, tokens and scopes.
+- [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk): how the kit is layered, and how to build a component the same way.
 - [Blocks](https://blamy.github.io/ui/#/blocks): whole apps to read, run and copy.
 - [Working with LLMs](https://blamy.github.io/ui/#/working-with-llms): prompts for a coding agent.
 

@@ -8,7 +8,7 @@ import { Icon } from '@/lib/icon'
 function SettingSwitch(props: { on: boolean; onChange: (v: boolean) => void }) {
   return (
     <span style={{ display: 'flex', alignItems: 'center' }}>
-      <Switch checked={props.on} onChange={props.onChange} />
+      <Switch checked={props.on} onCheckedChange={props.onChange} />
     </span>
   )
 }
@@ -34,7 +34,7 @@ export default function RowLayouts() {
         <ListSection title="Top-aligned leading">
           <ListRow
             align="top"
-            onPress={() => setDone((d) => !d)}
+            onClick={() => setDone((d) => !d)}
             leading={
               <span
                 style={{
@@ -67,7 +67,7 @@ export default function RowLayouts() {
               <Slider
                 aria-label="Brightness"
                 value={brightness}
-                onChange={(v) => setBrightness(v as number)}
+                onValueChange={(v) => setBrightness(v as number)}
                 style={{ flex: 1 }}
               />
               <Icon name="sun" size={24} style={{ color: 'var(--muted-foreground)' }} />
@@ -89,7 +89,7 @@ export default function RowLayouts() {
               key={m}
               title={m}
               selected={mailbox === m.toLowerCase()}
-              onPress={() => setMailbox(m.toLowerCase())}
+              onClick={() => setMailbox(m.toLowerCase())}
               divider={i === 0}
             />
           ))}

@@ -1,13 +1,16 @@
 /* Every screen the app pushes: Listen Now, Browse, Radio, Search, the Library and its sections, and the album,
-   artist and playlist pages. `PageView` draws one; the phone's tabs push them as NavigationStack screens
-   (`screensFor`) and the wide layout's detail column as SplitViewStack pages. Pages read the player and
+   artist and playlist pages. `PageView` draws one; the phone's tabs push them as NavigationStack pages
+   (`MusicPage`) and the wide layout's detail column as SplitViewStack pages. Pages read the player and
    `open` from `MusicContext`, so a pushed page stays live. Album tiles, playlist tiles, artist rows and the album
    page's artist link preview what they open in a HoverCard (a pointer or keyboard focus; never touch). */
-import { createContext, useContext, useState, type CSSProperties, type ReactNode } from 'react';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
-import { type Screen } from '@/components/ui/navigation-stack';
+import { createContext, useContext, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
+import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import {
+  NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackPage, NavigationStackTitle,
+} from '@/components/ui/navigation-stack';
 import { NowPlayingBars } from '@/components/ui/now-playing-bars';
 import { SearchField } from '@/components/ui/search-field';
+import { PlainButton } from '@/components/ui/plain-button';
 import { Icon, type IconName, type IconShape } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { ArtistArt, Artwork, PlaylistArt } from './artwork';
@@ -22,6 +25,13 @@ export type Page =
   | { kind: 'album'; id: string } | { kind: 'artist'; name: string } | { kind: 'playlist'; id: string };
 
 export const pageKey = (p: Page) => ('id' in p ? `${p.kind}:${p.id}` : 'name' in p ? `artist:${p.name}` : p.kind);
+/** The page a `pageKey` names. */
+export function pageOfKey(key: string): Page {
+  const at = key.indexOf(':');
+  if (at < 0) return { kind: key } as Page;
+  const kind = key.slice(0, at), rest = key.slice(at + 1);
+  return kind === 'artist' ? { kind, name: rest } : ({ kind, id: rest } as Page);
+}
 
 const TITLES: Record<string, string> = {
   listen: 'Listen Now', browse: 'Browse', radio: 'Radio', search: 'Search', library: 'Library', recent: 'Recently Added',
@@ -42,17 +52,24 @@ export const isDetail = (p: Page) => p.kind === 'album' || p.kind === 'artist' |
 /** The album icon (a record in its sleeve) — drawn here; the library set has no album glyph. */
 export const ALBUM_ICON: readonly IconShape[] = [{ r: [4, 4, 16, 16, 2.4] }, { c: [12, 12, 3.6] }, { c: [12, 12, 1], f: 1 }];
 
-/** The phone's NavigationStack screens for one tab's stack of pages. */
-export function screensFor(pages: Page[], bottomInset: number): Screen[] {
-  return pages.map((page, i) => ({
-    key: pageKey(page) + ':' + i,
-    title: pageTitle(page),
-    largeTitle: !isDetail(page),
-    titleOnScroll: isDetail(page),
-    hideChromeOnScroll: false,
-    bottomInset,
-    content: <PageView page={page} />,
-  }));
+/** A page's key on a phone tab's NavigationStack: the same album can sit twice in one stack. */
+export const stackKey = (p: Page, i: number) => pageKey(p) + ':' + i;
+
+/** One page on a phone tab's NavigationStack: sections get a large title, detail pages (album, artist, playlist)
+ *  keep their title in the page and show it in the bar once it scrolls away. */
+export function MusicPage({ value, page }: { value: string; page: Page }) {
+  const detail = isDetail(page);
+  return (
+    <NavigationStackPage value={value}>
+      <NavigationStackBar hideOnScroll={false}>
+        <NavigationStackTitle showOnScroll={detail}>{pageTitle(page)}</NavigationStackTitle>
+      </NavigationStackBar>
+      <NavigationStackContent>
+        {detail ? null : <NavigationStackLargeTitle />}
+        <PageView page={page} />
+      </NavigationStackContent>
+    </NavigationStackPage>
+  );
 }
 
 export function PageView({ page }: { page: Page }) {
@@ -80,13 +97,13 @@ function PageBody({ page, ctx }: { page: Page; ctx: Ctx }) {
 /* ── Hover cards ── what a tile or link opens, at a glance: an album's tracks, an artist's albums, a playlist's
    length. Built from the library itself. */
 
-/** Wraps a tile, row or link (`className` lays out the wrapper in its place) with the card for what it opens. */
-function Previewed({ card, className, children }: { card: ReactNode; className?: string; children: ReactNode }) {
+/** A tile, row or link (`render`: the button that opens it) with the card for what it opens. */
+function Previewed({ card, render, children }: { card: ReactNode; render: ComponentProps<typeof HoverCardTrigger>['render']; children: ReactNode }) {
   return (
-    <HoverCardTrigger className={className}>
-      {children}
-      <HoverCard placement="end top">{card}</HoverCard>
-    </HoverCardTrigger>
+    <HoverCard>
+      <HoverCardTrigger render={render}>{children}</HoverCardTrigger>
+      <HoverCardContent side="right" align="start">{card}</HoverCardContent>
+    </HoverCard>
   );
 }
 
@@ -147,10 +164,10 @@ function PlaylistCard({ playlist: p }: { playlist: Playlist }) {
 function Shelf({ title, children, onMore }: { title: string; children: ReactNode; onMore?: () => void }) {
   return (
     <section aria-label={title} className="pt-5">
-      <button type="button" onClick={onMore} disabled={!onMore}
+      <PlainButton onClick={onMore} disabled={!onMore}
         className="bl-btn flex items-center gap-1 border-0 bg-transparent px-4 pb-2.5 [font-family:inherit] text-[21px] font-bold tracking-[-.3px] text-foreground enabled:cursor-pointer">
         {title}{onMore ? <Icon name="chevron-right" size={17} weight="bold" className="text-muted-foreground" /> : null}
-      </button>
+      </PlainButton>
       <div className="bl-scroll flex snap-x snap-mandatory scroll-px-4 gap-3.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">{children}</div>
     </section>
   );
@@ -158,15 +175,14 @@ function Shelf({ title, children, onMore }: { title: string; children: ReactNode
 
 function AlbumTile({ album: a, ctx, size = 164, caption }: { album: Album; ctx: Ctx; size?: number; caption?: string }) {
   return (
-    <Previewed card={<AlbumCard album={a} />} className="shrink-0 snap-start">
-      <button type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
-        className="bl-btn group shrink-0 cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground"
-        style={{ width: size }}>
+    <Previewed card={<AlbumCard album={a} />}
+      render={<PlainButton onClick={() => ctx.open({ kind: 'album', id: a.id })}
+        className="bl-btn group shrink-0 cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground snap-start"
+        style={{ width: size }} />}>
         <Artwork album={a} size={size} className="transition-[scale,filter] duration-spring-snappy ease-spring-snappy group-hover:brightness-95 group-active:scale-[.97]" />
         <div className="mt-1.5 truncate text-detail leading-tight font-medium">{a.title}</div>
         <div className="truncate text-footnote text-muted-foreground">{caption ?? a.artist}</div>
-      </button>
-    </Previewed>
+      </Previewed>
   );
 }
 
@@ -174,8 +190,8 @@ function PillButtons({ onPlay, onShuffle }: { onPlay: () => void; onShuffle: () 
   const pill = 'bl-btn flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[11px] border-0 bg-secondary [font-family:inherit] text-callout font-semibold text-primary transition-[scale,background-color] duration-spring-snappy ease-spring-snappy hover:bg-secondary-strong active:scale-[.97]';
   return (
     <div className="flex w-full max-w-[420px] gap-3">
-      <button type="button" className={pill} onClick={onPlay}><Icon name="play" size={18} />Play</button>
-      <button type="button" className={pill} onClick={onShuffle}><Icon name="shuffle" size={19} weight="semibold" />Shuffle</button>
+      <PlainButton className={pill} onClick={onPlay}><Icon name="play" size={18} />Play</PlainButton>
+      <PlainButton className={pill} onClick={onShuffle}><Icon name="shuffle" size={19} weight="semibold" />Shuffle</PlainButton>
     </div>
   );
 }
@@ -184,7 +200,7 @@ function PillButtons({ onPlay, onShuffle }: { onPlay: () => void; onShuffle: () 
 function SongRow({ s, i, songs, ctx, art, number }: { s: Song; i: number; songs: Song[]; ctx: Ctx; art?: boolean; number?: number }) {
   const current = ctx.player.current.key === s.key;
   return (
-    <button type="button" onClick={() => ctx.player.playFrom(songs, i)} aria-current={current || undefined}
+    <PlainButton onClick={() => ctx.player.playFrom(songs, i)} aria-current={current || undefined}
       className="bl-btn group flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent py-0 pr-4 pl-4 text-left [font-family:inherit] text-foreground hover:bg-secondary active:bg-accent">
       {art ? (
         <span className="relative shrink-0">
@@ -207,7 +223,7 @@ function SongRow({ s, i, songs, ctx, art, number }: { s: Song; i: number; songs:
         <span className="text-footnote tabular-nums text-muted-foreground">{fmt(s.track.dur)}</span>
         <Icon name="ellipsis" size={18} className="text-muted-foreground opacity-70" />
       </span>
-    </button>
+    </PlainButton>
   );
 }
 
@@ -223,7 +239,7 @@ function ListenNow({ ctx }: { ctx: Ctx }) {
     <div className="pb-4">
       <Shelf title="Top Picks for You">
         {picks.map((a, i) => (
-          <button key={a.id} type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
+          <PlainButton key={a.id} onClick={() => ctx.open({ kind: 'album', id: a.id })}
             className="bl-btn shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit]">
             <div className="mb-1.5 text-[12.5px] text-muted-foreground">{['Made for You', 'New Release', 'Because You Listened to Juno Vale'][i]}</div>
             <div className="relative w-[250px] overflow-hidden rounded-panel shadow-[0_4px_16px_black] shadow-black/12"
@@ -234,7 +250,7 @@ function ListenNow({ ctx }: { ctx: Ctx }) {
                 <div className="truncate text-footnote text-white/70">{a.artist} · {a.year}</div>
               </div>
             </div>
-          </button>
+          </PlainButton>
         ))}
       </Shelf>
       <Shelf title="Recently Played" onMore={() => ctx.open({ kind: 'recent' })}>
@@ -242,14 +258,13 @@ function ListenNow({ ctx }: { ctx: Ctx }) {
       </Shelf>
       <Shelf title="Made for You">
         {PLAYLISTS.map((p) => (
-          <Previewed key={p.id} card={<PlaylistCard playlist={p} />} className="shrink-0 snap-start">
-            <button type="button" onClick={() => ctx.open({ kind: 'playlist', id: p.id })}
-              className="bl-btn w-[164px] shrink-0 cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
+          <Previewed key={p.id} card={<PlaylistCard playlist={p} />}
+            render={<PlainButton onClick={() => ctx.open({ kind: 'playlist', id: p.id })}
+              className="bl-btn w-[164px] shrink-0 cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground snap-start" />}>
               <PlaylistArt playlist={p} size={164} />
               <div className="mt-1.5 truncate text-detail font-medium">{p.title}</div>
               <div className="truncate text-footnote text-muted-foreground">{p.description}</div>
-            </button>
-          </Previewed>
+            </Previewed>
         ))}
       </Shelf>
       <Shelf title="New Releases">
@@ -265,7 +280,7 @@ function Browse({ ctx }: { ctx: Ctx }) {
     <div className="pb-4">
       <div className="bl-scroll flex snap-x snap-mandatory scroll-px-4 gap-3.5 overflow-x-auto px-4 pt-2 [scrollbar-width:none]">
         {[ALBUM['midnight-arcade'], ALBUM['kites-kowloon'], ALBUM['salt-ember']].map((a, i) => (
-          <button key={a.id} type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
+          <PlainButton key={a.id} onClick={() => ctx.open({ kind: 'album', id: a.id })}
             className="bl-btn w-[min(520px,86%)] shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
             <div className="text-[11.5px] font-semibold tracking-[.4px] text-muted-foreground uppercase">{['New Album', 'Exclusive', 'Updated Playlist'][i]}</div>
             <div className="truncate text-[21px] font-semibold tracking-[-.2px]">{a.title}</div>
@@ -278,7 +293,7 @@ function Browse({ ctx }: { ctx: Ctx }) {
                 {['A neon-lit, eight-bit love letter to late nights.', 'Harbour-front electronica, recorded on rooftops.', 'Sea spray, bonfires, and big choruses.'][i]}
               </div>
             </div>
-          </button>
+          </PlainButton>
         ))}
       </div>
       <Shelf title="New Music">{ALBUMS.slice(4).map((a) => <AlbumTile key={a.id} album={a} ctx={ctx} />)}</Shelf>
@@ -286,7 +301,7 @@ function Browse({ ctx }: { ctx: Ctx }) {
         <div className="px-4 pb-2 text-[21px] font-bold tracking-[-.3px]">Top Songs</div>
         <div className="grid grid-cols-1 gap-x-6 px-0 @xl:grid-cols-2 @4xl:grid-cols-3">
           {top.map((s, i) => (
-            <button key={s.key} type="button" onClick={() => ctx.player.playFrom(top, i)}
+            <PlainButton key={s.key} onClick={() => ctx.player.playFrom(top, i)}
               className="bl-btn flex cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-1.5 text-left [font-family:inherit] text-foreground hover:bg-secondary">
               <Artwork album={s.album} size={48} rounded={5} />
               <span className="w-5 text-callout font-semibold text-muted-foreground tabular-nums">{i + 1}</span>
@@ -294,7 +309,7 @@ function Browse({ ctx }: { ctx: Ctx }) {
                 <span className="block truncate text-subhead">{s.track.title}</span>
                 <span className="block truncate pb-1.5 text-footnote text-muted-foreground">{s.album.artist}</span>
               </span>
-            </button>
+            </PlainButton>
           ))}
         </div>
       </section>
@@ -311,7 +326,7 @@ function Radio({ ctx }: { ctx: Ctx }) {
         <div className="text-[11.5px] font-semibold tracking-[.4px] text-primary uppercase">Live · 9:00 PM</div>
         <div className="text-[21px] font-semibold">{live.title}</div>
         <div className="mb-2 text-callout text-muted-foreground">Tonight: Harbor Lights take over the booth</div>
-        <button type="button" onClick={() => ctx.player.playFrom(albumSongs(a), 0)}
+        <PlainButton onClick={() => ctx.player.playFrom(albumSongs(a), 0)}
           className="bl-btn relative block aspect-[2/1] w-full max-w-[760px] cursor-pointer overflow-hidden rounded-card border-0 p-0"
           style={{ background: `linear-gradient(120deg, ${a.colors[0]}, ${a.colors[1]})` }}>
           <Artwork album={a} rounded={10} className="absolute top-1/2 right-[6%] h-[72%] w-auto -translate-y-1/2 shadow-[0_12px_40px_black] shadow-black/35" />
@@ -319,11 +334,11 @@ function Radio({ ctx }: { ctx: Ctx }) {
             <Icon name="play" size={15} /> Listen Now
           </span>
           <span className="absolute top-5 left-5 text-left text-[30px] leading-none font-black tracking-[-.5px] text-white">TIDEWATER<br />RADIO</span>
-        </button>
+        </PlainButton>
       </div>
       <Shelf title="Stations for You">
         {STATIONS.map((s) => (
-          <button key={s.id} type="button" onClick={() => ctx.player.playFrom(albumSongs(ALBUM[s.album]), 0)}
+          <PlainButton key={s.id} onClick={() => ctx.player.playFrom(albumSongs(ALBUM[s.album]), 0)}
             className="bl-btn w-[164px] shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
             <span className="relative block">
               <Artwork album={ALBUM[s.album]} size={164} />
@@ -331,7 +346,7 @@ function Radio({ ctx }: { ctx: Ctx }) {
             </span>
             <div className="mt-1.5 truncate text-detail font-medium">{s.title}</div>
             <div className="truncate text-footnote text-muted-foreground">{s.subtitle}</div>
-          </button>
+          </PlainButton>
         ))}
       </Shelf>
     </div>
@@ -351,7 +366,7 @@ function Search({ ctx }: { ctx: Ctx }) {
   const artists = s ? ARTISTS.filter((a) => a.toLowerCase().includes(s)) : [];
   return (
     <div className="pb-4">
-      <div className="px-4 pt-1 pb-3"><SearchField value={q} onChange={setQ} placeholder="Artists, Songs, Lyrics, and More" /></div>
+      <div className="px-4 pt-1 pb-3"><SearchField value={q} onValueChange={setQ} placeholder="Artists, Songs, Lyrics, and More" /></div>
       {!s ? (
         <>
           <div className="px-4 pb-2 text-[21px] font-bold">Browse Categories</div>
@@ -359,12 +374,12 @@ function Search({ ctx }: { ctx: Ctx }) {
             {CATEGORIES.map(([name, color], i) => {
               const a = ALBUMS.find((x) => x.genre === name) ?? ALBUMS[i];
               return (
-                <button key={name} type="button" onClick={() => setQ(name === 'Chill' ? 'Low' : a.artist)}
+                <PlainButton key={name} onClick={() => setQ(name === 'Chill' ? 'Low' : a.artist)}
                   className="bl-btn relative aspect-[1.55] cursor-pointer overflow-hidden rounded-[11px] border-0 p-0 text-left [font-family:inherit]"
                   style={{ background: color }}>
                   <Artwork album={a} size="46%" rounded={4} className="absolute right-[-6%] bottom-[-6%] rotate-[18deg] shadow-[0_4px_12px_black] shadow-black/25" />
                   <span className="absolute bottom-2.5 left-3 text-callout font-bold text-white">{name}</span>
-                </button>
+                </PlainButton>
               );
             })}
           </div>
@@ -372,11 +387,11 @@ function Search({ ctx }: { ctx: Ctx }) {
       ) : (
         <>
           {artists.map((name) => (
-            <button key={name} type="button" onClick={() => ctx.open({ kind: 'artist', name })}
+            <PlainButton key={name} onClick={() => ctx.open({ kind: 'artist', name })}
               className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-2 text-left [font-family:inherit] text-foreground hover:bg-secondary">
               <ArtistArt artist={name} album={ALBUMS.find((a) => a.artist === name)!} size={48} />
               <span className="flex-1"><span className="block text-callout">{name}</span><span className="block text-footnote text-muted-foreground">Artist</span></span>
-            </button>
+            </PlainButton>
           ))}
           {albums.length ? <Shelf title="Albums">{albums.map((a) => <AlbumTile key={a.id} album={a} ctx={ctx} size={140} />)}</Shelf> : null}
           {songs.length ? <><div className="px-4 pt-5 pb-1 text-[21px] font-bold">Songs</div><SongList songs={songs} ctx={ctx} art /></> : null}
@@ -400,14 +415,14 @@ function LibraryHome({ ctx }: { ctx: Ctx }) {
     <div className="pb-4">
       <div className="pl-4">
         {LIBRARY_LINKS.map(([page, icon]) => (
-          <button key={pageKey(page)} type="button" onClick={() => ctx.open(page)}
+          <PlainButton key={pageKey(page)} onClick={() => ctx.open(page)}
             className="bl-btn flex w-full cursor-pointer items-center gap-3.5 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground">
             <Icon {...icon} size={24} className="text-primary" />
             <span className="flex flex-1 items-center py-3 text-title shadow-hairline-b">
               <span className="flex-1">{pageTitle(page)}</span>
               <Icon name="chevron-right" size={16} weight="bold" className="text-tertiary-foreground" />
             </span>
-          </button>
+          </PlainButton>
         ))}
       </div>
       <div className="px-4 pt-6 pb-2.5 text-[21px] font-bold tracking-[-.3px]">Recently Added</div>
@@ -420,14 +435,13 @@ function AlbumGrid({ albums, ctx }: { albums: Album[]; ctx: Ctx }) {
   return (
     <div className="grid gap-x-4 gap-y-5 px-4 pt-1 pb-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${ctx.wide ? 170 : 150}px, 1fr))` }}>
       {albums.map((a) => (
-        <Previewed key={a.id} card={<AlbumCard album={a} />} className="flex">
-          <button type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
-            className="bl-btn group w-full min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
+        <Previewed key={a.id} card={<AlbumCard album={a} />}
+          render={<PlainButton onClick={() => ctx.open({ kind: 'album', id: a.id })}
+            className="bl-btn group w-full min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground" />}>
             <Artwork album={a} className="aspect-square w-full transition-[scale] duration-spring-snappy ease-spring-snappy group-active:scale-[.97]" />
             <div className="mt-1.5 truncate text-detail font-medium">{a.title}</div>
             <div className="truncate text-footnote text-muted-foreground">{a.artist}</div>
-          </button>
-        </Previewed>
+          </Previewed>
       ))}
     </div>
   );
@@ -437,16 +451,15 @@ function ArtistList({ ctx }: { ctx: Ctx }) {
   return (
     <div className="pt-1 pl-4">
       {ARTISTS.map((name) => (
-        <Previewed key={name} card={<ArtistCard name={name} />} className="flex w-full">
-          <button type="button" onClick={() => ctx.open({ kind: 'artist', name })}
-            className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground">
+        <Previewed key={name} card={<ArtistCard name={name} />}
+          render={<PlainButton onClick={() => ctx.open({ kind: 'artist', name })}
+            className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground" />}>
             <ArtistArt artist={name} album={ALBUMS.find((a) => a.artist === name)!} size={44} />
             <span className="flex flex-1 items-center py-3.5 text-body shadow-hairline-b">
               <span className="flex-1">{name}</span>
               <Icon name="chevron-right" size={15} weight="bold" className="text-tertiary-foreground" />
             </span>
-          </button>
-        </Previewed>
+          </Previewed>
       ))}
     </div>
   );
@@ -476,10 +489,9 @@ function AlbumPage({ album: a, ctx }: { album: Album; ctx: Ctx }) {
         <Artwork album={a} size={ctx.wide ? 250 : 260} rounded={10} className="shadow-[0_10px_30px_black] shadow-black/18" />
         <div className={cn('flex min-w-0 flex-col gap-1', ctx.wide ? 'items-start pb-1' : 'items-center')}>
           <h2 className="m-0 text-[24px] leading-tight font-bold tracking-[-.3px]">{a.title}</h2>
-          <Previewed card={<ArtistCard name={a.artist} />}>
-            <button type="button" onClick={() => ctx.open({ kind: 'artist', name: a.artist })}
-              className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-title text-primary">{a.artist}</button>
-          </Previewed>
+          <Previewed card={<ArtistCard name={a.artist} />}
+            render={<PlainButton onClick={() => ctx.open({ kind: 'artist', name: a.artist })}
+              className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-title text-primary max-w-full" />}>{a.artist}</Previewed>
           <div className="text-[12.5px] font-semibold tracking-[.3px] text-muted-foreground uppercase">{a.genre} · {a.year} · Lossless</div>
           <div className="mt-3.5 w-full"><PillButtons onPlay={() => ctx.player.playFrom(songs, 0)} onShuffle={() => ctx.player.playFrom(songs, (songs.length * 7) % songs.length)} /></div>
         </div>

@@ -1,7 +1,7 @@
 {
   "name": "@brett_lamy/ui-sdk-react",
   "version": "0.1.0-beta.2.bl.1",
-  "description": "UI SDK for React. BL fork of @ui-sdk/react: upstream plus the few behaviors @brett_lamy/ui needs.",
+  "description": "UI SDK for React. BL fork of @ui-sdk/react: upstream plus layer hosts.",
   "keywords": [
     "react",
     "ui",
@@ -309,7 +309,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "node ../../tools/ui-sdk/build.mjs --only react"
+    "build": "node ../../tools/ui-sdk/build.mjs --only react --if-stale"
   },
   "dependencies": {
     "@ui-sdk/core": "workspace:@brett_lamy/ui-sdk-core@*"

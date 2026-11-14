@@ -105,7 +105,7 @@ export const APPS: DesktopApp[] = [
     Component: lazy(() => import('../codex-clone/page')),
   },
   {
-    id: 'vscode', name: 'Visual Studio Code', description: 'Code, terminals and OpenCode in one workspace', keywords: ['vscode', 'vs code', 'editor', 'ide', 'terminal', 'node', 'opencode'],
+    id: 'vscode', name: 'Visual Studio Code', description: 'Code, terminals and OpenCode in one workspace', keywords: ['vscode', 'vs code', 'editor', 'ide', 'terminal', 'node'],
     tile: ['#3AAAF2', '#007ACC'], icon: 'rectangle-split', size: { w: 1120, h: 720 }, props: ({ tailscale }) => ({ controller: tailscale ?? undefined }),
     Component: lazy(() => import('../vscode/page')),
   },

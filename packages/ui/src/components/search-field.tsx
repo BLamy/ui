@@ -1,45 +1,46 @@
 'use client';
-import { useState, type CSSProperties } from 'react';
-import { Button as AriaButton, Input, SearchField as AriaSearchField } from 'react-aria-components';
+import { useState, type ComponentProps, type CSSProperties } from 'react';
+import { Input, InputClear, InputGroup, createInputController } from '@ui-sdk/react/input';
+import { createParts } from '@ui-sdk/react/primitive';
 import { Icon } from '@/lib/icon';
+import { searchField, type SearchFieldSubmitDetails } from '@/lib/search-field-primitive';
 import { cn } from '@/lib/utils';
 
-export interface SearchFieldProps {
-  /** Controlled query. */
-  value?: string;
-  /** Initial query when uncontrolled. */
-  defaultValue?: string;
-  /** Called with the new query on every keystroke, and with '' when cleared (button or Esc). */
-  onChange?: (value: string) => void;
-  /** Enter pressed. */
-  onSubmit?: (value: string) => void;
-  placeholder?: string;
-  autoFocus?: boolean;
-  'aria-label'?: string;
+export type { SearchFieldSubmitDetails };
+
+const { Root, Input: SearchInput } = createParts(searchField, { root: 'div', input: 'input' });
+
+export interface SearchFieldProps extends Omit<ComponentProps<typeof Input>, 'type' | 'render' | 'children' | 'onSubmit' | 'className' | 'style'> {
+  /** Enter pressed. With it, Enter no longer submits the form around the field. */
+  onSubmit?: (value: string, details: SearchFieldSubmitDetails) => void;
+  /** Styles the pill around the input. */
   className?: string;
   style?: CSSProperties;
 }
 
-/** iOS search field on react-aria's SearchField (Esc clears a non-empty query). Controlled with
- *  `value` + `onChange`, or uncontrolled with `defaultValue`. */
+/** iOS search field: UI SDK's Input in an InputGroup with a magnifier and a Clear button, plus the search-field
+ *  keys (Escape clears a query, Enter submits; `onSubmit(value, details)` gets `reason`, `source` and `cancel()`). Its props are the Input's: `value` / `defaultValue` /
+ *  `onValueChange(value, details)`, where a clear reports `clear-press`, a `controller`, `disabled`, `name`…
+ *  The Clear button stays out of the Tab order: Escape is its keyboard route, so Tab goes straight to the results. */
 export function SearchField({
-  value, defaultValue = '', onChange, onSubmit, placeholder = 'Search', autoFocus, className, style, ...rest
+  controller, onSubmit, placeholder = 'Search', className, style, 'aria-label': ariaLabel = 'Search', ...props
 }: SearchFieldProps) {
-  const [inner, setInner] = useState(defaultValue);
-  const q = value ?? inner;
-  const set = (v: string) => { if (value === undefined) setInner(v); onChange?.(v); };
+  const [own] = useState(createInputController);
+  const input = controller ?? own;
   return (
-    <AriaSearchField data-slot="search-field" value={q} onChange={set} onSubmit={onSubmit} autoFocus={autoFocus}
-      aria-label={rest['aria-label'] || 'Search'}
-      className={cn('flex items-center gap-[7px] rounded-[11px] bg-secondary px-[9px] py-[7px]', className)} style={style}>
-      <Icon name="search" size={17} sw={2.2} className="text-muted-foreground" />
-      <Input placeholder={placeholder}
-        className="min-w-0 flex-1 appearance-none border-none bg-transparent p-0 [font-family:inherit] text-body text-foreground outline-none select-text [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none" />
-      {q ? (
-        <AriaButton aria-label="Clear search" className="bl-btn grid cursor-pointer border-0 bg-transparent p-0 text-tertiary-foreground">
+    <Root input={input} onSubmit={onSubmit} style={style}
+      className={cn('flex items-center gap-[7px] rounded-[11px] bg-secondary px-[9px] py-[7px] has-[input:disabled]:opacity-50', className)}>
+      <InputGroup className="contents">
+        <Icon name="search" size={17} sw={2.2} className="text-muted-foreground" />
+        <SearchInput render={
+          <Input type="search" controller={input} placeholder={placeholder} aria-label={ariaLabel}
+            className="min-w-0 flex-1 appearance-none border-none bg-transparent p-0 [font-family:inherit] text-body text-foreground outline-none select-text [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
+            {...props} />
+        } />
+        <InputClear aria-label="Clear search" tabIndex={-1} className="bl-btn grid cursor-pointer border-0 bg-transparent p-0 text-tertiary-foreground">
           <Icon name="xcirc" size={18} />
-        </AriaButton>
-      ) : null}
-    </AriaSearchField>
+        </InputClear>
+      </InputGroup>
+    </Root>
   );
 }

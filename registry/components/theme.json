@@ -1,7 +1,7 @@
 {
   "name": "theme",
   "title": "Theme",
-  "description": "BLProvider, ThemeScope and the appearance context: pick light/dark, a tint and a theme scope for a subtree. Colors are shadcn variables (see the bl-theme item for the iOS palette).",
+  "description": "BLProvider, ThemeScope and the appearance context: pick light/dark, a tint and a theme scope for a subtree. BLProvider is also the layer host its popups stay inside (useLayerHost), and a size-class scope: it measures its own box and provides compact / medium / regular to everything inside, which presentation=\"auto\" popups follow. Colors are shadcn variables (see the bl-theme item for the iOS palette).",
   "page": "theming",
   "exports": [
     "BLProvider",
@@ -9,7 +9,8 @@
     "AppearanceProvider",
     "useAppearance",
     "useWorkbenchAppearance",
-    "readThemeVars"
+    "readThemeVars",
+    "useLayerHost"
   ],
   "imports": [
     "BLProvider",

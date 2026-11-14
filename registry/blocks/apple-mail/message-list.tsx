@@ -1,12 +1,13 @@
 /* The message list: unread dots and flags in the leading gutter, sender · time, subject, a two-line preview,
    swipe actions on every row (ListRow's leading / trailing actions; a long swipe fires the outermost), and an
-   edit mode whose check circles slide in from the leading edge. Rows spring in and collapse out as mail
+   edit mode whose check circles slide in from the leading edge. Rows grow in and collapse out (ListSection) as mail
    arrives, moves or gets filtered; the selection highlight glides between rows. */
 import { useRef } from 'react';
-import { ListRow } from '@/components/ui/list';
+import { ListRow, ListSection } from '@/components/ui/list';
 import { useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
-import { springs, useMotion } from '@/lib/motion';
+import { LayoutGroup, motion } from 'framer-motion';
+import { springs } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { preview, relativeTime, type Message } from './data';
 import type { MailState } from './use-mail';
@@ -24,12 +25,11 @@ const ROW = cn(
 function MessageRow({ mail, m, selected, chevron, isEdge, onOpen }: {
   mail: MailState; m: Message; selected: boolean; chevron?: boolean; isEdge?: (x: number) => boolean; onOpen: (id: string) => void;
 }) {
-  const { motion } = useMotion();
   const on = selected && !mail.editing;
   return (
     <ListRow edit={mail.editing} checked={mail.checked.has(m.id)} divider={false} isEdge={isEdge}
       className={cn(ROW, mail.editing ? '[&>[data-slot=list-row-content]]:pl-2' : '[&>[data-slot=list-row-content]]:pl-8')}
-      onPress={() => { if (mail.editing) mail.toggleChecked(m.id); else onOpen(m.id); }}
+      onClick={() => { if (mail.editing) mail.toggleChecked(m.id); else onOpen(m.id); }}
       // Index 0 is the outermost action: the one a long swipe fires.
       leadingActions={[{ label: m.unread ? 'Read' : 'Unread', icon: m.unread ? 'envelope-open' : 'envelope-badge', onAction: () => mail.toggleRead(m.id) }]}
       trailingActions={[
@@ -66,7 +66,6 @@ function MessageRow({ mail, m, selected, chevron, isEdge, onOpen }: {
 
 /** The rows. Wide layouts draw the selection; on the phone rows show a chevron and push the message. */
 export function MessageList({ mail, onOpen }: { mail: MailState; onOpen: (id: string) => void }) {
-  const { motion, AnimatePresence, LayoutGroup } = useMotion();
   const s = useSplitView();
   const list = useRef<HTMLDivElement | null>(null);
   // On the phone the leading edge belongs to the back swipe.
@@ -74,18 +73,12 @@ export function MessageList({ mail, onOpen }: { mail: MailState; onOpen: (id: st
   return (
     <div className="pb-16">
       <LayoutGroup id={`mail-${mail.boxId}`}>
-        <div ref={list} key={mail.boxId} role="list" aria-label={mail.box.title}>
-          <AnimatePresence initial={false}>
-            {mail.list.map((m) => (
-              <motion.div key={m.id} role="listitem" className="overflow-hidden"
-                initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                transition={{ height: springs.smooth, opacity: { duration: 0.18 } }}>
-                <MessageRow mail={mail} m={m} selected={!s.collapsed && mail.selectedId === m.id} chevron={s.collapsed}
-                  isEdge={isEdge} onOpen={onOpen} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
+        <ListSection key={mail.boxId} ref={list} animate>
+          {mail.list.map((m) => (
+            <MessageRow key={m.id} mail={mail} m={m} selected={!s.collapsed && mail.selectedId === m.id} chevron={s.collapsed}
+              isEdge={isEdge} onOpen={onOpen} />
+          ))}
+        </ListSection>
       </LayoutGroup>
       {mail.list.length === 0 ? (
         <div className="px-6 pt-16 text-center">

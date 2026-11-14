@@ -74,14 +74,14 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
         <Field label="Component"><NameInput label="Component name" value={scene.name} taken={doc.scenes.filter((s) => s.id !== scene.id).map((s) => s.name)} onCommit={(v) => upd((s) => ({ ...s, name: pascal(v) }))} /></Field>
         <Field label="Initial scene">
           {doc.entry === scene.id ? <span className="flex items-center gap-1.5 text-footnote text-success"><Icon name="checkmark" size={13} sw={2.6} /> Is the entry point</span>
-            : <PlainButton onPress={() => b.commit((d) => ({ ...d, entry: scene.id }))} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium text-foreground outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">Make initial scene</PlainButton>}
+            : <PlainButton onClick={() => b.commit((d) => ({ ...d, entry: scene.id }))} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">Make initial scene</PlainButton>}
         </Field>
         <Field label="Background"><ColorInput label="Background" value={scene.background ?? null} onChange={(v) => upd((s) => ({ ...s, background: v }))} /></Field>
         <Field label="Embed in">
           <div className="flex flex-wrap gap-1">
             {(['NavigationStack', 'TabView', 'SplitView'] as const).map((k) => (
-              <PlainButton key={k} onPress={() => { const [next, id] = embedScene(doc, scene.id, k); b.commit(() => next, { kind: 'scene', scene: id }); }}
-                className="h-6 cursor-pointer rounded-md border-0 bg-secondary px-1.5 font-mono text-caption2 outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+              <PlainButton key={k} onClick={() => { const [next, id] = embedScene(doc, scene.id, k); b.commit(() => next, { kind: 'scene', scene: id }); }}
+                className="h-6 cursor-pointer rounded-md border-0 bg-secondary px-1.5 font-mono text-caption2 outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
                 {k}
               </PlainButton>
             ))}
@@ -91,14 +91,14 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
       </Section>
 
       <Section title="Props" help="What a segue passes in (prepare(for:sender:)); callbacks are its delegate" action={<span className="flex">
-        <AddButton label="Add prop" onPress={() => upd((s) => ({ ...s, props: [...s.props, { name: fresh(s, 'title'), type: 'string', default: "''" }] }))} />
+        <AddButton label="Add prop" onClick={() => upd((s) => ({ ...s, props: [...s.props, { name: fresh(s, 'title'), type: 'string', default: "''" }] }))} />
       </span>}>
         {scene.props.map((p, i) => (
           <div key={i} className="flex flex-col gap-1.5 rounded-lg border border-border p-2">
             <div className="flex items-center gap-1.5">
               <Icon name={p.callback ? 'phone-fill' : 'arrow-down-to-line'} size={13} sw={2} className={cn('shrink-0', p.callback ? 'text-warning' : 'text-primary')} />
               <div className="min-w-0 flex-1"><NameInput label="Prop name" value={p.name} taken={taken(scene, p.name)} onCommit={(v) => rename(p.name, v)} /></div>
-              <IconAction icon="trash" label={`Remove ${p.name}`} tone="danger" onPress={() => upd((s) => ({ ...s, props: s.props.filter((_, k) => k !== i) }))} />
+              <IconAction icon="trash" label={`Remove ${p.name}`} tone="danger" onClick={() => upd((s) => ({ ...s, props: s.props.filter((_, k) => k !== i) }))} />
             </div>
             {p.callback ? (
               <Field label="Parameters">
@@ -113,21 +113,21 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
           </div>
         ))}
         <div className="flex gap-1">
-          <PlainButton onPress={() => upd((s) => ({ ...s, props: [...s.props, { name: fresh(s, 'onDone'), type: 'any', default: 'undefined', callback: true, params: ['value'] }] }))}
-            className="flex h-7 cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-1.5 text-caption font-medium text-primary outline-none hover:bg-primary/10 data-focus-visible:ring-2 data-focus-visible:ring-ring">
+          <PlainButton onClick={() => upd((s) => ({ ...s, props: [...s.props, { name: fresh(s, 'onDone'), type: 'any', default: 'undefined', callback: true, params: ['value'] }] }))}
+            className="flex h-7 cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-1.5 text-caption font-medium text-primary outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring">
             <Icon name="plus" size={11} sw={2.6} /> Callback (delegate)
           </PlainButton>
         </div>
         {!scene.props.length ? <Help>Props come from the segue that presents the scene (its arguments). A callback prop is a delegate: the scene calls it, and the presenting scene implements it on the segue.</Help> : null}
       </Section>
 
-      <Section title="State" help="useState" action={<AddButton label="Add state" onPress={() => upd((s) => ({ ...s, state: [...s.state, { name: fresh(s, 'value'), type: 'string', initial: "''" }] }))} />}>
+      <Section title="State" help="useState" action={<AddButton label="Add state" onClick={() => upd((s) => ({ ...s, state: [...s.state, { name: fresh(s, 'value'), type: 'string', initial: "''" }] }))} />}>
         {scene.state.map((v, i) => (
           <div key={i} className="flex flex-col gap-1.5 rounded-lg border border-border p-2">
             <div className="flex items-center gap-1.5">
               <div className="min-w-0 flex-1"><NameInput label="State name" value={v.name} taken={taken(scene, v.name)} onCommit={(to) => rename(v.name, to)} /></div>
               <div className="w-24 shrink-0"><ChoiceInput label="Type" value={v.type} options={TYPES} onChange={(t) => setState(i, { type: t as ValueType, initial: v.initial === BLANK[v.type] ? BLANK[t as ValueType] : v.initial })} /></div>
-              <IconAction icon="trash" label={`Remove ${v.name}`} tone="danger" onPress={() => upd((s) => ({ ...s, state: s.state.filter((_, k) => k !== i) }))} />
+              <IconAction icon="trash" label={`Remove ${v.name}`} tone="danger" onClick={() => upd((s) => ({ ...s, state: s.state.filter((_, k) => k !== i) }))} />
             </div>
             <ExprInput label={`${v.name} initial value`} value={v.initial} multiline={v.type === 'list' || v.type === 'object'} names={new Set([...doc.contexts.map((c) => c.alias), ...scene.props.map((p) => p.name)])} scope={scope} onCommit={(x) => setState(i, { initial: x })} />
             <CodeLine>{`const [${v.name}, set${v.name.charAt(0).toUpperCase()}${v.name.slice(1)}] = useState<${TS[v.type]}>(…)`}</CodeLine>
@@ -136,14 +136,14 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
         {!scene.state.length ? <Help>State the scene owns. Bind a field’s value to it and typing writes it back; a Set action changes it.</Help> : null}
       </Section>
 
-      <Section title="Derived" help="useMemo" action={<AddButton label="Add memo" onPress={() => upd((s) => ({ ...s, memos: [...s.memos, { name: fresh(s, 'derived'), expr: s.state[0] ? `${s.state[0].name}` : "''" }] }))} />}>
+      <Section title="Derived" help="useMemo" action={<AddButton label="Add memo" onClick={() => upd((s) => ({ ...s, memos: [...s.memos, { name: fresh(s, 'derived'), expr: s.state[0] ? `${s.state[0].name}` : "''" }] }))} />}>
         {scene.memos.map((m, i) => {
           const before = new Set([...names].filter((n) => !scene.memos.slice(i).some((x) => x.name === n)));
           return (
             <div key={i} className="flex flex-col gap-1.5 rounded-lg border border-border p-2">
               <div className="flex items-center gap-1.5">
                 <div className="min-w-0 flex-1"><NameInput label="Memo name" value={m.name} taken={taken(scene, m.name)} onCommit={(to) => rename(m.name, to)} /></div>
-                <IconAction icon="trash" label={`Remove ${m.name}`} tone="danger" onPress={() => upd((s) => ({ ...s, memos: s.memos.filter((_, k) => k !== i) }))} />
+                <IconAction icon="trash" label={`Remove ${m.name}`} tone="danger" onClick={() => upd((s) => ({ ...s, memos: s.memos.filter((_, k) => k !== i) }))} />
               </div>
               <ExprInput label={`${m.name} expression`} value={m.expr} names={before} scope={scope} onCommit={(x) => upd((s) => ({ ...s, memos: s.memos.map((y, k) => (k === i ? { ...y, expr: x } : y)) }))} />
               <CodeLine>{`const ${m.name} = useMemo(() => …, [${[...freeNames(m.expr).keys()].join(', ')}])`}</CodeLine>
@@ -153,14 +153,14 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
         {!scene.memos.length ? <Help>Values computed from props, state and context, like a form’s “can submit”.</Help> : null}
       </Section>
 
-      <Section title="Effects" help="useEffect" action={<AddButton label="Add effect" onPress={() => upd((s) => ({ ...s, effects: [...s.effects, { id: `e${Date.now().toString(36)}`, on: 'appear', deps: [], actions: [newAction({ do: 'toast', message: "'Hello'" })] }] }))} />}>
+      <Section title="Effects" help="useEffect" action={<AddButton label="Add effect" onClick={() => upd((s) => ({ ...s, effects: [...s.effects, { id: `e${Date.now().toString(36)}`, on: 'appear', deps: [], actions: [newAction({ do: 'toast', message: "'Hello'" })] }] }))} />}>
         {scene.effects.map((e) => (
           <div key={e.id} className="flex flex-col gap-1.5 rounded-lg border border-border p-2">
             <div className="flex items-center gap-1.5">
               <div className="min-w-0 flex-1">
                 <ChoiceInput label="When" value={e.on} onChange={(v) => setEffect(e.id, { on: v as EffectDef['on'] })} options={[{ id: 'appear', label: 'Appear' }, { id: 'change', label: 'Change' }, { id: 'disappear', label: 'Disappear' }]} />
               </div>
-              <IconAction icon="trash" label="Remove effect" tone="danger" onPress={() => upd((s) => ({ ...s, effects: s.effects.filter((x) => x.id !== e.id) }))} />
+              <IconAction icon="trash" label="Remove effect" tone="danger" onClick={() => upd((s) => ({ ...s, effects: s.effects.filter((x) => x.id !== e.id) }))} />
             </div>
             {e.on === 'change' ? (
               <Field label="Watches">
@@ -192,7 +192,7 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
             {[...out.map((g) => ({ g, dir: 'out' as const })), ...into.map((g) => ({ g, dir: 'in' as const }))].map(({ g, dir }) => (
               <li key={`${dir}${g.id}`}>
-                <PlainButton onPress={() => b.select({ kind: 'segue', segue: g.id })} className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-2 text-left text-footnote outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+                <PlainButton onClick={() => b.select({ kind: 'segue', segue: g.id })} className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-2 text-left text-footnote outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
                   <Icon name={dir === 'out' ? 'arrow-right' : 'arrow-left'} size={12} sw={2.4} className="text-primary" />
                   <span className="truncate">{dir === 'out' ? `to ${doc.scenes.find((s) => s.id === g.to)?.name}` : `from ${doc.scenes.find((s) => s.id === g.from)?.name}`}</span>
                   <span className="ml-auto text-caption text-muted-foreground">{SEGUE_KINDS.find((k) => k.id === g.kind)?.label}</span>
@@ -219,7 +219,7 @@ export function ResponderPanel({ scene, doc }: { scene: Scene; doc: Doc }) {
         <Help>The first responder is the focused element (a field, a button). “Send to First Responder” starts there and goes up: the element, its parents, the scene, the app. The first that handles the command runs it — like a context resolving to its nearest provider, but starting from focus.</Help>
         <CodeLine>{'sendAction(\'submit\') → useResponder(\'submit\', …)'}</CodeLine>
       </Section>
-      <Section title={`${scene.name} responds to`} action={<AddButton label="Handle a command" onPress={() => set({ ...responds, [nextName('command', Object.keys(responds))]: [] })} />}>
+      <Section title={`${scene.name} responds to`} action={<AddButton label="Handle a command" onClick={() => set({ ...responds, [nextName('command', Object.keys(responds))]: [] })} />}>
         {Object.entries(responds).map(([cmd, list]) => (
           <CommandBlock key={cmd} cmd={cmd} actions={list} c={{ doc, scene, names, scope }}
             onRename={(to) => set(Object.fromEntries(Object.entries(responds).map(([k, v]) => [k === cmd ? to : k, v])))}

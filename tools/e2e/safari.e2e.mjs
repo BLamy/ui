@@ -12,7 +12,8 @@ const TAILNET = 'demo-tailnet.ts.net';
 const frame = (page) => page.frameLocator('[data-slot=safari-frame]');
 /* A CSS locator on purpose: behind the gate the field is inert and aria-hidden, so it is not in the accessibility tree. */
 const address = (page) => page.locator('input[role=combobox]');
-const gate = (page) => page.locator('[data-slot=safari-gate]');
+/* The gate is a modal Dialog in Safari's own layer host. */
+const gate = (page) => page.getByRole('dialog', { name: 'Connect to Tailscale' });
 
 /** Every host the page itself asks the network for, from the moment it is called until the test ends. */
 function watchNetwork(page) {
@@ -42,15 +43,16 @@ async function visit(page, text) {
 test('opens on a gate: nothing is reachable until Tailscale is connected', async ({ page }) => {
   await open(page);
   await expect(gate(page)).toBeVisible();
-  await expect(page.getByRole('dialog', { name: 'Connect to Tailscale' })).toBeVisible();
+  await expect(gate(page)).toHaveAttribute('aria-modal', 'true');
   await expect(page.getByRole('button', { name: 'Sign in with Tailscale' })).toBeVisible();
-  // The browser underneath is inert: not focusable, not clickable, hidden from assistive tech.
-  await expect(page.locator('[data-slot=safari-toolbar]').locator('xpath=..')).toHaveAttribute('inert', '');
-  await expect(page.locator('[data-slot=safari-toolbar]').locator('xpath=..')).toHaveAttribute('aria-hidden', 'true');
+  // The browser underneath is inert (the dialog's modality, contained in Safari's host): not focusable, not clickable,
+  // hidden from assistive tech. The page around the block is not.
+  expect(await page.locator('[data-slot=safari-toolbar]').evaluate((el) => !!el.closest('[inert]'))).toBe(true);
+  expect(await page.locator('[data-slot=safari]').evaluate((el) => !!el.closest('[data-layer-host]')?.contains(document.querySelector('[role=dialog][aria-modal=true]')))).toBe(true);
   for (let i = 0; i < 6; i++) await page.keyboard.press('Tab');
   expect(await page.evaluate(() => !!document.activeElement?.closest('[data-slot=safari-toolbar]'))).toBe(false);
   const box = await address(page).boundingBox();
-  const topmost = await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('[data-slot=safari-gate]'), { x: box.x + 20, y: box.y + box.height / 2 });
+  const topmost = await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('[role=dialog]'), { x: box.x + 20, y: box.y + box.height / 2 });
   expect(topmost).toBe(true);
 });
 
@@ -58,6 +60,9 @@ test('signing in lifts the gate and shows the devices on the tailnet', async ({ 
   await open(page);
   await signIn(page);
   await expect(page.locator('[data-slot=safari-start]')).toBeVisible();
+  // Focus lands in the address field, but lists nothing over the start page until the field is pressed or typed in.
+  await expect(address(page)).toBeFocused();
+  await expect(page.getByRole('listbox', { name: 'Suggestions' })).toHaveCount(0);
   for (const name of ['Home', 'Wiki', 'Notes', 'Status', 'Exit-node']) await expect(page.getByRole('button', { name: new RegExp(`^${name}, `) })).toBeVisible();
   await expect(page.getByRole('heading', { name: new RegExp(`Devices on ${TAILNET}`, 'i') })).toBeVisible();
 });
@@ -155,7 +160,8 @@ test('the address field: names, addresses and suggestions from the tailnet', asy
   await address(page).fill('not');
   await expect(page.getByRole('option')).toHaveCount(1);
   await address(page).press('ArrowDown');
-  await expect(page.getByRole('option', { selected: true })).toContainText(`notes.${TAILNET}`);
+  // The highlighted suggestion (UI SDK's Combobox marks it data-highlighted; aria-selected is the chosen value).
+  await expect(page.locator('[role=option][data-highlighted]')).toContainText(`notes.${TAILNET}`);
   await address(page).press('Enter');
   await expect(address(page)).toHaveValue(`notes.${TAILNET}`);
   await expect(frame(page).getByRole('heading', { name: 'Notes', exact: true })).toBeVisible();
@@ -238,7 +244,7 @@ test('JSON shows as text, a picture as a picture, and a file it cannot show says
   await expect(page.getByRole('img', { name: 'photo.svg' })).toBeVisible();
   await visit(page, `status.${TAILNET}/backup.bin`);
   await expect(page.getByRole('heading', { name: 'Safari can’t display this file' })).toBeVisible();
-  await expect(page.getByText(/application\/octet-stream, 2 KB/)).toBeVisible();
+  await expect(page.getByText(/application\/octet-stream, 2 kB/)).toBeVisible();
 });
 
 test('tabs: a new tab, a ⌘-click in the background, the overview, and closing', async ({ page }) => {

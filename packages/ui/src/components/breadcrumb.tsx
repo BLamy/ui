@@ -1,26 +1,24 @@
 'use client';
 import {
-  Children, createContext, isValidElement, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState,
+  Children, createContext, isValidElement, useContext, useMemo,
   type ComponentProps, type ReactElement, type ReactNode,
 } from 'react';
-import {
-  Breadcrumb as AriaBreadcrumb,
-  Breadcrumbs as AriaBreadcrumbs,
-  Button as AriaButton,
-  Link as AriaLink,
-  type Key,
-} from 'react-aria-components';
+import { Button } from '@ui-sdk/react/button';
+import { createParts } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Icon } from '@/lib/icon';
-import { cn } from '@/lib/utils';
+import { breadcrumb, type BreadcrumbTrailItem } from '@/lib/breadcrumb-primitive';
+import { cn, cx } from '@/lib/utils';
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSub,
+  DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-/* ══ Breadcrumb — the path to the current page, on react-aria's Breadcrumbs / Breadcrumb / Link ══
-   Every item is pressable: give it an `href` (a real link) and/or `onPress`. The last item is the current page
-   (`aria-current="page"`); it is plain text unless it has a handler. An item that carries `items` is a picker like
-   VS Code's breadcrumb: pressing it opens a menu of its siblings (the `selectedId` one is checked) instead.
+/* ══ Breadcrumb — the path to the current page: a `nav` with an ordered list of links ══
+   Every item is pressable: give it an `href` (a link) and/or `onClick` (a button, when it has no `href`). The last
+   item is the current page (`aria-current="page"`); it is plain text unless it has a handler. An item that carries
+   `items` is a picker like VS Code's breadcrumb: pressing it opens a menu of its siblings (the `selectedId` one is
+   checked) instead. The menus are DropdownMenus.
 
    <Breadcrumb items={[
      { id: 'home', label: 'Home', icon: 'house', href: '/' },
@@ -37,54 +35,20 @@ import {
    </Breadcrumb>
 
    Width-aware: when the items do not fit, the middle collapses into one `…` button that opens a menu of the hidden
-   items (the first and the last always stay, and as many trailing items as fit). The widths come from an
-   off-screen, inert copy of the full list that is re-measured whenever the content or the container changes
-   (`fitBreadcrumbs` is the pure part). The first render, and the server's, is the full list. ══ */
+   items (the first and the last always stay, and as many trailing items as fit). The measuring and the fit are
+   `lib/breadcrumb-primitive.ts`, which reads an off-screen, inert copy of the full list whenever the content or
+   the container changes (`fitBreadcrumbs` is the pure part); this file only renders. The first render, and the
+   server's, is the full list. ══ */
 
-/* ── The fit ── */
+export { fitBreadcrumbs, type BreadcrumbFit, type BreadcrumbFitOptions } from '@/lib/breadcrumb-primitive';
 
-export interface BreadcrumbFit {
-  /** How many leading items stay. */
-  head: number;
-  /** How many trailing items stay (0 when nothing is hidden). The hidden ones are `head … length - tail`. */
-  tail: number;
-}
-
-export interface BreadcrumbFitOptions {
-  /** Leading items that always stay. Default 1. */
-  keepHead?: number;
-  /** Trailing items that always stay. Default 1. */
-  keepTail?: number;
-}
-
-/** How many items to keep so a trail fits `available` px. `widths` are each item's own width; `separatorWidth` is
- *  what sits between two neighbours (separator and its spacing); `ellipsisWidth` is the `…` item's own width.
- *  When everything fits (or there is nothing to hide, or no width is known: `available <= 0`) the result is
- *  `{ head: widths.length, tail: 0 }`. Otherwise the middle collapses into the ellipsis: the head stays and
- *  the most trailing items that fit stay — at least `keepTail`, even when that overflows. */
-export function fitBreadcrumbs(
-  widths: readonly number[],
-  available: number,
-  separatorWidth = 0,
-  ellipsisWidth = 0,
-  { keepHead = 1, keepTail = 1 }: BreadcrumbFitOptions = {},
-): BreadcrumbFit {
-  const n = widths.length;
-  const all: BreadcrumbFit = { head: n, tail: 0 };
-  const head = Math.max(0, Math.min(keepHead, n));
-  const minTail = Math.max(0, keepTail);
-  if (available <= 0 || n - head <= minTail) return all;
-  const sum = (from: number, to: number) => {
-    let w = 0;
-    for (let i = from; i < to; i++) w += widths[i];
-    return w;
-  };
-  if (sum(0, n) + (n - 1) * separatorWidth <= available) return all;
-  // Trail = head items, the ellipsis, `tail` items: (head + 1 + tail) entries and as many gaps, less one.
-  const widthWith = (tail: number) => sum(0, head) + ellipsisWidth + sum(n - tail, n) + (head + tail) * separatorWidth;
-  for (let tail = n - head - 1; tail > minTail; tail--) if (widthWith(tail) <= available) return { head, tail };
-  return { head, tail: minTail };
-}
+const parts = createParts(breadcrumb, {
+  root: 'nav',
+  list: 'ol',
+  item: 'li',
+  ellipsis: 'li',
+  measure: 'div',
+});
 
 /* ── Variants ── */
 
@@ -103,9 +67,9 @@ export const breadcrumbVariants = cva('relative block w-full min-w-0 overflow-cl
  *  being the current one — the measuring copy does not know — so the current page differs by colour only. */
 export const breadcrumbItemVariants = cva(
   [
-    'bl-btn box-border inline-flex max-w-full min-w-0 items-center rounded-md border-0 bg-transparent text-foreground/70 no-underline [font-family:inherit] whitespace-nowrap outline-none transition-colors motion-reduce:transition-none',
-    'data-current:text-foreground',
-    'data-focus-visible:ring-2 data-focus-visible:ring-ring',
+    'bl-btn box-border inline-flex max-w-full min-w-0 items-center rounded-md border-0 bg-transparent py-0 text-foreground/70 no-underline [font:inherit] whitespace-nowrap outline-none transition-colors motion-reduce:transition-none',
+    'aria-[current=page]:text-foreground',
+    'focus-visible:ring-2 focus-visible:ring-ring',
   ],
   {
     variants: {
@@ -116,7 +80,7 @@ export const breadcrumbItemVariants = cva(
       },
       /** Pressable faces highlight on hover and press; the current page and plain text do not. */
       interactive: {
-        true: 'cursor-pointer data-hovered:bg-secondary data-hovered:text-foreground data-pressed:bg-secondary-strong aria-expanded:bg-secondary aria-expanded:text-foreground data-disabled:cursor-default',
+        true: 'cursor-pointer hover:bg-secondary hover:text-foreground active:bg-secondary-strong aria-expanded:bg-secondary aria-expanded:text-foreground data-disabled:cursor-default',
         false: 'cursor-default',
       },
     },
@@ -131,23 +95,27 @@ const SEPARATOR_SIZE = { sm: 12, default: 13, lg: 15 } as const;
 
 /** A sibling, or an entry of the `…` menu. */
 export interface BreadcrumbEntry {
-  id: Key;
-  label: ReactNode;
-  /** The plain-text label, for the menu's type-to-select when `label` is not a string. */
-  textValue?: string;
+  id: string | number;
+  /** The plain-text name: what shows, unless `children` gives richer content, and what the menu's type-to-select
+   *  and an agent read. */
+  label: string;
+  /** Content to show instead of `label`. */
+  children?: ReactNode;
   /** An icon name (`'house'`) or a node. */
   icon?: ReactNode;
+  /** Makes the item a link. */
   href?: string;
-  onPress?: () => void;
+  /** Runs when the item is pressed, or chosen in a menu. Without an `href` the item is a button. */
+  onClick?: () => void;
 }
 
 /** One item of the data-driven form: an entry that may carry its siblings. */
 export interface BreadcrumbItemData extends BreadcrumbEntry {
   /** The entries of this item's parent. When given, pressing the item opens them as a menu (the item's own
-   *  `href` / `onPress` are not used). */
+   *  `href` / `onClick` are not used). */
   items?: BreadcrumbEntry[];
   /** The `items` entry that is the current one; it is checked in the menu. */
-  selectedId?: Key;
+  selectedId?: string | number;
 }
 
 type SizeVariant = NonNullable<VariantProps<typeof breadcrumbVariants>['size']>;
@@ -157,6 +125,8 @@ interface BreadcrumbContextValue {
   separator?: ReactNode;
 }
 const BreadcrumbContext = createContext<BreadcrumbContextValue>({ size: 'default' });
+/** The item the root is rendering: its key, and whether it is the last one, the current page. */
+const ItemContext = createContext<{ value: string; current: boolean }>({ value: '', current: false });
 /** True inside the off-screen copy the root measures: items render as plain, inert boxes. */
 const MeasureContext = createContext(false);
 
@@ -188,47 +158,58 @@ function TrailingSeparator() {
 
 const MENU_ITEM = 'min-h-9 py-1.5 text-subhead leading-5';
 
-function MenuEntry({ entry }: { entry: BreadcrumbItemData }) {
-  const common = {
-    id: entry.id,
-    textValue: entry.textValue ?? (typeof entry.label === 'string' ? entry.label : undefined),
-    icon: entry.icon ? renderIcon(entry.icon, 18) : undefined,
-    className: MENU_ITEM,
-  };
+function MenuEntry({ entry, picker }: { entry: BreadcrumbItemData; picker: boolean }) {
+  const { label } = entry;
+  const content = entry.children ?? label;
+  const icon = entry.icon ? renderIcon(entry.icon, 18) : undefined;
   // An entry that has siblings of its own (a hidden item that is a picker) opens them as a submenu.
   if (entry.items?.length) {
     return (
       <DropdownMenuSub>
-        <DropdownMenuItem {...common}>{entry.label}</DropdownMenuItem>
-        <BreadcrumbMenu entries={entry.items} selectedId={entry.selectedId} />
+        <DropdownMenuSubTrigger className={MENU_ITEM}>{content}</DropdownMenuSubTrigger>
+        <BreadcrumbMenu sub entries={entry.items} selectedId={entry.selectedId} />
       </DropdownMenuSub>
     );
   }
-  return <DropdownMenuItem {...common} href={entry.href} onAction={entry.onPress}>{entry.label}</DropdownMenuItem>;
+  const link = entry.href ? <a href={entry.href} /> : undefined;
+  // In a picker the rows are radio items, so the current sibling reads as checked; its group fires the chosen entry.
+  return picker ? (
+    <DropdownMenuRadioItem value={String(entry.id)} label={label} icon={icon} closeOnSelect render={link} className={MENU_ITEM}>
+      {content}
+    </DropdownMenuRadioItem>
+  ) : (
+    <DropdownMenuItem label={label} icon={icon} render={link} onSelect={entry.onClick} className={MENU_ITEM}>
+      {content}
+    </DropdownMenuItem>
+  );
 }
 
-function BreadcrumbMenu({ entries, selectedId }: { entries: readonly BreadcrumbItemData[]; selectedId?: Key }) {
+function BreadcrumbMenu({ entries, selectedId, sub }: { entries: readonly BreadcrumbItemData[]; selectedId?: string | number; sub?: boolean }) {
   const picker = selectedId != null;
+  const rows = entries.map((entry) => <MenuEntry key={entry.id} entry={entry} picker={picker} />);
+  const Content = sub ? DropdownMenuSubContent : DropdownMenuContent;
   return (
-    <DropdownMenuContent
-      placement="bottom start"
-      offset={4}
-      popoverClassName="min-w-44"
-      selectionMode={picker ? 'single' : 'none'}
-      selectedKeys={picker ? [selectedId] : undefined}
-      disallowEmptySelection={picker}
-    >
-      {entries.map((entry) => <MenuEntry key={entry.id} entry={entry} />)}
-    </DropdownMenuContent>
+    <Content sideOffset={sub ? undefined : 4} className="min-w-44">
+      {picker ? (
+        <DropdownMenuRadioGroup
+          value={String(selectedId)}
+          onValueChange={(value) => entries.find((entry) => String(entry.id) === value)?.onClick?.()}
+        >
+          {rows}
+        </DropdownMenuRadioGroup>
+      ) : rows}
+    </Content>
   );
 }
 
 /* ── Item ── */
 
 export interface BreadcrumbItemProps extends Omit<BreadcrumbItemData, 'id' | 'label'> {
-  id?: Key;
-  /** The label — the children, or this (so a `BreadcrumbItemData` spreads straight in). */
-  label?: ReactNode;
+  id?: string | number;
+  /** The plain-text name (so a `BreadcrumbItemData` spreads straight in). Shown when there are no children; given
+   *  children that are not a string, it is what the trail's menus and an agent read. */
+  label?: string;
+  /** What shows. Default `label`. */
   children?: ReactNode;
   /** Merged onto the item's `<li>`. */
   className?: string;
@@ -246,40 +227,25 @@ function ItemFace({ icon, children }: { icon?: ReactNode; children?: ReactNode }
 
 const itemClass = (isCurrent: boolean, className?: string) => cn('flex min-w-0 items-center', isCurrent ? 'shrink' : 'shrink-0', className);
 
-function BreadcrumbItemContent({ isCurrent, icon, href, onPress, items, selectedId, children }: BreadcrumbItemProps & { isCurrent: boolean }) {
+function BreadcrumbItemContent({ isCurrent, icon, href, onClick, items, selectedId, children }: BreadcrumbItemProps & { isCurrent: boolean }) {
   const { size } = useContext(BreadcrumbContext);
   const face = <ItemFace icon={icon}>{children}</ItemFace>;
-  const actionable = !!(href || onPress);
+  const current = isCurrent ? 'page' as const : undefined;
   let control: ReactNode;
   if (items?.length) {
     control = (
       <DropdownMenu>
-        <AriaButton
-          data-slot="breadcrumb-link"
-          data-current={isCurrent || undefined}
-          aria-current={isCurrent ? 'page' : undefined}
-          className={breadcrumbItemVariants({ size })}
-        >
-          {face}
-        </AriaButton>
+        <DropdownMenuTrigger aria-current={current} className={breadcrumbItemVariants({ size })}>{face}</DropdownMenuTrigger>
         <BreadcrumbMenu entries={items} selectedId={selectedId} />
       </DropdownMenu>
     );
-  } else if (actionable || isCurrent) {
-    // react-aria disables the current item's link; a handler or href opts it back in.
-    control = (
-      <AriaLink
-        data-slot="breadcrumb-link"
-        href={href}
-        onPress={onPress}
-        {...(actionable ? { isDisabled: false } : null)}
-        className={breadcrumbItemVariants({ size, interactive: actionable })}
-      >
-        {face}
-      </AriaLink>
-    );
+  } else if (href) {
+    control = <a data-slot="breadcrumb-link" href={href} onClick={onClick} aria-current={current} className={breadcrumbItemVariants({ size })}>{face}</a>;
+  } else if (onClick) {
+    control = <Button onClick={onClick} aria-current={current} className={breadcrumbItemVariants({ size })}>{face}</Button>;
   } else {
-    control = <span data-slot="breadcrumb-link" className={breadcrumbItemVariants({ size, interactive: false })}>{face}</span>;
+    // Plain text: the current page, or an item with nothing to do.
+    control = <span data-slot="breadcrumb-link" aria-current={current} className={breadcrumbItemVariants({ size, interactive: false })}>{face}</span>;
   }
   return <>{control}{isCurrent ? null : <TrailingSeparator />}</>;
 }
@@ -297,25 +263,22 @@ function MeasuredItem({ icon, className, children }: Pick<BreadcrumbItemProps, '
   );
 }
 
-export function BreadcrumbItem({ id, label, children, className, ...props }: BreadcrumbItemProps) {
+export function BreadcrumbItem({ label, children, className, ...props }: BreadcrumbItemProps) {
   const measuring = useContext(MeasureContext);
+  const { value, current } = useContext(ItemContext);
   const content = children ?? label;
   if (measuring) return <MeasuredItem icon={props.icon} className={className}>{content}</MeasuredItem>;
   return (
-    <AriaBreadcrumb
-      id={id}
-      data-slot="breadcrumb-item"
-      className={({ isCurrent }) => itemClass(isCurrent, className)}
-    >
-      {({ isCurrent }) => <BreadcrumbItemContent {...props} isCurrent={isCurrent}>{content}</BreadcrumbItemContent>}
-    </AriaBreadcrumb>
+    <parts.Item value={value} current={current} className={itemClass(current, className)}>
+      <BreadcrumbItemContent {...props} isCurrent={current}>{content}</BreadcrumbItemContent>
+    </parts.Item>
   );
 }
 
 /* ── Ellipsis ── */
 
 export interface BreadcrumbEllipsisProps {
-  /** The hidden items, in order; each fires its own `href` / `onPress` (one with its own `items` opens them as a submenu). */
+  /** The hidden items, in order; each fires its own `href` / `onClick` (one with its own `items` opens them as a submenu). */
   items: readonly BreadcrumbItemData[];
   /** The button's accessible name. Default "More". */
   label?: string;
@@ -326,6 +289,7 @@ export interface BreadcrumbEllipsisProps {
  *  collapses; use it yourself for a trail you shorten by hand. */
 export function BreadcrumbEllipsis({ items, label = 'More', className }: BreadcrumbEllipsisProps) {
   const measuring = useContext(MeasureContext);
+  const { current: isCurrent } = useContext(ItemContext);
   const { size } = useContext(BreadcrumbContext);
   const face = <span className="grid shrink-0 place-items-center"><Icon name="ellipsis" size={ICON_SIZE[size] + 2} /></span>;
   if (measuring) {
@@ -337,47 +301,27 @@ export function BreadcrumbEllipsis({ items, label = 'More', className }: Breadcr
     );
   }
   return (
-    <AriaBreadcrumb data-slot="breadcrumb-ellipsis" className={({ isCurrent }) => itemClass(isCurrent, className)}>
-      {({ isCurrent }) => (
-        <>
-          <DropdownMenu>
-            <AriaButton data-slot="breadcrumb-link" aria-label={label} className={breadcrumbItemVariants({ size })}>
-              {face}
-            </AriaButton>
-            <BreadcrumbMenu entries={items} />
-          </DropdownMenu>
-          {isCurrent ? null : <TrailingSeparator />}
-        </>
-      )}
-    </AriaBreadcrumb>
+    <parts.Ellipsis className={itemClass(isCurrent, className)}>
+      <DropdownMenu>
+        <DropdownMenuTrigger aria-label={label} className={breadcrumbItemVariants({ size })}>{face}</DropdownMenuTrigger>
+        <BreadcrumbMenu entries={items} />
+      </DropdownMenu>
+      {isCurrent ? null : <TrailingSeparator />}
+    </parts.Ellipsis>
   );
 }
 
 /* ── Root ── */
 
-interface Metrics {
-  /** Each item's own width (without its separator). */
-  widths: number[];
-  separator: number;
-  ellipsis: number;
-  available: number;
-}
-const sameMetrics = (a: Metrics | null, b: Metrics) =>
-  !!a && a.available === b.available && a.separator === b.separator && a.ellipsis === b.ellipsis
-  && a.widths.length === b.widths.length && a.widths.every((w, i) => w === b.widths[i]);
-
-/** An element's inner width: what its children can fill. */
-function contentWidth(el: HTMLElement) {
-  const cs = getComputedStyle(el);
-  return el.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
-}
-
 type ItemElement = ReactElement<BreadcrumbItemProps>;
 
 const entryOf = (el: ItemElement): BreadcrumbItemData => {
-  const { id, label, children, icon, href, onPress, items, selectedId } = el.props;
-  return { id: id ?? el.key ?? '', label: children ?? label, icon, href, onPress, items, selectedId };
+  const { id, label, children, icon, href, onClick, items, selectedId } = el.props;
+  return { id: id ?? el.key ?? '', label: label ?? (typeof children === 'string' ? children : ''), children, icon, href, onClick, items, selectedId };
 };
+
+/** The key an item goes by: its `id`, else the key React gave it. */
+const valueOf = (el: ItemElement) => String(el.props.id ?? el.key ?? '');
 
 export interface BreadcrumbProps extends Omit<ComponentProps<'nav'>, 'children'>, VariantProps<typeof breadcrumbVariants> {
   /** The data-driven form: one item per entry (instead of `children`). */
@@ -392,7 +336,7 @@ export interface BreadcrumbProps extends Omit<ComponentProps<'nav'>, 'children'>
   ellipsisLabel?: string;
   /** Leading items that never collapse. Default 1. */
   keepHead?: number;
-  /** Trailing items that never collapse. Default 1. */
+  /** Trailing items that never collapse: at least 1 (the current page), default 1. */
   keepTail?: number;
 }
 
@@ -407,80 +351,54 @@ export function Breadcrumb({
       : (Children.toArray(children).filter(isValidElement) as ItemElement[])),
     [items, children],
   );
-
-  const rootRef = useRef<HTMLElement>(null);
-  const measureRef = useRef<HTMLOListElement>(null);
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
-
-  // Reads layout only; state changes only when a number did, so a re-render can never feed back into a re-measure.
-  const measure = useCallback(() => {
-    const root = rootRef.current;
-    const copy = measureRef.current;
-    if (!root || !copy) return;
-    const rows = Array.from(copy.children) as HTMLElement[];
-    const separator = copy.querySelector<HTMLElement>('[data-slot=breadcrumb-separator]')?.offsetWidth ?? 0;
-    const own = rows.map((row) => Math.max(0, row.offsetWidth - separator));
-    const next: Metrics = { widths: own.slice(0, -1), separator, ellipsis: own[own.length - 1] ?? 0, available: contentWidth(root) };
-    setMetrics((prev) => (sameMetrics(prev, next) ? prev : next));
-  }, []);
-
-  // After every render (the items may have changed), and whenever the container or the measured copy resizes.
-  useLayoutEffect(() => { if (collapse) measure(); });
-  useLayoutEffect(() => {
-    if (!collapse) return;
-    let live = true;
-    const run = () => { if (live) measure(); };
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(run);
-    if (observer) {
-      if (rootRef.current) observer.observe(rootRef.current);
-      if (measureRef.current) observer.observe(measureRef.current);
-    }
-    // Web fonts change every width.
-    void document.fonts?.ready.then(run);
-    return () => { live = false; observer?.disconnect(); };
-  }, [collapse, measure]);
-
-  const fit = collapse && metrics && metrics.widths.length === nodes.length
-    ? fitBreadcrumbs(metrics.widths, metrics.available, metrics.separator, metrics.ellipsis, { keepHead, keepTail })
-    : null;
-  const hiddenCount = fit ? nodes.length - fit.head - fit.tail : 0;
-  const visible = fit && hiddenCount > 0
-    ? [
-      ...nodes.slice(0, fit.head),
-      <BreadcrumbEllipsis key="breadcrumb-ellipsis" label={ellipsisLabel} items={nodes.slice(fit.head, nodes.length - fit.tail).map(entryOf)} />,
-      ...nodes.slice(nodes.length - fit.tail),
-    ]
-    : nodes;
+  const trail = useMemo<BreadcrumbTrailItem[]>(
+    () => nodes.map((node) => ({ value: valueOf(node), label: entryOf(node).label })),
+    [nodes],
+  );
 
   const context = useMemo<BreadcrumbContextValue>(() => ({ size: sizeKey, separator }), [sizeKey, separator]);
   return (
     <BreadcrumbContext.Provider value={context}>
-      <nav
-        ref={rootRef}
-        data-slot="breadcrumb"
+      <parts.Root
+        items={trail}
+        collapse={collapse}
+        keepHead={keepHead}
+        keepTail={keepTail}
         aria-label={ariaLabel}
-        className={cn(breadcrumbVariants({ size }), className)}
+        className={cx(breadcrumbVariants({ size }), className)}
         {...props}
       >
-        <AriaBreadcrumbs data-slot="breadcrumb-list" className="m-0 flex min-w-0 list-none items-center p-0">
-          {visible}
-        </AriaBreadcrumbs>
-        {collapse ? (
-          <div
-            data-slot="breadcrumb-measure"
-            aria-hidden
-            inert
-            className="pointer-events-none invisible absolute top-0 left-0 size-0 overflow-hidden"
-          >
-            <MeasureContext.Provider value>
-              <ol ref={measureRef} className="m-0 flex w-max list-none p-0">
-                {nodes}
-                <BreadcrumbEllipsis items={[]} />
-              </ol>
-            </MeasureContext.Provider>
-          </div>
-        ) : null}
-      </nav>
+        {({ head, tail, count }) => {
+          const shown = tail > 0 && count === nodes.length && count - head - tail > 0
+            ? [
+              ...nodes.slice(0, head),
+              <BreadcrumbEllipsis key="breadcrumb-ellipsis" label={ellipsisLabel} items={nodes.slice(head, count - tail).map(entryOf)} />,
+              ...nodes.slice(count - tail),
+            ]
+            : nodes;
+          return (
+            <>
+              <parts.List className="m-0 flex min-w-0 list-none items-center p-0">
+                {shown.map((node, index) => (
+                  <ItemContext.Provider key={node.key} value={{ value: valueOf(node), current: index === shown.length - 1 }}>
+                    {node}
+                  </ItemContext.Provider>
+                ))}
+              </parts.List>
+              {collapse ? (
+                <parts.Measure className="pointer-events-none invisible absolute top-0 left-0 size-0 overflow-hidden">
+                  <MeasureContext.Provider value>
+                    <ol className="m-0 flex w-max list-none p-0">
+                      {nodes}
+                      <BreadcrumbEllipsis items={[]} />
+                    </ol>
+                  </MeasureContext.Provider>
+                </parts.Measure>
+              ) : null}
+            </>
+          );
+        }}
+      </parts.Root>
     </BreadcrumbContext.Provider>
   );
 }

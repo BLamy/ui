@@ -23,16 +23,16 @@ const grid = (
     {(['default', 'filled', 'outline'] as const).map((variant) => (
       <div key={variant} className="flex items-center gap-2">
         <Toggle variant={variant} aria-label="Favorite"><Icon name="star" size={18} /></Toggle>
-        <Toggle variant={variant} defaultSelected aria-label="Favorited"><Icon name="starF" size={18} /></Toggle>
+        <Toggle variant={variant} defaultPressed aria-label="Favorited"><Icon name="starF" size={18} /></Toggle>
         <Toggle variant={variant}><Icon name="bell" size={18} />Alerts</Toggle>
-        <Toggle variant={variant} defaultSelected><Icon name="bell" size={18} />Alerts</Toggle>
-        <Toggle variant={variant} isDisabled>Off</Toggle>
+        <Toggle variant={variant} defaultPressed><Icon name="bell" size={18} />Alerts</Toggle>
+        <Toggle variant={variant} disabled>Off</Toggle>
       </div>
     ))}
     <div className="flex items-center gap-2">
-      <Toggle size="sm" defaultSelected>Small</Toggle>
-      <Toggle defaultSelected>Default</Toggle>
-      <Toggle size="lg" defaultSelected>Large</Toggle>
+      <Toggle size="sm" defaultPressed>Small</Toggle>
+      <Toggle defaultPressed>Default</Toggle>
+      <Toggle size="lg" defaultPressed>Large</Toggle>
     </div>
   </div>
 );

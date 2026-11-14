@@ -4,7 +4,7 @@
    it (cards.tsx). */
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import type { CSSProperties } from 'react';
 import { isOpen } from './agent';
 import { CREDITS, ME, NOTIFICATIONS, PROJECTS, relativeTime } from './data';
-import { ProjectPreview } from './cards';
+import { ProjectCard } from './cards';
 import { Avatar, BarButton, LoopMark, Pressable } from './parts';
 import { useLoopQA } from './state';
 
@@ -35,13 +35,13 @@ export function AppSidebar() {
             <LoopMark size={24} />Loop QA
           </span>
         )}
-        trailing={<BarButton label="New project" icon="plus" onPress={() => qa.setDialog('new-project')} />}
+        trailing={<BarButton label="New project" icon="plus" onClick={() => qa.setDialog('new-project')} />}
       />
       <SplitViewContent>
         <div className="flex flex-col gap-3 px-2.5 pb-4">
           <Pressable
-            onPress={() => qa.openPalette()}
-            className="flex h-9 cursor-pointer items-center justify-start gap-2 rounded-ctl border-0 bg-secondary px-2.5 text-left text-[13.5px] text-tertiary-foreground outline-none transition-[background-color]  data-focus-visible:ring-2 data-focus-visible:ring-ring"
+            onClick={() => qa.openPalette()}
+            className="flex h-9 cursor-pointer items-center justify-start gap-2 rounded-ctl border-0 bg-secondary px-2.5 text-left text-[13.5px] text-tertiary-foreground outline-none transition-[background-color]  focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Icon name="magnifyingglass" size={15} sw={2} />
             <span className="flex-1">Search or jump to…</span>
@@ -56,7 +56,8 @@ export function AppSidebar() {
                 key={p.id}
                 id={p.id}
                 tint={SELECTED}
-                title={<ProjectPreview project={p} className="w-full"><span className={cn('truncate', p.status === 'paused' && 'text-muted-foreground')}>{p.name}</span></ProjectPreview>}
+                title={<span className={cn('truncate', p.status === 'paused' && 'text-muted-foreground')}>{p.name}</span>}
+                preview={<ProjectCard project={p} />}
                 icon={<span className="grid size-[18px] place-items-center"><span className="size-2.5 rounded-sm bg-(--brand)" style={{ '--brand': p.brand } as CSSProperties} /></span>}
                 badge={live.has(p.id) ? <Spinner size={13} /> : openCount(p.id) ? <NumberMorph value={openCount(p.id)} /> : null}
               />
@@ -73,8 +74,8 @@ function SidebarFooter() {
   const pct = CREDITS.used / CREDITS.total;
   return (
     <div className="flex shrink-0 flex-col gap-2 border-t border-border px-2.5 pt-2.5 pb-3">
-      <PopoverTrigger>
-        <Pressable className="flex cursor-pointer flex-col items-stretch gap-1.5 rounded-ctl border-0 bg-transparent px-2 py-1.5 text-left outline-none  data-focus-visible:ring-2 data-focus-visible:ring-ring">
+      <Popover>
+        <PopoverTrigger render={<Pressable />} className="flex cursor-pointer flex-col items-stretch gap-1.5 rounded-ctl border-0 bg-transparent px-2 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <span className="flex w-full items-center justify-between text-caption">
             <span className="font-medium">Credits</span>
             <span className="text-muted-foreground tabular-nums">{Math.round(CREDITS.total - CREDITS.used).toLocaleString('en-US')} left</span>
@@ -82,8 +83,9 @@ function SidebarFooter() {
           <span className="h-1 w-full overflow-hidden rounded-full bg-secondary">
             <span className="block h-full w-(--w) rounded-full bg-primary" style={{ '--w': `${pct * 100}%` } as CSSProperties} />
           </span>
-        </Pressable>
-        <PopoverContent placement="top start" aria-label="Credits" className="w-64">
+        </PopoverTrigger>
+        <PopoverContent side="top" align="start" className="w-64">
+          <PopoverTitle className="sr-only">Credits</PopoverTitle>
           <div className="text-footnote font-semibold">{ME.plan} plan</div>
           <div className="mt-1 text-[24px] font-semibold tracking-[-.02em] tabular-nums">{CREDITS.used.toLocaleString('en-US')}<span className="text-footnote font-normal text-muted-foreground"> / {CREDITS.total.toLocaleString('en-US')}</span></div>
           <div className="mt-0.5 text-caption text-muted-foreground">credits used · renews {CREDITS.renews}</div>
@@ -93,7 +95,7 @@ function SidebarFooter() {
             ))}
           </div>
         </PopoverContent>
-      </PopoverTrigger>
+      </Popover>
       <div className="flex items-center gap-2 px-1">
         <Avatar initials={ME.initials} />
         <div className="min-w-0 flex-1 leading-tight">
@@ -108,15 +110,15 @@ function SidebarFooter() {
 
 function Notifications() {
   return (
-    <PopoverTrigger>
-      <BarButton label="Notifications">
+    <Popover>
+      <BarButton label="Notifications" render={<PopoverTrigger />}>
         <span className="relative inline-grid">
           <Icon name="bell" size={17} sw={1.9} />
           <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary ring-2 ring-sidebar" />
         </span>
       </BarButton>
-      <PopoverContent placement="top end" aria-label="Notifications" className="w-80 p-0 [&>[data-slot=popover-content]]:p-0">
-        <div className="border-b border-border px-4 py-3 text-footnote font-semibold">Notifications</div>
+      <PopoverContent side="top" align="end" className="w-80 p-0">
+        <PopoverTitle className="border-b border-border px-4 py-3 text-footnote font-semibold">Notifications</PopoverTitle>
         <ul className="m-0 list-none p-1.5">
           {NOTIFICATIONS.map((n) => (
             <li key={n.id} className="flex gap-3 rounded-ctl px-2.5 py-2">
@@ -132,6 +134,6 @@ function Notifications() {
           ))}
         </ul>
       </PopoverContent>
-    </PopoverTrigger>
+    </Popover>
   );
 }

@@ -1,6 +1,7 @@
 name: Publish packages
 
-# Publishes every @brett_lamy/* library whose package.json version isn't on npm yet, in dependency order.
+# Publishes every @brett_lamy/* library whose package.json version isn't on npm yet, in dependency order:
+# the two UI SDK fork packages (built from the vendor/ui-sdk submodule), then @brett_lamy/ui.
 # `pnpm pack` rewrites `workspace:*` to the real versions; `npm publish` then uploads the tarball using
 # npm trusted publishing (OIDC — configure this workflow, publish.yml, as the trusted publisher for each
 # package on npmjs.com) or, if set, the NPM_TOKEN repository secret.
@@ -26,6 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        # vendor/ui-sdk (our UI SDK fork) is a submodule; `pnpm install` builds the two @ui-sdk wrapper packages from it.
+        with: { submodules: true }
 
       - uses: pnpm/action-setup@v4
         with:
@@ -40,7 +43,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build libraries
-        run: pnpm nx run-many -t build -p @brett_lamy/ui
+        run: pnpm nx run-many -t build -p @brett_lamy/ui-sdk-core,@brett_lamy/ui-sdk-react,@brett_lamy/ui
 
       # Temporary: the claims npm's trusted publishing sees (payload only, no signature), to match its config.
       - name: Show OIDC claims
@@ -64,7 +67,8 @@ jobs:
           # Trusted publishing needs npm 11.5.1+; verbose output says why an OIDC exchange was refused.
           echo "npm $(npm --version)"
           mkdir -p "$RUNNER_TEMP/pkgs"
-          for pkg in ui; do
+          # The fork's two packages first: @brett_lamy/ui depends on them (as @ui-sdk/core and @ui-sdk/react).
+          for pkg in ui-sdk-core ui-sdk-react ui; do
             NAME=$(node -p "require('./packages/$pkg/package.json').name")
             VERSION=$(node -p "require('./packages/$pkg/package.json').version")
             if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
@@ -73,5 +77,7 @@ jobs:
             fi
             TARBALL=$(cd "packages/$pkg" && pnpm pack --pack-destination "$RUNNER_TEMP/pkgs" | tail -1)
             echo "Publishing $NAME@$VERSION ($TARBALL)"
-            npm publish "$TARBALL" --access public --loglevel verbose
+            # npm refuses a prerelease version without an explicit tag; the fork's versions are all prereleases.
+            case "$VERSION" in *-*) TAG="--tag latest" ;; *) TAG="" ;; esac
+            npm publish "$TARBALL" --access public $TAG --loglevel verbose
           done

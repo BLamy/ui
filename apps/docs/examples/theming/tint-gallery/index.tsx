@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Switch } from '@/components/ui/switch'
 import { BLProvider } from '@/lib/theme'
 
@@ -24,12 +24,11 @@ function Sample({ name }: { name: string }) {
       <Segmented
         aria-label="Plan"
         value={plan}
-        onChange={setPlan}
-        options={[
-          { id: 'free', label: 'Free' },
-          { id: 'pro', label: 'Pro' },
-        ]}
-      />
+        onValueChange={(v) => v && setPlan(v)}
+      >
+        <SegmentedItem value="free">Free</SegmentedItem>
+        <SegmentedItem value="pro">Pro</SegmentedItem>
+      </Segmented>
       <div
         style={{
           display: 'flex',
@@ -38,7 +37,7 @@ function Sample({ name }: { name: string }) {
         }}
       >
         <span style={{ fontSize: 14 }}>Sync</span>
-        <Switch aria-label="Sync" checked={on} onChange={setOn} />
+        <Switch aria-label="Sync" checked={on} onCheckedChange={setOn} />
       </div>
       <Button size="sm">Upgrade</Button>
     </div>

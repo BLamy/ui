@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { JsonEditor } from '@visual-json/react';
 import { parseYamlContent } from '@visual-json/yaml';
 import { Button } from '@/components/ui/button';
-import { Segmented } from '@/components/ui/segmented';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Spreadsheet } from '@/components/ui/spreadsheet';
 import { StlViewer } from '@/components/ui/stl-viewer';
 import { delimiterForPath, parseCsv, stringifyCsv } from '@/lib/csv';
@@ -149,8 +149,8 @@ function TextStatus({ file, doc, kind }: { file: OtherFile; doc: TextFile; kind:
   if (doc.conflict !== null) {
     return <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-footnote">
       <span className="min-w-0 flex-1">{file.name} changed outside Notes while you were editing it.</span>
-      <Button size="sm" variant="secondary" onPress={doc.reload}>Use the File</Button>
-      <Button size="sm" variant="secondary" onPress={doc.keepMine}>Keep Mine</Button>
+      <Button size="sm" variant="secondary" onClick={doc.reload}>Use the File</Button>
+      <Button size="sm" variant="secondary" onClick={doc.keepMine}>Keep Mine</Button>
     </div>;
   }
   return <>
@@ -166,7 +166,7 @@ function CodeView({ notes, file }: { notes: NotesState; file: OtherFile }) {
   const language = languageFromPath(file.path);
   return <div className="flex h-full min-h-[60vh] flex-col px-4 pt-3 pb-6">
     {doc.loadError ? <p role="alert" className="text-detail text-destructive">This file can’t be opened: {doc.loadError}</p>
-      : doc.text !== undefined ? <CodeEditor aria-label={file.name} value={doc.text} onChange={doc.edit} onSave={() => { void doc.save(); }} language={language}
+      : doc.text !== undefined ? <CodeEditor aria-label={file.name} value={doc.text} onValueChange={doc.edit} onSave={() => { void doc.save(); }} language={language}
         className="min-h-0 flex-1" />
       : <div aria-busy="true" className="flex-1 rounded-xl bg-secondary" />}
     <TextStatus file={file} doc={doc} kind={language === 'text' ? 'Text' : language.toUpperCase()} />
@@ -187,7 +187,7 @@ function SheetView({ notes, file }: { notes: NotesState; file: OtherFile }) {
   const kind = parsed?.delimiter === '\t' ? 'TSV' : 'CSV';
   return <div className="flex h-full min-h-[60vh] flex-col px-4 pt-3 pb-6">
     {doc.loadError ? <p role="alert" className="text-detail text-destructive">This file can’t be opened: {doc.loadError}</p>
-      : current ? <Spreadsheet aria-label={file.name} value={current} onChange={onChange} className="min-h-0 flex-1" />
+      : current ? <Spreadsheet aria-label={file.name} value={current} onValueChange={onChange} className="min-h-0 flex-1" />
       : <div aria-busy="true" className="flex-1 rounded-xl bg-secondary" />}
     <TextStatus file={file} doc={doc} kind={kind} />
   </div>;
@@ -282,8 +282,10 @@ export type DataMode = 'visual' | 'code';
 
 /** The Visual / Code switch for a JSON or YAML file, in the detail column's toolbar. */
 export function DataModeToggle({ mode, onChange }: { mode: DataMode; onChange: (mode: DataMode) => void }) {
-  return <Segmented aria-label="Show as" value={mode} onChange={(id) => onChange(id as DataMode)} className="w-[128px]"
-    options={[{ id: 'visual', label: 'Visual' }, { id: 'code', label: 'Code' }]} />;
+  return <Segmented<DataMode> aria-label="Show as" value={mode} onValueChange={(next) => { if (next) onChange(next); }} className="w-[128px]">
+    <SegmentedItem value="visual">Visual</SegmentedItem>
+    <SegmentedItem value="code">Code</SegmentedItem>
+  </Segmented>;
 }
 
 /** The viewer for a model, image, data, spreadsheet or code file. */

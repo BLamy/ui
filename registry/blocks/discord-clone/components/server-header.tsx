@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Button } from 'react-aria-components';
+import { PlainButton } from '@/components/ui/plain-button';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { useOptionalChatShell } from './chat-shell-context';
@@ -25,9 +25,9 @@ export function ServerHeader({ action, onClose, className, children, ...props }:
       {action !== undefined ? (
         action
       ) : close ? (
-        <Button onPress={close} aria-label="Close channels" className="grid cursor-pointer border-0 bg-transparent p-[4px] text-tertiary-foreground">
+        <PlainButton onClick={() => close()} aria-label="Close channels" className="grid cursor-pointer border-0 bg-transparent p-[4px] text-tertiary-foreground">
           <Icon name="xmark-large" size={14} sw={1.9} />
-        </Button>
+        </PlainButton>
       ) : (
         <span className="grid text-tertiary-foreground">
           <Icon name="chevron-right-compact" size={13} sw={1.9} className="[transform:rotate(90deg)]" />

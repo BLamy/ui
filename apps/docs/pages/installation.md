@@ -1,8 +1,8 @@
 # Installation
 
-BL UI is built on [React Aria Components](https://react-aria.adobe.com/) and Tailwind CSS v4, and you can take it two ways from one source of truth:
+BL UI is built on [UI SDK](https://ui-sdk.dev) (keyboard, focus, selection, popups, ARIA) and Tailwind CSS v4, and needs React 19. It uses our fork of UI SDK under upstream's package names (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)). You can take it two ways from one source of truth:
 
-- **shadcn registry (recommended).** `npx shadcn@latest add …` copies the source of the parts you pick into your project. There is no runtime dependency on `@brett_lamy/ui`, only what each part imports (`react-aria-components`, `framer-motion`, …). You own the files, so you can edit variants and defaults, and you ship exactly what you added.
+- **shadcn registry (recommended).** `npx shadcn@latest add …` copies the source of the parts you pick into your project. There is no runtime dependency on `@brett_lamy/ui`, only what each part imports (`@ui-sdk/core`, `@ui-sdk/react`, `framer-motion`, …). You own the files, so you can edit variants and defaults, and you ship exactly what you added.
 - **npm package.** `npm install @brett_lamy/ui` gives you everything, packaged together. It is generated from the same sources: ESM, one output module per source module so bundlers tree-shake, and `'use client'` on component modules for Next.js.
 
 | | Registry | npm |
@@ -23,11 +23,11 @@ See [Optimization](https://blamy.github.io/ui/#/optimization) for how to choose 
 {% step %}
 ### Start from a shadcn app
 
-New project: scaffold a Vite + React + Tailwind v4 app on shadcn's React Aria base (`--base aria`), the same foundation BL UI is built on. Choose a preset (look) when it asks.
+New project: scaffold a Vite + React + Tailwind v4 app with shadcn. Pick any base and preset (look) when it asks: BL UI's parts are UI SDK parts and don't depend on shadcn's base.
 
-{% command %}npx shadcn@latest create --name my-app --template vite --base aria{% endcommand %}
+{% command %}npx shadcn@latest create --name my-app --template vite{% endcommand %}
 
-This writes `components.json`, the `@/` import alias, `lib/utils.ts` and the theme CSS, and installs `react-aria-components`.
+This writes `components.json`, the `@/` import alias, `lib/utils.ts` and the theme CSS.
 
 Existing app: it needs Tailwind CSS v4 and an `@/` alias. Skip the rest of this step if you have them.
 
@@ -48,10 +48,11 @@ export default defineConfig({
 
 ```css
 /* src/index.css */
+@layer ui-sdk;
 @import "tailwindcss";
 ```
 
-Add the alias to `tsconfig.json` (and `tsconfig.app.json` if you have one), then run shadcn's `init`. If you already use shadcn with the Radix or Base UI base you can keep it: BL UI does not depend on your base.
+Add the alias to `tsconfig.json` (and `tsconfig.app.json` if you have one), then run shadcn's `init`. If you already use shadcn with any base (Radix, Base UI, React Aria) you can keep it: BL UI does not depend on your base.
 
 ```json
 {
@@ -62,7 +63,17 @@ Add the alias to `tsconfig.json` (and `tsconfig.app.json` if you have one), then
 }
 ```
 
-{% command %}npx shadcn@latest init --base aria{% endcommand %}
+{% command %}npx shadcn@latest init{% endcommand %}
+{% endstep %}
+
+{% step %}
+### Add UI SDK
+
+BL UI's parts import [UI SDK](https://ui-sdk.dev) as `@ui-sdk/core` and `@ui-sdk/react`. Install our fork of it under those names, both at the same version:
+
+{% command %}npm install @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1{% endcommand %}
+
+UI SDK adds a little CSS at runtime (hidden parts, the popup reset, a sheet's backdrop) in a cascade layer named `ui-sdk`. Declare that layer first, at the very top of your global CSS (`@layer ui-sdk;` above `@import "tailwindcss"`, as in the snippet above), so your own styles and Tailwind's utilities always win over it. See [Migrating to 6.0](https://blamy.github.io/ui/#/migrating-to-6) for the details.
 {% endstep %}
 
 {% step %}
@@ -130,9 +141,9 @@ Some parts wrap libraries that ship CommonJS-only dependencies. If Vite reports 
 {% step %}
 ### Start from a shadcn app
 
-New project: scaffold a Next.js app on shadcn's React Aria base. It sets up Tailwind CSS v4 through `@tailwindcss/postcss`, the `@/` alias and `components.json`; check that the latter has `"rsc": true` (see the next steps).
+New project: scaffold a Next.js app with shadcn (any base). It sets up Tailwind CSS v4 through `@tailwindcss/postcss`, the `@/` alias and `components.json`; check that the latter has `"rsc": true` (see the next steps).
 
-{% command %}npx shadcn@latest create --name my-app --template next --base aria{% endcommand %}
+{% command %}npx shadcn@latest create --name my-app --template next{% endcommand %}
 
 Existing app: it needs Tailwind CSS v4 and the `@/*` alias (create-next-app's default). For Tailwind v4 in Next, install the PostCSS plugin and import Tailwind in your global CSS:
 
@@ -146,12 +157,21 @@ export default config
 
 ```css
 /* app/globals.css */
+@layer ui-sdk;
 @import "tailwindcss";
 ```
 
 Then run shadcn's `init`, which writes `components.json` and `lib/utils.ts`:
 
-{% command %}npx shadcn@latest init --base aria{% endcommand %}
+{% command %}npx shadcn@latest init{% endcommand %}
+{% endstep %}
+
+{% step %}
+### Add UI SDK
+
+The same two aliased packages and the same `@layer ui-sdk;` line at the top of `app/globals.css` as on Vite:
+
+{% command %}npm install @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1{% endcommand %}
 {% endstep %}
 
 {% step %}
@@ -173,13 +193,13 @@ The same base item as on Vite. It only edits your CSS (tokens and framework CSS)
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/list.json{% endcommand %}
 
-The copied modules that use hooks, React Aria or motion start with `'use client'`. Keep `"rsc": true` in `components.json` for a Next app: the shadcn CLI leaves the directives in with it and strips them with `"rsc": false`.
+The copied modules that use hooks, UI SDK parts or motion start with `'use client'`. Keep `"rsc": true` in `components.json` for a Next app: the shadcn CLI leaves the directives in with it and strips them with `"rsc": false`.
 {% endstep %}
 
 {% step %}
 ### Use them
 
-A server component can render a BL UI part, but a function prop such as `onPress` has to come from a client component. Put the interactive part behind your own `'use client'` file:
+A server component can render a BL UI part, but a function prop such as `onClick` has to come from a client component. Put the interactive part behind your own `'use client'` file:
 
 ```tsx
 // components/todo-list.tsx
@@ -190,7 +210,7 @@ export function TodoList() {
   return (
     <List inset>
       <ListSection title="Today">
-        <ListRow title="Ship the docs" onPress={() => {}} />
+        <ListRow title="Ship the docs" onClick={() => {}} />
       </ListSection>
     </List>
   )
@@ -222,7 +242,7 @@ Browser-only parts (the Composer's editor, maps, session replay) can also be loa
 | `registry:lib` | `lib/<name>.ts` | `icon`, `motion`, `theme`, `utils` |
 | `registry:block` | `components/blocks/<name>/` | `apple-mail`, `discord-clone` |
 
-Each item declares the items it imports, so `npx shadcn@latest add …/list.json` also copies `button`, `icon`, `motion`, `utils` and the rest of what `list` needs, and installs the npm packages those files import (`framer-motion`, `class-variance-authority`, `react-aria-components`, …), and only those. The index is [`registry.json`](https://blamy.github.io/ui/r/registry.json).
+Each item declares the items it imports, so `npx shadcn@latest add …/list.json` also copies `button`, `icon`, `motion`, `utils` and the rest of what `list` needs, and installs the npm packages those files import (`framer-motion`, `class-variance-authority`, …), and only those. The two UI SDK packages are the exception: install them yourself under their aliases, as in the steps above, so the copied files' `@ui-sdk/core` and `@ui-sdk/react` imports resolve to our fork. The index is [`registry.json`](https://blamy.github.io/ui/r/registry.json).
 
 > **BL UI replaces `components/ui/button.tsx` and `lib/utils.ts`.** Dependencies are declared on BL UI's own items, so shadcn's stock `button` is never pulled in, and adding a part that uses Button writes BL UI's `button.tsx` over yours. The same goes for `lib/utils.ts`. BL UI's `cn` is a superset of shadcn's (the same `clsx` plus `tailwind-merge`, with BL UI's tokens registered), so code that calls `cn` keeps working, but your `Button` variants and any edits to these two files are replaced. Commit first, and review the diff after `add`. The CLI asks before overwriting; `-o` answers yes.
 
@@ -263,7 +283,7 @@ A block is a whole app or screen composed from library parts. Adding one copies 
 {% step %}
 ### Install
 
-BL UI needs React 19. Tailwind is optional here: the package ships a precompiled stylesheet for its own classes. You only need Tailwind if you also write Tailwind classes in your app.
+BL UI needs React 19. `@brett_lamy/ui` depends on our fork of UI SDK under upstream's names, so the install brings `@ui-sdk/core` and `@ui-sdk/react` with it. Tailwind is optional here: the package ships a precompiled stylesheet for its own classes. You only need Tailwind if you also write Tailwind classes in your app.
 
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 {% endstep %}
@@ -271,7 +291,7 @@ BL UI needs React 19. Tailwind is optional here: the package ships a precompiled
 {% step %}
 ### Import the styles
 
-Import the stylesheet once at your app's entry. Add the theme if you want the iOS palette; without it, define shadcn's CSS variables (`--background`, `--primary`, …) yourself or from a shadcn preset.
+Import the stylesheet once at your app's entry, before your own CSS: it declares the cascade layers, `ui-sdk` first, so UI SDK's runtime rules stay below everything else. (With a Tailwind build of your own, also put `@layer ui-sdk;` at the top of your global CSS.) Add the theme if you want the iOS palette; without it, define shadcn's CSS variables (`--background`, `--primary`, …) yourself or from a shadcn preset.
 
 ```tsx
 // src/main.tsx
@@ -323,7 +343,7 @@ If you also use Tailwind classes in your own code, set up Tailwind v4 with `@tai
 {% step %}
 ### Use it
 
-The package is compiled ESM and its component modules carry `'use client'`, so a server component can import and render them. Function props (`onPress`, `onChange`) still have to come from a client component.
+The package is compiled ESM and its component modules carry `'use client'`, so a server component can import and render them. Function props (`onClick`, `onValueChange`) still have to come from a client component.
 
 ```tsx
 // app/page.tsx
@@ -340,7 +360,7 @@ export default function Page() {
 {% endtab %}
 {% endtabs %}
 
-The npm package contains the library only (every component and lib, `styles.css`, `theme.css`). Blocks are registry-only. The package is at version 3.0.0, a breaking release: the workbench, chat and demo exports left the root barrel and live in blocks now.
+The npm package contains the library only (every component and lib, `styles.css`, `theme.css`). Blocks are registry-only. 6.0 is a breaking release: the components moved from react-aria-components to UI SDK, and their props follow UI SDK's API. See [Migrating to 6.0](https://blamy.github.io/ui/#/migrating-to-6).
 
 ## What the registry installs
 
@@ -359,13 +379,17 @@ The npm package contains the library only (every component and lib, `styles.css`
 
 ```tsx
 <BLProvider tint="#0A84FF">
-  <NavigationStack screens={screens} onPop={handlePop} />
+  <NavigationStack pages={pages} onPagesChange={setPages}>
+    <NavigationStackPage value="inbox">…</NavigationStackPage>
+  </NavigationStack>
 </BLProvider>
 ```
 
 ## Requirements
 
-- React and React DOM 18 or 19
+- React and React DOM 19 (and `@types/react` 19.2.10 or newer with TypeScript)
+- `@ui-sdk/core` and `@ui-sdk/react`, as the aliases `npm:@brett_lamy/ui-sdk-core` and `npm:@brett_lamy/ui-sdk-react` (the npm package brings them; a registry install adds them by hand)
+- `@layer ui-sdk;` declared before your other CSS when you have your own Tailwind build
 - Tailwind CSS v4 (for the registry path, and for any Tailwind classes of your own)
 - shadcn's CSS variables, from your shadcn theme or the bl-theme
 - A bundler that resolves ESM package exports and CSS imports (Vite, Next.js, React Router, …)

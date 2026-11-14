@@ -1,19 +1,17 @@
 # State and platform hooks
 
-Small utilities for state that survives a reload, keyboard shortcuts, the system back gesture, labelling controls inside list rows, and moving one DOM element between homes. The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
+Small utilities for state that survives a reload, the system back gesture, labelling controls inside list rows, and moving one DOM element between homes. The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
-`usePersistentState`, `useControllableState` and `useHotkey` are public. `usePersistentHost`, `useAttachHost`, `useBackHistory` and `useRowLabel` are **registry-only**: they are not in `@brett_lamy/ui`. A component that uses one brings it along when you add the component, and you can add one by itself.
+`usePersistentState` and `useControllableChange` are public. `usePersistentHost`, `useAttachHost` and `useRowLabel` are **registry-only**: they are not in `@brett_lamy/ui`. A component that uses one brings it along when you add the component, and you can add one by itself.
 
 ```tsx
 // npm (the two public hooks)
-import { usePersistentState, useControllableState, useHotkey } from '@brett_lamy/ui'
+import { usePersistentState, useControllableChange } from '@brett_lamy/ui'
 
 // shadcn registry (aliases)
 import { usePersistentState, loadJSON, saveJSON } from '@/lib/persistent-state'   // …/r/persistent-state.json
-import { useControllableState } from '@/lib/controllable-state'              // …/r/controllable-state.json
-import { useHotkey, matchesHotkey } from '@/components/ui/command-menu'          // …/r/command-menu.json
+import { useControllableChange } from '@/lib/controllable-state'             // …/r/controllable-state.json
 import { usePersistentHost, useAttachHost } from '@/lib/persistent-host'         // …/r/persistent-host.json (registry-only)
-import { useBackHistory, armBackHistory } from '@/lib/back-history'              // …/r/back-history.json (registry-only)
 import { useRowLabel } from '@/lib/row-label'                                    // …/r/row-label.json (registry-only)
 ```
 
@@ -50,7 +48,7 @@ const isSort = (v: unknown): v is Sort => v === 'name' || v === 'date'
 function Inbox() {
   const [sort, setSort] = usePersistentState<Sort>('inbox:sort', 'date', isSort)
   const [collapsed, setCollapsed] = usePersistentState('inbox:collapsed', false)
-  return <SortMenu value={sort} onChange={setSort} />
+  return <SortMenu value={sort} onValueChange={setSort} />
 }
 ```
 
@@ -65,75 +63,66 @@ Gotchas, from the source:
 - **JSON only.** Values go through `JSON.stringify` and `JSON.parse`: a `Date` comes back as a string, `undefined` and functions are lost. Use `isValid` to reject a shape you cannot restore.
 - Storage errors are swallowed, so a full quota silently stops persisting.
 
-## `useControllableState`
+## `useControllableChange`
 
-State that is either controlled (a `value` is given) or held inside the hook, starting at `defaultValue`. It is the `value` / `defaultValue` / `onChange` pattern of `FloatingSheet`, `FloatingChat` and `ArtifactChatContainer`, for your own components.
+State that is either controlled (a `value` is given) or held inside the hook, starting at `defaultValue`, with UI SDK-shaped change callbacks: `onChange(next, details)` gets the same `ChangeDetails` UI SDK's `createChange` hands out (`reason`, `event`, `source`, `cancel()`, `canceled`), before anything moves. It is the `value` / `defaultValue` / `onValueChange` pattern of `FloatingChat`, `ArtifactChatContainer`, `FilterBar` and the Composer, for your own components.
 
 - **Export:** public. Registry item `controllable-state` (`@/lib/controllable-state`).
 - **Needs:** nothing.
 
 ```ts
-function useControllableState<T>(
+function useControllableChange<T, Reason extends string>(
   value: T | undefined,
   defaultValue: T,
-  onChange?: (next: T) => void,
-): [T, (next: T) => void]
+  onChange?: (next: T, details: ChangeDetails<Reason>) => void,
+): [T, (next: T | ((prev: T) => T), given?: { reason: Reason; event?: Event; source?: ChangeSource }) => boolean]
 ```
 
 ```tsx
+type DisclosureReason = 'trigger-press' | 'imperative'
+
 function Disclosure({ open, defaultOpen = false, onOpenChange, children }: DisclosureProps) {
-  const [isOpen, setOpen] = useControllableState(open, defaultOpen, onOpenChange)
-  return <section data-open={isOpen}><Button onPress={() => setOpen(!isOpen)}>Toggle</Button>{isOpen ? children : null}</section>
+  const [shown, setShown] = useControllableChange<boolean, DisclosureReason>(open, defaultOpen, onOpenChange)
+  return (
+    <section data-open={shown || undefined}>
+      <Button onClick={(event) => setShown(!shown, { reason: 'trigger-press', event: event.nativeEvent })}>Toggle</Button>
+      {shown ? children : null}
+    </section>
+  )
 }
 ```
 
-The setter updates the internal copy only when `value` is `undefined` (uncontrolled), and always calls `onChange`, so a controlled parent decides what happens.
+The consumer hears every change first. Uncontrolled, the value moves unless it called `details.cancel()`; controlled, nothing is written here and the parent decides by what it passes back.
 
 Gotchas, from the source:
 
 - Only `undefined` means uncontrolled, so a controlled `null` (or `false`, or `0`) is a real value.
-- The setter takes a value, not an updater function, and is a new function each render.
+- The setter returns `false` when nothing was asked for (the same value, by `Object.is`) or the change was canceled; the same value never calls `onChange`.
+- Without `given` the reason is `imperative`. `source` falls back to what the event says (UI SDK's `sourceOf`), and is `programmatic` with no event.
+- An updater sees the latest value, even twice within one tick when uncontrolled. The setter keeps its identity while the hook stays controlled or uncontrolled.
 - `defaultValue` is read once, on the first render.
 
-## `useHotkey`
+## Keyboard shortcuts
 
-Calls a handler when a key combination is pressed anywhere in the document. It is what `CommandMenu`'s `hotkey` prop is built on.
-
-- **Export:** public, with `matchesHotkey(event, hotkey)`. Registry item `command-menu` (`@/components/ui/command-menu`).
-- **Needs:** nothing.
+BL UI has no shortcut hook of its own: shortcuts are UI SDK's. `useShortcut` from `@ui-sdk/react/shortcuts` registers a shortcut while the component is mounted, in UI SDK's shared shortcut registry, so it takes part in the same layering as menus, dialogs and command palettes (a shortcut can belong to a popup with `layer`).
 
 ```ts
-function useHotkey(hotkey: string | undefined, handler: (e: KeyboardEvent) => void, enabled = true): void
-function matchesHotkey(e: { key: string; code?: string; metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean }, hotkey: string): boolean
+import { useShortcut, useShortcutHint } from '@ui-sdk/react/shortcuts'
+
+function useShortcut(keys: string | null | undefined, handler: ShortcutHandler, options?: UseShortcutOptions): void
+function useShortcutHint(keys: string): { text: string; ariaKeyshortcuts: string }   // '⌘K' on Apple platforms, 'Ctrl+K' elsewhere
 ```
-
-| Parameter | Effect |
-| --- | --- |
-| `hotkey` | `'mod+k'`, `'shift+mod+o'`, `'alt+shift+mod+t'`, `'alt+space'`. `mod` is Command on Apple platforms (it checks for Mac, iPhone or iPad) and Ctrl elsewhere; `meta`, `ctrl`, `alt` and `shift` also work. `undefined` turns it off. |
-| `handler` | Called with the `KeyboardEvent`. It is read through a ref, so a new function each render is fine and nothing re-subscribes. |
-| `enabled` | `false` removes the listener. Default `true`. |
-
-Named keys are `space`, `enter` (`return`), `escape` (`esc`), `tab`, `backspace`, `delete`, `up`, `down`, `left`, `right`, `comma`, `period` and `slash`.
 
 ```tsx
 function Shell() {
   const [open, setOpen] = useState(false)
-  useHotkey('mod+k', () => setOpen((o) => !o))
-  useHotkey('escape', () => setOpen(false), open)   // only listens while the palette is open
+  useShortcut('mod+k', () => setOpen((o) => !o))
+  useShortcut(open ? 'escape' : null, () => setOpen(false))   // `null` registers nothing
   return <Palette open={open} onOpenChange={setOpen} />
 }
 ```
 
-{% demo src="hooks-state/hotkey" %}
-
-Gotchas:
-
-- **It listens on `document`, in the bubble phase**, whatever has focus. A shortcut with no modifier (`'k'`) also fires while the user types in a text field. Use a modifier, or check `e.target` in the handler and ignore editable elements.
-- **On a match it calls `preventDefault()` before your handler.** An event that something else already prevented (`defaultPrevented`) is skipped, so a nested handler that wants to claim the key can.
-- **Modifiers must match exactly.** `'mod+k'` does not fire when Shift is also held. Each of meta, ctrl, alt and shift on the event has to equal what the string asks for.
-- **Letters and digits match the physical key**, by `event.code` (`KeyK`, `Digit1`), so Option or Shift changing `event.key` on macOS does not break a shortcut, and the shortcut stays on the same physical key on other layouts. The key you press may not be the letter printed on the keycap on a non-QWERTY layout.
-- No chords (`g` then `i`) and no way to name a literal `+` key.
-- It subscribes in an effect, so nothing happens on the server.
+Keys are written like `mod+k` or `mod+shift+o`; `mod` is Command on Apple platforms and Ctrl elsewhere. The latest `handler` always runs, so it need not be stable. Components that take a shortcut use the same format: a menu item's `shortcut="mod+r"`, `Tooltip shortcut`, `CommandMenuDialogTrigger shortcut="mod+k"`, `Kbd keys="mod+k"`. See [Behaviors](https://blamy.github.io/ui/#/behaviors) for the rest of UI SDK's behaviors you can use beside the kit.
 
 ## `usePersistentHost`
 
@@ -184,39 +173,18 @@ Gotchas:
 - It runs in a layout effect, so the move happens before paint.
 - A portal's React context is the context of where `createPortal` is called, not of the dock: components inside a persistent host see the providers of the component that owns it. That is also why `useFloatingChat` does not work inside an `ArtifactChatContainer` slot (see [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)).
 
-## `useBackHistory`
+## The system back gesture
 
-Registry-only. A bridge for the system back gesture on touch devices. A system edge swipe would navigate the page itself away (a blank screen); while a stack can pop, one history sentinel stays armed, so the gesture lands as `popstate` and pops **your** stack instead. `NavigationStack` uses it.
-
-- **Export:** not in `@brett_lamy/ui`. Registry item `back-history` (`@/lib/back-history`), installed with `navigation-stack`.
-- **Needs:** nothing.
+6.0 removed `useBackHistory` and `armBackHistory` (`@/lib/back-history`). The system back (an Android back, an iOS edge swipe that would leave the page) is the kit's `bindBack` from `@/lib/back` (a framework-free behavior, also exported from `@brett_lamy/ui`), which `NavigationStack` binds while it can pop:
 
 ```ts
-function useBackHistory(depth: number, pop: () => void): void
-function armBackHistory(): void
+import { bindBack } from '@/lib/back'
+
+// bind only while there is somewhere to go back to; the cleanup disarms it
+const unbind = bindBack(el, { onBack: () => stack.pop() })
 ```
 
-`useBackHistory` registers a stack with the bridge for as long as it is mounted: `depth` is its screen count (it can pop above `1`), `pop` pops one screen. The latest values are read through a ref, so there is no need to memoize `pop`.
-
-**The hook does not arm the sentinel.** Call `armBackHistory()` yourself when a push happens; `NavigationStack` does it right after one.
-
-```tsx
-function Stack({ screens, onPop }: { screens: Screen[]; onPop: () => void }) {
-  useBackHistory(screens.length, onPop)
-  const push = (screen: Screen) => {
-    armBackHistory()   // pushes the history sentinel the system back gesture will land on
-    setScreens((s) => [...s, screen])
-  }
-  // …
-}
-```
-
-How it behaves, from the source:
-
-- It does nothing on devices without a coarse pointer. That is decided **once, when the module loads** (`(any-pointer: coarse)`), and a failure to push history turns it off for the page.
-- Arming pushes `history.pushState({ blNav: 1 }, '')`: no URL change, but one extra history entry. It arms once at a time.
-- One `popstate` listener serves the page, even if the module is loaded twice. On `popstate` the deepest registered stack that can pop (`depth > 1`; the last registered wins) is popped, and 80ms later the bridge re-arms if any stack can still pop.
-- Server-safe: the listener is only added where `window` exists.
+The newest bound consumer hears a back first; return `false` from `onBack` to pass it on. On Android it uses a `CloseWatcher`, on other touch devices it holds one history entry of its own, and on a desktop it does nothing (Escape goes through UI SDK's layers instead). Details are on [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit).
 
 ## `useRowLabel`
 

@@ -66,7 +66,7 @@ function NewThread() {
           </ConversationComposer>
           <ConversationSuggestions>
             {['Add a dark mode toggle', 'Write tests for the cart'].map((s) => (
-              <Suggestion key={s} onPress={() => send(s)}>
+              <Suggestion key={s} onClick={() => send(s)}>
                 {s}
               </Suggestion>
             ))}

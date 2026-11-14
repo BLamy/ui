@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Toaster, createToastQueue, toastApi } from '@/components/ui/toast';
+import { ToastRegion, createHud } from '@/components/ui/toast';
 import { type Appearance } from '@/lib/theme';
 import { SURFACES, type SurfaceKind } from './components/workbench/surfaces';
-import { WorkbenchAction, WorkbenchActions, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchPanelTrigger, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarTrigger, WorkbenchTab, WorkbenchTabBar, WorkbenchTitle } from './components/workbench/workbench-shell';
+import { WorkbenchAction, WorkbenchActions, WorkbenchContent, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchPanelTrigger, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarTrigger, WorkbenchTab, WorkbenchTabBar, WorkbenchTitle } from './components/workbench/workbench-shell';
 import { AppSidebar } from './components/app-sidebar';
 import { Commands, type PaletteState } from './components/commands';
 import { SurfacePanel } from './components/surface-panel';
@@ -40,11 +40,8 @@ export default function T3Clone({ tint, appearance, terminal, surface: initialSu
   const [project, setProject] = useState(PROJECTS[0].name);
   const [look, setLook] = useState<Appearance | undefined>(appearance);
   const [accent, setAccent] = useState(tint);
-  const [hud] = useState(createToastQueue);
-  const [notify] = useState(() => {
-    const api = toastApi(hud);
-    return (message: string) => api.hud(message, { tone: 'success' });
-  });
+  const [hud] = useState(() => createHud());
+  const notify = (message: string) => hud(message, { type: 'success' });
   const [paletteState, setPaletteState] = useState<PaletteState>(() => ({
     open: !!palette,
     pages: Array.isArray(palette) ? palette : undefined,
@@ -62,14 +59,16 @@ export default function T3Clone({ tint, appearance, terminal, surface: initialSu
           <WorkbenchSidebarTrigger />
           <WorkbenchTitle project={project}>{threads.current?.title ?? 'new thread'}</WorkbenchTitle>
           <WorkbenchActions>
-            <WorkbenchAction icon="magnifier" label="Command palette (⌘K)" onPress={() => setPaletteState((s) => ({ open: true, key: s.key + 1 }))} />
-            <WorkbenchAction icon="plus" label="New thread" onPress={threads.newThread} />
+            <WorkbenchAction icon="magnifier" label="Command palette (⌘K)" onClick={() => setPaletteState((s) => ({ open: true, key: s.key + 1 }))} />
+            <WorkbenchAction icon="plus" label="New thread" onClick={threads.newThread} />
             <WorkbenchDockTrigger />
             <WorkbenchPanelTrigger />
           </WorkbenchActions>
         </WorkbenchHeader>
 
-        <ThreadView state={threads} />
+        <WorkbenchContent>
+          <ThreadView state={threads} />
+        </WorkbenchContent>
 
         <TerminalDock threadKey={threadKey} workspace={workspace} />
       </WorkbenchMain>
@@ -77,11 +76,11 @@ export default function T3Clone({ tint, appearance, terminal, surface: initialSu
       <SurfacePanel threadKey={threadKey} workspace={workspace} />
 
       <WorkbenchTabBar value={workspace.surface} onValueChange={(k) => workspace.setSurface(k as SurfaceKind)}>
-        <WorkbenchTab id="chat" icon="bubble-left">
+        <WorkbenchTab value="chat" icon="bubble-left">
           Chat
         </WorkbenchTab>
         {SURFACES.map((s) => (
-          <WorkbenchTab key={s.k} id={s.k} icon={s.icon}>
+          <WorkbenchTab key={s.k} value={s.k} icon={s.icon}>
             {s.name}
           </WorkbenchTab>
         ))}
@@ -110,7 +109,7 @@ export default function T3Clone({ tint, appearance, terminal, surface: initialSu
         onTint={setAccent}
         notify={notify}
       />
-      <Toaster queue={hud} inline aria-label="Workbench notifications" />
+      <ToastRegion variant="hud" toaster={hud.toaster} aria-label="Workbench notifications" />
     </WorkbenchShell>
   );
 }

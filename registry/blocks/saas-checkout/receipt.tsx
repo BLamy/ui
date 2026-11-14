@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Celebrate } from '@/components/ui/celebrate';
-import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { BRAND_NAMES, longDate, money, renewsOn, slugify } from './checkout';
@@ -22,17 +22,19 @@ export function ReceiptView({ onDashboard }: { onDashboard: () => void }) {
     if (c.moved) heading.current?.focus({ preventScroll: true });
     const t = setTimeout(() => setBurst(1), 260);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   if (!r) return null;
+  const plan = `${r.quote.plan.name} · ${r.seats} ${r.seats === 1 ? 'seat' : 'seats'} · ${r.cycle === 'annual' ? 'yearly' : 'monthly'}`;
 
   const rows: [string, ReactNode][] = [
     ['Date paid', longDate(r.paidAt)],
     ['Plan', (
-      <HoverCardTrigger>
-        <span className="truncate">{r.quote.plan.name} · {r.seats} {r.seats === 1 ? 'seat' : 'seats'} · {r.cycle === 'annual' ? 'yearly' : 'monthly'}</span>
-        <HoverCard placement="bottom end"><PlanCard plan={r.quote.plan} cycle={r.cycle} /></HoverCard>
-      </HoverCardTrigger>
+      <HoverCard>
+        <HoverCardTrigger render={<span aria-label={plan} />} className="inline-flex max-w-full min-w-0">
+          <span className="truncate">{plan}</span>
+        </HoverCardTrigger>
+        <HoverCardContent side="bottom" align="end"><PlanCard plan={r.quote.plan} cycle={r.cycle} /></HoverCardContent>
+      </HoverCard>
     )],
     ...(r.account.workspace ? [['Workspace', `${PRODUCT.domain}/${slugify(r.account.workspace)}`] as [string, string]] : []),
     ['Payment method', (
@@ -83,7 +85,7 @@ export function ReceiptView({ onDashboard }: { onDashboard: () => void }) {
         </p>
       </Card>
 
-      <Button size="lg" className="w-full" onPress={onDashboard}>
+      <Button size="lg" className="w-full" onClick={onDashboard}>
         Go to dashboard <Icon name="arrow-right" size={18} sw={2.2} />
       </Button>
     </div>

@@ -4,37 +4,37 @@
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PlainButton } from '@/components/ui/plain-button';
 import { cn } from '@/lib/utils';
 import { Counter, Mark, Oct, ghButton, type OctName, type Layout } from './parts';
 import { useRepo } from './repo-context';
 
-export function GlobalHeader({ ui, width }: { ui: Layout; width: number }) {
+export function GlobalHeader({ ui }: { ui: Layout }) {
   const { source, openPicker, repo } = useRepo();
   const [owner, name] = source.full.split('/');
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-[var(--gh-inset)] px-4">
-      <button type="button" aria-label="Open menu" className={cn(ghButton(), 'w-8 bg-transparent px-0')}><Oct name="menu" /></button>
+      <PlainButton aria-label="Open menu" className={cn(ghButton(), 'w-8 bg-transparent px-0')}><Oct name="menu" /></PlainButton>
       <Mark />
-      <button type="button" onClick={openPicker} aria-label={`Repository ${source.full}: choose another`}
+      <PlainButton onClick={openPicker} aria-label={`Repository ${source.full}: choose another`}
         className="flex min-w-0 cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent p-0 text-detail text-foreground">
         <span className="rounded-md px-1.5 py-1 hover:bg-secondary">{repo?.owner ?? owner}</span>
         <span className="text-tertiary-foreground">/</span>
         <span className="truncate rounded-md px-1.5 py-1 font-semibold hover:bg-secondary">{repo?.name ?? name}</span>
         <Oct name="chevDown" size={12} className="text-muted-foreground" />
-      </button>
+      </PlainButton>
       <span className="flex-1" />
-      {width >= 900 ? (
-        <div className="flex h-8 w-[300px] items-center gap-2 rounded-md border border-border bg-background px-2 text-muted-foreground">
-          <Oct name="search" />
-          <span className="flex-1">Type <kbd className="rounded border border-border px-1 font-mono text-caption2">/</kbd> to search</span>
-        </div>
-      ) : null}
+      {/* The search box from 900px of the block's width (its `gh` container). */}
+      <div className="hidden h-8 w-[300px] items-center gap-2 rounded-md border border-border bg-background px-2 text-muted-foreground @min-[900px]/gh:flex">
+        <Oct name="search" />
+        <span className="flex-1">Type <kbd className="rounded border border-border px-1 font-mono text-caption2">/</kbd> to search</span>
+      </div>
       {ui.wide ? <span className="h-5 w-px bg-border" /> : null}
-      <button type="button" aria-label="Create new" className={cn(ghButton(), 'gap-1 bg-transparent px-2 text-muted-foreground')}>
+      <PlainButton aria-label="Create new" className={cn(ghButton(), 'gap-1 bg-transparent px-2 text-muted-foreground')}>
         <Oct name="plus" /><Oct name="chevDown" size={12} />
-      </button>
+      </PlainButton>
       {(['issue', 'pr', 'inbox'] as OctName[]).map((n) => (
-        <button key={n} type="button" aria-label={n} className={cn(ghButton(), 'w-8 bg-transparent px-0 text-muted-foreground')}><Oct name={n} /></button>
+        <PlainButton key={n} aria-label={n} className={cn(ghButton(), 'w-8 bg-transparent px-0 text-muted-foreground')}><Oct name={n} /></PlainButton>
       ))}
       <Account />
     </header>
@@ -51,16 +51,16 @@ export function Account() {
         ? ['Unlock keychain', () => void keychain.unlock().catch(() => {})]
         : ['Sign in with GitHub', keychain.signIn];
     return (
-      <Button className={ghButton(true)} onPress={act}>
+      <Button className={ghButton(true)} onClick={act}>
         {keychain.locked && !keychain.rejected ? <Oct name="lock" size={14} /> : null}{label}
       </Button>
     );
   }
   if (!viewer) return <span className="size-8 shrink-0 rounded-full bg-secondary" />;
   return (
-    <button type="button" onClick={openPicker} aria-label={`Signed in as ${viewer.login}`} className="cursor-pointer rounded-full border-0 bg-transparent p-0">
+    <PlainButton onClick={openPicker} aria-label={`Signed in as ${viewer.login}`} className="cursor-pointer rounded-full border-0 bg-transparent p-0">
       <Avatar c={viewer} src={viewer.avatar} size={32} />
-    </button>
+    </PlainButton>
   );
 }
 
@@ -73,7 +73,7 @@ export function RepoHeader({ ui }: { ui: Layout }) {
     </div>
   );
   return (
-    <div className="px-4 pt-4 md:px-6">
+    <div className="px-4 pt-4 @3xl/gh:px-6">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
         <div className="flex min-w-0 items-center gap-2 text-title">
           <Oct name={repo.private ? 'lock' : 'book'} className="text-muted-foreground" />

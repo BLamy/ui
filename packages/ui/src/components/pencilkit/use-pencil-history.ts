@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
 import type { PencilStroke } from '@/components/ui/pencilkit/constants';
-import type { PencilStrokesChangeSource } from '@/components/ui/pencilkit/pencil-canvas';
+import type { PencilStrokesChangeDetails } from '@/components/ui/pencilkit/pencil-canvas';
 
 export interface PencilHistory {
   strokes: PencilStroke[];
-  /** Wire to PencilCanvas `onStrokesChange`. A committed draw clears the redo stack. */
-  onStrokesChange: (next: PencilStroke[], source: PencilStrokesChangeSource) => void;
+  /** Wire to PencilCanvas `onStrokesChange`. A drawn stroke (`details.reason === 'draw'`) clears the redo stack. */
+  onStrokesChange: (next: PencilStroke[], details: PencilStrokesChangeDetails) => void;
   undo: () => void;
   redo: () => void;
   clear: () => void;
@@ -19,9 +19,9 @@ export function usePencilHistory(initial: PencilStroke[] = []): PencilHistory {
   const [strokes, setStrokes] = useState<PencilStroke[]>(initial);
   const [redoStack, setRedoStack] = useState<PencilStroke[]>([]);
 
-  const onStrokesChange = (next: PencilStroke[], source: PencilStrokesChangeSource) => {
+  const onStrokesChange = (next: PencilStroke[], details: PencilStrokesChangeDetails) => {
     setStrokes(next);
-    if (source === 'draw') setRedoStack([]);
+    if (details.reason === 'draw') setRedoStack([]);
   };
   const undo = () => {
     if (!strokes.length) return;

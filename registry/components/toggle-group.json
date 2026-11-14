@@ -1,15 +1,20 @@
 {
   "name": "toggle-group",
   "title": "ToggleGroup",
-  "description": "react-aria ToggleButtonGroup with single or multiple selection, roving arrow-key focus, and filled, outline and default looks.",
+  "description": "UI SDK's ToggleGroup: toggles that share one value, single or multiple, one tab stop with arrow keys between them, in default, filled (a sliding pressed card) and outline looks.",
   "page": "toggle-group",
   "exports": [
     "ToggleGroup",
     "ToggleGroupItem",
-    "toggleGroupVariants"
+    "toggleGroupVariants",
+    "createToggleGroupController"
   ],
   "imports": [
     "ToggleGroup",
     "ToggleGroupItem"
+  ],
+  "types": [
+    "ToggleGroupProps",
+    "ToggleGroupItemProps"
   ]
 }

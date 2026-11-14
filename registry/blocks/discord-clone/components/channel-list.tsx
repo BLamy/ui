@@ -1,34 +1,36 @@
 import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
-import { Button, composeRenderProps } from 'react-aria-components';
+import { PlainButton } from '@/components/ui/plain-button';
 import { Icon } from '@/lib/icon';
-import { cn } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 import { useOptionalChatShell } from './chat-shell-context';
 import { cva } from 'class-variance-authority';
 
 /* ══ Channel navigation ══
-   <ChannelList selectedKey onSelectionChange>
+   <ChannelList value onValueChange>
      <ChannelGroup label="Team">
-       <ChannelItem id="general">general</ChannelItem>
-       <ChannelItem id="dev" unread mentions={2}>dev</ChannelItem>
-       <ChannelThreadItem onPress={…}>Repo connect spawning…</ChannelThreadItem>
+       <ChannelItem value="general">general</ChannelItem>
+       <ChannelItem value="dev" unread mentions={2}>dev</ChannelItem>
+       <ChannelThreadItem onClick={…}>Repo connect spawning…</ChannelThreadItem>
    Picking a channel (or a thread row) inside a compact ChatShell also closes its navigation drawer. */
 
 interface ChannelListContextValue {
-  selectedKey?: string | null;
-  onSelectionChange?: (id: string) => void;
+  value?: string | null;
+  onValueChange?: (value: string) => void;
 }
 const ChannelListContext = createContext<ChannelListContextValue>({});
 
 export interface ChannelListProps extends Omit<ComponentProps<'nav'>, 'onChange'> {
-  /** the current channel */
-  selectedKey?: string | null;
-  onSelectionChange?: (id: string) => void;
+  /** the current channel (its ChannelItem's `value`) */
+  value?: string | null;
+  /** a ChannelItem was picked */
+  onValueChange?: (value: string) => void;
 }
 
-/** The scrolling channel list. Owns the selection its ChannelItems read. */
-export function ChannelList({ selectedKey, onSelectionChange, className, children, ...props }: ChannelListProps) {
+/** The scrolling channel list: a navigation landmark whose current row carries `aria-current="page"`. Owns the
+    value its ChannelItems read. */
+export function ChannelList({ value, onValueChange, className, children, ...props }: ChannelListProps) {
   return (
-    <ChannelListContext.Provider value={{ selectedKey, onSelectionChange }}>
+    <ChannelListContext.Provider value={{ value, onValueChange }}>
       <nav
         data-slot="channel-list"
         aria-label="Channels"
@@ -71,7 +73,7 @@ export const channelItemVariants = cva(
   'flex w-full cursor-pointer items-center gap-[7px] rounded-lg border-0 px-[8px] py-[5px] text-left font-sans text-[13.5px] [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
   {
     variants: {
-      active: { true: 'bg-secondary-strong', false: 'bg-transparent data-hovered:bg-accent' },
+      active: { true: 'bg-secondary-strong', false: 'bg-transparent hover:bg-accent' },
       emphasized: { true: 'font-[650] text-foreground', false: 'font-normal text-muted-foreground' },
     },
     defaultVariants: { active: false, emphasized: false },
@@ -83,14 +85,15 @@ export const channelThreadItemVariants = cva(
   'flex w-full cursor-pointer items-center gap-[6px] rounded-[7px] border-0 py-[3px] pr-[8px] pl-[24px] text-left font-sans text-caption',
   {
     variants: {
-      active: { true: 'bg-secondary font-semibold text-foreground', false: 'bg-transparent text-tertiary-foreground data-hovered:text-muted-foreground' },
+      active: { true: 'bg-secondary font-semibold text-foreground', false: 'bg-transparent text-tertiary-foreground hover:text-muted-foreground' },
     },
     defaultVariants: { active: false },
   },
 );
 
-export interface ChannelItemProps extends Omit<ComponentProps<typeof Button>, 'id' | 'children'> {
-  id: string;
+export interface ChannelItemProps extends Omit<ComponentProps<typeof PlainButton>, 'value' | 'children'> {
+  /** the channel this row opens; the list's `value` when it is current */
+  value: string;
   children?: ReactNode;
   /** leading glyph; a # by default (pass an Avatar for a DM) */
   icon?: ReactNode;
@@ -98,62 +101,55 @@ export interface ChannelItemProps extends Omit<ComponentProps<typeof Button>, 'i
   unread?: boolean;
   /** mention count: a red pill (replaces the dot) */
   mentions?: number;
-  /** overrides the list's selection */
-  isActive?: boolean;
+  /** overrides the list's value: whether this row is the current one */
+  active?: boolean;
 }
 
-export function ChannelItem({ id, icon, unread, mentions, isActive, className, children, onPress, ...props }: ChannelItemProps) {
+export function ChannelItem({ value, icon, unread, mentions, active, className, children, onClick, ...props }: ChannelItemProps) {
   const list = useContext(ChannelListContext);
   const shell = useOptionalChatShell();
-  const on = isActive ?? list.selectedKey === id;
+  const on = active ?? list.value === value;
   return (
-    <Button
-      data-slot="channel-item"
-      data-active={on || undefined}
+    <PlainButton
       data-unread={unread || undefined}
       aria-current={on ? 'page' : undefined}
-      onPress={(e) => {
-        list.onSelectionChange?.(id);
-        onPress?.(e);
+      onClick={(e, details) => {
+        onClick?.(e, details);
+        if (e.defaultPrevented) return;
+        list.onValueChange?.(value);
         shell?.setNavOpen(false);
       }}
-      className={composeRenderProps(className, (c) =>
-        cn(channelItemVariants({ active: on, emphasized: on || !!unread }), c),
-      )}
+      className={cx(channelItemVariants({ active: on, emphasized: on || !!unread }), className)}
       {...props}
     >
       <span className="grid text-tertiary-foreground">{icon ?? <Icon name="number" size={13} sw={2} />}</span>
       <span className="flex-1 truncate">{children}</span>
       {mentions ? <MentionPill n={mentions} /> : unread && !on && <span className="size-[7px] rounded-[50%] bg-primary" />}
-    </Button>
+    </PlainButton>
   );
 }
 
-export interface ChannelThreadItemProps extends Omit<ComponentProps<typeof Button>, 'children'> {
+export interface ChannelThreadItemProps extends Omit<ComponentProps<typeof PlainButton>, 'children'> {
   children?: ReactNode;
   /** the thread is open (full view) */
-  isActive?: boolean;
+  active?: boolean;
 }
 
 /** An indented thread row under its channel, with an elbow connector. */
-export function ChannelThreadItem({ isActive, className, children, onPress, ...props }: ChannelThreadItemProps) {
+export function ChannelThreadItem({ active, className, children, onClick, ...props }: ChannelThreadItemProps) {
   const shell = useOptionalChatShell();
   return (
-    <Button
-      data-slot="channel-thread-item"
-      data-active={isActive || undefined}
-      aria-current={isActive ? 'page' : undefined}
-      onPress={(e) => {
-        onPress?.(e);
-        shell?.setNavOpen(false);
+    <PlainButton
+      aria-current={active ? 'page' : undefined}
+      onClick={(e, details) => {
+        onClick?.(e, details);
+        if (!e.defaultPrevented) shell?.setNavOpen(false);
       }}
-      className={composeRenderProps(className, (c) =>
-        cn(channelThreadItemVariants({ active: !!isActive }), c),
-      )}
+      className={cx(channelThreadItemVariants({ active: !!active }), className)}
       {...props}
     >
       <span className="-mt-[6px] size-[8px] shrink-0 rounded-[0_0_0_4px] border-b-[1.5px] border-l-[1.5px] border-border" />
       <span className="truncate">{children}</span>
-    </Button>
+    </PlainButton>
   );
 }

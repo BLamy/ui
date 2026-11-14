@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { RequestTable } from '@/components/ui/request-table'
-import { Slider, SliderThumb, SliderTrack } from '@/components/ui/slider'
+import { Slider } from '@/components/ui/slider'
 import { formatLogTime } from '@/lib/log-list-model'
 import type { RequestRow, RequestTone } from '@/lib/request-table-model'
 
@@ -37,12 +37,10 @@ export default function Waterfall() {
   return (
     <div className="flex h-[440px] w-full flex-col gap-2">
       <div className="flex items-center gap-2">
-        <Slider<number> aria-label="Time" size="sm" className="min-w-0 flex-1" minValue={0} maxValue={END} value={time} onChange={setTime}>
-          <SliderTrack><SliderThumb /></SliderTrack>
-        </Slider>
+        <Slider<number> aria-label="Time" size="sm" className="min-w-0 flex-1" min={0} max={END} value={time} onValueChange={(value) => setTime(value)} />
         <span className="shrink-0 text-caption text-muted-foreground tabular-nums">{formatLogTime(time)}</span>
       </div>
-      <RequestTable aria-label="Requests" rows={ROWS} timeRange={[0, END]} playhead={time} onRowPress={(row) => setTime(row.time ?? 0)} className="min-h-0 flex-1" />
+      <RequestTable aria-label="Requests" rows={ROWS} timeRange={[0, END]} playhead={time} onAction={(_id, { row }) => setTime(row.time ?? 0)} className="min-h-0 flex-1" />
     </div>
   )
 }

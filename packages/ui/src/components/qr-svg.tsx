@@ -6,8 +6,6 @@ import { encodeQR, type QRLevel } from '@/lib/qr';
 export interface QRSvgProps {
   /** Text to encode (UTF-8, byte mode): a URL, a `WIFI:S:…;T:WPA;P:…;;` string, plain text… */
   value?: string;
-  /** @deprecated Use `value`. Kept as an alias so existing callers keep working. */
-  seed?: string;
   /** Rendered width/height in px (default 168). */
   size?: number;
   /** Error-correction level (default 'M'). Use 'Q'/'H' if the code may be partially covered or worn. */
@@ -61,7 +59,6 @@ const DOT_RADIUS = 0.2;
  */
 export function QRSvg({
   value,
-  seed,
   size = 168,
   level = 'M',
   margin = 0,
@@ -72,7 +69,7 @@ export function QRSvg({
   className,
   style,
 }: QRSvgProps) {
-  const text = value ?? seed ?? '';
+  const text = value ?? '';
   const { n, data, finders } = useMemo(() => {
     const qr = encodeQR(text, { level });
     const n = qr.size;

@@ -1,14 +1,19 @@
 {
   "name": "tooltip",
   "title": "Tooltip",
-  "description": "A small inverted label that names a control on hover or keyboard focus, with a warm-up delay and an arrow toward the trigger; touch never opens it.",
+  "description": "A small inverted label that names or describes a control on hover or keyboard focus, on UI SDK's Tooltip: a warm-up delay, an arrow toward the trigger, an optional shortcut hint; touch never opens it.",
   "page": "tooltip",
   "exports": [
     "Tooltip",
-    "TooltipTrigger"
+    "TooltipTrigger",
+    "TooltipContent",
+    "TooltipArrow",
+    "TooltipShortcut",
+    "createTooltipController"
   ],
   "imports": [
     "Tooltip",
-    "TooltipTrigger"
+    "TooltipTrigger",
+    "TooltipContent"
   ]
 }

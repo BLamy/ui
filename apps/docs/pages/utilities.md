@@ -1,6 +1,6 @@
 # Utilities
 
-The small helpers every BL UI component is built from. `cn` merges class names with tailwind-merge taught the library's token utilities; `pressable` and `brandTile` are class fragments for custom controls. The rest of this page lists the other modules under `lib/` and says which are public and which are internal. The design tokens themselves are in [Styling](https://blamy.github.io/ui/#/styling) and [Theming](https://blamy.github.io/ui/#/theming).
+The small helpers every BL UI component is built from. `cn` merges class names with tailwind-merge taught the library's token utilities; `cx` does the same under a UI SDK part's `className`, which may be a function of state; `pressable` and `brandTile` are class fragments for custom controls. The rest of this page lists the other modules under `lib/` and says which are public and which are internal. The design tokens themselves are in [Styling](https://blamy.github.io/ui/#/styling) and [Theming](https://blamy.github.io/ui/#/theming).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -48,6 +48,14 @@ What sets it apart from a stock `twMerge` is that it knows BL UI's token utiliti
 
 If you add a token of your own to `tokens.css`, regenerate the list (`node tools/tokens/build.mjs`) so `cn` learns it; in a registry install the list is the copied `lib/tokens.generated.ts`. `tokens.generated.ts` also exports `THEME_VARS` and the `ThemeVar` type that `ThemeScope`'s `vars` uses. It is generated (do not edit it), and the lists are internal: only `ThemeVar` reaches the package root, as a type.
 
+## cx
+
+```tsx
+<SelectTrigger className={cx('h-row rounded-ctl px-3', className)} />
+```
+
+`cx(ours, className)` merges a component's classes under the `className` a caller passed to a UI SDK part. A part's `className` may be a string or a function of the part's state (`({ open }) => open ? 'bg-muted' : ''`); `cx` returns a string for a string and a function for a function, with the caller's classes merged last by `cn` either way. Use it wherever you wrap a UI SDK part; `cn` is for plain elements. It is in `@/lib/utils` (registry) and not re-exported from the package root.
+
 ## pressable
 
 A class string for tappable elements you draw yourself: it removes the mobile tap flash, inherits the host font, and nudges the brightness on hover, dimmer on light surfaces (`.97`) and brighter on dark ones (`1.12`). It has no layout, so combine it with your own shape.
@@ -58,7 +66,7 @@ A class string for tappable elements you draw yourself: it removes the mobile ta
 
 {% demo src="utilities/pressable" %}
 
-It is for plain elements and [PlainButton](https://blamy.github.io/ui/#/plain-button)-style parts. The styled `Button` has its own press and hover states through react-aria's data attributes and does not use it.
+It is for plain elements and [PlainButton](https://blamy.github.io/ui/#/plain-button)-style parts. The styled `Button` has its own press and hover states (`active:` and `hover:` on UI SDK's Button) and does not use it.
 
 ## brandTile
 
@@ -70,16 +78,16 @@ It is for plain elements and [PlainButton](https://blamy.github.io/ui/#/plain-bu
 | --- | --- | --- |
 | `BARH` | `52` | The toolbar height in px, for JavaScript math (navigation and drawer bars, chrome offsets). In CSS use the `h-toolbar` utility, which is the same 52px. |
 | `FONT` | the iOS system stack | A font-family string. Nothing in the library uses it; set `font-sans` in CSS instead. |
-| `EASE` | `cubic-bezier(.32,.72,0,1)` | Deprecated. New motion uses the spring tokens in `lib/motion.ts` (`springs`, `--ease-spring-*`). |
 
 ## Other lib modules
 
+6.0 removed `lib/sheet-drag.ts` (`useSheetDrag`, `SHEET_TAP_SLOP`, `SHEET_MINIMIZE_TRAVEL`), the hooks in `lib/edge-swipe.ts` (`useEdgeSwipe`) and `lib/pull-to-refresh.ts` (`usePullToRefresh`), `lib/back-history.ts` and `lib/scroll-hidden.ts` (`useScrollHidden`), and `navigationPush` left `NavigationStack`. The gestures are UI SDK's behaviors (`Drawer` snap points, `bindDrag`) or the kit's own, framework-free ones built on them (`lib/edge-swipe.ts` is now `bindEdgeSwipe`, `lib/pull-to-refresh.ts` is `bindPullToRefresh`, and `lib/back.ts`, `lib/stack.ts`, `lib/size-class.ts`, `lib/presence.ts`: see [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit)), and hide-on-scroll is `useHideOnScroll` or `useChromeHidden`. See [Motion hooks](https://blamy.github.io/ui/#/hooks-motion).
+
 | Module | Public? | What it is |
 | --- | --- | --- |
-| `lib/container.ts` | yes | `useContainerWidth()` and `useContainerSize()` measure an element with a `ResizeObserver` and return `[ref, width]` or `[ref, { width, height }]` (a `ContainerSize`), so a shell sizes itself from its own box instead of the viewport. The `initial` argument (1200, or 1200 by 800) is used until the first measurement. `defineSlot(name)` and `collectSlots(children)` are the slot pattern behind `FloatingChat.Chat` and `ArtifactChatContainer.Content`: a slot renders nothing itself, and its parent reads the children by name. |
-| `lib/sheet-drag.ts` | yes | `useSheetDrag(options)`, the grow, snap and fold gesture behind [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet)'s cap and the Composer's draggable bump. It takes `open`, `peek`, `maxReveal`, optional `detents` and `minimizable`, and returns `reveal`, `minimize`, `dragging`, `settling`, `detent`, `handlers` for the handle element and `toggle`. `SHEET_TAP_SLOP` (4px) and `SHEET_MINIMIZE_TRAVEL` (96px) are its thresholds. |
+| `lib/container.ts` | yes | `useSizeClass()` returns `[ref, sizeClass]`, the `compact` / `medium` / `regular` class of an element's own box (`bindSizeClass` from `lib/size-class.ts`, which also writes `data-size-class` on it), or the nearest size-class scope's before the ref is attached; reach for it first. `SizeClassProvider`, `useSizeClassScope()` and `usePresentation()` are the size-class scope that `presentation="auto"` popups follow (see [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)). `useContainerWidth()` and `useContainerSize()` measure an element with a `ResizeObserver` and return `[ref, width]` or `[ref, { width, height }]` (a `ContainerSize`), so a shell sizes itself from its own box instead of the viewport. The `initial` argument (1200, or 1200 by 800) is used until the first measurement. `defineSlot(name)` and `collectSlots(children)` are the slot pattern behind `FloatingChat.Chat` and `ArtifactChatContainer.Content`: a slot renders nothing itself, and its parent reads the children by name. |
 | `lib/qr.ts` | yes | `encodeQR(text, { level, minVersion, maxVersion, mask })` returns `{ size, version, level, mask, modules }` with `modules[y][x]` true for a dark module. Byte mode only; throws a `RangeError` when the text does not fit. It is what `QRSvg` draws, so use that component unless you need the matrix. |
-| `lib/primitives.ts` | internal | Shared class fragments for the primitives: `focusRing`, `popoverSurface`, `popoverMotion`, `overlayZ`, `selectableText`. The file says it is not exported from the package; copy one in if you need it. |
+| `lib/primitives.ts` | internal | Shared class fragments for the primitives: `focusRing`, `popoverSurface`, `popoverMotion`, `popoverArrow`, `popoverArrowGlyph`, `selectableText`. The file says it is not exported from the package; copy one in if you need it. |
 | `lib/row-label.ts` | internal | `RowLabelContext` and `useRowLabel`. A list row publishes its title's id so a Switch or Slider inside it is labelled by the row title unless it has its own label. |
 | `lib/persistent-host.tsx` | internal | How `ArtifactChatContainer` moves one composer and transcript between its docked column and its floating layer without remounting them: detached host elements portalled into, then re-attached to the current dock. |
 

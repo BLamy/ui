@@ -43,7 +43,7 @@ export function ThreadView({ state }: { state: ThreadsState }) {
 
       <ConversationSuggestions>
         {SUGGESTIONS.map((s) => (
-          <Suggestion key={s} onPress={() => state.send(s)}>
+          <Suggestion key={s} onClick={() => state.send(s)}>
             {s}
           </Suggestion>
         ))}

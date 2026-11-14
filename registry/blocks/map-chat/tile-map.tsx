@@ -1,18 +1,20 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
-  type FocusEvent as ReactFocusEvent,
   type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { HoverCard, useHoverCard } from '@/components/ui/hover-card';
+import type { Viewport } from '@ui-sdk/core';
+import { usePart, usePrimitive } from '@ui-sdk/react/primitive';
+import { HoverCard, HoverCardContent, HoverCardTrigger, createHoverCardController } from '@/components/ui/hover-card';
+import { PlainButton as Button } from '@/components/ui/plain-button';
+import { changeDetails } from '@/lib/change-details';
+import { useContainerSize } from '@/lib/container';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { cn } from '@/lib/utils';
-import { Button } from 'react-aria-components';
 import { MAP_ICONS, type MapIconName } from './map-icons';
 import {
   TILE_SIZE,
@@ -26,6 +28,9 @@ import {
   type MapView,
   type Point,
 } from './geo';
+import { tileMap, type TileMapViewportChangeDetails } from './tile-map-primitive';
+
+export type { TileMapViewportChangeDetails, TileMapViewportReason } from './tile-map-primitive';
 
 export interface MapPin {
   id: string;
@@ -56,18 +61,22 @@ export interface TileMapProps {
    * without touching this prop.
    */
   view: MapTarget;
-  onViewChange?: (view: MapView) => void;
+  /** The camera moved: `details.reason` says why (`drag`, `pinch`, `wheel`, `zoom-key`, `move-key`, or `imperative` for
+   *  the zoom buttons, a double-click and flying to `view`). */
+  onViewChange?: (view: MapView, details: TileMapViewportChangeDetails) => void;
   pins?: MapPin[];
   route?: MapRoute | null;
   onPinClick?: (pin: MapPin) => void;
   /**
    * A hover card about a pin (the place it marks), opened while the pointer rests on its marker or label or keyboard
    * focus lands on it, as a maps app previews a place before you pick it. Return nothing for pins without one. Any
-   * pan, pinch or wheel closes it: the pins move out from under it.
+   * pan or zoom closes it: the pins move out from under it.
    */
   pinPreview?: (pin: MapPin) => ReactNode;
   /** Fired on a tap that did not pan the map or hit a pin. */
   onMapClick?: () => void;
+  /** The map's accessible name. Default "Map". */
+  'aria-label'?: string;
   tileUrl?: TileUrlFn;
   attribution?: ReactNode;
   /** Chrome colours for labels and controls; match it to the tile set. */
@@ -78,7 +87,8 @@ export interface TileMapProps {
   maxZoom?: number;
   /** Animate camera changes (`view` prop, zoom buttons, double-tap). */
   animate?: boolean;
-  /** Enables drag, wheel, and pinch gestures. */
+  /** Enables the gestures (drag, wheel, pinch) and the keys of the focused map (arrows pan, + − zoom, 0 goes back to
+   *  `view`). */
   interactive?: boolean;
   /** Renders the zoom stack (and a locate button when `onLocate` is set). */
   controls?: boolean;
@@ -161,7 +171,7 @@ const CHROME = {
   label: 'text-(--tile-map-label) [text-shadow:0_0_2px_var(--tile-map-label-halo),0_0_4px_var(--tile-map-label-halo),0_1px_3px_var(--tile-map-label-halo-soft)]',
   glass: 'border-(--tile-map-glass-border) bg-(--tile-map-glass) text-(--tile-map-ink) shadow-[0_6px_18px_var(--tile-map-glass-shadow)]',
   control: 'text-(--tile-map-ink)',
-  hover: 'data-hovered:bg-(--tile-map-glass-hover)',
+  hover: 'hover:bg-(--tile-map-glass-hover)',
   divider: 'border-t-(--tile-map-divider)',
   attribution: 'bg-(--tile-map-attribution) text-(--tile-map-attribution-ink)',
 };
@@ -171,7 +181,6 @@ const CONTROL =
 const PIN_SHADOW_RAISED = 'shadow-[0_4px_12px_rgba(0,0,0,.5),0_0_0_1px_rgba(0,0,0,.25)]';
 
 const FLY_MS = 900;
-const TAP_SLOP = 4;
 const loadedTiles = new Set<string>();
 
 interface Size {
@@ -179,26 +188,19 @@ interface Size {
   height: number;
 }
 
-interface Gesture {
-  cam: MapView;
-  anchor: Point;
-  distance: number;
-  moved: boolean;
-}
-
 function ease(t: number) {
   return 1 - (1 - t) ** 3;
 }
 
-function prefersReducedMotion() {
-  return typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* The camera (a center and a zoom level) as UI SDK's viewport over a world of Web Mercator pixels at level 0, and back.
+   The viewport's zoom is `2 ** level`; its x, y put the world's origin where the center lands in the middle. */
+function toViewport(cam: MapView, size: Size): Viewport {
+  const c = project(cam.center, cam.zoom);
+  return { x: size.width / 2 - c.x, y: size.height / 2 - c.y, zoom: 2 ** cam.zoom };
 }
-
-function pointerStats(pointers: Map<number, Point>) {
-  const pts = [...pointers.values()];
-  const anchor = pts.reduce((acc, p) => ({ x: acc.x + p.x / pts.length, y: acc.y + p.y / pts.length }), { x: 0, y: 0 });
-  const distance = pts.length >= 2 ? Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) : 0;
-  return { anchor, distance };
+function fromViewport(vp: Viewport, size: Size): MapView {
+  const zoom = Math.log2(vp.zoom);
+  return { center: unproject({ x: size.width / 2 - vp.x, y: size.height / 2 - vp.y }, zoom), zoom };
 }
 
 export function TileMap({
@@ -222,15 +224,21 @@ export function TileMap({
   children,
   className,
   style,
+  'aria-label': ariaLabel = 'Map',
 }: TileMapProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  // One hover card for every pin: it follows the pin under the pointer (or focus), anchored to that pin's marker.
-  const card = useHoverCard({ isDisabled: !pinPreview });
-  const [cardPinId, setCardPinId] = useState<string | null>(null);
-  const cardAnchor = useRef<HTMLElement | null>(null);
-  const closeCard = useRef(card.close);
-  closeCard.current = card.close;
-  const [size, setSize] = useState<Size>({ width: 0, height: 0 });
+  // The frame, measured: the camera is a center, so a resize keeps it in the middle.
+  const [rootRef, size] = useContainerSize<HTMLDivElement>({ width: 0, height: 0 });
+  // One hover card for every pin: each pin is a trigger handing it its id, and the card points at that pin's
+  // marker (read on every check, so it follows the pin while the map moves).
+  const [card] = useState(() => createHoverCardController<string>());
+  const [cardAnchor] = useState(() => ({
+    getBoundingClientRect: () => {
+      const id = card.getPayload();
+      const pin = id == null ? null : rootRef.current?.querySelector<HTMLElement>(`[data-pin="${CSS.escape(id)}"]`);
+      const marker = pin?.querySelector<HTMLElement>('[data-slot="tile-map-pin-marker"]') ?? pin;
+      return marker?.getBoundingClientRect() ?? { x: 0, y: 0, width: 0, height: 0 };
+    },
+  }));
   const [cam, setCam] = useState<MapView>(() => {
     if (!isBoundsTarget(view)) return view;
     const pts = view.bounds.length ? view.bounds : [{ lat: 0, lng: 0 }];
@@ -244,9 +252,6 @@ export function TileMap({
   sizeRef.current = size;
   const animRef = useRef(0);
   const firstFlyRef = useRef(true);
-  const pointers = useRef(new Map<number, Point>());
-  const gestureRef = useRef<Gesture | null>(null);
-  const [dragging, setDragging] = useState(false);
 
   const clampView = useCallback(
     (next: MapView): MapView => ({
@@ -257,11 +262,11 @@ export function TileMap({
   );
 
   const commit = useCallback(
-    (next: MapView) => {
+    (next: MapView, details: TileMapViewportChangeDetails = changeDetails({ reason: 'imperative' })) => {
       const clamped = clampView(next);
       camRef.current = clamped;
       setCam(clamped);
-      onViewChange?.(clamped);
+      onViewChange?.(clamped, details);
     },
     [clampView, onViewChange],
   );
@@ -298,31 +303,37 @@ export function TileMap({
     [animate, clampView, commit],
   );
 
-  useLayoutEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    const measure = () => setSize({ width: root.clientWidth, height: root.clientHeight });
-    measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(root);
-    return () => observer.disconnect();
-  }, []);
-
   const measured = size.width > 0 && size.height > 0;
+  const home = () => flyTo(resolveView(view, sizeRef.current.width, sizeRef.current.height, minZoom, maxZoom));
   useEffect(() => {
     if (!measured) return;
     const target = resolveView(view, sizeRef.current.width, sizeRef.current.height, minZoom, maxZoom);
     flyTo(target, firstFlyRef.current ? 0 : FLY_MS);
     firstFlyRef.current = false;
     // Only the target identity (and the first measurement) should move the camera.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, measured]);
 
   useEffect(() => () => cancelAnimationFrame(animRef.current), []);
 
+  // Navigation is UI SDK's viewport (tile-map-primitive.ts), always controlled from the camera: a gesture or a key asks
+  // for a viewport, and the camera it stands for (wrapped round the world, clamped to the poles and the levels) is
+  // committed. Any of them stops a flight and closes the pin's card.
+  const handle = usePrimitive(tileMap, {
+    viewport: toViewport(cam, size),
+    onViewportChange: (next, details) => {
+      cancelAnimationFrame(animRef.current);
+      if (pinPreview) card.close();
+      commit(fromViewport(next, sizeRef.current), details);
+    },
+    interactive,
+    minZoom: 2 ** minZoom,
+    maxZoom: 2 ** maxZoom,
+    onTap: () => onMapClick?.(),
+    onHome: home,
+  });
+
   const zoomAround = useCallback(
-    (point: Point, delta: number, animated = false) => {
+    (point: Point, delta: number) => {
       const cur = camRef.current;
       const { width, height } = sizeRef.current;
       const nextZoom = Math.max(minZoom, Math.min(maxZoom, cur.zoom + delta));
@@ -334,96 +345,18 @@ export function TileMap({
         x: world.x * scale - (point.x - width / 2),
         y: world.y * scale - (point.y - height / 2),
       };
-      const target = { center: unproject(next, nextZoom), zoom: nextZoom };
-      if (animated) flyTo(target, 320);
-      else commit(target);
+      flyTo({ center: unproject(next, nextZoom), zoom: nextZoom }, 320);
     },
-    [commit, flyTo, minZoom, maxZoom],
+    [flyTo, minZoom, maxZoom],
   );
-
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || !interactive) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      closeCard.current();
-      cancelAnimationFrame(animRef.current);
-      const rect = root.getBoundingClientRect();
-      const speed = e.deltaMode === 1 ? 0.06 : e.ctrlKey ? 0.01 : 0.0025;
-      zoomAround({ x: e.clientX - rect.left, y: e.clientY - rect.top }, -e.deltaY * speed);
-    };
-    root.addEventListener('wheel', onWheel, { passive: false });
-    return () => root.removeEventListener('wheel', onWheel);
-  }, [interactive, zoomAround]);
-
-  const local = (e: ReactPointerEvent) => {
-    const rect = rootRef.current?.getBoundingClientRect();
-    return { x: e.clientX - (rect?.left ?? 0), y: e.clientY - (rect?.top ?? 0) };
-  };
-
-  const anchorGesture = (moved = false) => {
-    const stats = pointerStats(pointers.current);
-    gestureRef.current = { cam: camRef.current, anchor: stats.anchor, distance: stats.distance, moved };
-  };
-
-  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!interactive || e.button !== 0) return;
-    if ((e.target as HTMLElement).closest('[data-map-ui]')) return;
-    card.close();
-    cancelAnimationFrame(animRef.current);
-    rootRef.current?.setPointerCapture(e.pointerId);
-    pointers.current.set(e.pointerId, local(e));
-    anchorGesture(gestureRef.current?.moved ?? false);
-  };
-
-  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const gesture = gestureRef.current;
-    if (!gesture || !pointers.current.has(e.pointerId)) return;
-    pointers.current.set(e.pointerId, local(e));
-    const { anchor, distance } = pointerStats(pointers.current);
-    const dx = anchor.x - gesture.anchor.x;
-    const dy = anchor.y - gesture.anchor.y;
-    if (!gesture.moved && Math.hypot(dx, dy) < TAP_SLOP && pointers.current.size === 1) return;
-    if (!gesture.moved) {
-      gesture.moved = true;
-      setDragging(true);
-    }
-    const { width, height } = sizeRef.current;
-    const zoomDelta = gesture.distance > 0 && distance > 0 ? Math.log2(distance / gesture.distance) : 0;
-    const nextZoom = Math.max(minZoom, Math.min(maxZoom, gesture.cam.zoom + zoomDelta));
-    const scale = 2 ** (nextZoom - gesture.cam.zoom);
-    const c = project(gesture.cam.center, gesture.cam.zoom);
-    const world = { x: c.x + (gesture.anchor.x - width / 2), y: c.y + (gesture.anchor.y - height / 2) };
-    const next = {
-      x: world.x * scale - (anchor.x - width / 2),
-      y: world.y * scale - (anchor.y - height / 2),
-    };
-    commit({ center: unproject(next, nextZoom), zoom: nextZoom });
-  };
-
-  const onPointerEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!pointers.current.has(e.pointerId)) return;
-    pointers.current.delete(e.pointerId);
-    const gesture = gestureRef.current;
-    if (pointers.current.size === 0) {
-      gestureRef.current = null;
-      setDragging(false);
-      if (gesture && !gesture.moved && e.type === 'pointerup') {
-        const target = e.target as HTMLElement;
-        if (!target.closest('[data-slot="tile-map-pin"]')) onMapClick?.();
-      }
-    } else {
-      anchorGesture(gesture?.moved ?? true);
-    }
-  };
 
   const onDoubleClick = (e: ReactMouseEvent<HTMLDivElement>) => {
     if (!interactive || (e.target as HTMLElement).closest('[data-map-ui]')) return;
     const rect = rootRef.current?.getBoundingClientRect();
-    zoomAround({ x: e.clientX - (rect?.left ?? 0), y: e.clientY - (rect?.top ?? 0) }, 1, true);
+    zoomAround({ x: e.clientX - (rect?.left ?? 0), y: e.clientY - (rect?.top ?? 0) }, 1);
   };
 
-  const zoomBy = (delta: number) => zoomAround({ x: size.width / 2, y: size.height / 2 }, delta, true);
+  const zoomBy = (delta: number) => zoomAround({ x: size.width / 2, y: size.height / 2 }, delta);
 
   const toScreen = (p: LatLng): Point => {
     const c = project(cam.center, cam.zoom);
@@ -431,41 +364,18 @@ export function TileMap({
     return { x: q.x - c.x + size.width / 2, y: q.y - c.y + size.height / 2 };
   };
 
-  /** Points the card at this pin (and its marker) before it opens. */
-  const aimCard = (pin: MapPin, button: HTMLElement) => {
-    cardAnchor.current = button.querySelector<HTMLElement>('[data-slot="tile-map-pin-marker"]') ?? button;
-    if (cardPinId !== pin.id) {
-      card.close();
-      setCardPinId(pin.id);
-    }
+  const previewOf = (id: string | undefined) => {
+    const pin = id == null ? undefined : pins.find((p) => p.id === id);
+    return pin ? pinPreview?.(pin) : null;
   };
-  const cardPin = pinPreview && cardPinId ? pins.find((p) => p.id === cardPinId) : undefined;
-  const cardContent = cardPin ? pinPreview?.(cardPin) : null;
 
   const z = Math.round(cam.zoom);
   const ordered = [...pins].sort((a, b) => Number(a.selected ?? false) - Number(b.selected ?? false));
   const tone = CHROME;
   const routePoints = route?.points.map((p) => { const s = toScreen(p); return `${s.x},${s.y}`; }).join(' ');
 
-  return (
-    <div
-      ref={rootRef}
-      data-slot="tile-map"
-      data-scheme={scheme}
-      data-dragging={dragging || undefined}
-      className={cn(
-        'relative isolate h-full min-h-0 w-full min-w-0 cursor-grab touch-none overflow-hidden select-none data-dragging:cursor-grabbing',
-        MAP_FONT,
-        tone.root,
-        className,
-      )}
-      style={{ ...tileMapVars(scheme), '--tile-map-callout': CALLOUT_FILL, '--tile-map-user': TILE_MAP_USER_BLUE, ...style } as CSSProperties}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerEnd}
-      onPointerCancel={onPointerEnd}
-      onDoubleClick={onDoubleClick}
-    >
+  const content = (
+    <>
       <div data-slot="tile-map-tiles" className="absolute inset-0 overflow-hidden" aria-hidden style={tileFilter ? { filter: tileFilter } : undefined}>
         {measured && z - 1 >= minZoom && (
           <TileLayer z={z - 1} cam={cam} size={size} tileUrl={tileUrl} fallback />
@@ -491,42 +401,30 @@ export function TileMap({
             const s = toScreen(pin.position);
             const kind = pin.kind ?? 'place';
             const user = kind === 'user';
-            return (
-              /* Raw button: a press on a pin must still start a map pan, which react-aria's press handling would swallow. */
-              <button
-                key={pin.id}
-                type="button"
-                data-slot="tile-map-pin"
-                data-kind={kind}
-                data-selected={pin.selected || undefined}
-                className={cn(
-                  'group/pin pointer-events-none absolute top-0 left-0 flex h-0 w-0 cursor-pointer flex-col items-center gap-[3px] border-0 bg-transparent p-0 [font:inherit] text-white',
-                  pin.selected && 'z-2',
-                )}
-                style={{
-                  transform: `translate3d(${s.x}px, ${s.y}px, 0)`,
-                  '--ck-pin-color': pin.color ?? (kind === 'stop' ? 'var(--primary)' : TILE_MAP_USER_BLUE),
-                } as CSSProperties}
-                aria-label={pin.label ?? pin.id}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPinClick?.(pin);
-                }}
-                {...(pinPreview ? {
-                  onPointerEnter: (e: ReactPointerEvent<HTMLButtonElement>) => {
-                    if (!pinPreview(pin)) return;
-                    aimCard(pin, e.currentTarget);
-                    card.triggerProps.onPointerEnter(e);
-                  },
-                  onPointerLeave: card.triggerProps.onPointerLeave,
-                  onFocus: (e: ReactFocusEvent<HTMLButtonElement>) => {
-                    if (!pinPreview(pin)) return;
-                    aimCard(pin, e.currentTarget);
-                    card.triggerProps.onFocus(e);
-                  },
-                  onBlur: card.triggerProps.onBlur,
-                } : null)}
-              >
+            /* Raw button: a press on a pin that moves still pans the map (the primitive hands it over past the drag threshold).
+               A pin with a preview is the card's trigger. */
+            const pinProps = {
+              type: 'button' as const,
+              'data-slot': 'tile-map-pin',
+              'data-pin': pin.id,
+              'data-kind': kind,
+              'data-selected': pin.selected || undefined,
+              className: cn(
+                'group/pin pointer-events-none absolute top-0 left-0 flex h-0 w-0 cursor-pointer flex-col items-center gap-[3px] border-0 bg-transparent p-0 [font:inherit] text-white',
+                pin.selected && 'z-2',
+              ),
+              style: {
+                transform: `translate3d(${s.x}px, ${s.y}px, 0)`,
+                '--ck-pin-color': pin.color ?? (kind === 'stop' ? 'var(--primary)' : TILE_MAP_USER_BLUE),
+              } as CSSProperties,
+              'aria-label': pin.label ?? pin.id,
+              onClick: (e: ReactMouseEvent<HTMLButtonElement>) => {
+                e.stopPropagation();
+                onPinClick?.(pin);
+              },
+            };
+            const marker = (
+              <>
                 {pin.callout != null && (
                   <span className="pointer-events-auto absolute bottom-[23px] left-1/2 [transform:translateX(-50%)] rounded-ctl bg-(--tile-map-callout) px-2.5 py-[5px] text-footnote leading-[1.1] font-bold tracking-[-.01em] whitespace-nowrap text-white shadow-[0_4px_12px_rgba(0,0,0,.25)] after:absolute after:-bottom-[5px] after:left-1/2 after:size-2.5 after:[transform:translateX(-50%)_rotate(45deg)] after:rounded-[2px] after:bg-inherit">
                     {pin.callout}
@@ -565,30 +463,43 @@ export function TileMap({
                     {pin.label}
                   </span>
                 )}
+              </>
+            );
+            return pinPreview?.(pin) ? (
+              <HoverCardTrigger key={pin.id} controller={card} payload={pin.id} render={<button {...pinProps} />}>
+                {marker}
+              </HoverCardTrigger>
+            ) : (
+              <button key={pin.id} {...pinProps}>
+                {marker}
               </button>
             );
           })}
         </div>
       )}
-      {cardContent ? (
-        <HoverCard {...card.cardProps} triggerRef={cardAnchor} placement="top" offset={10} arrow>{cardContent}</HoverCard>
+      {pinPreview ? (
+        <HoverCard controller={card}>
+          <HoverCardContent<string> anchor={cardAnchor} side="top" sideOffset={10} arrow>
+            {({ payload }) => previewOf(payload)}
+          </HoverCardContent>
+        </HoverCard>
       ) : null}
       {controls && (
         <div data-slot="tile-map-controls" className="pointer-events-auto absolute top-3.5 right-3.5 z-3 flex flex-col gap-2.5" data-map-ui>
           {onLocate && (
             <Button
               aria-label="Show my location"
-              onPress={onLocate}
+              onClick={onLocate}
               className={cn(CONTROL, 'rounded-panel border backdrop-blur-[14px]', tone.glass, tone.control, tone.hover)}
             >
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={MAP_ICONS.locate} /></svg>
             </Button>
           )}
           <div data-slot="tile-map-zoom" className={cn('flex flex-col overflow-hidden rounded-panel border backdrop-blur-[14px]', tone.glass)}>
-            <Button aria-label="Zoom in" onPress={() => zoomBy(1)} className={cn(CONTROL, 'rounded-none border-0 bg-transparent', tone.control, tone.hover)}>
+            <Button aria-label="Zoom in" onClick={() => zoomBy(1)} className={cn(CONTROL, 'rounded-none border-0 bg-transparent', tone.control, tone.hover)}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d={MAP_ICONS.plus} /></svg>
             </Button>
-            <Button aria-label="Zoom out" onPress={() => zoomBy(-1)} className={cn(CONTROL, 'rounded-none border-0 border-t bg-transparent', tone.divider, tone.control, tone.hover)}>
+            <Button aria-label="Zoom out" onClick={() => zoomBy(-1)} className={cn(CONTROL, 'rounded-none border-0 border-t bg-transparent', tone.divider, tone.control, tone.hover)}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d={MAP_ICONS.minus} /></svg>
             </Button>
           </div>
@@ -604,8 +515,24 @@ export function TileMap({
           {attribution}
         </div>
       )}
-    </div>
+    </>
   );
+
+  return usePart(handle, 'root', {}, {
+    ref: rootRef,
+    ...{ 'data-scheme': scheme },
+    'aria-label': ariaLabel,
+    className: cn(
+      'relative isolate h-full min-h-0 w-full min-w-0 touch-none overflow-clip outline-none select-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary',
+      interactive && 'cursor-grab data-dragging:cursor-grabbing',
+      MAP_FONT,
+      tone.root,
+      className,
+    ),
+    style: { ...tileMapVars(scheme), '--tile-map-callout': CALLOUT_FILL, '--tile-map-user': TILE_MAP_USER_BLUE, ...style } as CSSProperties,
+    onDoubleClick,
+    children: content,
+  }, 'div');
 }
 
 interface TileLayerProps {

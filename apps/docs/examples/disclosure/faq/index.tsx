@@ -1,8 +1,9 @@
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
+  DisclosureGroup,
+  DisclosureGroupHeader,
+  DisclosureGroupItem,
+  DisclosureGroupPanel,
+  DisclosureGroupTrigger,
 } from '@/components/ui/disclosure'
 
 const faqs = [
@@ -30,18 +31,20 @@ const faqs = [
 ]
 
 // The default variant: hairline-separated rows with no container. Only one
-// panel is open at a time (react-aria's default for a DisclosureGroup).
+// panel is open at a time, unless the group is `multiple`.
 export default function Faq() {
   return (
     <div className="mx-auto max-w-lg">
-      <Accordion defaultExpandedKeys={['billing']}>
+      <DisclosureGroup defaultValue={['billing']}>
         {faqs.map((f) => (
-          <AccordionItem key={f.id} id={f.id} isDisabled={f.disabled}>
-            <AccordionTrigger>{f.q}</AccordionTrigger>
-            <AccordionContent>{f.a}</AccordionContent>
-          </AccordionItem>
+          <DisclosureGroupItem key={f.id} value={f.id} disabled={f.disabled}>
+            <DisclosureGroupHeader>
+              <DisclosureGroupTrigger>{f.q}</DisclosureGroupTrigger>
+            </DisclosureGroupHeader>
+            <DisclosureGroupPanel>{f.a}</DisclosureGroupPanel>
+          </DisclosureGroupItem>
         ))}
-      </Accordion>
+      </DisclosureGroup>
     </div>
   )
 }

@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
+  Dialog,
+  DialogBackdrop,
   DialogBody,
   DialogClose,
   DialogContent,
@@ -10,14 +12,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { FieldError, TextField } from '@/components/ui/text-field'
 import { BLProvider } from '@/lib/theme'
 
 // `default` (400px) and `lg` (560px) are general dialogs: header, a scrolling
-// body, a right-aligned footer, a round × in the corner. The render-function
-// child receives `close`, so Save can validate before it dismisses.
+// body, a right-aligned footer, a round × in the corner. Save is a DialogClose
+// rendered as a Button; its `action` runs before the dialog closes.
 export default function Forms() {
   const [name, setName] = useState('Aurora redesign')
   const [draft, setDraft] = useState(name)
@@ -30,46 +31,37 @@ export default function Forms() {
             Project: <strong>{name}</strong>
           </div>
           <div>
-            <DialogTrigger onOpenChange={(open) => open && setDraft(name)}>
-              <Button variant="secondary">Rename…</Button>
-              <DialogContent>
-                {({ close }) => (
-                  <>
-                    <DialogClose />
-                    <DialogHeader>
-                      <DialogTitle>Rename project</DialogTitle>
-                      <DialogDescription>
-                        Names are visible to everyone in the workspace.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <DialogBody>
-                      <TextField
-                        value={draft}
-                        onChange={setDraft}
-                        isInvalid={empty}
-                        autoFocus
-                      >
-                        <Label variant="field">Name</Label>
-                        <Input />
-                        <FieldError>A project needs a name.</FieldError>
-                      </TextField>
-                    </DialogBody>
-                    <DialogFooter>
-                      <Button variant="ghost" onPress={close}>Cancel</Button>
-                      <Button
-                        isDisabled={empty}
-                        onPress={() => {
-                          setName(draft.trim())
-                          close()
-                        }}
-                      >
-                        Save
-                      </Button>
-                    </DialogFooter>
-                  </>
-                )}
+            <Dialog onOpenChange={(open) => open && setDraft(name)}>
+              <DialogTrigger className={buttonVariants({ variant: 'secondary' })}>Rename…</DialogTrigger>
+              <DialogBackdrop />
+              <DialogContent initialFocus="input">
+                <DialogClose />
+                <DialogHeader>
+                  <DialogTitle>Rename project</DialogTitle>
+                  <DialogDescription>
+                    Names are visible to everyone in the workspace.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogBody>
+                  <Field invalid={empty ? true : undefined}>
+                    <FieldLabel variant="field">Name</FieldLabel>
+                    <Input value={draft} onValueChange={setDraft} />
+                    <FieldError match>A project needs a name.</FieldError>
+                  </Field>
+                </DialogBody>
+                <DialogFooter>
+                  <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+                  <DialogClose
+                    render={<Button />}
+                    disabled={empty}
+                    value="save"
+                    action={() => setName(draft.trim())}
+                  >
+                    Save
+                  </DialogClose>
+                </DialogFooter>
               </DialogContent>
-            </DialogTrigger>
+            </Dialog>
           </div>
         </div>
       </BLProvider>

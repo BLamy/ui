@@ -25,20 +25,20 @@ export default function Disclosure() {
         <Button
           size="sm"
           variant="secondary"
-          isDisabled={count >= rows.length}
-          onPress={() => setCount((c) => c + 1)}
+          disabled={count >= rows.length}
+          onClick={() => setCount((c) => c + 1)}
         >
           Add row
         </Button>
         <Button
           size="sm"
           variant="secondary"
-          isDisabled={count <= 1}
-          onPress={() => setCount((c) => c - 1)}
+          disabled={count <= 1}
+          onClick={() => setCount((c) => c - 1)}
         >
           Remove row
         </Button>
-        <Button size="sm" variant="ghost" onPress={() => setCount(2)}>
+        <Button size="sm" variant="ghost" onClick={() => setCount(2)}>
           Reset
         </Button>
       </div>

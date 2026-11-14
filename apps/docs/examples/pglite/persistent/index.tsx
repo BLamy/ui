@@ -18,8 +18,8 @@ function Visits() {
         This database has <strong data-testid="visit-count" className="tabular-nums">{n}</strong> {n === 1 ? 'visit' : 'visits'}. Reload the page: they stay.
       </p>
       <div className="flex gap-2">
-        <Button variant="secondary" onPress={() => void exec('insert into visits default values')}>Record a visit</Button>
-        <Button variant="secondary" onPress={() => void exec('truncate visits')}>Clear</Button>
+        <Button variant="secondary" onClick={() => void exec('insert into visits default values')}>Record a visit</Button>
+        <Button variant="secondary" onClick={() => void exec('truncate visits')}>Clear</Button>
       </div>
       <p role="status" className="text-caption text-foreground/65">
         {info ? `${info.dataDir} · PostgreSQL ${info.serverVersion}` : 'Opening…'}
@@ -40,7 +40,7 @@ export default function Persistent() {
         blocked={({ takeover }) => (
           <div role="status" className="grid gap-3 rounded-panel bg-card p-4 shadow-hairline">
             <p className="text-subhead">This database is open in another tab. Two tabs writing to it would corrupt it.</p>
-            <Button variant="secondary" onPress={takeover}>Use it here instead</Button>
+            <Button variant="secondary" onClick={takeover}>Use it here instead</Button>
           </div>
         )}
       >

@@ -40,7 +40,7 @@ import { MorphGroup, Morph, MorphPresence } from '@brett_lamy/ui'
         <Morph id="controls" fade>…</Morph>
       </Morph>
     ) : (
-      <Morph key="mini" id="player" radius={14} as="button" onClick={() => setOpen(true)}>
+      <Morph key="mini" id="player" radius={14} render={<button type="button" />} onClick={() => setOpen(true)}>
         <Morph id="art" radius={8} />
       </Morph>
     )}
@@ -58,7 +58,7 @@ Tap the mini player; drag the full player down (or tap the grabber) to fold it b
 - **Corners.** Pass `radius` rather than a `border-radius` class: it animates with the frame and stays round while the element scales.
 - **Text.** Give text blocks `layout="position"` so they move to their new place without being stretched on the way.
 - **Parts without a partner** — the full player's controls — take `fade` and sit inside `MorphPresence`, so they fade in and out while the shared parts morph.
-- **Drag to dismiss.** `dragToDismiss` makes the element follow a downward drag (rubber-banded upward); releasing past `dismissDistance` (120px) or flicking down calls `onDismiss`, and the element morphs back from wherever the finger left it. Horizontal gestures (sliders, carousels) pass through; put vertically scrolling content in a sibling rather than inside the draggable element.
+- **Drag to dismiss.** `dragToDismiss` makes the element follow a downward drag (rubber-banded upward); releasing past `dismissDistance` (120px) or flicking down calls `onDismiss`, and the element morphs back from wherever the finger left it. The gesture is UI SDK's `bindDrag` (a press that barely moves stays a click, Escape is not needed: lift to release); the offset is the CSS `translate` property, so it never fights the morph's `transform`, and `data-dragging` is set while the finger is down. Horizontal gestures (sliders, carousels) pass through; put vertically scrolling content in a sibling rather than inside the draggable element.
 - **Reduced motion.** With `prefers-reduced-motion` the layouts swap at once and fading parts cross-fade briefly; dragging is off.
 - `useMorphTransition()` returns the group's transition for your own `motion` elements that should move with the morph.
 
@@ -78,9 +78,9 @@ Tap the mini player; drag the full player down (or tap the grabber) to fold it b
 | --- | --- | --- |
 | `id` | — | The shared identity, the same in both layouts. |
 | `radius` | — | Corner radius in px for this layout. |
-| `as` | `div` | `section`, `button`, `li`, `img`, `a`, … |
+| `render` | a `div` | The element to render instead, as on UI SDK parts: `render={<button type="button" />}`, `render={<li />}`. Its type becomes the framer-motion element and its props sit under Morph's; `className`s merge. 6.0 replaced `as`. |
 | `layout` | `true` | `position` to move without resizing (text), `size` to resize in place. |
-| `dragToDismiss` / `onDismiss` / `dismissDistance` | off / — / 120 | Pull-down to dismiss. |
+| `dragToDismiss` / `onDismiss` / `dismissDistance` | off / — / 120 | Pull-down to dismiss: past the distance, or a downward flick (UI SDK's velocity tracker, over 0.65 px/ms). |
 | `fade` | `false` | Fade in on mount and out on unmount (inside `MorphPresence`). |
 
 Other DOM props (`className`, `style`, `onClick`, `role`, `aria-*`, `data-*`) pass through; the element carries `data-slot="morph"` and `data-morph-id`.

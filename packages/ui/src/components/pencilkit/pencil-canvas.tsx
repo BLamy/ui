@@ -1,6 +1,8 @@
 'use client';
 import * as React from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { bindDrag, type ChangeDetails, type PointerSample } from '@ui-sdk/core';
+import { changeDetails } from '@/lib/change-details';
 import { cn } from '@/lib/utils';
 import {
   PK_INKS,
@@ -12,7 +14,9 @@ import {
 } from '@/components/ui/pencilkit/constants';
 import { MemoStroke, StrokePath } from '@/components/ui/pencilkit/stroke-path';
 
-export type PencilStrokesChangeSource = 'draw' | 'erase';
+/** Why the strokes changed: a stroke was drawn, or the eraser took some away. */
+export type PencilStrokesChangeReason = 'draw' | 'erase';
+export type PencilStrokesChangeDetails = ChangeDetails<PencilStrokesChangeReason>;
 
 export interface PencilCanvasProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
   /** Active tool. Default 'pen'. */
@@ -25,7 +29,9 @@ export interface PencilCanvasProps extends Omit<React.HTMLAttributes<HTMLDivElem
   strokes?: PencilStroke[];
   /** Initial strokes when uncontrolled. */
   defaultStrokes?: PencilStroke[];
-  onStrokesChange?: (strokes: PencilStroke[], source: PencilStrokesChangeSource) => void;
+  /** Called with the new strokes and why (`details.reason`: `draw` or `erase`), before anything moves. When
+   *  uncontrolled, `details.cancel()` keeps the strokes as they were. */
+  onStrokesChange?: (strokes: PencilStroke[], details: PencilStrokesChangeDetails) => void;
   /** Empty-state hint content, shown only while the canvas has no strokes. */
   hint?: React.ReactNode;
   /** Small monospace status label rendered top-right (e.g. 'perfect-freehand@1.2.2'). */
@@ -57,14 +63,17 @@ export function PencilCanvas({
   const [, setV] = useState(0);
   const live = useRef<PencilStroke | null>(null);
   const box = useRef<HTMLDivElement | null>(null);
-  const erasing = useRef(false);
 
-  const commit = (fn: (prev: PencilStroke[]) => PencilStroke[], source: PencilStrokesChangeSource) => {
+  const notify = useRef(onStrokesChange);
+  notify.current = onStrokesChange;
+  const commit = (fn: (prev: PencilStroke[]) => PencilStroke[], reason: PencilStrokesChangeReason, event: Event) => {
     const next = fn(strokesRef.current);
-    if (next === strokesRef.current) return;
+    if (next === strokesRef.current || (reason === 'erase' && next.length === strokesRef.current.length)) return;
+    const details = changeDetails({ reason, event });
+    notify.current?.(next, details);
+    if (details.canceled || controlled) return;
     strokesRef.current = next;
-    if (!controlled) setInnerStrokes(next);
-    if (onStrokesChange) onStrokesChange(next, source);
+    setInnerStrokes(next);
   };
 
   const pos = (e: { clientX: number; clientY: number; pressure: number }): PencilPoint => {
@@ -72,7 +81,7 @@ export function PencilCanvas({
     return [e.clientX - r.left, e.clientY - r.top, e.pressure > 0 ? e.pressure : 0.5];
   };
 
-  const eraseAt = (e: React.PointerEvent) => {
+  const eraseAt = (e: PointerEvent) => {
     const p = pos(e), x = p[0], y = p[1];
     commit(
       (ss) =>
@@ -85,18 +94,44 @@ export function PencilCanvas({
           }
           return true;
         }),
-      'erase'
+      'erase',
+      e,
     );
   };
 
-  const down = (e: React.PointerEvent) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    if (tool === 'eraser') {
-      erasing.current = true;
-      eraseAt(e);
-      return;
+  // The stroke follows UI SDK's bindDrag (capture, document listeners, cancel), which reports once a frame with
+  // the latest pointer event; that event's coalesced samples are every position since the last frame.
+  const stopDrag = useRef<(() => void) | null>(null);
+  useEffect(() => () => stopDrag.current?.(), []);
+
+  const move = ({ event }: PointerSample) => {
+    if (tool === 'eraser') return eraseAt(event);
+    const s = live.current;
+    if (!s) return;
+    // An untrusted event has no coalesced samples, so it stands for itself.
+    const coalesced = event.getCoalescedEvents?.() ?? [];
+    for (const ev of coalesced.length ? coalesced : [event]) s.points.push(pos(ev));
+    setV((v) => v + 1);
+  };
+
+  const end = (event: PointerEvent) => {
+    stopDrag.current = null;
+    if (tool === 'eraser') return;
+    const s = live.current;
+    live.current = null;
+    if (s && s.points.length > 1) {
+      s.done = true;
+      commit((ss) => [...ss, s], 'draw', event);
     }
+    // The live stroke is gone either way (committed, a tap, or canceled by the consumer).
+    setV((v) => v + 1);
+  };
+
+  const down = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    stopDrag.current?.();
+    stopDrag.current = bindDrag(e.currentTarget, e.nativeEvent, { onMove: move, onEnd: end });
+    if (tool === 'eraser') return eraseAt(e.nativeEvent);
     live.current = {
       tool: tool as PencilDrawTool,
       color: ink,
@@ -108,41 +143,11 @@ export function PencilCanvas({
     setV((v) => v + 1);
   };
 
-  const move = (e: React.PointerEvent) => {
-    if (tool === 'eraser') {
-      if (erasing.current) eraseAt(e);
-      return;
-    }
-    const s = live.current;
-    if (!s) return;
-    const ne = e.nativeEvent as PointerEvent;
-    const evs: { clientX: number; clientY: number; pressure: number }[] =
-      ne && ne.getCoalescedEvents ? ne.getCoalescedEvents() : [e];
-    for (const ev of evs) s.points.push(pos(ev));
-    setV((v) => v + 1);
-  };
-
-  const up = () => {
-    if (tool === 'eraser') {
-      erasing.current = false;
-      return;
-    }
-    const s = live.current;
-    live.current = null;
-    if (s && s.points.length > 1) {
-      s.done = true;
-      commit((ss) => [...ss, s], 'draw');
-    } else setV((v) => v + 1);
-  };
-
   return (
     <div
       ref={box}
       data-slot="pencil-canvas"
       onPointerDown={down}
-      onPointerMove={move}
-      onPointerUp={up}
-      onPointerCancel={up}
       className={cn('absolute inset-0 cursor-crosshair touch-none', className)}
       style={style}
       {...rest}

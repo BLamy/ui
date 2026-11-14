@@ -19,8 +19,8 @@ export default function ButtonLoading() {
   return (
     <div className="flex flex-col items-center gap-3">
       <Button
-        isDisabled={saving}
-        onPress={() => {
+        disabled={saving}
+        onClick={() => {
           setSaved(false)
           setSaving(true)
         }}

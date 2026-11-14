@@ -22,16 +22,16 @@ Both apps hot-reload — edit \`src/\` and the browser surface refreshes on save
 
 function DemoButton({
   label,
-  onPress,
+  onClick,
   style,
 }: {
   label: string
-  onPress?: () => void
+  onClick?: () => void
   style?: CSSProperties
 }) {
   return (
     <button
-      onClick={onPress}
+      onClick={onClick}
       style={{
         border: 0,
         borderRadius: 10,
@@ -78,7 +78,7 @@ export default function StreamedReply() {
     <div style={{ fontFamily: FONT }}>
       <DemoButton
         label={live ? 'Streaming…' : 'Replay stream'}
-        onPress={replay}
+        onClick={replay}
         style={{ marginBottom: 10, background: '#0A84FF' }}
       />
       <div

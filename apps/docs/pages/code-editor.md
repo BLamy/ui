@@ -29,8 +29,8 @@ import { CodeEditor } from '@brett_lamy/ui'
 
 ```tsx
 // Editable by default
-<CodeEditor defaultValue={source} language="ts" onChange={(value, change) => save(value)} />
-<CodeEditor value={source} onChange={setSource} language="ts" />
+<CodeEditor defaultValue={source} language="ts" onValueChange={(value, details) => save(value)} />
+<CodeEditor value={source} onValueChange={setSource} language="ts" />
 
 // Read-only: a snippet, in the page
 <CodeEditor readOnly value={source} language="ts" title="src/queue.ts" lineNumbers showCopy highlightLines={[4]} />
@@ -58,7 +58,7 @@ Windowed, it fills its parent when the parent has a height, and follows its cont
 
 You get the windowed renderer when it's editable, when a prop only it can honor is used, or when the text is too big to put in the page. Otherwise you get the page. `windowed` overrides that where it can: `windowed` on a read-only text always windows it, and `windowed={false}` keeps it in the page however big it is. It can't be `false` on an editor, or `true` on `variant="inline"`, and the types won't let you ask.
 
-These props mean windowed, because the page can't honor them: `lines`, `lineCount` and `getLine`, `gutters`, `onLineNumberPress`, `currentLine`, `markers`, `lineDecoration`, `scrollToLine`, a function for `highlight`, `onCopyText`, `onSelectionChange` and `maxLineLength`. Everything else works in both.
+These props mean windowed, because the page can't honor them: `lines`, `lineCount` and `getLine`, `gutters`, `onLineNumberClick`, `currentLine`, `markers`, `lineDecoration`, `scrollToLine`, a function for `highlight`, `onCopyText`, `onSelectionChange` and `maxLineLength`. Everything else works in both.
 
 A read-only text goes in the page up to **5,000 lines**, **32 KB on a line** and **256 KB** in all (`MAX_PAGE_LINES`, `MAX_PAGE_LINE_LENGTH`, `MAX_PAGE_CHARS`). Those come from timing the in-page renderer in Chromium, from first render to settled colors, on a hardware GPU:
 
@@ -105,30 +105,32 @@ Undo keeps up to 1,000 steps and 32 million characters. Typing groups into a ste
 
 ### Changes
 
-`onChange(value, change)` is the ordinary way to hear about one. `change` says what happened, so you can often do without `value`:
+`onValueChange(value, details)` is the ordinary way to hear about one. `details` are UI SDK's change details, with the edit itself, so you can often do without `value`:
 
 | Field | Meaning |
 | --- | --- |
+| `reason` | `input-change` (typing), `delete`, `newline`, `indent`, `paste`, `cut`, `composition` (an input method), `undo`, `redo`, or `imperative` (an agent's `setValue`). |
+| `event` / `source` | The DOM event behind it (a `beforeinput`, a key, a clipboard event), and who made it: `keyboard`, `mouse`, `programmatic`… |
+| `cancel()` / `canceled` | Takes the edit back, in an editor without `value`. With `value`, what you pass back decides. An edit canceled in `onEdit` doesn't reach `onValueChange`. |
 | `from` / `to` | The range that was replaced, in the text before the change, as `{ line, column }`. |
 | `newTo` | Where the new text ends, in the text after it. |
 | `text` / `removed` | What went in and what came out, with `\n` for line ends. |
-| `origin` | `input`, `delete`, `newline`, `indent`, `paste`, `cut`, `composition`, `undo` or `redo`. |
 
-`value` is the whole text, joined from its lines on each change. On half a million lines that's a few milliseconds of every key. So for a document that size, use `onEdit(change)`, which gets the same `change` and never joins anything, and call `getValue()` on the ref when you actually want the text.
+`value` is the whole text, joined from its lines on each change. On half a million lines that's a few milliseconds of every key. So for a document that size, use `onEdit(details)`, which gets the same `details` and never joins anything, and call `getValue()` on the ref when you actually want the text.
 
 {% demo src="code-editor/huge-document" %}
 
-`lineAfterEdit(line, change)` says where a line number ends up after a change, for breakpoints and anything else you keep by line. The editor can't move them itself, since they're yours.
+`lineAfterEdit(line, details)` says where a line number ends up after a change, for breakpoints and anything else you keep by line. The editor can't move them itself, since they're yours.
 
 ### Controlled
 
-`value` and `onChange` work as they do on an input.
+`value` and `onValueChange` work as they do on an input.
 
 {% demo src="code-editor/controlled" %}
 
-- What you pass back from `onChange` is the same string, so accepting a change costs nothing: nothing is parsed and nothing is joined.
+- What you pass back from `onValueChange` is the same string, so accepting a change costs nothing: nothing is parsed and nothing is joined.
 - Any other `value` is worked out as the edit it amounts to, so the caret stays where it means something, and it's a step in undo. To start a different file with a clean slate, give the editor a `key`.
-- An edit you don't accept is put back, right after `onChange` returns, so update `value` from inside it, not later.
+- An edit you don't accept is put back, right after `onValueChange` returns, so update `value` from inside it, not later.
 
 A file's own line ending, `\n` or `\r\n`, is kept in `value` and `getValue()`. A file with a mix ends up with whichever it used most, on the first edit. U+2028 and U+2029 stay in the line and show as symbols: they're legal in a string, and turning them into line ends would change the file. `splitCodeLines` splits where JS engines count lines, for a read-only source whose positions come from an engine.
 
@@ -156,7 +158,7 @@ A filename header with a copy button, a line-number gutter, and a highlighted ra
 
 ### Copyable snippets
 
-`showCopy` adds a labelled copy button: in the header when there is a `title`, otherwise floating at the top right (it shows on hover and keyboard focus, and always on touch screens). A polite status message announces the copy.
+`showCopy` adds a labelled copy button: in the header when there is a `title`, otherwise floating at the top right (it shows on hover and keyboard focus, and always on touch screens). UI SDK's announcer says the copy.
 
 {% demo src="code-editor/copyable-snippets" %}
 
@@ -235,7 +237,7 @@ Lines are numbered from `startLine`, 1 by default, everywhere in the props and t
 
 ### Gutters
 
-`gutters` is an ordered list. A gutter has an `id`, a `width` in px and `render(lineNumber)`, which can return anything: a dot, a count, a popover trigger. `onPress` makes the cell a button, and `isPressable` says on which lines. Gutters stay put while the code scrolls sideways. The built-in line numbers go next to the code, or first with `lineNumbers="start"`, or not at all with `lineNumbers={false}`. They're on by default in an editor and for `lines` or `getLine`, and off for a read-only text, in either renderer.
+`gutters` is an ordered list. A gutter has an `id`, a `width` in px and `render(lineNumber)`, which can return anything: a dot, a count, a popover trigger. `onClick(event, details)` makes the cell a button, with the line at `details.line`, and `clickable` says on which lines. A cell that holds a control of its own, like a popover trigger, says so with `focusable(lineNumber)`, so the arrow keys can reach the ones off screen. Gutters stay put while the code scrolls sideways. The built-in line numbers go next to the code, or first with `lineNumbers="start"`, or not at all with `lineNumbers={false}`. They're on by default in an editor and for `lines` or `getLine`, and off for a read-only text, in either renderer.
 
 Here's a debugger's source view, composed from the outside. The [DebugToolbar](https://blamy.github.io/ui/#/debug-toolbar) moves between executed lines and breakpoints. Press a line number to jump there. Press a hit count for arrows and a box to type which execution. Press beside a line number for a breakpoint, and on a notch above the code for one at that column.
 
@@ -247,8 +249,8 @@ const gutters = useMemo(() => [
   {
     id: 'breakpoint',
     width: 16,
-    onPress: toggleBreakpoint,
-    isPressable: canBreak,
+    onClick: (event, { line }) => toggleBreakpoint(line),
+    clickable: canBreak,
     label: (line) => `Toggle a breakpoint on line ${line}`,
     render: (line) => <Dot on={breakpoints.has(line)} />,
   },
@@ -259,8 +261,8 @@ const gutters = useMemo(() => [
   variant="ghost"
   lines={lines}
   gutters={gutters}
-  onLineNumberPress={jumpToLine}
-  isLineNumberPressable={ranAtLeastOnce}
+  onLineNumberClick={(event, { line }) => jumpToLine(line)}
+  lineNumberClickable={ranAtLeastOnce}
 />
 ```
 
@@ -274,7 +276,7 @@ A stepping debugger re-renders on every step. With `gutters` memoized and the ca
 
 `lineDecoration(lineNumber)` gives a line a `tint` (`info`, `success`, `warning`, `danger`, `muted`), or classes for its band, its text and its gutter cells, like dimming lines that never ran. It's only called for rows on screen.
 
-`markers` puts things to press at a column inside a line, like column-level breakpoints: an array of `{ line, column, label, onPress, isActive }`, or a function from a line to its markers when there are many. A line of a bundle can have tens of thousands, and only those in the rendered part of the line are in the page. A marker sits over the grid and never moves the text. `children` replaces the default notch.
+`markers` puts things to press at a column inside a line, like column-level breakpoints: an array of `{ line, column, label, onClick, active }` (`onClick(event, details)`, with `details.marker` and `details.line`), or a function from a line to its markers when there are many. A line of a bundle can have tens of thousands, and only those in the rendered part of the line are in the page. A marker sits over the grid and never moves the text. `children` replaces the default notch.
 
 ### Scrolling
 
@@ -305,7 +307,7 @@ In Chromium, on a machine that was busy with other things, under React's develop
 | Typing at the end of 500,000 lines | 6.1 ms | 9.9 ms | 10.8 ms |
 | Typing in the middle of a megabyte line | 7.3 ms | 10.8 ms | 13.1 ms |
 
-Both are with `onEdit`. `onChange` on the 500,000 lines joins the text on each key, and came to 11.9 ms, 16.3 ms and 16.4 ms. Breaking a megabyte line in two with Enter is the one key that can go over a frame, at 12.8 ms, 17.7 ms and 20.8 ms, because the two new lines are measured from scratch.
+Both are with `onEdit`. `onValueChange` on the 500,000 lines joins the text on each key, and came to 11.9 ms, 16.3 ms and 16.4 ms. Breaking a megabyte line in two with Enter is the one key that can go over a frame, at 12.8 ms, 17.7 ms and 20.8 ms, because the two new lines are measured from scratch.
 
 The grid has these rules:
 
@@ -320,7 +322,7 @@ The grid has these rules:
 
 Selection is the windowed renderer's own: two positions in the document, drawn on the rows, and copied from the source. The browser's can't work here, since most of what you'd select doesn't exist. So a selection can run from the first character of a file to the last, it survives scrolling away and back, and copying gets the source as it is, tabs and all, with nothing from the gutters.
 
-Drag to select, past an edge to scroll along with it. Double click for a word, triple click for a line, and shift click to extend. In a read-only view, Shift with the arrow keys, Home or End extends from where you last clicked, ⌘A or Ctrl+A selects all, ⌘C or Ctrl+C copies and Esc clears. The context menu's Copy works too, and in an editor, Cut and Paste. On touch, a pan scrolls, and a long press selects a word and then drags.
+Drag to select, past an edge to scroll along with it, faster the further past it you go. Double click for a word, triple click for a line, and shift click to extend. In a read-only view, Shift with the arrow keys, Home or End extends from where you last clicked, ⌘A or Ctrl+A selects all, ⌘C or Ctrl+C copies and Esc clears. The context menu's Copy works too, and in an editor, Cut and Paste. On touch, a pan scrolls, and a long press selects a word and then drags.
 
 What that costs:
 
@@ -328,7 +330,7 @@ What that costs:
 - Copy stops at 64 million characters, and `onCopyText` says so with `truncated`.
 - Copying a whole file blocks while the text is put together. On 500,000 lines of 32 characters, that was about half a second.
 
-The ref has `getSelection`, `getSelectionText`, `setSelection`, `selectAll`, `focus` and `getValue`, and `onSelectionChange` follows along. In an editor, a caret is a selection with both ends at the same place. In the page, they work on the browser's selection.
+The ref has `getSelection`, `getSelectionText`, `setSelection`, `selectAll`, `focus` and `getValue`, and `onSelectionChange(selection, details)` follows along. `details.reason` is `press` (a click, double or triple click, or long press), `drag`, `caret-move` (an arrow, Home, End or a page key), `select-all`, `escape-key`, an edit's reason, or `imperative` (the ref, or new content), and `details.cancel()` keeps the selection where it was, except after an edit, new content or a call from code. In an editor, a caret is a selection with both ends at the same place. In the page, they work on the browser's selection.
 
 ### Highlighting
 
@@ -358,11 +360,13 @@ At phone width the gutters stay readable and the code scrolls sideways behind th
 
 An editor is a `<textarea>` with `role="textbox"`, `aria-multiline` and `aria-readonly`, which holds the focus, and is named by `aria-label` or `title`. It holds the caret's line, or the selected text, so a screen reader has something to read as the caret moves. It keeps Tab, and Esc gives it back, so the keyboard is never trapped.
 
-A snippet is a real `<pre><code>`. The `<pre>` is focusable, so keyboard users can scroll it, and it is named by `title` (or the language). Line numbers and diff signs are CSS-generated and hidden from assistive tech, so they are neither read aloud nor copied. The copy button is a labelled react-aria `Button` whose label changes to "Copied", with a polite status message.
+A snippet is a real `<pre><code>`. The `<pre>` is a focusable region, so keyboard users can scroll it, and it is named by `aria-label`, else `title` (or the language). Line numbers and diff signs are CSS-generated and hidden from assistive tech, so they are neither read aloud nor copied. The copy button is a labelled UI SDK `Button` whose label changes to "Copied", and it says "Copied to clipboard" through UI SDK's announcer.
 
 A source view is a labelled region that takes focus, so arrow keys, Page Up and Down, Home and End scroll it. Pass `aria-label` with the file's name.
 
-Gutter buttons and markers are one tab stop, however many there are, so Tab can't get lost walking half a million rows. Tab goes in and then out again, the arrow keys go down a gutter and along a line and scroll as they need to, and Enter or Space presses. A row with focus stays in the page wherever the view goes, including one whose cell opened a popover. Anything focusable a gutter's `render` returns joins in.
+Gutter buttons and markers are one tab stop, however many there are, so Tab can't get lost walking half a million rows: a UI SDK roving group (`createRovingFocus`), keyed by line, so it reaches lines that aren't rendered. Tab goes in and then out again. ↑ and ↓ go to the next line with a control in the same gutter, or the nearest marker on the next line that has any, and scroll it in. ← and → go along the line, gutters first and then its markers, Home and End to its ends, and Enter or Space presses. A row with focus stays in the page wherever the view goes, including one whose cell opened a popover. A control a gutter's `render` returns joins in, also when it appears in a cell already on screen (a breakpoint set on a visible line); with `focusable`, so do those off screen.
+
+For agents, an editable editor is listed under its name (its `aria-label` or `title`): `getValue()` reads the text and `setValue(text)` replaces it as one edit, undoable, that `onEdit` and `onValueChange` see with reason `imperative` and `source: 'agent'`, and can refuse with `details.cancel()`. A read-only editor offers `getValue()` only.
 
 The code is a list of lines, each announcing its place in the whole file with `aria-setsize` and `aria-posinset`. Line numbers that aren't buttons are hidden from assistive technology, since the list already says which line it is.
 
@@ -372,7 +376,7 @@ The code is a list of lines, each announcing its place in the whole file with `a
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `value` / `onChange` | — | The text, controlled. `onChange(value, change)`. Read-only, just `value`. |
+| `value` / `onValueChange` | — | The text, controlled. `onValueChange(value, details)`. Read-only, just `value`. |
 | `defaultValue` | `''` | The text, uncontrolled. |
 | `onEdit` | — | `(change)`: every change, without joining the text. For huge documents. |
 | `readOnly` | `false` | Turns editing off. `variant="inline"` is always read-only. |
@@ -398,7 +402,7 @@ The code is a list of lines, each announcing its place in the whole file with `a
 | `appearance` | ambient | Force the token palette. It defaults to the `AppearanceProvider` value, and otherwise follows the color scheme. |
 | `contentClassName` | — | Class for the inner `<pre>` or windowed view. |
 | `gutters` | `[]` | `CodeEditorGutter[]`, in order. Memoize it. |
-| `onLineNumberPress` / `isLineNumberPressable` | — | Makes line numbers buttons, on the lines you say. |
+| `onLineNumberClick` / `lineNumberClickable` | — | Makes line numbers buttons, on the lines you say. `onLineNumberClick(event, { line, source })`. |
 | `lineNumberLabel` / `lineNumberTitle` | `Line N` / — | Their accessible name and tooltip. |
 | `currentLine` / `currentColumn` | — | The line and column execution is on. |
 | `revealCurrentLine` | `true` | Keep the current line in view. `{ smooth: true }` animates it. |
@@ -407,7 +411,7 @@ The code is a list of lines, each announcing its place in the whole file with `a
 | `scrollToLine` | — | Scrolls when this changes: a line, or `{ line, column, align, smooth }`. |
 | `maxLineLength` | — | The widest line in cells, if you know it. Saves a pass over the file. |
 | `onCopyText` | — | `({ text, truncated })` when a selection is copied. |
-| `onSelectionChange` | — | `(selection \| null)`, with lines from `startLine` and columns from 0. |
+| `onSelectionChange` | — | `(selection \| null, details)`, with lines from `startLine` and columns from 0, and `details.reason`. |
 
 `className`, `style` and other `div` props go on the root. `CodeEditorContent` takes `lineNumbers` … `lineHeight` plus a `value` and `language` of its own, for the page. `CodeEditorCopyButton` takes `value`, `label` (default `"Copy code"`) and `onCopy`, and it can be used outside an editor (the GitHub clone's *Copy raw file* button is one). `codeEditorVariants` is the cva recipe.
 
@@ -417,7 +421,8 @@ The code is a list of lines, each announcing its place in the whole file with `a
 | --- | --- |
 | `id` / `width` | Names it, and sets its width in px. |
 | `render` | `(lineNumber) => ReactNode`: a cell's contents. |
-| `onPress` / `isPressable` | Makes the cell a button, on the lines you say. |
+| `onClick` / `clickable` | Makes the cell a button, on the lines you say. `onClick(event, { line, source })`. |
+| `focusable` | Without `onClick`: the lines whose cell holds a control of its own, for the arrow keys. |
 | `label` / `title` | The button's accessible name, and a tooltip. |
 | `align` / `className` | `start`, `center` (default) or `end`; a class on each cell. |
 
@@ -428,7 +433,7 @@ The code is a list of lines, each announcing its place in the whole file with `a
 | `line` | The line, in the array form of `markers`. |
 | `column` | UTF-16 code units from the start of the line. Past the end, it's shown at the end. |
 | `label` | Its accessible name. |
-| `onPress` / `isActive` | Makes it a button; filled in, and announced as pressed. |
+| `onClick` / `active` | Makes it a button, `onClick(event, { marker, line, source })`; filled in, and announced as pressed. |
 | `title` / `className` / `children` | A tooltip, a class, and something to draw instead of the notch. |
 
 ### CodeEditorHandle
@@ -476,7 +481,7 @@ The code is a list of lines, each announcing its place in the whole file with `a
 | `--bl-syntax-caret` | The caret (default `--foreground`). |
 | `--bl-syntax-inline-bg`, `--bl-syntax-inline-font-size` | The inline variant. |
 
-A class on `CodeEditor` changes the font and its size, and the character width follows. Windowed, the parts are `code-editor-line`, `code-editor-text`, `code-editor-gutter-row`, `code-editor-gutter-cell`, `code-editor-band`, `code-editor-selection`, `code-editor-caret`, `code-editor-input`, `code-editor-column` and `code-editor-marker`, and rows carry `data-line`.
+A class on `CodeEditor` changes the font and its size, and the character width follows. Windowed, the parts are `code-editor-line`, `code-editor-text`, `code-editor-gutter-row`, `code-editor-gutter-cell`, `code-editor-band`, `code-editor-selection`, `code-editor-caret`, `code-editor-input`, `code-editor-column` and `code-editor-marker` (a marker or gutter cell that is a button is UI SDK's `button` part instead, and the editor's rings take keyboard focus from the hidden input's `:focus`; every cell carries `data-code-editor-cell` with its gutter id, or `marker`), and rows carry `data-line`.
 
 ## cva recipes
 

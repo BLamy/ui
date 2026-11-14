@@ -1,9 +1,10 @@
 /* The Format panel: what you can change about the selection, by kind, and how it's arranged. With nothing selected
-   it formats the board itself. Sliders checkpoint once when you grab them, then change live. */
-import type { ReactNode } from 'react';
-import { PlainButton } from '@/components/ui/plain-button';
-import { Segmented } from '@/components/ui/segmented';
+   it formats the board itself. Sliders checkpoint once when a change starts, change live, and end it on commit. */
+import { useRef, type ReactNode } from 'react';
+import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Slider } from '@/components/ui/slider';
+import { ToggleGroup } from '@/components/ui/toggle-group';
 import { Icon, type IconShape } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { boundsOf } from './geometry';
@@ -27,42 +28,76 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/** Color choices. `none` adds a first swatch for "no color": no fill, or the theme's own ink. */
+/** The "no color" swatch's value in the group: no fill, or the theme's own ink. */
+const NONE = 'none';
+const ring = 'data-pressed:outline-2 data-pressed:outline-offset-2 data-pressed:outline-primary data-pressed:outline-solid';
+
+/** Color choices: one-of-many (the kit's ToggleGroup: one tab stop, arrow keys, the current color pressed). `none`
+    adds a first swatch for "no color". */
 function Swatches({ value, colors, onChange, none, label }: { value: string | null; colors: string[]; onChange: (c: string | null) => void; none?: 'clear' | 'auto'; label: string }) {
-  const ring = 'outline-2 outline-offset-2 outline-primary outline-solid';
   return (
-    <div role="group" aria-label={label} className="flex flex-wrap items-center gap-2">
+    <ToggleGroup
+      aria-label={label} value={[value ?? NONE]} deselectable={false}
+      onValueChange={([next]) => next && onChange(next === NONE ? null : next)}
+      className="flex flex-wrap items-center gap-2"
+    >
       {none ? (
-        <PlainButton
-          aria-label={none === 'clear' ? 'No fill' : 'Automatic'} title={none === 'clear' ? 'None' : 'Automatic'} onPress={() => onChange(null)}
-          className={cn('relative grid size-6 cursor-pointer place-items-center overflow-hidden rounded-full border border-border bg-background p-0', value === null && ring)}
+        <PlainToggleButton
+          value={NONE} aria-label={none === 'clear' ? 'No fill' : 'Automatic'} title={none === 'clear' ? 'None' : 'Automatic'}
+          className={cn('relative grid size-6 cursor-pointer place-items-center overflow-hidden rounded-full border border-border bg-background p-0', ring)}
         >
           {none === 'clear'
             ? <span aria-hidden="true" className="absolute h-px w-8 rotate-45 bg-destructive" />
             : <span aria-hidden="true" className="absolute inset-y-0 right-0 w-1/2 bg-foreground" />}
-        </PlainButton>
+        </PlainToggleButton>
       ) : null}
       {colors.map((c) => (
-        <PlainButton
-          key={c} aria-label={c} title={c} onPress={() => onChange(c)}
-          className={cn('size-6 cursor-pointer rounded-full border border-black/10 p-0', value === c && ring)}
+        <PlainToggleButton
+          key={c} value={c} aria-label={c} title={c}
+          className={cn('size-6 cursor-pointer rounded-full border border-black/10 p-0', ring)}
           style={{ background: c }}
         />
       ))}
-    </div>
+    </ToggleGroup>
   );
 }
 
-function Chip({ active, label, onPress, children }: { active?: boolean; label: string; onPress: () => void; children: ReactNode }) {
+const chip = 'grid h-8 min-w-9 cursor-pointer place-items-center rounded-lg border-0 bg-secondary px-2 text-detail font-semibold text-foreground hover:bg-secondary-strong data-pressed:bg-primary data-pressed:text-primary-foreground';
+
+/** An action chip. */
+function Chip({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
   return (
-    <PlainButton
-      aria-label={label} title={label} onPress={onPress}
-      className={cn('grid h-8 min-w-9 cursor-pointer place-items-center rounded-lg border-0 px-2 text-detail font-semibold', active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground hover:bg-secondary-strong')}
-    >
+    <PlainButton aria-label={label} title={label} onClick={onClick} className={chip}>
       {children}
     </PlainButton>
   );
 }
+
+/** An on/off chip (a UI SDK Toggle), or one choice of a ChipGroup when given a `value`. */
+function ChipToggle({ label, value, pressed, onPressedChange, children }: { label: string; value?: string; pressed?: boolean; onPressedChange?: (pressed: boolean) => void; children: ReactNode }) {
+  return (
+    <PlainToggleButton aria-label={label} title={label} value={value} pressed={pressed} onPressedChange={onPressedChange} className={chip}>
+      {children}
+    </PlainToggleButton>
+  );
+}
+
+/** One-of-many chips (the kit's ToggleGroup: one tab stop, arrow keys, always one pressed). */
+function ChipGroup<T extends string>({ label, value, onChange, className, children }: { label: string; value: T; onChange: (value: T) => void; className?: string; children: ReactNode }) {
+  return (
+    <ToggleGroup<T> aria-label={label} value={[value]} deselectable={false} onValueChange={([next]) => next && onChange(next)} className={cn('flex items-center gap-1.5', className)}>
+      {children}
+    </ToggleGroup>
+  );
+}
+
+const alignChips = (current: Align, onChange: (a: Align) => void) => (
+  <ChipGroup<Align> label="Text alignment" value={current} onChange={onChange}>
+    {(['left', 'center', 'right'] as Align[]).map((a) => (
+      <ChipToggle key={a} value={a} label={`Align ${a}`}>{glyph(G_TEXT_ALIGN[a])}</ChipToggle>
+    ))}
+  </ChipGroup>
+);
 
 const glyph = (shapes: readonly IconShape[]) => <Icon shapes={shapes} size={18} sw={1.7} />;
 
@@ -75,9 +110,14 @@ export function FormatPanel() {
 
   // Change a property on every selected item that `is` the kind; sliders go live.
   const set = (is: (i: Item) => boolean, patch: Record<string, unknown>) => f.update(ids.filter((id) => is(byId.get(id) as Item)), patch);
+  // The first step of a drag or a key press checkpoints; the commit ends it, so the next change checkpoints again.
+  const changing = useRef(false);
   const live = (is: (i: Item) => boolean, key: string) => ({
-    onChangeStart: () => f.begin(),
-    onChange: (v: number) => f.patch((all) => all.map((i) => (ids.includes(i.id) && is(i) ? ({ ...i, [key]: v } as Item) : i))),
+    onValueChange: (v: number) => {
+      if (!changing.current) { changing.current = true; f.begin(); }
+      f.patch((all) => all.map((i) => (ids.includes(i.id) && is(i) ? ({ ...i, [key]: v } as Item) : i)));
+    },
+    onValueCommit: () => { changing.current = false; },
   });
 
   const first = <T extends Item>(kind: T['kind']) => selected.find((i) => i.kind === kind) as T | undefined;
@@ -96,12 +136,11 @@ export function FormatPanel() {
     return (
       <div className="flex flex-col gap-3">
         <Section title="Board">
-          <Segmented
-            aria-label="Background"
-            value={board?.background ?? 'dots'}
-            onChange={(b) => f.setBackground(b as Background)}
-            options={[{ id: 'dots', label: 'Dots' }, { id: 'grid', label: 'Grid' }, { id: 'none', label: 'Plain' }]}
-          />
+          <Segmented<Background> aria-label="Background" value={board?.background ?? 'dots'} onValueChange={(b) => b && f.setBackground(b)}>
+            <SegmentedItem value="dots">Dots</SegmentedItem>
+            <SegmentedItem value="grid">Grid</SegmentedItem>
+            <SegmentedItem value="none">Plain</SegmentedItem>
+          </Segmented>
         </Section>
         <p className="m-0 text-footnote text-muted-foreground">Select something on the board to format it.</p>
       </div>
@@ -113,7 +152,7 @@ export function FormatPanel() {
       {sticky ? (
         <Section title="Sticky note">
           <Swatches label="Sticky color" value={sticky.color} colors={STICKY_COLORS} onChange={(c) => c && set(isSticky, { color: c })} />
-          <Slider label="Text size" showValue minValue={10} maxValue={64} step={1} value={sticky.size} {...live(isSticky, 'size')} />
+          <Slider label="Text size" showValue min={10} max={64} step={1} value={sticky.size} {...live(isSticky, 'size')} />
         </Section>
       ) : null}
 
@@ -123,7 +162,7 @@ export function FormatPanel() {
             <div className="grid grid-cols-6 gap-1">
               {SHAPE_KINDS.map((s) => (
                 <PlainButton
-                  key={s.kind} aria-label={s.label} title={s.label} onPress={() => set(isShape, { shape: s.kind })}
+                  key={s.kind} aria-label={s.label} title={s.label} onClick={() => set(isShape, { shape: s.kind })}
                   className={cn('grid size-9 cursor-pointer place-items-center rounded-lg border-0 p-0', shape.shape === s.kind ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary')}
                 >
                   <ShapeGlyph kind={s.kind} size={24} />
@@ -134,19 +173,17 @@ export function FormatPanel() {
           </Section>
           <Section title="Border">
             <Swatches label="Border color" none="auto" value={shape.stroke} colors={SWATCHES} onChange={(c) => set(isShape, { stroke: c })} />
-            <Slider label="Width" showValue minValue={0} maxValue={12} step={1} value={shape.sw} {...live(isShape, 'sw')} />
+            <Slider label="Width" showValue min={0} max={12} step={1} value={shape.sw} {...live(isShape, 'sw')} />
             <div className="flex gap-2">
-              <Chip label="Dashed border" active={shape.dashed} onPress={() => set(isShape, { dashed: !shape.dashed })}>Dashed</Chip>
+              <ChipToggle label="Dashed border" pressed={shape.dashed} onPressedChange={(dashed) => set(isShape, { dashed })}>Dashed</ChipToggle>
             </div>
-            <Slider label="Opacity" showValue minValue={0.1} maxValue={1} step={0.05} value={shape.opacity} {...live(isShape, 'opacity')} />
+            <Slider label="Opacity" showValue min={0.1} max={1} step={0.05} value={shape.opacity} {...live(isShape, 'opacity')} />
           </Section>
           <Section title="Text">
-            <Slider label="Size" showValue minValue={10} maxValue={64} step={1} value={shape.size} {...live(isShape, 'size')} />
+            <Slider label="Size" showValue min={10} max={64} step={1} value={shape.size} {...live(isShape, 'size')} />
             <div className="flex items-center gap-1.5">
-              <Chip label="Bold" active={shape.bold} onPress={() => set(isShape, { bold: !shape.bold })}><span className="font-bold">B</span></Chip>
-              {(['left', 'center', 'right'] as Align[]).map((a) => (
-                <Chip key={a} label={`Align ${a}`} active={shape.align === a} onPress={() => set(isShape, { align: a })}>{glyph(G_TEXT_ALIGN[a])}</Chip>
-              ))}
+              <ChipToggle label="Bold" pressed={shape.bold} onPressedChange={(bold) => set(isShape, { bold })}><span className="font-bold">B</span></ChipToggle>
+              {alignChips(shape.align, (align) => set(isShape, { align }))}
             </div>
             <Swatches label="Text color" none="auto" value={shape.textColor} colors={SWATCHES} onChange={(c) => set(isShape, { textColor: c })} />
           </Section>
@@ -155,18 +192,16 @@ export function FormatPanel() {
 
       {text ? (
         <Section title="Text">
-          <div className="grid grid-cols-4 gap-1.5">
+          <ChipGroup label="Text size" value={TEXT_SIZES.find((t) => t.size === text.size)?.label ?? ''} onChange={(label) => { const t = TEXT_SIZES.find((x) => x.label === label); if (t) set(isText, { size: t.size }); }} className="grid w-full grid-cols-4">
             {TEXT_SIZES.map((t) => (
-              <Chip key={t.label} label={t.label} active={text.size === t.size} onPress={() => set(isText, { size: t.size })}><span className="text-caption">{t.label}</span></Chip>
+              <ChipToggle key={t.label} value={t.label} label={t.label}><span className="text-caption">{t.label}</span></ChipToggle>
             ))}
-          </div>
-          <Slider label="Size" showValue minValue={10} maxValue={120} step={1} value={text.size} {...live(isText, 'size')} />
+          </ChipGroup>
+          <Slider label="Size" showValue min={10} max={120} step={1} value={text.size} {...live(isText, 'size')} />
           <div className="flex items-center gap-1.5">
-            <Chip label="Bold" active={text.bold} onPress={() => set(isText, { bold: !text.bold })}><span className="font-bold">B</span></Chip>
-            <Chip label="Italic" active={text.italic} onPress={() => set(isText, { italic: !text.italic })}><span className="italic">I</span></Chip>
-            {(['left', 'center', 'right'] as Align[]).map((a) => (
-              <Chip key={a} label={`Align ${a}`} active={text.align === a} onPress={() => set(isText, { align: a })}>{glyph(G_TEXT_ALIGN[a])}</Chip>
-            ))}
+            <ChipToggle label="Bold" pressed={text.bold} onPressedChange={(bold) => set(isText, { bold })}><span className="font-bold">B</span></ChipToggle>
+            <ChipToggle label="Italic" pressed={text.italic} onPressedChange={(italic) => set(isText, { italic })}><span className="italic">I</span></ChipToggle>
+            {alignChips(text.align, (align) => set(isText, { align }))}
           </div>
           <Swatches label="Text color" none="auto" value={text.color} colors={SWATCHES} onChange={(c) => set(isText, { color: c })} />
         </Section>
@@ -174,11 +209,19 @@ export function FormatPanel() {
 
       {connector ? (
         <Section title="Connector">
-          <Segmented aria-label="Route" value={connector.route} onChange={(r) => set(isConnector, { route: r as Route })} options={[{ id: 'straight', label: 'Straight' }, { id: 'elbow', label: 'Elbow' }, { id: 'curve', label: 'Curve' }]} />
-          <Segmented aria-label="Arrowheads" value={connector.heads} onChange={(h) => set(isConnector, { heads: h as Heads })} options={[{ id: 'none', label: 'None' }, { id: 'end', label: 'End' }, { id: 'both', label: 'Both' }]} />
+          <Segmented<Route> aria-label="Route" value={connector.route} onValueChange={(r) => r && set(isConnector, { route: r })}>
+            <SegmentedItem value="straight">Straight</SegmentedItem>
+            <SegmentedItem value="elbow">Elbow</SegmentedItem>
+            <SegmentedItem value="curve">Curve</SegmentedItem>
+          </Segmented>
+          <Segmented<Heads> aria-label="Arrowheads" value={connector.heads} onValueChange={(h) => h && set(isConnector, { heads: h })}>
+            <SegmentedItem value="none">None</SegmentedItem>
+            <SegmentedItem value="end">End</SegmentedItem>
+            <SegmentedItem value="both">Both</SegmentedItem>
+          </Segmented>
           <Swatches label="Line color" none="auto" value={connector.color} colors={SWATCHES} onChange={(c) => set(isConnector, { color: c })} />
-          <Slider label="Width" showValue minValue={1} maxValue={12} step={1} value={connector.width} {...live(isConnector, 'width')} />
-          <div className="flex gap-2"><Chip label="Dashed line" active={connector.dashed} onPress={() => set(isConnector, { dashed: !connector.dashed })}>Dashed</Chip></div>
+          <Slider label="Width" showValue min={1} max={12} step={1} value={connector.width} {...live(isConnector, 'width')} />
+          <div className="flex gap-2"><ChipToggle label="Dashed line" pressed={connector.dashed} onPressedChange={(dashed) => set(isConnector, { dashed })}>Dashed</ChipToggle></div>
         </Section>
       ) : null}
 
@@ -190,13 +233,13 @@ export function FormatPanel() {
 
       <Section title="Arrange">
         <div className="flex flex-wrap gap-1.5">
-          <Chip label="Duplicate" onPress={() => f.duplicate(selection)}><Icon name="copy" size={18} sw={1.7} /></Chip>
-          {selection.length > 1 ? <Chip label="Group" onPress={() => f.group(selection)}>{glyph(G_GROUP)}</Chip> : null}
-          {selected.some((i) => i.group) ? <Chip label="Ungroup" onPress={() => f.ungroup(selection)}><span className="text-caption">Ungroup</span></Chip> : null}
-          <Chip label={selected.every((i) => i.locked) ? 'Unlock' : 'Lock'} active={selected.every((i) => i.locked)} onPress={() => f.setLocked(selection, !selected.every((i) => i.locked))}>
+          <Chip label="Duplicate" onClick={() => f.duplicate(selection)}><Icon name="copy" size={18} sw={1.7} /></Chip>
+          {selection.length > 1 ? <Chip label="Group" onClick={() => f.group(selection)}>{glyph(G_GROUP)}</Chip> : null}
+          {selected.some((i) => i.group) ? <Chip label="Ungroup" onClick={() => f.ungroup(selection)}><span className="text-caption">Ungroup</span></Chip> : null}
+          <ChipToggle label="Lock" pressed={selected.every((i) => i.locked)} onPressedChange={(locked) => f.setLocked(selection, locked)}>
             <Icon name={selected.every((i) => i.locked) ? 'lock-fill' : 'lock-open'} size={18} sw={1.7} />
-          </Chip>
-          <Chip label="Delete" onPress={() => f.remove(selection)}><Icon name="trash-slim" size={18} sw={1.7} /></Chip>
+          </ChipToggle>
+          <Chip label="Delete" onClick={() => f.remove(selection)}><Icon name="trash-slim" size={18} sw={1.7} /></Chip>
         </div>
         {ids.length > 1 ? <AlignRow /> : null}
       </Section>
@@ -229,7 +272,7 @@ function AlignRow() {
   const labels: Record<AlignKind, string> = { left: 'Align left', hcenter: 'Align centers', right: 'Align right', top: 'Align top', vcenter: 'Align middles', bottom: 'Align bottom' };
   return (
     <div className="flex flex-wrap gap-1.5">
-      {(Object.keys(G_ALIGN) as AlignKind[]).map((k) => <Chip key={k} label={labels[k]} onPress={() => align(k)}>{glyph(G_ALIGN[k])}</Chip>)}
+      {(Object.keys(G_ALIGN) as AlignKind[]).map((k) => <Chip key={k} label={labels[k]} onClick={() => align(k)}>{glyph(G_ALIGN[k])}</Chip>)}
     </div>
   );
 }

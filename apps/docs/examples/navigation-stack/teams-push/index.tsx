@@ -1,6 +1,12 @@
 import { useState, type ReactNode } from 'react'
 import { List, ListRow, ListSection } from '@/components/ui/list'
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import {
+  NavigationStack,
+  NavigationStackBar,
+  NavigationStackContent,
+  NavigationStackPage,
+  NavigationStackTitle,
+} from '@/components/ui/navigation-stack'
 import { Icon } from '@/lib/icon'
 
 const teams = ['Design', 'Engineering', 'Research']
@@ -27,55 +33,61 @@ function Frame({ children }: { children: ReactNode }) {
 
 export default function TeamsPush() {
   const [team, setTeam] = useState<string | null>(null)
-  const screens: Screen[] = [
-    {
-      key: 'root',
-      title: 'Teams',
-      grouped: true,
-      content: (
-        <List inset>
-          <ListSection>
-            {teams.map((t, i) => (
-              <ListRow
-                key={t}
-                leading={<Icon name="person" size={20} />}
-                title={t}
-                accessory="chevron"
-                divider={i < teams.length - 1}
-                onPress={() => setTeam(t)}
-              />
-            ))}
-          </ListSection>
-        </List>
-      ),
-    },
-  ]
-  // Push by adding a screen; the back chevron or an edge swipe calls onPop.
-  if (team)
-    screens.push({
-      key: 'detail',
-      title: team,
-      grouped: true,
-      content: (
-        <div style={{ padding: '28px 22px', textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 650 }}>{team}</div>
-          <div
-            style={{
-              fontSize: 13,
-              color: 'var(--muted-foreground)',
-              marginTop: 5,
-              lineHeight: 1.5,
-            }}
-          >
-            Pushed screen — use the back chevron, or drag from the left edge to
-            pop interactively.
-          </div>
-        </div>
-      ),
-    })
+  // The pages are keys: push by adding one, and the back chevron, Escape or an
+  // edge swipe asks for one fewer through onPagesChange.
   return (
     <Frame>
-      <NavigationStack screens={screens} onPop={() => setTeam(null)} />
+      <NavigationStack
+        pages={team ? ['root', 'detail'] : ['root']}
+        onPagesChange={(pages) => {
+          if (pages.length === 1) setTeam(null)
+        }}
+      >
+        <NavigationStackPage value="root" grouped>
+          <NavigationStackBar>
+            <NavigationStackTitle>Teams</NavigationStackTitle>
+          </NavigationStackBar>
+          <NavigationStackContent>
+            <List inset>
+              <ListSection>
+                {teams.map((t, i) => (
+                  <ListRow
+                    key={t}
+                    leading={<Icon name="person" size={20} />}
+                    title={t}
+                    accessory="chevron"
+                    divider={i < teams.length - 1}
+                    onClick={() => setTeam(t)}
+                  />
+                ))}
+              </ListSection>
+            </List>
+          </NavigationStackContent>
+        </NavigationStackPage>
+        {team ? (
+          <NavigationStackPage value="detail" grouped>
+            <NavigationStackBar>
+              <NavigationStackTitle>{team}</NavigationStackTitle>
+            </NavigationStackBar>
+            <NavigationStackContent>
+              <div style={{ padding: '28px 22px', textAlign: 'center' }}>
+                <div style={{ fontSize: 16, fontWeight: 650 }}>{team}</div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: 'var(--muted-foreground)',
+                    marginTop: 5,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Pushed page — use the back chevron, or drag from the left edge
+                  to pop interactively.
+                </div>
+              </div>
+            </NavigationStackContent>
+          </NavigationStackPage>
+        ) : null}
+      </NavigationStack>
     </Frame>
   )
 }

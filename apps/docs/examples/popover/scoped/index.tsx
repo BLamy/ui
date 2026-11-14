@@ -1,17 +1,19 @@
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Tooltip, TooltipTrigger } from '@/components/ui/tooltip'
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ThemeScope } from '@/lib/theme'
 
-// Overlays render in a portal, outside the DOM of whatever opened them, so CSS
-// inheritance cannot reach them. Popover, Tooltip, DropdownMenu, Select,
-// Dialog and Sheet read the nearest ThemeScope (useThemeScopeProps) and wear
-// it: same appearance, tint and variables as the surface that opened them.
+// Popups render into their layer host (BLProvider's root) or the browser's top
+// layer, outside the DOM of whatever opened them, so CSS inheritance cannot
+// reach them. Popover, Tooltip, DropdownMenu, Select, Dialog and Sheet read the
+// nearest ThemeScope (useThemeScopeProps) and wear it: same appearance, tint
+// and variables as the surface that opened them.
 export default function Scoped() {
   return (
     <ThemeScope
@@ -24,24 +26,25 @@ export default function Scoped() {
         A dark, amber scope on a page that may be light. Open each one.
       </p>
       <div className="flex flex-wrap gap-3">
-        <TooltipTrigger>
-          <Button>Hover me</Button>
-          <Tooltip>Inverted: the scope's foreground on its background</Tooltip>
-        </TooltipTrigger>
-        <PopoverTrigger>
-          <Button variant="secondary">Popover</Button>
-          <PopoverContent aria-label="Export options" placement="bottom start">
+        <Tooltip>
+          <TooltipTrigger className={buttonVariants()}>Hover me</TooltipTrigger>
+          <TooltipContent>Inverted: the scope's foreground on its background</TooltipContent>
+        </Tooltip>
+        <Popover>
+          <PopoverTrigger className={buttonVariants({ variant: 'secondary' })}>Popover</PopoverTrigger>
+          <PopoverContent align="start">
+            <PopoverTitle className="sr-only">Export options</PopoverTitle>
             <p className="m-0 text-detail text-muted-foreground">
               Surface from <code>--popover</code>, text from <code>--popover-foreground</code>.
             </p>
             <Button size="sm" className="mt-3">Primary is the tint</Button>
           </PopoverContent>
-        </PopoverTrigger>
+        </Popover>
         <DropdownMenu>
-          <Button variant="secondary">Menu</Button>
+          <DropdownMenuTrigger className={buttonVariants({ variant: 'secondary' })}>Menu</DropdownMenuTrigger>
           <DropdownMenuContent aria-label="Actions">
-            <DropdownMenuItem id="duplicate">Duplicate</DropdownMenuItem>
-            <DropdownMenuItem id="archive">Archive</DropdownMenuItem>
+            <DropdownMenuItem value="duplicate">Duplicate</DropdownMenuItem>
+            <DropdownMenuItem value="archive">Archive</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

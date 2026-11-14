@@ -3,10 +3,11 @@
    avatar and name, and every To / Cc name, open the person's contact card on hover, as Mail's address
    tokens do. */
 import { Fragment, useState, type ReactNode } from 'react';
-import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Avatar } from '@/components/ui/avatar';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Chevron } from '@/components/ui/icon-swap';
+import { PlainButton } from '@/components/ui/plain-button';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { MESSAGES, ME, VIPS, initials, longTime, relativeTime, type Attachment, type Message, type Person, type ThreadEntry } from './data';
@@ -32,13 +33,13 @@ function ContactCard({ who }: { who: Person }) {
   );
 }
 
-/** A name that opens its contact card. */
+/** A name: a mailto link that previews its contact card. */
 function Contact({ who, children }: { who: Person; children: ReactNode }) {
   return (
-    <HoverCardTrigger>
-      {children}
-      <HoverCard placement="bottom start"><ContactCard who={who} /></HoverCard>
-    </HoverCardTrigger>
+    <HoverCard>
+      <HoverCardTrigger render={<a href={`mailto:${who.email}`} className="inline-flex max-w-full min-w-0 text-inherit no-underline outline-none focus-visible:underline" />}>{children}</HoverCardTrigger>
+      <HoverCardContent side="bottom" align="start"><ContactCard who={who} /></HoverCardContent>
+    </HoverCard>
   );
 }
 
@@ -75,7 +76,7 @@ const ATTACHMENT_TONE: Record<Attachment['kind'], string> = { pdf: '#FF3B30', im
 
 function AttachmentTile({ a }: { a: Attachment }) {
   return (
-    <button type="button"
+    <PlainButton
       className="bl-btn flex min-w-0 cursor-pointer items-center gap-2.5 rounded-panel border-0 bg-secondary px-3 py-2.5 text-left [font-family:inherit] text-foreground transition-colors hover:bg-secondary-strong">
       <span className="grid size-9 shrink-0 place-items-center rounded-lg text-white" style={{ background: ATTACHMENT_TONE[a.kind] }}>
         <Icon name={a.kind === 'image' ? 'photo' : a.kind === 'zip' ? 'archivebox' : 'doc'} size={20} sw={1.9} />
@@ -84,7 +85,7 @@ function AttachmentTile({ a }: { a: Attachment }) {
         <span className="block truncate text-detail font-medium">{a.name}</span>
         <span className="block text-[12.5px] text-muted-foreground">{a.size}</span>
       </span>
-    </button>
+    </PlainButton>
   );
 }
 
@@ -107,11 +108,12 @@ function Header({ from, to, cc, date, trailing }: { from: Person; to: Person[]; 
   );
 }
 
+/** An earlier message: a header row that opens the full text below it (UI SDK's Collapsible). */
 function EarlierMessage({ e }: { e: ThreadEntry }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-card bg-card shadow-[0_0_0_1px_var(--border)]">
-      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)}
+    <Collapsible open={open} onOpenChange={setOpen} className="rounded-card bg-card shadow-[0_0_0_1px_var(--border)]">
+      <CollapsibleTrigger
         className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-3 text-left [font-family:inherit] text-foreground">
         <Avatar c={initials(e.from)} size={30} />
         <span className="min-w-0 flex-1">
@@ -122,11 +124,11 @@ function EarlierMessage({ e }: { e: ThreadEntry }) {
           <span className={cn('block truncate text-detail text-muted-foreground transition-opacity duration-200', open && 'opacity-0')}>{e.body[0]}</span>
         </span>
         <Chevron direction={open ? 'down' : 'right'} size={14} className="text-tertiary-foreground" />
-      </button>
-      <AnimatedHeight>
-        {open ? <div className="px-4 pt-0 pb-4 pl-[58px]"><Body lines={e.body} /></div> : null}
-      </AnimatedHeight>
-    </div>
+      </CollapsibleTrigger>
+      <CollapsiblePanel className="h-(--collapsible-panel-height) overflow-clip transition-[height] duration-spring-smooth ease-spring-smooth data-starting-style:h-0 data-ending-style:h-0 motion-reduce:transition-none">
+        <div className="px-4 pt-0 pb-4 pl-[58px]"><Body lines={e.body} /></div>
+      </CollapsiblePanel>
+    </Collapsible>
   );
 }
 

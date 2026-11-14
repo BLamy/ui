@@ -18,7 +18,7 @@ export default function Copy() {
     <div className="flex items-center justify-center gap-8">
       <Button
         variant="secondary"
-        onPress={() => {
+        onClick={() => {
           void navigator.clipboard?.writeText('npx shadcn@latest add icon-swap')
           setCopied(true)
         }}
@@ -32,7 +32,7 @@ export default function Copy() {
         size="icon"
         variant="secondary"
         aria-label={playing ? 'Pause' : 'Play'}
-        onPress={() => setPlaying((p) => !p)}
+        onClick={() => setPlaying((p) => !p)}
       >
         <IconSwap id={playing ? 'pause' : 'play'}>
           <Icon name={playing ? 'pause' : 'play'} size={18} />

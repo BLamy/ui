@@ -6,7 +6,7 @@ import { Pad } from '../stories/frame';
 
 /* Seeded states for the visual-regression suite: files are listed with fixed statuses (no `upload` function is
    given, so nothing moves), and "drag-over" is the real thing: the play function sends dragenter / dragover with a
-   DataTransfer, so react-aria sets `data-drop-target` itself. */
+   DataTransfer, so UI SDK's drop zone sets `data-dragging` itself. */
 
 const meta: Meta<typeof FileUpload> = {
   title: 'Molecules/FileUpload',
@@ -42,29 +42,27 @@ const seedFiles = {
     item(fakeFile('a-very-long-file-name-that-keeps-going-and-going-until-it-has-to-truncate-somewhere.mov', 48 * 1024 * 1024, 'video/quicktime'), 'done'),
   ],
   rejected: () => [
-    item(fakeFile('archive.zip', 4 * 1024 * 1024, 'application/zip'), 'rejected', { reason: 'type', error: 'Unsupported file type. Accepted: Images and PDFs.' }),
-    item(fakeFile('huge.png', 12 * 1024 * 1024, 'image/png'), 'rejected', { reason: 'too-large', error: 'Larger than the 5 MB limit.' }),
+    item(fakeFile('archive.zip', 4 * 1024 * 1024, 'application/zip'), 'rejected', { reason: 'file-type', error: 'Unsupported file type. Accepted: Images and PDFs.' }),
+    item(fakeFile('huge.png', 12 * 1024 * 1024, 'image/png'), 'rejected', { reason: 'file-too-large', error: 'Larger than the 5 MB limit.' }),
     item(fakeFile('ok.png', 120 * 1024, 'image/svg+xml', gradient('#22c55e', '#0d9488')), 'queued'),
   ],
 };
 
 /** FileUpload seeded with a list. */
-function Seeded({ seed, dark, children, ...props }: { seed: () => UploadFile[]; dark?: boolean } & Omit<FileUploadProps, 'defaultFiles'>) {
+function Seeded({ seed, dark, children, ...props }: { seed: () => UploadFile[]; dark?: boolean } & Omit<FileUploadProps, 'defaultValue'>) {
   const [files] = useState(seed);
   return (
     <Pad w={440} dark={dark}>
-      <FileUpload defaultFiles={files} {...props}>{children}</FileUpload>
+      <FileUpload defaultValue={files} {...props}>{children}</FileUpload>
     </Pad>
   );
 }
 
-/** Sends dragenter and dragover to the zone with a real DataTransfer, so the drag-over state is react-aria's own. */
+/** Sends dragenter and dragover to the zone with a real DataTransfer, so the drag-over state is the drop zone's own. */
 async function dragOver({ canvasElement }: { canvasElement: HTMLElement }) {
-  const zone = canvasElement.querySelector('[data-slot=file-drop-zone]');
+  const zone = canvasElement.querySelector('[data-slot=file-input-dropzone]');
   if (!zone) return;
   const dt = new DataTransfer();
-  // A script-built DataTransfer reports effectAllowed "none", which react-aria reads as "can't drop"; a real drag carries the source's.
-  Object.defineProperty(dt, 'effectAllowed', { value: 'all' });
   dt.items.add(new File(['x'], 'photo.png', { type: 'image/png' }));
   const fire = (type: string) => zone.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt }));
   fire('dragenter');
@@ -75,7 +73,7 @@ export const Idle: Story = {
   render: (args) => (
     <Pad w={440}><FileUpload {...args} /></Pad>
   ),
-  args: { accept: ['image/*', 'application/pdf'], maxSize: 5 * 1024 * 1024, maxFiles: 5 },
+  args: { accept: ['image/*', 'application/pdf'], maxSize: 5_000_000, maxFiles: 5 },
 };
 
 export const DragOver: Story = {
@@ -85,7 +83,7 @@ export const DragOver: Story = {
 
 export const Uploading: Story = {
   render: (args) => <Seeded seed={seedFiles.uploading} {...args} />,
-  args: { maxSize: 25 * 1024 * 1024 },
+  args: { maxSize: 25_000_000 },
 };
 
 export const DoneAndError: Story = {
@@ -94,7 +92,7 @@ export const DoneAndError: Story = {
 
 export const Rejected: Story = {
   render: (args) => <Seeded seed={seedFiles.rejected} {...args} />,
-  args: { accept: ['image/*', 'application/pdf'], maxSize: 5 * 1024 * 1024 },
+  args: { accept: ['image/*', 'application/pdf'], maxSize: 5_000_000 },
 };
 
 export const Dark: Story = {
@@ -117,7 +115,7 @@ export const CustomRow: Story = {
     const [files] = useState(seedFiles.mixed);
     return (
       <Pad w={440}>
-        <FileUpload defaultFiles={files}>
+        <FileUpload defaultValue={files}>
           <FileDropZone size="compact" title="Add attachments" icon="paperclip" />
           <FileList>{(f) => <FileItem item={f} className="rounded-ctl" />}</FileList>
         </FileUpload>

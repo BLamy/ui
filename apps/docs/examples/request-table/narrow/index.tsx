@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { RequestTable } from '@/components/ui/request-table'
-import { Slider, SliderThumb, SliderTrack } from '@/components/ui/slider'
+import { Slider } from '@/components/ui/slider'
 import type { RequestRow } from '@/lib/request-table-model'
 
 const PATHS = ['api/cart', 'api/products', 'assets/chunk-a81.js', 'img/product.webp', 'api/checkout']
@@ -22,10 +22,8 @@ export default function Narrow() {
   const [width, setWidth] = useState(390)
   return (
     <div className="flex w-full flex-col gap-2">
-      <Slider<number> aria-label="Table width" size="sm" className="w-full max-w-sm" minValue={300} maxValue={800} value={width} onChange={setWidth}>
-        <SliderTrack><SliderThumb /></SliderTrack>
-      </Slider>
-      <RequestTable aria-label="Requests" rows={ROWS} playhead={3600} defaultSelectedId={12} className="h-[360px] max-w-full" style={{ width }} />
+      <Slider<number> aria-label="Table width" size="sm" className="w-full max-w-sm" min={300} max={800} value={width} onValueChange={(value) => setWidth(value)} />
+      <RequestTable aria-label="Requests" rows={ROWS} playhead={3600} defaultValue={12} className="h-[360px] max-w-full" style={{ width }} />
     </div>
   )
 }

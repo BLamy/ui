@@ -3,12 +3,12 @@ import { openDemo } from './helpers.mjs';
 
 /* ContextMenu, through its docs demo: three photo tiles, each its own area with a menu. */
 test.beforeEach(async ({ page }) => {
-  await openDemo(page, 'context-menu/actions', '[data-slot=context-menu]');
+  await openDemo(page, 'context-menu/actions', '[data-slot=menu-context-trigger]');
 });
 
 const tile = (page, name) => page.getByRole('button', { name: new RegExp(name) });
 const menu = (page, name) => page.getByRole('menu', { name: `${name} actions` });
-const status = (page) => page.locator('[data-slot=context-menu]').first().locator('xpath=ancestor::div[2]').locator('p');
+const status = (page) => page.locator('[data-slot=menu-context-trigger]').first().locator('xpath=ancestor::div[2]').locator('p');
 
 test.describe('mouse', () => {
   test('a right-click opens the menu at the pointer, below and to its right', async ({ page }) => {
@@ -68,7 +68,7 @@ test.describe('mouse', () => {
   test('a normal click on a control inside the area still works', async ({ page }) => {
     let clicks = 0;
     await page.exposeFunction('__count', () => { clicks++; });
-    await page.evaluate(() => document.querySelector('[data-slot=context-menu] button').addEventListener('click', () => window.__count()));
+    await page.evaluate(() => document.querySelector('[data-slot=menu-context-trigger] button').addEventListener('click', () => window.__count()));
     await tile(page, 'Lisbon').click();
     expect(clicks).toBe(1);
     await expect(menu(page, 'Lisbon')).toHaveCount(0);
@@ -115,7 +115,7 @@ test.describe('touch', () => {
   }
 
   test('a long press opens it and lifting the finger does not press the tile', async ({ page }) => {
-    await page.evaluate(() => { window.__clicks = 0; document.querySelector('[data-slot=context-menu] button').addEventListener('click', () => { window.__clicks++; }); });
+    await page.evaluate(() => { window.__clicks = 0; document.querySelector('[data-slot=menu-context-trigger] button').addEventListener('click', () => { window.__clicks++; }); });
     const box = await tile(page, 'Lisbon').boundingBox();
     await touch(page, { x: box.x + 30, y: box.y + 30 }, () => page.waitForTimeout(700));
     await expect(menu(page, 'Lisbon')).toBeVisible();

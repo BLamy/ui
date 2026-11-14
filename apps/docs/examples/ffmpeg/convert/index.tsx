@@ -4,7 +4,7 @@ import { FileUploadButton } from '@/components/ui/file-upload'
 import { Progress } from '@/components/ui/progress'
 import { FfmpegError, mediaFileName } from '@/lib/ffmpeg'
 import { FfmpegProvider, useFfmpeg, useFfmpegSupport, useMediaInfo } from '@/lib/ffmpeg/react'
-import { formatBytes } from '@/lib/format-bytes'
+import { formatFileSize } from '@ui-sdk/core/file-input';
 import { formatTimecode } from '@/lib/video-timeline-model'
 
 // FFmpeg in a worker, like a command line: probe a file, then turn it into an
@@ -87,17 +87,17 @@ function Converter() {
     <div className="flex w-full max-w-xl flex-col gap-3 p-4">
       <div className="flex flex-wrap items-center gap-2">
         <FileUploadButton variant="secondary" size="sm" multiple={false} accept={['video/*', 'audio/*']}
-          onFiles={(entries) => setFile(entries[0]?.file ?? null)}>
+          onFiles={(files) => setFile(files[0] ?? null)}>
           Choose a file…
         </FileUploadButton>
-        <Button variant="secondary" size="sm" isDisabled={!ffmpeg || !!busy} onPress={makeTestClip}>Use a test clip</Button>
+        <Button variant="secondary" size="sm" disabled={!ffmpeg || !!busy} onClick={makeTestClip}>Use a test clip</Button>
       </div>
       {file ? (
         <div className="rounded-panel bg-secondary px-3 py-2 text-footnote">
           <div className="font-semibold">{file.name}</div>
           <div className="text-muted-foreground tabular-nums">
             {info.loading ? 'Probing…' : info.error ? info.error.message : [
-              formatBytes(file.size),
+              formatFileSize(file.size),
               info.data && formatTimecode(info.data.duration),
               v && `${v.codec} ${v.displayWidth}×${v.displayHeight} ${Math.round(v.fps)} fps`,
               a && `${a.codec} ${a.sampleRate / 1000} kHz ${a.channels === 1 ? 'mono' : `${a.channels} ch`}`,
@@ -107,7 +107,7 @@ function Converter() {
       ) : null}
       <div className="flex gap-2">
         {(Object.keys(JOBS) as Job[]).map((job) => (
-          <Button key={job} size="sm" isDisabled={!info.data || !!busy || (job !== 'mp3' && !v) || (job === 'mp3' && !a)} onPress={() => run(job)}>
+          <Button key={job} size="sm" disabled={!info.data || !!busy || (job !== 'mp3' && !v) || (job === 'mp3' && !a)} onClick={() => run(job)}>
             {JOBS[job].label}
           </Button>
         ))}
@@ -119,7 +119,7 @@ function Converter() {
           {result.type.startsWith('audio/') ? <audio src={result.url} controls className="w-full" />
             : <img src={result.url} alt={result.name} className="max-h-48 self-start rounded-ctl" />}
           <div className="flex items-center gap-3 text-footnote text-muted-foreground">
-            <span>{result.name} · {formatBytes(result.size)}</span>
+            <span>{result.name} · {formatFileSize(result.size)}</span>
             <a href={result.url} download={result.name} className="text-primary">Download</a>
           </div>
           <code className="block rounded-ctl bg-secondary p-2 text-caption break-all">{result.command}</code>

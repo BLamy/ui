@@ -26,7 +26,7 @@ export type PropControl =
   | { kind: 'font' };
 
 export interface PropSpec {
-  /** The prop's name in code (`variant`, `isDisabled`); `children` for the element's content. */
+  /** The prop's name in code (`variant`, `disabled`); `children` for the element's content. */
   name: string;
   /** What the inspector says beside it, when that isn't the name. */
   label?: string;
@@ -99,7 +99,7 @@ export interface ComponentSpec {
   module: string;
   /** The JSX tag. */
   tag: string;
-  /** Other exports its JSX uses (TextField's Label, Input and FieldDescription), as `module|Name`. */
+  /** Other exports its JSX uses (Field's FieldLabel, Input and FieldDescription), as `module|Name`. */
   uses?: string[];
   /**
    * `frame`: the node's box is the container (a stack); `component`: children render inside the component, which
@@ -124,7 +124,7 @@ export interface ComponentSpec {
   make?: () => Partial<Node>;
   render: (r: RenderArgs) => ReactNode;
   /** What the code generator writes for it, when that isn't `<Tag prop=…>` with its props as they are: parts that
-      carry props, lists that become items, dates that are DateValues. Kept beside `render`, which it mirrors. */
+      carry props, lists that become items, a Field around a control. Kept beside `render`, which it mirrors. */
   code?: (g: CodeArgs) => string;
 }
 
@@ -136,8 +136,8 @@ export interface CodeArgs {
   attr: (name: string, as?: string) => string;
   /** A list prop's literal items, or null when it's bound (`expr` is the list then). */
   list: (name: string) => ItemEntry[] | null;
-  /** An event as a JSX attribute (` onChange={…}`): its actions and its two-way write-back, the value passed
-      through `map` first (a Key to a string, a date to ISO); '' when nothing listens. */
+  /** An event as a JSX attribute (` onValueChange={…}`): its actions and its two-way write-back, the value passed
+      through `map` first (a list to its comma text); '' when nothing listens. */
   on: (event: string, map?: (v: string) => string) => string;
   /** An event's handler as a function expression (`(v) => {…}`), for a part that calls it; null when nothing listens. */
   handler: (event: string, map?: (v: string) => string) => string | null;
@@ -145,6 +145,11 @@ export interface CodeArgs {
   use: (module: string, name: string) => void;
   /** Its children, as JSX. */
   children: string[];
+  /** A slot's nodes, as JSX (a Popover's trigger). */
+  slot: (name: string) => string[];
+  /** A trigger part (`PopoverTrigger`) around its children, or a slot's nodes: rendered through the Button when it
+      holds just one, else as a plain <button> around them, so the trigger is the control people focus. */
+  trigger: (part: string, slot?: string) => string;
   /** A text prop as JSX children: the text, or `{expr}` when bound. */
   text: (name: string) => string;
 }
@@ -216,8 +221,6 @@ export function itemsOf(v: unknown): ItemEntry[] {
   });
 }
 
-/** The comma list's labels (for Segmented's options). */
-export const splitOptions = (v: unknown) => itemsOf(v).map((i) => i.label);
 
 /* ── Where a scene is in the stack (for NavigationStack's back button) ── */
 

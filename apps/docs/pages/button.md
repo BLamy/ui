@@ -1,6 +1,6 @@
 # Button
 
-The labelled action button, react-aria's `Button` dressed in BL UI's look: five variants, five sizes, a press that sinks a little on a spring, and a text label that morphs into the next one instead of swapping. Use it for anything the reader presses to do something. Icon-only controls are Buttons too (`size="icon"`, or the quiet toolbar look below); to draw your own pressable from scratch, use [PlainButton](https://blamy.github.io/ui/#/plain-button).
+The labelled action button, UI SDK's `Button` dressed in BL UI's look: six variants, six sizes, a pending state while its action runs, a press that sinks a little on a spring, and a text label that morphs into the next one instead of swapping. Use it for anything the reader presses to do something. Icon-only controls are Buttons too (`size="icon"`, or the quiet toolbar look below); to draw your own pressable from scratch, use [PlainButton](https://blamy.github.io/ui/#/plain-button).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -50,7 +50,7 @@ For the borderless tool you see in toolbars and row actions, use `variant="quiet
   <Icon name="magnifyingglass" size={17} sw={1.7} />
 </Button>
 
-<Button variant="quiet" size="icon-sm" active={starred} aria-label="Star" onPress={toggleStar}>
+<Button variant="quiet" size="icon-sm" active={starred} aria-label="Star" onClick={toggleStar}>
   <Icon name="star" size={18} sw={1.7} />
 </Button>
 ```
@@ -66,7 +66,7 @@ For the borderless tool you see in toolbars and row actions, use `variant="quiet
 | `Button` | cva variants and sizes | text, an icon, or both | labelled actions, icon buttons and toolbar tools |
 | [PlainButton](https://blamy.github.io/ui/#/plain-button) | none | anything | pressables you style yourself |
 
-`Button` and `PlainButton` both wrap react-aria's `Button` and keep `title`, which react-aria would otherwise drop.
+`Button` and `PlainButton` both wrap UI SDK's `Button`, so they share its behavior: `onClick`, the pending state, `disabled` / `focusableWhenDisabled` and `render`.
 
 ## Label morph and pending
 
@@ -74,33 +74,40 @@ A plain-text child is wrapped in `TextMorph`: the letters two labels share slide
 
 {% demo src="button/label-morph" %}
 
-`isPending` is react-aria's: presses are ignored and the button gets `aria-disabled` and `data-pending`, but it stays focusable and keeps its look. Button draws no spinner for it, so change the label (as above) or add your own.
+Return a Promise from `onClick` and the button is pending until it settles: it keeps focus and its look, ignores further presses and gets `data-pending`; after a second it announces `pendingAnnouncement` ("Loading" by default) to screen readers. Button draws no spinner for it, so change the label (as above) or show your own with Tailwind's `in-data-pending:` variant.
 
 ```tsx
-<Button isPending={saving} onPress={save}>{saving ? 'Saving…' : 'Save'}</Button>
+<Button onClick={() => save()} pendingAnnouncement="Saving">
+  <Icon name="arrow-down" className="in-data-pending:hidden" />
+  <Spinner className="not-in-data-pending:hidden" />
+  Save
+</Button>
 ```
+
+A form's async submit handler isn't tracked: keep your own flag and set `disabled` with `focusableWhenDisabled` while it runs.
 
 ## Accessibility
 
-It renders a real `<button>`. react-aria provides press handling (mouse, touch, keyboard and virtual clicks), `Enter` and `Space` activation, a focus ring that shows only for keyboard focus, and `isDisabled` (native `disabled`; dimmed to 40%). Use `onPress`, not `onClick`. A button with text is named by the text. Icon-only buttons need an `aria-label`. When a button is the trigger of an open menu or popover, it stays in its open state without the press "sink" (react-aria keeps `data-pressed` for as long as the overlay is open; the sink is suppressed for `aria-expanded`).
+It renders a real `<button>` (or, with `render={<a href="…" />}`, a link that behaves the same). `Enter` and `Space` activate it, `onClick` receives the event and `{ source }` (how it was pressed), and the focus ring shows only for keyboard focus. `disabled` takes it out of the tab order and dims it to 40%; add `focusableWhenDisabled` to keep it focusable (`aria-disabled`). A button with text is named by the text. Icon-only buttons need an `aria-label`. When a button is the trigger of an open menu or popover it carries `aria-expanded`, and the press "sink" is suppressed for it.
 
 ## Props
 
-All of react-aria's `ButtonProps` are accepted (`onPress`, `isDisabled`, `isPending`, `type`, `form`, `autoFocus`, `aria-label`, …) except `render`.
+All of UI SDK's `Button` props are accepted (`onClick`, `disabled`, `focusableWhenDisabled`, `pendingAnnouncement`, `render`, `type`, `form`, `autoFocus`, `aria-label`, …), plus:
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `default` | `default` (primary fill) · `secondary` · `ghost` (transparent, accent fill on hover) · `destructive` · `link` (text only, no padding). |
-| `size` | `default` | `default` 36px · `sm` 32px · `lg` 44px · `pill` (full width, 16px text) · `icon` (36px circle, no padding). |
-| `title` | — | Native tooltip, rendered onto the `<button>`. |
-| `className` | — | String or react-aria function; merged after the variant classes, so yours win. |
+| `variant` | `default` | `default` (primary fill) · `secondary` · `ghost` (transparent, accent fill on hover) · `destructive` · `link` (text only, no padding) · `quiet` (muted, secondary fill on hover). |
+| `size` | `default` | `default` 36px · `sm` 32px · `lg` 44px · `pill` (full width, 16px text) · `icon` (36px circle, no padding) · `icon-sm` (hugs its glyph). |
+| `active` | `false` | The filled "on" look of a `quiet` button. |
+| `title` | — | Native tooltip. |
+| `className` | — | String or a function of the state (`disabled`, `pending`); merged after the variant classes, so yours win. |
 | `children` | — | A string morphs between values; other nodes render as given. |
 
 The `link` variant keeps the `default` size's height and radius; it only drops the padding and fill.
 
 ## Styling
 
-The element carries `data-slot="button"` and the `bl-btn` class. State comes from react-aria data attributes: `data-hovered`, `data-pressed`, `data-focus-visible`, `data-disabled`, `data-pending`, `data-focused`. The press scale, the focus ring (`ring-ring`, offset 2) and the 40% disabled opacity are in the base classes; the `ghost` variant's hover fill is `data-hovered:bg-accent`.
+The element carries `data-slot="button"` and the `bl-btn` class. State comes from UI SDK's `data-disabled` and `data-pending`; hover, a held press and keyboard focus are the native `hover:`, `active:` and `focus-visible:`. The press scale (`active:`), the focus ring (`ring-ring`, offset 2) and the 40% disabled opacity are in the base classes; the `ghost` variant's hover fill is `hover:not-data-disabled:bg-accent`.
 
 ## cva recipes
 
@@ -111,7 +118,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/button`. Base classes:
 
 ```text
-bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap outline-none transition-[scale,background-color,opacity] duration-spring-snappy ease-spring-snappy data-pressed:not-aria-expanded:scale-[.97] motion-reduce:transition-none data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-offset-2 data-disabled:cursor-default data-disabled:opacity-40
+bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap outline-none transition-[scale,background-color,opacity] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress
 ```
 
 **`variant`** — default `default`
@@ -120,10 +127,10 @@ bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 b
 | --- | --- |
 | `default` (default) | `bg-primary text-primary-foreground` |
 | `secondary` | `bg-secondary text-secondary-foreground` |
-| `ghost` | `bg-transparent text-foreground data-hovered:bg-accent` |
+| `ghost` | `bg-transparent text-foreground hover:not-data-disabled:bg-accent` |
 | `destructive` | `bg-destructive text-white` |
 | `link` | `bg-transparent p-0 text-primary` |
-| `quiet` | `bg-transparent text-muted-foreground data-hovered:bg-secondary` |
+| `quiet` | `bg-transparent text-muted-foreground hover:not-data-disabled:bg-secondary data-pressed:bg-secondary data-pressed:text-foreground` |
 
 **`size`** — default `default`
 

@@ -1,10 +1,11 @@
 'use client';
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Toolbar, ToolbarButton } from '@ui-sdk/react/toolbar';
 import { Icon } from '@/lib/icon';
 import { usePlaybackState, type Playback } from '@/lib/playback';
 import { cn } from '@/lib/utils';
 import { clipDuration, clipEnd, formatTimecode, lookCss, type Timeline, type TimelineClip, type TimelineFormat, type TimelineTrack } from '@/lib/video-timeline-model';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 
 /* ══ VideoPreview — a timeline played live in the page ══
    Nothing is rendered ahead of time: every clip near the playhead is a <video>, <audio> or <img> of its media, laid out
@@ -191,29 +192,31 @@ export interface PlaybackControlsProps {
   className?: string;
 }
 
-/** Start, frame back, play/pause, frame forward, end, and the time. */
+/** Start, frame back, play/pause, frame forward, end, and the time. A UI SDK Toolbar: one tab stop, arrow keys
+    between the buttons. */
 export function PlaybackControls({ clock, fps = 30, timecode = true, className }: PlaybackControlsProps) {
   const playing = usePlaybackState(clock, (s) => s.playing);
   const atEnd = usePlaybackState(clock, (s) => s.duration > 0 && s.time >= s.duration);
   const step = (n: number) => { clock.pause(); clock.step(n / fps); };
+  const small = buttonVariants({ variant: 'quiet', size: 'icon-sm' });
   return (
-    <div data-slot="playback-controls" className={cn('flex items-center gap-1', className)}>
-      <Button variant="quiet" size="icon-sm" aria-label="Go to start" onPress={() => { clock.pause(); clock.seek(0); }}>
+    <Toolbar aria-label="Playback" className={cn('flex items-center gap-1', className)}>
+      <ToolbarButton className={small} aria-label="Go to start" onClick={() => { clock.pause(); clock.seek(0); }}>
         <Icon name="backward" size={16} />
-      </Button>
-      <Button variant="quiet" size="icon-sm" aria-label="Previous frame" onPress={() => step(-1)}>
+      </ToolbarButton>
+      <ToolbarButton className={small} aria-label="Previous frame" onClick={() => step(-1)}>
         <Icon name="chevL" size={16} />
-      </Button>
-      <Button variant="ghost" size="icon" aria-label={playing ? 'Pause' : atEnd ? 'Replay' : 'Play'} onPress={clock.toggle}>
+      </ToolbarButton>
+      <ToolbarButton className={buttonVariants({ variant: 'ghost', size: 'icon' })} aria-label={playing ? 'Pause' : atEnd ? 'Replay' : 'Play'} onClick={clock.toggle}>
         <Icon name={playing ? 'pause' : 'play'} size={20} />
-      </Button>
-      <Button variant="quiet" size="icon-sm" aria-label="Next frame" onPress={() => step(1)}>
+      </ToolbarButton>
+      <ToolbarButton className={small} aria-label="Next frame" onClick={() => step(1)}>
         <Icon name="chev" size={16} />
-      </Button>
-      <Button variant="quiet" size="icon-sm" aria-label="Go to end" onPress={() => { clock.pause(); clock.seek(clock.getState().duration); }}>
+      </ToolbarButton>
+      <ToolbarButton className={small} aria-label="Go to end" onClick={() => { clock.pause(); clock.seek(clock.getState().duration); }}>
         <Icon name="forward" size={16} />
-      </Button>
+      </ToolbarButton>
       {timecode ? <PlaybackTimecode clock={clock} fps={fps} showDuration className="ms-2" /> : null}
-    </div>
+    </Toolbar>
   );
 }

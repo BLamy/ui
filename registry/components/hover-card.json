@@ -1,17 +1,20 @@
 {
   "name": "hover-card",
   "title": "Hover Card",
-  "description": "A card that previews what a trigger points at (a person, link, file or commit) while the pointer rests on it or keyboard focus lands on it; the pointer can move into it, one is open at a time, and touch never opens it.",
+  "description": "A card that previews what a trigger points at (a person, link, file or commit) while the pointer rests on it or keyboard focus stays on it, on UI SDK's Hover Card; the pointer can move into it, one card can serve many triggers, and touch never opens it.",
   "page": "hover-card",
   "exports": [
     "HoverCard",
     "HoverCardTrigger",
+    "HoverCardContent",
+    "HoverCardArrow",
     "HoverCardHeader",
-    "useHoverCard"
+    "createHoverCardController"
   ],
   "imports": [
     "HoverCard",
     "HoverCardTrigger",
+    "HoverCardContent",
     "HoverCardHeader"
   ]
 }

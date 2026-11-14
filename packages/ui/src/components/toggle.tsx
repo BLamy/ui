@@ -1,16 +1,20 @@
 'use client';
-import { ToggleButton, type ToggleButtonProps, composeRenderProps } from 'react-aria-components';
+import type { ComponentProps } from 'react';
+import { Toggle as SdkToggle, ToggleIcon as SdkToggleIcon } from '@ui-sdk/react/toggle';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { cx } from '@/lib/utils';
 
-/* ══ Toggle — two-state button on react-aria's ToggleButton. On = tinted, like an iOS toolbar toggle. ══ */
+/* ══ Toggle — UI SDK's Toggle (a button that stays pressed) with the kit's variants ══
+   `pressed` / `defaultPressed` / `onPressedChange(pressed, details)`, `disabled`, and a controller from
+   `createToggleController()` to press it from elsewhere. On = tinted, like an iOS toolbar toggle. Inside a
+   ToggleGroup use ToggleGroupItem, which takes the group's variant and size. */
 export const toggleVariants = cva(
   [
     'bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-1.5 border-0 [font-family:inherit] font-semibold whitespace-nowrap text-foreground outline-none',
-    'transition-[background-color,color,box-shadow,scale] duration-spring-snappy ease-spring-snappy data-pressed:not-aria-expanded:scale-[.96] motion-reduce:transition-none [&_svg]:shrink-0',
-    'data-hovered:bg-accent data-pressed:bg-secondary-strong',
-    'data-selected:bg-primary/15 data-selected:text-primary data-selected:data-pressed:bg-primary/25',
-    'data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 data-disabled:cursor-default data-disabled:opacity-40',
+    'transition-[background-color,color,box-shadow,scale] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.96] motion-reduce:transition-none [&_svg]:shrink-0',
+    'hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong',
+    'data-pressed:bg-primary/15 data-pressed:text-primary data-pressed:active:not-data-disabled:bg-primary/25',
+    'focus-visible:ring-[3px] focus-visible:ring-ring/45 data-disabled:cursor-default data-disabled:opacity-40',
   ],
   {
     variants: {
@@ -18,7 +22,7 @@ export const toggleVariants = cva(
         default: 'bg-transparent',
         /** Filled resting state, for toggles standing alone on a card. */
         filled: 'bg-secondary',
-        outline: 'bg-transparent shadow-hairline data-selected:shadow-[inset_0_0_0_1px_transparent]',
+        outline: 'bg-transparent shadow-hairline data-pressed:shadow-[inset_0_0_0_1px_transparent]',
       },
       size: {
         sm: 'h-8 min-w-8 rounded-lg px-2 text-footnote',
@@ -30,14 +34,16 @@ export const toggleVariants = cva(
   },
 );
 
-export interface ToggleProps extends ToggleButtonProps, VariantProps<typeof toggleVariants> {}
+export type ToggleProps = ComponentProps<typeof SdkToggle> & VariantProps<typeof toggleVariants>;
 
 export function Toggle({ className, variant, size, ...props }: ToggleProps) {
-  return (
-    <ToggleButton
-      data-slot="toggle"
-      className={composeRenderProps(className, (cls) => cn(toggleVariants({ variant, size }), cls))}
-      {...props}
-    />
-  );
+  return <SdkToggle className={cx(toggleVariants({ variant, size }), className)} {...props} />;
 }
+
+/** An icon inside a toggle: hidden from screen readers (the toggle's text or `aria-label` names it), and
+    `mirror` flips it in right-to-left text. */
+export function ToggleIcon({ className, ...props }: ComponentProps<typeof SdkToggleIcon>) {
+  return <SdkToggleIcon className={cx('inline-flex shrink-0', className)} {...props} />;
+}
+
+export { createToggleController } from '@ui-sdk/react/toggle';

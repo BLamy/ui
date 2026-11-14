@@ -4,7 +4,10 @@ import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/docstream-ed
 import type { EditorAttachment } from '@brett_lamy/docstream-editor';
 import { astToTiptap } from '@brett_lamy/docstream-editor/convert';
 import { parseMarkdown } from '@brett_lamy/docstream/gitbook';
+import type { ChangeDetails } from '@ui-sdk/core';
+import { useFieldControl } from '@ui-sdk/react/field';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { changeDetails } from '@/lib/change-details';
 import { cn } from '@/lib/utils';
 
 /* ══ MarkdownEditor — a themed field over the Docstream (TipTap) editor ══
@@ -13,12 +16,20 @@ import { cn } from '@/lib/utils';
 
    The value is GitBook-flavored Markdown, the same dialect MarkdownView renders. Type "/" for blocks, paste
    Markdown to get structure, paste or drop images inline or as attachment chips. Colors come from the
-   surrounding --bl-* tokens (BLProvider, AppearanceProvider), and the editor's own popovers — the slash menu
-   and the chip hover card, which live on <body> — are dressed in the same tokens while this editor owns them. */
+   surrounding --bl-* tokens (BLProvider, AppearanceProvider). The editor's popovers (the slash menu, the link
+   popover, the chip hover card) render in place in the top layer, so they inherit the same tokens and, inside a
+   BLProvider, stay within its layer host.
+   Inside a UI SDK Field it is the field's control: the FieldLabel names it, FieldDescription and FieldError
+   describe it, and the field's name, disabled and invalid state apply. */
 
 /** The TipTap editor instance behind a MarkdownEditor. */
 export type MarkdownEditorInstance = NonNullable<Parameters<NonNullable<GitbookEditorProps['onEditorReady']>>[0]>;
 export type MarkdownEditorAttachment = EditorAttachment;
+
+/** Why the Markdown changed: an edit in the editor (typing, paste, a toolbar or "/" command), or a call through
+    the ref (`setMarkdown`, `insertMarkdown`, `clear`). */
+export type MarkdownEditorValueChangeReason = 'input-change' | 'imperative';
+export type MarkdownEditorValueChangeDetails = ChangeDetails<MarkdownEditorValueChangeReason>;
 
 /* Pasted plain text that reads as Markdown is parsed into structure instead of landing as literal text. */
 const MARKDOWN_HINTS = [
@@ -112,7 +123,8 @@ export interface MarkdownEditorClassNames {
   checklist?: string;
   /** One checklist row. Checked rows also carry `data-checked="true"`. */
   checklistItem?: string;
-  /** A checklist row's checkbox (`<input type="checkbox">`). */
+  /** A checklist row's checkbox: Docstream's task checkbox, a `button[role=checkbox]` over the state icon
+      (`data-checked` when verified, `data-indeterminate` for the in-between states). */
   checkbox?: string;
   table?: string;
   /** Header cells (`th`). */
@@ -133,7 +145,7 @@ const SLOT_SELECTORS: Record<Exclude<keyof MarkdownEditorClassNames, 'editor' | 
   list: '.ProseMirror :is(ul:not([data-type="taskList"]), ol)',
   checklist: '.ProseMirror ul[data-type="taskList"]',
   checklistItem: '.ProseMirror ul[data-type="taskList"] > li',
-  checkbox: '.ProseMirror ul[data-type="taskList"] > li > label input[type="checkbox"]',
+  checkbox: '.ProseMirror ul[data-type="taskList"] > li > .gb-task-control .docs-task-checkbox',
   table: '.ProseMirror table',
   tableHeader: '.ProseMirror th',
   tableCell: '.ProseMirror td',
@@ -218,8 +230,9 @@ export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorV
   value?: string;
   /** Initial Markdown (uncontrolled). */
   defaultValue?: string;
-  /** Called with serialized Markdown on every edit. */
-  onValueChange?: (markdown: string) => void;
+  /** Called with the serialized Markdown on every edit, and why (`details.reason`, `details.event`,
+   *  `details.source`). `details.cancel()` puts the document back as it was. */
+  onValueChange?: (markdown: string, details: MarkdownEditorValueChangeDetails) => void;
   /** ⌘/Ctrl+Enter. Called with the current Markdown. */
   onSubmit?: (markdown: string) => void;
   placeholder?: string;
@@ -271,7 +284,7 @@ export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorV
   minHeight?: number | string;
   /** Maximum height before the editor scrolls (px or any CSS length). */
   maxHeight?: number | string;
-  /** Submits the Markdown with a form under this name (a hidden input). */
+  /** Submits the Markdown with a form under this name (a hidden input). Inside a Field, defaults to the field's. */
   name?: string;
   id?: string;
   'aria-label'?: string;
@@ -285,36 +298,13 @@ export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorV
   style?: React.CSSProperties;
 }
 
-const len = (v: number | string | undefined) => (typeof v === 'number' ? `${v}px` : v);
-
-/* Token names the editor's stylesheet reads outside .gb (its popovers). Copied from the editor's resolved
-   values onto each popover it portals to <body>, so the menu matches the surface the editor sits on. */
-const PORTAL_TOKENS = [
-  '--popover', '--popover-foreground', '--card', '--card-foreground', '--foreground', '--border', '--muted',
-  '--muted-foreground', '--accent', '--accent-foreground', '--primary',
-];
-
-function usePortalTheme(root: React.RefObject<HTMLDivElement | null>) {
-  React.useEffect(() => {
-    if (typeof MutationObserver === 'undefined') return;
-    const obs = new MutationObserver((records) => {
-      const el = root.current;
-      if (!el || !(el.matches(':focus-within') || el.matches(':hover'))) return;
-      const cs = getComputedStyle(el);
-      for (const r of records)
-        r.addedNodes.forEach((n) => {
-          if (!(n instanceof HTMLElement) || !n.matches('.react-renderer, .gb-attachment-card')) return;
-          for (const t of PORTAL_TOKENS) n.style.setProperty(t, cs.getPropertyValue(t));
-          n.style.colorScheme = cs.colorScheme;
-          n.dataset.scheme = /dark/.test(cs.colorScheme) && !/light/.test(cs.colorScheme) ? 'dark' : 'light';
-          n.style.fontFamily = cs.fontFamily;
-          n.dataset.markdownEditorPortal = '';
-        });
-    });
-    obs.observe(document.body, { childList: true });
-    return () => obs.disconnect();
-  }, [root]);
+/** Sets a callback or object ref. */
+function setRef<T>(ref: React.Ref<T>, value: T | null) {
+  if (typeof ref === 'function') ref(value);
+  else if (ref) (ref as React.RefObject<T | null>).current = value;
 }
+
+const len = (v: number | string | undefined) => (typeof v === 'number' ? `${v}px` : v);
 
 /**
  * A Markdown field on the Docstream editor: WYSIWYG blocks, "/" commands, Markdown paste, inline or chip image
@@ -328,8 +318,8 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
     onSubmit,
     placeholder,
     readOnly = false,
-    disabled = false,
-    invalid = false,
+    disabled: disabledProp = false,
+    invalid: invalidProp = false,
     autoFocus = false,
     toolbar = false,
     documentProperties,
@@ -355,7 +345,7 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
     onEditorReady,
     minHeight,
     maxHeight,
-    name,
+    name: nameProp,
     id,
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledby,
@@ -374,16 +364,68 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
   const markdown = controlled ? value : inner;
   const [editor, setEditor] = React.useState<MarkdownEditorInstance | null>(null);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
+  // Inside a UI SDK Field: its name, disabled state, and the ids and validity its control slot hands out.
+  const field = useFieldControl({ id });
+  const fieldProps = field?.props({ id, 'aria-labelledby': ariaLabelledby, 'aria-describedby': ariaDescribedby }) as
+    | (Record<string, unknown> & { ref?: React.Ref<HTMLElement> })
+    | undefined;
+  const disabled = disabledProp || !!field?.disabled;
+  const invalid = invalidProp || fieldProps?.['aria-invalid'] === 'true' || fieldProps?.['aria-invalid'] === true;
+  const name = nameProp ?? field?.name;
+  const controlId = (fieldProps?.id as string | undefined) ?? id;
+  const labelledBy = (fieldProps?.['aria-labelledby'] as string | undefined) ?? ariaLabelledby;
+  const describedBy = (fieldProps?.['aria-describedby'] as string | undefined) ?? ariaDescribedby;
+  const fieldRef = React.useRef(fieldProps?.ref);
+  fieldRef.current = fieldProps?.ref;
   const editable = !readOnly && !disabled;
 
   // Handlers the editor captured at creation read the latest props through here.
   const latest = React.useRef({ markdown, onValueChange, onSubmit, onKeyDown, onPaste, pasteMarkdown, onReady: onEditorReady, controlled });
   latest.current = { markdown, onValueChange, onSubmit, onKeyDown, onPaste, pasteMarkdown, onReady: onEditorReady, controlled };
 
+  // Why the next change happens: a call through the ref says so while it runs; otherwise it is an edit, caused by
+  // the input event seen last in this task (a key, a paste, a drop, a toolbar press).
+  const imperative = React.useRef(false);
+  const lastInput = React.useRef<Event | undefined>(undefined);
+  React.useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    let clear: ReturnType<typeof setTimeout> | undefined;
+    const seen = (event: Event) => {
+      lastInput.current = event;
+      clearTimeout(clear);
+      clear = setTimeout(() => (lastInput.current = undefined));
+    };
+    const types = ['keydown', 'beforeinput', 'input', 'paste', 'drop', 'cut', 'click'];
+    for (const t of types) root.addEventListener(t, seen, true);
+    return () => {
+      clearTimeout(clear);
+      for (const t of types) root.removeEventListener(t, seen, true);
+    };
+  }, []);
+  const asImperative = (run: () => void) => {
+    imperative.current = true;
+    try {
+      run();
+    } finally {
+      imperative.current = false;
+    }
+  };
+
   const handleChange = React.useCallback((md: string) => {
+    const previous = latest.current.markdown;
+    const details = changeDetails<MarkdownEditorValueChangeReason>(
+      imperative.current ? { reason: 'imperative' } : { reason: 'input-change', event: lastInput.current },
+    );
+    latest.current.onValueChange?.(md, details);
+    if (details.canceled) {
+      // Put the document back as it was, without reporting that as a change.
+      const ed = editorRef.current;
+      if (ed && !ed.isDestroyed) ed.commands.setContent(astToTiptap(parseMarkdown(previous)), { emitUpdate: false });
+      return;
+    }
     latest.current.markdown = md;
     if (!latest.current.controlled) setInner(md);
-    latest.current.onValueChange?.(md);
   }, []);
 
   const handleKeyDown = React.useCallback((event: KeyboardEvent) => {
@@ -420,25 +462,33 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
     if (editor && !editor.isDestroyed && editor.isEditable !== editable) editor.setEditable(editable, false);
   }, [editor, editable]);
 
-  // ARIA on the contenteditable itself, so a <Label> / aria-describedby reach the field.
+  // ARIA on the contenteditable itself, so a <Label>, aria-describedby or the Field around it reach the field.
   React.useEffect(() => {
     if (!editor) return;
     return whenMounted(editor, () => {
       const dom = editorDom(editor);
       if (!dom) return;
       const attrs: Record<string, string | undefined> = {
-        id,
+        id: controlId,
         'aria-label': ariaLabel,
-        'aria-labelledby': ariaLabelledby,
-        'aria-describedby': ariaDescribedby,
+        'aria-labelledby': labelledBy,
+        'aria-describedby': describedBy,
         'aria-invalid': invalid ? 'true' : undefined,
         'aria-readonly': readOnly ? 'true' : undefined,
         'aria-disabled': disabled ? 'true' : undefined,
         'aria-placeholder': placeholder,
       };
-      for (const [k, v] of Object.entries(attrs)) (v === undefined ? dom.removeAttribute(k) : dom.setAttribute(k, v));
+      for (const [k, v] of Object.entries(attrs)) {
+        if (v === undefined) dom.removeAttribute(k);
+        else dom.setAttribute(k, v);
+      }
+      // Tell the field which element is its control.
+      const ref = fieldRef.current;
+      if (!ref) return;
+      setRef(ref, dom);
+      return () => setRef(ref, null);
     });
-  }, [editor, id, ariaLabel, ariaLabelledby, ariaDescribedby, invalid, readOnly, disabled, placeholder]);
+  }, [editor, controlId, ariaLabel, labelledBy, describedBy, invalid, readOnly, disabled, placeholder, !!field]);
 
   React.useEffect(() => {
     if (!editor) return;
@@ -472,23 +522,22 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
       setMarkdown: (md) => {
         const ed = editorRef.current;
         if (!ed) return;
-        ed.commands.setContent(astToTiptap(parseMarkdown(md)), { emitUpdate: true });
+        asImperative(() => ed.commands.setContent(astToTiptap(parseMarkdown(md)), { emitUpdate: true }));
       },
       insertMarkdown: (md) => {
         const ed = editorRef.current;
         if (!ed) return;
         ed.commands.focus();
-        insertMarkdown(ed, md);
+        asImperative(() => insertMarkdown(ed, md));
       },
       clear: () => {
-        editorRef.current?.commands.clearContent(true);
+        const ed = editorRef.current;
+        if (ed) asImperative(() => ed.commands.clearContent(true));
       },
       isEmpty: () => editorRef.current?.isEmpty ?? !latest.current.markdown.trim(),
     }),
     [],
   );
-
-  usePortalTheme(rootRef);
 
   // Slot classes onto the live document, re-applied after every transaction (ProseMirror re-renders nodes).
   const slotKey = JSON.stringify([contentClassName, classNames ?? null]);

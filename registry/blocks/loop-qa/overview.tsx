@@ -32,15 +32,15 @@ export function Overview({ project: p }: { project: Project }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-2 gap-3 @4xl:grid-cols-4!">
-        <StatTile label="Open bugs" icon="exclamation-circle" value={open.length} onPress={() => qa.setTab('bugs')}
+        <StatTile label="Open bugs" icon="exclamation-circle" value={open.length} onClick={() => qa.setTab('bugs')}
           foot={open.length ? `${open.filter((b) => b.severity === 'critical').length} critical` : 'All clear'}>
           <SeverityBar counts={countBySeverity(open.map((b) => b.severity))} className="mt-2.5" />
         </StatTile>
-        <StatTile label="Test runs" icon="checklist" value={runs.length} onPress={() => qa.setTab('runs')}
+        <StatTile label="Test runs" icon="checklist" value={runs.length} onClick={() => qa.setTab('runs')}
           foot={latest ? `Last: ${latest.status} · ${relativeTime(latest.started)}` : 'No runs yet'} />
-        <StatTile label="Playwright tests" icon="doc-text" value={tests.length} onPress={() => qa.setTab('tests')}
+        <StatTile label="Playwright tests" icon="doc-text" value={tests.length} onClick={() => qa.setTab('tests')}
           foot={tests.length ? (failing ? `${failing} failing until fixed` : 'All passing') : 'Generated from bugs'} />
-        <StatTile label="Coverage" icon="network" onPress={() => qa.setTab('sitemap')} foot="of known pages and states">
+        <StatTile label="Coverage" icon="network" onClick={() => qa.setTab('sitemap')} foot="of known pages and states">
           <div className="mt-2 flex items-center gap-3">
             <ProgressRing aria-label="Coverage" value={coverage} size="lg" showValue />
             <span className="text-caption leading-4 text-muted-foreground">{latest ? `${latest.journeys.length} journeys in the last run` : '—'}</span>
@@ -54,14 +54,19 @@ export function Overview({ project: p }: { project: Project }) {
 
       <div className="grid gap-5 @5xl:grid-cols-[1.25fr_1fr]!">
         <Panel title="Latest findings" icon="sparkle"
-          trailing={latest ? <RunPreview runId={latest.id} placement="bottom end"><Button size="sm" variant="ghost" className="h-7 rounded-md px-2 text-[12.5px] text-muted-foreground" onPress={() => qa.open({ kind: 'run', id: latest.id })}>Run #{latest.id.slice(4)}<Icon name="chevron-right" size={12} sw={2.4} /></Button></RunPreview> : null}
+          trailing={latest ? (
+            <RunPreview runId={latest.id} align="end"
+              render={<Button size="sm" variant="ghost" className="h-7 rounded-md px-2 text-[12.5px] text-muted-foreground" onClick={() => qa.open({ kind: 'run', id: latest.id })} />}>
+              Run #{latest.id.slice(4)}<Icon name="chevron-right" size={12} sw={2.4} />
+            </RunPreview>
+          ) : null}
           bodyClassName="px-4 py-3.5 text-[13.5px] [&_p]:my-2 [&_ul]:my-2">
           {latest?.findings ? <MarkdownView markdown={latest.findings} /> : (
             <p className="m-0 text-muted-foreground">{latest ? `${latest.journeys.length} journeys · ${latest.newBugs} new bugs.` : 'Run the project to see findings here.'}</p>
           )}
         </Panel>
         <Panel title="Newest open bugs" icon="exclamation-circle"
-          trailing={<Button size="sm" variant="ghost" className="h-7 rounded-md px-2 text-[12.5px] text-muted-foreground" onPress={() => qa.setTab('bugs')}>All {open.length}<Icon name="chevron-right" size={12} sw={2.4} /></Button>}>
+          trailing={<Button size="sm" variant="ghost" className="h-7 rounded-md px-2 text-[12.5px] text-muted-foreground" onClick={() => qa.setTab('bugs')}>All {open.length}<Icon name="chevron-right" size={12} sw={2.4} /></Button>}>
           <ul className="m-0 list-none p-1.5">
             {recent.map((b) => <BugLine key={b.id} bug={b} />)}
             {!recent.length ? <li className="px-3 py-6 text-center text-footnote text-muted-foreground">No open bugs.</li> : null}
@@ -76,15 +81,14 @@ function BugLine({ bug: b }: { bug: Bug }) {
   const qa = useLoopQA();
   return (
     <li>
-      <BugPreview bug={b} className="flex w-full" placement="left top">
-        <Pressable onPress={() => qa.open({ kind: 'bug', id: b.id })}
-          className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-ctl px-2.5 py-2 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-[.99]">
-          <SeverityBadge severity={b.severity} className="w-[66px] justify-center" />
-          <span className="min-w-0 flex-1">
-            <span className="line-clamp-1 text-footnote font-medium">{b.title}</span>
-            <span className="block text-[11.5px] text-muted-foreground"><span className="font-mono">{b.id}</span> · {relativeTime(b.discovered)}</span>
-          </span>
-        </Pressable>
+      <BugPreview bug={b} side="left" align="start"
+        render={<Pressable onClick={() => qa.open({ kind: 'bug', id: b.id })}
+          className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-ctl px-2.5 py-2 text-left whitespace-normal hover:bg-muted! active:not-aria-expanded:not-data-disabled:scale-[.99]" />}>
+        <SeverityBadge severity={b.severity} className="w-[66px] justify-center" />
+        <span className="min-w-0 flex-1">
+          <span className="line-clamp-1 text-footnote font-medium">{b.title}</span>
+          <span className="block text-[11.5px] text-muted-foreground"><span className="font-mono">{b.id}</span> · {relativeTime(b.discovered)}</span>
+        </span>
       </BugPreview>
     </li>
   );
@@ -106,9 +110,9 @@ function Exploration() {
       icon="play-outline"
       trailing={
         <span className="flex items-center gap-1">
-          <BarButton label="Previous exploration" icon="chevron-left" onPress={() => go(-1)} className="size-7" />
+          <BarButton label="Previous exploration" icon="chevron-left" onClick={() => go(-1)} className="size-7" />
           <span className="min-w-9 text-center text-caption text-muted-foreground tabular-nums">{index + 1} / {EXPLORATIONS.length}</span>
-          <BarButton label="Next exploration" icon="chevron-right" onPress={() => go(1)} className="size-7" />
+          <BarButton label="Next exploration" icon="chevron-right" onClick={() => go(1)} className="size-7" />
         </span>
       }
       bodyClassName="grid gap-4 p-4 @5xl:grid-cols-[1fr_240px]!"

@@ -3,13 +3,17 @@
    "Go to" pages for projects (⌘1–⌘7), bugs (with a preview pane) and runs; typing at the root searches all of
    them at once. Nested pages keep their query and row when you come back (Backspace / ←).
 
-   Hotkeys listen on the document but only act for this block — when focus is inside it, or nothing is focused and
-   the pointer is over it — so a page hosting several blocks doesn't trigger them all:
+   Hotkeys are page shortcuts (UI SDK's `useShortcut`) that only act for this block — when focus is inside it, or
+   nothing is focused and the pointer is over it — so a page hosting several blocks doesn't trigger them all:
    ⌘K palette · ⌘J Ask QA · ⇧⌘↵ start a run · ⇧⌘C copy open bug reports · ⇧⌘L light/dark · ⌘. change status of
    the open bug. */
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useShortcut } from '@ui-sdk/react/shortcuts';
 import { ContentSwap } from '@/components/ui/animated-height';
-import { CommandEmpty, CommandFooter, CommandGroup, CommandInput, CommandItem, CommandList, CommandMenu, CommandPage, matchesHotkey, useCommandActive, useCommandMenu } from '@/components/ui/command-menu';
+import {
+  CommandMenu, CommandMenuDialog, CommandMenuDialogContent, CommandMenuEmpty, CommandMenuFooter, CommandMenuGroup, CommandMenuGroupLabel,
+  CommandMenuInput, CommandMenuItem, CommandMenuList, CommandMenuPage, CommandMenuShortcut, useCommandMenu, useCommandMenuValue,
+} from '@/components/ui/command-menu';
 import { useContainerWidth } from '@/lib/container';
 import { cn } from '@/lib/utils';
 import { isOpen } from './agent';
@@ -24,26 +28,20 @@ export function Commands() {
   const [layer, setLayer] = useState<HTMLDivElement | null>(null);
   const dark = qa.look === 'dark';
 
-  const keys = useRef<(e: KeyboardEvent) => void>(() => {});
-  keys.current = (e) => {
+  /** Whether a key press is this block's: focus is inside it, or nothing is focused and the pointer is over it. */
+  const mine = () => {
     const root = layer?.parentElement;
-    if (!root) return;
+    if (!root) return false;
     const active = document.activeElement;
-    const mine = (active && active !== document.body && root.contains(active)) || ((!active || active === document.body) && root.matches(':hover'));
-    if (!mine) return;
-    const run = (fn: () => void) => { e.preventDefault(); fn(); };
-    if (matchesHotkey(e, 'mod+k')) return run(() => (qa.palette.open ? qa.setPalette((s) => ({ ...s, open: false })) : qa.openPalette()));
-    if (matchesHotkey(e, 'mod+j')) return run(() => qa.setAskOpen(!qa.askOpen));
-    if (matchesHotkey(e, 'shift+mod+enter')) return run(() => qa.startRun(qa.project?.id ?? PROJECTS[0]!.id, 'Manual'));
-    if (matchesHotkey(e, 'shift+mod+c')) return run(() => qa.copyBugReports(qa.project?.id ?? PROJECTS[0]!.id));
-    if (matchesHotkey(e, 'shift+mod+l')) return run(() => qa.setLook(dark ? 'light' : 'dark'));
-    if (qa.currentBug && matchesHotkey(e, 'mod+.')) return run(() => qa.openPalette(['status']));
+    return (!!active && active !== document.body && root.contains(active)) || ((!active || active === document.body) && root.matches(':hover'));
   };
-  useEffect(() => {
-    const on = (e: KeyboardEvent) => !e.defaultPrevented && keys.current(e);
-    document.addEventListener('keydown', on);
-    return () => document.removeEventListener('keydown', on);
-  }, []);
+  const project = () => qa.project?.id ?? PROJECTS[0]!.id;
+  useShortcut('mod+k', () => qa.openPalette(), { when: mine, description: 'Search Loop QA' });
+  useShortcut('mod+j', () => qa.setAskOpen(!qa.askOpen), { when: mine, description: 'Ask QA' });
+  useShortcut('shift+mod+enter', () => qa.startRun(project(), 'Manual'), { when: mine, description: 'Start a test run' });
+  useShortcut('shift+mod+c', () => qa.copyBugReports(project()), { when: mine, description: 'Copy open bug reports' });
+  useShortcut('shift+mod+l', () => qa.setLook(dark ? 'light' : 'dark'), { when: mine, description: 'Switch the theme' });
+  useShortcut(qa.currentBug ? 'mod+.' : null, () => qa.openPalette(['status']), { when: mine, description: 'Change the bug’s status' });
 
   return (
     <>
@@ -54,143 +52,159 @@ export function Commands() {
   );
 }
 
-function Palette({ container }: { container: Element | null }) {
+function Palette({ container }: { container: HTMLElement | null }) {
   const qa = useLoopQA();
   const [ref, width] = useContainerWidth<HTMLDivElement>(640);
   const project = qa.project ?? PROJECTS[0]!;
   const bug = qa.currentBug ? qa.bugs.find((b) => b.id === qa.currentBug) : undefined;
   const openBugs = [...qa.bugs.filter(isOpen)].sort((a, b) => severityRank(a.severity) - severityRank(b.severity) || b.discovered.localeCompare(a.discovered));
   const dark = qa.look === 'dark';
+  const close = () => qa.setPalette((s) => ({ ...s, open: false }));
+  // ⌘K again closes it (the page's ⌘K pauses while the palette is up).
+  useShortcut(qa.palette.open ? 'mod+k' : null, close, { layer: ref });
 
   const bugItem = (b: Bug) => (
-    <CommandItem key={b.id} value={`bug ${b.id}`} keywords={[b.id, b.title, b.kind]} searchDescription={false}
+    <CommandMenuItem key={b.id} value={`bug ${b.id}`} label={b.title} keywords={[b.id, b.kind]}
       icon={<span className="size-2.5 rounded-full bg-(--c)" style={{ '--c': SEVERITY_COLOR[b.severity] } as CSSProperties} />}
       title={b.title} description={`${b.id} · ${PROJECTS.find((p) => p.id === b.projectId)?.name ?? ''}`}
       onSelect={() => qa.open({ kind: 'bug', id: b.id })} />
   );
+  const hint = (keys: string) => <CommandMenuShortcut shortcut={keys} />;
 
   return (
-    <CommandMenu
-      variant="dialog"
-      isOpen={qa.palette.open}
-      onOpenChange={(o) => qa.setPalette((s) => ({ ...s, open: o }))}
-      defaultPages={qa.palette.pages}
-      container={container}
-      ranking="global"
-      aria-label="Command menu"
-      className="w-full [--command-surface:var(--popover)] shadow-[0_28px_80px_-12px_--alpha(black/45%),0_0_0_1px_var(--border)]"
-      style={{ maxWidth: 680 }}
-    >
-      <CommandInput placeholder="Search projects, bugs and runs, or type a command…" />
-      <div ref={ref} className="flex min-h-0 border-t border-border">
-        <div className="min-w-0 flex-1">
-          <CommandList maxHeight={400}>
-            <CommandEmpty>No results</CommandEmpty>
+    <CommandMenuDialog open={qa.palette.open} onOpenChange={(o) => qa.setPalette((s) => ({ ...s, open: o }))} container={container}>
+      <CommandMenuDialogContent aria-label="Command menu" className="max-w-[680px]">
+        <CommandMenu
+          defaultPages={qa.palette.pages}
+          className="w-full [--command-surface:var(--popover)] shadow-[0_28px_80px_-12px_--alpha(black/45%),0_0_0_1px_var(--border)]"
+        >
+          <CommandMenuInput placeholder="Search projects, bugs and runs, or type a command…" />
+          <div ref={ref} className="flex min-h-0 border-t border-border">
+            <div className="min-w-0 flex-1">
+              <CommandMenuEmpty>No results</CommandMenuEmpty>
+              <CommandMenuList className="max-h-100">
+                <CommandMenuPage>
+                  {bug ? (
+                    <CommandMenuGroup>
+                      <CommandMenuGroupLabel>This bug · {bug.id}</CommandMenuGroupLabel>
+                      <CommandMenuItem icon="checkmark-circle" title="Change status…" label="Change status" description={STATUS_LABEL[bug.status]} trailing={hint('mod+.')} page="status" />
+                      <CommandMenuItem icon="flag" title="Change severity…" label="Change severity" description={SEVERITY_LABEL[bug.severity]} page="severity" />
+                      <CommandMenuItem icon="copy" title="Copy bug report" description="Markdown, ready for a coding agent" onSelect={() => qa.copyBugReport(bug.id)} />
+                    </CommandMenuGroup>
+                  ) : null}
+                  <CommandMenuGroup>
+                    <CommandMenuGroupLabel>Actions</CommandMenuGroupLabel>
+                    <CommandMenuItem icon="play" title={`Start test run on ${project.name}`} value="Start test run" keywords={['run', 'test', 'qa', project.name]} trailing={hint('shift+mod+enter')}
+                      disabled={qa.runs.some((r) => r.status === 'running')} onSelect={() => qa.startRun(project.id, 'Manual')} />
+                    <CommandMenuItem icon="sparkle" title={qa.askOpen ? 'Hide Ask QA' : 'Ask QA'} keywords={['chat', 'agent', 'assistant']} trailing={hint('mod+j')} onSelect={() => qa.setAskOpen(!qa.askOpen)} />
+                    <CommandMenuItem icon="copy" title="Copy open bug reports" description={`${qa.bugs.filter((b) => b.projectId === project.id && isOpen(b)).length} reports from ${project.name}`} trailing={hint('shift+mod+c')}
+                      keywords={['markdown', 'export']} onSelect={() => qa.copyBugReports(project.id)} />
+                    <CommandMenuItem icon="link" title="Connect issue tracker…" keywords={['linear', 'jira', 'github', 'slack', 'integration']} page="tracker" />
+                    <CommandMenuItem icon="share" title="Share project…" keywords={['invite', 'members', 'link']} onSelect={() => qa.setDialog('share')} />
+                    <CommandMenuItem icon={dark ? 'sun' : 'moon'} title={dark ? 'Switch to light theme' : 'Switch to dark theme'} value="Toggle theme" keywords={['appearance', 'dark', 'light', 'mode']} trailing={hint('shift+mod+l')}
+                      onSelect={() => qa.setLook(dark ? 'light' : 'dark')} />
+                  </CommandMenuGroup>
+                  <CommandMenuGroup>
+                    <CommandMenuGroupLabel>Go to</CommandMenuGroupLabel>
+                    <CommandMenuItem icon="grid" title="All projects" onSelect={() => qa.openSection('projects')} />
+                    <CommandMenuItem icon="folder-closed" title="Project…" page="projects" />
+                    <CommandMenuItem icon="exclamation-circle" title="Bug…" label="Bug" description={`${openBugs.length} open`} page="bugs" />
+                    <CommandMenuItem icon="checklist" title="Test run…" page="runs" />
+                  </CommandMenuGroup>
+                  <SearchOnly>
+                    <CommandMenuGroup>
+                      <CommandMenuGroupLabel>Projects</CommandMenuGroupLabel>
+                      {PROJECTS.map((p) => (
+                        <CommandMenuItem key={p.id} value={`project ${p.name}`} keywords={[host(p.url)]} icon={<Swatch color={p.brand} />} title={p.name} description={host(p.url)}
+                          onSelect={() => qa.openSection(p.id)} />
+                      ))}
+                    </CommandMenuGroup>
+                    <CommandMenuGroup>
+                      <CommandMenuGroupLabel>Bugs</CommandMenuGroupLabel>
+                      {openBugs.map(bugItem)}
+                    </CommandMenuGroup>
+                    <CommandMenuGroup>
+                      <CommandMenuGroupLabel>Runs</CommandMenuGroupLabel>
+                      {qa.runs.map((r) => (
+                        <CommandMenuItem key={r.id} value={`run ${r.id} ${r.title}`} label={r.title} keywords={[`#${r.id.slice(4)}`]} icon="checklist" title={r.title}
+                          description={`#${r.id.slice(4)} · ${PROJECTS.find((p) => p.id === r.projectId)?.name} · ${r.status}`}
+                          onSelect={() => qa.open({ kind: 'run', id: r.id })} />
+                      ))}
+                    </CommandMenuGroup>
+                  </SearchOnly>
+                </CommandMenuPage>
 
-            <CommandPage id="root">
-              {bug ? (
-                <CommandGroup heading={`This bug · ${bug.id}`}>
-                  <CommandItem icon="checkmark-circle" title="Change status…" description={STATUS_LABEL[bug.status]} shortcut="⌘." page="status" searchDescription={false} />
-                  <CommandItem icon="flag" title="Change severity…" description={SEVERITY_LABEL[bug.severity]} page="severity" searchDescription={false} />
-                  <CommandItem icon="copy" title="Copy bug report" description="Markdown, ready for a coding agent" onSelect={() => qa.copyBugReport(bug.id)} />
-                </CommandGroup>
-              ) : null}
-              <CommandGroup heading="Actions">
-                <CommandItem icon="play" title={`Start test run on ${project.name}`} value="Start test run" keywords={['run', 'test', 'qa', project.name]} shortcut="⇧⌘↵"
-                  disabled={qa.runs.some((r) => r.status === 'running')} onSelect={() => qa.startRun(project.id, 'Manual')} />
-                <CommandItem icon="sparkle" title={qa.askOpen ? 'Hide Ask QA' : 'Ask QA'} keywords={['chat', 'agent', 'assistant']} shortcut="⌘J" onSelect={() => qa.setAskOpen(!qa.askOpen)} />
-                <CommandItem icon="copy" title="Copy open bug reports" description={`${qa.bugs.filter((b) => b.projectId === project.id && isOpen(b)).length} reports from ${project.name}`} shortcut="⇧⌘C"
-                  keywords={['markdown', 'export']} onSelect={() => qa.copyBugReports(project.id)} />
-                <CommandItem icon="link" title="Connect issue tracker…" keywords={['linear', 'jira', 'github', 'slack', 'integration']} page="tracker" />
-                <CommandItem icon="share" title="Share project…" keywords={['invite', 'members', 'link']} onSelect={() => qa.setDialog('share')} />
-                <CommandItem icon={dark ? 'sun' : 'moon'} title={dark ? 'Switch to light theme' : 'Switch to dark theme'} value="Toggle theme" keywords={['appearance', 'dark', 'light', 'mode']} shortcut="⇧⌘L"
-                  onSelect={() => qa.setLook(dark ? 'light' : 'dark')} />
-              </CommandGroup>
-              <CommandGroup heading="Go to">
-                <CommandItem icon="grid" title="All projects" onSelect={() => qa.openSection('projects')} />
-                <CommandItem icon="folder-closed" title="Project…" page="projects" chevron />
-                <CommandItem icon="exclamation-circle" title="Bug…" description={`${openBugs.length} open`} page="bugs" chevron searchDescription={false} />
-                <CommandItem icon="checklist" title="Test run…" page="runs" chevron />
-              </CommandGroup>
-              <SearchOnly>
-                <CommandGroup heading="Projects">
-                  {PROJECTS.map((p) => (
-                    <CommandItem key={p.id} value={`project ${p.name}`} keywords={[p.name, host(p.url)]} icon={<Swatch color={p.brand} />} title={p.name} description={host(p.url)}
-                      onSelect={() => qa.openSection(p.id)} />
+                <CommandMenuPage value="projects" title="Projects" placeholder="Search projects…" numbered>
+                  <CommandMenuGroup>
+                    <CommandMenuGroupLabel>Projects</CommandMenuGroupLabel>
+                    {PROJECTS.map((p) => (
+                      <CommandMenuItem key={p.id} value={p.name} keywords={[host(p.url)]} icon={<Swatch color={p.brand} />} title={p.name} description={host(p.url)}
+                        trailing={<span className="ml-auto shrink-0 text-caption text-muted-foreground tabular-nums">{qa.bugs.filter((b) => b.projectId === p.id && isOpen(b)).length} open</span>}
+                        onSelect={() => qa.openSection(p.id)} />
+                    ))}
+                  </CommandMenuGroup>
+                </CommandMenuPage>
+
+                <CommandMenuPage value="bugs" title="Bugs" placeholder="Search open bugs…">
+                  {SEVERITIES.map((s) => (
+                    <CommandMenuGroup key={s}>
+                      <CommandMenuGroupLabel>{SEVERITY_LABEL[s]}</CommandMenuGroupLabel>
+                      {openBugs.filter((b) => b.severity === s).map(bugItem)}
+                    </CommandMenuGroup>
                   ))}
-                </CommandGroup>
-                <CommandGroup heading="Bugs">{openBugs.map(bugItem)}</CommandGroup>
-                <CommandGroup heading="Runs">
-                  {qa.runs.map((r) => (
-                    <CommandItem key={r.id} value={`run ${r.id} ${r.title}`} keywords={[r.title, `#${r.id.slice(4)}`]} icon="checklist" title={r.title}
-                      description={`#${r.id.slice(4)} · ${PROJECTS.find((p) => p.id === r.projectId)?.name} · ${r.status}`} searchDescription={false}
-                      onSelect={() => qa.open({ kind: 'run', id: r.id })} />
-                  ))}
-                </CommandGroup>
-              </SearchOnly>
-            </CommandPage>
+                </CommandMenuPage>
 
-            <CommandPage id="projects" title="Projects" placeholder="Search projects…" numbered>
-              <CommandGroup heading="Projects">
-                {PROJECTS.map((p) => (
-                  <CommandItem key={p.id} value={p.name} keywords={[host(p.url)]} icon={<Swatch color={p.brand} />} title={p.name} description={host(p.url)}
-                    badge={<span className="text-caption text-muted-foreground tabular-nums">{qa.bugs.filter((b) => b.projectId === p.id && isOpen(b)).length} open</span>}
-                    onSelect={() => qa.openSection(p.id)} />
-                ))}
-              </CommandGroup>
-            </CommandPage>
+                <CommandMenuPage value="runs" title="Test runs" placeholder="Search runs…">
+                  <CommandMenuGroup>
+                    <CommandMenuGroupLabel>Recent runs</CommandMenuGroupLabel>
+                    {qa.runs.map((r) => (
+                      <CommandMenuItem key={r.id} value={`${r.title} #${r.id.slice(4)}`} icon="checklist" title={r.title}
+                        description={`#${r.id.slice(4)} · ${PROJECTS.find((p) => p.id === r.projectId)?.name} · ${r.status === 'running' ? 'running now' : relativeTime(r.started)}`}
+                        trailing={<span className="ml-auto shrink-0"><RunStatusBadge status={r.status} /></span>} onSelect={() => qa.open({ kind: 'run', id: r.id })} />
+                    ))}
+                  </CommandMenuGroup>
+                </CommandMenuPage>
 
-            <CommandPage id="bugs" title="Bugs" placeholder="Search open bugs…">
-              {SEVERITIES.map((s) => (
-                <CommandGroup key={s} heading={SEVERITY_LABEL[s]}>{openBugs.filter((b) => b.severity === s).map(bugItem)}</CommandGroup>
-              ))}
-            </CommandPage>
+                <CommandMenuPage value="status" title={bug ? `${bug.id} status` : 'Status'} placeholder="Set status…" numbered>
+                  <CommandMenuGroup>
+                    <CommandMenuGroupLabel>Status</CommandMenuGroupLabel>
+                    {STATUSES.map((s) => (
+                      <CommandMenuItem key={s} value={STATUS_LABEL[s]} icon={<span className={cn('size-2.5 rounded-full', STATUS_DOT[s])} />} title={STATUS_LABEL[s]}
+                        trailing={bug?.status === s ? <span className="ml-auto shrink-0 text-caption text-muted-foreground">Current</span> : undefined}
+                        disabled={!bug} onSelect={() => { if (bug) { qa.setBugStatus(bug.id, s); qa.hud(`${bug.id} → ${STATUS_LABEL[s]}`); } }} />
+                    ))}
+                  </CommandMenuGroup>
+                </CommandMenuPage>
 
-            <CommandPage id="runs" title="Test runs" placeholder="Search runs…">
-              <CommandGroup heading="Recent runs">
-                {qa.runs.map((r) => (
-                  <CommandItem key={r.id} value={`${r.title} #${r.id.slice(4)}`} icon="checklist" title={r.title}
-                    description={`#${r.id.slice(4)} · ${PROJECTS.find((p) => p.id === r.projectId)?.name} · ${r.status === 'running' ? 'running now' : relativeTime(r.started)}`}
-                    badge={<RunStatusBadge status={r.status} />} onSelect={() => qa.open({ kind: 'run', id: r.id })} />
-                ))}
-              </CommandGroup>
-            </CommandPage>
+                <CommandMenuPage value="severity" title={bug ? `${bug.id} severity` : 'Severity'} placeholder="Set severity…" numbered>
+                  <CommandMenuGroup>
+                    <CommandMenuGroupLabel>Severity</CommandMenuGroupLabel>
+                    {SEVERITIES.map((s) => (
+                      <CommandMenuItem key={s} value={SEVERITY_LABEL[s]} icon={<Swatch color={SEVERITY_COLOR[s]} round />} title={SEVERITY_LABEL[s]}
+                        trailing={bug?.severity === s ? <span className="ml-auto shrink-0 text-caption text-muted-foreground">Current</span> : undefined}
+                        disabled={!bug} onSelect={() => { if (bug) { qa.setBugSeverity(bug.id, s); qa.hud(`${bug.id} → ${SEVERITY_LABEL[s]}`); } }} />
+                    ))}
+                  </CommandMenuGroup>
+                </CommandMenuPage>
 
-            <CommandPage id="status" title={bug ? `${bug.id} status` : 'Status'} placeholder="Set status…" numbered>
-              <CommandGroup heading="Status">
-                {STATUSES.map((s) => (
-                  <CommandItem key={s} value={STATUS_LABEL[s]} icon={<span className={cn('size-2.5 rounded-full', STATUS_DOT[s])} />} title={STATUS_LABEL[s]}
-                    badge={bug?.status === s ? <span className="text-caption text-muted-foreground">Current</span> : undefined}
-                    disabled={!bug} onSelect={() => { if (bug) { qa.setBugStatus(bug.id, s); qa.toast.hud(`${bug.id} → ${STATUS_LABEL[s]}`); } }} />
-                ))}
-              </CommandGroup>
-            </CommandPage>
-
-            <CommandPage id="severity" title={bug ? `${bug.id} severity` : 'Severity'} placeholder="Set severity…" numbered>
-              <CommandGroup heading="Severity">
-                {SEVERITIES.map((s) => (
-                  <CommandItem key={s} value={SEVERITY_LABEL[s]} icon={<Swatch color={SEVERITY_COLOR[s]} round />} title={SEVERITY_LABEL[s]}
-                    badge={bug?.severity === s ? <span className="text-caption text-muted-foreground">Current</span> : undefined}
-                    disabled={!bug} onSelect={() => { if (bug) { qa.setBugSeverity(bug.id, s); qa.toast.hud(`${bug.id} → ${SEVERITY_LABEL[s]}`); } }} />
-                ))}
-              </CommandGroup>
-            </CommandPage>
-
-            <CommandPage id="tracker" title="Issue tracker" placeholder="Connect a tracker…">
-              <CommandGroup heading="Issue trackers">
-                {TRACKERS.map((t) => (
-                  <CommandItem key={t.id} value={t.name} icon={<Swatch color={t.color} />} title={t.name} description={t.detail}
-                    badge={qa.trackers.includes(t.id) ? <span className="text-caption font-medium text-success">Connected</span> : undefined}
-                    onSelect={() => qa.connectTracker(t.id, t.name)} />
-                ))}
-              </CommandGroup>
-            </CommandPage>
-          </CommandList>
-        </div>
-        <BugPreview wide={width >= 600} />
-      </div>
-      <CommandFooter />
-    </CommandMenu>
+                <CommandMenuPage value="tracker" title="Issue tracker" placeholder="Connect a tracker…">
+                  <CommandMenuGroup>
+                    <CommandMenuGroupLabel>Issue trackers</CommandMenuGroupLabel>
+                    {TRACKERS.map((t) => (
+                      <CommandMenuItem key={t.id} value={t.name} icon={<Swatch color={t.color} />} title={t.name} description={t.detail}
+                        trailing={qa.trackers.includes(t.id) ? <span className="ml-auto shrink-0 text-caption font-medium text-success">Connected</span> : undefined}
+                        onSelect={() => qa.connectTracker(t.id, t.name)} />
+                    ))}
+                  </CommandMenuGroup>
+                </CommandMenuPage>
+              </CommandMenuList>
+            </div>
+            <BugPreview wide={width >= 600} />
+          </div>
+          <CommandMenuFooter />
+        </CommandMenu>
+      </CommandMenuDialogContent>
+    </CommandMenuDialog>
   );
 }
 
@@ -203,7 +217,7 @@ function SearchOnly({ children }: { children: ReactNode }) {
 /** On the Bugs page (wide palettes), the active bug's summary beside the list. */
 function BugPreview({ wide }: { wide: boolean }) {
   const { page } = useCommandMenu();
-  const active = useCommandActive();
+  const active = useCommandMenuValue();
   const qa = useLoopQA();
   if (!wide || page !== 'bugs') return null;
   const b = active?.startsWith('bug ') ? qa.bugs.find((x) => x.id === active.slice(4)) : undefined;

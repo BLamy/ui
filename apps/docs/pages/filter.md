@@ -1,6 +1,6 @@
 # Filter
 
-Linear-style filtering. A **Filter** button (and an optional `F` shortcut) opens a searchable list of fields; pick one and a searchable multi-select of its values (checkbox rows with colors, icons and counts) — or a date, number, text or Yes/No editor. The filter lands as a **chip**: `[field] [operator ▾] [value ▾] [×]`. The operator and the value are each a button of their own: the operator opens a small menu (`is`, `is not`, `is any of`, `is none of`; `contains`; `before`, `after`, `in the last`; `=`, `<`, `>`), the value opens the same picker you added it with. Everything is built on react-aria: a toolbar with arrow keys, menus, popovers, an autocomplete list.
+Linear-style filtering. A **Filter** button (and an optional `F` shortcut) opens a searchable list of fields; pick one and a searchable multi-select of its values (checkbox rows with colors, icons and counts) — or a date, number, text or Yes/No editor. The filter lands as a **chip**: `[field] [operator ▾] [value ▾] [×]`. The operator and the value are each a button of their own: the operator opens a small menu (`is`, `is not`, `is any of`, `is none of`; `contains`; `before`, `after`, `in the last`; `=`, `<`, `>`), the value opens the same picker you added it with. Everything is built on UI SDK: a Toolbar with arrow keys, Menus with radio items, Popovers, a Command for the fields and an option search (`createListbox` with a list of ticked values) for the values.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -46,7 +46,7 @@ const shown = matchFilters(issues, filters, fields, (issue, field) => issue[fiel
 <FilterBar fields={fields} value={filters} onValueChange={setFilters} hotkey="f" />
 ```
 
-`value` / `onValueChange` control the filters; `defaultValue` leaves them to the bar. `match` / `onMatchChange` (or `defaultMatch`) hold whether every filter must hold (`all`, the default) or any one (`any`); `showMatch` adds the "Match all ▾" menu from two filters on.
+`value` / `onValueChange(filters, details)` control the filters. `details` are UI SDK's change details: `reason` (`add`, `update`, `remove`, `clear`, `apply`, or `imperative` for `setFilters` from code), the `event` behind it (the press, the key, the pick in a value list), `source` (`mouse`, `keyboard`, `agent`…, passed on from the UI SDK part that made the change) and `cancel()`, which keeps an uncontrolled bar as it was; `defaultValue` leaves them to the bar. `match` / `onMatchChange(match, details)` (or `defaultMatch`) hold whether every filter must hold (`all`, the default) or any one (`any`); `showMatch` adds the "Match all ▾" menu from two filters on.
 
 ## Fields
 
@@ -103,7 +103,7 @@ The serialized form is `field:operator:value;…`, every part percent-encoded, a
 
 ## Parts
 
-`FilterBar` provides the fields, the filters and their edits, and a polite live region; with no children it renders a `FilterToolbar`. Compose the rest yourself:
+`FilterBar` provides the fields, the filters and their edits, and announces what changes (UI SDK's `announce()`); with no children it renders a `FilterToolbar`. Compose the rest yourself:
 
 ```tsx
 <FilterBar fields={fields} value={filters} onValueChange={setFilters}>
@@ -119,8 +119,8 @@ The serialized form is `field:operator:value;…`, every part percent-encoded, a
 | Part | Props |
 | --- | --- |
 | `FilterBar` | `fields`, `value` / `defaultValue` / `onValueChange`, `match` / `defaultMatch` / `onMatchChange`, `allowDuplicates`, `hotkey`, `showMatch`, `locale`, `children`. |
-| `FilterToolbar` | The row: react-aria's Toolbar. `hotkey`, `showMatch`, `children`. |
-| `FilterMenu` | The Filter button and its popover. `hotkey`, `children` (your own trigger — any pressable), `label`, `isOpen` / `defaultOpen` / `onOpenChange`, `placement`. Outside a bar also `fields` and `state`. |
+| `FilterToolbar` | The row: UI SDK's Toolbar (its props: `orientation`, `loop`, `disabled`, `controller`…). `hotkey`, `showMatch`, `children`. |
+| `FilterMenu` | The Filter button and its popover. `hotkey`, `render` (your own trigger element, like `<Button variant="secondary" />`), `children` (the trigger's content; default a filter icon and "Filter"), `open` / `defaultOpen` / `onOpenChange(open, details)`, `side` / `align`, `className` (the trigger), `popoverClassName`. Outside a bar also `fields` and `state`. |
 | `FilterList` | The chips, as a list. A render function child draws each filter yourself. Renders nothing when empty. |
 | `FilterChip` | One filter. `filter`, `field`, `onChange`, `onRemove`, `readOnly`, `size`, `tone`. Inside a bar it needs only `filter`. |
 | `FilterClear` | "Clear all". Renders nothing when empty. |
@@ -154,11 +154,13 @@ state.setFilters((prev) => …)              // updater: sees the latest value e
 state.match; state.setMatch('any')
 ```
 
+Every edit takes an optional last argument, `{ event, source }`, that reaches the change's details (`state.remove(id, { event })` from a click handler), and returns whether it went through: `false` when nothing changed or `details.cancel()` refused it.
+
 Options: `value`, `defaultValue`, `onValueChange`, `match`, `defaultMatch`, `onMatchChange`.
 
 ### `useFilterBar()`
 
-Inside a `FilterBar`, its `fields`, filters, `match`, edits, `announce(message)` (say something politely), `removeAndFocus(id)` and `apply(filters, mode)` (add filters from outside the menu: `merge` replaces a field's filter, `replace` swaps them all). It throws outside a bar; `useOptionalFilterBar()` returns `null` instead.
+Inside a `FilterBar`, its `fields`, filters, `match`, edits, `announce(message)` (say something politely), `bindChip(el, id)` (UI SDK's `createFocusRecovery` for a chip you render yourself: a chip that leaves with focus hands it to the next chip's same part, else the previous chip's, else the Filter button; `FilterChip` binds itself) and `apply(filters, mode, options?)` (add filters from outside the menu: `merge` replaces a field's filter, `replace` swaps them all). It throws outside a bar; `useOptionalFilterBar()` returns `null` instead.
 
 ## Keyboard
 
@@ -177,8 +179,8 @@ Inside a `FilterBar`, its `fields`, filters, `match`, edits, `announce(message)`
 
 - The row is a `toolbar` labelled "Filters"; the chips are a labelled `list` of `group`s whose names are sentences — "Status is any of Open, In progress".
 - The operator and value buttons are named by what they do and hold ("Status operator: is any of", "Status value: Open, In progress"), so their visible text is part of the name. The × reads "Remove filter: Status is any of Open, In progress".
-- Menus and pickers are react-aria's: the search field keeps DOM focus and the active option is virtual (`aria-activedescendant`), selected options say so (`aria-selected`), focus returns to the button that opened them.
-- Additions, edits, removals, Clear all and match changes are announced through a polite live region.
+- Menus and pickers are UI SDK's: the search field (a `combobox`) keeps DOM focus and the active option is virtual (`aria-activedescendant`); a field's values are a `listbox` with `aria-multiselectable` whose ticked options say so (`aria-selected`); operator and match menus are `menuitemradio`s; focus returns to the button that opened them.
+- Additions, edits, removals, Clear all and match changes are announced politely through UI SDK's `announce()` (one live region for the page), in the bar's own document Each is said once the bar shows it: a controlled consumer that refuses a change (by not passing it back) hears nothing said, and focus stays where it was.
 - Option colors are decoration; every option has its label, and counts are text.
 
 ## cva recipes

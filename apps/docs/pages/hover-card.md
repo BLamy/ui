@@ -1,6 +1,6 @@
 # Hover Card
 
-A card that previews what its trigger points at — a person, a repository, a file, a commit — while the pointer rests on the trigger or keyboard focus lands on it. Where a [Tooltip](https://blamy.github.io/ui/#/tooltip) names a control in a line of text, a hover card is a small page: an avatar and a title, a line or two of detail, even a button. The pointer can move into it to select its text or press that button without it closing. Hover cards are how BL UI previews references everywhere: Avatar takes a `card`, ListRow a `preview`, Tree a `preview(node)`, and the blocks use them for people, links, files and the like.
+A card that previews what its trigger points at — a person, a repository, a file, a commit — while the pointer rests on the trigger or keyboard focus stays on it, on [UI SDK](https://ui-sdk.dev)'s Hover Card. Where a [Tooltip](https://blamy.github.io/ui/#/tooltip) names a control in a line of text, a hover card is a small page: an avatar and a title, a line or two of detail, even a button. The pointer can move into it to select its text or press that button without it closing. Hover cards are how BL UI previews references everywhere: Avatar takes a `card`, ListRow a `preview`, Tree a `preview(node)`, and the blocks use them for people, links, files and the like.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -10,7 +10,7 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  HoverCard, HoverCardTrigger, HoverCardHeader,
+  HoverCard, HoverCardTrigger, HoverCardContent, HoverCardHeader,
 } from '@/components/ui/hover-card'
 ```
 {% endtab %}
@@ -23,7 +23,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  HoverCard, HoverCardTrigger, HoverCardHeader,
+  HoverCard, HoverCardTrigger, HoverCardContent, HoverCardHeader,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
@@ -31,46 +31,51 @@ import {
 
 ## Usage
 
-Put the trigger and a `HoverCard` in `HoverCardTrigger`. The first child is the trigger — usually a link, a name or an avatar — and the card holds whatever previews it. `HoverCardHeader` lays out the usual top: media, a title, a subtitle and an action.
+`HoverCard` is the root. `HoverCardTrigger` is the trigger, a link by default (give it an `href`); `render` makes it any other element that has a name — a button, a row, an avatar with an `aria-label`. `HoverCardContent` is the card and holds whatever previews it. `HoverCardHeader` lays out the usual top: media, a title, a subtitle and an action.
 
 ```tsx
-<HoverCardTrigger>
-  <a href="/u/ada">@ada</a>
-  <HoverCard placement="bottom start">
+<HoverCard>
+  <HoverCardTrigger href="/u/ada">@ada</HoverCardTrigger>
+  <HoverCardContent align="start">
     <HoverCardHeader media={<Avatar name="Ada Lovelace" />} title="Ada Lovelace" subtitle="@ada"
       action={<Button size="sm" variant="secondary">Follow</Button>} />
     <p>Maintainer · reviews the motion and layout parts.</p>
-  </HoverCard>
-</HoverCardTrigger>
+  </HoverCardContent>
+</HoverCard>
 ```
 
 {% demo src="hover-card/profile" %}
 
-The card opens after the pointer has rested on the trigger for 600ms (`delay`) and stays 250ms after it leaves both the trigger and the card (`closeDelay`), so the pointer can cross the gap into it. Only one is open at a time, and right after one closes the next opens without the delay, so sweeping across names in a paragraph or rows in a list moves the card along. Keyboard focus (`:focus-visible`, not a click) opens it at once; Esc closes it. `placement` is `bottom` by default and flips when there's no room; `arrow` draws a pointer toward the trigger.
+The card opens after the pointer — or keyboard focus — has rested on the trigger for 600ms (`delay`), and stays 300ms after the pointer leaves both the trigger and the card (`closeDelay`), so the pointer can cross the gap into it. Esc closes it and leaves focus on the trigger; Tab from the trigger moves into an open card. The content opens on the trigger's `side` (`bottom` by default), lined up by `align`, 8px away (`sideOffset`), and flips when there's no room; `arrow` draws a pointer toward the trigger.
 
 ## On the parts
 
 Most hover cards belong to a part that already shows the thing they preview:
 
 - **Avatar** — `card={…}` opens on the avatar itself, inside an AvatarGroup too.
-- **ListRow** — `preview={…}` opens beside the row (`end top`), so it never covers the list.
+- **ListRow** — `preview={…}` opens beside the row, so it never covers the list.
 - **Tree** — `preview={(node) => …}` opens beside the row under the pointer; return nothing for rows without one.
 
 {% demo src="hover-card/rows" %}
 
-## Your own triggers
+## One card for many triggers
 
-`HoverCardTrigger` wraps its trigger in an inline-flex `span` (`className` changes it: `flex w-full` for a row). Where a wrapper doesn't fit — a canvas item, a table cell, an SVG mark — `useHoverCard` gives the same behavior to an element you render:
+A feed or a list can share one card instead of rendering one per link. Connect the triggers and the card to one `createHoverCardController<Payload>()`; each trigger passes a `payload` and the content reads it from its state. As the pointer sweeps from one trigger to the next, the open card moves along at once, without the delay.
 
 ```tsx
-const card = useHoverCard<HTMLDivElement>()
-const { ref, ...handlers } = card.triggerProps
+const profile = createHoverCardController<Person>()
 
-<div ref={ref} {...handlers}>…</div>
-<HoverCard {...card.cardProps}>…</HoverCard>
+{people.map((person) => (
+  <HoverCardTrigger key={person.id} controller={profile} payload={person} href={`/u/${person.handle}`}>
+    {person.name}
+  </HoverCardTrigger>
+))}
+<HoverCard controller={profile}>
+  <HoverCardContent>{({ payload }) => payload && <HoverCardHeader title={payload.name} subtitle={`@${payload.handle}`} />}</HoverCardContent>
+</HoverCard>
 ```
 
-`cardProps` carries `triggerRef`; pass your own `triggerRef` to anchor the card to a different element than the one that's hovered.
+For something you hit-test yourself — a canvas item, a map pin, an SVG mark — open it from code: `profile.open({ anchor, payload })` places the card against `anchor` (an element, or a virtual anchor such as a point `{ x, y }`), and `profile.close()` closes it.
 
 ## What goes inside
 
@@ -78,29 +83,38 @@ A preview, not the thing itself: a header, a line or two of detail, a few badges
 
 ## Accessibility
 
-The card is a non-modal popover: it never takes focus, traps it or blocks the page, and it doesn't hide the rest of the page from assistive technology. It is supplementary — screen reader users get the same information by following the trigger, which should be a real link or button with its own name. Opening on `:focus-visible` gives keyboard users the preview as they Tab through; pressing the trigger still does what it always does.
+The trigger stays a plain link (or the element you render), and pressing it does what it always does. The card is a preview beside it, not a dialog: it never traps focus or blocks the page, and it doesn't hide the rest of the page from assistive technology. It is supplementary — screen reader and touch users get the same information by following the trigger, which should have its own name. Presses inside the card stay in the card: they never also press the row or button it previews.
 
 ## Props
-
-### HoverCardTrigger (and useHoverCard)
-
-| Prop | Default | Effect |
-| --- | --- | --- |
-| `delay` | `600` | ms of hovering before it opens (none while warm). |
-| `closeDelay` | `250` | ms before it closes once the pointer has left trigger and card. |
-| `isOpen` / `defaultOpen` / `onOpenChange` | closed | Control visibility. |
-| `isDisabled` | `false` | Never opens. |
-| `className` | `inline-flex max-w-full` | The wrapper around the trigger (HoverCardTrigger only). |
 
 ### HoverCard
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `placement` | `bottom` | Side and alignment relative to the trigger; flips when there's no room. |
-| `offset` | `8` | Gap in px. |
-| `arrow` | `false` | Draw a pointer toward the trigger. |
-| `triggerRef` / `isOpen` / `onOpenChange` | from HoverCardTrigger | For `useHoverCard`'s `cardProps`. |
-| `className` / `contentClassName` | `w-72` / `p-4` | The surface and its padded content. |
+| `delay` | `600` | ms the pointer or keyboard focus rests on the trigger before it opens. |
+| `closeDelay` | `300` | ms before it closes once the pointer has left trigger and card. |
+| `open` / `defaultOpen` / `onOpenChange(open, details)` | closed | Control visibility; `details.reason`, `details.cancel()`. |
+| `disabled` | `false` | Never opens. |
+| `controller` | — | From `createHoverCardController()`: share one card between triggers, open it from code. |
+| `container` | BLProvider's root | Where it renders. |
+
+### HoverCardTrigger
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `href` | — | Where the link goes. |
+| `render` | an `<a>` | Another element: `render={<button type="button" aria-label="Ada" />}`. |
+| `controller` / `payload` | — | Connect a trigger outside the root, with data for the card. |
+
+### HoverCardContent
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `side` / `align` | `bottom` / `center` | Where it opens relative to the trigger. |
+| `sideOffset` / `alignOffset` | `8` / `0` | Gap in px, and shift along the trigger. |
+| `arrow` | `false` | Draw a pointer toward the trigger (`HoverCardArrow`). |
+| `className` / `style` | `w-72 p-4` | Merged onto the card; either may be a function of its state. |
+| `children` | — | Content, or a function of its state (`open`, `payload`). |
 
 ### HoverCardHeader
 
@@ -112,4 +126,4 @@ The card is a non-modal popover: it never takes focus, traps it or blocks the pa
 
 ## Styling
 
-The card is `data-slot="hover-card"` with its content in `hover-card-content`, on the same surface as [Popover](https://blamy.github.io/ui/#/popover) (`popover` colors, the 14px radius and shadow) and the same motion: it grows out of the trigger and fades under reduced motion. It renders in BLProvider's portal root, or `<body>` without one, and inside a [ThemeScope](https://blamy.github.io/ui/#/theming) it takes the scope's appearance.
+Slots (from UI SDK): `hover-card-trigger`, `hover-card-content`, `hover-card-arrow`, plus `hover-card-header`. The card is on the same surface as [Popover](https://blamy.github.io/ui/#/popover) (`popover` colors, the 14px radius and shadow) with the same motion: it grows out of the trigger as it enters (`data-starting-style`), leaves quicker (`data-ending-style`), and only fades under reduced motion; `data-side` / `data-align` give where it landed. Only the trigger that opened it gets `data-open`. It renders into BLProvider's root (the browser's top layer without one), and inside a [ThemeScope](https://blamy.github.io/ui/#/theming) it takes the scope's appearance.

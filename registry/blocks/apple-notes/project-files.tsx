@@ -2,12 +2,12 @@
    file), "Choose file…" lists every file in it, and files dropped on the note are copied next to it and embedded. */
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Credenza } from '@/components/ui/credenza';
-import { ListBox, ListBoxItem } from '@/components/ui/list-box';
+import { CredenzaClose } from '@/components/ui/credenza';
+import { Listbox, ListboxItem } from '@/components/ui/list-box';
 import { SearchField } from '@/components/ui/search-field';
-import { useSplitView } from '@/components/ui/split-view';
 import { TreeFileIcon } from '@/components/ui/tree';
 import type { Note } from './data';
+import { NotesCredenza } from './dialogs';
 import { draggedPaths, hasComputerFiles, hasNotesFiles } from './drag';
 import type { NotesState } from './use-notes';
 
@@ -81,7 +81,6 @@ export function useProjectFiles(notes: NotesState, n: Note) {
 function FilePicker({ notes, root, dir, self, picking, onDone }: {
   notes: NotesState; root: string; dir: string; self: string; picking: Pick | null; onDone: (url: string | null) => void;
 }) {
-  const s = useSplitView();
   const [query, setQuery] = useState('');
   const [chosen, setChosen] = useState<string | null>(null);
   const images = picking?.kind === 'image';
@@ -89,26 +88,25 @@ function FilePicker({ notes, root, dir, self, picking, onDone }: {
     .filter((path) => path.startsWith(`${root}/`) && path !== self && (!images || IMAGE.test(path)))
     .sort((a, b) => a.localeCompare(b)), [notes.notes, notes.others, root, self, images]);
   const q = query.trim().toLowerCase();
-  const items = all.filter((path) => !q || path.toLowerCase().includes(q)).slice(0, 300).map((path) => ({ id: path, path }));
+  const items = all.filter((path) => !q || path.toLowerCase().includes(q)).slice(0, 300);
   const choose = (path: string | null) => { setQuery(''); setChosen(null); onDone(path ? relativePath(dir, path) : null); };
-  return <Credenza compact={s.collapsed} open={!!picking} onClose={() => choose(null)} title={images ? 'Choose an Image' : 'Choose a File'}>
+  return <NotesCredenza open={!!picking} onClose={() => choose(null)} title={images ? 'Choose an Image' : 'Choose a File'}>
     <div className="flex flex-col gap-3 px-4 pt-0.5 pb-4">
-      <SearchField aria-label="Search files" value={query} onChange={setQuery} autoFocus />
+      <SearchField aria-label="Search files" value={query} onValueChange={setQuery} autoFocus />
       <div className="max-h-[50vh] min-h-40 overflow-auto rounded-lg border border-border">
-        {items.length ? <ListBox aria-label="Files" items={items} selectionMode="single"
-          selectedKeys={chosen ? [chosen] : []}
-          onSelectionChange={(keys) => setChosen((String([...keys][0] ?? '') || null))}
-          onAction={(key) => choose(String(key))}>
-          {(item) => <ListBoxItem id={item.id} textValue={item.path} icon={<TreeFileIcon name={item.path} />}
-            description={parent(item.path.slice(root.length + 1)) || undefined}>
-            {item.path.slice(item.path.lastIndexOf('/') + 1)}
-          </ListBoxItem>}
-        </ListBox> : <p className="m-0 px-4 py-10 text-center text-detail text-muted-foreground">{q ? 'No files match.' : images ? 'No images in this folder.' : 'No other files in this folder.'}</p>}
+        {/* Arrows or a press pick a file; a double press or Return chooses it. */}
+        {items.length ? <Listbox aria-label="Files" value={chosen} onValueChange={setChosen}
+          onKeyDown={(e) => { if (e.key === 'Enter' && chosen) { e.preventDefault(); choose(chosen); } }}>
+          {items.map((path) => <ListboxItem key={path} value={path} label={path.slice(path.lastIndexOf('/') + 1)} icon={<TreeFileIcon name={path} />}
+            description={parent(path.slice(root.length + 1)) || undefined} onDoubleClick={() => choose(path)}>
+            {path.slice(path.lastIndexOf('/') + 1)}
+          </ListboxItem>)}
+        </Listbox> : <p className="m-0 px-4 py-10 text-center text-detail text-muted-foreground">{q ? 'No files match.' : images ? 'No images in this folder.' : 'No other files in this folder.'}</p>}
       </div>
       <div className="flex gap-2">
-        <Button variant="secondary" className="flex-1" onPress={() => choose(null)}>Cancel</Button>
-        <Button className="flex-1" isDisabled={!chosen} onPress={() => choose(chosen)}>Choose</Button>
+        <CredenzaClose render={<Button variant="secondary" className="flex-1" />}>Cancel</CredenzaClose>
+        <Button className="flex-1" disabled={!chosen} onClick={() => choose(chosen)}>Choose</Button>
       </div>
     </div>
-  </Credenza>;
+  </NotesCredenza>;
 }

@@ -1,8 +1,11 @@
-/* The master list lives in NavigationStack, rooted at the sidebar's location. Only folder rows change its screens. */
+/* The master list lives in NavigationStack, rooted at the sidebar's location. Only folder rows change its pages. */
 import { useRef, useState, type ReactNode } from 'react';
-import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Chevron } from '@/components/ui/icon-swap';
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
+import {
+  NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackLeading, NavigationStackPage,
+  NavigationStackTitle, NavigationStackTrailing,
+} from '@/components/ui/navigation-stack';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/search-field';
 import { TreeFileIcon } from '@/components/ui/tree';
@@ -29,18 +32,21 @@ function useUploadTarget(notes: NotesState, folder: Folder) {
   });
 }
 
-/** A folder: pressing it pushes its screen; resting on it previews what's inside. */
+/** A folder: pressing it pushes its page; resting on it previews what's inside. */
 function FolderRow({ notes, f, className }: { notes: NotesState; f: Folder; className: string }) {
   const { dropProps } = useUploadTarget(notes, f);
-  return <HoverCardTrigger className="flex w-full"><ItemMenu notes={notes} id={f.id} label={f.title} className="min-w-0 flex-1">
-    <button type="button" aria-label={`Open folder ${f.title}`} data-tkrow="" {...dropProps}
-      onClick={() => notes.openFolder(f.id)}
-      className={cn(className, 'cursor-pointer border-0 bg-transparent outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring data-[drop-target]:bg-secondary data-[drop-target]:ring-2 data-[drop-target]:ring-primary')}>
-      <Icon name="folder" size={21} className="shrink-0 text-primary" />
-      <span className="min-w-0 flex-1 truncate">{f.title}{f.connected === false ? <span className="block text-caption text-muted-foreground">Reconnect folder</span> : null}</span>
-      <span className="text-caption text-muted-foreground">{notes.count(f)}</span><Chevron direction="right" size={15} />
-    </button>
-  </ItemMenu><HoverCard placement="end top"><FolderPreview notes={notes} folder={f} /></HoverCard></HoverCardTrigger>;
+  return <HoverCard>
+    <ItemMenu notes={notes} id={f.id} label={f.title}>
+      <HoverCardTrigger render={<button type="button" aria-label={`Open folder ${f.title}`} data-tkrow="" {...dropProps}
+        onClick={() => notes.openFolder(f.id)}
+        className={cn(className, 'cursor-pointer border-0 bg-transparent outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring data-[drop-target]:bg-secondary data-[drop-target]:ring-2 data-[drop-target]:ring-primary')} />}>
+        <Icon name="folder" size={21} className="shrink-0 text-primary" />
+        <span className="min-w-0 flex-1 truncate">{f.title}{f.connected === false ? <span className="block text-caption text-muted-foreground">Reconnect folder</span> : null}</span>
+        <span className="text-caption text-muted-foreground">{notes.count(f)}</span><Chevron direction="right" size={15} />
+      </HoverCardTrigger>
+    </ItemMenu>
+    <HoverCardContent side="right" align="start"><FolderPreview notes={notes} folder={f} /></HoverCardContent>
+  </HoverCard>;
 }
 
 function FolderRows({ notes, folders }: { notes: NotesState; folders: Folder[] }) {
@@ -62,16 +68,16 @@ function OtherFileRows({ notes, files, onOpen }: { notes: NotesState; files: Oth
       const where = notes.query ? <span className="block truncate text-caption opacity-70">{f.path.split('/').slice(1, -1).join('/')}</span> : null;
       if (viewable(f.kind)) {
         const selected = notes.selectedId === f.id;
-        return <li key={f.id}><HoverCardTrigger className="flex w-full">
-          <button type="button" {...fileDragProps(f.path)} onClick={() => onOpen(f.id)} aria-current={selected || undefined} title={f.path}
+        return <li key={f.id}><HoverCard>
+          <HoverCardTrigger render={<button type="button" {...fileDragProps(f.path)} onClick={() => onOpen(f.id)} aria-current={selected || undefined} title={f.path}
             className={cn('flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg border-0 bg-transparent px-2 text-left text-subhead text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              selected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary')}>
+              selected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary')} />}>
             {f.kind === 'stl' || f.kind === 'image' || f.kind === 'csv' ? <Icon name={f.kind === 'stl' ? 'cube' : f.kind === 'csv' ? 'table' : 'photo'} size={18} className={cn('shrink-0', !selected && 'text-primary')} />
               : <TreeFileIcon name={f.name} className="shrink-0" />}
             <span className="min-w-0 flex-1 truncate">{f.name}{where}</span>
-          </button>
-          <HoverCard placement="end top"><FilePreview file={f} /></HoverCard>
-        </HoverCardTrigger></li>;
+          </HoverCardTrigger>
+          <HoverCardContent side="right" align="start"><FilePreview file={f} /></HoverCardContent>
+        </HoverCard></li>;
       }
       return <li key={f.id} {...fileDragProps(f.path)} title={`${f.path} · Drag onto a note to embed it`}
         className="flex min-h-11 cursor-grab items-center gap-2 rounded-lg px-2 text-subhead text-muted-foreground opacity-60">
@@ -90,34 +96,36 @@ function EmptyFolder({ notes, folder }: { notes: NotesState; folder: Folder }) {
     <h2 className="m-0 text-title font-semibold">{notes.query ? 'No Results' : none ? 'Your folders, your notes' : 'No Notes'}</h2>
     <p className="text-detail leading-relaxed text-muted-foreground">{notes.query ? 'Try another search.' : none
       ? 'Add a folder from your Mac to browse and edit its Markdown files.' : `Markdown files in ${folder.title} will appear here.`}</p>
-    {none && !notes.query ? <Button variant="secondary" isDisabled={!notes.files.canOpenFolder || notes.files.busy}
-      onPress={() => { void notes.addFolder().then((id) => { if (id && s.collapsed) s.show('supplementary'); }); }}>Choose Folder…</Button> : null}
+    {none && !notes.query ? <Button variant="secondary" disabled={!notes.files.canOpenFolder || notes.files.busy}
+      onClick={() => { void notes.addFolder().then((id) => { if (id && s.collapsed) s.show('supplementary'); }); }}>Choose Folder…</Button> : null}
   </div>;
 }
 
-/** The master list is the location chosen in the sidebar: its folders push screens, its notes open in the detail. */
+/** The master list is the location chosen in the sidebar: its folders push pages, its notes open in the detail. */
 export function ListColumn({ notes }: { notes: NotesState }) {
   const s = useSplitView();
   const open = (id: string) => { notes.select(id); s.select('supplementary', id); };
   const tree = notes.view === 'tree';
   const visibleTrail = notes.rootFolder ? tree ? [notes.rootFolder] : notes.trail : [notes.folder];
-  const screens: Screen[] = visibleTrail.map((folder, i) => {
+  const pages = visibleTrail.map((folder, i) => {
     const { list, children, others } = notes.contents(folder);
     const active = i === visibleTrail.length - 1;
-    return {
-      key: folder.id, title: notes.rootFolder ? folder.title : 'Notes', largeTitle: true, hideChromeOnScroll: false,
-      bottomInset: s.collapsed ? 50 : 0,
-      leading: i === 0 ? <SplitViewToggle /> : undefined,
-      trailing: <ViewToggle view={notes.view} onChange={notes.setView} />,
-      content: <>
+    return <NavigationStackPage key={folder.id} value={folder.id}>
+      <NavigationStackBar hideOnScroll={false}>
+        {i === 0 ? <NavigationStackLeading><SplitViewToggle /></NavigationStackLeading> : null}
+        <NavigationStackTitle>{notes.rootFolder ? folder.title : 'Notes'}</NavigationStackTitle>
+        <NavigationStackTrailing><ViewToggle view={notes.view} onChange={notes.setView} /></NavigationStackTrailing>
+      </NavigationStackBar>
+      <NavigationStackContent bottomInset={s.collapsed ? 50 : 0}>
+        <NavigationStackLargeTitle />
         <div className="flex items-center gap-1.5 pr-2.5 pb-3 pl-4">
-          <SearchField value={notes.query} onChange={notes.setQuery} aria-label={`Search ${folder.title}`} className="min-w-0 flex-1" />
+          <SearchField value={notes.query} onValueChange={notes.setQuery} aria-label={`Search ${folder.title}`} className="min-w-0 flex-1" />
           <FilterMenu filter={notes.filter} onChange={notes.setFilter} />
         </div>
         {active && notes.files.error ? <div role="alert" className="mx-4 mb-3 break-words text-detail text-destructive">{notes.files.error}</div> : null}
         {folder.connected === false ? <div className="space-y-3 px-5 py-10 text-detail text-muted-foreground">
           <p>Reconnect {folder.title} to view the notes on your Mac.</p>
-          <Button variant="secondary" onPress={() => { void notes.files.run(() => notes.files.reconnect(folder.id)); }}>Reconnect folder</Button>
+          <Button variant="secondary" onClick={() => { void notes.files.run(() => notes.files.reconnect(folder.id)); }}>Reconnect folder</Button>
         </div> : tree && notes.rootFolder ? <FolderTree notes={notes} root={notes.rootFolder} onOpen={open} /> : <>
           <UploadArea notes={notes} folder={folder}>
             <FolderRows notes={notes} folders={children} />
@@ -125,14 +133,16 @@ export function ListColumn({ notes }: { notes: NotesState }) {
             {!list.length && !children.length && !others.length ? <EmptyFolder notes={notes} folder={folder} /> : null}
           </UploadArea>
         </>}
-      </>,
-    };
+      </NavigationStackContent>
+    </NavigationStackPage>;
   });
+  const top = visibleTrail.at(-1)?.id;
   return <SplitViewSupplementary aria-label="Notes" width={330} minWidth={280}>
-    <div className="relative min-h-0 flex-1"><NavigationStack screens={screens}
-      onPop={() => { const previous = notes.trail.at(-2); if (previous) notes.openFolder(previous.id); }} /></div>
+    {/* A pop (back button, swipe, Escape) opens the folder that is now on top. */}
+    <div className="relative min-h-0 flex-1"><NavigationStack pages={visibleTrail.map((f) => f.id)}
+      onPagesChange={(next) => { const folder = next.at(-1); if (folder && folder !== top) notes.openFolder(folder); }}>{pages}</NavigationStack></div>
     {s.collapsed ? <BottomBar className="justify-end">
-      <BarButton label="New note" onPress={() => notes.startCreating('file')}><Icon name="compose" size={24} /></BarButton>
+      <BarButton label="New note" onClick={() => notes.startCreating('file')}><Icon name="compose" size={24} /></BarButton>
     </BottomBar> : null}
   </SplitViewSupplementary>;
 }
@@ -151,7 +161,7 @@ export function NoteColumn({ notes }: { notes: NotesState }) {
   const [format, setFormat] = useState(false);
   const [dataMode, setDataMode] = useState<DataMode>('visual');
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
-  const compose = <BarButton label="New note" onPress={() => notes.startCreating('file')}><Icon name="compose" /></BarButton>;
+  const compose = <BarButton label="New note" onClick={() => notes.startCreating('file')}><Icon name="compose" /></BarButton>;
   const tools = n ? <EditorTools editorRef={editorRef} format={format} onFormat={() => setFormat((v) => !v)} source={source} onSource={() => setSource((v) => !v)} /> : null;
   const name = n ? notes.isRenaming(n.id, 'title')
     ? <RenameField notes={notes} id={n.id} name={n.file.name} className="text-body font-semibold" />

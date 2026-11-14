@@ -40,7 +40,7 @@ function CommentsDrawer() {
           <h3 style={{ flex: 1, margin: 0, fontSize: 22 }}>
             Launch announcement
           </h3>
-          <Button variant="secondary" size="sm" onPress={() => setOpen(true)}>
+          <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
             <Icon name="message" size={16} /> {comments.length}
           </Button>
         </div>
@@ -51,9 +51,8 @@ function CommentsDrawer() {
       </article>
       {/* overlay: slides over the page from the right; the scrim closes it */}
       <SideDrawer
-        mode="overlay"
         open={open}
-        onClose={() => setOpen(false)}
+        onOpenChange={setOpen}
         title="Comments"
         width={300}
       >

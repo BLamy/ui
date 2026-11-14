@@ -25,7 +25,7 @@ function Surfaces() {
           <WorkbenchPanelTitle icon={meta?.icon}>
             {meta?.name ?? 'Surfaces'}
           </WorkbenchPanelTitle>
-          <WorkbenchPanelClose onPress={() => setKind(null)} />
+          <WorkbenchPanelClose onClick={() => setKind(null)} />
         </WorkbenchPanelHeader>
         {kind === 'browser' ? (
           <SurfaceBrowser url="http://localhost:3000">

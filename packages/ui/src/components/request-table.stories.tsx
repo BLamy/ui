@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
-import { RequestLink, RequestTable, type RequestColumn, type RequestTableHandle } from '@/components/ui/request-table';
-import { Slider, SliderThumb, SliderTrack } from '@/components/ui/slider';
+import { RequestLink, RequestTable, createRequestTableController, type RequestColumn, type RequestTableController } from '@/components/ui/request-table';
+import { Slider } from '@/components/ui/slider';
 import { Icon } from '@/lib/icon';
 import { formatLogTime, type RowId } from '@/lib/log-list-model';
 import { usePlaybackClock, usePlaybackState } from '@/lib/playback';
@@ -93,7 +93,7 @@ function PhoneWindow({ children, dark }: { children?: ReactNode; dark?: boolean 
 const PLAYHEAD = SMALL[60].time;
 
 export const Default: Story = {
-  args: { rows: SMALL, playhead: PLAYHEAD, timeRange: [0, SMALL[120].time ?? 1], defaultSelectedId: 'request-52', density: 'compact', layout: 'auto' },
+  args: { rows: SMALL, playhead: PLAYHEAD, timeRange: [0, SMALL[120].time ?? 1], defaultValue: 'request-52', density: 'compact', layout: 'auto' },
   render: (args) => <Desktop><RequestTable aria-label="Requests" {...args} className="min-h-0 flex-1" /></Desktop>,
 };
 
@@ -103,7 +103,7 @@ export const Comfortable: Story = {
 };
 
 export const Dark: Story = {
-  render: () => <Desktop dark><RequestTable aria-label="Requests" rows={SMALL} playhead={PLAYHEAD} timeRange={[0, SMALL[120].time ?? 1]} defaultSelectedId="request-52" className="min-h-0 flex-1" /></Desktop>,
+  render: () => <Desktop dark><RequestTable aria-label="Requests" rows={SMALL} playhead={PLAYHEAD} timeRange={[0, SMALL[120].time ?? 1]} defaultValue="request-52" className="min-h-0 flex-1" /></Desktop>,
 };
 
 /** Under 480 px of its own width: two-line rows, with sorting in a menu. */
@@ -127,35 +127,33 @@ export const SidePanel: Story = {
   ),
 };
 
-function Transport({ rows, handle, rate }: { rows: readonly RequestRow[]; handle: RefObject<RequestTableHandle | null>; rate: number }) {
+function Transport({ rows, controller, rate }: { rows: readonly RequestRow[]; controller: RequestTableController; rate: number }) {
   const duration = requestTimeRange(rows)[1] / 1000;
   const clock = usePlaybackClock({ duration, time: duration * 0.4, rate });
   const playing = usePlaybackState(clock, (s) => s.playing);
   const shown = usePlaybackState(clock, (s) => Math.round(s.time * 4) / 4);
   useEffect(() => {
-    const tick = () => handle.current?.setPlayhead(clock.getState().time * 1000);
+    const tick = () => controller.setPlayhead(clock.getState().time * 1000);
     tick();
     return clock.subscribe(tick);
-  }, [clock, handle]);
+  }, [clock, controller]);
   return (
     <div className="flex shrink-0 items-center gap-2 px-1">
-      <Button variant="quiet" size="icon-sm" aria-label={playing ? 'Pause' : 'Play'} data-testid="play" onPress={clock.toggle}>
+      <Button variant="quiet" size="icon-sm" aria-label={playing ? 'Pause' : 'Play'} data-testid="play" onClick={clock.toggle}>
         <Icon name={playing ? 'pause' : 'play'} size={14} />
       </Button>
-      <Slider<number> aria-label="Time" size="sm" className="min-w-0 flex-1" minValue={0} maxValue={duration} step={0.01} value={shown} onChange={(t) => clock.seek(t)}>
-        <SliderTrack><SliderThumb /></SliderTrack>
-      </Slider>
+      <Slider<number> aria-label="Time" size="sm" className="min-w-0 flex-1" min={0} max={duration} step={0.01} value={shown} onValueChange={(t) => clock.seek(t)} />
       <span className="shrink-0 text-caption text-muted-foreground tabular-nums">{formatLogTime(shown * 1000)}</span>
     </div>
   );
 }
 
 function PlayheadDemo({ rows, rate }: { rows: readonly RequestRow[]; rate: number }) {
-  const handle = useRef<RequestTableHandle>(null);
+  const [controller] = useState(createRequestTableController);
   return (
     <>
-      <Transport rows={rows} handle={handle} rate={rate} />
-      <RequestTable ref={handle} aria-label="Requests" rows={rows} className="min-h-0 flex-1" />
+      <Transport rows={rows} controller={controller} rate={rate} />
+      <RequestTable controller={controller} aria-label="Requests" rows={rows} className="min-h-0 flex-1" />
     </>
   );
 }
@@ -213,7 +211,7 @@ function PairDemo() {
   const [selected, setSelected] = useState<RowId | null>('s8');
   const [seekedTo, setSeekedTo] = useState('Press a row to seek to it');
   const renderLink = useCallback((row: PairRow) => (
-    row.other ? <RequestLink onPress={() => setSelected(row.other ?? null)}>{row.otherLabel}</RequestLink> : null
+    row.other ? <RequestLink onClick={() => setSelected(row.other ?? null)}>{row.otherLabel}</RequestLink> : null
   ), []);
   return (
     <>
@@ -222,9 +220,9 @@ function PairDemo() {
         aria-label="Requests and server functions"
         rows={PAIR}
         columns={['name', 'method', 'status', 'type', 'duration', 'waterfall']}
-        selectedId={selected}
-        onSelectionChange={setSelected}
-        onRowPress={(row) => setSeekedTo(`Seek to ${formatLogTime(row.time ?? 0)}`)}
+        value={selected}
+        onValueChange={setSelected}
+        onAction={(_id, { row }) => setSeekedTo(`Seek to ${formatLogTime(row.time ?? 0)}`)}
         renderLink={renderLink}
         playhead={PAIR[40].time}
         className="min-h-0 flex-1"
@@ -285,8 +283,8 @@ function DevtoolsDemo() {
         aria-label="Network"
         rows={rows}
         columns={open ? ['name', 'status'] : ['name', 'status', 'method', 'type', 'duration', 'waterfall']}
-        selectedId={selected}
-        onRowPress={(row) => setSelected(row.id === selected ? null : row.id)}
+        value={selected}
+        onAction={(id) => setSelected(id === selected ? null : id)}
         layout={open ? 'table' : 'auto'}
         className={open ? 'w-72 shrink-0' : 'min-h-0 flex-1'}
       />

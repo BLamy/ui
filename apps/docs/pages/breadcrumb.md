@@ -1,6 +1,6 @@
 # Breadcrumb
 
-The path to the current page. Every item is pressable (a link, a button, or a picker of its siblings like VS Code's breadcrumb), and when the trail is wider than its container the middle collapses into one `…` menu, so the first and the last item are always there. It is built on react-aria's `Breadcrumbs`, `Breadcrumb` and `Link`, with the siblings and the hidden items in a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu).
+The path to the current page. Every item is pressable (a link, a button, or a picker of its siblings like VS Code's breadcrumb), and when the trail is wider than its container the middle collapses into one `…` menu, so the first and the last item are always there. It is a `nav` with an ordered list of native links and UI SDK buttons, with the siblings and the hidden items in a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -27,7 +27,7 @@ import { Breadcrumb, BreadcrumbItem } from '@brett_lamy/ui'
 
 ## Items
 
-Pass `items` for the data-driven form, or compose `BreadcrumbItem`s as children. An item takes an `href` (a real link, so `RouterProvider` and middle-click work), an `onPress`, or both. The last item is the current page: it gets `aria-current="page"` and is plain text unless it has a handler or an `href`. `icon` is an icon name (`'house'`) or any node. Between items sits a chevron, `aria-hidden`; `separator` replaces it (`null` for none).
+Pass `items` for the data-driven form, or compose `BreadcrumbItem`s as children. An item takes an `href` (a real `<a>`, so your router's link handling and middle-click work), an `onClick`, or both; with only `onClick` it is a button. The last item is the current page: it gets `aria-current="page"` and is plain text unless it has a handler or an `href`. `icon` is an icon name (`'house'`) or any node. Between items sits a chevron, `aria-hidden`; `separator` replaces it (`null` for none).
 
 {% demo src="breadcrumb/trail" %}
 
@@ -49,13 +49,13 @@ Pass `items` for the data-driven form, or compose `BreadcrumbItem`s as children.
 
 ### The current page as an action
 
-react-aria disables the link of the last item; give it an `onPress` or an `href` and it is pressable again (still `aria-current`), for "reload" or "copy link".
+The last item is plain text; give it an `onClick` or an `href` and it is pressable (still `aria-current="page"`), for "reload" or "copy link".
 
 {% demo src="breadcrumb/current-action" %}
 
 ## Sibling menus
 
-An item that carries `items` is a picker: pressing it opens a menu of the other entries of its parent, the `selectedId` one checked, and choosing one fires that entry's `href` or `onPress`. Use it for a file path, a project switcher or any hierarchy where the siblings are one step away. The item's own `href` and `onPress` are not used (the menu replaces them), so put the "go there" action in the entries.
+An item that carries `items` is a picker: pressing it opens a menu of the other entries of its parent, the `selectedId` one checked, and choosing one fires that entry's `href` or `onClick`. Use it for a file path, a project switcher or any hierarchy where the siblings are one step away. The item's own `href` and `onClick` are not used (the menu replaces them), so put the "go there" action in the entries.
 
 {% demo src="breadcrumb/sibling-menus" %}
 
@@ -74,7 +74,7 @@ An item that carries `items` is a picker: pressing it opens a menu of the other 
 
 ## Collapsing
 
-The root measures its own width with a `ResizeObserver`, against the natural width of each item taken from an off-screen, inert copy of the full list, and re-measures when the items or the container change. When the trail does not fit, the middle becomes a `…` button (named "More") that opens a menu of the hidden items, each firing its own `href` / `onPress` (a hidden item that is a sibling picker opens its entries as a submenu). The first item and the last always stay and as many trailing items as fit; widen the container and items come back. The first render, and the server's, is the full list, so nothing flickers in. Give the root a width of its own (it is `w-full` by default) so it fills its container instead of shrinking to its content.
+The fit is a UI SDK primitive (`lib/breadcrumb-primitive.ts`, built with `definePrimitive` and rendered with `createParts`). It measures the root's own width with a `ResizeObserver`, against the natural width of each item taken from an off-screen, inert copy of the full list, and re-measures when the items, their labels or the container change, or web fonts load. While items are hidden the root has `data-collapsed`. When the trail does not fit, the middle becomes a `…` button (named "More") that opens a menu of the hidden items, each firing its own `href` / `onClick` (a hidden item that is a sibling picker opens its entries as a submenu). The first item and the last always stay and as many trailing items as fit; widen the container and items come back. The first render, and the server's, is the full list, so nothing flickers in. Give the root a width of its own (it is `w-full` by default) so it fills its container instead of shrinking to its content.
 
 {% demo src="breadcrumb/collapsing" %}
 
@@ -91,7 +91,9 @@ fitBreadcrumbs([44, 76, 108, 100, 92], 320, 16, 24)
 
 ## Accessibility
 
-The root is a `nav` landmark named "Breadcrumb" (`aria-label` overrides it) around an ordered list. The current item has `aria-current="page"`. A sibling picker is a button with `aria-haspopup`, `aria-expanded` and a `menu` of `menuitemradio` rows (the current one `aria-checked`); the `…` button needs a name, so `ellipsisLabel` localizes "More". Links are real `a` elements when they have an `href`; arrow keys, Home/End, type-to-select and Esc come from the menu. The measuring copy is `aria-hidden` and `inert`, so assistive tech and focus never see it, but a test that queries by text will find each label twice — query within the `breadcrumb-list` slot or by role.
+The root is a `nav` landmark named "Breadcrumb" (`aria-label` overrides it) around an ordered list. The current item has `aria-current="page"`. A sibling picker is a button with `aria-haspopup`, `aria-expanded` and a `menu` of `menuitemradio` rows (the current one `aria-checked`); the `…` button needs a name, so `ellipsisLabel` localizes "More". Links are real `a` elements when they have an `href`; arrow keys, Home/End, type-to-select and Esc come from the menu. The measuring copy is `aria-hidden` and `inert`, so assistive tech, agents and focus never see it, but a test that queries by text will find each label twice — query within the `breadcrumb-list` slot or by role.
+
+For an agent (UI SDK's `createAgent`), the trail is one `breadcrumb` entry named like the landmark. Its `items` are the shown items (`{ value, label }`, `value` being the item's `id`), and its `activate(value)` presses one: the link, button or sibling picker. It returns `false` for plain-text items and hidden ones. The hidden items are rows of the `…` menu, a Menu entry of its own named "More". Sibling pickers are Menus too.
 
 ## Props
 
@@ -103,7 +105,7 @@ The root is a `nav` landmark named "Breadcrumb" (`aria-label` overrides it) arou
 | `size` | `default` | `sm`, `default` or `lg`: text size, icon size and item height. |
 | `separator` | chevron | Replaces the chevron (`null` for none). |
 | `collapse` | `true` | Collapse the middle into `…` when the items do not fit. |
-| `keepHead` / `keepTail` | `1` / `1` | Leading / trailing items that never collapse. |
+| `keepHead` / `keepTail` | `1` / `1` | Leading / trailing items that never collapse. `keepTail` is at least 1: the current page always shows. |
 | `ellipsisLabel` | `More` | The `…` button's accessible name. |
 | `aria-label` | `Breadcrumb` | The landmark's name. |
 | `className` / `style` | — | Merged onto the `nav`. |
@@ -112,18 +114,19 @@ The root is a `nav` landmark named "Breadcrumb" (`aria-label` overrides it) arou
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `id` | — | Key (required in `BreadcrumbItemData`; it is also the menu row's key). |
-| `label` / children | — | The text. A non-string label needs `textValue` for the menu's type-to-select. |
+| `id` | — | `string \| number` key (required in `BreadcrumbItemData`; it is also the menu row's value). |
+| `label` | — | The plain-text name (a `string`): what shows, what the menus' type-to-select and an agent read. |
+| `children` | `label` | Content to show instead, like an icon and a styled name; the menus show it too and still read `label`. On `BreadcrumbItem`, children alone (a string) work as the label. |
 | `icon` | — | An icon name or a node, before the label. |
-| `href` / `onPress` | — | The link and / or press handler. |
-| `items` | — | `BreadcrumbEntry[]` (`id`, `label`, `icon`, `href`, `onPress`, `textValue`): the siblings, shown as a menu on press. |
-| `selectedId` | — | The `items` entry that is current; it is checked. |
+| `href` / `onClick` | — | The link and / or press handler (`() => void`). |
+| `items` | — | `BreadcrumbEntry[]` (`id`, `label`, `children`, `icon`, `href`, `onClick`): the siblings, shown as a menu on press. |
+| `selectedId` | — | The `items` entry that is current; the menu's rows are then radio items and this one is checked. |
 
 `BreadcrumbEllipsis` (`items`, `label`) is the `…` item the root renders; use it directly for a trail you shorten by hand. `BreadcrumbSeparator` is the chevron span (children replace the icon).
 
 ## Styling
 
-Slots: `breadcrumb` (the `nav`), `breadcrumb-list` (the `ol`), `breadcrumb-item` (each `li`), `breadcrumb-ellipsis`, `breadcrumb-link` (the pressable face of an item, the `…` button, or plain text), `breadcrumb-separator`. Faces use react-aria's data attributes: `data-hovered`, `data-pressed`, `data-focus-visible` (a ring, like Button) and `data-current` for the current page, which turns from `text-muted-foreground` to `text-foreground`. Width never depends on the current state, because the measuring copy cannot know which item is last; restyle with colors and backgrounds, not font weight or padding that only the current item has.
+Slots: `breadcrumb` (the `nav`; `data-collapsed` while items are hidden), `breadcrumb-list` (the `ol`), `breadcrumb-item` (each `li`; `data-current` on the last one), `breadcrumb-ellipsis`, `breadcrumb-measure` (the off-screen copy), `breadcrumb-link` (a link or plain-text face; a face that is a button carries UI SDK's `button` slot, and one that opens a menu `menu-trigger`), `breadcrumb-separator`. Faces style `:hover`, `:active`, `:focus-visible` (a ring, like Button) and `aria-[current=page]` for the current page, which turns from `text-foreground/70` to `text-foreground`; a face whose menu is open has `aria-expanded`. Width never depends on the current state, because the measuring copy cannot know which item is last; restyle with colors and backgrounds, not font weight or padding that only the current item has.
 
 ## cva recipes
 
@@ -150,7 +153,7 @@ relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [o
 Defined in `@/components/ui/breadcrumb`. Base classes:
 
 ```text
-[ 'bl-btn box-border inline-flex max-w-full min-w-0 items-center rounded-md border-0 bg-transparent text-foreground/70 no-underline [font-family:inherit] whitespace-nowrap outline-none transition-colors motion-reduce:transition-none', 'data-current:text-foreground', 'data-focus-visible:ring-2 data-focus-visible:ring-ring', ]
+[ 'bl-btn box-border inline-flex max-w-full min-w-0 items-center rounded-md border-0 bg-transparent py-0 text-foreground/70 no-underline [font:inherit] whitespace-nowrap outline-none transition-colors motion-reduce:transition-none', 'aria-[current=page]:text-foreground', 'focus-visible:ring-2 focus-visible:ring-ring', ]
 ```
 
 **`size`** — default `default`
@@ -165,5 +168,5 @@ Defined in `@/components/ui/breadcrumb`. Base classes:
 
 | Value | Adds |
 | --- | --- |
-| `true` (default) | `cursor-pointer data-hovered:bg-secondary data-hovered:text-foreground data-pressed:bg-secondary-strong aria-expanded:bg-secondary aria-expanded:text-foreground…` |
+| `true` (default) | `cursor-pointer hover:bg-secondary hover:text-foreground active:bg-secondary-strong aria-expanded:bg-secondary aria-expanded:text-foreground data-disabled:curso…` |
 | `false` | `cursor-default` |

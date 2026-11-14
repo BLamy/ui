@@ -1,6 +1,6 @@
 /* The middle column: the selected category's items with search. Rows are SplitViewItems, so they select the
    detail beside them — or push it on a phone. Resting on a sign-in previews it (AccountPreview). */
-import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
+import { PlainButton } from '@/components/ui/plain-button';
 import { SearchField } from '@/components/ui/search-field';
 import { SplitViewContent, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewToggle } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
@@ -19,13 +19,13 @@ export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
     <>
       <SplitViewHeader title={categoryTitle(category)} leading={<SplitViewToggle />}
         trailing={canAdd ? (
-          <button type="button" aria-label="New password" onClick={() => onAdd()}
+          <PlainButton aria-label="New password" onClick={() => onAdd()}
             className="bl-btn grid size-9 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent text-primary transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90">
             <Icon name="plus" size={21} weight="semibold" />
-          </button>
+          </PlainButton>
         ) : null} />
       <div className="px-3 pt-2.5 pb-2">
-        <SearchField value={query} onChange={onQuery} placeholder={`Search ${categoryTitle(category)}`} className="py-[6px] [&_input]:text-subhead" />
+        <SearchField value={query} onValueChange={onQuery} placeholder={`Search ${categoryTitle(category)}`} className="py-[6px] [&_input]:text-subhead" />
       </div>
       <SplitViewContent>
         {total === 0 ? (
@@ -50,8 +50,9 @@ export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
 
 function Row({ entry: e, category, now }: { entry: Entry; category: Selection; now: CodeClock }) {
   const a = e.account;
-  const row = (
-    <SplitViewItem id={e.id} variant="row" className="min-h-[58px] py-2">
+  // Wi-Fi rows already show all a network has but its password.
+  return (
+    <SplitViewItem id={e.id} variant="row" className="min-h-[58px] py-2" preview={a ? <AccountPreview account={a} /> : undefined}>
       {e.kind === 'wifi' ? (
         <WifiTile />
       ) : <SiteTile title={e.title} color={a!.color} size={32} className={cn(e.kind === 'deleted' && 'opacity-60 grayscale')} />}
@@ -71,11 +72,4 @@ function Row({ entry: e, category, now }: { entry: Entry; category: Selection; n
       ) : null}
     </SplitViewItem>
   );
-  // Wi-Fi rows already show all a network has but its password.
-  return a ? (
-    <HoverCardTrigger className="flex w-full">
-      {row}
-      <HoverCard placement="end top"><AccountPreview account={a} /></HoverCard>
-    </HoverCardTrigger>
-  ) : row;
 }

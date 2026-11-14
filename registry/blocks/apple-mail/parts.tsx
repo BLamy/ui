@@ -1,22 +1,21 @@
 /* Toolbar pieces shared by the columns at every width: tinted bar buttons, the Move / Reply / Mark
    pull-down menus, and the translucent bottom bar. */
-import type { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import type { ReactElement, ReactNode } from 'react';
+import { Button, type ButtonProps } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { IconSwap } from '@/components/ui/icon-swap';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { MOVE_TARGETS, type Message } from './data';
 import type { MailState } from './use-mail';
 
-/** A tinted, borderless toolbar button: a glyph, or a text label like "Edit". */
-export function BarButton({ label, children, onPress, isDisabled, className }: {
-  label: string; children?: ReactNode; onPress?: () => void; isDisabled?: boolean; className?: string;
-}) {
+/** A tinted, borderless toolbar button: a glyph, or a text label like "Edit". It takes every Button prop, so a menu
+ *  trigger can render as one. */
+export function BarButton({ label, children, className, ...props }: Omit<ButtonProps, 'className'> & { label: string; className?: string }) {
   const text = children == null;
   return (
-    <Button variant="ghost" aria-label={label} onPress={onPress} isDisabled={isDisabled}
-      className={cn('h-9 rounded-ctl text-primary data-hovered:bg-secondary', text ? 'px-2.5 text-body font-normal' : 'w-10 px-0', className)}>
+    <Button variant="ghost" aria-label={label} {...props}
+      className={cn('h-9 rounded-ctl text-primary hover:bg-secondary', text ? 'px-2.5 text-body font-normal' : 'w-10 px-0', className)}>
       {children ?? label}
     </Button>
   );
@@ -24,22 +23,22 @@ export function BarButton({ label, children, onPress, isDisabled, className }: {
 
 export function FlagButton({ mail, m }: { mail: MailState; m: Message }) {
   return (
-    <BarButton label={m.flagged ? 'Unflag' : 'Flag'} onPress={() => mail.toggleFlag(m.id)} className={m.flagged ? 'text-warning' : undefined}>
+    <BarButton label={m.flagged ? 'Unflag' : 'Flag'} onClick={() => mail.toggleFlag(m.id)} className={m.flagged ? 'text-warning' : undefined}>
       <IconSwap id={m.flagged ? 'on' : 'off'}><Icon name={m.flagged ? 'flag-fill' : 'flag'} /></IconSwap>
     </BarButton>
   );
 }
 
-/** "Move to…" menu of folders. */
-export function MoveMenu({ mail, ids, children, isDisabled, onMoved }: {
-  mail: MailState; ids: string[]; children?: ReactNode; isDisabled?: boolean; onMoved?: () => void;
+/** "Move to…" menu of folders. `trigger` is the button it opens from (a folder glyph by default). */
+export function MoveMenu({ mail, ids, trigger, disabled, onMoved }: {
+  mail: MailState; ids: string[]; trigger?: ReactElement; disabled?: boolean; onMoved?: () => void;
 }) {
   return (
-    <DropdownMenu>
-      {children ?? <BarButton label="Move to…" isDisabled={isDisabled}><Icon name="folder" /></BarButton>}
-      <DropdownMenuContent aria-label="Move to" onAction={(key) => { mail.moveTo(ids, String(key)); onMoved?.(); }} disabledKeys={[mail.boxId]}>
+    <DropdownMenu onAction={(value) => { mail.moveTo(ids, value); onMoved?.(); }}>
+      <DropdownMenuTrigger disabled={disabled} render={trigger ?? <BarButton label="Move to…"><Icon name="folder" /></BarButton>} />
+      <DropdownMenuContent>
         {MOVE_TARGETS.map((b) => (
-          <DropdownMenuItem key={b.id} id={b.id} icon={<Icon name={b.icon} size={20} />}>{b.title}</DropdownMenuItem>
+          <DropdownMenuItem key={b.id} value={b.id} disabled={b.id === mail.boxId} icon={<Icon name={b.icon} size={20} />}>{b.title}</DropdownMenuItem>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -48,15 +47,14 @@ export function MoveMenu({ mail, ids, children, isDisabled, onMoved }: {
 
 export function ReplyMenu({ mail, m }: { mail: MailState; m: Message }) {
   return (
-    <DropdownMenu>
-      <BarButton label="Reply"><Icon name="reply" /></BarButton>
-      <DropdownMenuContent aria-label="Reply" placement="bottom end"
-        onAction={(key) => mail.compose(key as 'reply' | 'replyAll' | 'forward', m)}>
-        <DropdownMenuItem id="reply" icon={<Icon name="reply" size={20} />}>Reply</DropdownMenuItem>
-        <DropdownMenuItem id="replyAll" icon={<Icon name="reply-all" size={20} />}>Reply All</DropdownMenuItem>
-        <DropdownMenuItem id="forward" icon={<Icon name="arrow-forward" size={20} />}>Forward</DropdownMenuItem>
+    <DropdownMenu onAction={(value) => mail.compose(value as 'reply' | 'replyAll' | 'forward', m)}>
+      <DropdownMenuTrigger render={<BarButton label="Reply"><Icon name="reply" /></BarButton>} />
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem value="reply" icon={<Icon name="reply" size={20} />}>Reply</DropdownMenuItem>
+        <DropdownMenuItem value="replyAll" icon={<Icon name="reply-all" size={20} />}>Reply All</DropdownMenuItem>
+        <DropdownMenuItem value="forward" icon={<Icon name="arrow-forward" size={20} />}>Forward</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem id="print" isDisabled icon={<Icon name="doc" size={20} />}>Print</DropdownMenuItem>
+        <DropdownMenuItem value="print" disabled icon={<Icon name="doc" size={20} />}>Print</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -78,24 +76,24 @@ export function ListBar({ mail }: { mail: MailState }) {
   if (mail.editing) {
     return (
       <BottomBar>
-        <DropdownMenu>
-          <BarButton label="Mark" isDisabled={!ids.length} />
-          <DropdownMenuContent aria-label="Mark" placement="top start" onAction={(k) => mail.markChecked(k === 'unread')}>
-            <DropdownMenuItem id="read" icon={<Icon name="envelope-open" size={20} />}>Mark as Read</DropdownMenuItem>
-            <DropdownMenuItem id="unread" icon={<Icon name="envelope-badge" size={20} />}>Mark as Unread</DropdownMenuItem>
+        <DropdownMenu onAction={(value) => mail.markChecked(value === 'unread')}>
+          <DropdownMenuTrigger disabled={!ids.length} render={<BarButton label="Mark" />} />
+          <DropdownMenuContent side="top" align="start">
+            <DropdownMenuItem value="read" icon={<Icon name="envelope-open" size={20} />}>Mark as Read</DropdownMenuItem>
+            <DropdownMenuItem value="unread" icon={<Icon name="envelope-badge" size={20} />}>Mark as Unread</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <span className="flex-1" />
-        <MoveMenu mail={mail} ids={ids}><BarButton label="Move" isDisabled={!ids.length} /></MoveMenu>
+        <MoveMenu mail={mail} ids={ids} disabled={!ids.length} trigger={<BarButton label="Move" />} />
         <span className="flex-1" />
-        <BarButton label={mail.boxId === 'trash' ? 'Delete' : 'Trash'} isDisabled={!ids.length} onPress={() => mail.trash(ids)} />
+        <BarButton label={mail.boxId === 'trash' ? 'Delete' : 'Trash'} disabled={!ids.length} onClick={() => mail.trash(ids)} />
       </BottomBar>
     );
   }
   const unread = mail.list.filter((m) => m.unread).length;
   return (
     <BottomBar>
-      <BarButton label={mail.unreadOnly ? 'Show all mail' : 'Filter by unread'} onPress={mail.toggleUnreadFilter}>
+      <BarButton label={mail.unreadOnly ? 'Show all mail' : 'Filter by unread'} onClick={mail.toggleUnreadFilter}>
         <IconSwap id={mail.unreadOnly ? 'on' : 'off'}><Icon name={mail.unreadOnly ? 'filter-circle-fill' : 'filter-circle'} size={24} /></IconSwap>
       </BarButton>
       <div className="min-w-0 flex-1 text-center leading-[1.25]" aria-live="polite">
@@ -111,7 +109,7 @@ export function ListBar({ mail }: { mail: MailState }) {
           </>
         )}
       </div>
-      <BarButton label="New message" onPress={() => mail.compose('new')}><Icon name="compose" size={24} /></BarButton>
+      <BarButton label="New message" onClick={() => mail.compose('new')}><Icon name="compose" size={24} /></BarButton>
     </BottomBar>
   );
 }

@@ -10,7 +10,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import { useDocstreamEnv } from '@brett_lamy/docstream';
 import { getReplayMeta, type ReplayEvent } from '@/components/ui/replay-preview';
-import { fitCamera, unionRect, type Camera, type Rect } from '@/lib/canvas-math';
+import { createCanvasController } from '@/components/ui/canvas';
+import { unionRect, type Rect, type Viewport } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';
 import { PlainButton } from '@/components/ui/plain-button';
 import { Icon } from '@/lib/icon';
@@ -25,7 +26,7 @@ import { QaAuthError, createQaClient, type QaProject, type QaTestRun } from './q
 import { QaPanel, type QaLoad } from './qa-panel';
 import { SAMPLE_RECORDINGS } from './recordings';
 import { Sidebar, type SourceRecording } from './sidebar';
-import { ToolButton } from './toolbar';
+import { ToolButton, ToolToggle } from './toolbar';
 
 export type { Recording } from './analyze';
 
@@ -80,7 +81,9 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
   const narrow = size.width < 960;
   const [sources, setSources] = useState<SourceRecording[]>(() => recordings.map(source));
   const [crops, setCrops] = useState<Crops>({});
-  const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, z: 0.1 });
+  const [view, setView] = useState<Viewport>({ x: 0, y: 0, zoom: 0.1 });
+  // Fitting the map, a frame or a search hit moves the board's view through it.
+  const [canvasView] = useState(() => createCanvasController());
   const [selection, setSelection] = useState<Selection>(null);
   const [shown, setShown] = useState<Record<string, number>>({});
   const [showDismiss, setShowDismiss] = useState(false);
@@ -115,8 +118,8 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
 
   const fitTo = useCallback((r: Rect | null, pad = 64) => {
     const el = canvas.current?.getBoundingClientRect();
-    if (el && el.width > 50) setCamera(fitCamera(r && { ...r, y: r.y - 60, h: r.h + 60 }, { width: el.width, height: el.height }, pad));
-  }, []);
+    if (el && el.width > 50) canvasView.fit(r && { ...r, y: r.y - 60, h: r.h + 60 }, { padding: pad });
+  }, [canvasView]);
 
   // Everything in view on opening and whenever the recordings change.
   const fitted = useRef<string | null>(null);
@@ -195,25 +198,25 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
         onDrop={onDrop}
       >
         <header className="flex h-toolbar shrink-0 items-center gap-1 border-b border-border bg-bar px-2">
-          <ToolButton icon="sidebar" label={navOpen ? 'Hide recordings' : 'Show recordings'} active={navOpen} onPress={() => setPanes({ nav: !navOpen, inspector: inspectorOpen })} />
-          <div role="heading" aria-level={1} className="ml-1 text-subhead font-semibold">Replay Canvas</div>
+          <ToolToggle icon="sidebar" label={navOpen ? 'Hide recordings' : 'Show recordings'} pressed={navOpen} onPressedChange={(nav) => setPanes({ nav, inspector: inspectorOpen })} />
+          <h1 className="m-0 ml-1 text-subhead font-semibold">Replay Canvas</h1>
           <p className="m-0 ml-2 min-w-0 truncate text-footnote text-muted-foreground">
             {enabled.length} recording{enabled.length === 1 ? '' : 's'} → {map.pages.length} pages · {map.overlays.length} layers ·{map.chrome.length ? ` ${map.chrome.length} shared ·` : ''} {states} frames · {map.segues.length} segues
           </p>
           <div className="flex-1" />
           {following && (
-            <PlainButton aria-label={`Stop following ${following.name}`} onPress={() => setJourney(null)}
-              className="mr-1 flex max-w-64 cursor-pointer items-center gap-1.5 rounded-full border-0 bg-secondary py-1 pr-1.5 pl-2.5 text-footnote text-foreground outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+            <PlainButton aria-label={`Stop following ${following.name}`} onClick={() => setJourney(null)}
+              className="mr-1 flex max-w-64 cursor-pointer items-center gap-1.5 rounded-full border-0 bg-secondary py-1 pr-1.5 pl-2.5 text-footnote text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
               <span className="size-2.5 shrink-0 rounded-full" style={{ background: following.color }} />
               <span className="truncate">Following {following.name}</span>
               <Icon name="xmark" size={11} sw={2.2} className="shrink-0 text-muted-foreground" />
             </PlainButton>
           )}
-          <ToolButton icon="arrow-up-right" label={showArrows ? 'Hide arrows (dots stay; select one to see its arrow)' : 'Show arrows'} active={showArrows} onPress={() => setShowArrows((v) => !v)} />
-          <ToolButton icon="xmark-circle" label={showDismiss ? 'Hide dismissals' : 'Show dismissals'} active={showDismiss} onPress={() => setShowDismiss((v) => !v)} />
-          <ToolButton icon="grid" label={showMiniMap ? 'Hide minimap' : 'Show minimap'} active={showMiniMap} onPress={() => setShowMiniMap((v) => !v)} />
-          <ToolButton icon="magnifyingglass" label="Zoom to fit (⌘0)" onPress={() => fitTo(unionRect(boxes))} />
-          <ToolButton icon="sidebar" label={inspectorOpen ? 'Hide inspector' : 'Show inspector'} active={inspectorOpen} className="-scale-x-100" onPress={() => setPanes({ nav: navOpen, inspector: !inspectorOpen })} />
+          <ToolToggle icon="arrow-up-right" label={showArrows ? 'Hide arrows (dots stay; select one to see its arrow)' : 'Show arrows'} pressed={showArrows} onPressedChange={setShowArrows} />
+          <ToolToggle icon="xmark-circle" label={showDismiss ? 'Hide dismissals' : 'Show dismissals'} pressed={showDismiss} onPressedChange={setShowDismiss} />
+          <ToolToggle icon="grid" label={showMiniMap ? 'Hide minimap' : 'Show minimap'} pressed={showMiniMap} onPressedChange={setShowMiniMap} />
+          <ToolButton icon="magnifyingglass" label="Zoom to fit (⌘0)" onClick={() => fitTo(unionRect(boxes))} />
+          <ToolToggle icon="sidebar" label={inspectorOpen ? 'Hide inspector' : 'Show inspector'} pressed={inspectorOpen} className="-scale-x-100" onPressedChange={(inspector) => setPanes({ nav: navOpen, inspector })} />
         </header>
         <div className="relative flex min-h-0 flex-1">
           {navOpen && (
@@ -241,8 +244,9 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
               viewport={viewport}
               crops={crops}
               onCrop={onCrop}
-              camera={camera}
-              onCameraChange={setCamera}
+              view={view}
+              onViewChange={setView}
+              controller={canvasView}
               selection={selection}
               onSelect={setSelection}
               showDismiss={showDismiss}

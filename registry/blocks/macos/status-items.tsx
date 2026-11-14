@@ -9,8 +9,8 @@
      All of it is invented sample data and nothing connects to anything: turning it off only dims the glyph. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { ListBox, ListBoxItem, ListBoxSection } from '@/components/ui/list-box';
-import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Listbox, ListboxGroup, ListboxGroupLabel, ListboxItem } from '@/components/ui/list-box';
+import { Popover, PopoverClose, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { TailscaleLoginButton, TailscaleMark, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button';
@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { useDesktop } from './desktop';
 
 /** A status item in the bar: a quiet button that takes the bar's own text colour, and shows it is open. */
-const ITEM = '-m-1 rounded-md p-1 text-inherit data-hovered:bg-current/12 data-pressed:bg-current/20 aria-expanded:bg-current/20 data-focus-visible:ring-offset-0';
+const ITEM = '-m-1 rounded-md p-1 text-inherit hover:bg-current/12 active:bg-current/20 aria-expanded:bg-current/20 focus-visible:ring-offset-0';
 
 /** Which of the two menus is open when the bar mounts (stories, tests). */
 export type StatusMenu = 'wifi' | 'tailscale';
@@ -47,12 +47,12 @@ export function WifiBars({ level, size = 14, className }: { level: 0 | 1 | 2 | 3
     The same list-box row the Tailscale menu's exit nodes use in its `networks` variant (TailscaleExitNodes, core). */
 export function NetworkRow({ id, name, detail, glyph }: { id: string; name: string; detail?: ReactNode; glyph?: ReactNode }) {
   return (
-    <ListBoxItem id={id} textValue={name} description={detail}>
+    <ListboxItem value={id} label={name} description={detail}>
       <span className="flex min-w-0 items-center gap-2">
         <span className="min-w-0 flex-1 truncate">{name}</span>
         <span aria-hidden="true" className="flex shrink-0 items-center gap-1.5">{glyph}</span>
       </span>
-    </ListBoxItem>
+    </ListboxItem>
   );
 }
 
@@ -79,17 +79,19 @@ export function TailscaleStatusItem({ defaultOpen }: { defaultOpen?: boolean }) 
   };
 
   return (
-    <PopoverTrigger defaultOpen={defaultOpen}>
-      <Button variant="quiet" size="icon-sm" aria-label={label} className={ITEM}>
+    <Popover defaultOpen={defaultOpen}>
+      <PopoverTrigger render={<Button variant="quiet" size="icon-sm" aria-label={label} className={ITEM} />}>
         <span className="relative grid">
           <TailscaleMark size={15} className={cn('transition-opacity duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', !connected && 'opacity-45')} />
           {exit ? <span data-slot="macos-exit-node-dot" aria-hidden="true" className="absolute -top-px -right-px size-1.5 rounded-full bg-success" /> : null}
         </span>
-      </Button>
-      <PopoverContent aria-label="Tailscale" placement="bottom end" offset={6} className="w-72">
+      </PopoverTrigger>
+      <PopoverContent align="end" sideOffset={6} className="w-72">
+        {/* The trigger's name is its status; the menu is just "Tailscale". */}
+        <PopoverTitle className="sr-only">Tailscale</PopoverTitle>
         {connected ? <TailscaleMenu variant="networks" onExitNode={choose} glyph={exitNodeGlyph} /> : <TailscaleSignIn />}
       </PopoverContent>
-    </PopoverTrigger>
+    </Popover>
   );
 }
 
@@ -159,40 +161,39 @@ export function WifiStatusItem({ defaultOpen }: { defaultOpen?: boolean }) {
   };
 
   return (
-    <PopoverTrigger defaultOpen={defaultOpen}>
-      <Button variant="quiet" size="icon-sm" aria-label={on ? `Wi-Fi, connected to ${network.name}` : 'Wi-Fi, off'} className={ITEM}>
+    <Popover defaultOpen={defaultOpen}>
+      <PopoverTrigger render={<Button variant="quiet" size="icon-sm" aria-label={on ? `Wi-Fi, connected to ${network.name}` : 'Wi-Fi, off'} className={ITEM} />}>
         <WifiBars level={on ? network.bars : 0} size={15} />
-      </Button>
-      <PopoverContent aria-label="Wi-Fi" placement="bottom end" offset={6} className="w-72">
-        {({ close }) => (
-          <div data-slot="macos-wifi-menu" className="flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-subhead font-semibold">Wi-Fi</span>
-              {/* The switch is a phone's size; scaled to sit in a menu without taking the room it was made for. */}
-              <span className="-my-1 inline-grid origin-right scale-75"><Switch checked={on} onChange={setOn} aria-label="Wi-Fi" /></span>
-            </div>
-            {on ? (
-              <ListBox
-                variant="popup"
-                aria-label="Wi-Fi networks"
-                selectionMode="single"
-                disallowEmptySelection
-                selectedKeys={[joining ?? joined]}
-                onSelectionChange={(keys) => { const key = keys === 'all' ? undefined : [...keys][0]; if (key !== undefined) join(String(key)); }}
-                className="max-h-72 p-0"
-              >
-                <ListBoxSection title="My Networks">{MY_NETWORKS.map((n) => networkRow(n, joining))}</ListBoxSection>
-                <ListBoxSection title="Other Networks">{OTHER_NETWORKS.map((n) => networkRow(n, joining))}</ListBoxSection>
-              </ListBox>
-            ) : (
-              <p className="m-0 text-footnote text-foreground/70">Wi-Fi is turned off. Turn it on to see the networks around you.</p>
-            )}
-            <Button variant="ghost" size="sm" className="justify-start px-2 font-normal" onPress={() => { desktop.open('settings'); close(); }}>
-              Network Settings…
-            </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" sideOffset={6} className="w-72">
+        <div data-slot="macos-wifi-menu" className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <PopoverTitle className="text-subhead">Wi-Fi</PopoverTitle>
+            {/* The switch is a phone's size; scaled to sit in a menu without taking the room it was made for. */}
+            <span className="-my-1 inline-grid origin-right scale-75"><Switch checked={on} onCheckedChange={setOn} aria-label="Wi-Fi" /></span>
           </div>
-        )}
+          {on ? (
+            <Listbox
+              variant="popup"
+              aria-label="Wi-Fi networks"
+              // Moving through the list doesn't join anything: Enter, Space or a press does.
+              activation="manual"
+              deselectable={false}
+              value={joining ?? joined}
+              onValueChange={(id) => { if (id) join(id); }}
+              className="max-h-72 p-0"
+            >
+              <ListboxGroup><ListboxGroupLabel>My Networks</ListboxGroupLabel>{MY_NETWORKS.map((n) => networkRow(n, joining))}</ListboxGroup>
+              <ListboxGroup><ListboxGroupLabel>Other Networks</ListboxGroupLabel>{OTHER_NETWORKS.map((n) => networkRow(n, joining))}</ListboxGroup>
+            </Listbox>
+          ) : (
+            <p className="m-0 text-footnote text-foreground/70">Wi-Fi is turned off. Turn it on to see the networks around you.</p>
+          )}
+          <PopoverClose render={<Button variant="ghost" size="sm" className="justify-start px-2 font-normal" onClick={() => desktop.open('settings')} />}>
+            Network Settings…
+          </PopoverClose>
+        </div>
       </PopoverContent>
-    </PopoverTrigger>
+    </Popover>
   );
 }

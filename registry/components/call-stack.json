@@ -1,7 +1,7 @@
 {
   "name": "call-stack",
   "title": "CallStack",
-  "description": "Frames as a debugger lists them: the top frame marked, runs of framework and library frames folded, async boundaries as labelled separators, short locations with the full path a press away. Virtualized, on react-aria's GridList.",
+  "description": "Frames as a debugger lists them: the top frame marked, runs of framework and library frames folded, async boundaries as labelled separators, short locations with the full path a press away. Virtualized, on UI SDK's Tree.",
   "page": "call-stack",
   "files": [
     "components/call-stack.tsx"
@@ -18,6 +18,7 @@
   ],
   "types": [
     "CallStackProps",
+    "CallStackValueChangeDetails",
     "CallStackFrame",
     "CallStackFrameKind",
     "CallStackLocation"

@@ -1,11 +1,27 @@
 {
   "name": "list",
   "title": "List",
-  "description": "Inset-grouped and plain lists with rows, sections, swipe actions and an A-Z IndexBar.",
+  "description": "Inset-grouped and plain lists on UI SDK: sections that are lists of rows (grow in, collapse out, reorder by a grip with createReorder), rows with swipe actions and full swipe (createSwipeActions), edit mode and a hover preview, and an A-Z IndexBar.",
   "page": "lists",
   "exports": [
     "List",
     "ListSection",
+    "ListRow",
+    "listRowVariants",
+    "createListRowController"
+  ],
+  "imports": [
+    "List",
+    "ListSection",
     "ListRow"
+  ],
+  "types": [
+    "ListProps",
+    "ListSectionProps",
+    "ListRowProps",
+    "ListRowAction",
+    "ListRowActionDetails",
+    "ListRowController",
+    "ListSectionOrderChangeDetails"
   ]
 }

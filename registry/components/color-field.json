@@ -1,15 +1,16 @@
 {
   "name": "color-field",
   "title": "ColorField",
-  "description": "A text field that reads a hex color, or one channel of it, with an optional swatch; and ColorSwatch, a color chip over a checkerboard so transparency shows. React-aria's ColorField.",
+  "description": "A text field for a color on UI SDK's ColorPicker: it reads any CSS color on Enter or blur, or edits one channel as a number, beside a swatch of the color; and ColorSwatch, a color chip on its own.",
   "page": "color-field",
   "exports": [
     "ColorField",
     "ColorFieldGroup",
     "ColorFieldInput",
+    "ColorFieldChannelInput",
     "ColorFieldSwatch",
     "ColorSwatch",
-    "colorFieldGroupVariants"
+    "colorFieldVariants"
   ],
   "imports": [
     "ColorField",

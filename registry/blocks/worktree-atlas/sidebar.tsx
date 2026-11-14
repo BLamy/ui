@@ -6,10 +6,12 @@
    it in a hover card (its folder, HEAD, pull request, size and age), so two agent branches can be told apart before
    either is opened. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
+import { ToggleGroup } from '@ui-sdk/react/toggle';
+import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
 import { Button } from '@/components/ui/button';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { HoverCardHeader } from '@/components/ui/hover-card';
 import { Spinner } from '@/components/ui/spinner';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { AnimatedHeight } from '@/components/ui/animated-height';
@@ -31,23 +33,21 @@ const VIEWS: { id: AtlasView; label: string; icon: ReactNode }[] = [
 
 function Rail({ atlas }: { atlas: AtlasState }) {
   return (
-    <div role="toolbar" aria-label="View" aria-orientation="vertical"
+    <ToggleGroup<AtlasView> aria-label="View" orientation="vertical" deselectable={false} value={[atlas.view]}
+      onValueChange={([view]) => { if (view) atlas.showView(view); }}
       className="flex w-[52px] shrink-0 flex-col items-center gap-1.5 shadow-[inset_-1px_0_0_var(--border)]">
       <div aria-hidden="true" data-slot="atlas-rail-top" className="h-toolbar w-full shrink-0" />
-      {VIEWS.map((v) => {
-        const on = atlas.view === v.id;
-        return (
-          <PlainButton key={v.id} aria-label={v.label} aria-pressed={on} onPress={() => atlas.showView(v.id)}
-            className={cn(
-              'bl-btn grid size-10 cursor-pointer place-items-center rounded-ctl border-0 outline-none transition-colors duration-150',
-              'data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring',
-              on ? 'bg-secondary text-foreground' : 'bg-transparent text-muted-foreground data-[hovered]:bg-secondary/60 data-[hovered]:text-foreground',
-            )}>
-            {v.icon}
-          </PlainButton>
-        );
-      })}
-    </div>
+      {VIEWS.map((v) => (
+        <PlainToggleButton key={v.id} value={v.id} aria-label={v.label}
+          className={cn(
+            'bl-btn grid size-10 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent text-muted-foreground outline-none transition-colors duration-150',
+            'focus-visible:ring-2 focus-visible:ring-ring',
+            'not-data-pressed:hover:bg-secondary/60 not-data-pressed:hover:text-foreground data-pressed:bg-secondary data-pressed:text-foreground',
+          )}>
+          {v.icon}
+        </PlainToggleButton>
+      ))}
+    </ToggleGroup>
   );
 }
 
@@ -92,9 +92,13 @@ function WorktreeItem({ atlas, p, w }: { atlas: AtlasState; p: Project; w: Workt
   const s = useSplitView();
   const show = (view: AtlasView) => { atlas.showView(view); atlas.open(w.id); s.select('sidebar', w.id); };
   return (
-    <ContextMenu>
-      <HoverCardTrigger className="flex w-full">
-        <SplitViewItem id={w.id} className="min-h-[34px] w-full py-1 pl-10">
+    <ContextMenu onAction={(value) => {
+      if (value === 'files' || value === 'changes') show(value);
+      else if (value === 'copy') void navigator.clipboard?.writeText(w.path);
+      else if (value === 'delete') atlas.requestDelete([w]);
+    }}>
+      <ContextMenuTrigger className="flex w-full">
+        <SplitViewItem id={w.id} className="min-h-[34px] w-full py-1 pl-10" preview={<WorktreeCard p={p} w={w} />}>
           <span className="flex min-w-0 flex-1 items-center gap-2">
             <span className={cn('min-w-0 flex-1 truncate text-subhead leading-[1.3]', !w.branch && 'italic', (w.missing || w.unreachable) && 'opacity-55')}>
               {branchLabel(w)}
@@ -105,18 +109,13 @@ function WorktreeItem({ atlas, p, w }: { atlas: AtlasState; p: Project; w: Workt
             </span>
           </span>
         </SplitViewItem>
-        <HoverCard placement="end top"><WorktreeCard p={p} w={w} /></HoverCard>
-      </HoverCardTrigger>
-      <ContextMenuContent aria-label={`${branchLabel(w)} actions`} onAction={(key) => {
-        if (key === 'files' || key === 'changes') show(key);
-        else if (key === 'copy') void navigator.clipboard?.writeText(w.path);
-        else if (key === 'delete') atlas.requestDelete([w]);
-      }}>
-        <ContextMenuItem id="changes" icon={<ChangesIcon size={18} />}>Show Changes</ContextMenuItem>
-        <ContextMenuItem id="files" icon={<Icon name="folder" size={18} />}>Browse Files</ContextMenuItem>
-        <ContextMenuItem id="copy" icon={<Icon name="copy" size={18} />}>Copy Path</ContextMenuItem>
+      </ContextMenuTrigger>
+      <ContextMenuContent aria-label={`${branchLabel(w)} actions`}>
+        <ContextMenuItem value="changes" icon={<ChangesIcon size={18} />}>Show Changes</ContextMenuItem>
+        <ContextMenuItem value="files" icon={<Icon name="folder" size={18} />}>Browse Files</ContextMenuItem>
+        <ContextMenuItem value="copy" icon={<Icon name="copy" size={18} />}>Copy Path</ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem id="delete" variant="destructive" isDisabled={!atlas.deletable(w)} icon={<Icon name="trash" size={18} />}>
+        <ContextMenuItem value="delete" destructive disabled={!atlas.deletable(w)} icon={<Icon name="trash" size={18} />}>
           {w.clone ? 'Delete Clone…' : 'Delete Worktree…'}
         </ContextMenuItem>
       </ContextMenuContent>
@@ -133,29 +132,30 @@ function ProjectGroup({ atlas, p, where, expanded, onExpandedChange }: {
   // The open worktree stays in view even when it is past the limit.
   if (atlas.selected?.projectId === p.id && !shown.includes(atlas.selected)) shown.push(atlas.selected);
   return (
-    <div role="group" aria-label={p.name}>
-      <PlainButton onPress={() => onExpandedChange(!expanded)} aria-expanded={expanded}
-        className="bl-btn flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-ctl border-0 bg-transparent px-2.5 text-left [font-family:inherit] text-subhead text-foreground outline-none data-[hovered]:bg-secondary data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+    <Collapsible open={expanded} onOpenChange={(open) => onExpandedChange(open)} role="group" aria-label={p.name}>
+      <CollapsibleTrigger
+        className="bl-btn flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-ctl border-0 bg-transparent px-2.5 text-left [font-family:inherit] text-subhead text-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
         <FolderIcon open={expanded} size={20} className="text-muted-foreground" />
         <span className="min-w-0 flex-1 truncate" title={shortPath(p.path)}>
           {p.name}{where ? <span className="ml-1.5 text-footnote text-muted-foreground">{where}</span> : null}
         </span>
-      </PlainButton>
-      <AnimatedHeight>
-        {expanded ? (
+      </CollapsibleTrigger>
+      <CollapsiblePanel className="h-(--collapsible-panel-height) overflow-clip transition-[height] duration-spring-tray ease-spring-tray data-starting-style:h-0 data-ending-style:h-0 motion-reduce:transition-none">
+        {/* Show more grows the open group on the same spring. */}
+        <AnimatedHeight>
           <div className="flex flex-col gap-px pb-1">
             {shown.map((w) => <WorktreeItem key={w.id} atlas={atlas} p={p} w={w} />)}
             {rows.length > limit ? (
-              <PlainButton onPress={() => setLimit(nextLimit(limit))}
-                className="bl-btn flex h-8 w-full cursor-pointer items-center rounded-ctl border-0 bg-transparent pl-10 text-left [font-family:inherit] text-subhead text-muted-foreground outline-none data-[hovered]:text-foreground data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+              <PlainButton onClick={() => setLimit(nextLimit(limit))}
+                className="bl-btn flex h-8 w-full cursor-pointer items-center rounded-ctl border-0 bg-transparent pl-10 text-left [font-family:inherit] text-subhead text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
                 Show more
               </PlainButton>
             ) : null}
             {rows.length === 0 ? <div className="pl-10 py-1.5 text-footnote text-muted-foreground">No worktrees</div> : null}
           </div>
-        ) : null}
-      </AnimatedHeight>
-    </div>
+        </AnimatedHeight>
+      </CollapsiblePanel>
+    </Collapsible>
   );
 }
 
@@ -184,8 +184,8 @@ export function ProjectsSidebar({ atlas, footer }: { atlas: AtlasState; footer?:
       <Rail atlas={atlas} />
       <div className="relative flex min-w-0 flex-1 flex-col">
         <SplitViewHeader title="Projects" titleAlign="leading" largeTitle={s.collapsed} trailing={<>
-          <BarButton label="Scan again" isDisabled={atlas.scanning} onPress={() => void atlas.scan()}><Icon name="arrow-clockwise" size={20} /></BarButton>
-          {canAdd ? <BarButton label="Add folder" onPress={() => void atlas.addLocation()}><Icon name="folder-badge-plus" size={22} /></BarButton> : null}
+          <BarButton label="Scan again" disabled={atlas.scanning} onClick={() => void atlas.scan()}><Icon name="arrow-clockwise" size={20} /></BarButton>
+          {canAdd ? <BarButton label="Add folder" onClick={() => void atlas.addLocation()}><Icon name="folder-badge-plus" size={22} /></BarButton> : null}
         </>} />
         <SplitViewContent>
           <div className="flex flex-col gap-px px-2 pt-1 pb-20">
@@ -203,9 +203,9 @@ export function ProjectsSidebar({ atlas, footer }: { atlas: AtlasState; footer?:
                     <Icon name={l.connected ? 'internaldrive' : 'lock'} size={18} className="text-muted-foreground" />
                     <span className="min-w-0 flex-1 truncate">{l.name}</span>
                     {l.connected ? null : (
-                      <Button size="sm" variant="secondary" onPress={() => void atlas.reconnect(l.id)}>Allow</Button>
+                      <Button size="sm" variant="secondary" onClick={() => void atlas.reconnect(l.id)}>Allow</Button>
                     )}
-                    <Button variant="quiet" size="icon-sm" aria-label={`Remove ${l.name}`} onPress={() => void atlas.removeLocation(l.id)}>
+                    <Button variant="quiet" size="icon-sm" aria-label={`Remove ${l.name}`} onClick={() => void atlas.removeLocation(l.id)}>
                       <Icon name="xmark" size={13} sw={2.4} />
                     </Button>
                   </div>

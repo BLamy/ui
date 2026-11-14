@@ -89,8 +89,8 @@ export default function LoadingSwap() {
       </AnimatedHeight>
       <Button
         variant="secondary"
-        isDisabled={loading}
-        onPress={() => setAttempt((a) => a + 1)}
+        disabled={loading}
+        onClick={() => setAttempt((a) => a + 1)}
         style={{ justifySelf: 'center' }}
       >
         Reload

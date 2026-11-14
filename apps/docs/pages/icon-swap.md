@@ -37,7 +37,7 @@ Wrap the icon and give it an `id` that changes when the icon does. The children 
 </IconSwap>
 ```
 
-The new glyph grows in on the bouncy spring; the old one leaves faster than the new arrives. Under reduced motion both just fade, briefly.
+The new glyph grows in on the bouncy spring; the old one leaves faster than the new arrives. Under reduced motion both just fade, briefly. The glyphs come and go with UI SDK's presence (`data-starting-style` / `data-ending-style`, through the kit's `usePresenceList`), so the swap is plain CSS on the spring tokens and can be interrupted.
 
 ## Chevron
 
@@ -47,7 +47,7 @@ The new glyph grows in on the bouncy spring; the old one leaves faster than the 
 
 ## Accessibility
 
-Neither part labels anything: the glyph is decoration and `Chevron` is `aria-hidden`. Put the meaning on the control that contains them: change the button's label or `aria-label` with the state ("Copy" to "Copied"), and use `aria-expanded` on a disclosure. A state change that is not obvious from a label change should be announced in a `role="status"` region.
+Neither part labels anything: the glyph is decoration and `Chevron` is `aria-hidden`. Put the meaning on the control that contains them: change the button's label or `aria-label` with the state ("Copy" to "Copied"), and use `aria-expanded` on a disclosure. A state change that is not obvious from a label change should be announced with UI SDK's `announce()`.
 
 ## Props
 
@@ -70,4 +70,4 @@ Neither part labels anything: the glyph is decoration and `Chevron` is `aria-hid
 
 ## Styling
 
-`data-slot="icon-swap"` is the cell; the leaving and arriving glyphs are stacked in the same grid area. `data-slot="chevron"` carries `data-direction`. Both use `currentColor`, so set the colour on a parent or with a `text-*` class.
+`data-slot="icon-swap"` is the cell; each glyph is a `data-slot="icon-swap-glyph"` stacked in the same grid area, with `data-starting-style` for its first frame and `data-ending-style` while it leaves. `data-slot="chevron"` carries `data-direction`. Both use `currentColor`, so set the colour on a parent or with a `text-*` class.

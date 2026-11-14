@@ -21,8 +21,6 @@ export const PASSWORDS_KEYCHAIN = { id: 'apple-passwords-sign-ins', rp: { name: 
 
 export interface PasswordsKeychainProps {
   children: ReactNode;
-  /** Sheets as trays (phone) instead of dialogs. */
-  compact?: boolean;
   /** Runs the device sign-ins; defaults to the real flows (tailnet or CORS proxy). `createDemoDeviceAuth()` fakes them. */
   auth?: DeviceAuth;
   /** The Tailscale controller sign-ins may use; default one sharing the Safari block's node. `false`: always the proxy. */
@@ -45,7 +43,7 @@ export function PasswordsKeychain({ children, tailscale, passkeyVault, ...rest }
   return tailscale ? <TailscaleProvider tailscale={tailscale}>{app}</TailscaleProvider> : <TailscaleProvider options={passwordsTailnetOptions()}>{app}</TailscaleProvider>;
 }
 
-function Keychain({ children, compact = false, auth: authProp, protects = 'the developer sign-in tokens kept in this browser' }: Omit<PasswordsKeychainProps, 'tailscale' | 'passkeyVault'>) {
+function Keychain({ children, auth: authProp, protects = 'the developer sign-in tokens kept in this browser' }: Omit<PasswordsKeychainProps, 'tailscale' | 'passkeyVault'>) {
   const tailnet = useOptionalTailscale();
   const auth = useMemo(() => authProp ?? createDeviceAuth({ fetch: tailnetOrProxy(tailnet) }), [authProp, tailnet]);
   const store = useSignInStore(auth);
@@ -58,9 +56,9 @@ function Keychain({ children, compact = false, auth: authProp, protects = 'the d
   return (
     <SignInsProvider value={{ ...store, signIn: setSignIn, savePasskey }}>
       {children}
-      <SignInCredenza service={signIn} auth={auth} compact={compact} live onClose={() => setSignIn(null)}
+      <SignInCredenza service={signIn} auth={auth} live onClose={() => setSignIn(null)}
         onSaved={(id: ServiceId, grant: DeviceGrant) => store.store(id, grant)} onSavePasskey={savePasskey} />
-      <PasskeyEnrollDialog isOpen={enrolling} onOpenChange={setEnrolling} appName="Passwords" protects={protects} />
+      <PasskeyEnrollDialog open={enrolling} onOpenChange={setEnrolling} appName="Passwords" protects={protects} />
     </SignInsProvider>
   );
 }

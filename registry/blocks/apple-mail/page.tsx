@@ -2,7 +2,6 @@
    filter, threads, and a compose sheet. One SplitView at every size: three tiled columns at regular width
    (≥1024), list · message with the mailboxes floating over them on an iPad, and a stack with large titles and
    back buttons on an iPhone. */
-import { useState } from 'react';
 import { SplitView } from '@/components/ui/split-view';
 import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { ListColumn, MessageColumn } from './columns';
@@ -27,20 +26,19 @@ const MAIL_TINT = { light: '#007AFF', dark: '#0A84FF' } as const;
 export default function AppleMail({ appearance, initialMailbox = 'inbox', initialMessage = 'm2', initialDraft = null }: AppleMailProps) {
   const ambient = useAppearance();
   const dark = (appearance ?? ambient) === 'dark';
-  const [compact, setCompact] = useState(false);
   const mail = useMail({ mailbox: initialMailbox, message: initialMessage, draft: initialDraft });
 
   return (
     <AppearanceProvider value={dark ? 'dark' : 'light'}>
       <BLProvider tint={MAIL_TINT[dark ? 'dark' : 'light']} className="bg-background">
-        <SplitView aria-label="Mail" onWidthClassChange={(wc) => setCompact(wc === 'compact')}
-          selection={{ sidebar: mail.boxId, supplementary: mail.selectedId }}
-          onSelectionChange={(sel) => { if (sel.sidebar) mail.openBox(sel.sidebar); }}>
+        <SplitView aria-label="Mail"
+          value={{ sidebar: mail.boxId, supplementary: mail.selectedId }}
+          onValueChange={(next) => { if (next.sidebar) mail.openBox(next.sidebar); }}>
           <MailboxesSidebar mail={mail} />
           <ListColumn mail={mail} />
           <MessageColumn mail={mail} />
+          <ComposeSheet mail={mail} />
         </SplitView>
-        <ComposeSheet mail={mail} wide={!compact} />
       </BLProvider>
     </AppearanceProvider>
   );

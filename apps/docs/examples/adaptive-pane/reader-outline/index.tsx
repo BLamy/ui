@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import { AdaptivePane, type AdaptivePaneMode } from '@/components/ui/adaptive-pane'
+import { AdaptivePane, type AdaptivePanePresentation } from '@/components/ui/adaptive-pane'
 import { Button } from '@/components/ui/button'
-import { Segmented } from '@/components/ui/segmented'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 
 const outlineModes = [
   { id: 'column', label: 'Docked' },
@@ -18,7 +18,7 @@ const headings = [
 
 function Reader() {
   // The mode is also just state: let the reader pick how the outline presents.
-  const [mode, setMode] = useState<AdaptivePaneMode>('column')
+  const [mode, setMode] = useState<AdaptivePanePresentation>('column')
   const [open, setOpen] = useState(false)
   return (
     <div
@@ -30,9 +30,9 @@ function Reader() {
       }}
     >
       <AdaptivePane
-        mode={mode}
+        presentation={mode}
         open={open}
-        onClose={() => setOpen(false)}
+        onOpenChange={setOpen}
         columnWidth={190}
         drawerWidth={230}
         columnStyle={{ borderRight: '1px solid var(--border)' }}
@@ -85,16 +85,21 @@ function Reader() {
           <div style={{ width: 250 }}>
             <Segmented
               aria-label="Outline"
-              options={outlineModes}
               value={mode}
-              onChange={(m) => {
-                setMode(m as AdaptivePaneMode)
+              onValueChange={(m) => {
+                setMode(m as AdaptivePanePresentation)
                 setOpen(false)
               }}
-            />
+            >
+              {outlineModes.map((o) => (
+                <SegmentedItem key={o.id} value={o.id}>
+                  {o.label}
+                </SegmentedItem>
+              ))}
+            </Segmented>
           </div>
           {mode === 'drawer' && (
-            <Button size="sm" variant="secondary" onPress={() => setOpen(true)}>
+            <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>
               Outline
             </Button>
           )}

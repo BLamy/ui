@@ -39,13 +39,13 @@ import { TimeInput } from '@brett_lamy/ui'
 <TimeInput
   label="When"
   timeZone="Europe/Paris"
-  onValueChange={({ text, result, pending }) => {
+  onParseChange={({ text, result, pending }) => {
     if (!pending && result) save(result.occurrences, result.rrules)
   }}
 />
 ```
 
-Everything is optional. Without `timeZone` the browser's zone is used, and without `reference` "now" is read each time the text is parsed.
+Everything is optional. Without `timeZone` the browser's zone is used, and without `reference` "now" is read each time the text is parsed. To type a time of day part by part (hours, minutes, AM/PM) instead of reading free text, use `TimeField` from [DateField](https://blamy.github.io/ui/#/date-field). That is UI SDK's `TimeInput`: this kit's `TimeInput` is a different component, so code that follows UI SDK's docs for `TimeInput` wants `TimeField`.
 
 {% demo src="time-input/basic" %}
 
@@ -57,7 +57,7 @@ Everything is optional. Without `timeZone` the browser's zone is used, and witho
 - **Notes.** The parser's diagnostics, with the words they point at: "Assumed a daytime working-hours range.", "No AM/PM marker; interpreted as a 24-hour clock.", "The model is uncertain about this expression."
 - **Nothing found.** "No date or time found in that text." instead of silence.
 
-While a new parse is pending the previous preview stays, dimmed, and the recognised-words line is hidden (its offsets belong to the old text). A visually hidden status line announces the outcome ("3 dates found.") to screen readers.
+While a new parse is pending the previous preview stays, dimmed, and the recognised-words line is hidden (its offsets belong to the old text). The outcome ("3 dates found.") is announced to screen readers through UI SDK's shared live region (`announce`), once per settled parse.
 
 ### Repeating schedules
 
@@ -71,7 +71,7 @@ An ambiguous numeric date such as "3/4" is month first unless you pass `dateOrde
 
 ### Controlled
 
-`value` makes the field controlled. `onValueChange` is called on every keystroke with `result: null` and `pending: true` (this is the call a controlled `value` follows) and again with the parse once it settles. Read `result` only when `pending` is `false`.
+`value` makes the text controlled; follow it with `onValueChange(text, details)`, as on any [Input](https://blamy.github.io/ui/#/input) (`details.cancel()` rejects a keystroke). The reading arrives separately: `onParseChange` is called on every keystroke with `result: null` and `pending: true`, and again with the parse once it settles. Read `result` only when `pending` is `false`.
 
 {% demo src="time-input/controlled" %}
 
@@ -108,7 +108,7 @@ gpu-time has two backends and picks one itself (`backend="auto"`, the default): 
 
 ## Accessibility
 
-The field is a react-aria `TextField`: the label, description and error are linked to the input, and `aria-invalid` is set when it is invalid. The preview is linked to the input with `aria-describedby`, its lists are real lists with names ("Repeats", "Upcoming", "Notes"), diagnostics carry a hidden "Warning:" or "Error:" prefix so severity is not conveyed by color alone, and a polite status line announces the result. Without a visible `label` the field is named "Date or time"; set `aria-label` to change it.
+The field is the kit's [Input](https://blamy.github.io/ui/#/input) in a [Field](https://blamy.github.io/ui/#/field): the label, description and error are linked to the input, and `aria-invalid` is set when it is invalid. The preview is linked to the input with `aria-describedby`, its lists are real lists with names ("Repeats", "Upcoming", "Notes"), diagnostics carry a hidden "Warning:" or "Error:" prefix so severity is not conveyed by color alone, and the result is announced politely through UI SDK's shared live region. Without a visible `label` the field is named "Date or time"; set `aria-label` to change it.
 
 ## API
 
@@ -117,10 +117,10 @@ The field is a react-aria `TextField`: the label, description and error are link
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `value` / `defaultValue` | — | The text, controlled or uncontrolled. |
-| `onValueChange` | — | `({ text, result, pending, error }) => void`. Called on each keystroke with `result: null, pending: true`, then with the parse when it settles. |
-| `onChange` | — | The react-aria `TextField` handler: the new string, on each keystroke. |
+| `onValueChange` | — | `(text, details) => void`, the Input's own callback: the new string on each keystroke, with `details.reason` and `details.cancel()`. |
+| `onParseChange` | — | `({ text, result, pending, error }) => void`. Called on each keystroke with `result: null, pending: true`, then with the parse when it settles. |
 | `label`, `description` | — | The field's caption and help text. |
-| `isInvalid`, `errorMessage` | — | Force the invalid state with your own message. A parser failure (for example an unknown `timeZone`) also invalidates the field and shows its message. |
+| `invalid`, `error` | — | Force the invalid state with your own message, shown while the field is invalid. A parser failure (for example an unknown `timeZone`) also invalidates the field and shows its message. |
 | `reference` | now | The instant "tomorrow" is counted from: a `Date`, epoch milliseconds or an ISO string with `Z` or an offset. |
 | `timeZone` | the browser's | IANA zone the text is read in and the preview is shown in. |
 | `dateOrder` | `MDY` | `MDY` or `DMY`, for ambiguous numeric dates. |
@@ -135,7 +135,7 @@ The field is a react-aria `TextField`: the label, description and error are link
 | `debounceMs` | `120` | Wait after typing before parsing. |
 | `className`, `style` | — | Merged onto the root (`data-slot="time-input"`). |
 
-The other react-aria `TextField` props (`name`, `isRequired`, `isDisabled`, `autoFocus`, …) pass through. The root carries `data-backend` and `data-pending`; the preview is `data-slot="time-input-preview"`, with `time-input-recognized`, `time-input-repeats`, `time-input-occurrences` and `time-input-diagnostics` inside it.
+The other props are the Input's and pass through to it: `name`, `required`, `disabled`, `readOnly`, `autoFocus`, `controller` and every native input attribute. A `required` field left empty shows the browser's message after a submit attempt. The root carries `data-backend` and `data-pending`; the preview is `data-slot="time-input-preview"`, with `time-input-recognized`, `time-input-repeats`, `time-input-occurrences` and `time-input-diagnostics` inside it.
 
 ## Hooks and helpers
 

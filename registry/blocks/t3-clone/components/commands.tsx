@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { matchesHotkey } from '@/components/ui/command-menu';
+import { useState } from 'react';
+import { useShortcut } from '@ui-sdk/react/shortcuts';
 import { type Appearance } from '@/lib/theme';
 import { useWorkbenchShell } from './workbench/workbench-shell';
 import { CommandPalette } from './command-palette';
@@ -31,9 +31,9 @@ export interface CommandsProps {
 }
 
 /**
- * The palette, the theme editor, and the block's keyboard shortcuts. Shortcuts listen on the document but only
- * act for this block: when focus is inside it, or nothing is focused and the pointer is over it — so a page
- * hosting several blocks (the docs) doesn't open them all.
+ * The palette, the theme editor, and the block's keyboard shortcuts (UI SDK's shared `shortcuts`). They only act
+ * for this block: when focus is inside it, or nothing is focused and the pointer is over it — so a page hosting
+ * several blocks (the docs) doesn't open them all.
  */
 export function Commands(props: CommandsProps) {
   const { palette, onPalette, threads, notify } = props;
@@ -50,29 +50,22 @@ export function Commands(props: CommandsProps) {
     notify('Copied thread ID');
   };
 
-  const keys = useRef<(e: KeyboardEvent) => void>(() => {});
-  keys.current = (e) => {
+  const mine = () => {
     const root = layer?.parentElement;
-    if (!root) return;
+    if (!root) return false;
     const active = document.activeElement;
-    const mine = (active && active !== document.body && root.contains(active)) || ((!active || active === document.body) && root.matches(':hover'));
-    if (!mine) return;
-    const run = (fn: () => void) => {
-      e.preventDefault();
-      fn();
-    };
-    if (matchesHotkey(e, 'mod+k')) return run(() => (palette.open ? onPalette((s) => ({ ...s, open: false })) : open()));
-    if (matchesHotkey(e, 'shift+mod+o')) return run(() => { onPalette((s) => ({ ...s, open: false })); props.onNewThread(props.project); });
-    if (matchesHotkey(e, 'shift+mod+c')) return run(copyId);
-    if (matchesHotkey(e, 'mod+p')) return run(() => open(['files']));
-    if (matchesHotkey(e, 'shift+mod+f')) return run(() => open(['search']));
-    if (matchesHotkey(e, 'alt+shift+mod+t')) return run(() => setEditor((v) => !v));
+    return (!!active && active !== document.body && root.contains(active)) || ((!active || active === document.body) && root.matches(':hover'));
   };
-  useEffect(() => {
-    const on = (e: KeyboardEvent) => !e.defaultPrevented && keys.current(e);
-    document.addEventListener('keydown', on);
-    return () => document.removeEventListener('keydown', on);
-  }, []);
+  const scoped = { when: mine };
+  useShortcut('mod+k', () => (palette.open ? onPalette((s) => ({ ...s, open: false })) : open()), scoped);
+  useShortcut('shift+mod+o', () => {
+    onPalette((s) => ({ ...s, open: false }));
+    props.onNewThread(props.project);
+  }, scoped);
+  useShortcut('shift+mod+c', copyId, scoped);
+  useShortcut('mod+p', () => open(['files']), scoped);
+  useShortcut('shift+mod+f', () => open(['search']), scoped);
+  useShortcut('alt+shift+mod+t', () => setEditor((v) => !v), scoped);
 
   return (
     <>
@@ -85,6 +78,7 @@ export function Commands(props: CommandsProps) {
         onAppearance={props.onAppearance}
         tint={props.tint}
         onTint={props.onTint}
+        container={layer?.parentElement}
       />
       <CommandPalette
         key={palette.key}

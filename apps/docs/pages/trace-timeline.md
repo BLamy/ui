@@ -49,13 +49,13 @@ const lanes = [{
   lanes={lanes}
   stops={stops}
   value={time}
-  onValueChange={(t, { phase, stop }) => setTime(t)}
+  onValueChange={(t, { reason, stop }) => setTime(t)}
 />
 ```
 
 {% demo src="trace-timeline/one-lane" %}
 
-`onValueChange(time, { phase, stop })` says `start` on a press, `move` at most once a frame while dragging, and `end` on release; a key press is one `end`. `stop` is the stop the value snapped to, or `null`. Hold `value` yourself or leave it to `defaultValue`.
+`onValueChange(time, details)` carries UI SDK's change details: `details.reason` is `track-press` on a press, `drag` at most once a frame while dragging, `step-key` for a key, and `escape-key` when Escape puts a scrub back where it began; `details.stop` is the stop the value snapped to, or `null`; `details.cancel()` keeps the playhead where it is. `onValueCommit(time, details)` runs once when the interaction is done (a release, a key, Escape), like a slider's, so seek a video there and only follow the playhead in `onValueChange`. Hold `value` yourself or leave it to `defaultValue`.
 
 ## A strip and a rail
 
@@ -97,7 +97,7 @@ The strip fills the width of its parent and is as tall as its rows want, unless 
 | `marks` | `[{ key, times, shape, tone, color }]`: over the density row. A `bar` runs its full height and a `dot` sits along its far edge. Unsorted `times` are sorted once and remembered. |
 | `threads` | `[{ id, label, color }]`: a row of activity each, from `fetchActivity`. |
 
-Requests are for the whole timeline, on the shared clock: `requests={[{ id, time, from, to, color, tone }]}` draws a dot at `time`, a band over `from`…`to` (a range, when that's all that's known) and a line between them. Press one to select it (`selectedRequest`, `onSelectRequest`). Pressing a row focuses its lane (`focusedLane`, `onFocusLane`) and a thread row selects its thread (`selectedThread`, `onSelectThread`), and the gutter picks without seeking. These are all yours to hold.
+Requests are for the whole timeline, on the shared clock: `requests={[{ id, time, from, to, color, tone }]}` draws a dot at `time`, a band over `from`…`to` (a range, when that's all that's known) and a line between them. Press one to select it (`selectedRequest`, `onSelectedRequestChange`). Pressing a row focuses its lane (`focusedLane`, `onFocusedLaneChange`) and a thread row selects its thread (`selectedThread`, `onSelectedThreadChange`, whose `details.lane` is the thread's lane), and the gutter picks without seeking. Each is held for you (`defaultFocusedLane`, `defaultSelectedThread`, `defaultSelectedRequest`) or yours to hold, and each callback gets UI SDK's change details: `reason` is `item-press` (or `imperative` from an agent), with `event`, `source` and `cancel()`.
 
 **Activity** is fetched for the view, not stored up front. `fetchActivity(laneKey, edges, signal)` runs once per lane with bucket edges in that lane's own time, one bucket per 2 px, and answers with `[{ id, counts }]`, a count per bucket per thread. It waits for the view to rest for `activityDebounce` (60 ms), and an answer that's out of date is dropped and its `signal` aborted. Until the new answer comes the old one stays on screen, moved to where its times now are, so zooming stays smooth.
 
@@ -145,14 +145,17 @@ const stepAxis = (times, range, timeShare = 0.25) => ({
 | **Shift or a sideways wheel** | Pans | Pans when zoomed |
 | **Ctrl and wheel (a trackpad pinch), or two fingers** | Zooms around the pointer | Zooms around the pointer |
 | **Double press** | Two seeks | Resets the zoom |
+| **Escape while dragging** | Puts the playhead back where the drag began | Puts the playhead back where the drag began |
 
-A speed change never moves the playhead: the scrub starts again from where the playhead is, at the new speed. Without this a 600 px rail over an hour moves 6 s a pixel; at the slowest speed it moves about 94 ms. A second finger coming down takes back the first finger's jump, so a pinch leaves the playhead alone. All of it is pointer events, so a mouse, a pen and touch all work.
+A speed change never moves the playhead: the scrub starts again from where the playhead is, at the new speed. Without this a 600 px rail over an hour moves 6 s a pixel; at the slowest speed it moves about 94 ms. A second finger coming down takes back the first finger's jump, so a pinch leaves the playhead alone. The drag is UI SDK's `bindDrag`, so it keeps the pointer outside the timeline and outside the window; all of it is pointer events, so a mouse, a pen and touch all work.
 
 The preview card appears beside the pointer while hovering or dragging on a rail, showing the stop's `caption` and `preview`, or else the time. On a strip it appears over a stop in the stops row. `renderPreview(time, stop)` puts a slot at the top of the card for a thumbnail of that moment, and then a strip shows it wherever you hover.
 
 ## From code
 
 `ref` gives you `fit()`, `setView(view)`, `redraw()`, `focus()` and `pixelTimes()`, the time at each CSS pixel of the plot: the times a drag can land on, worth reading ahead, and worth asking for again after `onViewChange` or a resize. When the playhead moves out of the view through `value`, as it does playing or stepping, the view goes to it.
+
+`onViewChange(view, details)` says why the view moved in `details.reason`: `wheel` (the wheel, or a trackpad pinch), `pinch` (two fingers), `zoom-key` (`+`, `-`, `0`), `double-press` (two presses in one place on a rail), `drag` (a scrub past the edge), `playhead` (the playhead left the view), `range-change` (a new `range`, when you don't hold `view`) or `imperative` (`setView`, `fit` and agents). `details.cancel()` keeps the view where it is; holding `view` and not passing the new one back does the same. The view, the playhead and the picks are the trace-timeline primitive's state, so an agent can `setValue`, `setView`, `fit`, `focusLane`, `selectThread` and `selectRequest` through UI SDK's agent bridge.
 
 `onDraw({ layer, ms, columns })` reports what each canvas redraw took: `data` for the rows, when the view or the data changed, and `overlay` for the playhead and the hover line.
 
@@ -176,8 +179,9 @@ Picking a lane, a thread or a request takes a pointer, so offer them in a list a
 | --- | --- | --- |
 | `range` | required | The whole timeline, on the shared clock. |
 | `lanes` / `requests` / `stops` | none | What's on it. |
-| `value` / `defaultValue` / `onValueChange` | start of `range` | The playhead. |
-| `view` / `defaultView` / `onViewChange` | all of `range` | The stretch of time on show. |
+| `value` / `defaultValue` / `onValueChange(time, details)` | start of `range` | The playhead; `details` has `reason`, `source`, `event`, `cancel()` and `stop`. |
+| `onValueCommit(time, details)` | — | Once a press, a drag or a key is done. |
+| `view` / `defaultView` / `onViewChange(view, details)` | all of `range` | The stretch of time on show; `details.reason` says what moved it. |
 | `axis` | `linearAxis(range)` | Turns times into positions. |
 | `orientation` | `horizontal` | `horizontal` is the strip, `vertical` the rail. |
 | `side` | `right` | Rail: the edge it sits on. Its stops and card are on the inner side. |
@@ -186,9 +190,9 @@ Picking a lane, a thread or a request takes a pointer, so offer them in a list a
 | `insetContent` | `true` | Rail: publish `--bl-index-bar-inset` on its parent (right side only). |
 | `gutter` | `64` | Strip: the width of the label gutter, 0 for none. |
 | `requestsLabel` / `stopsLabel` | `requests` / `stops` | Strip: the gutter's labels for those rows. |
-| `focusedLane` / `onFocusLane` | none | The lane in focus. A single lane always is. |
-| `selectedThread` / `onSelectThread` | none | The selected thread, in the focused lane. |
-| `selectedRequest` / `onSelectRequest` | none | The selected request. |
+| `focusedLane` / `defaultFocusedLane` / `onFocusedLaneChange(lane, details)` | none | The lane in focus. A single lane always is. |
+| `selectedThread` / `defaultSelectedThread` / `onSelectedThreadChange(thread, details)` | none | The selected thread, in the focused lane; `details.lane` is its lane. |
+| `selectedRequest` / `defaultSelectedRequest` / `onSelectedRequestChange(request, details)` | none | The selected request. |
 | `fetchActivity` / `activityDebounce` | none / `60` | Thread activity for the view, and how long it has to rest first, in ms. |
 | `step` | a pixel's worth | What an arrow key moves the playhead by. |
 | `minSpan` | `1e-5` | The shortest stretch of time the view can show. |
@@ -204,7 +208,7 @@ Picking a lane, a thread or a request takes a pointer, so offer them in a list a
 
 The root is `data-slot="trace-timeline"`, with `data-orientation` and `data-side`, and holds `trace-timeline-canvas` (the rows), `trace-timeline-overlay` (the playhead and hover), and on a rail `trace-timeline-stop` for each dash, `trace-timeline-pill` and `trace-timeline-card`.
 
-Colours come from the theme's tokens, read from its CSS variables through hidden elements and read again when a class or style changes on an ancestor or the system's appearance does. Density and threads use `--chart-1` to `--chart-5`, the playhead `--primary`, and tones `--destructive`, `--warning` and `--success`. Any `color` you pass can be any CSS colour, variables included. The strip's height comes from `--tt-height`, so a `className` such as `h-full` takes over.
+Colours come from the theme's tokens, read from its CSS variables through hidden elements and read again when the kit's appearance changes (an `AppearanceProvider`, or the `dark` class on `<html>`) or a class or style changes on an ancestor, as a `ThemeScope`'s does. Density and threads use `--chart-1` to `--chart-5`, the playhead `--primary`, and tones `--destructive`, `--warning` and `--success`. Any `color` you pass can be any CSS colour, variables included. The strip's height comes from `--tt-height`, so a `className` such as `h-full` takes over.
 
 ## cva recipes
 

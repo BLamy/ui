@@ -1,19 +1,21 @@
 import { useCallback, useLayoutEffect, useMemo, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
-import { Button, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { AdaptivePane } from '@/components/ui/adaptive-pane';
-import { SideDrawer } from '@/components/ui/side-drawer';
-import { useContainerWidth } from '@/lib/container';
+import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { SideDrawer, sideDrawerPageClass, type SideDrawerOpenChangeDetails } from '@/components/ui/side-drawer';
+import { changeDetails } from '@/lib/change-details';
+import { SizeClassProvider, useContainerWidth, useSizeClassScope } from '@/lib/container';
+import { sizeClassOf } from '@/lib/size-class';
 import { Icon } from '@/lib/icon';
 import { ThemeScopeContext, useAppearance, themeScopeProps, type Appearance } from '@/lib/theme';
-import { cn } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 
-import { ChatShellContext, useChatShell, useOptionalChatShell, type ChatShellContextValue } from './chat-shell-context';
+import { ChatShellContext, useChatShell, useOptionalChatShell, type ChatShellContextValue, type ChatShellNavOpenChangeDetails } from './chat-shell-context';
 
-export { useChatShell, useOptionalChatShell, type ChatShellContextValue };
+export { useChatShell, useOptionalChatShell, type ChatShellContextValue, type ChatShellNavOpenChangeDetails };
 
 /* ══ ChatShell — the layout root of a team chat, and its regions ══
-   <ChatShell>                     measures itself, provides { width, compact, navOpen }, applies --ck-* tokens
+   <ChatShell>                     measures itself, provides { width, compact, navOpen } and a size-class scope, applies --ck-* tokens
      <ChatShellNav>                rail + sidebar: a docked column when wide, one left EdgeDrawer when compact
        <TabView orientation="vertical"><TabViewBar variant="workspace">…   an optional workspace rail
        <ChatShellSidebar>…         the channel column (header · channel list · signed-in user)
@@ -34,7 +36,8 @@ export interface ChatShellProps extends Omit<ComponentProps<'div'>, 'ref'> {
   defaultNavOpen?: boolean;
   /** controlled compact navigation drawer */
   navOpen?: boolean;
-  onNavOpenChange?: (open: boolean) => void;
+  /** Runs before the drawer opens or closes, with why; `details.cancel()` keeps it as it is. */
+  onNavOpenChange?: (open: boolean, details: ChatShellNavOpenChangeDetails) => void;
   /** Light or dark palette. Defaults to the ambient `AppearanceProvider` value, else dark. */
   appearance?: Appearance;
   /** accent for unread dots, mention pills, own reactions, the send button (--primary). Defaults to the theme primary. */
@@ -56,9 +59,12 @@ export function ChatShell({
   const [ref, width] = useContainerWidth();
   const [navOpenState, setNavOpenState] = useState(defaultNavOpen);
   const navOpen = navOpenProp ?? navOpenState;
-  const setNavOpen = (open: boolean) => {
+  // The consumer hears the change first, with the AdaptivePane's details (or the caller's); a cancel keeps it.
+  const setNavOpen = (open: boolean, details: ChatShellNavOpenChangeDetails = changeDetails({ reason: 'imperative' })) => {
+    onNavOpenChange?.(open, details);
+    if (details.canceled) return false;
     setNavOpenState(open);
-    onNavOpenChange?.(open);
+    return true;
   };
   const ambient = useAppearance();
   const appearance = appearanceProp ?? ambient ?? 'dark';
@@ -67,7 +73,10 @@ export function ChatShell({
     setNavs((n) => n + 1);
     return () => setNavs((n) => n - 1);
   }, []);
-  const ctx: ChatShellContextValue = { width, compact: width < breakpoint, navOpen, setNavOpen, hasNav: navs > 0, registerNav };
+  // Compact below `breakpoint`; the shell is a size-class scope, so popups inside (Credenzas, menus with
+  // `presentation="auto"`) and its own navigation follow its box. Its pixel width answers the docking questions.
+  const sizeClass = sizeClassOf(width, { medium: breakpoint, regular: Math.max(breakpoint, 1024) });
+  const ctx: ChatShellContextValue = { width, compact: sizeClass === 'compact', navOpen, setNavOpen, hasNav: navs > 0, registerNav };
   const scope = themeScopeProps({ scope: 'chat', appearance, tint });
   // Published too, so overlays opened inside (hover cards, menus) portal out wearing the same chat scope.
   const scopeState = useMemo(() => ({ scope: 'chat' as const, appearance, tint }), [appearance, tint]);
@@ -78,14 +87,14 @@ export function ChatShell({
           ref={ref}
           data-slot="chat-shell"
           data-appearance={appearance}
-          data-compact={ctx.compact || undefined}
+          data-size-class={sizeClass}
           // A `chat` theme scope: the bl-theme's team-chat palette for everything inside the shell.
           data-theme-scope={scope['data-theme-scope']}
           className={cn('relative flex h-full w-full overflow-hidden bg-background font-sans text-foreground', scope.className, className)}
           style={{ ...scope.style, ...style }}
           {...props}
         >
-          {children}
+          <SizeClassProvider value={sizeClass}>{children}</SizeClassProvider>
         </div>
       </ChatShellContext.Provider>
     </ThemeScopeContext.Provider>
@@ -107,14 +116,16 @@ export interface ChatShellNavProps {
  *  `ChatShellNavTrigger` and closed by the scrim or by anything that calls `useChatShell().setNavOpen(false)` (a close button, picking a
  *  channel). */
 export function ChatShellNav({ children, className, style }: ChatShellNavProps) {
-  const { compact, navOpen, setNavOpen, registerNav } = useChatShell();
+  const { navOpen, setNavOpen, registerNav } = useChatShell();
+  const compact = useSizeClassScope() === 'compact';
   useLayoutEffect(registerNav, [registerNav]);
   return (
     <AdaptivePane
-      mode={compact ? 'drawer' : 'column'}
+      presentation={compact ? 'drawer' : 'column'}
       side="left"
+      aria-label="Navigation"
       open={navOpen}
-      onClose={() => setNavOpen(false)}
+      onOpenChange={(next, details) => { if (!setNavOpen(next, details)) details.cancel(); }}
       scrim="var(--overlay, color-mix(in oklab, black 40%, transparent))"
       columnStyle={{ ...navColumnStyle, ...style }}
       className={cn('flex', className)}
@@ -124,28 +135,28 @@ export function ChatShellNav({ children, className, style }: ChatShellNavProps) 
   );
 }
 
-export interface ChatShellNavTriggerProps extends Omit<ComponentProps<typeof Button>, 'children'> {
+export interface ChatShellNavTriggerProps extends Omit<ComponentProps<typeof PlainButton>, 'children'> {
   children?: ReactNode;
 }
 
 /** The hamburger that opens the navigation drawer. Renders nothing while the navigation is docked (or when
  *  the shell has no ChatShellNav). */
-export function ChatShellNavTrigger({ className, children, onPress, ...props }: ChatShellNavTriggerProps) {
-  const { compact, hasNav, setNavOpen } = useChatShell();
+export function ChatShellNavTrigger({ className, children, onClick, ...props }: ChatShellNavTriggerProps) {
+  const { compact, hasNav, navOpen, setNavOpen } = useChatShell();
   if (!compact || !hasNav) return null;
   return (
-    <Button
-      data-slot="chat-shell-nav-trigger"
+    <PlainButton
       aria-label="Channels"
-      onPress={(e) => {
-        setNavOpen(true);
-        onPress?.(e);
+      aria-expanded={navOpen}
+      onClick={(e, details) => {
+        onClick?.(e, details);
+        if (!e.defaultPrevented) setNavOpen(true, changeDetails({ reason: 'trigger-press', event: e.nativeEvent }));
       }}
-      className={composeRenderProps(className, (c) => cn('grid cursor-pointer border-0 bg-transparent p-1 text-muted-foreground', c))}
+      className={cx('grid cursor-pointer border-0 bg-transparent p-1 text-muted-foreground', className)}
       {...props}
     >
       {children ?? <Icon name="line-3-horizontal" size={17} sw={2} />}
-    </Button>
+    </PlainButton>
   );
 }
 
@@ -164,7 +175,8 @@ export function ChatShellSidebar({ className, ...props }: ComponentProps<'div'>)
 
 /** The conversation column: header, transcript, footer. Takes the remaining width. */
 export function ChatShellMain({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="chat-shell-main" className={cn('flex min-w-0 flex-1 flex-col', className)} {...props} />;
+  // The conversation is the page a ChatShellPanel pushes over on a phone: it parallaxes under the push.
+  return <div data-slot="chat-shell-main" className={cn('flex min-w-0 flex-1 flex-col', sideDrawerPageClass, className)} {...props} />;
 }
 
 export function ChatShellHeader({ className, ...props }: ComponentProps<'div'>) {
@@ -209,51 +221,48 @@ export function ChatShellHeaderActions({ className, ...props }: ComponentProps<'
 export const chatShellHeaderActionVariants = cva('shrink-0 cursor-pointer bg-transparent font-sans', {
   variants: {
     variant: {
-      /** an icon button; `isActive` tints it */
-      icon: 'grid border-0 p-1 text-tertiary-foreground data-hovered:text-muted-foreground data-[active]:text-primary',
+      /** an icon button (a pressed ChatShellHeaderToggle is tinted) */
+      icon: 'grid border-0 p-1 text-tertiary-foreground hover:text-muted-foreground data-pressed:text-primary',
       /** a small outlined text button */
-      outline: 'rounded-lg border border-border px-2.5 py-1 text-[11.5px] font-semibold text-muted-foreground data-hovered:bg-accent',
+      outline: 'rounded-lg border border-border px-2.5 py-1 text-[11.5px] font-semibold text-muted-foreground hover:bg-accent',
     },
   },
   defaultVariants: { variant: 'icon' },
 });
 
 export interface ChatShellHeaderActionProps
-  extends ComponentProps<typeof Button>,
-    VariantProps<typeof chatShellHeaderActionVariants> {
-  /** marks a toggle as on (tints the icon variant) */
-  isActive?: boolean;
+  extends ComponentProps<typeof PlainButton>,
+    VariantProps<typeof chatShellHeaderActionVariants> {}
+
+/** A header action: an icon (`variant="icon"`) or a small outlined text button (`"outline"`). */
+export function ChatShellHeaderAction({ variant, className, ...props }: ChatShellHeaderActionProps) {
+  return <PlainButton className={cx(chatShellHeaderActionVariants({ variant }), className)} {...props} />;
 }
 
-export function ChatShellHeaderAction({ variant, isActive, className, ...props }: ChatShellHeaderActionProps) {
-  return (
-    <Button
-      data-slot="chat-shell-header-action"
-      data-active={isActive || undefined}
-      aria-pressed={isActive}
-      className={composeRenderProps(className, (c) => cn(chatShellHeaderActionVariants({ variant }), c))}
-      {...props}
-    />
-  );
+export interface ChatShellHeaderToggleProps
+  extends ComponentProps<typeof PlainToggleButton>,
+    VariantProps<typeof chatShellHeaderActionVariants> {}
+
+/** A header action that stays on (the member list, a thread panel): UI SDK's Toggle, `pressed` /
+ *  `onPressedChange(pressed, details)`; the icon variant tints while pressed. */
+export function ChatShellHeaderToggle({ variant, className, ...props }: ChatShellHeaderToggleProps) {
+  return <PlainToggleButton className={cx(chatShellHeaderActionVariants({ variant }), className)} {...props} />;
 }
 
-export interface ChatShellBackProps extends Omit<ComponentProps<typeof Button>, 'children'> {
+export interface ChatShellBackProps extends Omit<ComponentProps<typeof PlainButton>, 'children'> {
   children?: ReactNode;
 }
 
 /** A tinted "‹ #channel" back button, for a view (a full-width thread) that replaces the channel. */
 export function ChatShellBack({ className, children, ...props }: ChatShellBackProps) {
   return (
-    <Button
-      data-slot="chat-shell-back"
-      className={composeRenderProps(className, (c) =>
-        cn('flex shrink-0 cursor-pointer items-center gap-1 border-0 bg-transparent py-1 pr-1.5 pl-0 font-sans text-footnote font-[650] text-primary', c),
-      )}
+    <PlainButton
+      className={cx('flex shrink-0 cursor-pointer items-center gap-1 border-0 bg-transparent py-1 pr-1.5 pl-0 font-sans text-footnote font-[650] text-primary', className)}
       {...props}
     >
       <Icon name="chevron-right-compact" size={13} sw={1.9} className="rotate-180" />
       {children}
-    </Button>
+    </PlainButton>
   );
 }
 
@@ -287,7 +296,8 @@ export function ChatShellAside({ minWidth = 1320, open = true, className, ...pro
 
 export interface ChatShellPanelProps {
   open: boolean;
-  onOpenChange?: (open: boolean) => void;
+  /** The SideDrawer's own change details (the close button, Escape, a swipe…); `details.cancel()` keeps it open. */
+  onOpenChange?: (open: boolean, details: SideDrawerOpenChangeDetails) => void;
   title?: ReactNode;
   /** from this shell width up the panel docks as a column; below it, it overlays the conversation */
   dockWidth?: number;
@@ -304,9 +314,9 @@ export function ChatShellPanel({ open, onOpenChange, title = 'Thread', dockWidth
   const { width: w } = useChatShell();
   return (
     <SideDrawer
-      mode={w >= dockWidth ? 'fixed' : 'overlay'}
+      presentation={w >= dockWidth ? 'fixed' : 'auto'}
       open={open}
-      onClose={() => onOpenChange?.(false)}
+      onOpenChange={onOpenChange}
       title={title}
       width={width ?? Math.min(360, w - 60)}
       // Inside the chat scope the drawer already paints with the chat palette; its close button takes the stronger fill.

@@ -1,21 +1,29 @@
 {
   "name": "toast",
   "title": "Toast",
-  "description": "HUDs and banners on react-aria's toast region: the \"Copied\" pill that updates in place, banners that pile up like Sonner's and spread on hover, with actions, springs, auto-dismiss and announcements.",
+  "description": "Banners and HUDs on UI SDK's Toast: cards that pile up at an edge and spread on hover, the \"Copied\" pill that updates in place, with actions, promise toasts, swipe to dismiss, timers that pause on hover and focus, and announcements.",
   "page": "toast",
   "exports": [
-    "Toaster",
+    "ToastRegion",
+    "Toast",
+    "ToastIcon",
+    "ToastTitle",
+    "ToastDescription",
+    "ToastAction",
+    "ToastClose",
     "toast",
-    "useToast",
-    "createToastQueue",
-    "ToastQueue",
+    "createToaster",
+    "hud",
+    "createHud",
     "ToastProvider",
-    "toastApi",
-    "defaultToastQueue"
+    "useToast",
+    "toastRegionVariants",
+    "toastVariants",
+    "toastIconVariants"
   ],
   "imports": [
-    "Toaster",
+    "ToastRegion",
     "toast",
-    "useToast"
+    "hud"
   ]
 }

@@ -24,3 +24,14 @@ const combos = (
 
 export const Group: Story = { render: () => combos };
 export const Dark: Story = { decorators: [(Story) => <Panel dark><Story /></Panel>], render: () => combos };
+
+/** `keys` takes a shortcut and shows it for the reader's platform: ⌘K on Apple, Ctrl+K elsewhere. */
+export const Shortcut: Story = {
+  render: () => (
+    <div className="flex flex-col gap-3 text-[15px] text-foreground">
+      <div className="flex items-center justify-between">Search <Kbd keys="mod+k" /></div>
+      <div className="flex items-center justify-between">Command palette <Kbd keys="mod+shift+p" /></div>
+      <div className="flex items-center justify-between">Send <Kbd keys="mod+enter" /></div>
+    </div>
+  ),
+};

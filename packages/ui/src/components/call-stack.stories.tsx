@@ -47,7 +47,7 @@ function Frame({ w = 760, h = 560, dark, children }: { w?: number; h?: number; d
 
 function Stack({ frames, initial }: { frames: readonly CallStackFrame[]; initial: string }) {
   const [selected, setSelected] = useState(initial);
-  return <CallStack frames={frames} selectedId={selected} onSelect={(f) => setSelected(f.id)} />;
+  return <CallStack frames={frames} value={selected} onValueChange={setSelected} />;
 }
 
 export const Desktop: Story = { render: () => <Frame><Stack frames={CHECKOUT} initial="a" /></Frame> };
@@ -77,6 +77,6 @@ const RECURSIVE = recursiveStack(1000);
 export const Recursive: Story = { render: () => <Frame><Stack frames={RECURSIVE} initial="top" /></Frame> };
 export const RecursivePhone: Story = { name: 'Recursive, phone', render: () => <Frame w={390} h={720}><Stack frames={RECURSIVE} initial="top" /></Frame> };
 export const SelectedDeep: Story = { render: () => <Frame><Stack frames={RECURSIVE} initial="walk-640" /></Frame> };
-export const AllFramesOpen: Story = { render: () => <Frame><CallStack frames={CHECKOUT} collapseRuns={false} defaultSelectedId="b" /></Frame> };
-export const OpenRun: Story = { render: () => <Frame><CallStack frames={CHECKOUT} defaultExpandedRuns={['r1']} defaultSelectedId="r2" /></Frame> };
-export const OpenRunPhone: Story = { name: 'Open run, phone', render: () => <Frame w={390} h={720}><CallStack frames={CHECKOUT} defaultExpandedRuns={['r1']} defaultSelectedId="r2" /></Frame> };
+export const AllFramesOpen: Story = { render: () => <Frame><CallStack frames={CHECKOUT} collapseRuns={false} defaultValue="b" /></Frame> };
+export const OpenRun: Story = { render: () => <Frame><CallStack frames={CHECKOUT} defaultExpandedRuns={['r1']} defaultValue="r2" /></Frame> };
+export const OpenRunPhone: Story = { name: 'Open run, phone', render: () => <Frame w={390} h={720}><CallStack frames={CHECKOUT} defaultExpandedRuns={['r1']} defaultValue="r2" /></Frame> };

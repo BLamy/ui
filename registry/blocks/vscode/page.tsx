@@ -2,7 +2,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { AdaptivePane } from '@/components/ui/adaptive-pane';
 import { TabView, TabViewBar, TabViewIndicator, TabViewList, TabViewSeparator, TabViewTab } from '@/components/ui/tab-view';
-import { useContainerWidth } from '@/lib/container';
+import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import type { Tailscale, TailscaleOptions } from '@/lib/tailscale';
@@ -16,9 +16,6 @@ import { SearchPanel } from './search-panel';
 import { StatusBar } from './status-bar';
 import { VSCodeStore, type SidebarView, type ViewId } from './store';
 import { vscodeTailnet } from './tailnet';
-
-/** Below this the window shows one pane at a time. */
-const NARROW_WIDTH = 640;
 
 export interface VSCodeProps {
   /** Share an existing connection, such as the macOS desktop's. */
@@ -52,16 +49,16 @@ function RailTab({ store, id, icon, label }: { store: VSCodeStore; id: ViewId; i
   const note = () => { wasOpen.current = store.view === id && store.sidebarOpen; };
   return (
     <TabViewTab
-      id={id}
-      textValue={label}
-      className="relative grid size-11 cursor-pointer place-items-center text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-focus-visible:ring-inset data-hovered:text-foreground data-selected:text-foreground"
+      value={id}
+      aria-label={label}
+      className="relative grid size-11 cursor-pointer place-items-center text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-inset hover:text-foreground data-selected:text-foreground"
       onPointerDownCapture={note}
-      onPress={(event) => {
+      onClick={(event) => {
         if (store.narrow || (store.view !== id && store.lastSideView !== id)) return;
-        store.toggleSidebar(!(event.pointerType === 'keyboard' ? store.sidebarOpen : wasOpen.current));
+        // Enter or Space clicks without a pointer (`detail` 0): the sidebar is read as it is now.
+        store.toggleSidebar(!(event.detail === 0 ? store.sidebarOpen : wasOpen.current));
       }}
     >
-      <TabViewIndicator />
       <span title={label} className="grid size-full place-items-center">
         <Icon name={icon} size={21} sw={1.6} />
       </span>
@@ -85,8 +82,9 @@ function VSCodeWindow({ runtime, initialFile, initialView, className, style }: V
     store.mount();
     return () => store.unmount(owned ? () => store.runtime.dispose?.() : undefined);
   }, [store, owned]);
-  const [host, width] = useContainerWidth<HTMLDivElement>();
-  const narrow = width < NARROW_WIDTH;
+  // A compact window shows one pane at a time.
+  const [host, sizeClass] = useSizeClass<HTMLDivElement>();
+  const narrow = sizeClass === 'compact';
   const started = useRef(false);
   useLayoutEffect(() => {
     store.setNarrow(narrow);
@@ -109,50 +107,55 @@ function VSCodeWindow({ runtime, initialFile, initialView, className, style }: V
       className={cn('@container/vscode relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-background font-sans text-foreground', className)}
       style={style}
     >
-      <div className="flex min-h-0 min-w-0 flex-1">
-        {/* The rail, on its own: what it selects isn't a tab panel, because whatever a TabView holds, react-aria also
-            renders in a hidden pass where a Workspace can't measure itself. */}
-        <TabView
-          placement="start"
-          selectedKey={sidebarView ?? (narrow ? view : store.lastSideView)}
-          onSelectionChange={(key) => {
-            store.setView(key as ViewId);
-            if (!narrow) store.toggleSidebar(true);
-          }}
-          className="shrink-0"
-        >
-          <TabViewBar variant="plain" className="w-11 shrink-0 items-center gap-0.5 border-e border-border bg-muted py-0.5">
-            <TabViewList aria-label="Views" className="flex flex-col items-center gap-0.5">
-              {SIDE_VIEWS.map((item) => <RailTab key={item.id} store={store} {...item} />)}
-              {narrow ? <TabViewSeparator className="my-1 h-px w-6" /> : null}
-              {narrow ? PANE_VIEWS.map((item) => <RailTab key={item.id} store={store} {...item} />) : null}
-            </TabViewList>
-          </TabViewBar>
-        </TabView>
-        <div className="relative flex min-h-0 min-w-0 flex-1">
-          <AdaptivePane
-            mode="column"
-            columnWidth={narrow ? '100%' : 240}
-            columnStyle={showSidebar ? undefined : { display: 'none' }}
-            resizable={!narrow}
-            minWidth={160}
+      {/* The window is a size-class scope: its popups (the Explorer's Credenzas) are trays when it is compact. */}
+      <SizeClassProvider value={sizeClass}>
+        <div className="flex min-h-0 min-w-0 flex-1">
+          {/* The rail, on its own: what it selects isn't a tab panel. The side panels stay mounted beside the
+              editors, and the editors and terminals are panes of one Workspace. */}
+          <TabView<ViewId>
+            placement="start"
+            value={sidebarView ?? (narrow ? view : store.lastSideView)}
+            onValueChange={(value) => {
+              if (!value) return;
+              store.setView(value);
+              if (!narrow) store.toggleSidebar(true);
+            }}
+            className="shrink-0"
           >
-            {/* The panels stay mounted, so that the Explorer keeps which folders are open. */}
-            <div className={cn('h-full min-h-0 bg-sidebar text-sidebar-foreground', !narrow && 'border-e border-border')}>
-              {SIDE_VIEWS.map(({ id, label }) => (
-                <section key={id} aria-label={label} hidden={(sidebarView ?? lastSideView) !== id} className="h-full min-h-0 overflow-hidden">
-                  {id === 'explorer' ? <Explorer store={store} /> : id === 'search' ? <SearchPanel store={store} /> : <RunPanel store={store} />}
-                </section>
-              ))}
-            </div>
-          </AdaptivePane>
-          <main className={cn('min-h-0 min-w-0 flex-1', !showMain && 'hidden')}>
-            <EditorArea store={store} />
-          </main>
+            <TabViewBar variant="plain" className="w-11 shrink-0 items-center gap-0.5 border-e border-border bg-muted py-0.5">
+              <TabViewList aria-label="Views" className="flex flex-col items-center gap-0.5">
+                {SIDE_VIEWS.map((item) => <RailTab key={item.id} store={store} {...item} />)}
+                {narrow ? <TabViewSeparator className="my-1 h-px w-6" /> : null}
+                {narrow ? PANE_VIEWS.map((item) => <RailTab key={item.id} store={store} {...item} />) : null}
+                <TabViewIndicator />
+              </TabViewList>
+            </TabViewBar>
+          </TabView>
+          <div className="relative flex min-h-0 min-w-0 flex-1">
+            <AdaptivePane
+              presentation="column"
+              columnWidth={narrow ? '100%' : 240}
+              columnClassName={showSidebar ? undefined : 'hidden'}
+              resizable={!narrow}
+              minWidth={160}
+            >
+              {/* The panels stay mounted, so that the Explorer keeps which folders are open. */}
+              <div className={cn('h-full min-h-0 bg-sidebar text-sidebar-foreground', !narrow && 'border-e border-border')}>
+                {SIDE_VIEWS.map(({ id, label }) => (
+                  <section key={id} aria-label={label} hidden={(sidebarView ?? lastSideView) !== id} className="h-full min-h-0 overflow-hidden">
+                    {id === 'explorer' ? <Explorer store={store} /> : id === 'search' ? <SearchPanel store={store} /> : <RunPanel store={store} />}
+                  </section>
+                ))}
+              </div>
+            </AdaptivePane>
+            <main className={cn('min-h-0 min-w-0 flex-1', !showMain && 'hidden')}>
+              <EditorArea store={store} />
+            </main>
+          </div>
         </div>
-      </div>
-      <StatusBar store={store} />
-      <ExplorerDialogs store={store} />
+        <StatusBar store={store} />
+        <ExplorerDialogs store={store} />
+      </SizeClassProvider>
     </div>
   );
 }

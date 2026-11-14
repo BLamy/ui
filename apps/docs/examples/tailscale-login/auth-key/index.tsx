@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import wasmURL from '@agent-wasm/tailscale-connect/main.wasm?url'
-import { FieldDescription, TextField } from '@/components/ui/text-field'
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button'
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect'
 import { TailscaleProvider } from '@/lib/tailscale-react'
@@ -18,15 +17,15 @@ export default function AuthKey() {
   const [key, setKey] = useState('')
   return (
     <div className="mx-auto grid w-full max-w-sm gap-4">
-      <TextField type="password" autoComplete="off" value={key} onChange={setKey}>
-        <Label variant="field" className="text-foreground/70">Auth key</Label>
-        <Input placeholder="tskey-auth-…" />
+      <Field>
+        <FieldLabel variant="field" className="text-foreground/70">Auth key</FieldLabel>
+        <Input type="password" autoComplete="off" value={key} onValueChange={setKey} placeholder="tskey-auth-…" />
         <FieldDescription className="text-foreground/70">An ephemeral key from your admin console. Used once, never stored.</FieldDescription>
-      </TextField>
+      </Field>
       <TailscaleProvider
         options={{ client: () => createTailscaleConnectClient({ wasmURL }), hostname: 'bl-ui-docs-kiosk', auth: { mode: 'auth-key', authKey: async () => key.trim() }, lockName: 'docs-auth-key' }}
       >
-        <TailscaleLoginButton variant="outline" labels={{ signIn: 'Connect this kiosk' }} isDisabled={!key.trim().startsWith('tskey-')} />
+        <TailscaleLoginButton variant="outline" labels={{ signIn: 'Connect this kiosk' }} disabled={!key.trim().startsWith('tskey-')} />
         <TailscaleStatusBadge />
       </TailscaleProvider>
     </div>

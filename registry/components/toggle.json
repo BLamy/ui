@@ -1,13 +1,18 @@
 {
   "name": "toggle",
   "title": "Toggle",
-  "description": "Two-state button on react-aria's ToggleButton: tinted when on, in default, filled and outline variants.",
+  "description": "UI SDK's Toggle, a button that stays pressed: tinted when on, in default, filled and outline variants, with ToggleIcon and a controller.",
   "page": "toggle",
   "exports": [
     "Toggle",
-    "toggleVariants"
+    "ToggleIcon",
+    "toggleVariants",
+    "createToggleController"
   ],
   "imports": [
     "Toggle"
+  ],
+  "types": [
+    "ToggleProps"
   ]
 }

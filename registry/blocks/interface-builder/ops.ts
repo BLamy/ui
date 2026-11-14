@@ -65,7 +65,7 @@ export function containerScene(doc: Doc, kind: 'NavigationStack' | 'TabView' | '
   const ref = makeNode('SceneRef', { props: { scene: child.id } });
   const base = { id: newId('s'), x, y, props: [], state: [], memos: [], effects: [], background: null };
   if (kind === 'NavigationStack') return { ...base, name: uniqueName(`${child.name}Nav`, doc.scenes.map((s) => s.name)), root: makeNode('NavigationStack', { children: [ref] }) };
-  if (kind === 'TabView') return { ...base, name: uniqueName(`${child.name}Tabs`, doc.scenes.map((s) => s.name)), root: makeNode('TabView', { props: { tabs: `${child.name}:star`, selectedKey: child.name }, children: [ref] }) };
+  if (kind === 'TabView') return { ...base, name: uniqueName(`${child.name}Tabs`, doc.scenes.map((s) => s.name)), root: makeNode('TabView', { props: { tabs: `${child.name}:star`, value: child.name }, children: [ref] }) };
   return { ...base, name: uniqueName(`${child.name}Split`, doc.scenes.map((s) => s.name)), root: makeNode('SplitView', { slots: { sidebar: [ref], supplementary: [], detail: [] } }) };
 }
 

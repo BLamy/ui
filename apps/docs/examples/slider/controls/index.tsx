@@ -1,25 +1,26 @@
 import { useState } from 'react'
 import { Slider } from '@/components/ui/slider'
 
-// `label` + `showValue` add a caption and the formatted value; formatOptions is
-// Intl.NumberFormat. Pass an array for a range with two thumbs.
+// `label` + `showValue` add a caption and the formatted value; `format` takes
+// Intl.NumberFormat options. Pass an array for a range with two thumbs.
 export default function Controls() {
   const [range, setRange] = useState<number[]>([20, 80])
   return (
     <div className="mx-auto grid max-w-sm gap-6">
-      <Slider label="Brightness" showValue defaultValue={0.64} minValue={0} maxValue={1} step={0.01} formatOptions={{ style: 'percent' }} />
-      <Slider label="Text size" showValue defaultValue={3} minValue={1} maxValue={7} step={1} />
+      <Slider label="Brightness" showValue defaultValue={0.64} min={0} max={1} step={0.01} format={{ style: 'percent' }} />
+      <Slider label="Text size" showValue defaultValue={3} min={1} max={7} step={1} />
       <Slider
         label="Budget"
         showValue
-        minValue={0}
-        maxValue={500}
+        min={0}
+        max={500}
         step={10}
         value={range}
-        onChange={(v) => setRange(v as number[])}
-        formatOptions={{ style: 'currency', currency: 'USD', maximumFractionDigits: 0 }}
+        onValueChange={setRange}
+        thumbLabels={['Lowest budget', 'Highest budget']}
+        format={{ style: 'currency', currency: 'USD', maximumFractionDigits: 0 }}
       />
-      <Slider label="Locked" showValue defaultValue={30} isDisabled />
+      <Slider label="Locked" showValue defaultValue={30} disabled />
     </div>
   )
 }

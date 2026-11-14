@@ -61,8 +61,8 @@ function Welcome({ onAdd, onSample }: { onAdd: () => void; onSample: () => void 
           Git is read right here in the browser; nothing is uploaded.
         </p>
         <div className="mt-5 grid gap-2">
-          <Button size="pill" onPress={onAdd}>Open Folder…</Button>
-          <Button size="pill" variant="secondary" onPress={onSample}>Try Sample Data</Button>
+          <Button size="pill" onClick={onAdd}>Open Folder…</Button>
+          <Button size="pill" variant="secondary" onClick={onSample}>Try Sample Data</Button>
         </div>
       </div>
     </div>
@@ -72,22 +72,22 @@ function Welcome({ onAdd, onSample }: { onAdd: () => void; onSample: () => void 
 function Atlas({ source, initialWorktree, initialView, onSample, onLeaveSample }: Omit<WorktreeAtlasProps, 'appearance' | 'source'> & {
   source: WorktreeSource; onSample?: () => void; onLeaveSample?: () => void;
 }) {
-  const [compact, setCompact] = useState(false);
   const atlas = useAtlas(source, { worktree: initialWorktree, view: initialView });
   const welcome = onSample && atlas.scanned && atlas.locations.length === 0;
   return (
     <>
-      <SplitView aria-label="Worktree Atlas" defaultCompactColumn={initialWorktree ? 'supplementary' : 'sidebar'} onWidthClassChange={(wc) => setCompact(wc === 'compact')}
-        selection={{ sidebar: atlas.worktreeId, supplementary: atlas.filePath }}
-        onSelectionChange={(sel) => {
-          if (sel.sidebar !== undefined && sel.sidebar !== atlas.worktreeId) atlas.open(sel.sidebar);
-          else if (sel.supplementary !== undefined && sel.supplementary !== atlas.filePath) atlas.openFile(sel.supplementary);
+      <SplitView aria-label="Worktree Atlas" defaultCompactColumn={initialWorktree ? 'supplementary' : 'sidebar'}
+        value={{ sidebar: atlas.worktreeId, supplementary: atlas.filePath }}
+        onValueChange={(next, { column }) => {
+          const id = next[column];
+          if (column === 'sidebar' && id !== undefined && id !== atlas.worktreeId) atlas.open(id);
+          else if (column === 'supplementary' && id !== undefined && id !== atlas.filePath) atlas.openFile(id);
         }}>
-        <ProjectsSidebar atlas={atlas} footer={onLeaveSample ? <Button size="sm" variant="secondary" onPress={onLeaveSample}>Open My Folders</Button> : null} />
+        <ProjectsSidebar atlas={atlas} footer={onLeaveSample ? <Button size="sm" variant="secondary" onClick={onLeaveSample}>Open My Folders</Button> : null} />
         <FileColumn atlas={atlas} />
         <DetailColumn atlas={atlas} />
+        <DeleteCredenza atlas={atlas} />
       </SplitView>
-      <DeleteCredenza atlas={atlas} compact={compact} />
       {welcome ? <Welcome onAdd={() => void atlas.addLocation()} onSample={onSample} /> : null}
     </>
   );

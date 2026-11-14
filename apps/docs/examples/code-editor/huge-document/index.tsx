@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { CodeEditor, type CodeEditorChange, type CodeEditorHandle } from '@/components/ui/code-editor'
+import { CodeEditor, type CodeEditorHandle, type CodeEditorValueChangeDetails } from '@/components/ui/code-editor'
 
 function makeLines() {
   const lines: string[] = []
@@ -16,12 +16,12 @@ function makeLine() {
 }
 
 // `onEdit` gets every change without the whole text being joined: on a file this size, that's what you want instead of
-// `onChange`, which would join it on every key. `getValue()` on the ref joins it when you ask.
+// `onValueChange`, which would join it on every key. `getValue()` on the ref joins it when you ask.
 export default function HugeDocument({ variant = 'lines' }: { variant?: string }) {
   const lines = variant === 'lines'
   const text = useMemo(() => (lines ? makeLines() : makeLine()), [lines])
   const editor = useRef<CodeEditorHandle>(null)
-  const [last, setLast] = useState<CodeEditorChange | null>(null)
+  const [last, setLast] = useState<CodeEditorValueChangeDetails | null>(null)
   const [length, setLength] = useState<number | null>(null)
   const go = () => {
     if (lines) {
@@ -36,10 +36,10 @@ export default function HugeDocument({ variant = 'lines' }: { variant?: string }
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="secondary" onPress={go}>{lines ? 'To the end' : 'To the middle of the long line'}</Button>
-        <Button size="sm" variant="secondary" onPress={() => setLength(editor.current?.getValue().length ?? null)}>Join the text</Button>
+        <Button size="sm" variant="secondary" onClick={go}>{lines ? 'To the end' : 'To the middle of the long line'}</Button>
+        <Button size="sm" variant="secondary" onClick={() => setLength(editor.current?.getValue().length ?? null)}>Join the text</Button>
         <span className="ml-auto font-mono text-caption text-muted-foreground">
-          {last ? `${last.origin} at ${last.from.line.toLocaleString('en-US')}:${last.from.column.toLocaleString('en-US')}` : 'Type somewhere'}
+          {last ? `${last.reason} at ${last.from.line.toLocaleString('en-US')}:${last.from.column.toLocaleString('en-US')}` : 'Type somewhere'}
           {length === null ? '' : ` · ${length.toLocaleString('en-US')} characters`}
         </span>
       </div>

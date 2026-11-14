@@ -1,6 +1,13 @@
 import { useState, type ReactNode } from 'react'
 import { List, ListRow, ListSection } from '@/components/ui/list'
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import {
+  NavigationStack,
+  NavigationStackBar,
+  NavigationStackContent,
+  NavigationStackLargeTitle,
+  NavigationStackPage,
+  NavigationStackTitle,
+} from '@/components/ui/navigation-stack'
 
 // Titles of different lengths, so the back label shows each case: the full
 // previous title, an ellipsized one, and "Back" once the centered title leaves
@@ -17,42 +24,46 @@ const TREE: Record<string, string[]> = {
 
 function Stack() {
   const [path, setPath] = useState<string[]>([])
-  const screen = (title: string, root = false): Screen => ({
-    key: title,
-    title,
-    largeTitle: root,
-    grouped: true,
-    hideChromeOnScroll: false,
-    content: (
-      <List inset>
-        <ListSection
-          footer={
-            TREE[title].length
-              ? 'Push a row: the title flies into the back button. Pop with ' +
-                'the button, Esc, or an edge swipe.'
-              : 'The back label names the screen behind — truncated, or ' +
-                '“Back”, when the title leaves no room.'
-          }
-        >
-          {TREE[title].map((t, i) => (
-            <ListRow
-              key={t}
-              title={t}
-              accessory="chevron"
-              onPress={() => setPath((p) => [...p, t])}
-              divider={i < TREE[title].length - 1}
-            />
-          ))}
-        </ListSection>
-      </List>
-    ),
-  })
+  const page = (title: string, root = false) => (
+    <NavigationStackPage key={title} value={title} grouped>
+      <NavigationStackBar hideOnScroll={false}>
+        <NavigationStackTitle>{title}</NavigationStackTitle>
+      </NavigationStackBar>
+      <NavigationStackContent>
+        {root ? <NavigationStackLargeTitle /> : null}
+        <List inset>
+          <ListSection
+            footer={
+              TREE[title].length
+                ? 'Push a row: the title flies into the back button. Pop with ' +
+                  'the button, Esc, or an edge swipe.'
+                : 'The back label names the page behind — truncated, or ' +
+                  '“Back”, when the title leaves no room.'
+            }
+          >
+            {TREE[title].map((t, i) => (
+              <ListRow
+                key={t}
+                title={t}
+                accessory="chevron"
+                onClick={() => setPath((p) => [...p, t])}
+                divider={i < TREE[title].length - 1}
+              />
+            ))}
+          </ListSection>
+        </List>
+      </NavigationStackContent>
+    </NavigationStackPage>
+  )
   return (
     <div style={{ position: 'relative', height: 360 }}>
       <NavigationStack
-        screens={[screen('Settings', true), ...path.map((t) => screen(t))]}
-        onPop={() => setPath((p) => p.slice(0, -1))}
-      />
+        pages={['Settings', ...path]}
+        onPagesChange={(pages) => setPath(pages.slice(1))}
+      >
+        {page('Settings', true)}
+        {path.map((t) => page(t))}
+      </NavigationStack>
     </div>
   )
 }

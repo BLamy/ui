@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Dialog } from 'react-aria-components'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { CodeEditor, type CodeEditorGutter, type CodeEditorMarker } from '@/components/ui/code-editor'
 import { DebugToolbar, type DebugToolbarAction } from '@/components/ui/debug-toolbar'
-import { Popover, PopoverTrigger } from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover'
 import { splitCodeLines } from '@/lib/code-editor-model'
 import { Icon } from '@/lib/icon'
 import { ThemeScope } from '@/lib/theme'
@@ -40,37 +39,34 @@ const jumpLabel = (line: number) => `Jump to line ${line}`
 function HitCount({ line, hit, onGo }: { line: number; hit: number; onGo: (line: number, hit: number) => void }) {
   const hits = HITS[line]
   return (
-    <PopoverTrigger>
-      <Button
-        variant="ghost"
+    <Popover>
+      <PopoverTrigger className={cn(buttonVariants({ variant: 'ghost' }), 'h-full w-full rounded-none bg-transparent px-1 font-mono text-caption2 font-normal text-muted-foreground hover:bg-secondary hover:text-foreground')}
         aria-label={`Line ${line} ran ${hits} times`}
-        className="h-full w-full rounded-none bg-transparent px-1 font-mono text-caption2 font-normal text-muted-foreground data-hovered:bg-secondary data-hovered:text-foreground"
       >
         <span className="ml-auto">{hits}</span>
-      </Button>
-      <Popover placement="bottom start" offset={4} className="w-auto">
-        <Dialog aria-label={`Executions of line ${line}`} className="flex items-center gap-1 p-1.5 outline-none">
-          <Button size="icon-sm" variant="quiet" aria-label="Previous execution" isDisabled={hit <= 1} onPress={() => onGo(line, hit - 1)}>
-            <Icon name="chevron-left" size={14} />
-          </Button>
-          <input
-            aria-label="Execution number"
-            inputMode="numeric"
-            placeholder="–"
-            value={hit || ''}
-            onChange={(e) => {
-              const value = Number(e.target.value)
-              if (Number.isInteger(value) && value >= 1 && value <= hits) onGo(line, value)
-            }}
-            className="h-7 w-12 rounded-ctl border-0 bg-secondary text-center font-mono text-caption text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          />
-          <span className="pr-1 font-mono text-caption text-muted-foreground">of {hits}</span>
-          <Button size="icon-sm" variant="quiet" aria-label="Next execution" isDisabled={hit >= hits} onPress={() => onGo(line, hit + 1)}>
-            <Icon name="chevron-right" size={14} />
-          </Button>
-        </Dialog>
-      </Popover>
-    </PopoverTrigger>
+      </PopoverTrigger>
+      <PopoverContent variant="surface" side="bottom" align="start" sideOffset={4} className="flex w-auto items-center gap-1 p-1.5 outline-none">
+        <PopoverTitle className="sr-only">{`Executions of line ${line}`}</PopoverTitle>
+        <Button size="icon-sm" variant="quiet" aria-label="Previous execution" disabled={hit <= 1} onClick={() => onGo(line, hit - 1)}>
+          <Icon name="chevron-left" size={14} />
+        </Button>
+        <input
+          aria-label="Execution number"
+          inputMode="numeric"
+          placeholder="–"
+          value={hit || ''}
+          onChange={(e) => {
+            const value = Number(e.target.value)
+            if (Number.isInteger(value) && value >= 1 && value <= hits) onGo(line, value)
+          }}
+          className="h-7 w-12 rounded-ctl border-0 bg-secondary text-center font-mono text-caption text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        />
+        <span className="pr-1 font-mono text-caption text-muted-foreground">of {hits}</span>
+        <Button size="icon-sm" variant="quiet" aria-label="Next execution" disabled={hit >= hits} onClick={() => onGo(line, hit + 1)}>
+          <Icon name="chevron-right" size={14} />
+        </Button>
+      </PopoverContent>
+    </Popover>
   )
 }
 
@@ -119,16 +115,18 @@ export default function Debugger() {
       width: 34,
       align: 'end',
       render: (line) => (HITS[line] ? <HitCount line={line} hit={position.line === line ? position.hit : 0} onGo={go} /> : null),
+      // Its counts are popover triggers: say which lines have one, and the arrow keys reach them on lines off screen too.
+      focusable: (line) => !!HITS[line],
     },
     {
       id: 'breakpoint',
       width: 16,
-      onPress: toggle,
-      isPressable: canBreak,
+      onClick: (_event, { line }) => toggle(line),
+      clickable: canBreak,
       label: (line) => `${breakpoints.has(line) ? 'Remove' : 'Add'} a breakpoint on line ${line}`,
       className: 'group',
       render: (line) => canBreak(line)
-        ? <span className={cn('size-[9px] rounded-full', breakpoints.has(line) ? 'bg-warning' : 'bg-warning/50 opacity-0 group-data-hovered:opacity-100')} />
+        ? <span className={cn('size-[9px] rounded-full', breakpoints.has(line) ? 'bg-warning' : 'bg-warning/50 opacity-0 group-hover:opacity-100')} />
         : null,
     },
   ], [breakpoints, go, position.line, position.hit, toggle])
@@ -136,8 +134,8 @@ export default function Debugger() {
   const markers = useCallback((line: number): CodeEditorMarker[] | undefined => SITES[line]?.map((column) => ({
     column,
     label: `Breakpoint at line ${line}, column ${column}`,
-    isActive: sites.has(`${line}:${column}`),
-    onPress: () => setSites((set) => {
+    active: sites.has(`${line}:${column}`),
+    onClick: () => setSites((set) => {
       const next = new Set(set)
       if (!next.delete(`${line}:${column}`)) next.add(`${line}:${column}`)
       return next
@@ -174,8 +172,8 @@ export default function Debugger() {
             currentColumn={position.column}
             lineDecoration={lineDecoration}
             markers={markers}
-            onLineNumberPress={jump}
-            isLineNumberPressable={ranAtLeastOnce}
+            onLineNumberClick={(_event, { line }) => jump(line)}
+            lineNumberClickable={ranAtLeastOnce}
             lineNumberLabel={jumpLabel}
           />
         </div>

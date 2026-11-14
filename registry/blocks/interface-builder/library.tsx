@@ -1,10 +1,11 @@
 /* The library (Xcode's ⇧⌘L): every component the catalog offers, searchable, grouped by kind. Drag one onto a scene
    (the canvas shows where it will land), or press it (Return) to add it to the selected container. Items are raw
    elements because they carry a pointer drag, so they keep their own button role and keyboard handling. Resting on one
-   (or tabbing to it) shows its hover card: the component drawn as it's inserted, where it comes from, and its props,
+   (or tabbing to it) shows the list's one hover card: the component drawn as it's inserted, where it comes from, and its props,
    events and slots (previews.tsx). Pressing closes it, so it's never over the canvas a drag is aiming at. */
-import { useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type RefObject } from 'react';
-import { HoverCard, useHoverCard } from '@/components/ui/hover-card';
+import { useMemo, useState, type PointerEvent, type RefObject } from 'react';
+import { bindDrag, dragThreshold } from '@ui-sdk/core';
+import { createHoverCardController, HoverCard, HoverCardContent, HoverCardTrigger, type HoverCardController } from '@/components/ui/hover-card';
 import { SearchField } from '@/components/ui/search-field';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,8 @@ export function insertFromLibrary(b: Builder, item: LibraryItem): boolean {
 export function LibraryList({ onDragStart, onInserted, autoFocus, className }: { onDragStart?: () => void; onInserted?: () => void; autoFocus?: boolean; className?: string }) {
   const b = useBuilder();
   const [q, setQ] = useState('');
+  // One card for every row: it follows the row the pointer rests on (or focus is on).
+  const [previews] = useState(() => createHoverCardController<LibraryItem>());
   const groups = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean);
     const hits = LIBRARY.filter((it) => words.every((w) => `${it.title} ${it.keywords} ${it.description}`.toLowerCase().includes(w)));
@@ -41,7 +44,7 @@ export function LibraryList({ onDragStart, onInserted, autoFocus, className }: {
   return (
     <div data-slot="ib-library" className={cn('flex min-h-0 flex-col', className)}>
       <div className="p-2.5 pb-1.5">
-        <SearchField value={q} onChange={setQ} placeholder="Filter components" autoFocus={autoFocus} aria-label="Filter components" />
+        <SearchField value={q} onValueChange={setQ} placeholder="Filter components" autoFocus={autoFocus} aria-label="Filter components" />
       </div>
       <div className="bl-scroll min-h-0 flex-1 overflow-y-auto px-1.5 pb-3">
         {groups.length ? groups.map((g) => (
@@ -51,72 +54,62 @@ export function LibraryList({ onDragStart, onInserted, autoFocus, className }: {
               <span className="font-mono font-normal tracking-normal normal-case">{g.section === 'Layout' ? 'HTML + Tailwind' : g.section === 'React' ? 'react' : '@brett_lamy/ui'}</span>
             </h3>
             {g.items.map((it) => (
-              <LibraryRow key={it.id} item={it} onDragStart={onDragStart} onInsert={() => { if (insertFromLibrary(b, it)) onInserted?.(); }} />
+              <LibraryRow key={it.id} item={it} previews={previews} onDragStart={onDragStart} onInsert={() => { if (insertFromLibrary(b, it)) onInserted?.(); }} />
             ))}
           </section>
         )) : <p className="m-0 px-3 py-6 text-center text-footnote text-muted-foreground">No components match “{q}”.</p>}
       </div>
+      <HoverCard controller={previews}>
+        <HoverCardContent<LibraryItem> side="right" align="start" className="w-80">
+          {({ payload }) => (payload ? <LibraryCard item={payload} doc={b.doc} /> : null)}
+        </HoverCardContent>
+      </HoverCard>
     </div>
   );
 }
 
-function LibraryRow({ item, onDragStart, onInsert }: { item: LibraryItem; onDragStart?: () => void; onInsert: () => void }) {
-  const b = useBuilder();
-  const card = useHoverCard<HTMLDivElement>();
-  const start = useRef<{ x: number; y: number; id: number; dragging: boolean } | null>(null);
-  const down = (e: PointerEvent<HTMLDivElement>) => {
-    card.close();
+function LibraryRow({ item, previews, onDragStart, onInsert }: { item: LibraryItem; previews: HoverCardController<LibraryItem>; onDragStart?: () => void; onInsert: () => void }) {
+  // A press that moves past the drag threshold picks the item up; one that doesn't is a click, and a click (or Enter
+  // or Space) inserts it. The gesture follows the pointer on the document, so it carries on after a drag closes the
+  // library popover this row is in; `bindDrag` swallows the click a drag's release sends.
+  const down = (e: PointerEvent<HTMLElement>) => {
+    previews.close();
     if (e.button !== 0) return;
-    start.current = { x: e.clientX, y: e.clientY, id: e.pointerId, dragging: false };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-  const move = (e: PointerEvent<HTMLDivElement>) => {
-    const s = start.current;
-    if (!s || s.id !== e.pointerId) return;
-    if (!s.dragging) {
-      if (Math.hypot(e.clientX - s.x, e.clientY - s.y) < 5) return;
-      s.dragging = true;
-      libraryDrag.start(item, e.clientX, e.clientY);
-      onDragStart?.();
-    }
-    libraryDrag.move(e.clientX, e.clientY);
-  };
-  const up = (e: PointerEvent<HTMLDivElement>) => {
-    const s = start.current;
-    start.current = null;
-    if (!s || s.id !== e.pointerId) return;
-    if (s.dragging) libraryDrag.end();
-    else onInsert();
-  };
-  const key = (e: KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onInsert(); }
+    let dragging = false;
+    bindDrag(e.currentTarget, e.nativeEvent, {
+      threshold: dragThreshold,
+      cancelOnEscape: true,
+      onStart: (ev) => {
+        dragging = true;
+        libraryDrag.start(item, ev.clientX, ev.clientY);
+        onDragStart?.();
+      },
+      onMove: ({ x, y }) => libraryDrag.move(x, y),
+      onEnd: (_, canceled) => {
+        if (!dragging) return;
+        if (canceled) libraryDrag.cancel();
+        else libraryDrag.end();
+      },
+    });
   };
   return (
-    <>
-      <div
-        {...card.triggerProps}
-        role="button"
-        tabIndex={0}
-        aria-label={`${item.title}: ${item.description}`}
-        onPointerDown={down}
-        onPointerMove={move}
-        onPointerUp={up}
-        onPointerCancel={() => { if (start.current?.dragging) libraryDrag.cancel(); start.current = null; }}
-        onKeyDown={key}
-        className="group flex cursor-grab touch-none items-center gap-2.5 rounded-lg px-2 py-1.5 outline-none select-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
-      >
-        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-secondary text-primary group-hover:bg-background">
-          <Icon name={typeof item.icon === 'string' ? item.icon : undefined} shapes={typeof item.icon === 'string' ? undefined : item.icon} size={18} sw={1.8} />
-        </span>
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate font-mono text-footnote font-medium text-foreground">{item.source === 'kit' ? `<${item.title}>` : item.title}</span>
-          <span className="truncate text-caption2 text-muted-foreground">{item.description}</span>
-        </span>
-      </div>
-      <HoverCard {...card.cardProps} placement="end top" className="w-80">
-        <LibraryCard item={item} doc={b.doc} />
-      </HoverCard>
-    </>
+    <HoverCardTrigger
+      controller={previews}
+      payload={item}
+      render={<button type="button" />}
+      aria-label={`${item.title}: ${item.description}`}
+      onPointerDown={down}
+      onClick={onInsert}
+      className="group flex w-full cursor-grab touch-none items-center gap-2.5 rounded-lg border-0 bg-transparent px-2 py-1.5 text-left text-inherit no-underline outline-none select-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
+    >
+      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-secondary text-primary group-hover:bg-background">
+        <Icon name={typeof item.icon === 'string' ? item.icon : undefined} shapes={typeof item.icon === 'string' ? undefined : item.icon} size={18} sw={1.8} />
+      </span>
+      <span className="flex min-w-0 flex-col">
+        <span className="truncate font-mono text-footnote font-medium text-foreground">{item.source === 'kit' ? `<${item.title}>` : item.title}</span>
+        <span className="truncate text-caption2 text-muted-foreground">{item.description}</span>
+      </span>
+    </HoverCardTrigger>
   );
 }
 

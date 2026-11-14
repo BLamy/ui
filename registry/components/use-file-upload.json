@@ -1,20 +1,23 @@
 {
   "name": "use-file-upload",
   "title": "useFileUpload",
-  "description": "The file-upload logic without UI: a file list with validation (type, size, count, duplicates, your own rule), a concurrency-limited upload queue with abort, retry and controlled mode, an XMLHttpRequest adapter that reports real progress, and the pure helpers (formatBytes, matchesAccept, folder flattening).",
+  "description": "The file-upload logic behind FileUpload: the fileUpload primitive (definePrimitive) with rows for UI SDK's FileInput (queued, uploading, done, failed, and rejected with the reason in words, duplicates included), a concurrency-limited upload queue with abort, retry and controlled mode, a controller and agent actions (remove, retry, clear, uploadAll), the useFileUpload hook, an XMLHttpRequest adapter that reports real progress, and helpers (describeRules, rejectionMessage; sizes through UI SDK's formatFileSize).",
   "page": "use-file-upload",
   "exports": [
     "useFileUpload",
     "useFilePreview",
+    "fileUpload",
+    "createFileUploadController",
     "xhrUpload",
-    "formatBytes",
-    "matchesAccept"
+    "rejectionMessage"
   ],
   "imports": [
     "useFileUpload",
     "xhrUpload"
   ],
   "files": [
+    "lib/use-file-upload.ts",
+    "lib/file-upload-primitive.ts",
     "lib/file-upload-model.ts"
   ]
 }

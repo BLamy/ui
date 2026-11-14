@@ -24,14 +24,14 @@ const COLUMNS = ['name', 'method', 'status', 'duration', 'waterfall'] as const
 // A row's link selects the other end of its call, which comes into view if it isn't already.
 export default function Pair() {
   const [selected, setSelected] = useState<RowId | null>('browser-4')
-  const renderLink = useCallback((row: Row) => <RequestLink onPress={() => setSelected(row.other)}>{row.otherLabel}</RequestLink>, [])
+  const renderLink = useCallback((row: Row) => <RequestLink onClick={() => setSelected(row.other)}>{row.otherLabel}</RequestLink>, [])
   return (
     <RequestTable<Row>
       aria-label="Requests and server functions"
       rows={ROWS}
       columns={COLUMNS}
-      selectedId={selected}
-      onSelectionChange={setSelected}
+      value={selected}
+      onValueChange={setSelected}
       renderLink={renderLink}
       className="h-[320px] w-full"
     />

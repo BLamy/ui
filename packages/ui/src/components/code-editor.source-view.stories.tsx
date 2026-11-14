@@ -1,12 +1,11 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Dialog } from 'react-aria-components';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { DebugToolbar, type DebugToolbarAction } from '@/components/ui/debug-toolbar';
 import {
   CodeEditor, type CodeEditorGutter, type CodeEditorHandle, type CodeEditorLineDecoration, type CodeEditorMarker,
 } from '@/components/ui/code-editor';
-import { Popover, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { splitCodeLines } from '@/lib/code-editor-model';
 import { createGpuCodeHighlight } from '@/lib/code-editor-gpu';
 import { Icon } from '@/lib/icon';
@@ -132,37 +131,34 @@ function HitCount({ line, current, onGo }: { line: number; current: { line: numb
   const hits = HITS[line] ?? 0;
   const hit = current.line === line ? current.hit : 0;
   return (
-    <PopoverTrigger>
-      <Button
-        variant="ghost"
+    <Popover>
+      <PopoverTrigger className={cn(buttonVariants({ variant: 'ghost' }), 'h-full w-full rounded-none bg-transparent px-1 text-right font-mono text-caption2 font-normal text-muted-foreground tabular-nums hover:bg-secondary hover:text-foreground')}
         aria-label={`Line ${line} ran ${hits} times`}
-        className="h-full w-full rounded-none bg-transparent px-1 text-right font-mono text-caption2 font-normal text-muted-foreground tabular-nums data-hovered:bg-secondary data-hovered:text-foreground"
       >
         <span className="ml-auto">{formatHits(hits)}</span>
-      </Button>
-      <Popover placement="bottom start" offset={4} className="w-auto">
-        <Dialog aria-label={`Executions of line ${line}`} className="flex items-center gap-1 p-1.5 outline-none">
-          <Button size="icon-sm" variant="quiet" aria-label="Previous execution" isDisabled={hit <= 1} onPress={() => onGo(line, hit - 1)}>
-            <Icon name="chevron-left" size={14} />
-          </Button>
-          <input
-            aria-label="Execution number"
-            className="h-7 w-12 rounded-ctl border-0 bg-secondary text-center font-mono text-caption text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            value={hit || ''}
-            placeholder="–"
-            inputMode="numeric"
-            onChange={(e) => {
-              const value = Number(e.target.value);
-              if (Number.isInteger(value) && value >= 1 && value <= hits) onGo(line, value);
-            }}
-          />
-          <span className="pr-1 font-mono text-caption text-muted-foreground">of {hits}</span>
-          <Button size="icon-sm" variant="quiet" aria-label="Next execution" isDisabled={hit >= hits} onPress={() => onGo(line, hit + 1)}>
-            <Icon name="chevron-right" size={14} />
-          </Button>
-        </Dialog>
-      </Popover>
-    </PopoverTrigger>
+      </PopoverTrigger>
+      <PopoverContent variant="surface" side="bottom" align="start" sideOffset={4} className="flex w-auto items-center gap-1 p-1.5 outline-none">
+        <PopoverTitle className="sr-only">{`Executions of line ${line}`}</PopoverTitle>
+        <Button size="icon-sm" variant="quiet" aria-label="Previous execution" disabled={hit <= 1} onClick={() => onGo(line, hit - 1)}>
+          <Icon name="chevron-left" size={14} />
+        </Button>
+        <input
+          aria-label="Execution number"
+          className="h-7 w-12 rounded-ctl border-0 bg-secondary text-center font-mono text-caption text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          value={hit || ''}
+          placeholder="–"
+          inputMode="numeric"
+          onChange={(e) => {
+            const value = Number(e.target.value);
+            if (Number.isInteger(value) && value >= 1 && value <= hits) onGo(line, value);
+          }}
+        />
+        <span className="pr-1 font-mono text-caption text-muted-foreground">of {hits}</span>
+        <Button size="icon-sm" variant="quiet" aria-label="Next execution" disabled={hit >= hits} onClick={() => onGo(line, hit + 1)}>
+          <Icon name="chevron-right" size={14} />
+        </Button>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -224,16 +220,18 @@ function DebuggerDemo({ wide = true }: { wide?: boolean }) {
       width: wide ? 40 : 30,
       align: 'end',
       render: (line) => (HITS[line] ? <HitCount line={line} current={position} onGo={go} /> : null),
+      // Its counts are popover triggers: the arrow keys reach them on lines that aren't on screen too.
+      focusable: (line) => !!HITS[line],
     },
     {
       id: 'breakpoint',
       width: 16,
-      onPress: toggle,
-      isPressable: breakable,
+      onClick: (_event, { line }) => toggle(line),
+      clickable: breakable,
       label: (line) => `${breakpoints.has(line) ? 'Remove' : 'Add'} a breakpoint on line ${line}`,
       render: (line) =>
         breakable(line) ? (
-          <span className={cn('size-[9px] rounded-full', breakpoints.has(line) ? 'bg-warning' : 'bg-warning/50 opacity-0 group-data-hovered:opacity-100')} />
+          <span className={cn('size-[9px] rounded-full', breakpoints.has(line) ? 'bg-warning' : 'bg-warning/50 opacity-0 group-hover:opacity-100')} />
         ) : null,
       className: 'group',
     },
@@ -248,8 +246,8 @@ function DebuggerDemo({ wide = true }: { wide?: boolean }) {
   const markers = useCallback((line: number): CodeEditorMarker[] | undefined => SITES[line]?.map((column) => ({
     column,
     label: `Breakpoint at line ${line}, column ${column}`,
-    isActive: columnBreakpoints.has(`${line}:${column}`),
-    onPress: () => setColumnBreakpoints((set) => {
+    active: columnBreakpoints.has(`${line}:${column}`),
+    onClick: () => setColumnBreakpoints((set) => {
       const next = new Set(set);
       if (!next.delete(`${line}:${column}`)) next.add(`${line}:${column}`);
       return next;
@@ -286,8 +284,8 @@ function DebuggerDemo({ wide = true }: { wide?: boolean }) {
           currentColumn={position.column}
           lineDecoration={lineDecoration}
           markers={markers}
-          onLineNumberPress={jump}
-          isLineNumberPressable={ranAtLeastOnce}
+          onLineNumberClick={(_event, { line }) => jump(line)}
+          lineNumberClickable={ranAtLeastOnce}
           lineNumberLabel={jumpLabel}
         />
       </div>
@@ -381,11 +379,11 @@ function ScrollingDemo() {
     <WindowFrame>
       <div className="absolute inset-0 flex flex-col bg-card">
         <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border px-2">
-          <Button size="sm" variant="secondary" onPress={() => editor.current?.scrollToLine(1000)}>Line 1,000</Button>
-          <Button size="sm" variant="secondary" onPress={() => editor.current?.scrollToLine(250_000, { align: 'start' })}>Line 250,000 at the top</Button>
-          <Button size="sm" variant="secondary" onPress={() => editor.current?.scrollToLine(2000, { align: 'end', smooth: true })}>Smoothly to line 2,000</Button>
-          <Button size="sm" variant="secondary" onPress={() => setTarget(4242)}>Prop: line 4,242</Button>
-          <Button size="sm" variant="secondary" onPress={() => editor.current?.selectAll()}>Select all</Button>
+          <Button size="sm" variant="secondary" onClick={() => editor.current?.scrollToLine(1000)}>Line 1,000</Button>
+          <Button size="sm" variant="secondary" onClick={() => editor.current?.scrollToLine(250_000, { align: 'start' })}>Line 250,000 at the top</Button>
+          <Button size="sm" variant="secondary" onClick={() => editor.current?.scrollToLine(2000, { align: 'end', smooth: true })}>Smoothly to line 2,000</Button>
+          <Button size="sm" variant="secondary" onClick={() => setTarget(4242)}>Prop: line 4,242</Button>
+          <Button size="sm" variant="secondary" onClick={() => editor.current?.selectAll()}>Select all</Button>
           <span data-testid="copied" className="ml-auto font-mono text-caption text-muted-foreground">{copied}</span>
         </div>
         <div className="min-h-0 flex-1">

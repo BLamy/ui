@@ -11,13 +11,13 @@ import type { VSCodeStore } from './store';
 function Toggle({ label, title, selected, onChange }: { label: string; title: string; selected: boolean; onChange: (selected: boolean) => void }) {
   return (
     <PlainToggleButton
-      isSelected={selected}
-      onChange={onChange}
+      pressed={selected}
+      onPressedChange={onChange}
       aria-label={title}
       title={title}
       className={cn(
         'grid h-6 min-w-6 cursor-pointer place-items-center rounded-[5px] border border-transparent bg-transparent px-1 font-mono text-caption2 text-muted-foreground outline-none',
-        'data-hovered:bg-secondary data-selected:border-primary/60 data-selected:bg-primary/15 data-selected:text-foreground data-focus-visible:ring-2 data-focus-visible:ring-ring/45',
+        'hover:bg-secondary data-pressed:border-primary/60 data-pressed:bg-primary/15 data-pressed:text-foreground focus-visible:ring-2 focus-visible:ring-ring/45',
       )}
     >
       {label}
@@ -32,9 +32,9 @@ function MatchRow({ match, onOpen }: { match: SearchMatch; onOpen: () => void })
   return (
     <li>
       <PlainButton
-        onPress={onOpen}
+        onClick={onOpen}
         aria-label={`Line ${match.line}: ${match.preview}`}
-        className="flex w-full cursor-pointer items-baseline gap-2 truncate border-0 bg-transparent py-0.5 ps-9 pe-3 text-start font-mono text-caption2 text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-focus-visible:ring-inset data-hovered:bg-secondary"
+        className="flex w-full cursor-pointer items-baseline gap-2 truncate border-0 bg-transparent py-0.5 ps-9 pe-3 text-start font-mono text-caption2 text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-inset hover:bg-secondary"
       >
         <span className="min-w-0 truncate">
           {before}
@@ -85,7 +85,7 @@ export function SearchPanel({ store }: { store: VSCodeStore }) {
     <div data-slot="vscode-search" className="flex h-full min-h-0 flex-col">
       <SidebarHeader title="Search" />
       <div className="flex shrink-0 flex-col gap-1.5 px-3 pb-2">
-        <SearchField className="[&_input]:text-footnote" aria-label="Search in files" placeholder="Search" value={query} onChange={(next) => store.setSearch({ query: next })} />
+        <SearchField className="[&_input]:text-footnote" aria-label="Search in files" placeholder="Search" value={query} onValueChange={(next) => store.setSearch({ query: next })} />
         <div className="flex items-center gap-1">
           <Toggle label="Aa" title="Match case" selected={matchCase} onChange={(next) => store.setSearch({ matchCase: next })} />
           <Toggle label=".*" title="Use regular expression" selected={regex} onChange={(next) => store.setSearch({ regex: next })} />

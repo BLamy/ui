@@ -1,13 +1,28 @@
 'use client';
-import type { CSSProperties, ReactNode } from 'react';
-import { Label, ProgressBar, type ProgressBarProps, composeRenderProps } from 'react-aria-components';
+import type { ComponentProps, ReactNode } from 'react';
+import {
+  Progress as SdkProgress, ProgressIndicator as SdkProgressIndicator, ProgressLabel as SdkProgressLabel,
+  ProgressTrack as SdkProgressTrack, ProgressValue as SdkProgressValue,
+} from '@ui-sdk/react/progress';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { cx } from '@/lib/utils';
 import { NumberMorph } from '@/components/ui/number-morph';
 
-/* ══ Progress — react-aria's ProgressBar (role=progressbar, aria-valuenow / valuetext), iOS progress view look.
-   Omit `value` or pass `isIndeterminate` for the sliding bar. The fill springs to each new value and the
-   default percentage label rolls its digits (NumberMorph). ══ */
+/* ══ Progress — UI SDK's Progress (role=progressbar, aria-valuenow / valuetext), iOS progress view look ══
+   `value` between `min` and `max` (0 and 100); leave it out for the sliding indeterminate bar. `format` takes
+   Intl.NumberFormat options or a function. Name it with `label` or `aria-label`.
+
+   <Progress label="Uploading" showValue value={38} />
+
+   With no children it renders the composition below from its props; pass the parts yourself to rearrange them:
+
+   <Progress value={38}>
+     <ProgressLabel>Uploading</ProgressLabel>
+     <ProgressValue />
+     <ProgressTrack><ProgressIndicator /></ProgressTrack>
+   </Progress>
+
+   The fill springs to each new value and the default percentage rolls its digits (NumberMorph). */
 export const progressVariants = cva('relative w-full overflow-hidden rounded-full bg-secondary-strong', {
   variants: {
     size: {
@@ -19,52 +34,65 @@ export const progressVariants = cva('relative w-full overflow-hidden rounded-ful
   defaultVariants: { size: 'default' },
 });
 
-export const progressIndicatorVariants = cva('absolute inset-y-0 left-0 rounded-full', {
-  variants: {
-    tone: {
-      default: 'bg-primary',
-      success: 'bg-success',
-      destructive: 'bg-destructive',
+export const progressIndicatorVariants = cva(
+  'absolute inset-y-0 left-0 rounded-full transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none data-indeterminate:w-2/5 data-indeterminate:animate-bl-progress data-indeterminate:transition-none motion-reduce:data-indeterminate:animate-none',
+  {
+    variants: {
+      tone: {
+        default: 'bg-primary',
+        success: 'bg-success',
+        destructive: 'bg-destructive',
+      },
     },
+    defaultVariants: { tone: 'default' },
   },
-  defaultVariants: { tone: 'default' },
-});
+);
 
-export interface ProgressProps extends ProgressBarProps, VariantProps<typeof progressVariants>, VariantProps<typeof progressIndicatorVariants> {
+export type ProgressProps = ComponentProps<typeof SdkProgress> & VariantProps<typeof progressVariants> & VariantProps<typeof progressIndicatorVariants> & {
+  /** A visible label, which names the bar. */
   label?: ReactNode;
   /** Show the formatted value opposite the label. */
   showValue?: boolean;
-}
+};
 
-export function Progress({ className, size, tone, label, showValue, ...props }: ProgressProps) {
-  // A custom label or format gets react-aria's text as is; the default percentage rolls.
-  const plainPercent = props.valueLabel == null && props.formatOptions == null;
+export function Progress({ className, size, tone, label, showValue, children, ...props }: ProgressProps) {
+  // A custom format shows UI SDK's text as is; the default percentage rolls.
+  const plainPercent = props.format == null;
   return (
-    <ProgressBar
-      data-slot="progress"
-      className={composeRenderProps(className, (cls) => cn('grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5', cls))}
-      {...props}
-    >
-      {({ percentage, valueText, isIndeterminate }) => (
+    <SdkProgress className={cx('grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5', className)} {...props}>
+      {children ?? (
         <>
-          {label ? <Label className="text-subhead font-medium text-foreground">{label}</Label> : null}
-          {showValue && !isIndeterminate ? (
-            <span className="col-start-2 text-subhead text-muted-foreground tabular-nums">
-              {plainPercent ? <NumberMorph value={(percentage ?? 0) / 100} format={{ style: 'percent' }} /> : valueText}
-            </span>
+          {label ? <ProgressLabel>{label}</ProgressLabel> : null}
+          {showValue ? (
+            <ProgressValue className="col-start-2">
+              {plainPercent ? (state) => <NumberMorph value={(state.percent ?? 0) / 100} format={{ style: 'percent' }} /> : undefined}
+            </ProgressValue>
           ) : null}
-          <div data-slot="progress-track" className={cn(progressVariants({ size }), 'col-span-2')}>
-            <div
-              data-slot="progress-indicator"
-              className={cn(
-                progressIndicatorVariants({ tone }),
-                isIndeterminate ? 'w-2/5 animate-bl-progress motion-reduce:animate-none' : 'w-(--pct) transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
-              )}
-              style={isIndeterminate ? undefined : ({ '--pct': `${percentage ?? 0}%` } as CSSProperties)}
-            />
-          </div>
+          <ProgressTrack size={size} className="col-span-2">
+            <ProgressIndicator tone={tone} />
+          </ProgressTrack>
         </>
       )}
-    </ProgressBar>
+    </SdkProgress>
   );
+}
+
+/** The bar's visible name. */
+export function ProgressLabel({ className, ...props }: ComponentProps<typeof SdkProgressLabel>) {
+  return <SdkProgressLabel className={cx('text-subhead font-medium text-foreground', className)} {...props} />;
+}
+
+/** The formatted value, like "38%" (nothing while indeterminate). Children replace it. */
+export function ProgressValue({ className, ...props }: ComponentProps<typeof SdkProgressValue>) {
+  return <SdkProgressValue className={cx('text-subhead text-muted-foreground tabular-nums data-indeterminate:hidden', className)} {...props} />;
+}
+
+/** The rail the indicator fills. */
+export function ProgressTrack({ className, size, ...props }: ComponentProps<typeof SdkProgressTrack> & VariantProps<typeof progressVariants>) {
+  return <SdkProgressTrack className={cx(progressVariants({ size }), className)} {...props} />;
+}
+
+/** The filled part, as wide as the value; a sliding bar while indeterminate. */
+export function ProgressIndicator({ className, tone, ...props }: ComponentProps<typeof SdkProgressIndicator> & VariantProps<typeof progressIndicatorVariants>) {
+  return <SdkProgressIndicator className={cx(progressIndicatorVariants({ tone }), className)} {...props} />;
 }

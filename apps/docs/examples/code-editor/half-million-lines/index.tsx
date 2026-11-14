@@ -21,10 +21,10 @@ export default function HalfMillionLines() {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <div className="mb-2 flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" onPress={() => editor.current?.scrollToLine(1)}>Top</Button>
-        <Button size="sm" variant="secondary" onPress={() => editor.current?.scrollToLine(250_000, { align: 'start' })}>Line 250,000</Button>
-        <Button size="sm" variant="secondary" onPress={() => editor.current?.scrollToLine(500_000, { align: 'end' })}>The end</Button>
-        <Button size="sm" variant="secondary" onPress={() => editor.current?.scrollToLine(1200, { smooth: true })}>Smoothly to 1,200</Button>
+        <Button size="sm" variant="secondary" onClick={() => editor.current?.scrollToLine(1)}>Top</Button>
+        <Button size="sm" variant="secondary" onClick={() => editor.current?.scrollToLine(250_000, { align: 'start' })}>Line 250,000</Button>
+        <Button size="sm" variant="secondary" onClick={() => editor.current?.scrollToLine(500_000, { align: 'end' })}>The end</Button>
+        <Button size="sm" variant="secondary" onClick={() => editor.current?.scrollToLine(1200, { smooth: true })}>Smoothly to 1,200</Button>
       </div>
       <div className="h-72 overflow-hidden rounded-card border border-border">
         <CodeEditor ref={editor} readOnly variant="ghost" lineCount={500_000} getLine={getLine} maxLineLength={64} aria-label="generated.js" />

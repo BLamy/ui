@@ -35,10 +35,10 @@ export default function MegabyteLine() {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <div className="mb-2 flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" onPress={() => go(0)}>Start</Button>
-        <Button size="sm" variant="secondary" onPress={() => go(500_000)}>Column 500,000</Button>
-        <Button size="sm" variant="secondary" onPress={() => go(1_048_000)}>The end</Button>
-        <Button size="sm" variant="secondary" onPress={() => editor.current?.selectAll()}>Select all</Button>
+        <Button size="sm" variant="secondary" onClick={() => go(0)}>Start</Button>
+        <Button size="sm" variant="secondary" onClick={() => go(500_000)}>Column 500,000</Button>
+        <Button size="sm" variant="secondary" onClick={() => go(1_048_000)}>The end</Button>
+        <Button size="sm" variant="secondary" onClick={() => editor.current?.selectAll()}>Select all</Button>
       </div>
       <div className="h-40 overflow-hidden rounded-card border border-border">
         <CodeEditor ref={editor} readOnly variant="ghost" lines={lines} aria-label="bundle.js" />

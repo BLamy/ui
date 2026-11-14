@@ -1,35 +1,30 @@
 import { useState } from 'react'
-import { parseColor, type Color } from 'react-aria-components'
-import { ColorField, ColorFieldGroup, ColorFieldInput, ColorFieldSwatch } from '@/components/ui/color-field'
-import { Label } from '@/components/ui/label'
-import { FieldDescription, FieldError } from '@/components/ui/text-field'
+import { formatColor, parseColor } from '@ui-sdk/core/color'
+import { ColorField } from '@/components/ui/color-field'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 
-// Typing never changes the color until it is valid: the field commits when it
-// loses focus (try "0a84ff" or "#0a84ff"), and reverts to the last color if the
-// text does not parse. `onChange` gets a Color, or null when the field is empty.
+// Typing never changes the color until the text is one: the field reads it on
+// Enter or when it loses focus (try "rebeccapurple" or "oklch(0.7 0.15 250)"),
+// and puts the value back if the text is not a color. `onValueChange` gets a
+// CSS color string; parseColor turns it into data when you need the channels.
 export default function Basic() {
-  const [color, setColor] = useState<Color | null>(parseColor('#7f5af0'))
+  const [color, setColor] = useState('#7f5af0')
+  const parsed = parseColor(color)
   return (
     <div className="mx-auto grid max-w-sm gap-5">
-      <ColorField value={color} onChange={setColor}>
-        <Label variant="field">Accent</Label>
-        <ColorFieldGroup>
-          <ColorFieldSwatch />
-          <ColorFieldInput />
-        </ColorFieldGroup>
+      <Field>
+        <FieldLabel variant="field">Accent</FieldLabel>
+        <ColorField value={color} onValueChange={setColor} />
         <FieldDescription>
-          A hex color, with or without the #. Held as {color ? color.toString('hsl') : 'nothing'}.
+          Any CSS color. Held as {parsed ? formatColor(parsed, 'hsl', { precision: 3 }) : color}.
         </FieldDescription>
-      </ColorField>
+      </Field>
 
-      <ColorField defaultValue="#ff453a" isInvalid>
-        <Label variant="field">Brand</Label>
-        <ColorFieldGroup size="sm">
-          <ColorFieldSwatch />
-          <ColorFieldInput />
-        </ColorFieldGroup>
-        <FieldError>Pick a darker color.</FieldError>
-      </ColorField>
+      <Field invalid>
+        <FieldLabel variant="field">Brand</FieldLabel>
+        <ColorField size="sm" defaultValue="#ff453a" />
+        <FieldError match>Pick a darker color.</FieldError>
+      </Field>
     </div>
   )
 }

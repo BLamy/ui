@@ -23,7 +23,7 @@ export default function Panel() {
           Sphinx of black quartz, judge my vow.
         </p>
       </div>
-      <FontList value={font} onChange={setFont} onPreview={setPreview} className="overflow-hidden rounded-card bg-card shadow-hairline" />
+      <FontList value={font} onValueChange={setFont} onPreview={setPreview} className="overflow-hidden rounded-card bg-card shadow-hairline" />
     </div>
   )
 }

@@ -197,8 +197,8 @@ const handler = (list: Action[], c: SceneCode, param = '') => {
   return lines.length === 1 && lines[0].length < 60 ? `(${p}) => ${lines[0].replace(/;$/, '')}` : `(${p}) => {\n${indent(lines.join('\n'), 2)}\n}`;
 };
 
-/** An event's handler: its actions, after writing a two-way binding back; `map` converts the value first (a Key to
-    a string, a date to ISO). Null when nothing listens. */
+/** An event's handler: its actions, after writing a two-way binding back; `map` converts the value first (a list
+    to its comma text). Null when nothing listens. */
 function eventHandler(n: Node, c: SceneCode, ev: string, map?: (v: string) => string): string | null {
   const list = n.on?.[ev] ?? [];
   const two = specOf(n.type).props.find((ps) => ps.twoWay === ev && n.bind?.[ps.name]);
@@ -239,14 +239,7 @@ function jsx(n: Node, parent: Axis, c: SceneCode, depth = 0): string {
   const kids = (n.children ?? []).map((k) => jsx(k, axis, c, depth + 1));
   const cls = classesOf(n, parent);
   const motion = motionAttrs(n);
-  const events: string[] = [];
-  for (const [ev, list] of Object.entries(n.on ?? {})) if (list.length) events.push(`${ev}={${handler(list, c)}}`);
-  // Two-way bindings: the value, and the change that writes it back.
-  for (const ps of spec.props) {
-    const b = n.bind?.[ps.name];
-    const path = b && ps.twoWay ? refPath(b) : null;
-    if (path && !n.on?.[ps.twoWay!]?.length) events.push(`${ps.twoWay}={${path.length > 1 ? `(v) => ${path[0]}.set({ ${path[1]}: v })` : setter(path[0])}}`);
-  }
+  const events = eventsOf(n, c);
   const ref = n.ref ? [`ref={${n.ref}}`] : [];
 
   let el: string;
@@ -295,6 +288,34 @@ function jsx(n: Node, parent: Axis, c: SceneCode, depth = 0): string {
   return el;
 }
 
+/** A node's events as JSX attributes: its actions, and the change a two-way binding writes back with. */
+function eventsOf(n: Node, c: SceneCode): string[] {
+  const spec = specOf(n.type);
+  const events: string[] = [];
+  for (const [ev, list] of Object.entries(n.on ?? {})) if (list.length) events.push(`${ev}={${handler(list, c)}}`);
+  for (const ps of spec.props) {
+    const b = n.bind?.[ps.name];
+    const path = b && ps.twoWay ? refPath(b) : null;
+    if (path && !n.on?.[ps.twoWay!]?.length) events.push(`${ps.twoWay}={${path.length > 1 ? `(v) => ${path[0]}.set({ ${path[1]}: v })` : setter(path[0])}}`);
+  }
+  return events;
+}
+
+/** A Popover's or Tooltip's trigger part around the nodes that open it. One Button is the part's element
+    (`render={<Button …/>}`, its label as the part's children), so the control people focus is the trigger; anything
+    else sits in a plain <button> the part renders. */
+function triggerJsx(part: string, nodes: Node[], c: SceneCode): string {
+  const only = nodes.length === 1 ? nodes[0] : null;
+  if (only?.type === 'Button' && !only.when && !only.repeat && !only.responds && !only.motion) {
+    const own = defaultLeaf(only, [], c, eventsOf(only, c));
+    const cls = classesOf(only, 'horizontal');
+    const attrs = [...own.attrs, ...(cls ? [`className="${cls}"`] : []), ...(only.ref ? [`ref={${only.ref}}`] : [])];
+    return `<${part} render={<Button${attrs.length ? ` ${attrs.join(' ')}` : ''} />}>${own.inner}</${part}>`;
+  }
+  const kids = nodes.map((x) => jsx(x, 'horizontal', c));
+  return `<${part} render={<button type="button" className="inline-flex" />}>\n${indent(kids.join('\n'), 2)}\n</${part}>`;
+}
+
 /* ── The kit's containers, hosting scenes ── */
 
 /** An embedded scene: its component, its props from bindings here, its callback props from actions here. */
@@ -333,8 +354,8 @@ function navStackJsx(n: Node, c: SceneCode, depth: number): string {
   return `<NavStack\n  ${bar.join('\n  ')}\n  root={\n${indent(content, 4)}\n  }\n/>`;
 }
 
-/** A TabView: the kit's, a tab per child; `auto` placement measures its own width (a tab bar when narrow, a side
-    rail when wide). */
+/** A TabView: the kit's, a tab per child; `auto` placement follows its own size class (a tab bar when compact, a
+    side rail from 700px). */
 function tabViewJsx(n: Node, c: SceneCode): string {
   for (const part of ['TabView', 'TabViewBar', 'TabViewList', 'TabViewTab', 'TabViewPanels', 'TabViewPanel']) c.imports.add(`@/components/ui/tab-view|${part}`);
   const tabs = itemsOf(n.props.tabs);
@@ -343,23 +364,23 @@ function tabViewJsx(n: Node, c: SceneCode): string {
   let box = '';
   if (!asked) {
     const i = ++c.seq;
-    c.imports.add('@/lib/container|useContainerWidth');
-    c.hooks.push(`// A tab bar when narrow, a side rail when wide.\nconst [tabBox${i}, tabWidth${i}] = useContainerWidth<HTMLDivElement>();`);
-    placement = `{tabWidth${i} >= 700 ? 'start' : 'bottom'}`;
+    c.imports.add('@/lib/container|useSizeClass');
+    c.hooks.push(`// A tab bar when compact, a side rail from 700px.\nconst [tabBox${i}, tabSize${i}] = useSizeClass({ breakpoints: { medium: 700 }, initial: 'compact' });`);
+    placement = `{tabSize${i} === 'compact' ? 'bottom' : 'start'}`;
     box = `tabBox${i}`;
   }
-  const bound = n.bind?.selectedKey;
-  const selection = bound ? `selectedKey={${bound}}` : `defaultSelectedKey=${JSON.stringify(String(n.props.selectedKey ?? tabs[0]?.id ?? ''))}`;
-  const change = eventAttr(n, c, 'onSelectionChange', (v) => `String(${v})`);
+  const bound = n.bind?.value;
+  const selection = bound ? `value={${bound}}` : `defaultValue=${JSON.stringify(String(n.props.value ?? tabs[0]?.id ?? ''))}`;
+  const change = eventAttr(n, c, 'onValueChange');
   const panels = tabs.map((t, i) => {
     const child = n.children?.[i];
     const content = child ? jsx(child, 'vertical', c) : `<div /* drop a scene here for ${t.label} */ />`;
-    return `<TabViewPanel id=${JSON.stringify(t.id)} shouldForceMount className="overflow-hidden">\n${indent(content, 2)}\n</TabViewPanel>`;
+    return `<TabViewPanel value=${JSON.stringify(t.id)} keepMounted className="overflow-hidden">\n${indent(content, 2)}\n</TabViewPanel>`;
   });
   const view = `<TabView placement=${placement} ${selection}${change} className="relative size-full">
   <TabViewBar>
     <TabViewList aria-label="Tabs">
-${indent(tabs.map((t) => `<TabViewTab id=${JSON.stringify(t.id)} icon=${JSON.stringify(t.icon ?? 'circle')} title=${JSON.stringify(t.label)} />`).join('\n'), 6)}
+${indent(tabs.map((t) => `<TabViewTab value=${JSON.stringify(t.id)} icon=${JSON.stringify(t.icon ?? 'circle')} title=${JSON.stringify(t.label)} />`).join('\n'), 6)}
     </TabViewList>
   </TabViewBar>
   <TabViewPanels>
@@ -423,6 +444,8 @@ function leaf(n: Node, kids: string[], c: SceneCode, events: string[]): string {
       handler: (ev, map) => eventHandler(n, c, ev, map ?? ((v) => v)),
       use: (module, name) => { c.imports.add(`${module}|${name}`); },
       children: kids,
+      slot: (name) => (n.slots?.[name] ?? []).map((x) => jsx(x, 'horizontal', c)),
+      trigger: (part, slot) => triggerJsx(part, (slot ? n.slots?.[slot] : n.children) ?? [], c),
       text: (name) => {
         const b = n.bind?.[name];
         if (b) return `{${b}}`;
@@ -463,28 +486,39 @@ function leaf(n: Node, kids: string[], c: SceneCode, events: string[]): string {
     case 'Icon': return `<Icon name=${p('name')} size=${p('size')} sw=${p('sw')}${n.props.color ? ` className="${colorClass('text', n.props.color as string)}"` : ''} />`;
     case 'ListRow': {
       const leading = (n.slots?.leading ?? []).map((x) => jsx(x, 'horizontal', c)).join('\n');
+      const control = (n.slots?.accessory ?? []).map((x) => jsx(x, 'horizontal', c)).join('\n');
       const attrs = ['title', 'subtitle', 'trailing'].map((k) => [k, p(k)] as const).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`);
-      if (n.props.accessory && n.props.accessory !== 'none') attrs.push(`accessory="${n.props.accessory}"`);
+      // The accessory: a control in its slot (a Switch, which the row names), else the chevron or the check.
+      if (control) attrs.push(`accessory={\n${indent(control, 4)}\n  }`);
+      else if (n.props.accessory && n.props.accessory !== 'none') attrs.push(`accessory="${n.props.accessory}"`);
+      for (const k of ['checked', 'destructive']) { const v = p(k); if (v && v !== '{false}') attrs.push(v === '{true}' ? k : `${k}=${v}`); }
       if (leading) attrs.push(`leading={\n${indent(leading, 4)}\n  }`);
       return `<ListRow\n${indent([...attrs, ...events].join('\n'), 2)}\n/>`;
     }
     default: {
-      const attrs: string[] = [];
-      let text = '';
-      for (const ps of spec.props) {
-        if (ps.part) continue;
-        const v = p(ps.name);
-        if (v == null || v === '{false}' || (v === JSON.stringify(ps.default) && !n.bind?.[ps.name])) continue;
-        if (ps.name === 'children') text = children(v);
-        else attrs.push(`${ps.name}=${v}`);
-      }
-      if (n.type === 'Button' && n.props.icon) { c.imports.add('@/lib/icon|Icon'); text = `<Icon name=${p('icon')} />${text ? ` ${text}` : ''}`; }
-      const all = [...attrs, ...events];
-      const inner = text || (kids.length ? `\n${indent(kids.join('\n'), 2)}\n` : '');
-      const open = `<${spec.tag}${all.length ? ` ${all.join(' ')}` : ''}`;
-      return inner ? `${open}>${inner}</${spec.tag}>` : `${open} />`;
+      const { tag, attrs, inner } = defaultLeaf(n, kids, c, events);
+      const open = `<${tag}${attrs.length ? ` ${attrs.join(' ')}` : ''}`;
+      return inner ? `${open}>${inner}</${tag}>` : `${open} />`;
     }
   }
+}
+
+/** A catalog component written as `<Tag prop=…>` with its props as they are: its tag, attributes and children. */
+function defaultLeaf(n: Node, kids: string[], c: SceneCode, events: string[]): { tag: string; attrs: string[]; inner: string } {
+  const spec = specOf(n.type);
+  if (spec.module) c.imports.add(`${spec.module}|${spec.tag}`);
+  const p = (name: string) => propSrc(n, name, spec.props.find((x) => x.name === name)?.default);
+  const attrs: string[] = [];
+  let text = '';
+  for (const ps of spec.props) {
+    if (ps.part) continue;
+    const v = p(ps.name);
+    if (v == null || v === '{false}' || (v === JSON.stringify(ps.default) && !n.bind?.[ps.name])) continue;
+    if (ps.name === 'children') text = v.startsWith('{') ? v : v.slice(1, -1);
+    else attrs.push(`${ps.name}=${v}`);
+  }
+  if (n.type === 'Button' && n.props.icon) { c.imports.add('@/lib/icon|Icon'); text = `<Icon name=${p('icon')} />${text ? ` ${text}` : ''}`; }
+  return { tag: spec.tag, attrs: [...attrs, ...events], inner: text || (kids.length ? `\n${indent(kids.join('\n'), 2)}\n` : '') };
 }
 
 /* ── Files ── */
@@ -586,7 +620,10 @@ import {
   type ComponentType, type ReactElement, type ReactNode, type RefObject,
 } from 'react';
 import { AnimatePresence, LayoutGroup, motion, type TargetAndTransition, type Transition } from 'framer-motion';
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
+import {
+  NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackLeading, NavigationStackPage,
+  NavigationStackTitle, NavigationStackTrailing,
+} from '@/components/ui/navigation-stack';
 import { SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSupplementary, useSplitView } from '@/components/ui/split-view';
 
 type Kind = 'push' | 'detail' | 'modal' | 'fade' | 'magic' | 'replace';
@@ -649,7 +686,7 @@ export function StoryboardProvider({ scenes, segues, initial }: { scenes: Scenes
 /* ── Navigation stacks ── */
 
 /** What a Screen tells the stack it's in: its title, large title, grouped background, width and bar items. */
-export type ScreenBar = Omit<Screen, 'key' | 'content'>;
+export interface ScreenBar { title?: ReactNode; largeTitle?: boolean; grouped?: boolean; maxW?: number; leading?: ReactNode; trailing?: ReactNode }
 interface Stack { push: (el: ReactElement) => void; pop: () => boolean; depth: number }
 const StackCtx = createContext<Stack | null>(null);
 const BarCtx = createContext<((bar: ScreenBar) => void) | null>(null);
@@ -669,10 +706,24 @@ export function NavStack({ root, ...rootBar }: { root: ReactElement } & ScreenBa
   }, []);
   const all = [{ key: 'root', el: root }, ...pages];
   return (
-    <NavigationStack
-      screens={all.map((p, i) => ({ ...(i === 0 ? rootBar : null), ...bars[p.key], key: p.key, content: <Page id={p.key} el={p.el} depth={i} setBar={setBar} push={push} pop={pop} /> }))}
-      onPop={pop}
-    />
+    <NavigationStack pages={all.map((p) => p.key)} onPagesChange={(keys) => setPages((p) => p.filter((x) => keys.includes(x.key)))}>
+      {all.map((p, i) => {
+        const bar: ScreenBar = { ...(i === 0 ? rootBar : null), ...bars[p.key] };
+        return (
+          <NavigationStackPage key={p.key} value={p.key} grouped={bar.grouped}>
+            <NavigationStackBar>
+              {bar.leading ? <NavigationStackLeading>{bar.leading}</NavigationStackLeading> : null}
+              <NavigationStackTitle>{bar.title}</NavigationStackTitle>
+              {bar.trailing ? <NavigationStackTrailing>{bar.trailing}</NavigationStackTrailing> : null}
+            </NavigationStackBar>
+            <NavigationStackContent maxWidth={bar.maxW}>
+              {bar.largeTitle ? <NavigationStackLargeTitle /> : null}
+              <Page id={p.key} el={p.el} depth={i} setBar={setBar} push={push} pop={pop} />
+            </NavigationStackContent>
+          </NavigationStackPage>
+        );
+      })}
+    </NavigationStack>
   );
 }
 

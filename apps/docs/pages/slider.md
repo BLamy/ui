@@ -1,6 +1,6 @@
 # Slider
 
-react-aria's `Slider` in the iOS style: a 4px track with a tint fill and a 26px white thumb. Pass a number for one thumb or an array for a range with two. Use it to choose a value on a continuum (brightness, volume, a price range); for an exact number or a few discrete choices, prefer a field or a [ToggleGroup](https://blamy.github.io/ui/#/toggle-group).
+UI SDK's `Slider` in the iOS style: a 4px track with a tint fill and a 26px white thumb. Pass a number for one thumb or an array for a range with two. Use it to choose a value on a continuum (brightness, volume, a price range); for an exact number or a few discrete choices, prefer a field or a [ToggleGroup](https://blamy.github.io/ui/#/toggle-group).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -27,14 +27,14 @@ import { Slider } from '@brett_lamy/ui'
 
 ## Label, value and range
 
-`label` adds a caption and `showValue` the formatted value opposite it; `formatOptions` is `Intl.NumberFormat` (percent, currency). `minValue`, `maxValue` (defaults 0 and 100) and `step` (default 1) set the scale. Controlled with `value` / `onChange`, or `defaultValue`. The thumbs are added for you — one per value.
+`label` adds a caption and `showValue` the formatted value opposite it; `format` takes `Intl.NumberFormat` options (percent, currency) or a function of the value. `min`, `max` (defaults 0 and 100) and `step` (default 1) set the scale. Controlled with `value` / `onValueChange(value, details)`, or `defaultValue`; `onValueCommit` fires once when a drag or key press ends. The thumbs are added for you, one per value; a range's thumbs are named "Minimum" and "Maximum" unless you pass `thumbLabels`.
 
 {% demo src="slider/controls" %}
 
 ```tsx
-<Slider label="Brightness" showValue defaultValue={0.64} minValue={0} maxValue={1} step={0.01}
-  formatOptions={{ style: 'percent' }} />
-<Slider label="Budget" showValue value={range} onChange={setRange} />   {/* range = [20, 80] */}
+<Slider label="Brightness" showValue defaultValue={0.64} min={0} max={1} step={0.01}
+  format={{ style: 'percent' }} />
+<Slider label="Budget" showValue value={range} onValueChange={setRange} thumbLabels={['Lowest', 'Highest']} />   {/* range = [20, 80] */}
 ```
 
 ## Tones and the scrubber
@@ -45,43 +45,52 @@ import { Slider } from '@brett_lamy/ui'
 
 ## Custom layout
 
-Pass children to replace the default layout and compose `SliderTrack` and `SliderThumb` yourself (for example with a react-aria `Label` and `SliderOutput`), or to give a thumb a `name` or `aria-label` in a range:
+Pass children to replace the default layout and compose the parts yourself: `SliderValue` (the formatted value), `SliderControl` (the hit area), `SliderTrack` (the rail), `SliderIndicator` (the fill) and one `SliderThumb` per value. Give each thumb of a range its own `aria-label`:
 
 ```tsx
 <Slider defaultValue={[20, 80]} aria-label="Price range">
-  <SliderTrack>
-    <SliderThumb index={0} aria-label="Minimum" />
-    <SliderThumb index={1} aria-label="Maximum" />
-  </SliderTrack>
+  <SliderValue />
+  <SliderControl>
+    <SliderTrack>
+      <SliderIndicator />
+      <SliderThumb index={0} aria-label="Lowest price" />
+      <SliderThumb index={1} aria-label="Highest price" />
+    </SliderTrack>
+  </SliderControl>
 </Slider>
 ```
 
+`createSliderController()` drives a slider from elsewhere: pass it as `controller` and call its methods.
+
 ## Accessibility
 
-Each thumb is `role="slider"` with `aria-valuenow` and `aria-valuetext` (formatted with `formatOptions`). Arrow keys move by `step`, Page Up / Down by larger steps, Home / End to the ends. A slider needs a name: `label`, `aria-label` or `aria-labelledby`. Inside a `ListRow` it is labelled by the row title. In a range, name each thumb.
+Each thumb holds a native range input (`aria-valuenow`, and `aria-valuetext` formatted with `format`), which is what takes focus. Arrow keys move by `step`, Page Up / Down by `largeStep`, Home / End to the ends. A slider needs a name: `label`, `aria-label` or `aria-labelledby`; a one-thumb slider hands it to its thumb. Inside a `ListRow` it is labelled by the row title. In a range the group takes the name and each thumb has its own (`thumbLabels`, or `aria-label` on a `SliderThumb`).
 
 ## Props
 
 ### Slider
 
-Every react-aria `Slider` prop applies (`value`, `defaultValue`, `onChange`, `onChangeEnd`, `minValue`, `maxValue`, `step`, `isDisabled`, `orientation`, `formatOptions`, `aria-*`), plus:
+Every UI SDK `Slider` prop applies (`value`, `defaultValue`, `onValueChange`, `onValueCommit`, `min`, `max`, `step`, `largeStep`, `disabled`, `orientation`, `format`, `locale`, `name`, `controller`, `aria-*`), plus:
 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `label` | — | Caption above the track. |
 | `showValue` | `false` | The formatted value on the right of the label row. |
+| `thumbLabels` | `['Minimum', 'Maximum']` | Names of a range's thumbs, in order. |
 | `tone` | `default` | `default` · `onDark` · `onLight`. |
 | `size` | `default` | `default` 26px thumb · `sm` 12px scrubber thumb. |
 | `trackColor` / `fillColor` / `thumbColor` | — | Any CSS color; set the `--bl-slider-*` variables. |
 | `children` | — | Replaces the default label, value and track. |
 
-### SliderTrack and SliderThumb
+`details.reason` on `onValueChange` says what moved it (a pointer, a key, the controller); `details.cancel()` keeps the old value.
 
-`SliderTrack` is the 28px hit area (20px for `sm`) that draws the track and the fill between thumbs and renders the thumbs as children. `SliderThumb` takes an `index` for ranges, plus `name`, `isDisabled` and `aria-label`.
+### Parts
+
+`SliderValue` shows the formatted value (a range joined with an en dash). `SliderControl` is the 28px hit area (20px for `sm`), inset by half a thumb. `SliderTrack` is the 4px rail and `SliderIndicator` the fill up to the thumb (or between a range's thumbs). `SliderThumb` takes an `index` for ranges, plus `aria-label` / `aria-labelledby` for its input.
 
 ## Styling
 
-`data-slot="slider"` (with `data-tone` and `data-size` when not default), `"slider-track"`, `"slider-range"` (the fill) and `"slider-thumb"`. A thumb gets `data-dragging` and `data-focus-visible`. A disabled slider is dimmed to 40%. `sliderVariants({ tone, size })` returns the root classes.
+UI SDK writes `data-slot` on every part (`slider`, `slider-value`, `slider-control`, `slider-track`, `slider-indicator`, `slider-thumb`) and the state attributes `data-orientation`, `data-disabled`, `data-readonly` and `data-dragging` (a thumb, while it is dragged); the root also has `data-tone` and `data-size` when not default. The focus ring is drawn on the thumb with `has-focus-visible:`. A disabled slider is dimmed to 40%. `sliderVariants({ tone, size })` returns the root classes.
 
 ## cva recipes
 

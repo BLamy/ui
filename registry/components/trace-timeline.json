@@ -1,7 +1,7 @@
 {
   "name": "trace-timeline",
   "title": "TraceTimeline",
-  "description": "A long session on one clock, drawn on a canvas at most one thing per device pixel: a strip with a ruler, diamonds, density with marks over it, thread activity fetched for the view, requests and several lanes, or the same timeline as a rail for narrow windows with stops as dashes that swell around the pointer, a scrub that slows as you pull away, and pinch and wheel zoom. A slider, with the keyboard that implies.",
+  "description": "A long session on one clock, drawn on a canvas at most one thing per device pixel: a strip with a ruler, diamonds, density with marks over it, thread activity fetched for the view, requests and several lanes, or the same timeline as a rail for narrow windows with stops as dashes that swell around the pointer, a scrub that slows as you pull away, and pinch and wheel zoom. A slider on UI SDK (its value with change and commit details, its keys, and a bindDrag scrub that Escape puts back), with the keyboard that implies; the view, the focused lane and the selected thread and request are the primitive's state too, each reported with UI SDK change details.",
   "page": "trace-timeline",
   "files": [
     "components/trace-timeline.tsx"
@@ -18,7 +18,15 @@
   "types": [
     "TraceTimelineProps",
     "TraceTimelineHandle",
-    "TraceValueInfo",
+    "TraceValueChangeDetails",
+    "TraceValueChangeReason",
+    "TraceValueCommitDetails",
+    "TraceViewChangeDetails",
+    "TraceViewChangeReason",
+    "TracePickReason",
+    "TraceFocusedLaneChangeDetails",
+    "TraceSelectedThreadChangeDetails",
+    "TraceSelectedRequestChangeDetails",
     "TraceDrawStats",
     "TraceFetchActivity"
   ]

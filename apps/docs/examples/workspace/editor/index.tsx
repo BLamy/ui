@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Icon } from '@/lib/icon';
+import { Button } from '@/components/ui/button';
 import {
   Workspace,
   WorkspaceToolbar,
-  useParentTabset,
-  type WorkspaceModelInput,
+  createWorkspaceController,
   type TabNode,
+  type WorkspaceLayoutInput,
 } from '@/components/ui/workspace';
+import { Icon } from '@/lib/icon';
 
 type View = 'about' | 'counter' | 'notes' | 'nested' | 'scratchpad';
-const model: WorkspaceModelInput<View> = {
+const layout: WorkspaceLayoutInput<View> = {
   version: 1,
   root: {
     type: 'split',
@@ -48,7 +49,7 @@ const model: WorkspaceModelInput<View> = {
     ],
   },
 };
-const nestedModel: WorkspaceModelInput<View> = {
+const nestedLayout: WorkspaceLayoutInput<View> = {
   version: 1,
   root: {
     type: 'split',
@@ -71,39 +72,13 @@ function Counter() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 p-6">
       <span className="text-4xl font-semibold tabular-nums">{count}</span>
-      <button
-        type="button"
-        className="appearance-none rounded-lg border-0 bg-primary px-4 py-2 font-sans text-sm text-primary-foreground"
-        onClick={() => setCount(count + 1)}
-      >
+      <Button size="sm" onClick={() => setCount(count + 1)}>
         Increment
-      </button>
-      <p className="max-w-60 text-center text-xs text-muted-foreground">
+      </Button>
+      <p className="max-w-60 text-center text-xs text-foreground/70">
         Drag this tab into another pane. The counter keeps its value.
       </p>
     </div>
-  );
-}
-
-function Toolbar() {
-  const tabset = useParentTabset<View>();
-  return (
-    <WorkspaceToolbar>
-      <button
-        type="button"
-        aria-label="Add scratchpad"
-        className="flex size-7 appearance-none items-center border-0 bg-transparent p-0 justify-center rounded text-muted-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
-        onClick={() =>
-          tabset?.addTab({
-            id: crypto.randomUUID(),
-            title: 'Scratchpad',
-            data: 'scratchpad',
-          })
-        }
-      >
-        <Icon name="plus" size={14} />
-      </button>
-    </WorkspaceToolbar>
   );
 }
 
@@ -114,12 +89,7 @@ function renderTabContent(tab: TabNode<View>) {
     case 'nested':
       return (
         <div className="h-full p-2">
-          <Workspace
-            aria-label="Nested workspace"
-            defaultModel={nestedModel}
-            renderTabContent={renderTabContent}
-            renderTabsetToolbar={Toolbar}
-          />
+          <Panes label="Nested workspace" defaultLayout={nestedLayout} />
         </div>
       );
     case 'notes':
@@ -147,10 +117,11 @@ function renderTabContent(tab: TabNode<View>) {
             split the pane, or in the center to join a group.
           </p>
           <p>
-            Resize with the dividers. Arrow keys focus tabs, Enter selects, and
-            Delete closes. Pane controls add a scratchpad or maximize the group.
+            Resize with the dividers. Arrow keys select tabs, Space picks one
+            up to move it, and Delete closes. Pane controls add a scratchpad
+            or maximize the group.
           </p>
-          <p className="text-muted-foreground">
+          <p className="text-foreground/70">
             Counters, notes and nested workspaces stay mounted when you move
             them.
           </p>
@@ -159,13 +130,46 @@ function renderTabContent(tab: TabNode<View>) {
   }
 }
 
-export default function WorkspaceExample() {
+/** A workspace with its own controller, so each pane's toolbar can add a tab to that pane. */
+function Panes({
+  label,
+  defaultLayout,
+}: {
+  label: string;
+  defaultLayout: WorkspaceLayoutInput<View>;
+}) {
+  const [workspace] = useState(() => createWorkspaceController<View>());
   return (
     <Workspace
-      aria-label="Editor workspace"
-      defaultModel={model}
+      aria-label={label}
+      controller={workspace}
+      defaultLayout={defaultLayout}
       renderTabContent={renderTabContent}
-      renderTabsetToolbar={Toolbar}
+      renderTabsetToolbar={(tabset) => (
+        <WorkspaceToolbar>
+          <Button
+            variant="quiet"
+            size="icon-sm"
+            aria-label="Add scratchpad"
+            onClick={() =>
+              workspace.addTab(
+                {
+                  id: crypto.randomUUID(),
+                  title: 'Scratchpad',
+                  data: 'scratchpad',
+                },
+                { tabsetId: tabset.id },
+              )
+            }
+          >
+            <Icon name="plus" size={14} />
+          </Button>
+        </WorkspaceToolbar>
+      )}
     />
   );
+}
+
+export default function WorkspaceExample() {
+  return <Panes label="Editor workspace" defaultLayout={layout} />;
 }

@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Credenza } from '@/components/ui/credenza';
+import { Credenza, CredenzaBackdrop, CredenzaClose, CredenzaContent, CredenzaHeader, CredenzaTitle, CredenzaView } from '@/components/ui/credenza';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -53,7 +53,9 @@ function Rows({ worktrees, checks, results }: { worktrees: Worktree[]; checks: M
   );
 }
 
-export function DeleteCredenza({ atlas, compact }: { atlas: AtlasState; compact: boolean }) {
+/** Rendered inside the SplitView: a tray while the split view is compact, a dialog otherwise (Credenza's `"auto"`
+    follows the split view's size class). */
+export function DeleteCredenza({ atlas }: { atlas: AtlasState }) {
   const pending = atlas.pendingDelete;
   const [list, setList] = useState<Worktree[]>([]);
   const [view, setView] = useState<'confirm' | 'deleting' | 'done'>('confirm');
@@ -103,36 +105,45 @@ export function DeleteCredenza({ atlas, compact }: { atlas: AtlasState; compact:
     : view === 'deleting' ? 'Deleting…' : one ? 'Delete Worktree?' : `Delete ${list.length} Worktrees?`;
 
   return (
-    <Credenza open={!!pending} onClose={close} isDismissable={view !== 'deleting'} compact={compact} view={view} title={title}>
-      {view === 'deleting' ? (
-        <div className="grid place-items-center gap-3 px-5 pt-4 pb-8 text-subhead text-muted-foreground">
-          <Spinner size={26} label="Deleting" />
-          Deleting {going} folder{going === 1 ? '' : 's'}…
-        </div>
-      ) : (
-        <div className="px-4 pt-1 pb-4">
-          {view === 'confirm' ? (
-            <p className="mx-1 mb-3 text-footnote leading-[1.4] text-muted-foreground">
-              {one ? 'Its folder and Git’s record of it are' : 'Their folders and Git’s records of them are'} deleted, like <code className="font-mono">git worktree remove</code>. Branches and commits stay in the repository.
-              {list.some((w) => w.clone) ? ' A clone is deleted with its whole history.' : ''}
-            </p>
-          ) : null}
-          <Rows worktrees={list} checks={checks} results={view === 'done' ? results : undefined} />
-          {view === 'confirm' && dirty.length ? (
-            <Checkbox isSelected={force} onChange={setForce} className="mx-1 mt-3 text-footnote">
-              Also delete {dirty.length === 1 && one ? 'it' : `the ${dirty.length} with unsaved work`} — that work is lost
-            </Checkbox>
-          ) : null}
-          <div className="mt-4 grid gap-2">
-            {view === 'confirm' ? <>
-              <Button size="pill" variant="destructive" isDisabled={checking || going === 0} onPress={() => void confirm()}>
-                {checking ? 'Checking…' : going === 0 ? 'Nothing to Delete' : one ? 'Delete Worktree' : `Delete ${going} Worktree${going === 1 ? '' : 's'}`}
-              </Button>
-              <Button size="pill" variant="secondary" data-autofocus onPress={close}>Cancel</Button>
-            </> : <Button size="pill" onPress={close}>Done</Button>}
-          </div>
-        </div>
-      )}
+    <Credenza open={!!pending} onOpenChange={(open) => { if (!open) close(); }} dismissible={view !== 'deleting'} view={view}>
+      <CredenzaBackdrop />
+      <CredenzaContent>
+        <CredenzaHeader>
+          <CredenzaTitle>{title}</CredenzaTitle>
+          <CredenzaClose />
+        </CredenzaHeader>
+        <CredenzaView>
+          {view === 'deleting' ? (
+            <div className="grid place-items-center gap-3 px-5 pt-4 pb-8 text-subhead text-muted-foreground">
+              <Spinner size={26} label="Deleting" />
+              Deleting {going} folder{going === 1 ? '' : 's'}…
+            </div>
+          ) : (
+            <div className="px-4 pt-1 pb-4">
+              {view === 'confirm' ? (
+                <p className="mx-1 mb-3 text-footnote leading-[1.4] text-muted-foreground">
+                  {one ? 'Its folder and Git’s record of it are' : 'Their folders and Git’s records of them are'} deleted, like <code className="font-mono">git worktree remove</code>. Branches and commits stay in the repository.
+                  {list.some((w) => w.clone) ? ' A clone is deleted with its whole history.' : ''}
+                </p>
+              ) : null}
+              <Rows worktrees={list} checks={checks} results={view === 'done' ? results : undefined} />
+              {view === 'confirm' && dirty.length ? (
+                <Checkbox checked={force} onCheckedChange={(checked) => setForce(checked === true)} className="mx-1 mt-3 text-footnote">
+                  Also delete {dirty.length === 1 && one ? 'it' : `the ${dirty.length} with unsaved work`} — that work is lost
+                </Checkbox>
+              ) : null}
+              <div className="mt-4 grid gap-2">
+                {view === 'confirm' ? <>
+                  <Button size="pill" variant="destructive" disabled={checking || going === 0} onClick={() => void confirm()}>
+                    {checking ? 'Checking…' : going === 0 ? 'Nothing to Delete' : one ? 'Delete Worktree' : `Delete ${going} Worktree${going === 1 ? '' : 's'}`}
+                  </Button>
+                  <CredenzaClose render={<Button size="pill" variant="secondary" />} autoFocus>Cancel</CredenzaClose>
+                </> : <CredenzaClose render={<Button size="pill" />}>Done</CredenzaClose>}
+              </div>
+            </div>
+          )}
+        </CredenzaView>
+      </CredenzaContent>
     </Credenza>
   );
 }

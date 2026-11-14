@@ -21,7 +21,7 @@ export default function Persistent() {
       blocked={({ takeover }) => (
         <div role="status" className="grid gap-3 rounded-panel bg-card p-4 shadow-hairline">
           <p className="text-subhead">This database is open in another tab.</p>
-          <Button variant="secondary" onPress={takeover}>Use it here instead</Button>
+          <Button variant="secondary" onClick={takeover}>Use it here instead</Button>
         </div>
       )}
     >

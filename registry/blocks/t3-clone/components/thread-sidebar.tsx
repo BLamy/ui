@@ -1,13 +1,13 @@
 import * as React from 'react';
-import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Button } from 'react-aria-components';
+import type { ChangeDetails } from '@ui-sdk/core';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger, type CollapsibleOpenChangeReason } from '@ui-sdk/react/collapsible';
+import { Input } from '@ui-sdk/react/input';
 import { Icon, type IconName } from '@/lib/icon';
-import { springs } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useOptionalWorkbenchShell } from './workbench/workbench-shell';
 import { Button as UiButton } from '@/components/ui/button';
-import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { PlainButton as Button } from '@/components/ui/plain-button';
 
 /* ══ Thread sidebar parts ══
    <ThreadSidebar>
@@ -86,17 +86,18 @@ export function ThreadSidebarToolbar({ className, style, children }: Div) {
 
 export interface ThreadSearchProps {
   value: string;
-  onChange: (value: string) => void;
+  onValueChange: (value: string) => void;
   placeholder?: string;
   className?: string;
 }
-export function ThreadSearch({ value, onChange, placeholder = 'Search', className }: ThreadSearchProps) {
+export function ThreadSearch({ value, onValueChange, placeholder = 'Search', className }: ThreadSearchProps) {
   return (
     <div data-slot="thread-search" className={cn('flex flex-1 items-center gap-1.5 rounded-lg bg-secondary px-2 py-[5px]', className)}>
       <Icon name="magnifier" size={14} sw={2} className="text-tertiary-foreground" />
-      <input
+      <Input
+        type="search"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onValueChange={(next) => onValueChange(next)}
         placeholder={placeholder}
         aria-label="Search threads"
         className="min-w-0 flex-1 border-0 bg-transparent text-[12.5px] [font-family:inherit] text-foreground outline-none"
@@ -106,7 +107,7 @@ export function ThreadSearch({ value, onChange, placeholder = 'Search', classNam
 }
 
 /** Compose button; closes the compact drawer. */
-export function ThreadNewButton({ onPress, label = 'New thread', className }: { onPress?: () => void; label?: string; className?: string }) {
+export function ThreadNewButton({ onClick, label = 'New thread', className }: { onClick?: () => void; label?: string; className?: string }) {
   const close = useCloseDrawer();
   return (
     <UiButton
@@ -115,8 +116,8 @@ export function ThreadNewButton({ onPress, label = 'New thread', className }: { 
       aria-label={label}
       title={label}
       className={className}
-      onPress={() => {
-        onPress?.();
+      onClick={() => {
+        onClick?.();
         close();
       }}
     >
@@ -128,16 +129,15 @@ export function ThreadNewButton({ onPress, label = 'New thread', className }: { 
 export interface ProjectSwitcherProps {
   /** the current project, or "All projects" */
   children?: React.ReactNode;
-  onPress?: () => void;
+  onClick?: () => void;
   className?: string;
 }
 /** The project row under the search field: current project, a chevron, and the folder-plus affordance. */
-export function ProjectSwitcher({ children = 'All projects', onPress, className }: ProjectSwitcherProps) {
+export function ProjectSwitcher({ children = 'All projects', onClick, className }: ProjectSwitcherProps) {
   return (
     <Button
-      data-slot="project-switcher"
       className={cn(rowBtn, 'mx-2 bg-transparent px-2 py-1.5 text-[12.5px] font-semibold text-muted-foreground', className)}
-      onPress={() => onPress?.()}
+      onClick={() => onClick?.()}
     >
       <Icon name="folder-closed" size={15} sw={1.8} />
       <span className="flex-1 truncate">{children}</span>
@@ -162,52 +162,48 @@ export interface ThreadGroupProps {
   collapsible?: boolean;
   defaultOpen?: boolean;
   open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: (open: boolean, details: ChangeDetails<CollapsibleOpenChangeReason>) => void;
   className?: string;
   children?: React.ReactNode;
 }
-/** A labelled run of threads ("Active", "Settled", "Today"…). Collapsible groups fold on a spring. */
-export function ThreadGroup({ label, collapsible, defaultOpen = true, open: openProp, onOpenChange, className, children }: ThreadGroupProps) {
-  const [ownOpen, setOwnOpen] = useState(defaultOpen);
-  const open = openProp ?? ownOpen;
-  const labelEl = <span className="text-caption2 font-semibold tracking-[.4px] text-tertiary-foreground">{label}</span>;
+/** A labelled run of threads ("Active", "Settled", "Today"…). A collapsible group's header is a disclosure (UI SDK
+    Collapsible) that folds the rows on a spring. */
+export function ThreadGroup({ label, collapsible, defaultOpen = true, open, onOpenChange, className, children }: ThreadGroupProps) {
+  const labelId = React.useId();
+  const labelEl = <span id={labelId} className="text-caption2 font-semibold tracking-[.4px] text-tertiary-foreground">{label}</span>;
   const line = <span className="h-px flex-1 bg-border" />;
   return (
-    <div data-slot="thread-group" role="group" className={className}>
+    <Collapsible
+      data-slot="thread-group"
+      role="group"
+      aria-labelledby={labelId}
+      open={open}
+      defaultOpen={defaultOpen}
+      onOpenChange={onOpenChange}
+      className={className}
+    >
       {collapsible ? (
-        <Button
-          aria-expanded={open}
-          className={cn(press, 'box-border flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-2 pt-2.5 pb-1')}
-          onPress={() => {
-            setOwnOpen(!open);
-            onOpenChange?.(!open);
-          }}
-        >
+        <CollapsibleTrigger className={cn(press, 'group/thread-group box-border flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-2 pt-2.5 pb-1')}>
           {labelEl}
           {line}
-          <Icon name={open ? 'chevron-up-wide' : 'chevron-down-wide'} size={12} sw={2.2} className="text-tertiary-foreground" />
-        </Button>
+          <Icon name="chevron-up-wide" size={12} sw={2.2} className="text-tertiary-foreground group-data-closed/thread-group:hidden" />
+          <Icon name="chevron-down-wide" size={12} sw={2.2} className="text-tertiary-foreground group-data-open/thread-group:hidden" />
+        </CollapsibleTrigger>
       ) : (
         <div className="flex items-center gap-2 px-2 pt-2.5 pb-1">
           {labelEl}
           {line}
         </div>
       )}
-      <AnimatePresence initial={false}>
-        {open ? (
-          <motion.div
-            key="rows"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={springs.smooth}
-            className={collapsible ? 'overflow-hidden' : undefined}
-          >
-            {children}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
+      <CollapsiblePanel
+        className={cn(
+          'h-(--collapsible-panel-height) transition-[height,opacity] duration-spring-smooth ease-spring-smooth data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0 motion-reduce:transition-none',
+          collapsible && 'overflow-hidden',
+        )}
+      >
+        {children}
+      </CollapsiblePanel>
+    </Collapsible>
   );
 }
 
@@ -223,23 +219,23 @@ export interface ThreadItemProps {
   /** a HoverCard's content about the thread, beside the sidebar while the pointer rests on the row or keyboard focus
       is on it */
   preview?: React.ReactNode;
-  onPress?: () => void;
+  onClick?: () => void;
   className?: string;
   children?: React.ReactNode;
 }
-export function ThreadItem({ active, status = 'idle', meta, icon = 'bubble-left', preview, onPress, className, children }: ThreadItemProps) {
+export function ThreadItem({ active, status = 'idle', meta, icon = 'bubble-left', preview, onClick, className, children }: ThreadItemProps) {
   const close = useCloseDrawer();
-  const row = (
-    <Button
-      data-slot="thread-item"
-      data-status={status}
-      aria-current={active ? 'page' : undefined}
-      className={cn(rowBtn, 'box-border w-full px-2 py-1.5 text-footnote text-foreground', active ? 'bg-secondary-strong' : 'bg-transparent', className)}
-      onPress={() => {
-        onPress?.();
-        close();
-      }}
-    >
+  const rowProps = {
+    'data-status': status,
+    'aria-current': active ? ('page' as const) : undefined,
+    className: cn(rowBtn, 'box-border w-full px-2 py-1.5 text-footnote text-foreground', active ? 'bg-secondary-strong' : 'bg-transparent', className),
+    onClick: () => {
+      onClick?.();
+      close();
+    },
+  };
+  const content = (
+    <>
       {status === 'running' ? (
         <span className="grid size-[15px] shrink-0 place-items-center" aria-label="Running">
           <span className="size-[7px] animate-[wbPulse_1.2s_infinite] rounded-full bg-primary motion-reduce:animate-none" />
@@ -252,24 +248,25 @@ export function ThreadItem({ active, status = 'idle', meta, icon = 'bubble-left'
       <span className={cn('min-w-0 flex-1 truncate', status === 'unread' && 'font-semibold')}>{children}</span>
       {status === 'unread' ? <span aria-label="Unread" className="size-1.5 shrink-0 rounded-full bg-primary" /> : null}
       {meta != null ? <span className="shrink-0 text-[11.5px] text-tertiary-foreground">{meta}</span> : null}
-    </Button>
+    </>
   );
-  if (!preview) return row;
+  if (!preview) return <Button {...rowProps}>{content}</Button>;
   return (
-    <HoverCardTrigger className="flex w-full">
-      {row}
-      <HoverCard placement="right top" offset={14}>{preview}</HoverCard>
-    </HoverCardTrigger>
+    <HoverCard>
+      <HoverCardTrigger render={<Button {...rowProps} />}>{content}</HoverCardTrigger>
+      <HoverCardContent side="right" align="start" sideOffset={14}>
+        {preview}
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 
 /** "Show N more" at the end of a truncated group. */
-export function ThreadShowMore({ count, onPress, className }: { count: number; onPress?: () => void; className?: string }) {
+export function ThreadShowMore({ count, onClick, className }: { count: number; onClick?: () => void; className?: string }) {
   return (
     <Button
-      data-slot="thread-show-more"
       className={cn(rowBtn, 'w-full bg-transparent px-2 py-1.5 text-[12.5px] text-tertiary-foreground', className)}
-      onPress={() => onPress?.()}
+      onClick={() => onClick?.()}
     >
       <Icon name="plus" size={13} sw={2} />
       <span>Show {count} more</span>
@@ -286,19 +283,19 @@ export function ThreadSidebarFooter({ className, style, children }: Div) {
 }
 
 /** A tinted callout in the footer ("Update available"). `onDismiss` adds the ×. */
-export function SidebarNotice({ icon = 'arrow-down-to-line', onPress, onDismiss, className, children }: { icon?: IconName | (string & {}); onPress?: () => void; onDismiss?: () => void; className?: string; children?: React.ReactNode }) {
+export function SidebarNotice({ icon = 'arrow-down-to-line', onClick, onDismiss, className, children }: { icon?: IconName | (string & {}); onClick?: () => void; onDismiss?: () => void; className?: string; children?: React.ReactNode }) {
   return (
     <div data-slot="sidebar-notice" className={cn('mb-1.5 flex items-center gap-2 rounded-[9px] bg-primary/12 px-2.5 py-[7px]', className)}>
       <Icon name={icon} size={14} sw={2} className="text-primary" />
-      {onPress ? (
-        <Button className={cn(press, 'flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-[12.5px] font-semibold text-primary')} onPress={onPress}>
+      {onClick ? (
+        <Button className={cn(press, 'flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-[12.5px] font-semibold text-primary')} onClick={() => onClick()}>
           {children}
         </Button>
       ) : (
         <span className="flex-1 text-[12.5px] font-semibold text-primary">{children}</span>
       )}
       {onDismiss !== undefined ? (
-        <Button aria-label="Dismiss" className={cn(press, 'grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-tertiary-foreground')} onPress={onDismiss}>
+        <Button aria-label="Dismiss" className={cn(press, 'grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-tertiary-foreground')} onClick={() => onDismiss()}>
           <Icon name="xmark-large" size={13} sw={2} />
         </Button>
       ) : null}
@@ -307,12 +304,11 @@ export function SidebarNotice({ icon = 'arrow-down-to-line', onPress, onDismiss,
 }
 
 /** A footer row: Settings, Help, Sign out. */
-export function SidebarFooterItem({ icon, onPress, className, children }: { icon: IconName | (string & {}); onPress?: () => void; className?: string; children?: React.ReactNode }) {
+export function SidebarFooterItem({ icon, onClick, className, children }: { icon: IconName | (string & {}); onClick?: () => void; className?: string; children?: React.ReactNode }) {
   return (
     <Button
-      data-slot="sidebar-footer-item"
       className={cn(rowBtn, 'w-full bg-transparent px-2 py-[7px] text-footnote text-muted-foreground', className)}
-      onPress={() => onPress?.()}
+      onClick={() => onClick?.()}
     >
       <Icon name={icon} size={16} sw={1.7} />
       <span>{children}</span>
@@ -326,11 +322,11 @@ export interface SidebarUserProps {
   detail?: React.ReactNode;
   /** image URL; initials otherwise */
   avatar?: string;
-  onPress?: () => void;
+  onClick?: () => void;
   className?: string;
 }
 /** The signed-in user: avatar, name, detail, and a chevron that suggests a menu. */
-export function SidebarUser({ name, detail, avatar, onPress, className }: SidebarUserProps) {
+export function SidebarUser({ name, detail, avatar, onClick, className }: SidebarUserProps) {
   const initials = name
     .split(/\s+/)
     .map((w) => w[0])
@@ -339,9 +335,8 @@ export function SidebarUser({ name, detail, avatar, onPress, className }: Sideba
     .toUpperCase();
   return (
     <Button
-      data-slot="sidebar-user"
       className={cn(rowBtn, 'w-full bg-transparent px-2 py-1.5', className)}
-      onPress={() => onPress?.()}
+      onClick={() => onClick?.()}
     >
       {avatar ? (
         <img src={avatar} alt="" className="size-7 shrink-0 rounded-full object-cover" />

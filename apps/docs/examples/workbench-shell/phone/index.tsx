@@ -4,7 +4,7 @@ import { SidebarContent, SidebarHeader, SidebarItem, SidebarSection, SidebarWork
 import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 import { Icon } from '@/lib/icon'
 import { TerminalBody, TerminalHeader } from '@/components/blocks/t3-clone/components/workbench/terminal'
-import { useWorkbenchShell, WorkbenchActions, WorkbenchDock, WorkbenchDockClose, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarClose, WorkbenchSidebarTrigger, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
+import { useWorkbenchShell, WorkbenchActions, WorkbenchContent, WorkbenchDock, WorkbenchDockClose, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarClose, WorkbenchSidebarTrigger, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
 import { WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
 const BUILD_LOG = [
@@ -52,7 +52,7 @@ function Threads() {
       label={title}
       badge={meta}
       active={title === current}
-      onPress={() => {
+      onClick={() => {
         setCurrent(title)
         shell.setSidebarOpen(false)
       }}
@@ -93,28 +93,30 @@ function PhoneWorkbench() {
               <WorkbenchDockTrigger />
             </WorkbenchActions>
           </WorkbenchHeader>
-          <Conversation>
-            <ConversationMessages threadKey="build" streaming>
-              <UserMessage key="u1">
-                Build it and tell me the bundle size.
-              </UserMessage>
-              <AssistantMessage key="a1">
-                <MessageMarkdown
-                  markdown={
-                    'Building now — the log is in the terminal sheet. ' +
-                    'Drag it down to dismiss, or up for more.'
-                  }
+          <WorkbenchContent>
+            <Conversation>
+              <ConversationMessages threadKey="build" streaming>
+                <UserMessage key="u1">
+                  Build it and tell me the bundle size.
+                </UserMessage>
+                <AssistantMessage key="a1">
+                  <MessageMarkdown
+                    markdown={
+                      'Building now — the log is in the terminal sheet. ' +
+                      'Drag it down to dismiss, or up for more.'
+                    }
+                  />
+                </AssistantMessage>
+              </ConversationMessages>
+              <ConversationComposer>
+                <WorkbenchComposer
+                  options={false}
+                  checkout={false}
+                  onSubmit={() => {}}
                 />
-              </AssistantMessage>
-            </ConversationMessages>
-            <ConversationComposer>
-              <WorkbenchComposer
-                options={false}
-                checkout={false}
-                onSubmit={() => {}}
-              />
-            </ConversationComposer>
-          </Conversation>
+              </ConversationComposer>
+            </Conversation>
+          </WorkbenchContent>
           {/* compact width: the dock is a dismissible FloatingSheet over the whole shell */}
           <WorkbenchDock>
             <TerminalHeader title="zsh — web">

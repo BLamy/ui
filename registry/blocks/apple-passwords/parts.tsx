@@ -1,11 +1,12 @@
 /* Pieces the columns share: site and Wi-Fi tiles, the grouped card and its rows, copy buttons (confirmed by the
    block's "Copied" HUD), the password that reveals by morphing, and the verification code with its countdown ring. */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, use, useEffect, useRef, useState, type ReactNode } from 'react';
 import { IconSwap } from '@/components/ui/icon-swap';
 import { NumberMorph } from '@/components/ui/number-morph';
+import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
 import { CountdownRing, useCountdown } from '@/components/ui/progress-ring';
 import { TextMorph } from '@/components/ui/text-morph';
-import { useToast } from '@/components/ui/toast';
+import { hud as pageHud, type Hud } from '@/components/ui/toast';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { codeFor } from './data';
@@ -47,16 +48,22 @@ export function WifiTile({ size = 32 }: { size?: number }) {
 }
 
 /* ── Copy ── copies, flips to a check for a moment, and shows "<label> Copied" in the block's HUD. */
+const HudContext = createContext<Hud>(pageHud);
+/** The HUD copy buttons below report to: the block's own (`createHud()`), drawn inside the block. */
+export function HudProvider({ hud, children }: { hud: Hud; children: ReactNode }) {
+  return <HudContext value={hud}>{children}</HudContext>;
+}
+
 export function CopyButton({ label, value }: { label: string; value: string }) {
-  const toast = useToast();
+  const hud = use(HudContext);
   const [done, setDone] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
   return (
-    <button type="button" aria-label={`Copy ${label}`}
+    <PlainButton aria-label={`Copy ${label}`}
       onClick={() => {
         try { void navigator.clipboard?.writeText(value).catch(() => {}); } catch { /* no clipboard */ }
-        toast.hud(`${label} Copied`, { tone: 'success' });
+        hud(`${label} Copied`, { type: 'success' });
         setDone(true);
         clearTimeout(timer.current);
         timer.current = setTimeout(() => setDone(false), 1400);
@@ -68,7 +75,7 @@ export function CopyButton({ label, value }: { label: string; value: string }) {
       <IconSwap id={done ? 'done' : 'copy'}>
         <Icon name={done ? 'check' : 'copy'} size={17} weight={done ? 'bold' : 'regular'} className={cn(done && 'text-success')} />
       </IconSwap>
-    </button>
+    </PlainButton>
   );
 }
 
@@ -100,13 +107,13 @@ export function PasswordValue({ password, revealed }: { password: string; reveal
   );
 }
 
-export function RevealButton({ revealed, onToggle }: { revealed: boolean; onToggle: () => void }) {
+/** The eye: a toggle that stays pressed while the password shows. */
+export function RevealButton({ revealed, onRevealedChange }: { revealed: boolean; onRevealedChange: (revealed: boolean) => void }) {
   return (
-    <button type="button" aria-label={revealed ? 'Hide password' : 'Show password'} aria-pressed={revealed}
-      onClick={() => onToggle()}
+    <PlainToggleButton aria-label="Show password" pressed={revealed} onPressedChange={(pressed) => onRevealedChange(pressed)}
       className="bl-btn grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90">
       <IconSwap id={revealed ? 'off' : 'on'}><Icon name={revealed ? 'eye-slash' : 'eye'} size={18} /></IconSwap>
-    </button>
+    </PlainToggleButton>
   );
 }
 

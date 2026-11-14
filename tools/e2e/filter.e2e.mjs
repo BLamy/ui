@@ -61,7 +61,7 @@ test.describe('issue tracker', () => {
     await expect(page.getByRole('dialog', { name: 'Add filter' })).toBeVisible();
     // the search box has focus: another f is typed, not a second menu
     await page.keyboard.press('f');
-    await expect(page.getByRole('searchbox', { name: 'Filter by' })).toHaveValue('f');
+    await expect(page.getByRole('combobox', { name: 'Filter by' })).toHaveValue('f');
     await page.keyboard.press('Escape'); // clears the search
     await page.keyboard.press('Escape'); // closes
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -141,7 +141,7 @@ test.describe('issue tracker', () => {
     await page.keyboard.press('Enter');
     await page.getByRole('option', { name: /High/ }).click();
     await page.keyboard.press('Escape');
-    const announcer = page.locator('[data-slot=filter-announcer]');
+    const announcer = page.locator('[data-ui-sdk-announcer]'); // UI SDK's one polite live region (announce())
     await page.getByRole('button', { name: 'Remove filter: Priority is High' }).click();
     await expect(announcer).toContainText('Filter removed: Priority is High');
     await page.getByRole('button', { name: 'Clear all' }).click();
@@ -190,7 +190,7 @@ test.describe('field kinds', () => {
     await page.getByRole('button', { name: /^Created value/ }).click();
     const amount = page.getByRole('spinbutton', { name: 'How many' });
     await amount.fill('3');
-    await page.locator('label', { hasText: 'months' }).click();
+    await page.getByRole('radio', { name: 'months' }).click();
     await expect(chip(page, 'Created in the last 3 months')).toBeVisible();
     await expect(page.getByText(/^\?filters=/)).toContainText('created:in_the_last:3m');
   });

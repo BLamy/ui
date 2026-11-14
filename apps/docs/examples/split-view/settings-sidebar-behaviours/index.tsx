@@ -88,8 +88,8 @@ export default function SettingsSidebarBehaviours({
         ) : (
           <SplitViewSettingsDemo
             sidebarBehavior={variant as 'overlay' | 'displace'}
-            sidebarVisible={open}
-            onSidebarVisibleChange={setOpen}
+            sidebarOpen={open}
+            onSidebarOpenChange={setOpen}
           />
         )}
       </Scaled>

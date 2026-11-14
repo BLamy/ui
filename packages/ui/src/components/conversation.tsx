@@ -1,11 +1,14 @@
 'use client';
 import * as React from 'react';
-import { useState } from 'react';
-import { AnimatePresence, animate, motion } from 'framer-motion';
-import { PlainButton as Button } from '@/components/ui/plain-button';
-import { cn, pressable, brandTile } from '@/lib/utils';
+import { animate } from 'framer-motion';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
+import { PlainButton as Button, type PlainButtonProps } from '@/components/ui/plain-button';
+import { cn, cx, pressable, brandTile } from '@/lib/utils';
 import { Icon, type IconName } from '@/lib/icon';
-import { prefersReducedMotion, springs } from '@/lib/motion';
+import { springs } from '@/lib/motion';
+import { usePresence } from '@/lib/presence';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
+import type { CollapsibleOptions } from '@ui-sdk/react/collapsible';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { MessageScroller, type MessageScrollerItem } from '@/components/ui/message-scroller';
 
@@ -50,22 +53,24 @@ export function Conversation({ empty = false, className, style, children }: Conv
 /** Content above the composer while the conversation is empty; leaves upward when the thread starts. */
 export function ConversationEmpty({ className, children }: Div) {
   const { empty } = React.useContext(ConversationContext);
+  const presence = usePresence<HTMLDivElement>(empty);
   return (
     <div data-slot="conversation-empty" className={cn('relative flex min-h-0 flex-col justify-end', empty ? 'flex-1' : 'flex-none')}>
-      <AnimatePresence mode="popLayout" initial={false}>
-        {empty ? (
-          <motion.div
-            key="empty"
-            className={cn('mx-auto w-full max-w-[620px]', className)}
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -24, scale: 0.97, filter: 'blur(4px)' }}
-            transition={springs.smooth}
-          >
-            {children}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {presence.mounted ? (
+        <div
+          ref={presence.ref}
+          className={cn(
+            'mx-auto w-full max-w-[620px] transition-[opacity,translate,scale,filter] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+            'data-starting-style:-translate-y-3 data-starting-style:opacity-0',
+            'data-ending-style:-translate-y-6 data-ending-style:scale-97 data-ending-style:opacity-0 data-ending-style:blur-xs',
+            // Leaving, it's out of the flow, so the composer below moves at once.
+            presence.leaving && 'absolute inset-x-0 top-0',
+            className,
+          )}
+        >
+          {children}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -103,6 +108,8 @@ export interface ConversationMessagesProps {
 /** The thread's messages in a MessageScroller: new turns anchor near the top, replies grow below. */
 export function ConversationMessages({ threadKey, streaming, peek, children }: ConversationMessagesProps) {
   const { empty } = React.useContext(ConversationContext);
+  // The thread fades in when the first message starts it; it has no exit.
+  const presence = usePresence<HTMLDivElement>(!empty);
   const items: MessageScrollerItem[] = [];
   React.Children.forEach(children, (child) => {
     if (!React.isValidElement(child)) return;
@@ -111,13 +118,11 @@ export function ConversationMessages({ threadKey, streaming, peek, children }: C
   });
   return (
     <div data-slot="conversation-messages" className={cn('relative flex min-h-0 flex-col', empty ? 'flex-none' : 'flex-1')}>
-      <AnimatePresence mode="popLayout" initial={false}>
-        {!empty ? (
-          <motion.div key="thread" className="flex min-h-0 flex-1 flex-col" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-            <MessageScroller items={items} streaming={streaming} threadKey={threadKey} peek={peek} />
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {!empty ? (
+        <div ref={presence.ref} className="flex min-h-0 flex-1 flex-col transition-opacity duration-200 data-starting-style:opacity-0 motion-reduce:transition-none">
+          <MessageScroller items={items} streaming={streaming} threadKey={threadKey} peek={peek} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -158,36 +163,35 @@ export function ConversationComposer({ className, style, children }: Div) {
 /** Suggestion chips under the empty composer. */
 export function ConversationSuggestions({ className, children }: Div) {
   const { empty } = React.useContext(ConversationContext);
+  const presence = usePresence<HTMLDivElement>(empty);
   return (
     <div data-slot="conversation-suggestions" className={cn('relative min-h-0', empty ? 'flex-1' : 'flex-none')}>
-      <AnimatePresence mode="popLayout" initial={false}>
-        {empty ? (
-          <motion.div
-            key="suggestions"
-            className={cn('mx-auto mt-3.5 flex w-full max-w-[620px] flex-wrap justify-center gap-[7px]', className)}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
-            transition={springs.snappy}
-          >
-            {children}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {presence.mounted ? (
+        <div
+          ref={presence.ref}
+          className={cn(
+            'mx-auto mt-3.5 flex w-full max-w-[620px] flex-wrap justify-center gap-[7px] transition-[opacity,translate] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
+            'data-starting-style:translate-y-2 data-starting-style:opacity-0 data-ending-style:translate-y-3 data-ending-style:opacity-0',
+            presence.leaving && 'absolute inset-x-0 top-0',
+            className,
+          )}
+        >
+          {children}
+        </div>
+      ) : null}
     </div>
   );
 }
-export function Suggestion({ onPress, className, children }: { onPress?: () => void; className?: string; children?: React.ReactNode }) {
+
+export type SuggestionProps = PlainButtonProps;
+
+/** A suggestion chip: a UI SDK Button, so it takes `onClick`, `disabled` and the rest. */
+export function Suggestion({ className, ...props }: SuggestionProps) {
   return (
     <Button
-      data-slot="suggestion"
-      className={cn(pressable, 'cursor-pointer rounded-[99px] border border-border bg-transparent px-[13px] py-1.5 text-[12.5px] text-muted-foreground hover:bg-secondary!', className)}
-      onPress={() => {
-        onPress?.();
-      }}
-    >
-      {children}
-    </Button>
+      className={cx([pressable, 'cursor-pointer rounded-[99px] border border-border bg-transparent px-[13px] py-1.5 text-[12.5px] text-muted-foreground hover:bg-secondary!'], className)}
+      {...props}
+    />
   );
 }
 
@@ -254,55 +258,41 @@ export interface WorkLogProps {
   /** the collapsed row, e.g. "Worked for 1m 4s" */
   summary: React.ReactNode;
   defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: CollapsibleOptions['onOpenChange'];
   /** ToolCall rows; with none the row is static */
   children?: React.ReactNode;
   className?: string;
 }
-/** "Worked for Ns" — expands (on a spring) into the tool calls behind the reply. */
-export function WorkLog({ summary, defaultOpen = false, children, className }: WorkLogProps) {
-  const [open, setOpen] = useState(defaultOpen);
+/** "Worked for Ns" — a UI SDK Collapsible that opens (on a spring) into the tool calls behind the reply. */
+export function WorkLog({ summary, defaultOpen = false, open, onOpenChange, children, className }: WorkLogProps) {
   const has = React.Children.count(children) > 0;
   const row = 'flex items-center gap-[5px] text-caption text-tertiary-foreground';
-  const chevron = (
-    <motion.span className="grid" animate={{ rotate: open ? 90 : 0 }} transition={springs.snappy}>
-      <Icon name="chevron-right-wide" size={11} sw={2.4} />
-    </motion.span>
-  );
-  return (
-    <div data-slot="work-log" data-open={open || undefined} className={cn('mt-0.5 mb-1.5', className)}>
-      {has ? (
-        <Button
-          aria-expanded={open}
-          className={cn(row, pressable, 'cursor-pointer border-0 bg-transparent p-0 leading-[inherit]')}
-          onPress={() => {
-            setOpen(!open);
-          }}
-        >
-          <Icon name="clock-dial" size={12.5} sw={2} />
-          {summary}
-          {chevron}
-        </Button>
-      ) : (
+  if (!has) {
+    return (
+      <div data-slot="work-log" className={cn('mt-0.5 mb-1.5', className)}>
         <div className={row}>
           <Icon name="clock-dial" size={12.5} sw={2} />
           {summary}
           <Icon name="chevron-right-wide" size={11} sw={2.4} />
         </div>
-      )}
-      <AnimatePresence initial={false}>
-        {open && has ? (
-          <motion.div
-            key="calls"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={springs.smooth}
-            className="overflow-hidden"
-          >
-            <div className="mt-1.5 mb-1 ml-[5px] grid gap-1.5 border-l border-border pl-3">{children}</div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      </div>
+    );
+  }
+  return (
+    <div data-slot="work-log" className={cn('mt-0.5 mb-1.5', className)}>
+      <Collapsible defaultOpen={defaultOpen} open={open} onOpenChange={onOpenChange}>
+        <CollapsibleTrigger className={cn(row, pressable, 'group/work-log cursor-pointer border-0 bg-transparent p-0 leading-[inherit]')}>
+          <Icon name="clock-dial" size={12.5} sw={2} />
+          {summary}
+          <span className="grid transition-[rotate] duration-spring-snappy ease-spring-snappy group-data-open/work-log:rotate-90 motion-reduce:transition-none">
+            <Icon name="chevron-right-wide" size={11} sw={2.4} />
+          </span>
+        </CollapsibleTrigger>
+        <CollapsiblePanel className="h-(--collapsible-panel-height) overflow-hidden transition-[height,opacity] duration-spring-smooth ease-spring-smooth data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0 motion-reduce:transition-none">
+          <div className="mt-1.5 mb-1 ml-[5px] grid gap-1.5 border-l border-border pl-3">{children}</div>
+        </CollapsiblePanel>
+      </Collapsible>
     </div>
   );
 }
@@ -367,9 +357,7 @@ export function SettledBanner({
       </div>
       <Button
         className={cn(pressable, 'shrink-0 cursor-pointer rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12.5px] font-semibold text-foreground hover:bg-secondary!')}
-        onPress={() => {
-          onUnsettle();
-        }}
+        onClick={() => onUnsettle()}
       >
         Un-settle
       </Button>

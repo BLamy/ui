@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewIndicator, TabViewList, TabViewTab } from '@/components/ui/tab-view';
+import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewList, TabViewPill, TabViewTab } from '@/components/ui/tab-view';
 import { Icon } from '@/lib/icon';
-import { ChatShell, ChatShellAside, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderAction, ChatShellHeaderActions, ChatShellHeaderIcon, ChatShellMain, ChatShellNav, ChatShellNavTrigger, ChatShellPanel, ChatShellSidebar, ChatShellTitle } from './components/chat-shell';
+import { ChatShell, ChatShellAside, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderActions, ChatShellHeaderToggle, ChatShellHeaderIcon, ChatShellMain, ChatShellNav, ChatShellNavTrigger, ChatShellPanel, ChatShellSidebar, ChatShellTitle } from './components/chat-shell';
 import { useChatShell } from './components/chat-shell-context';
 import { ChatUsersProvider, chatUserAvatar, type ChatUser } from './components/chat-users';
 import { Avatar } from '@/components/ui/avatar';
@@ -61,15 +61,15 @@ function ShellDemo({ width, height, defaultNavOpen }: FrameArgs) {
     <Frame width={width} height={height}>
       <ChatShell breakpoint={880} defaultNavOpen={defaultNavOpen}>
         <ChatShellNav>
-          <TabView orientation="vertical" defaultSelectedKey="blui" className="contents">
+          <TabView orientation="vertical" defaultValue="blui" className="contents">
             <TabViewBar variant="workspace">
               <TabViewList aria-label="Workspaces">
-                <TabViewTab id="blui" textValue="BL UI HQ">
-                  <TabViewIndicator variant="pill" />
+                <TabViewTab value="blui" aria-label="BL UI HQ">
+                  <TabViewPill />
                   <WorkspaceTile>T</WorkspaceTile>
                 </TabViewTab>
-                <TabViewTab id="creamery" textValue="Creamery">
-                  <TabViewIndicator variant="pill" />
+                <TabViewTab value="creamery" aria-label="Creamery">
+                  <TabViewPill />
                   <WorkspaceTile color="#BF5AF2">C</WorkspaceTile>
                 </TabViewTab>
               </TabViewList>
@@ -171,10 +171,10 @@ export const DirectMessages: Story = {
           <ChatShellNav>
             <ChatShellSidebar>
               <ServerHeader>Direct messages</ServerHeader>
-              <ChannelList selectedKey={cur} onSelectionChange={setCur}>
+              <ChannelList value={cur} onValueChange={setCur}>
                 <ChannelGroup label="Recent">
                   {(['miles', 'noor', 'theo', 'stitch'] as const).map((id) => (
-                    <ChannelItem key={id} id={id} icon={<Avatar {...chatUserAvatar(USERS[id], 18)} />} unread={id === 'noor'}>
+                    <ChannelItem key={id} value={id} icon={<Avatar {...chatUserAvatar(USERS[id], 18)} />} unread={id === 'noor'}>
                       {USERS[id].name}
                     </ChannelItem>
                   ))}
@@ -200,9 +200,9 @@ export const ThreadPanel: Story = {
         <ChatShell>
           <Conversation name="design">
             <ChatShellHeaderActions>
-              <ChatShellHeaderAction aria-label="Thread" isActive={open} onPress={() => setOpen(!open)}>
+              <ChatShellHeaderToggle aria-label="Thread" pressed={open} onPressedChange={setOpen}>
                 <Icon name="text-bubble" size={16} sw={1.9} />
-              </ChatShellHeaderAction>
+              </ChatShellHeaderToggle>
             </ChatShellHeaderActions>
           </Conversation>
           <ChatShellPanel open={open} onOpenChange={setOpen}>

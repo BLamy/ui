@@ -233,7 +233,9 @@ const componentItems = [...graph.items.values()].map((it) => {
 
 /* ── blocks ── */
 const BLOCKS_DIR = 'registry/blocks';
-const isOwnFile = (from, spec) => spec.startsWith('.') && !posix.relative('/', posix.join('/', posix.dirname(from), spec)).startsWith('..');
+// A relative import that stays inside the block's own folder. Resolved under a stand-in folder, because joining from
+// the root would clamp `../other-block/file` back inside and let it through.
+const isOwnFile = (from, spec) => spec.startsWith('.') && !posix.relative('/block', posix.join('/block', posix.dirname(from), spec)).startsWith('..');
 
 const blockItems = readdirSync(join(ROOT, BLOCKS_DIR), { withFileTypes: true })
   .filter((d) => d.isDirectory() && existsSync(join(ROOT, BLOCKS_DIR, d.name, 'meta.json')))

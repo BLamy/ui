@@ -97,7 +97,7 @@ function Mail() {
               }
               leadingActions={leading}
               trailingActions={trailing}
-              onPress={() => setLast(`Opened “${m.subject}”.`)}
+              onClick={() => setLast(`Opened “${m.subject}”.`)}
               divider={i < mail.length - 1}
             />
           )
@@ -107,7 +107,7 @@ function Mail() {
         <Button
           variant="link"
           style={{ display: 'block', margin: '0 auto 16px' }}
-          onPress={() => setMail(initialMail)}
+          onClick={() => setMail(initialMail)}
         >
           Restore mail
         </Button>

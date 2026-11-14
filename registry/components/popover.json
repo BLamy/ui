@@ -1,14 +1,21 @@
 {
   "name": "popover",
   "title": "Popover",
-  "description": "A floating panel anchored to a trigger: Popover is the styled surface, PopoverContent a padded dialog for arbitrary content, PopoverTrigger opens it.",
+  "description": "A floating panel anchored to its trigger, on UI SDK's Popover: a padded panel or a bare surface that flips to stay on screen, with a title, a description and an optional arrow; it can open on hover, serve many triggers through a controller, and become a bottom sheet in a compact container.",
   "page": "popover",
   "exports": [
     "Popover",
     "PopoverTrigger",
-    "PopoverContent"
+    "PopoverContent",
+    "PopoverArrow",
+    "PopoverTitle",
+    "PopoverDescription",
+    "PopoverClose",
+    "popoverContentVariants",
+    "createPopoverController"
   ],
   "imports": [
+    "Popover",
     "PopoverTrigger",
     "PopoverContent"
   ]

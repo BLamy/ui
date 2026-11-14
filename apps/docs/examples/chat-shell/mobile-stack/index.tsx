@@ -20,7 +20,7 @@ const rooms = [
 const miles = { f: 'Miles', l: 'Okafor' }
 
 function Rooms() {
-  const { selection, select, collapsed } = useSplitView()
+  const { value, select, collapsed } = useSplitView()
   return (
     <ChatShellSidebar className="w-full border-r-0">
       <SidebarHeader>
@@ -36,9 +36,9 @@ function Rooms() {
               icon={<Icon name="number" size={13} sw={2} />}
               label={r.name}
               // Collapsed, the rows are navigation: nothing stays selected.
-              active={!collapsed && selection.sidebar === r.id}
+              active={!collapsed && value.sidebar === r.id}
               badge={r.unread ? 'new' : undefined}
-              onPress={() => select('sidebar', r.id)}
+              onClick={() => select('sidebar', r.id)}
             />
           ))}
         </SidebarSection>
@@ -48,12 +48,12 @@ function Rooms() {
 }
 
 function Room() {
-  const { selection, collapsed, back } = useSplitView()
-  const room = rooms.find((r) => r.id === selection.sidebar) ?? rooms[0]
+  const { value, collapsed, back } = useSplitView()
+  const room = rooms.find((r) => r.id === value.sidebar) ?? rooms[0]
   return (
     <ChatShellMain>
       <ChatShellHeader>
-        {collapsed && <ChatShellBack onPress={back}>Channels</ChatShellBack>}
+        {collapsed && <ChatShellBack onClick={() => back()}>Channels</ChatShellBack>}
         <ChatShellHeaderIcon />
         <ChatShellTitle>{room.name}</ChatShellTitle>
       </ChatShellHeader>
@@ -132,7 +132,8 @@ export default function MobileStack({
         {/* remount on switch so each width starts from its default column */}
         <ChatShell key={variant}>
           <SplitView
-            defaultSelection={{ sidebar: 'design' }}
+            aria-label="Channels"
+            defaultValue={{ sidebar: 'design' }}
             defaultCompactColumn="sidebar"
             className="bg-background"
           >

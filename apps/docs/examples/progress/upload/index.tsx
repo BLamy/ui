@@ -49,15 +49,14 @@ export default function Upload() {
         <Progress
           label={label}
           showValue={phase !== 'queued'}
-          isIndeterminate={phase === 'queued'}
-          value={value}
+          value={phase === 'queued' ? null : value}
           tone={phase === 'done' ? 'success' : 'default'}
         />
       )}
       <Button
         variant="secondary"
-        isDisabled={phase === 'queued' || phase === 'uploading'}
-        onPress={start}
+        disabled={phase === 'queued' || phase === 'uploading'}
+        onClick={start}
         className="justify-self-start"
       >
         {phase === 'done' ? 'Upload again' : 'Start upload'}

@@ -1,10 +1,16 @@
 'use client';
 import {
-  useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState,
-  type CSSProperties, type FocusEvent, type HTMLAttributes, type KeyboardEvent, type PointerEvent, type ReactNode, type Ref,
+  useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore,
+  type CSSProperties, type FocusEvent, type HTMLAttributes, type PointerEvent as ReactPointerEvent, type ReactNode, type Ref,
 } from 'react';
 import { cva } from 'class-variance-authority';
-import { useControllableState } from '@/lib/controllable-state';
+import { usePart, usePrimitive } from '@ui-sdk/react/primitive';
+import { useAppearance } from '@/lib/theme';
+import {
+  traceTimeline,
+  type TraceFocusedLaneChangeDetails, type TraceSeek, type TraceSelectedRequestChangeDetails, type TraceSelectedThreadChangeDetails, type TraceTimelineGestures,
+  type TraceTimelineOptions, type TraceValueChangeDetails, type TraceValueCommitDetails, type TraceViewChangeDetails, type TraceViewChangeReason,
+} from '@/lib/trace-timeline-primitive';
 import { cn } from '@/lib/utils';
 import {
   TRACE_GUTTER, TRACE_MIN_SPAN, TRACE_RULER, TRACE_SCRUB_SPEEDS, TRACE_SNAP_REACH, TRACE_WAVE_PEAK, TRACE_WAVE_REST,
@@ -29,8 +35,9 @@ import {
 
    Marks go on a canvas, at most one thing per device pixel per row, found by binary search over sorted arrays, so an hour
    with hundreds of thousands of marks costs what the pixels cost. Colours are the theme's tokens, read from its CSS
-   variables and read again when the theme changes. Press or drag to seek; on a rail, pull away from it to slow the scrub.
-   Wheel and pinch zoom around the pointer. The root is a `slider`, with the keyboard that implies. ══ */
+   variables and read again when the theme changes. Press or drag to seek; on a rail, pull away from it to slow the scrub,
+   and press Escape to put the playhead back. Wheel and pinch zoom around the pointer. The root is a `slider` (the
+   trace-timeline primitive: its value, keys and the scrub, on UI SDK's `bindDrag`), with the keyboard that implies. ══ */
 
 export const traceTimelineVariants = cva('font-sans touch-none select-none', {
   variants: {
@@ -47,12 +54,10 @@ export const traceTimelineVariants = cva('font-sans touch-none select-none', {
   defaultVariants: { orientation: 'horizontal', side: 'right' },
 });
 
-export interface TraceValueInfo<K extends TraceKey = TraceKey> {
-  /** `start` on the press, `move` at most once a frame, `end` on release. A key press is one `end`. */
-  phase: 'start' | 'move' | 'end';
-  /** The stop the value snapped to, if any. */
-  stop: TraceStop<K> | null;
-}
+export type {
+  TraceFocusedLaneChangeDetails, TracePickReason, TraceSelectedRequestChangeDetails, TraceSelectedThreadChangeDetails, TraceValueChangeDetails,
+  TraceValueChangeReason, TraceValueCommitDetails, TraceViewChangeDetails, TraceViewChangeReason,
+} from '@/lib/trace-timeline-primitive';
 
 /** What a redraw took: `data` is the rows, when the view or the data changed; `overlay` is the playhead and hover line. */
 export interface TraceDrawStats {
@@ -64,7 +69,7 @@ export interface TraceDrawStats {
 export interface TraceTimelineHandle {
   /** Shows the whole range. */
   fit(): void;
-  /** Shows a stretch of time (reports it through `onViewChange`). */
+  /** Shows a stretch of time (reports it through `onViewChange`, as `imperative`). */
   setView(view: TraceRange): void;
   /** The time at each CSS pixel of the plot: the times a drag can land on, worth reading ahead. */
   pixelTimes(): number[];
@@ -88,11 +93,17 @@ export interface TraceTimelineProps<K extends TraceKey = TraceKey> extends Omit<
   /** The playhead. */
   value?: number;
   defaultValue?: number;
-  onValueChange?: (time: number, info: TraceValueInfo<K>) => void;
+  /** As the playhead moves: `details.reason` is `track-press` on a press, `drag` at most once a frame while dragging,
+   *  `step-key` for a key, `escape-key` when Escape puts a scrub back; `details.stop` is the stop it snapped to. */
+  onValueChange?: (time: number, details: TraceValueChangeDetails<K>) => void;
+  /** Once a press, a drag or a key is done, with where the playhead ended. */
+  onValueCommit?: (time: number, details: TraceValueCommitDetails<K>) => void;
   /** The stretch of time on show. Hold it to keep the zoom through a remount. */
   view?: TraceRange;
   defaultView?: TraceRange;
-  onViewChange?: (view: TraceRange) => void;
+  /** As the view moves: `details.reason` is `wheel`, `pinch`, `zoom-key`, `double-press`, `drag` (a scrub past the edge),
+   *  `playhead` (the playhead left it), `range-change` or `imperative`. `details.cancel()` keeps the view. */
+  onViewChange?: (view: TraceRange, details: TraceViewChangeDetails) => void;
   /** `horizontal` is the strip, `vertical` the rail. */
   orientation?: 'horizontal' | 'vertical';
   /** Rail: the edge it sits on. Its stops and card are on the inner side. */
@@ -105,14 +116,18 @@ export interface TraceTimelineProps<K extends TraceKey = TraceKey> extends Omit<
   /** Rail: publish how far list rows run under it as `--bl-index-bar-inset` on its parent, as IndexBar does, so ListRows
    *  beside it keep their trailing accessories clear of it (right side only). Default true. */
   insetContent?: boolean;
-  /** The lane in focus (a single lane always is). */
+  /** The lane in focus (a single lane always is). A press on a lane's row focuses it (`item-press`). */
   focusedLane?: string | null;
-  onFocusLane?: (laneKey: string) => void;
-  /** The selected thread, in the focused lane. */
+  defaultFocusedLane?: string | null;
+  onFocusedLaneChange?: (lane: string, details: TraceFocusedLaneChangeDetails) => void;
+  /** The selected thread, in the focused lane. A press on a thread's row selects it; `details.lane` is its lane. */
   selectedThread?: TraceKey | null;
-  onSelectThread?: (threadId: TraceKey, laneKey: string) => void;
+  defaultSelectedThread?: TraceKey | null;
+  onSelectedThreadChange?: (thread: TraceKey | null, details: TraceSelectedThreadChangeDetails) => void;
+  /** The selected request. A press on one selects it. */
   selectedRequest?: TraceKey | null;
-  onSelectRequest?: (requestId: TraceKey) => void;
+  defaultSelectedRequest?: TraceKey | null;
+  onSelectedRequestChange?: (request: TraceKey | null, details: TraceSelectedRequestChangeDetails) => void;
   /** Thread activity for the current view: one call per lane with bucket edges in that lane's own time, debounced as the
    *  view moves, with stale answers dropped and `signal` aborted. Answer with a count per bucket per thread. */
   fetchActivity?: TraceFetchActivity;
@@ -194,10 +209,12 @@ function toColors(t: Record<TokenName, string>): TraceColors {
   };
 }
 
-/** The theme's colours, for a canvas: read now, and again when an ancestor's class or style changes or the system's
- *  light or dark does. */
+/** The theme's colours, for a canvas: read now, again when the kit's appearance changes (`useAppearance`: an
+ *  AppearanceProvider, or the `dark` class on <html>), and again when an ancestor's class or style changes, which is how
+ *  a ThemeScope's own `appearance`, palette or tint reaches what's under it. */
 function useThemeColors(root: React.RefObject<HTMLElement | null>, holder: React.RefObject<HTMLElement | null>) {
   const [theme, setTheme] = useState<{ colors: TraceColors; font: string; signature: string } | null>(null);
+  const appearance = useAppearance();
   useLayoutEffect(() => {
     const el = root.current;
     const tokens = holder.current;
@@ -218,8 +235,6 @@ function useThemeColors(root: React.RefObject<HTMLElement | null>, holder: React
       mo = new MutationObserver(soon);
       for (let up = el.parentElement; up; up = up.parentElement) mo.observe(up, { attributes: true, attributeFilter: ['class', 'style', 'data-theme', 'data-theme-scope'] });
     }
-    const scheme = typeof matchMedia === 'undefined' ? null : matchMedia('(prefers-color-scheme: dark)');
-    scheme?.addEventListener?.('change', soon);
     // Labels drawn before a web font landed need drawing again once it has.
     const fonts = typeof document === 'undefined' ? undefined : document.fonts;
     const fontsLoaded = () => setTheme((prev) => (prev ? { ...prev } : prev));
@@ -227,10 +242,9 @@ function useThemeColors(root: React.RefObject<HTMLElement | null>, holder: React
     return () => {
       cancelAnimationFrame(raf);
       mo?.disconnect();
-      scheme?.removeEventListener?.('change', soon);
       fonts?.removeEventListener?.('loadingdone', fontsLoaded);
     };
-  }, [root, holder]);
+  }, [root, holder, appearance]);
   return theme;
 }
 
@@ -249,12 +263,11 @@ interface Spot<K extends TraceKey> {
   lane?: string;
 }
 
+/** What the pointers are doing, as far as drawing goes; the primitive follows them. */
 type Gesture =
   | { kind: 'idle' }
-  /** A pinch has ended with a finger still down: nothing more until it lifts. */
-  | { kind: 'spent' }
   | { kind: 'pinch'; win: TraceWindow; separation: number; mid: number }
-  | { kind: 'scrub'; id: number; pointerType: string; s: TraceScrub; along: number; pull: number; before: number; last: number; snap: boolean; travel: number; pressAlong: number; pressAcross: number };
+  | { kind: 'scrub'; s: TraceScrub; along: number; pull: number; last: number; snap: boolean; travel: number; pressAlong: number; pressAcross: number };
 
 /** How long a key's preview card stays, in ms. */
 const PEEK_MS = 1500;
@@ -268,12 +281,13 @@ const ACTIVITY_PX = 2;
 
 export function TraceTimeline<K extends TraceKey = TraceKey>({
   range, axis: axisProp, lanes: lanesProp = NO_LANES, requests = NO_REQUESTS, stops = NO_STOPS as Array<TraceStop<K>>,
-  value, defaultValue, onValueChange, view: viewProp, defaultView, onViewChange,
+  value, defaultValue, onValueChange, onValueCommit, view: viewProp, defaultView, onViewChange,
   orientation = 'horizontal', side = 'right', top, bottom, railWidth = 44, insetContent = true,
-  focusedLane, onFocusLane, selectedThread = null, onSelectThread, selectedRequest = null, onSelectRequest,
+  focusedLane, defaultFocusedLane, onFocusedLaneChange, selectedThread, defaultSelectedThread, onSelectedThreadChange,
+  selectedRequest, defaultSelectedRequest, onSelectedRequestChange,
   fetchActivity, activityDebounce = 60, step, minSpan = TRACE_MIN_SPAN, formatTime = formatTraceTime,
   renderPreview, previewLines = 2, previewWidth = 260, gutter = TRACE_GUTTER, requestsLabel = 'requests', stopsLabel = 'stops',
-  label = 'Timeline', onDraw, ref, className, style, onKeyDown, onBlur, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onPointerLeave, onLostPointerCapture, ...rest
+  label = 'Timeline', onDraw, ref, className, style, onBlur, onPointerMove, onPointerLeave, ...rest
 }: TraceTimelineProps<K>) {
   const vertical = orientation === 'vertical';
   const rootRef = useRef<HTMLDivElement>(null);
@@ -291,12 +305,40 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
   if (!sameLanes(lanesRef.current, lanesProp)) lanesRef.current = lanesProp;
   const lanes = lanesRef.current;
 
-  const [viewState, setViewState] = useControllableState<TraceRange>(viewProp, defaultView ?? rangeMemo);
+  // The playhead, its keys and the scrub are the primitive's; what a press or a key means here comes from `gestures`.
+  const gestureRef = useRef<TraceTimelineGestures<K> | null>(null);
+  const gestures = useMemo<TraceTimelineGestures<K>>(() => {
+    // The latest render's answers: they read its axis, view and rows.
+    const now = () => gestureRef.current as TraceTimelineGestures<K>;
+    return {
+      press: (e) => now().press(e),
+      scrub: (e) => now().scrub(e),
+      release: (e, canceled) => now().release(e, canceled),
+      pinch: (points, event) => now().pinch(points, event),
+      key: (e, at) => now().key(e, at),
+      wheel: (e) => now().wheel(e),
+    };
+  }, []);
+  const handle = usePrimitive(traceTimeline, {
+    value, defaultValue, onValueChange: onValueChange as TraceTimelineOptions['onValueChange'], onValueCommit: onValueCommit as TraceTimelineOptions['onValueCommit'],
+    view: viewProp, defaultView, onViewChange, minSpan,
+    focusedLane, defaultFocusedLane, onFocusedLaneChange,
+    selectedThread, defaultSelectedThread, onSelectedThreadChange,
+    selectedRequest, defaultSelectedRequest, onSelectedRequestChange,
+    min: range.start, max: range.end, orientation, gestures: gestures as TraceTimelineGestures,
+  });
+  const { instance } = handle;
+  const subscribe = useCallback((listener: () => void) => instance.subscribe(listener), [instance]);
+  const readState = useCallback(() => instance.get(), [instance]);
+  const state = useSyncExternalStore(subscribe, readState, readState);
+  const time = Math.max(range.start, Math.min(range.end, value ?? state.value));
+  // What a host holds wins over the state until the primitive syncs to it.
+  const viewState = viewProp ?? state.view;
   // By its numbers, so a host that passes a new object with the same ones doesn't cost a redraw.
   const view = useMemo(() => clampView({ start: viewState.start, end: viewState.end }, rangeMemo, minSpan), [viewState.start, viewState.end, rangeMemo, minSpan]);
   const win = useMemo(() => viewWindow(axis, view), [axis, view]);
-  const [valueState, setValueState] = useControllableState<number>(value, defaultValue ?? range.start);
-  const time = Math.max(range.start, Math.min(range.end, valueState));
+  const selectedThreadKey = (selectedThread === undefined ? state.selectedThread : selectedThread) ?? null;
+  const selectedRequestKey = (selectedRequest === undefined ? state.selectedRequest : selectedRequest) ?? null;
 
   const [size, setSize] = useState({ width: 0, height: 0, hostWidth: 0, hostHeight: 0, top: 0 });
   const start = vertical ? 0 : gutter;
@@ -310,7 +352,7 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
   );
   const marks = useMemo(() => selectStops(stops, { axis, win, length }), [stops, axis, win, length]);
   const sortedStops = useMemo(() => stopsByTime(stops), [stops]);
-  const focusedKey = focusedLane ?? (lanes.length === 1 ? lanes[0].key : null);
+  const focusedKey = (focusedLane === undefined ? state.focusedLane : focusedLane) ?? (lanes.length === 1 ? lanes[0].key : null);
 
   const theme = useThemeColors(rootRef, tokenHolder);
   // Colours a host passes, resolved once per theme.
@@ -359,23 +401,14 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
   const winNow = useRef(win);
   winNow.current = win;
 
-  const emitValue = (t: number, phase: TraceValueInfo<K>['phase'], stop: TraceStop<K> | null) => {
-    setValueState(t);
-    onValueChange?.(t, { phase, stop });
-  };
-  const applyView = (next: TraceRange) => {
-    const clamped = clampView(next, rangeMemo, minSpan);
-    if (clamped.start === view.start && clamped.end === view.end) return;
-    setViewState(clamped);
-    onViewChange?.(clamped);
-  };
-  const applyWindow = (next: TraceWindow) => {
+  type ViewGiven = { reason: TraceViewChangeReason; event?: Event };
+  /** Asks the primitive for a window of the axis; only a change that goes through moves what the next event starts from. */
+  const applyWindow = (next: TraceWindow, details: ViewGiven) => {
     const nextView = windowView(axis, next);
     if (nextView.end - nextView.start < minSpan) return;
-    winNow.current = next;
-    applyView(nextView);
+    if (handle.api.setView(nextView, details)) winNow.current = next;
   };
-  const fit = () => applyView(rangeMemo);
+  const fit = (details: ViewGiven) => handle.api.fit(details);
 
   /* ── Size ── */
   useLayoutEffect(() => {
@@ -505,7 +538,7 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     pixelEdges(axis, win, f.columns, b.edges);
     drawTraceData(f, {
       rows, lanes, ticks: vertical ? [] : chooseTicks(axis, win, view, length), format: (t, res) => formatRef.current(t, res), activity: activity.current,
-      focusedLane: focusedKey, selectedThread, selectedRequest, requests: requestGroups, requestsLabel, stopsLabel,
+      focusedLane: focusedKey, selectedThread: selectedThreadKey, selectedRequest: selectedRequestKey, requests: requestGroups, requestsLabel, stopsLabel,
       stopMarks: marks as ReadonlyArray<TraceStopMark>, color: colorOf,
     }, b);
     onDraw?.({ layer: 'data', ms: performance.now() - began, columns: f.columns });
@@ -529,7 +562,7 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
   // These run in the same commit as the DOM dashes and pill, so the canvas and they can't disagree on screen.
   useLayoutEffect(() => {
     painters.current.paintData();
-  }, [theme, size, vertical, side, start, length, axis, win, rows, lanes, requestGroups, marks, focusedKey, selectedThread, selectedRequest, activityVersion, requestsLabel, stopsLabel]);
+  }, [theme, size, vertical, side, start, length, axis, win, rows, lanes, requestGroups, marks, focusedKey, selectedThreadKey, selectedRequestKey, activityVersion, requestsLabel, stopsLabel]);
   useLayoutEffect(() => {
     painters.current.paintOverlay();
   }, [theme, size, vertical, side, start, length, axis, win, rows, time, hover]);
@@ -545,7 +578,7 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     if (time < view.start || time > view.end) {
       const f = axis.fraction(time);
       const half = (win.to - win.from) / 2;
-      applyWindow(panWindow({ from: f - half, to: f + half }, 0));
+      applyWindow(panWindow({ from: f - half, to: f + half }, 0), { reason: 'playhead' });
     }
     // Only the playhead moving does this; applyWindow reads the rest from this render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -557,16 +590,14 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     if (seenRange.current === rangeMemo) return;
     seenRange.current = rangeMemo;
     activity.current.clear();
-    if (viewProp === undefined) {
-      setViewState(rangeMemo);
-      onViewChange?.(rangeMemo);
-    }
+    if (viewProp === undefined) handle.api.setView(rangeMemo, { reason: 'range-change' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangeMemo]);
 
-  /* ── Gestures ── */
-  const pointers = useRef(new Map<number, { x: number; y: number }>());
-  const dirty = useRef({ scrub: false, pinch: false, hover: null as { along: number; across: number } | null });
+  /* ── Gestures: what a press, a move, a pinch, the wheel and a key mean here (the primitive follows the pointer) ── */
+  const dirty = useRef({ pinch: false, hover: null as { along: number; across: number } | null });
+  const pinchPoints = useRef<ReadonlyArray<{ x: number; y: number }>>([]);
+  const pinchEvent = useRef<PointerEvent | undefined>(undefined);
   const frameRequest = useRef(0);
   const lastTap = useRef<{ at: number; along: number; across: number } | null>(null);
 
@@ -590,31 +621,28 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     g.pull = pull;
   };
 
-  /** Puts a scrub's position on the playhead, and brings the view along when it goes past the edge. */
-  const commitScrub = (g: Extract<Gesture, { kind: 'scrub' }>, phase: TraceValueInfo<K>['phase']) => {
+  /** Where a scrub's position puts the playhead; brings the view along when it goes past the edge. */
+  const placeScrub = (g: Extract<Gesture, { kind: 'scrub' }>, event: PointerEvent): TraceSeek<K> => {
     const { fraction, mark } = scrubPosition(g.s, g.along, scrubContext(g.snap));
     const current = winNow.current;
-    if (fraction < current.from) applyWindow(panWindow(current, fraction - current.from));
-    else if (fraction > current.to) applyWindow(panWindow(current, fraction - current.to));
+    if (fraction < current.from) applyWindow(panWindow(current, fraction - current.from), { reason: 'drag', event });
+    else if (fraction > current.to) applyWindow(panWindow(current, fraction - current.to), { reason: 'drag', event });
     const t = mark ? mark.stop.time : axis.timeAt(fraction);
-    if (t !== g.last || phase !== 'move') emitValue(t, phase, mark?.stop ?? null);
     g.last = t;
     setDrag({ along: vertical ? g.along : Math.max(0, Math.min(length, alongOfFraction(fraction))), pull: g.pull, time: t, mark, tier: g.s.tier });
+    return { time: t, stop: mark?.stop ?? null };
   };
 
   const runFrame = () => {
     frameRequest.current = 0;
     const g = gesture.current;
     const d = dirty.current;
-    if (g.kind === 'scrub' && d.scrub) {
-      d.scrub = false;
-      commitScrub(g, 'move');
-    } else if (g.kind === 'pinch' && d.pinch) {
+    if (g.kind === 'pinch' && d.pinch) {
       d.pinch = false;
-      const [a, b] = [...pointers.current.values()];
+      const [a, b] = pinchPoints.current;
       if (a && b) {
         const r = rect();
-        applyWindow(pinchWindow(g.win, g.separation, g.mid, Math.hypot(a.x - b.x, a.y - b.y), alongOf(r, (a.x + b.x) / 2, (a.y + b.y) / 2), length));
+        applyWindow(pinchWindow(g.win, g.separation, g.mid, Math.hypot(a.x - b.x, a.y - b.y), alongOf(r, (a.x + b.x) / 2, (a.y + b.y) / 2), length), { reason: 'pinch', event: pinchEvent.current });
       }
     }
     if (d.hover) {
@@ -629,165 +657,176 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
   frameHandler.current = runFrame;
   useEffect(() => () => cancelAnimationFrame(frameRequest.current), []);
 
-  const endScrub = (g: Extract<Gesture, { kind: 'scrub' }>, restore: number | null) => {
-    dirty.current.scrub = false;
-    gesture.current = { kind: 'idle' };
-    if (restore !== null) emitValue(restore, 'end', null);
-    else commitScrub(g, 'end');
-    setDrag(null);
+  const KEY_SEEK = (direction: 1 | -1, shift: boolean): number => {
+    const times = shift ? 10 : 1;
+    if (step != null) return time + direction * step * times;
+    return axis.timeAt(axis.fraction(time) + direction * times * ((win.to - win.from) / length));
   };
+  const playheadAlong = ((axis.fraction(time) - win.from) / (win.to - win.from)) * length;
 
-  const handlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if ((e.pointerType === 'mouse' && e.button !== 0) || !(length > 0)) return;
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      // Not a live pointer (a synthesized event); the gesture still works while it stays over the timeline.
-    }
-    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    setPeek(null);
-    const count = pointers.current.size;
-    const r = rect();
-    if (count === 2) {
-      // A second finger makes this a pinch, so take back the first finger's jump.
-      const g = gesture.current;
-      if (g.kind === 'scrub') endScrub(g, g.before);
-      const [a, b] = [...pointers.current.values()];
-      gesture.current = { kind: 'pinch', win: winNow.current, separation: Math.hypot(a.x - b.x, a.y - b.y), mid: alongOf(r, (a.x + b.x) / 2, (a.y + b.y) / 2) };
+  gestureRef.current = {
+    press(e) {
+      if (!(length > 0)) return null;
+      setPeek(null);
+      const r = rect();
+      const along = alongOf(r, e.clientX, e.clientY);
+      const across = acrossOf(r, e.clientX, e.clientY);
+      const row = rowAt(rows, across);
+      // Picking out a lane on a rail takes a pointer finer than a finger; everywhere else, a press on a row is a pick.
+      const picked = { reason: 'item-press', event: e } as const;
+      if (row?.lane && row.lane.key !== focusedKey && !(vertical && e.pointerType === 'touch')) handle.api.focusLane(row.lane.key, picked);
+      if (row?.type === 'requests') {
+        const hit = requestAt(requests, (t) => alongOfFraction(axis.fraction(t)), along);
+        if (hit) handle.api.selectRequest(hit.id, picked);
+      }
+      if (row?.type === 'thread' && row.thread && row.lane) handle.api.selectThread(row.thread.id, { ...picked, lane: row.lane.key });
+      if (along < 0) return null; // The gutter picks rows but doesn't seek.
+      const current = winNow.current;
+      const scale = (current.to - current.from) / length;
+      const g: Extract<Gesture, { kind: 'scrub' }> = {
+        kind: 'scrub', s: startScrub(along, current.from + along * scale, scale), along, pull: 0, last: NaN,
+        snap: vertical || row?.type === 'stops', travel: 0, pressAlong: along, pressAcross: across,
+      };
+      gesture.current = g;
       setPointerAt(null);
-      return;
-    }
-    if (count > 2 || gesture.current.kind !== 'idle') return;
-    const along = alongOf(r, e.clientX, e.clientY);
-    const across = acrossOf(r, e.clientX, e.clientY);
-    const row = rowAt(rows, across);
-    // Picking out a lane on a rail takes a pointer finer than a finger; everywhere else, a press on a row is a pick.
-    if (row?.lane && row.lane.key !== focusedKey && !(vertical && e.pointerType === 'touch')) onFocusLane?.(row.lane.key);
-    if (row?.type === 'requests') {
-      const hit = requestAt(requests, (t) => alongOfFraction(axis.fraction(t)), along);
-      if (hit) onSelectRequest?.(hit.id);
-    }
-    if (row?.type === 'thread' && row.thread && row.lane && row.thread.id !== selectedThread) onSelectThread?.(row.thread.id, row.lane.key);
-    if (along < 0) return; // The gutter picks rows but doesn't seek.
-    const current = winNow.current;
-    const scale = (current.to - current.from) / length;
-    const g: Extract<Gesture, { kind: 'scrub' }> = {
-      kind: 'scrub', id: e.pointerId, pointerType: e.pointerType, s: startScrub(along, current.from + along * scale, scale), along, pull: 0, before: time, last: NaN,
-      snap: vertical || row?.type === 'stops', travel: 0, pressAlong: along, pressAcross: across,
-    };
-    gesture.current = g;
-    setPointerAt(null);
-    commitScrub(g, 'start');
-  };
-
-  const handlePointerMove = (e: PointerEvent<HTMLDivElement>) => {
-    const known = pointers.current.get(e.pointerId);
-    if (known) {
-      known.x = e.clientX;
-      known.y = e.clientY;
-    }
-    const g = gesture.current;
-    const r = rect();
-    if (g.kind === 'scrub' && g.id === e.pointerId) {
+      return placeScrub(g, e);
+    },
+    scrub(e) {
+      const g = gesture.current;
+      if (g.kind !== 'scrub') return { time, stop: null };
+      const r = rect();
       followPointer(g, r, e.clientX, e.clientY);
       g.travel = Math.max(g.travel, Math.abs(g.along - g.pressAlong) + Math.abs(acrossOf(r, e.clientX, e.clientY) - g.pressAcross));
-      dirty.current.scrub = true;
-      requestFrame();
-    } else if (g.kind === 'pinch') {
-      dirty.current.pinch = true;
-      requestFrame();
-    } else if (g.kind === 'idle' && e.pointerType !== 'touch') {
-      dirty.current.hover = { along: alongOf(r, e.clientX, e.clientY), across: acrossOf(r, e.clientX, e.clientY) };
-      requestFrame();
-    }
-  };
-
-  const release = (e: PointerEvent<HTMLDivElement>, cancelled: boolean) => {
-    if (!pointers.current.delete(e.pointerId)) return;
-    const g = gesture.current;
-    if (g.kind === 'scrub' && g.id === e.pointerId) {
-      const r = rect();
-      if (!cancelled) followPointer(g, r, e.clientX, e.clientY);
-      endScrub(g, null);
+      return placeScrub(g, e);
+    },
+    release(e, canceled) {
+      const g = gesture.current;
+      if (g.kind !== 'scrub') return;
+      gesture.current = { kind: 'idle' };
+      setDrag(null);
       // Two presses in the same place reset the zoom on a rail.
-      if (vertical && !cancelled && g.travel < DOUBLE_PX / 2) {
+      if (vertical && !canceled && g.travel < DOUBLE_PX / 2) {
         const tap = lastTap.current;
         if (tap && e.timeStamp - tap.at < DOUBLE_MS && Math.abs(tap.along - g.pressAlong) < DOUBLE_PX && Math.abs(tap.across - g.pressAcross) < DOUBLE_PX) {
           lastTap.current = null;
-          fit();
+          fit({ reason: 'double-press', event: e });
         } else {
           lastTap.current = { at: e.timeStamp, along: g.pressAlong, across: g.pressAcross };
         }
       } else {
         lastTap.current = null;
       }
-      if (e.pointerType !== 'touch' && !cancelled) {
+      if (e.pointerType !== 'touch' && !canceled && e.type === 'pointerup') {
+        const r = rect();
         const across = acrossOf(r, e.clientX, e.clientY);
         if (across >= 0 && across <= (vertical ? railWidth : size.height)) {
           dirty.current.hover = { along: alongOf(r, e.clientX, e.clientY), across };
           requestFrame();
         }
       }
-    } else if (g.kind === 'pinch' && pointers.current.size < 2) {
-      gesture.current = pointers.current.size ? { kind: 'spent' } : { kind: 'idle' };
+    },
+    pinch(points, event) {
       lastTap.current = null;
-    } else if (g.kind === 'spent' && !pointers.current.size) {
-      gesture.current = { kind: 'idle' };
-    }
+      pinchEvent.current = event;
+      if (!points) {
+        gesture.current = { kind: 'idle' };
+        return;
+      }
+      pinchPoints.current = points;
+      if (gesture.current.kind !== 'pinch') {
+        const [a, b] = points;
+        const r = rect();
+        gesture.current = { kind: 'pinch', win: winNow.current, separation: Math.hypot(a.x - b.x, a.y - b.y), mid: alongOf(r, (a.x + b.x) / 2, (a.y + b.y) / 2) };
+        setPointerAt(null);
+        setPeek(null);
+        return;
+      }
+      dirty.current.pinch = true;
+      requestFrame();
+    },
+    wheel(e) {
+      if (!(length > 0)) return;
+      const current = winNow.current;
+      const span = current.to - current.from;
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? length : 1;
+      const dy = e.deltaY * unit;
+      const dx = e.deltaX * unit;
+      const r = rect();
+      const anchor = Math.max(0, Math.min(1, alongOf(r, e.clientX, e.clientY) / length));
+      if (e.ctrlKey || e.metaKey) {
+        // A trackpad pinch: small deltas, sent as a ctrl wheel. A mouse's notches are big, so one zooms by at most ~1.6×.
+        e.preventDefault();
+        applyWindow(zoomWindow(current, anchor, Math.exp(Math.max(-50, Math.min(50, dy)) * 0.01)), { reason: 'wheel', event: e });
+      } else if (vertical) {
+        // At the whole range there's nothing to pan, so the wheel stays the page's.
+        if (span >= 1) return;
+        e.preventDefault();
+        applyWindow(panWindow(current, ((dy || dx) / length) * span), { reason: 'wheel', event: e });
+      } else if (e.shiftKey || Math.abs(dx) > Math.abs(dy)) {
+        e.preventDefault();
+        applyWindow(panWindow(current, (((e.shiftKey ? dy || dx : dx)) / length) * span), { reason: 'wheel', event: e });
+      } else {
+        e.preventDefault();
+        applyWindow(zoomWindow(current, anchor, Math.exp(dy * 0.002)), { reason: 'wheel', event: e });
+      }
+    },
+    key(e, at) {
+      if (!(length > 0)) return null;
+      const seekTo = (t: number, stop: TraceStop<K> | null): TraceSeek<K> => {
+        showPeek(stop);
+        return { time: Math.max(range.start, Math.min(range.end, t)), stop };
+      };
+      const zoomBy = (factor: number) => {
+        const inView = playheadAlong >= 0 && playheadAlong <= length;
+        applyWindow(zoomWindow(win, inView ? playheadAlong / length : 0.5, factor), { reason: 'zoom-key', event: e });
+        return true as const;
+      };
+      // Time runs down a rail, so down is later there, as on IndexBar. On a strip up and right are later, as on any slider.
+      switch (e.key) {
+        case 'ArrowRight': return seekTo(KEY_SEEK(1, e.shiftKey), null);
+        case 'ArrowLeft': return seekTo(KEY_SEEK(-1, e.shiftKey), null);
+        case 'ArrowDown': return seekTo(KEY_SEEK(vertical ? 1 : -1, e.shiftKey), null);
+        case 'ArrowUp': return seekTo(KEY_SEEK(vertical ? -1 : 1, e.shiftKey), null);
+        case 'PageUp':
+        case 'PageDown': {
+          const stop = adjacentStop(sortedStops, at, e.key === 'PageDown' ? 1 : -1, Math.max(1e-9, Math.abs(at) * 1e-12));
+          return stop ? seekTo(stop.time, stop) : true;
+        }
+        case 'Home': return seekTo(range.start, null);
+        case 'End': return seekTo(range.end, null);
+        case '+':
+        case '=': return zoomBy(1 / KEY_ZOOM);
+        case '-':
+        case '_': return zoomBy(KEY_ZOOM);
+        case '0': fit({ reason: 'zoom-key', event: e }); return true;
+        default: return null;
+      }
+    },
   };
-
-  const handlers = useRef({ wheel: (_: WheelEvent) => {} });
-  handlers.current.wheel = (e: WheelEvent) => {
-    if (!(length > 0)) return;
-    const current = winNow.current;
-    const span = current.to - current.from;
-    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? length : 1;
-    const dy = e.deltaY * unit;
-    const dx = e.deltaX * unit;
-    const r = rect();
-    const anchor = Math.max(0, Math.min(1, alongOf(r, e.clientX, e.clientY) / length));
-    if (e.ctrlKey || e.metaKey) {
-      // A trackpad pinch: small deltas, sent as a ctrl wheel. A mouse's notches are big, so one zooms by at most ~1.6×.
-      e.preventDefault();
-      applyWindow(zoomWindow(current, anchor, Math.exp(Math.max(-50, Math.min(50, dy)) * 0.01)));
-    } else if (vertical) {
-      // At the whole range there's nothing to pan, so the wheel stays the page's.
-      if (span >= 1) return;
-      e.preventDefault();
-      applyWindow(panWindow(current, ((dy || dx) / length) * span));
-    } else if (e.shiftKey || Math.abs(dx) > Math.abs(dy)) {
-      e.preventDefault();
-      applyWindow(panWindow(current, (((e.shiftKey ? dy || dx : dx)) / length) * span));
-    } else {
-      e.preventDefault();
-      applyWindow(zoomWindow(current, anchor, Math.exp(dy * 0.002)));
-    }
-  };
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return undefined;
-    const onWheelNative = (e: WheelEvent) => handlers.current.wheel(e);
-    // Non-passive, so the page behind doesn't scroll as the timeline zooms. React's onWheel is passive.
-    el.addEventListener('wheel', onWheelNative, { passive: false });
-    return () => el.removeEventListener('wheel', onWheelNative);
-  }, []);
 
   // A gesture doesn't outlive the orientation it started in.
   const seenOrientation = useRef(orientation);
   useEffect(() => {
     if (seenOrientation.current === orientation) return;
     seenOrientation.current = orientation;
-    const g = gesture.current;
-    if (g.kind === 'scrub') endScrub(g, null);
-    else gesture.current = { kind: 'idle' };
-    pointers.current.clear();
+    handle.api.internal.reset();
+    gesture.current = { kind: 'idle' };
     setPointerAt(null);
     setDrag(null);
     setPeek(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orientation]);
 
-  /* ── Keyboard ── */
+  /** Hover, for the card, the swell and the hover line: only a pointer that hovers, and only while nothing is pressed. */
+  const handleHover = (e: ReactPointerEvent<HTMLDivElement>) => {
+    onPointerMove?.(e);
+    if (gesture.current.kind !== 'idle' || e.pointerType === 'touch') return;
+    const r = rect();
+    dirty.current.hover = { along: alongOf(r, e.clientX, e.clientY), across: acrossOf(r, e.clientX, e.clientY) };
+    requestFrame();
+  };
+
+  /* ── The card a key shows on a rail ── */
   const peekTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(peekTimer.current), []);
   const showPeek = (stop: TraceStop<K> | null) => {
@@ -796,60 +835,14 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     clearTimeout(peekTimer.current);
     peekTimer.current = setTimeout(() => setPeek(null), PEEK_MS);
   };
-  const seekByKey = (t: number, stop: TraceStop<K> | null) => {
-    emitValue(Math.max(range.start, Math.min(range.end, t)), 'end', stop);
-    showPeek(stop);
-  };
-  const playheadAlong = ((axis.fraction(time) - win.from) / (win.to - win.from)) * length;
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    onKeyDown?.(e);
-    // Cmd and the like with these keys belong to the browser (zoom, history) or the host.
-    if (e.defaultPrevented || !(length > 0) || e.metaKey || e.ctrlKey || e.altKey) return;
-    const nudge = (direction: 1 | -1) => {
-      const times = e.shiftKey ? 10 : 1;
-      if (step != null) return seekByKey(time + direction * step * times, null);
-      const f = axis.fraction(time) + direction * times * ((win.to - win.from) / length);
-      seekByKey(axis.timeAt(f), null);
-    };
-    const zoomBy = (factor: number) => {
-      const inView = playheadAlong >= 0 && playheadAlong <= length;
-      applyWindow(zoomWindow(win, inView ? playheadAlong / length : 0.5, factor));
-    };
-    // Time runs down a rail, so down is later there, as on IndexBar. On a strip up and right are later, as on any slider.
-    switch (e.key) {
-      case 'ArrowRight': nudge(1); break;
-      case 'ArrowLeft': nudge(-1); break;
-      case 'ArrowDown': nudge(vertical ? 1 : -1); break;
-      case 'ArrowUp': nudge(vertical ? -1 : 1); break;
-      case 'PageUp':
-      case 'PageDown': {
-        const direction = e.key === 'PageDown' ? 1 : -1;
-        const stop = adjacentStop(sortedStops, time, direction, Math.max(1e-9, Math.abs(time) * 1e-12));
-        if (stop) seekByKey(stop.time, stop);
-        break;
-      }
-      case 'Home': seekByKey(range.start, null); break;
-      case 'End': seekByKey(range.end, null); break;
-      case '+':
-      case '=': zoomBy(1 / KEY_ZOOM); break;
-      case '-':
-      case '_': zoomBy(KEY_ZOOM); break;
-      case '0': fit(); break;
-      default: return;
-    }
-    e.preventDefault();
-    e.stopPropagation();
-  };
   const handleBlur = (e: FocusEvent<HTMLDivElement>) => {
     onBlur?.(e);
     setPeek(null);
   };
 
-  const api = useRef({ fit, applyView });
-  api.current = { fit, applyView };
   useImperativeHandle(ref, () => ({
-    fit: () => api.current.fit(),
-    setView: (next) => api.current.applyView(next),
+    fit: () => { handle.api.fit(); },
+    setView: (next) => { handle.api.setView(next); },
     pixelTimes: () => {
       const { axis: a, win: w, length: l } = latest.current;
       const times: number[] = [];
@@ -861,7 +854,7 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
       painters.current.paintOverlay();
     },
     focus: () => rootRef.current?.focus(),
-  }), []);
+  }), [handle.api]);
 
   /* ── The preview card ── */
   const focusSpot: Spot<K> | null = drag ?? hover ?? (peek && vertical ? { along: playheadAlong, pull: 0, time, mark: peek.stop ? { stop: peek.stop, along: playheadAlong, count: 1, tone: peek.stop.tone ?? 'default', first: peek.stop.time, last: peek.stop.time, dim: false } : null } : null);
@@ -907,60 +900,33 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
   // The card says the time; the pill would only sit under it.
   const pillHidden = showCard && !!focusSpot && Math.abs(focusSpot.along - playheadAlong) < cardSize.height / 2 + 12 && focusSpot.pull < 40;
 
-  return (
-    <div
-      role="slider"
-      tabIndex={0}
-      aria-label={label}
-      aria-orientation={orientation}
-      aria-valuemin={range.start}
-      aria-valuemax={range.end}
-      aria-valuenow={time}
-      aria-valuetext={atStop?.caption ? `${timeText}, ${atStop.caption}` : timeText}
-      {...rest}
-      ref={rootRef}
-      data-slot="trace-timeline"
-      data-orientation={orientation}
-      data-side={vertical ? side : undefined}
-      onPointerDown={(e) => {
-        onPointerDown?.(e);
-        handlePointerDown(e);
-      }}
-      onPointerMove={(e) => {
-        onPointerMove?.(e);
-        handlePointerMove(e);
-      }}
-      onPointerUp={(e) => {
-        onPointerUp?.(e);
-        release(e, false);
-      }}
-      onPointerCancel={(e) => {
-        onPointerCancel?.(e);
-        release(e, true);
-      }}
-      onLostPointerCapture={(e) => {
-        onLostPointerCapture?.(e);
-        release(e, true);
-      }}
-      onPointerLeave={(e) => {
-        onPointerLeave?.(e);
-        dirty.current.hover = null;
-        setPointerAt(null);
-      }}
-      onKeyDown={handleKeyDown}
-      onBlur={handleBlur}
-      className={cn(traceTimelineVariants({ orientation, side }), className)}
-      style={{
-        '--tt-width': railWidth + 'px',
-        '--tt-height': stripHeight(lanes, { requests: hasRequests, stops: hasStops }) + 'px',
-        '--tt-top': len(top ?? 0),
-        '--tt-bottom': len(bottom ?? 0),
-        '--tt-dash': dashInset + 'px',
-        '--tt-lines': previewLines,
-        '--tt-card-w': Math.min(previewWidth, Math.max(160, size.hostWidth - railWidth - 16)) + 'px',
-        ...style,
-      } as CSSProperties}
-    >
+  const sideAttr = { 'data-side': vertical ? side : undefined };
+  const root = usePart(handle, 'root', {}, {
+    'aria-label': label,
+    'aria-valuetext': atStop?.caption ? `${timeText}, ${atStop.caption}` : timeText,
+    ...rest,
+    ...sideAttr,
+    ref: rootRef,
+    onPointerMove: handleHover,
+    onPointerLeave: (e: ReactPointerEvent<HTMLDivElement>) => {
+      onPointerLeave?.(e);
+      dirty.current.hover = null;
+      setPointerAt(null);
+    },
+    onBlur: handleBlur,
+    className: cn(traceTimelineVariants({ orientation, side }), className),
+    style: {
+      '--tt-width': railWidth + 'px',
+      '--tt-height': stripHeight(lanes, { requests: hasRequests, stops: hasStops }) + 'px',
+      '--tt-top': len(top ?? 0),
+      '--tt-bottom': len(bottom ?? 0),
+      '--tt-dash': dashInset + 'px',
+      '--tt-lines': previewLines,
+      '--tt-card-w': Math.min(previewWidth, Math.max(160, size.hostWidth - railWidth - 16)) + 'px',
+      ...style,
+    } as CSSProperties,
+    children: (
+      <>
       <canvas ref={dataCanvas} aria-hidden data-slot="trace-timeline-canvas" className="pointer-events-none absolute inset-0 size-full" />
       <canvas ref={overlayCanvas} aria-hidden data-slot="trace-timeline-overlay" className="pointer-events-none absolute inset-0 size-full" />
       {/* Where the canvas's colours are read from. */}
@@ -1043,6 +1009,8 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
           ) : null}
         </div>
       ) : null}
-    </div>
-  );
+      </>
+    ),
+  }, 'div');
+  return root;
 }

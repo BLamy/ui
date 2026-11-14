@@ -57,7 +57,8 @@ The root is an `ol` with `aria-label="Progress"`, so a page with two steppers sh
 | `variant` | `bars` | `bars` or `line`. |
 | `animated` | `true` | Shimmer the active segment. |
 | `labels` | `false` | Show labels under the steps. |
-| `className` / `style` | — | Merged onto the `ol`. |
+| `aria-label` / `aria-labelledby` | `"Progress"` | The list's name. Name each stepper when a page has more than one (an order and a deploy). |
+| `className` / `style` | — | Merged onto the `ol`, which takes the other `ol` attributes too. |
 
 ## Styling
 

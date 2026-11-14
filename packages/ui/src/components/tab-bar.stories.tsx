@@ -12,9 +12,9 @@ export default meta;
 type Story = StoryObj<typeof TabBar>;
 
 const items = [
-  { id: 'contacts', title: 'Contacts', icon: 'person' },
-  { id: 'recents', title: 'Recents', icon: 'clock' },
-  { id: 'settings', title: 'Settings', icon: 'sliders' },
+  { value: 'contacts', title: 'Contacts', icon: 'person' },
+  { value: 'recents', title: 'Recents', icon: 'clock' },
+  { value: 'settings', title: 'Settings', icon: 'sliders' },
 ];
 
 export const Interactive: Story = {
@@ -25,7 +25,7 @@ export const Interactive: Story = {
         <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 15, color: 'var(--muted-foreground)' }}>
           Selected: {tab}
         </div>
-        <TabBar items={items} selected={tab} onSelect={setTab} />
+        <TabBar items={items} value={tab} onValueChange={setTab} />
       </>
     );
   },
@@ -34,6 +34,6 @@ export const Interactive: Story = {
 export const TwoTabs: Story = {
   render: () => {
     const [tab, setTab] = useState('contacts');
-    return <TabBar items={items.slice(0, 2)} selected={tab} onSelect={setTab} />;
+    return <TabBar items={items.slice(0, 2)} value={tab} onValueChange={setTab} />;
   },
 };

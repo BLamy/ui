@@ -11,7 +11,7 @@ export default function SiblingMenus() {
   const [file, setFile] = useState('breadcrumb.tsx')
 
   const entries = (names: string[], icon: string, pick: (name: string) => void): BreadcrumbEntry[] =>
-    names.map((name) => ({ id: name, label: name, icon, onPress: () => pick(name) }))
+    names.map((name) => ({ id: name, label: name, icon, onClick: () => pick(name) }))
 
   const path: BreadcrumbItemData[] = [
     { id: 'home', label: 'Home', icon: 'house', href: '#home' },

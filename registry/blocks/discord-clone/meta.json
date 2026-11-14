@@ -27,7 +27,8 @@
     "components/chat-shell-context.ts"
   ],
   "dependencies": [
-    "class-variance-authority",
-    "react-aria-components"
+    "@ui-sdk/core",
+    "@ui-sdk/react",
+    "class-variance-authority"
   ]
 }

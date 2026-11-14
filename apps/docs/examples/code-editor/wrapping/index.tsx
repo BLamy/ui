@@ -18,7 +18,7 @@ export default function Wrapping() {
   return (
     <div className="mx-auto w-[390px] max-w-full">
       <label className="mb-2 flex items-center gap-2 text-footnote text-foreground">
-        <Switch checked={wrap} onChange={setWrap} aria-label="Wrap" />
+        <Switch checked={wrap} onCheckedChange={setWrap} aria-label="Wrap" />
         Wrap
       </label>
       <div className="h-56 overflow-hidden rounded-card border border-border">

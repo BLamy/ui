@@ -48,7 +48,7 @@ Without WebGPU the box is replaced by a note, and the editor is the raw expressi
 
 1. **The expression.** A monospace text field. Under it, the five fields are shown one per cell with their names, and the cell the caret is in is outlined. A field that is wrong is outlined in the error color, and the error text names it ("Minute: 60 is out of range (0–59)"). An empty field gets a prompt, not an error.
 2. **A description**, in English, from [cronstrue](https://github.com/bradymholt/cRonstrue) (loaded on first use): "At 09:00 AM, Monday through Friday".
-3. **Presets**, as toggle chips; the one that equals the current expression is pressed.
+3. **Presets**, a UI SDK ToggleGroup of chips: one Tab stop, ←/→ between them, and the one that equals the current expression is pressed (pressing it again keeps it).
 4. **Next runs**, as above.
 
 ### Raw only, and your own presets
@@ -120,7 +120,7 @@ The module starts with `'use client'`. On the server it renders the labelled fie
 
 ## Accessibility
 
-The expression and the plain-English box are react-aria text fields with linked labels, descriptions and errors; `aria-invalid` follows the validation, and the error text lists every problem. The five-field breakdown is a description list (name and value pairs). Presets are toggle buttons that report their pressed state. Next runs is a list of `<time>` elements. The model's answer is dimmed and marked busy while a newer one is pending. Colors are never the only signal: invalid fields also carry error text.
+The expression and the plain-English box are UI SDK fields (`Field` + `Input`) with linked labels, descriptions and errors; `aria-invalid` follows the validation, and the error text lists every problem. The five-field breakdown is a description list (name and value pairs). Presets are a toggle group named "Presets": toggle buttons that report their pressed state, with one Tab stop and the arrow keys between them. Next runs is a list of `<time>` elements. The model's answer is dimmed and marked busy while a newer one is pending. Colors are never the only signal: invalid fields also carry error text.
 
 ## API
 
@@ -129,7 +129,7 @@ The expression and the plain-English box are react-aria text fields with linked 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `value` / `defaultValue` | — | The expression, controlled or uncontrolled. |
-| `onValueChange` | — | `(expression: string) => void`, on every edit, preset press and every answer of the plain-English box. |
+| `onValueChange` | — | `(expression, details) => void`, on every edit, preset press and every answer of the plain-English box. `details.reason` is `input-change` (typing, or the box's answer to it), `item-press` (a preset), `clear-press`, `reset` or `imperative`; `details.cancel()` keeps an uncontrolled editor's expression. |
 | `label` | "Cron expression" | Label of the expression field. |
 | `description` | "Five fields, separated by spaces." | Help text under it. |
 | `name` | — | Form field name of the expression. |
@@ -142,7 +142,7 @@ The expression and the plain-English box are react-aria text fields with linked 
 | `locale` | the browser's | BCP 47 locale of the run times. |
 | `debounceMs` | `0` | Wait after typing before asking the model (0: every keystroke). |
 | `variant` | `card` | `card` puts the model's answer and the next runs on filled panels; `plain` has no surface. |
-| `isDisabled` | `false` | Disables the fields and chips. |
+| `disabled` | `false` | Disables the fields and chips. |
 | `className`, `style` | — | Merged onto the root (`data-slot="cron-editor"`). Other div props pass through. |
 
 Parts carry `data-slot`s for tests and styling: `cron-editor-natural`, `cron-editor-note`, `cron-editor-fields` (each cell has `data-field`, and `data-active` / `data-invalid`), `cron-editor-description`, `cron-editor-presets` and `cron-editor-next`.

@@ -3,9 +3,9 @@
    A group row and the family avatars preview who's in the group. */
 import type { CSSProperties } from 'react';
 import { Avatar } from '@/components/ui/avatar';
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCardHeader } from '@/components/ui/hover-card';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, useSplitView } from '@/components/ui/split-view';
+import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection } from '@/components/ui/split-view';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { GROUPS, type CategoryId } from './data';
@@ -34,14 +34,12 @@ export function Sidebar({ vault, onOpenService }: { vault: Vault; onOpenService:
         </div>
         <SplitViewSection title="Shared Groups" className="mt-2">
           {GROUPS.map((g) => (
-            <HoverCardTrigger key={g.id} className="flex w-full">
-              <SplitViewItem id={'group:' + g.id}
-                icon={<Icon name="people" size={20} />}
-                title={g.name}
-                subtitle={g.members.map((m) => m.f).join(', ')}
-                badge={vault.accounts.filter((a) => a.group === g.id).length} />
-              <HoverCard placement="end top"><GroupPreview group={g} vault={vault} /></HoverCard>
-            </HoverCardTrigger>
+            <SplitViewItem key={g.id} id={'group:' + g.id}
+              icon={<Icon name="people" size={20} />}
+              title={g.name}
+              subtitle={g.members.map((m) => m.f).join(', ')}
+              badge={vault.accounts.filter((a) => a.group === g.id).length}
+              preview={<GroupPreview group={g} vault={vault} />} />
           ))}
         </SplitViewSection>
         <ServiceButtons onOpen={onOpenService} />
@@ -59,26 +57,24 @@ export function Sidebar({ vault, onOpenService }: { vault: Vault; onOpenService:
   );
 }
 
+/** A category: a card that fills with the accent when selected. A SplitViewItem, so it selects (or pushes) like a row. */
 function Tile({ id, label, icon, color, count }: { id: CategoryId; label: string; icon: IconName; color: string; count: number }) {
-  const sv = useSplitView();
-  const selected = sv.isSelected('sidebar', id);
   return (
-    <button type="button" aria-current={selected || undefined}
-      onClick={() => sv.select('sidebar', id)}
+    <SplitViewItem id={id}
       className={cn(
-        'bl-btn group flex cursor-pointer flex-col gap-2 rounded-panel border-0 p-2.5 text-left [font-family:inherit] outline-none',
+        'min-h-0 flex-col items-stretch gap-2 rounded-panel p-2.5',
         'transition-[background-color,scale,box-shadow] duration-spring-snappy ease-spring-snappy active:scale-[.97]',
-        'focus-visible:ring-2 focus-visible:ring-ring',
-        selected ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground shadow-[0_.5px_1.5px_black] shadow-black/8 hover:bg-[color-mix(in_oklab,var(--card)_92%,var(--foreground))]',
+        'bg-card text-foreground shadow-[0_.5px_1.5px_black] shadow-black/8 hover:bg-[color-mix(in_oklab,var(--card)_92%,var(--foreground))] active:bg-[color-mix(in_oklab,var(--card)_92%,var(--foreground))]',
+        'data-selected:bg-primary data-selected:text-primary-foreground data-selected:shadow-none data-selected:hover:bg-primary data-selected:active:bg-primary',
       )}>
       <span className="flex w-full items-start justify-between">
-        <span className={cn('grid size-[30px] place-items-center rounded-full transition-colors duration-200', selected ? 'bg-white text-(--tile)' : 'bg-(--tile) text-white')}
+        <span className="grid size-[30px] place-items-center rounded-full bg-(--tile) text-white transition-colors duration-200 group-data-selected/item:bg-white group-data-selected/item:text-(--tile)"
           style={{ '--tile': color } as CSSProperties}>
           <Icon name={icon} size={18} weight="semibold" />
         </span>
         <span className="pt-0.5 text-title font-bold tabular-nums"><NumberMorph value={count} /></span>
       </span>
       <span className="text-detail font-semibold">{label}</span>
-    </button>
+    </SplitViewItem>
   );
 }

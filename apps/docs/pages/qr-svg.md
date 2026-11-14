@@ -55,7 +55,7 @@ Without `title` the SVG is `aria-hidden`, as it is a machine-readable image. Giv
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `value` | `''` | Text to encode. `seed` is a deprecated alias. |
+| `value` | `''` | Text to encode. |
 | `size` | `168` | Rendered width and height in px. |
 | `level` | `M` | Error correction: `L`, `M`, `Q` or `H`. |
 | `margin` | `0` | Quiet zone in modules, added inside the SVG. |

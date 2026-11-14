@@ -5,7 +5,7 @@
    ⌘C/X/V · arrows nudge · ⌘ +/−/0/1 zoom · scroll to pan, ⌘-scroll or pinch to zoom · Option-drag copies.
    All boards are invented sample data. */
 import { BLProvider, useAppearance } from '@/lib/theme';
-import { useContainerWidth } from '@/lib/container';
+import { useSizeClassScope } from '@/lib/container';
 import { BoardGallery } from './boards';
 import { SAMPLE_BOARDS } from './data';
 import { BoardEditor } from './editor';
@@ -35,10 +35,10 @@ export default function Freeform({ defaultBoards = SAMPLE_BOARDS, initialBoard =
 
 function Shell() {
   const f = useFreeform();
-  const [ref, width] = useContainerWidth<HTMLDivElement>(1000);
-  const compact = width < 640;
+  // BLProvider's root measures this box: compact is its size class.
+  const compact = useSizeClassScope() === 'compact';
   return (
-    <div ref={ref} data-slot="freeform" className="relative h-full w-full">
+    <div data-slot="freeform" className="relative h-full w-full">
       {f.openId && f.board ? <BoardEditor key={f.openId} compact={compact} onBack={() => f.open(null)} /> : <BoardGallery compact={compact} />}
     </div>
   );

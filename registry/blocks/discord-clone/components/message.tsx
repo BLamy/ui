@@ -1,12 +1,13 @@
 import { createContext, useContext, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
-import { Button, ToggleButton, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Avatar } from '@/components/ui/avatar';
-import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { PlainToggleButton } from '@/components/ui/plain-button';
 import { MarkdownView } from '@/components/ui/markdown-view';
+import { Toolbar, ToolbarButton } from '@ui-sdk/react/toolbar';
 import { chatUserAvatar, useChatUsers, type ChatUser } from './chat-users';
 import { UserCard } from './user-card';
-import { cn } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 
 /* ══ Message — one row of a transcript, from parts ══
    <Message user={ada}>
@@ -27,11 +28,6 @@ interface MessageContextValue {
   variant: 'default' | 'continued';
 }
 const MessageContext = createContext<MessageContextValue>({ variant: 'default' });
-
-/** react-aria's Button drops `title`, so the tooltip goes on through a ref. */
-const titleRef = (title: string) => (el: HTMLElement | null) => {
-  if (el) el.title = title;
-};
 
 export const messageVariants = cva(
   'group/message relative flex gap-[11px] px-[18px] font-sans [&:hover]:bg-accent',
@@ -96,20 +92,28 @@ export function MessageHeader({ className, ...props }: ComponentProps<'div'>) {
   return <div data-slot="message-header" className={cn('flex items-baseline gap-[7px]', className)} {...props} />;
 }
 
+/* A card's trigger in running text: a button that reads like the words around it. */
+const inlineTrigger = 'cursor-default border-0 bg-transparent p-0 align-baseline [font-family:inherit] text-[length:inherit] leading-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-ring/45';
+
 /** The author's name in their role color; defaults to the row's user. */
 export function MessageAuthor({ className, children, ...props }: ComponentProps<'span'>) {
   const { user } = useContext(MessageContext);
-  const author = (
-    <span data-slot="message-author" className={cn('ck-role text-[13.5px] font-bold text-(--ck-role)', user && 'cursor-default hover:underline', className)} {...props}>
-      {children ?? user?.name}
-    </span>
-  );
-  if (!user) return author;
+  const authorClass = cn('ck-role text-[13.5px] font-bold text-(--ck-role)', user && 'cursor-default hover:underline', className);
+  if (!user) {
+    return (
+      <span data-slot="message-author" className={authorClass} {...props}>
+        {children}
+      </span>
+    );
+  }
   return (
-    <HoverCardTrigger>
-      {author}
-      <HoverCard placement="right top" offset={10}><UserCard user={user} /></HoverCard>
-    </HoverCardTrigger>
+    <HoverCard>
+      {/* A button, so a keyboard reaches the card too (focus opens it, like a hover). */}
+      <HoverCardTrigger render={<button type="button" className={cn(inlineTrigger, authorClass)} {...(props as ComponentProps<'button'>)} />}>{children ?? user.name}</HoverCardTrigger>
+      <HoverCardContent side="right" align="start" sideOffset={10}>
+        <UserCard user={user} />
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 
@@ -140,12 +144,16 @@ export function MessageContent({ className, children, ...props }: ComponentProps
           renderReference={(ref) => {
             const user = ref.kind === 'mention' ? users[ref.id] : undefined;
             return user ? (
-              <HoverCardTrigger>
-                <span data-slot="mention" className="cursor-default rounded-sm bg-primary/12 dark:bg-primary/16 px-[3px] py-0 font-semibold text-link hover:bg-primary/20">
+              <HoverCard>
+                <HoverCardTrigger
+                  render={<button type="button" className={cn(inlineTrigger, 'rounded-sm bg-primary/12 dark:bg-primary/16 px-[3px] py-0 font-semibold text-link hover:bg-primary/20')} />}
+                >
                   @{user.name}
-                </span>
-                <HoverCard placement="top start"><UserCard user={user} /></HoverCard>
-              </HoverCardTrigger>
+                </HoverCardTrigger>
+                <HoverCardContent side="top" align="start">
+                  <UserCard user={user} />
+                </HoverCardContent>
+              </HoverCard>
             ) : null;
           }}
         />
@@ -171,37 +179,32 @@ export const messageReactionVariants = cva(
   },
 );
 
-export interface MessageReactionProps extends Omit<ComponentProps<typeof ToggleButton>, 'children' | 'isSelected'> {
+export interface MessageReactionProps extends Omit<ComponentProps<typeof PlainToggleButton>, 'children' | 'pressed' | 'defaultPressed'> {
   emoji: ReactNode;
   count: number;
-  /** your own reaction: tinted outline */
+  /** your own reaction: tinted outline, and the toggle is on */
   mine?: boolean;
 }
 
-/** A reaction pill; a toggle (react-aria ToggleButton) that is on when it's yours. */
+/** A reaction pill; a toggle (UI SDK Toggle, `aria-pressed`) that is on when it's yours. Toggle it with
+    `onPressedChange(pressed, details)`. */
 export function MessageReaction({ emoji, count, mine, className, ...props }: MessageReactionProps) {
   return (
-    <ToggleButton
-      data-slot="message-reaction"
-      isSelected={!!mine}
-      className={composeRenderProps(className, (c) =>
-        cn(messageReactionVariants({ mine: !!mine }), c),
-      )}
-      {...props}
-    >
+    <PlainToggleButton pressed={!!mine} className={cx(messageReactionVariants({ mine: !!mine }), className)} {...props}>
       {emoji}
       <span className={cn('text-caption2', mine ? 'text-link' : 'text-muted-foreground')}>{count}</span>
-    </ToggleButton>
+    </PlainToggleButton>
   );
 }
 
-/** The floating action bar on the row's top-right corner: shown on hover and on keyboard focus. */
-export function MessageActions({ className, ...props }: ComponentProps<'div'>) {
+/** The floating action bar on the row's top-right corner: shown on hover and on keyboard focus. A UI SDK Toolbar
+    ("Message actions" unless named otherwise): one Tab stop per message, the arrow keys move between its actions. */
+export function MessageActions({ className, ...props }: ComponentProps<typeof Toolbar>) {
   return (
-    <div
-      data-slot="message-actions"
-      className={cn(
-        'absolute -top-[10px] right-[16px] flex gap-[2px] rounded-[9px] border border-border bg-card p-[2px] opacity-0 [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-hover/message:opacity-100 has-data-focus-visible:opacity-100',
+    <Toolbar
+      aria-label="Message actions"
+      className={cx(
+        'absolute -top-[10px] right-[16px] flex gap-[2px] rounded-[9px] border border-border bg-card p-[2px] opacity-0 [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-hover/message:opacity-100 has-focus-visible:opacity-100',
         className,
       )}
       {...props}
@@ -209,20 +212,17 @@ export function MessageActions({ className, ...props }: ComponentProps<'div'>) {
   );
 }
 
-export interface MessageActionProps extends ComponentProps<typeof Button> {
+export type MessageActionProps = ComponentProps<typeof ToolbarButton> & {
   /** accessible name and tooltip */
   label: string;
-}
+};
 
 export function MessageAction({ label, className, ...props }: MessageActionProps) {
   return (
-    <Button
-      data-slot="message-action"
+    <ToolbarButton
       aria-label={label}
-      ref={titleRef(label)}
-      className={composeRenderProps(className, (c) =>
-        cn('grid cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent px-[6px] py-[3px] text-footnote text-muted-foreground data-hovered:bg-secondary', c),
-      )}
+      title={label}
+      className={cx('grid cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent px-[6px] py-[3px] text-footnote text-muted-foreground hover:bg-secondary', className)}
       {...props}
     />
   );

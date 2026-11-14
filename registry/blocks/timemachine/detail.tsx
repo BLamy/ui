@@ -81,11 +81,11 @@ export function SessionDetail({ session, onDeleted }: { session: SessionInfo; on
           </p>
         </div>
         {session.live ? (
-          <PlainButton aria-label="Refresh" title="Load the latest events" onPress={() => setVersion((v) => v + 1)} className="grid size-8 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground hover:bg-secondary">
+          <PlainButton aria-label="Refresh" title="Load the latest events" onClick={() => setVersion((v) => v + 1)} className="grid size-8 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground hover:bg-secondary">
             <Icon name="arrow-clockwise" size={18} sw={1.8} />
           </PlainButton>
         ) : (
-          <PlainButton aria-label="Delete session" title="Delete this session" onPress={() => { void deleteSession(session.id).then(onDeleted); }} className="grid size-8 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground hover:bg-secondary hover:text-destructive">
+          <PlainButton aria-label="Delete session" title="Delete this session" onClick={() => { void deleteSession(session.id).then(onDeleted); }} className="grid size-8 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground hover:bg-secondary hover:text-destructive">
             <Icon name="trash-slim" size={18} sw={1.7} />
           </PlainButton>
         )}

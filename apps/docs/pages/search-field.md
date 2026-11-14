@@ -1,6 +1,6 @@
 # SearchField
 
-The iOS search field: a rounded secondary-colored bar with a magnifier, a borderless input and a clear button that appears once there is a query. Built on react-aria's `SearchField`, so Esc clears a non-empty query and Enter submits. It is a finished, fixed-style control, not a wrapper: for a labelled, validated text field use [TextField](https://blamy.github.io/ui/#/text-field) with an [Input](https://blamy.github.io/ui/#/input).
+The iOS search field: a rounded secondary-colored bar with a magnifier, a borderless input and a clear button that appears once there is a query. It is UI SDK's `Input` in an `InputGroup` with an `InputClear`, plus two keys of its own: Esc clears a non-empty query and Enter submits. It is a finished, fixed-style control, not a wrapper: for a labelled, validated text field use a [Field](https://blamy.github.io/ui/#/field) with an [Input](https://blamy.github.io/ui/#/input).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -27,7 +27,7 @@ import { SearchField } from '@brett_lamy/ui'
 
 ## Filtering a list
 
-Control it with `value` and `onChange`, or seed it with `defaultValue` and let it keep its own state. `onChange` receives the string on every keystroke and `''` when it is cleared; `onSubmit` receives the query on Enter.
+Control it with `value` and `onValueChange`, or seed it with `defaultValue` and let it keep its own state. `onValueChange(value, details)` receives the string on every keystroke and `''` when it is cleared; `details.reason` is `input-change` for typing and `clear-press` for the clear button or Esc. `onSubmit(value, details)` receives the query on Enter, with `details.reason` `enter-key`, the key event, `source` and `cancel()`.
 
 {% demo src="search-field/filter" %}
 
@@ -36,34 +36,62 @@ const [query, setQuery] = useState('')
 
 <SearchField
   value={query}
-  onChange={setQuery}
+  onValueChange={setQuery}
   onSubmit={runSearch}
   placeholder="Search people"
   aria-label="Search people"
 />
 ```
 
-Uncontrolled: `<SearchField defaultValue="Wei" onChange={track} aria-label="Search contacts" />`.
+Uncontrolled: `<SearchField defaultValue="Wei" onValueChange={track} aria-label="Search contacts" />`.
+
+## Keys
+
+| Key | Does |
+| --- | --- |
+| Esc | Clears the query. In an empty field it does nothing and is left alone, so the popover or sheet around the field still closes on it. |
+| Enter | Calls `onSubmit` with the query. Without `onSubmit`, or when `onSubmit` calls `details.cancel()`, Enter submits the form around the field, like any input. |
+
+Neither key acts while an input method is composing text. A `readOnly` field still submits on Enter, but Escape doesn't clear it.
+
+## From outside
+
+Pass a `controller` to write the query from somewhere else, like a suggestion chip. Its writes reach `onValueChange` with the reason `imperative`.
+
+```tsx
+const [search] = useState(createInputController)
+
+<SearchField controller={search} aria-label="Search cities" />
+<Button onClick={() => search.setValue('Lisbon')}>Lisbon</Button>
+```
+
+`createInputController` comes from [Input](https://blamy.github.io/ui/#/input).
 
 ## Accessibility
 
-react-aria gives it `role="searchbox"`, Esc-to-clear and a clear button labelled "Clear search" that is left out of the Tab order (Esc is the keyboard route). The field's accessible name is `aria-label`, which defaults to "Search"; set it to say what is searched ("Search contacts") so it differs from other search fields on the page. Announce the result count yourself (an `aria-live` region) if the list updates as you type.
+The input is a native `type="search"`, so its role is `searchbox`. The clear button is labelled "Clear search", returns focus to the input, and is left out of the Tab order (Esc is the keyboard route). The field's accessible name is `aria-label`, which defaults to "Search"; set it to say what is searched ("Search contacts") so it differs from other search fields on the page. Inside a `Field`, the `FieldLabel` names it instead. Announce the result count yourself (`announce()` from `@ui-sdk/core`) if the list updates as you type.
+
+An agent sees the input under the field's name, with `setValue` and `clear`. With `onSubmit`, the field is listed too, under the same name, with a `submit` action: it calls `onSubmit` with the current query, `reason: 'imperative'` and `source: 'agent'`.
 
 ## Props
+
+`SearchField` takes the props of UI SDK's `Input`, which go to the input, except `type` and `render`:
 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `value` | — | Controlled query. |
-| `defaultValue` | `''` | Initial query when uncontrolled. |
-| `onChange` | — | Called with the string on each change, and `''` when cleared. |
-| `onSubmit` | — | Called with the query when Enter is pressed. |
+| `defaultValue` | — | Initial query when uncontrolled. |
+| `onValueChange` | — | `(value, details)` on each change, and `''` when cleared. `details.cancel()` rejects it. |
+| `onSubmit` | — | `(value, details)` when Enter is pressed (`reason: 'enter-key'`) or an agent submits (`'imperative'`). `details.cancel()` leaves Enter to the form. |
+| `controller` | — | From `createInputController()`: `getValue()`, `setValue(value)`, `clear()`, `focus()`. |
 | `placeholder` | `Search` | Placeholder text. |
-| `autoFocus` | — | Focus on mount. |
+| `disabled` / `readOnly` | `false` | A disabled field is dimmed; neither shows the clear button. |
+| `name`, `autoFocus`, `autoComplete`, … | — | Any other native input attribute. |
 | `aria-label` | `Search` | Accessible name. |
-| `className` / `style` | — | Merged onto the bar. |
+| `className` / `style` | — | Merged onto the bar, not the input. |
 
-Only these props are forwarded: there is no `isDisabled`, label, description or validation. Use `TextField` for those.
+There is no label, description or validation here: put it in a `Field` for those.
 
 ## Styling
 
-The root is `data-slot="search-field"`, an 11px-radius `bg-secondary` row with a 17px `search` icon, an `input` with no chrome (the browser's own search cancel button is hidden) and, when the query is not empty, a 18px `xcirc` clear button. Because `className` merges last you can change the background (`bg-card` on a secondary surface) or the radius. To hold it above a list, pass it as the `header` of a `List`.
+The root is `data-slot="search-field"`, an 11px-radius `bg-secondary` row with a 17px `search` icon, an `input` (`data-slot="input"`) with no chrome (the browser's own search cancel button is hidden) and, when the query is not empty, a 18px `xcirc` clear button (`data-slot="input-clear"`). The `input-group` between the root and its children has no box of its own (`display: contents`). Because `className` merges last you can change the background (`bg-card` on a secondary surface) or the radius, and reach the input with `[&_input]:`. To hold it above a list, pass it as the `header` of a `List`.

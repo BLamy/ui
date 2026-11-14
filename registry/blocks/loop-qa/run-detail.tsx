@@ -1,6 +1,7 @@
 /* A run: its ring and status, what it found (findings), what it covered, the exploration it recorded, and its
    journeys grouped by outcome — a journey with bugs unfolds to list them. A live run fills in as it goes. */
 import { useState, type ReactNode } from 'react';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Button } from '@/components/ui/button';
 import { Chevron } from '@/components/ui/icon-swap';
@@ -111,47 +112,48 @@ function Pending({ run: r }: { run: Run }) {
   );
 }
 
+/** A journey: what it was and how it went. One that found bugs is a disclosure that lists them. */
 function JourneyRow({ journey: j }: { journey: Journey }) {
   const qa = useLoopQA();
   const [open, setOpen] = useState(j.bugIds.length > 0 && j.bugIds.length < 3);
   const bugs = j.bugIds.map((id) => qa.bugs.find((b) => b.id === id)).filter((b) => !!b);
   const icon = j.status === 'passed' ? 'check' : j.status === 'blocked' ? 'exclamation-circle' : 'xmark';
   const tone = j.status === 'passed' ? 'text-success' : j.status === 'blocked' ? 'text-warning' : 'text-destructive';
+  const row = 'flex w-full items-center justify-start gap-3 rounded-none px-4 py-2.5 text-left whitespace-normal';
+  const summary = (
+    <>
+      <Icon name={icon} size={14} sw={2.6} className={cn('shrink-0', tone)} />
+      <span className="min-w-0 flex-1 text-[13.5px] font-medium">{j.title}</span>
+      <span className="shrink-0 text-caption text-muted-foreground">{j.steps} steps</span>
+    </>
+  );
+  if (!bugs.length) return <li className={cn(row, 'box-border border-b border-border last:border-b-0')}>{summary}</li>;
   return (
-    <li className="border-b border-border last:border-b-0">
-      <Pressable isDisabled={!bugs.length} onPress={() => setOpen(!open)} aria-expanded={bugs.length ? open : undefined}
-        className="flex w-full cursor-pointer items-center justify-start gap-3 rounded-none px-4 py-2.5 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-100 data-disabled:cursor-default data-disabled:opacity-100 data-focus-visible:ring-inset">
-        <Icon name={icon} size={14} sw={2.6} className={cn('shrink-0', tone)} />
-        <span className="min-w-0 flex-1 text-[13.5px] font-medium">{j.title}</span>
-        <span className="shrink-0 text-caption text-muted-foreground">{j.steps} steps</span>
-        {bugs.length ? (
-          <span className="flex shrink-0 items-center gap-1.5 text-caption font-semibold text-destructive">
-            <Icon name="exclamation-circle" size={13} sw={2.2} />{bugs.length}
-            <Chevron direction={open ? 'down' : 'right'} size={12} sw={2.6} className="text-tertiary-foreground" />
-          </span>
-        ) : null}
-      </Pressable>
-      {bugs.length ? (
-        <AnimatedHeight>
-          {open ? (
-            <ul className="m-0 list-none px-3 pb-2 pl-9">
-              {bugs.map((b) => (
-                <li key={b.id}>
-                  <BugPreview bug={b} className="flex w-full" placement="right top">
-                    <Pressable onPress={() => qa.open({ kind: 'bug', id: b.id })}
-                      className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-[9px] px-2 py-1.5 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-[.99]">
-                      <SeverityBadge severity={b.severity} />
-                      <span className="min-w-0 flex-1 truncate text-footnote">{b.title}</span>
-                      <span className="shrink-0 text-[11.5px] text-muted-foreground">{relativeTime(b.discovered)}</span>
-                    </Pressable>
-                  </BugPreview>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </AnimatedHeight>
-      ) : null}
-    </li>
+    <Collapsible open={open} onOpenChange={setOpen} render={<li />} className="border-b border-border last:border-b-0">
+      <CollapsibleTrigger render={<Pressable />}
+        className={cn(row, 'cursor-pointer hover:bg-muted! active:not-aria-expanded:not-data-disabled:scale-100 focus-visible:ring-inset')}>
+        {summary}
+        <span className="flex shrink-0 items-center gap-1.5 text-caption font-semibold text-destructive">
+          <Icon name="exclamation-circle" size={13} sw={2.2} />{bugs.length}
+          <Chevron direction={open ? 'down' : 'right'} size={12} sw={2.6} className="text-tertiary-foreground" />
+        </span>
+      </CollapsibleTrigger>
+      <CollapsiblePanel className="h-(--collapsible-panel-height) overflow-clip transition-[height] duration-spring-tray ease-spring-tray data-starting-style:h-0 data-ending-style:h-0 motion-reduce:transition-none">
+        <ul className="m-0 list-none px-3 pb-2 pl-9">
+          {bugs.map((b) => (
+            <li key={b.id}>
+              <BugPreview bug={b} side="right" align="start"
+                render={<Pressable onClick={() => qa.open({ kind: 'bug', id: b.id })}
+                  className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-[9px] px-2 py-1.5 text-left whitespace-normal hover:bg-muted! active:not-aria-expanded:not-data-disabled:scale-[.99]" />}>
+                <SeverityBadge severity={b.severity} />
+                <span className="min-w-0 flex-1 truncate text-footnote">{b.title}</span>
+                <span className="shrink-0 text-[11.5px] text-muted-foreground">{relativeTime(b.discovered)}</span>
+              </BugPreview>
+            </li>
+          ))}
+        </ul>
+      </CollapsiblePanel>
+    </Collapsible>
   );
 }
 
@@ -165,7 +167,7 @@ function Expandable({ children }: { children: ReactNode }) {
           {children}
         </div>
       </AnimatedHeight>
-      <Button size="sm" variant="ghost" className="mt-1 -ml-2 h-7 rounded-md px-2 text-[12.5px] text-primary" onPress={() => setOpen(!open)}>
+      <Button size="sm" variant="ghost" className="mt-1 -ml-2 h-7 rounded-md px-2 text-[12.5px] text-primary" onClick={() => setOpen(!open)}>
         {open ? 'Show less' : 'Show more'}
       </Button>
     </div>

@@ -1,13 +1,13 @@
 'use client';
-import { useSyncExternalStore, type ComponentProps, type JSX, type ReactNode } from 'react';
-import { Button as AriaButton, Link as AriaLink, composeRenderProps, type ButtonProps as AriaButtonProps } from 'react-aria-components';
+import { useSyncExternalStore, type ComponentProps, type ReactNode } from 'react';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon, type IconName } from '@/lib/icon';
 import { tailscaleErrorMessage, type Tailscale, type TailscaleSnapshot, type TailscaleStatus } from '@/lib/tailscale';
 import { useOptionalTailscale } from '@/lib/tailscale-react';
-import { cn } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 
 /* ══ TailscaleLoginButton — "Sign in with Tailscale" ══
    <TailscaleProvider options={…}>
@@ -29,13 +29,13 @@ export function TailscaleMark({ className, size = 16 }: { className?: string; si
 }
 
 export const tailscaleLoginButtonVariants = cva(
-  'box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] font-semibold whitespace-nowrap outline-none transition-[scale,background-color,opacity] duration-spring-snappy ease-spring-snappy data-pressed:scale-[.97] motion-reduce:transition-none data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-offset-2 data-disabled:cursor-default data-disabled:opacity-40',
+  'box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] font-semibold whitespace-nowrap outline-none transition-[scale,background-color,opacity] duration-spring-snappy ease-spring-snappy active:not-data-disabled:scale-[.97] motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-disabled:cursor-default data-disabled:opacity-40',
   {
     variants: {
       variant: {
         /** Dark on light, light on dark — the usual "Sign in with …" look. */
         default: 'bg-foreground text-background',
-        outline: 'bg-background text-foreground shadow-hairline data-hovered:bg-secondary',
+        outline: 'bg-background text-foreground shadow-hairline hover:not-data-disabled:bg-secondary',
         secondary: 'bg-secondary text-secondary-foreground',
       },
       size: {
@@ -89,8 +89,10 @@ function useSnapshot(t: Tailscale | null): TailscaleSnapshot | null {
 const noopSubscribe = () => () => undefined;
 const nullSnapshot = () => null;
 
+type SdkButtonProps = ComponentProps<typeof SdkButton>;
+
 export interface TailscaleLoginButtonProps
-  extends Omit<AriaButtonProps, 'children' | 'onPress' | 'className'>, Omit<VariantProps<typeof tailscaleLoginButtonVariants>, 'tone'> {
+  extends Omit<SdkButtonProps, 'children' | 'onClick' | 'className'>, Omit<VariantProps<typeof tailscaleLoginButtonVariants>, 'tone'> {
   /** Default: the provider's controller. */
   tailscale?: Tailscale;
   /** Show this status instead of the controller's (stories, or a controller of your own). */
@@ -100,10 +102,10 @@ export interface TailscaleLoginButtonProps
   onCancel?: () => void;
   onSignOut?: () => void;
   labels?: Partial<TailscaleLoginButtonLabels>;
-  className?: AriaButtonProps['className'];
+  className?: SdkButtonProps['className'];
 }
 
-/** A react-aria Button that signs in to Tailscale and shows where that stands. Never colour alone: the label changes with the state. */
+/** A UI SDK Button that signs in to Tailscale and shows where that stands. Never colour alone: the label changes with the state. */
 export function TailscaleLoginButton({ tailscale, status: statusProp, onSignIn, onCancel, onSignOut, labels: labelsProp, variant, size, className, ...props }: TailscaleLoginButtonProps) {
   const t = useOptionalTailscale(tailscale);
   const snap = useSnapshot(t);
@@ -123,19 +125,18 @@ export function TailscaleLoginButton({ tailscale, status: statusProp, onSignIn, 
     else (onSignIn ?? (() => void t?.signIn()))();
   };
   return (
-    <AriaButton
-      data-slot="tailscale-login-button"
+    <SdkButton
       data-status={status}
-      // react-aria's Button drops aria-busy (its `isPending` would also ignore presses, and a press here cancels), so it goes on the <button> directly.
-      render={(p: JSX.IntrinsicElements['button']) => <button {...p} aria-busy={tone === 'busy' || undefined} />}
+      // Busy is shown, not UI SDK's pending state: a pending button ignores presses, and a press here cancels.
+      aria-busy={tone === 'busy' || undefined}
       aria-label={tone === 'busy' ? `${label} Press to cancel.` : undefined}
-      className={composeRenderProps(className, (cls) => cn(tailscaleLoginButtonVariants({ variant, size, tone }), cls))}
-      onPress={press}
+      className={cx(tailscaleLoginButtonVariants({ variant, size, tone }), className)}
+      onClick={press}
       {...props}
     >
       {tone === 'busy' ? <Spinner spin size={16} /> : tone === 'error' ? <Icon name="exclamation-circle" size={16} sw={2} className="text-destructive" /> : <TailscaleMark />}
       <span>{label}</span>
-    </AriaButton>
+    </SdkButton>
   );
 }
 
@@ -188,9 +189,9 @@ export function TailscaleStatusBadge({ tailscale, status: statusProp, tailnet: t
       {!compact && status === 'error' && error ? <span className="text-foreground">{error}</span> : null}
       {!compact && status === 'needs-approval' ? <span className="text-foreground/70">An admin has to approve this device.</span> : null}
       {!compact && status === 'signing-in' && loginUrl ? (
-        <AriaLink href={loginUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground underline outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring">
+        <a href={loginUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring">
           Continue to Tailscale
-        </AriaLink>
+        </a>
       ) : null}
     </div>
   );

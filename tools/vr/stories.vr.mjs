@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE = process.env.SB_URL || 'http://localhost:6006';
+const BASE = (process.env.STORYBOOK_URL || process.env.SB_URL || 'http://localhost:6006').replace(/\/$/, '');
 const index = await (await fetch(`${BASE}/index.json`)).json();
 const stories = Object.values(index.entries).filter((e) => e.type === 'story');
 

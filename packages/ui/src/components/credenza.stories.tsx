@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Credenza } from '@/components/ui/credenza';
+import {
+  Credenza, CredenzaBack, CredenzaBackdrop, CredenzaClose, CredenzaContent, CredenzaHeader, CredenzaTitle, CredenzaView,
+} from '@/components/ui/credenza';
 import { Icon } from '@/lib/icon';
 import { Button } from '@/components/ui/button';
 import { QRSvg } from '@/components/ui/qr-svg';
 import { Phone } from '../stories/frame';
 
-const meta: Meta<typeof Credenza> = {
+type DemoArgs = { compact?: boolean };
+const meta: Meta<DemoArgs> = {
   title: 'Organisms/Credenza',
-  component: Credenza,
 };
 export default meta;
-type Story = StoryObj<typeof Credenza>;
+type Story = StoryObj<DemoArgs>;
 
 const TITLES: Record<string, string> = { menu: 'Share Contact', qr: 'QR Code', done: 'Shared' };
 
@@ -19,9 +21,9 @@ function Views({ view, go, onClose }: { view: string; go: (v: string) => void; o
   if (view === 'qr') return (
     <div style={{ padding: '12px 20px 20px', textAlign: 'center' }}>
       <div style={{ display: 'inline-grid', placeItems: 'center', padding: 16, borderRadius: 20, background: '#fff', color: '#111', boxShadow: '0 0 0 1px var(--border)' }}>
-        <QRSvg seed="weichen" /></div>
+        <QRSvg value="weichen" /></div>
       <div style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: '12px 0 14px', lineHeight: 1.45 }}>Scanning adds Wei Chen — name, phone, and email.</div>
-      <Button size="pill" onPress={() => go('done')}>Save to Photos</Button>
+      <Button size="pill" onClick={() => go('done')}>Save to Photos</Button>
     </div>
   );
   if (view === 'done') return (
@@ -29,7 +31,7 @@ function Views({ view, go, onClose }: { view: string; go: (v: string) => void; o
       <span style={{ display: 'inline-grid', placeItems: 'center', width: 54, height: 54, borderRadius: '50%', background: 'var(--success, oklch(0.723 0.191 149.6))', color: '#fff', marginBottom: 10 }}><Icon name="check" size={26} sw={3} /></span>
       <div style={{ fontSize: 17, fontWeight: 700 }}>Card shared</div>
       <div style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: '4px 0 16px' }}>Wei Chen is on the way.</div>
-      <Button size="pill" onPress={onClose}>Done</Button>
+      <Button size="pill" onClick={onClose}>Done</Button>
     </div>
   );
   return (
@@ -58,31 +60,44 @@ function Demo({ compact }: { compact?: boolean }) {
   return (
     <>
       <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
-        <Button size="pill" onPress={() => { setView('menu'); setOpen(true); }} className="w-[200px]">Open Credenza</Button>
+        <Button size="pill" onClick={() => { setView('menu'); setOpen(true); }} className="w-[200px]">Open Credenza</Button>
       </div>
-      <Credenza open={open} onClose={() => setOpen(false)} compact={compact} view={view}
-        title={TITLES[view]} canBack={view !== 'menu'} onBack={() => setView('menu')}>
-        <Views view={view} go={setView} onClose={() => setOpen(false)} />
+      <Credenza open={open} onOpenChange={setOpen} presentation={compact ? 'sheet' : 'dialog'} view={view}>
+        <CredenzaBackdrop />
+        <CredenzaContent>
+          <CredenzaHeader>
+            <CredenzaBack hidden={view === 'menu'} onClick={() => setView('menu')} />
+            <CredenzaTitle>{TITLES[view]}</CredenzaTitle>
+            <CredenzaClose />
+          </CredenzaHeader>
+          <CredenzaView><Views view={view} go={setView} onClose={() => setOpen(false)} /></CredenzaView>
+        </CredenzaContent>
       </Credenza>
     </>
   );
 }
 
-/** A gate the user has to answer: no close button or grabber, and Escape, the scrim and a drag down leave it open. */
+/** A gate the user has to answer: no × or grabber, and Escape, the scrim and a drag down leave it open. */
 function Gate({ compact }: { compact?: boolean }) {
   const [open, setOpen] = useState(true);
   return (
     <>
       <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
-        <Button size="pill" onPress={() => setOpen(true)} className="w-[200px]">Show the gate</Button>
+        <Button size="pill" onClick={() => setOpen(true)} className="w-[200px]">Show the gate</Button>
       </div>
-      <Credenza open={open} isDismissable={false} compact={compact} title="Updated terms">
+      <Credenza open={open} onOpenChange={setOpen} dismissible={false} presentation={compact ? 'sheet' : 'dialog'}>
+        <CredenzaBackdrop />
+        <CredenzaContent>
+          <CredenzaHeader><CredenzaTitle>Updated terms</CredenzaTitle></CredenzaHeader>
+          <CredenzaView>
         <div style={{ padding: '6px 20px 20px' }}>
           <div style={{ fontSize: 14, color: 'var(--muted-foreground)', margin: '0 0 16px', lineHeight: 1.45 }}>
             Shared albums now keep their photos for a year. Agree to keep sharing — this sheet stays until you do.
           </div>
-          <Button size="pill" onPress={() => setOpen(false)}>Agree and Continue</Button>
+          <CredenzaClose render={<Button size="pill" />}>Agree and Continue</CredenzaClose>
         </div>
+          </CredenzaView>
+        </CredenzaContent>
       </Credenza>
     </>
   );
@@ -96,7 +111,7 @@ export const CompactTray: Story = {
   render: () => <Phone w={390} h={720}><Demo compact /></Phone>,
 };
 
-/** `isDismissable={false}`: only the button closes it; the tray rubber-bands when dragged. */
+/** `dismissible={false}`: only its Close part closes it; the tray springs back when dragged. */
 export const NonDismissable: Story = {
   args: { compact: true },
   render: ({ compact }) => <Phone w={compact ? 390 : 720} h={compact ? 720 : 560}><Gate compact={!!compact} /></Phone>,

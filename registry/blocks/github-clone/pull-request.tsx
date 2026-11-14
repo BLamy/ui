@@ -8,12 +8,13 @@ import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer';
 import { MarkdownView } from '@/components/ui/markdown-view';
+import { PlainButton } from '@/components/ui/plain-button';
 import { Progress } from '@/components/ui/progress';
 import { TabView, TabViewBar, TabViewFooter, TabViewList, TabViewPanels } from '@/components/ui/tab-view';
 import { cn } from '@/lib/utils';
 import { CommitMessage, UserAvatar, UserCard, UserName } from './cards';
 import type { Check, FileNode, PullDetail, TimelineItem, User } from './data';
-import { AvatarStack, Box, DiffStat, DiffView, FileTree, FlowPanel, LabelChip, Oct, StatePill, UnderlineTab, ghButton, githubMarkdown, Branch, PR_STATE, type OctName, type Layout, type Nav } from './parts';
+import { AvatarStack, Box, DiffStat, DiffView, FileTree, FlowPanel, LabelChip, Oct, StatePill, UnderlineIndicator, UnderlineTab, ghButton, githubMarkdown, Branch, PR_STATE, type OctName, type Layout, type Nav } from './parts';
 import { Loaded, useLoad, useRepo } from './repo-context';
 
 export type PullRequestTab = 'conversation' | 'commits' | 'checks' | 'files';
@@ -28,9 +29,9 @@ export function PullRequestView({ ui, number, nav, initialTab = 'conversation' }
   return (
     <div className={cn(ui.phone && 'px-4 py-4')}>
       {!ui.phone ? (
-        <button type="button" onClick={() => nav.openPr(null)} className="mb-3 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-detail text-primary hover:underline">
+        <PlainButton onClick={() => nav.openPr(null)} className="mb-3 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-detail text-primary hover:underline">
           <Oct name="chevLeft" size={14} />Pull requests
-        </button>
+        </PlainButton>
       ) : null}
       <Loaded load={pull}>
         {(p) => (
@@ -41,8 +42,8 @@ export function PullRequestView({ ui, number, nav, initialTab = 'conversation' }
               </h1>
               {!ui.phone ? (
                 <div className="flex shrink-0 gap-2 pt-1.5">
-                  <Button className={ghButton()} onPress={openOnGitHub(p.url)}>{p.url ? <>Open on GitHub<Oct name="external" size={12} /></> : 'Edit'}</Button>
-                  <Button className={ghButton(true)} onPress={nav.clone}><Oct name="code" />Code<Oct name="chevDown" size={12} /></Button>
+                  <Button className={ghButton()} onClick={openOnGitHub(p.url)}>{p.url ? <>Open on GitHub<Oct name="external" size={12} /></> : 'Edit'}</Button>
+                  <Button className={ghButton(true)} onClick={nav.clone}><Oct name="code" />Code<Oct name="chevDown" size={12} /></Button>
                 </div>
               ) : null}
             </div>
@@ -52,21 +53,22 @@ export function PullRequestView({ ui, number, nav, initialTab = 'conversation' }
                 <UserName user={p.author} /> {p.state === 'merged' ? 'merged' : 'wants to merge'} {p.commits} commit{p.commits === 1 ? '' : 's'} into <Branch>{p.base}</Branch> from <Branch>{p.head}</Branch>
               </span>
             </div>
-            <TabView placement="top" selectedKey={sub} onSelectionChange={(k) => setSub(String(k))} className="mt-2">
+            <TabView placement="top" value={sub} onValueChange={(k) => { if (k) setSub(k); }} className="mt-2">
               <TabViewBar variant="plain" className="overflow-x-auto border-b border-border [scrollbar-width:none]">
                 <TabViewList aria-label="Pull request" className="flex gap-1">
-                  <UnderlineTab id="conversation" icon="comment" label="Conversation" count={p.comments} />
-                  <UnderlineTab id="commits" icon="commit" label="Commits" count={p.commits} />
-                  <UnderlineTab id="checks" icon="checkFill" label="Checks" count={checks.data?.length} />
-                  <UnderlineTab id="files" icon="file" label="Files changed" count={p.changedFiles} />
+                  <UnderlineTab value="conversation" icon="comment" label="Conversation" count={p.comments} />
+                  <UnderlineTab value="commits" icon="commit" label="Commits" count={p.commits} />
+                  <UnderlineTab value="checks" icon="checkFill" label="Checks" count={checks.data?.length} />
+                  <UnderlineTab value="files" icon="file" label="Files changed" count={p.changedFiles} />
+                  <UnderlineIndicator />
                 </TabViewList>
                 {!ui.phone ? <TabViewFooter className="pl-4"><DiffStat add={p.additions} del={p.deletions} /></TabViewFooter> : null}
               </TabViewBar>
               <TabViewPanels className="pt-6">
-                <FlowPanel id="conversation"><Conversation ui={ui} pr={p} checks={checks.data ?? []} /></FlowPanel>
-                <FlowPanel id="commits"><CommitList ui={ui} number={p.number} /></FlowPanel>
-                <FlowPanel id="checks"><Loaded load={checks}>{(c) => <Checks checks={c} />}</Loaded></FlowPanel>
-                <FlowPanel id="files"><FilesChanged ui={ui} number={p.number} /></FlowPanel>
+                <FlowPanel value="conversation"><Conversation ui={ui} pr={p} checks={checks.data ?? []} /></FlowPanel>
+                <FlowPanel value="commits"><CommitList ui={ui} number={p.number} /></FlowPanel>
+                <FlowPanel value="checks"><Loaded load={checks}>{(c) => <Checks checks={c} />}</Loaded></FlowPanel>
+                <FlowPanel value="files"><FilesChanged ui={ui} number={p.number} /></FlowPanel>
               </TabViewPanels>
             </TabView>
           </>
@@ -366,7 +368,7 @@ export function MergeBox({ ui, pr, checks }: { ui: Layout; pr: PullDetail; check
             {row(!failed && !running, checksTitle, checksText)}
             <div className="border-b border-border bg-muted">
               {checks.map((c) => (
-                <div key={c.name} className="flex items-center gap-2 px-4 py-1.5 text-caption sm:pl-[60px]">
+                <div key={c.name} className="flex items-center gap-2 px-4 py-1.5 text-caption @[40rem]/gh:pl-[60px]">
                   {CHECK_GLYPH[c.status]}
                   <b className="min-w-0 truncate font-semibold">{c.name}</b>
                   <span className="text-muted-foreground">{c.status === 'success' ? `Successful in ${c.time}` : c.time}</span>
@@ -378,7 +380,7 @@ export function MergeBox({ ui, pr, checks }: { ui: Layout; pr: PullDetail; check
         {row(mergeOk, mergeTitle, mergeText)}
         <div className="flex flex-wrap items-center gap-3 bg-background px-4 py-3">
           <div className="flex">
-            <Button className={cn(ghButton(true), 'rounded-r-none')} onPress={openOnGitHub(pr.url)}>Merge pull request</Button>
+            <Button className={cn(ghButton(true), 'rounded-r-none')} onClick={openOnGitHub(pr.url)}>Merge pull request</Button>
             <Button aria-label="Merge options" className={cn(ghButton(true), 'rounded-l-none border-l-white/30 px-2')}><Oct name="chevDown" size={12} /></Button>
           </div>
           <span className="text-caption text-muted-foreground">{source.live ? 'Merging opens the pull request on GitHub.' : 'You can also merge this with the command line.'}</span>

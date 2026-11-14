@@ -1,11 +1,17 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { Input, TextField } from 'react-aria-components';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Input } from '@ui-sdk/react/input';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { PlainToggleButton } from '@/components/ui/plain-button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { MarkdownEditor, type MarkdownEditorClassNames, type MarkdownEditorHandle } from '@/components/ui/markdown-editor';
 import { SplitViewEmpty, SplitViewHeader, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
-import { cn } from '@/lib/utils';
 import type { Doc } from '../lib/data';
 import type { CodexState } from '../lib/use-codex';
 import { DocOutline, outlineOf } from './doc-outline';
@@ -19,7 +25,7 @@ const DOC_PARTS: MarkdownEditorClassNames = {
   blockquote: 'my-4 rounded-xl border-0 bg-secondary px-4 py-3 text-subhead leading-[1.6] text-foreground not-italic',
   checklist: 'pl-0',
   checklistItem: 'items-start gap-2.5 text-subhead leading-[1.65] data-[checked=true]:text-muted-foreground data-[checked=true]:line-through',
-  checkbox: 'mt-[5px] size-[15px] cursor-pointer accent-primary',
+  checkbox: 'mt-[5px] size-[15px] cursor-pointer',
   link: 'text-link underline-offset-2 hover:underline',
   table: 'text-detail',
   tableHeader: 'border-border bg-transparent px-3 py-2 font-semibold',
@@ -88,9 +94,13 @@ function DocPage({ codex, doc, editorRef, format }: { codex: CodexState; doc: Do
           <div className="text-[52px] leading-none" aria-hidden="true">
             {doc.emoji}
           </div>
-          <TextField aria-label="Title" value={doc.title} onChange={(title) => codex.editDoc(doc.id, { title })} className="mt-4 mb-5 block">
-            <Input className="box-border w-full border-0 bg-transparent p-0 text-[34px] leading-[1.15] font-bold tracking-[-.6px] text-foreground [font-family:inherit] outline-none placeholder:text-tertiary-foreground" placeholder="Untitled" />
-          </TextField>
+          <Input
+            aria-label="Title"
+            value={doc.title}
+            onValueChange={(title) => codex.editDoc(doc.id, { title })}
+            placeholder="Untitled"
+            className="mt-4 mb-5 box-border block w-full border-0 bg-transparent p-0 text-[34px] leading-[1.15] font-bold tracking-[-.6px] text-foreground [font-family:inherit] outline-none placeholder:text-tertiary-foreground"
+          />
           {doc.cover ? <div aria-hidden="true" className="mb-6 h-[120px] rounded-xl bg-(image:--doc-cover)" style={{ '--doc-cover': doc.cover } as React.CSSProperties} /> : null}
           <MarkdownEditor
             ref={editorRef}
@@ -113,22 +123,25 @@ function DocPage({ codex, doc, editorRef, format }: { codex: CodexState; doc: Do
   );
 }
 
-/** Editor tools: text formatting, checklist, table, and the "/" block menu. */
-function DocTools({ editorRef, format, onFormat, disabled }: { editorRef: RefObject<MarkdownEditorHandle | null>; format: boolean; onFormat: () => void; disabled: boolean }) {
-  const tool = (label: string, icon: string, onPress: () => void, active?: boolean) => <Button
-    variant="quiet"
-    size="icon-sm"
-    active={active}
-    aria-label={label}
-    title={label}
-    onPress={disabled ? undefined : onPress}
-    className={cn(disabled && 'opacity-40')}
-  >
-    <Icon name={icon} size={17} sw={1.7} />
-  </Button>;
+/** Editor tools: the formatting bar's toggle, checklist, table, and the "/" block menu. Disabled with no document. */
+function DocTools({ editorRef, format, onFormat, disabled }: { editorRef: RefObject<MarkdownEditorHandle | null>; format: boolean; onFormat: (on: boolean) => void; disabled: boolean }) {
+  const tool = (label: string, icon: string, onClick: () => void) => (
+    <Button variant="quiet" size="icon-sm" aria-label={label} title={label} disabled={disabled} onClick={onClick}>
+      <Icon name={icon} size={17} sw={1.7} />
+    </Button>
+  );
   return (
     <>
-      {tool('Format text', 'textformat', onFormat, format)}
+      <PlainToggleButton
+        aria-label="Format text"
+        title="Format text"
+        pressed={format}
+        onPressedChange={onFormat}
+        disabled={disabled}
+        className={buttonVariants({ variant: 'quiet', size: 'icon-sm' })}
+      >
+        <Icon name="textformat" size={17} sw={1.7} />
+      </PlainToggleButton>
       {tool('Checklist', 'checklist', () => editorRef.current?.chain()?.toggleList('taskList', 'taskItem').run())}
       {tool('Table', 'table', () => editorRef.current?.insertMarkdown('| Column | Column |\n| --- | --- |\n|  |  |\n|  |  |'))}
       {tool('Insert block', 'plus', () => editorRef.current?.chain()?.insertContent('/').run())}
@@ -141,16 +154,20 @@ function DocSwitcher({ codex }: { codex: CodexState }) {
   const { docs, doc, open } = codex.workspace;
   return (
     <DropdownMenu>
-      <Button variant="ghost" aria-label="Documents in this chat" className="h-8 gap-1 rounded-lg px-2 text-muted-foreground data-hovered:bg-secondary">
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" aria-label="Documents in this chat" className="h-8 gap-1 rounded-lg px-2 text-muted-foreground hover:bg-secondary" />}
+      >
         <Icon name="doc" size={17} />
         <Icon name="chevron-down" size={12} sw={2.4} />
-      </Button>
-      <DropdownMenuContent aria-label="Documents" placement="bottom start" selectionMode="single" selectedKeys={doc ? [doc.id] : []} onAction={(k) => open(String(k))}>
-        {docs.map((d) => (
-          <DropdownMenuItem key={d.id} id={d.id}>
-            {d.emoji} {d.title}
-          </DropdownMenuItem>
-        ))}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="bottom" align="start">
+        <DropdownMenuRadioGroup value={doc?.id ?? null} onValueChange={(id) => id && open(id)}>
+          {docs.map((d) => (
+            <DropdownMenuRadioItem key={d.id} value={d.id} label={d.title} closeOnSelect>
+              {d.emoji} {d.title}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -162,7 +179,7 @@ export function DocContent({ codex }: { codex: CodexState }) {
   const { doc } = codex.workspace;
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
   const [format, setFormat] = useState(false);
-  const tools = <DocTools editorRef={editorRef} format={format} onFormat={() => setFormat((f) => !f)} disabled={!doc} />;
+  const tools = <DocTools editorRef={editorRef} format={format} onFormat={setFormat} disabled={!doc} />;
   return (
     <>
       <SplitViewHeader

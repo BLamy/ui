@@ -40,14 +40,14 @@ export default function Steps() {
       <div className="flex justify-between">
         <Button
           variant="secondary"
-          isDisabled={index === 0}
-          onPress={() => setIndex((i) => i - 1)}
+          disabled={index === 0}
+          onClick={() => setIndex((i) => i - 1)}
         >
           Back
         </Button>
         <Button
-          isDisabled={index === steps.length - 1}
-          onPress={() => setIndex((i) => i + 1)}
+          disabled={index === steps.length - 1}
+          onClick={() => setIndex((i) => i + 1)}
         >
           Continue
         </Button>
