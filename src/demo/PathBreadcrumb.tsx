@@ -6,13 +6,15 @@
    it, picking a folder opens the first file inside it. When the segments don't fit the container the
    middle collapses into a single `…` that lists the hidden segments.
 
-   Every segment is a trigger of one UI SDK menu (a controller shared by the triggers, the segment as the
-   payload), so opening another segment's menu takes the open one over. The menu opens in the top layer,
+   Every segment is a trigger of one UI SDK menu outside it (a controller shared by the triggers, the segment's id as
+   the payload the content renders from), so opening another segment's menu takes the open one over, and it opens on
+   the current entry. The menu opens in the top layer,
    so the viewer's overflow never clips it. The segment, sibling and fit maths are pure and exported
    (see PathBreadcrumb.test.ts). */
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { Menu, MenuContent, MenuItem, MenuTrigger, createMenuController } from "@ui-sdk/react/menu"
 import { Check, ChevronRight, FileCode2, Folder } from "lucide-react"
+import { useOpenOnCurrent } from "../ui/menu-current"
 
 export interface CrumbSegment {
   /** Unique within the breadcrumb. */
@@ -135,9 +137,7 @@ export function PathBreadcrumb({ src, path, paths, onSelect, className }: PathBr
   const measure = useRef<HTMLOListElement | null>(null)
   const [range, setRange] = useState<CrumbRange | null>(null)
   const [menu] = useState(() => createMenuController<string>())
-  const [openId, setOpenId] = useState<string | null>(null)
-  // The triggers share one menu, which would give them all the same generated id.
-  const triggerId = useId()
+  const openOnCurrent = useOpenOnCurrent('[role="menuitem"][data-current]')
   const signature = segments.map((s) => s.name).join("/")
 
   const fit = useCallback(() => {
@@ -172,25 +172,28 @@ export function PathBreadcrumb({ src, path, paths, onSelect, className }: PathBr
     ? [...segments.slice(0, range.start), "…", ...segments.slice(range.end)]
     : segments
   const idOf = (item: CrumbSegment | "…") => (item === "…" ? "…" : item.key)
-  const openItem = openId === null ? undefined : visible.find((item) => idOf(item) === openId)
-  const label = openItem === undefined ? undefined
-    : openItem === "…" ? "Hidden path segments"
-      : openItem.kind === "src" ? "Demo files" : `Files in ${parentOf(openItem.path) || "the demo root"}`
-  const entries = openItem === undefined ? []
-    : openItem === "…" ? (range ? hiddenEntries(paths, segments, range) : [])
-      : siblingEntries(paths, openItem)
+  // The content reads the open segment from the menu's payload: the id of the segment whose trigger opened it.
+  const itemOf = (payload: string | undefined) => (payload === undefined ? undefined : visible.find((item) => idOf(item) === payload))
+  const labelOf = (item: CrumbSegment | "…" | undefined) => item === undefined ? undefined
+    : item === "…" ? "Hidden path segments"
+      : item.kind === "src" ? "Demo files" : `Files in ${parentOf(item.path) || "the demo root"}`
+  const entriesOf = (item: CrumbSegment | "…" | undefined) => item === undefined ? []
+    : item === "…" ? (range ? hiddenEntries(paths, segments, range) : [])
+      : siblingEntries(paths, item)
 
   return (
     <nav ref={nav} className={className ? `docs-demo-crumbs ${className}` : "docs-demo-crumbs"} aria-label="Breadcrumb">
-      <Menu
-        controller={menu}
-        onPayloadChange={(payload) => setOpenId(typeof payload === "string" ? payload : null)}
-        onOpenChange={(open) => {
-          if (open) setOpenId(menu.getPayload() ?? null)
-        }}
-      >
-        <MenuContent className="docs-demo-crumb-menu" aria-label={label} side="bottom" align="start" sideOffset={4} collisionPadding={8}>
-          {entries.map((entry) => {
+      <Menu controller={menu} onOpenChange={(open) => openOnCurrent.opened(open)} onPayloadChange={() => openOnCurrent.opened()}>
+        <MenuContent<string>
+          className="docs-demo-crumb-menu"
+          side="bottom"
+          align="start"
+          sideOffset={4}
+          collisionPadding={8}
+          render={(props, state) => <div {...props} aria-label={labelOf(itemOf(state.payload))} />}
+          {...openOnCurrent.content}
+        >
+          {(state) => entriesOf(itemOf(state.payload)).map((entry) => {
             const current = entryContains(entry, path)
             return (
               <MenuItem
@@ -209,6 +212,7 @@ export function PathBreadcrumb({ src, path, paths, onSelect, className }: PathBr
             )
           })}
         </MenuContent>
+      </Menu>
       <ol className="docs-demo-crumbs-list">
         {visible.map((item, index) => {
           const hidden = item === "…"
@@ -218,8 +222,8 @@ export function PathBreadcrumb({ src, path, paths, onSelect, className }: PathBr
             <li key={id} className="docs-demo-crumb-item" data-last={last || undefined}>
               {index > 0 ? <ChevronRight className="docs-demo-crumb-sep" width={12} height={12} aria-hidden="true" /> : null}
               <MenuTrigger
+                controller={menu}
                 payload={id}
-                id={`${triggerId}-${index}`}
                 className="docs-demo-crumb"
                 data-crumb-last={last || undefined}
                 data-current={last || undefined}
@@ -246,7 +250,6 @@ export function PathBreadcrumb({ src, path, paths, onSelect, className }: PathBr
           </li>
         ))}
       </ol>
-      </Menu>
     </nav>
   )
 }

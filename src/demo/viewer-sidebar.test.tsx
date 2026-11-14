@@ -133,9 +133,12 @@ describe("breadcrumb", () => {
     await key(trigger, "ArrowDown")
     await flush()
     expect(options()).toEqual(["avatar.tsx", "user-panel.tsx"])
-    // focus lands on the first entry; the current one is marked
-    expect(document.activeElement!.textContent).toBe("avatar.tsx")
+    // focus lands on the current entry (not the first), which is marked
     expect(menu()!.querySelector("[aria-current=true]")!.textContent).toBe("user-panel.tsx")
+    expect(document.activeElement!.textContent).toBe("user-panel.tsx")
+    expect(menu()!.querySelector("[data-highlighted]")!.textContent).toBe("user-panel.tsx")
+    await key(document.activeElement!, "ArrowUp")
+    expect(document.activeElement!.textContent).toBe("avatar.tsx")
     await key(document.activeElement!, "ArrowDown")
     expect(document.activeElement!.textContent).toBe("user-panel.tsx")
     await key(document.activeElement!, "ArrowUp")
@@ -147,6 +150,7 @@ describe("breadcrumb", () => {
 
     await key(trigger, "ArrowDown")
     await flush()
+    await key(document.activeElement!, "ArrowUp")
     await key(document.activeElement!, "Enter")
     await flush()
     expect(menu()).toBeNull()

@@ -135,7 +135,9 @@ describe("DemoViewer code view: breadcrumb and file list handle (server markup)"
     const list = html.slice(html.indexOf("<ol"), html.indexOf("</ol>"))
     const names = [...list.matchAll(/docs-demo-crumb-text">([^<]+)</g)].map((m) => m[1])
     expect(names).toEqual(["blocks", "discord-clone", "index.tsx"])
-    expect(list).toContain('aria-haspopup="menu"')
+    // The segments are triggers outside the menu (its controller connects them as the page hydrates), so the server
+    // HTML doesn't claim a menu that can't open yet; viewer-a11y.test.tsx checks aria-haspopup once mounted.
+    expect(list).not.toContain('aria-haspopup="menu"')
     expect(list).toContain('aria-current="page"')
   })
 
