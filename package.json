@@ -44,7 +44,7 @@
     "./styles.css": "./dist/styles.css"
   },
   "dependencies": {
-    "@brett_lamy/docstream": "1.35.0",
+    "@brett_lamy/docstream": "2.0.0",
     "gpu-lexer": "0.0.2",
     "lucide-react": "^1.17.0"
   },
