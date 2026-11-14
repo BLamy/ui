@@ -13,7 +13,7 @@
    Elements pane. The docked panel with its resize separator and the Network table's selectable rows are primitives
    of UI SDK's core (devtools-primitives.ts). Plain CSS, like the player. */
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
-import { createStickToBottom } from '@ui-sdk/core'
+import { bindLayer, createStickToBottom } from '@ui-sdk/core'
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible'
 import { SegmentedControl, SegmentedControlItem } from '@ui-sdk/react/segmented-control'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui-sdk/react/select'
@@ -97,17 +97,37 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
   // Focus moves in as the panel opens (not later, when the user is already working in it).
   useEffect(() => { if (autoFocus) panel.current?.focus({ preventScroll: true }) }, [])
 
+  // Escape closes the panel while focus is in it. The panel joins UI SDK's layer stack for as long as it holds focus,
+  // so a popup opened inside it (the level select's list) sits above it and takes the first Escape itself.
+  const close = useRef(onClose)
+  close.current = onClose
+  useEffect(() => {
+    const el = panel.current
+    if (!el) return
+    let unbind: (() => void) | undefined
+    const enter = () => {
+      unbind ??= bindLayer(el, { onDismiss: (reason) => { if (reason === 'escape-key') close.current() } })
+    }
+    const leave = (event: FocusEvent) => {
+      if (event.relatedTarget instanceof Node && el.contains(event.relatedTarget)) return
+      unbind?.()
+      unbind = undefined
+    }
+    el.addEventListener('focusin', enter)
+    el.addEventListener('focusout', leave)
+    if (el.contains(el.ownerDocument.activeElement)) enter()
+    return () => {
+      el.removeEventListener('focusin', enter)
+      el.removeEventListener('focusout', leave)
+      unbind?.()
+    }
+  }, [])
+
   const onKeyDown = (e: ReactKeyboardEvent) => {
     onInteract?.()
     const target = e.target as HTMLElement
-    if (e.key === 'Escape') {
-      // An open list inside the panel (the level select's) closes on its own Escape, which it hears after this.
-      if (target.closest('[popover], [aria-haspopup][aria-expanded="true"]')) return
-      e.stopPropagation()
-      onClose()
-    }
-    // The player's own keys (space, arrows, J/K/L) stay out of the panel.
-    else if (!target.closest('input')) e.stopPropagation()
+    // Escape goes on to the layer stack (above); the player's own keys (space, arrows, J/K/L) stay out of the panel.
+    if (e.key !== 'Escape' && !target.closest('input')) e.stopPropagation()
   }
 
   const tabs: { id: ReplayDevtoolsTab; label: string }[] = [

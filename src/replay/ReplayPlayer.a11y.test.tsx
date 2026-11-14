@@ -177,6 +177,21 @@ describe("the Console and Network buttons (ToggleGroup)", () => {
     await press("k")
     expect(stage.calls).toEqual(["toggle"])
   })
+
+  it("Escape with focus outside the panel leaves it open, and doesn't reach the page as handled", async () => {
+    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="console" />)
+    await focus(q(panelOf(el)!, '[role=tab][aria-selected="true"]'))
+    const outside = document.body.appendChild(Object.assign(document.createElement("button"), { textContent: "Elsewhere" }))
+    try {
+      await focus(outside)
+      const escape = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })
+      await act(async () => { outside.dispatchEvent(escape) })
+      expect(panelOf(el)).not.toBeNull()
+      expect(escape.defaultPrevented).toBe(false)
+    } finally {
+      outside.remove()
+    }
+  })
 })
 
 describe("the DevTools panel", () => {
