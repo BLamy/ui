@@ -1148,6 +1148,15 @@ No export was added or removed, and every component keeps its props.
 
 The docs site's Installation page (https://blamy.github.io/docstream/) has the same notes.
 
+### Known limits in 2.0
+
+- **Disclosures opened before hydration.** An expandable, a properties sheet or an OpenAPI
+  response is a native `<details>` in server HTML, and becomes UI SDK's Collapsible once the
+  script hydrates it, keeping whether the reader opened it. The swap remounts its content,
+  so a disclosure *nested* inside it goes back to its default (closed) state, focus inside it
+  returns to the page, and an embed, iframe or demo inside it loads again. A single level,
+  with nothing focused, keeps its state.
+
 ## Migrating to 1.5
 
 No breaking changes. New: **Copy demo** (clipboard with the demo's files and an

@@ -5,7 +5,11 @@
    reveals it, with no script at all. Once hydrated it becomes UI SDK's Collapsible (a button with `aria-expanded`,
    `data-open` / `data-closed`, `hidden="until-found"` on the closed panel), keeping whatever the reader opened before
    the script ran. A client-only render starts as the Collapsible. The class names are the same in both, so the CSS
-   styles `details[open]` alongside `[data-open]`. */
+   styles `details[open]` alongside `[data-open]`.
+
+   Known limit: the swap is a different element type, so React remounts the content. A disclosure nested inside one
+   that was open before hydration comes back at its default state, focus inside it is lost, and an iframe or demo in
+   it mounts again. One level with nothing focused keeps its state. (README, "Known limits in 2.0".) */
 import { useRef, useSyncExternalStore, type HTMLAttributes, type ReactNode } from "react"
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@ui-sdk/react/collapsible"
 
