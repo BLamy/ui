@@ -26,11 +26,15 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
 ## Installation
 
 ```sh
-pnpm add @brett_lamy/docstream
-# or: npm install @brett_lamy/docstream
+pnpm add @brett_lamy/docstream @ui-sdk/core @ui-sdk/react
+# or: npm install @brett_lamy/docstream @ui-sdk/core @ui-sdk/react
 ```
 
-React and React DOM are peer dependencies and must be provided by your app.
+React and React DOM (19 or newer) and [UI SDK](https://ui-sdk.dev) (`@ui-sdk/core` and
+`@ui-sdk/react`, `>=0.1.0-beta.2`) are peer dependencies and must be provided by your app.
+docstream's interactive parts (tabs, menus, popovers, hover cards, the docs-site sidebar and
+search, the replay player's controls, the Strudel rack) are UI SDK components, so your app and
+docstream share one copy of its core.
 Nothing in docstream's dependency tree runs an install script, so
 `pnpm add` succeeds with no build-script prompts (no `ERR_PNPM_IGNORED_BUILDS`).
 Heavy renderers are loaded only when a page needs them: Pele for
@@ -74,6 +78,16 @@ Import the package CSS once near your app entrypoint:
 
 ```ts
 import "@brett_lamy/docstream/styles.css"
+```
+
+UI SDK adds a little CSS of its own (keeping closed popups hidden, for one) in a cascade layer
+named `ui-sdk`. docstream's stylesheet declares that layer first, so its rules win. If you import
+docstream's CSS inside a layer of your own (`@import "…/styles.css" layer(docs)`, or through
+Tailwind's layers), declare the layer yourself at the top of your global stylesheet, above
+`@import "tailwindcss"` if you have it:
+
+```css
+@layer ui-sdk;
 ```
 
 The stylesheet provides heading hierarchy and consistent spacing for the
@@ -1078,6 +1092,41 @@ ESM, and your type-check reads `.d.ts` files instead of docstream's sources. The
 The TypeScript sources are published too, behind a `source` export condition, for
 monorepos that want to compile docstream from source (e.g. Vite
 `resolve.conditions: ["source", ...]` or TypeScript `customConditions`).
+
+## Upgrading to 2.0
+
+2.0 rebuilds docstream's interactive UI on [UI SDK](https://ui-sdk.dev). Rendering, the
+parser and every component's props are unchanged; what changes is the install, one CSS line
+for layered hosts, and the markup some widgets render.
+
+1. **React 19.** `react` and `react-dom` are now `>=19` (UI SDK requires it); `@types/react`
+   19.2.10 or newer if you use TypeScript.
+2. **Install the UI SDK peers.** `@ui-sdk/core` and `@ui-sdk/react` (`>=0.1.0-beta.2`, on
+   npm's `beta` tag) are peer dependencies, so the app and docstream share one copy of the core:
+
+   ```sh
+   npm install @brett_lamy/docstream@2 @ui-sdk/core@beta @ui-sdk/react@beta
+   ```
+3. **The `ui-sdk` layer.** If you import docstream's stylesheet inside a cascade layer (or
+   through Tailwind's), put `@layer ui-sdk;` at the top of your global stylesheet, so UI SDK's
+   CSS sits under docstream's. A plain `import "@brett_lamy/docstream/styles.css"` needs nothing.
+4. **Styling hooks.** If you restyle docstream's widgets, state now comes from UI SDK's
+   attributes (`data-selected`, `data-open`, `data-pressed`, `data-checked`, `data-highlighted`,
+   `data-starting-style` / `data-ending-style`) rather than `aria-*` or helper classes:
+   `.docs-tab-active` is `[data-selected]`; `.docs-pill[aria-selected|aria-checked]` is
+   `[data-selected]` / `[data-checked]`; `.docs-page-actions-caret-open` is
+   `.docs-page-actions-more[data-open] .docs-page-actions-caret`; `.docs-task-tooltip` is
+   `.docs-tooltip`. In the replay player, parts that became UI SDK parts carry their old name
+   in `data-part` (`[data-part="replay-devtools-pane"]`, `-tablist`, `-section`, `-button`,
+   `-chips`, `-node`, `replay-preview-captions`, …) since UI SDK owns their `data-slot`.
+5. **Markup.** Expandables, the properties sheet and OpenAPI responses are UI SDK collapsibles
+   instead of `<details>` (closed panels carry `hidden="until-found"`, so find-in-page still
+   opens them). Popups (menus, hover cards, the demo viewer's fullscreen view, search) render
+   in place in the top layer instead of a portal; hover-card content mounts only while open.
+   The task checkbox is a `button[role=checkbox]`. The demo file list's width variable
+   `--docs-demo-files-w` is gone (UI SDK's `--resizable-panel-size` sizes it).
+
+The docs site's Installation page (https://blamy.github.io/docstream/) has the same notes.
 
 ## Migrating to 1.5
 

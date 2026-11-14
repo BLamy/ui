@@ -6,18 +6,20 @@ description: Install docstream, its peers and the stylesheet, and see exactly wh
 
 docstream is one package, `@brett_lamy/docstream`. It ships compiled ES modules with type declarations, needs no bundler configuration, and runs no install scripts — so `pnpm add` finishes without build-script prompts.
 
-{% command %}npm install @brett_lamy/docstream react react-dom{% endcommand %}
+{% command %}npm install @brett_lamy/docstream react react-dom @ui-sdk/core@beta @ui-sdk/react@beta{% endcommand %}
 
 {% hint style="info" %}
-React and React DOM (18 or newer) are peer dependencies: docstream uses your app's copy. Everything else it needs — the GitBook parser, the code highlighter, Pele, KaTeX, rrweb, Strudel — is a regular dependency and installs with it.
+React and React DOM (19 or newer) and [UI SDK](https://ui-sdk.dev) (`@ui-sdk/core` and `@ui-sdk/react`) are peer dependencies: docstream uses your app's copy. Its interactive parts (tabs, menus, popovers, hover cards, the site's sidebar and search, the replay and Strudel controls) are UI SDK components, sharing one copy of its core with your app. Everything else it needs — the GitBook parser, the code highlighter, Pele, KaTeX, rrweb, Strudel — is a regular dependency and installs with it.
 {% endhint %}
 
 ## Peer dependencies
 
 | Peer | Range | Required | Needed for |
 | --- | --- | --- | --- |
-| `react` | `>=18` | Yes | Everything that renders. |
-| `react-dom` | `>=18` | Yes | Everything that renders. |
+| `react` | `>=19` | Yes | Everything that renders. |
+| `react-dom` | `>=19` | Yes | Everything that renders. |
+| `@ui-sdk/core` | `>=0.1.0-beta.2` | Yes | The behaviors under every interactive part: keyboard, focus, dismissal, ARIA. |
+| `@ui-sdk/react` | `>=0.1.0-beta.2` | Yes | The UI SDK components docstream renders. |
 | `@agent-wasm/core` | `>=0.4.0` | Optional | The `@brett_lamy/docstream/playground` entry: live code fences and runnable inline `{% demo %}` files, run by almost-node (a Vite dev server in the browser). |
 | `@brett_lamy/viz-engine` | `>=0.2.0` | Optional | The `@brett_lamy/docstream/viz` entry: `VizEmbed`. |
 | `vite` | `>=5` | Optional | The `@brett_lamy/docstream/vite` plugin (`docstreamSources`), imported from `vite.config.ts`. |
@@ -75,6 +77,14 @@ import "@brett_lamy/docstream/styles.css"
 
 `styles.css` covers every block the renderer draws — headings, hints, tabs, code, demos, the replay player, the Strudel rack — and pulls in the property-sheet and task-checkbox styles. Its colors come from `--gb-*` tokens that read shadcn-style host tokens (`--card`, `--border`, `--primary`, …) with neutral defaults, so it looks right with no setup and follows your theme when there is one. See [Theming](../07-reference/01-theming.md).
 
+### The `ui-sdk` layer
+
+UI SDK adds a little CSS of its own (keeping closed popups hidden, for one) in a cascade layer named `ui-sdk` once a component mounts. `styles.css` declares that layer first, so docstream's rules win over it. If you import the stylesheet inside a layer of your own — `@import "@brett_lamy/docstream/styles.css" layer(docs)`, or through Tailwind's layers — declare it yourself at the very top of your global stylesheet, above `@import "tailwindcss"`:
+
+```css title="app.css" lineNumbers="false"
+@layer ui-sdk;
+```
+
 If you use `DocumentProperties` or `TaskCheckbox` on their own, outside a rendered document, their styles are separate entries too:
 
 ```ts lineNumbers="false"
@@ -131,7 +141,7 @@ For monorepos that want to compile docstream from its TypeScript sources instead
 {% tab title="Next.js" %}
 docstream is plain ESM, so no `transpilePackages` entry is needed.
 
-docstream's modules don't carry a `"use client"` directive, and the renderers use hooks (state, effects, context). In the App Router, render them from a client component:
+Only docstream's UI SDK part modules carry a `"use client"` directive; the renderers use hooks (state, effects, context) without one. In the App Router, render them from a client component:
 
 ```tsx title="app/docs/answer.tsx"
 "use client"
@@ -156,6 +166,53 @@ What to expect from a server render:
 - File-backed demos load through the resolver asynchronously. To have them settled for the first render (static export, SSR), call `preloadDemos(resolver, srcs)` first — see [Demos](../04-interactive/01-demos.md).
 {% endtab %}
 {% endtabs %}
+
+## Upgrading to 2.0
+
+2.0 rebuilds the interactive UI on UI SDK. Rendering, the parser and every component's props stay the same; this is what a host changes:
+
+{% stepper %}
+{% step %}
+### React 19
+
+`react` and `react-dom` are `>=19` now, as UI SDK requires (`@types/react` 19.2.10 or newer with TypeScript).
+{% endstep %}
+{% step %}
+### Install the two UI SDK peers
+
+{% command %}npm install @brett_lamy/docstream@2 @ui-sdk/core@beta @ui-sdk/react@beta{% endcommand %}
+
+Both are peer dependencies (`>=0.1.0-beta.2`), so your app and docstream share one copy of the core.
+{% endstep %}
+{% step %}
+### Declare the layer, if you layer docstream
+
+Importing `styles.css` inside a cascade layer (or Tailwind's)? Put `@layer ui-sdk;` at the top of your global stylesheet. A plain import needs nothing.
+{% endstep %}
+{% step %}
+### Update custom styles that target state
+
+Widget state is styled from UI SDK's attributes now, not `aria-*` or helper classes:
+
+| 1.x | 2.0 |
+| --- | --- |
+| `.docs-tab-active` | `[data-selected]` on the tab |
+| `.docs-pill[aria-selected="true"]`, `.docs-pill[aria-checked="true"]` | `.docs-pill[data-selected]`, `.docs-pill[data-checked]`; one `.docs-pill-indicator` / `.docs-tab-indicator` per strip slides to the choice |
+| `.docs-page-actions-caret-open` | `.docs-page-actions-more[data-open] .docs-page-actions-caret` |
+| `.docs-task-tooltip` | `.docs-tooltip` |
+| `.docs-expandable summary`, `.oas-response summary` | `.docs-expandable-trigger`, `.oas-response-trigger` (with `[data-open]`); `.docs-properties-trigger` for the properties sheet |
+| `.docs-demo-vp[aria-pressed]`, `.docs-demo-file[aria-selected]`, `.docs-demo-crumb[aria-expanded]` | `[data-pressed]`, `[data-selected]`, `[data-open]` |
+| `--docs-demo-files-w`, `--crumb-x` / `--crumb-y` | `--resizable-panel-size`; the crumb menu is placed by UI SDK |
+| `.ds-site-nav-row`, `.ds-site-search-hit[aria-selected]` | the sidebar is a UI SDK tree (`[data-slot="tree-item"]`; `.ds-site-nav-link[data-current]`, `.ds-site-nav-toggle[data-expanded]`); hits use `[data-highlighted]` |
+| `.strudel-device__toggle[aria-pressed]`, `.docstream-strudel__toggle[aria-expanded]` | `[data-pressed]`, `[data-open]` |
+| `[data-slot="replay-devtools-pane"]`, `-tablist`, `-section`, `-button(s)`, `-chips`, `-node`, `-code`, `-detail-body`, `replay-preview-captions` | the same names in `data-part`: UI SDK owns those parts' `data-slot` |
+{% endstep %}
+{% step %}
+### Expect some markup to move
+
+Expandables, the properties sheet and OpenAPI responses are UI SDK collapsibles instead of `<details>`; a closed panel carries `hidden="until-found"`, so find-in-page still opens it. Menus, hover cards, search and the demo's fullscreen view render in place in the browser's top layer rather than in a portal, and hover-card content mounts only while open. The task checkbox is a `button[role=checkbox]` with a hidden input.
+{% endstep %}
+{% endstepper %}
 
 ## Next
 

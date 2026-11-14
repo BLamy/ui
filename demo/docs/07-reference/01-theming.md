@@ -239,6 +239,10 @@ Mermaid fences are drawn by Pele, which reads `--pele-*` variables. docstream ma
 
 Override one by setting it on `.docs-mermaid-preview` (with higher specificity, e.g. `.brand-docs .docs-mermaid-preview`). Pele measures text in the diagram's own font; set `--pele-font` there to use a different one.
 
+## Cascade layers
+
+docstream's interactive parts are [UI SDK](https://ui-sdk.dev) components. UI SDK adds a little CSS of its own in a layer named `ui-sdk`, and `styles.css` declares that layer before anything else, so every docstream rule wins over it. If you import the stylesheet inside a layer of your own, or through Tailwind's, put `@layer ui-sdk;` at the top of your global stylesheet instead. Widget state is styled from UI SDK's attributes (`data-selected`, `data-open`, `data-pressed`, `data-checked`, `data-highlighted`), which your overrides can target too.
+
 ## Replay player
 
 The replay player's CSS sits in the `docstream.replay` cascade layer under zero-specificity `:where()` selectors, so your own rules and utility classes override it. If your utilities layer is declared before this stylesheet, put `@layer docstream.replay;` ahead of it. Its parts are addressable as `[data-slot="replay-preview"]` (with `data-state` `loading | paused | playing`), `-bar`, `-stage`, `-poster`, `-pointer`, `-controls`, `-scrubber` and `-markers`. See [Replays](../05-media/02-replays.md).
