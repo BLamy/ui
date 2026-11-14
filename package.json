@@ -46,8 +46,7 @@
   "dependencies": {
     "@brett_lamy/docstream": "1.35.0",
     "gpu-lexer": "0.0.2",
-    "lucide-react": "^1.17.0",
-    "react-aria": "^3.52.1"
+    "lucide-react": "^1.17.0"
   },
   "peerDependencies": {
     "@tiptap/core": "^3.26.1",
