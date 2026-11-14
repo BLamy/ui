@@ -31,7 +31,7 @@ pnpm add @brett_lamy/docstream @ui-sdk/core @ui-sdk/react
 ```
 
 React and React DOM (19 or newer) and [UI SDK](https://ui-sdk.dev) (`@ui-sdk/core` and
-`@ui-sdk/react`, `>=0.1.0-beta.2`) are peer dependencies and must be provided by your app.
+`@ui-sdk/react`, `^0.1.0-beta.2`) are peer dependencies and must be provided by your app.
 docstream's interactive parts (tabs, menus, popovers, hover cards, the docs-site sidebar and
 search, the replay player's controls, the Strudel rack) are UI SDK components, so your app and
 docstream share one copy of its core.
@@ -1101,7 +1101,7 @@ for layered hosts, and the markup some widgets render.
 
 1. **React 19.** `react` and `react-dom` are now `>=19` (UI SDK requires it); `@types/react`
    19.2.10 or newer if you use TypeScript.
-2. **Install the UI SDK peers.** `@ui-sdk/core` and `@ui-sdk/react` (`>=0.1.0-beta.2`, on
+2. **Install the UI SDK peers.** `@ui-sdk/core` and `@ui-sdk/react` (`^0.1.0-beta.2`, on
    npm's `beta` tag) are peer dependencies, so the app and docstream share one copy of the core:
 
    ```sh
@@ -1110,23 +1110,41 @@ for layered hosts, and the markup some widgets render.
 3. **The `ui-sdk` layer.** If you import docstream's stylesheet inside a cascade layer (or
    through Tailwind's), put `@layer ui-sdk;` at the top of your global stylesheet, so UI SDK's
    CSS sits under docstream's. A plain `import "@brett_lamy/docstream/styles.css"` needs nothing.
-4. **Styling hooks.** If you restyle docstream's widgets, state now comes from UI SDK's
-   attributes (`data-selected`, `data-open`, `data-pressed`, `data-checked`, `data-highlighted`,
-   `data-starting-style` / `data-ending-style`) rather than `aria-*` or helper classes:
-   `.docs-tab-active` is `[data-selected]`; `.docs-pill[aria-selected|aria-checked]` is
-   `[data-selected]` / `[data-checked]`; `.docs-page-actions-caret-open` is
-   `.docs-page-actions-more[data-open] .docs-page-actions-caret`; `.docs-task-tooltip` is
-   `.docs-tooltip`. In the replay player, parts that became UI SDK parts carry their old name
-   in `data-part` (`[data-part="replay-devtools-pane"]`, `-tablist`, `-section`, `-button`,
-   `-chips`, `-node`, `replay-preview-captions`, …) since UI SDK owns their `data-slot`.
-5. **Markup.** Expandables, the properties sheet and OpenAPI responses are UI SDK collapsibles
-   instead of `<details>` (closed panels carry `hidden="until-found"`, so find-in-page still
-   opens them). Popups (menus, hover cards, the demo viewer's fullscreen view, search) render
-   in place in the top layer instead of a portal; hover-card content mounts only while open.
-   The task checkbox is a `button[role=checkbox]`. The demo file list's width variable
-   `--docs-demo-files-w` is gone (UI SDK's `--resizable-panel-size` sizes it).
-6. **`react-aria` is gone.** The Copy demo button writes the clipboard on the copy event
+4. **Styling hooks and markup.** State now comes from UI SDK's attributes (`data-selected`,
+   `data-open`, `data-pressed`, `data-checked`, `data-highlighted`, `data-current`,
+   `data-starting-style` / `data-ending-style`) rather than `aria-*` or helper classes, and
+   where UI SDK owns a part's `data-slot`, docstream's old name moved to `data-part`. Every
+   hook that changed:
+
+   | Where | 1.x | 2.0 |
+   | --- | --- | --- |
+   | Tabs | `.docs-tab-active` | `.docs-tab[data-selected]`; one `.docs-tab-indicator` per strip |
+   | Pills | `.docs-pill[aria-selected="true"]`, `[aria-checked="true"]` | `.docs-pill[data-selected]`, `[data-checked]`; one `.docs-pill-indicator` |
+   | Page actions | `.docs-page-actions-caret-open` | `.docs-page-actions-more[data-open] .docs-page-actions-caret` |
+   | Tasks | `.docs-task-tooltip`; the checkbox an `input` | `.docs-tooltip`; the checkbox a `button[role=checkbox]` (`[data-checked]` / `[data-indeterminate]`) |
+   | Expandables, properties, OpenAPI | `<details>` with `.docs-expandable summary`, `.oas-response summary` | server HTML: still `<details>` / `<summary>` (`details[open]`); hydrated: `.docs-expandable-trigger`, `.oas-response-trigger`, `.docs-properties-trigger` buttons with `[data-open]`, panels `[hidden="until-found"]` while closed |
+   | Demo viewer | `.docs-demo-vp[aria-pressed]`, `.docs-demo-file[aria-selected]`, `.docs-demo-crumb[aria-expanded]` | `[data-pressed]`, `[data-selected]`, `[data-open]` |
+   | Demo viewer | `--docs-demo-files-w`; `--crumb-x` / `--crumb-y` | `--resizable-panel-size` on `.docs-demo-files-pane`; UI SDK places the crumb menu |
+   | Demo breadcrumb | segments `aria-haspopup` in server HTML | set once hydrated (the segments are triggers outside the one menu) |
+   | Site sidebar | `.ds-site-nav-row`; `aria-current` on the row; `.ds-site-nav-toggle` a `button`; `.ds-site-nav-children` a `div` | a UI SDK tree: `[data-slot="tree-item"]`, `.ds-site-nav-link[data-current]`; `.ds-site-nav-toggle` an indicator `span` inside the link (`[data-expanded]`); `.ds-site-nav-children` a `ul` |
+   | Site search | `.ds-site-search-hit[aria-selected]` | `[data-highlighted]` |
+   | Site overlays | drawer and search `position: absolute` in the site | the top layer. A site that is the page: modal over the window. An embedded site (`routing="memory"`, `.ds-site[data-embedded]`): `modal="trap-focus"` (host page stays usable), placed from `--ds-site-frame-top`/`-left`/`-width`/`-height` |
+   | Strudel | `.strudel-device__toggle[aria-pressed]`, `.docstream-strudel__toggle[aria-expanded]` | `[data-pressed]`, `[data-open]` |
+   | Replay | `[data-slot="replay-devtools-pane"]`, `-tablist`, `-section`, `-button`, `-buttons`, `-chips`, `-node`, `-code`, `-detail-body`, `[data-slot="replay-preview-captions"]` | the same names in `data-part` |
+   | Replay | the DevTools panel `role="dialog"` | a `section` named "DevTools" (a region docked in the player) |
+   | Replay | the scrubber fill from `--replay-progress` / `--replay-progress-start` on the track; `--replay-window-start` / `-size` on `[data-slot="replay-preview-window"]` | `[data-slot="slider-indicator"]`; the window's `--replay-window-start` / `-size` on the scrubber, `[data-slot="replay-preview-scrubber"][data-window]` |
+5. **Popups.** Menus, hover cards, search and the demo's fullscreen view render in place in
+   the top layer instead of a portal; hover-card content mounts only while open. Menus of
+   choices (a task's state, a breadcrumb's files) open on the current item.
+6. **Keys that changed.** The rack's knobs: Shift+Arrow is now the large step and Alt+Arrow the
+   fine one (Shift was fine). The fader is a slider: pressing the track jumps the thumb there
+   (the drag was relative). A rack module's grip picks the module up with Space or Enter
+   before the arrows move it (arrows moved it at once). In the replay player, Left and Right on
+   the Console / Network buttons move between the two (they seeked ±5 s).
+7. **`react-aria` is gone.** The Copy demo button writes the clipboard on the copy event
    itself; remove `react-aria` if nothing else of yours uses it.
+
+No export was added or removed, and every component keeps its props.
 
 The docs site's Installation page (https://blamy.github.io/docstream/) has the same notes.
 

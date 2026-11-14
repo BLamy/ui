@@ -18,8 +18,8 @@ React and React DOM (19 or newer) and [UI SDK](https://ui-sdk.dev) (`@ui-sdk/cor
 | --- | --- | --- | --- |
 | `react` | `>=19` | Yes | Everything that renders. |
 | `react-dom` | `>=19` | Yes | Everything that renders. |
-| `@ui-sdk/core` | `>=0.1.0-beta.2` | Yes | The behaviors under every interactive part: keyboard, focus, dismissal, ARIA. |
-| `@ui-sdk/react` | `>=0.1.0-beta.2` | Yes | The UI SDK components docstream renders. |
+| `@ui-sdk/core` | `^0.1.0-beta.2` | Yes | The behaviors under every interactive part: keyboard, focus, dismissal, ARIA. |
+| `@ui-sdk/react` | `^0.1.0-beta.2` | Yes | The UI SDK components docstream renders. |
 | `@agent-wasm/core` | `>=0.4.0` | Optional | The `@brett_lamy/docstream/playground` entry: live code fences and runnable inline `{% demo %}` files, run by almost-node (a Vite dev server in the browser). |
 | `@brett_lamy/viz-engine` | `>=0.2.0` | Optional | The `@brett_lamy/docstream/viz` entry: `VizEmbed`. |
 | `vite` | `>=5` | Optional | The `@brett_lamy/docstream/vite` plugin (`docstreamSources`), imported from `vite.config.ts`. |
@@ -182,7 +182,7 @@ What to expect from a server render:
 
 {% command %}npm install @brett_lamy/docstream@2 @ui-sdk/core@beta @ui-sdk/react@beta{% endcommand %}
 
-Both are peer dependencies (`>=0.1.0-beta.2`), so your app and docstream share one copy of the core.
+Both are peer dependencies (`^0.1.0-beta.2`), so your app and docstream share one copy of the core.
 {% endstep %}
 {% step %}
 ### Declare the layer, if you layer docstream
@@ -190,27 +190,36 @@ Both are peer dependencies (`>=0.1.0-beta.2`), so your app and docstream share o
 Importing `styles.css` inside a cascade layer (or Tailwind's)? Put `@layer ui-sdk;` at the top of your global stylesheet. A plain import needs nothing.
 {% endstep %}
 {% step %}
-### Update custom styles that target state
+### Update custom styles that target state or markup
 
-Widget state is styled from UI SDK's attributes now, not `aria-*` or helper classes:
+Widget state is styled from UI SDK's attributes now (`data-selected`, `data-open`, `data-pressed`, `data-checked`, `data-highlighted`, `data-current`, `data-starting-style` / `data-ending-style`), not `aria-*` or helper classes. Where UI SDK owns a part's `data-slot`, docstream's old name moved to `data-part`. Every hook that changed:
 
-| 1.x | 2.0 |
-| --- | --- |
-| `.docs-tab-active` | `[data-selected]` on the tab |
-| `.docs-pill[aria-selected="true"]`, `.docs-pill[aria-checked="true"]` | `.docs-pill[data-selected]`, `.docs-pill[data-checked]`; one `.docs-pill-indicator` / `.docs-tab-indicator` per strip slides to the choice |
-| `.docs-page-actions-caret-open` | `.docs-page-actions-more[data-open] .docs-page-actions-caret` |
-| `.docs-task-tooltip` | `.docs-tooltip` |
-| `.docs-expandable summary`, `.oas-response summary` | `.docs-expandable-trigger`, `.oas-response-trigger` (with `[data-open]`); `.docs-properties-trigger` for the properties sheet |
-| `.docs-demo-vp[aria-pressed]`, `.docs-demo-file[aria-selected]`, `.docs-demo-crumb[aria-expanded]` | `[data-pressed]`, `[data-selected]`, `[data-open]` |
-| `--docs-demo-files-w`, `--crumb-x` / `--crumb-y` | `--resizable-panel-size`; the crumb menu is placed by UI SDK |
-| `.ds-site-nav-row`, `.ds-site-search-hit[aria-selected]` | the sidebar is a UI SDK tree (`[data-slot="tree-item"]`; `.ds-site-nav-link[data-current]`, `.ds-site-nav-toggle[data-expanded]`); hits use `[data-highlighted]` |
-| `.strudel-device__toggle[aria-pressed]`, `.docstream-strudel__toggle[aria-expanded]` | `[data-pressed]`, `[data-open]` |
-| `[data-slot="replay-devtools-pane"]`, `-tablist`, `-section`, `-button(s)`, `-chips`, `-node`, `-code`, `-detail-body`, `replay-preview-captions` | the same names in `data-part`: UI SDK owns those parts' `data-slot` |
+| Where | 1.x | 2.0 |
+| --- | --- | --- |
+| Tabs | `.docs-tab-active` | `.docs-tab[data-selected]`; one `.docs-tab-indicator` per strip |
+| Pills | `.docs-pill[aria-selected="true"]`, `[aria-checked="true"]` | `.docs-pill[data-selected]`, `[data-checked]`; one `.docs-pill-indicator` |
+| Page actions | `.docs-page-actions-caret-open` | `.docs-page-actions-more[data-open] .docs-page-actions-caret` |
+| Tasks | `.docs-task-tooltip`; the checkbox an `input` | `.docs-tooltip`; the checkbox a `button[role=checkbox]` (`[data-checked]` / `[data-indeterminate]`) |
+| Expandables, properties, OpenAPI | `<details>` with `.docs-expandable summary`, `.oas-response summary` | server HTML: still `<details>` / `<summary>` (`details[open]`); hydrated: `.docs-expandable-trigger`, `.oas-response-trigger`, `.docs-properties-trigger` buttons with `[data-open]`, panels `[hidden="until-found"]` while closed |
+| Demo viewer | `.docs-demo-vp[aria-pressed]`, `.docs-demo-file[aria-selected]`, `.docs-demo-crumb[aria-expanded]` | `[data-pressed]`, `[data-selected]`, `[data-open]` |
+| Demo viewer | `--docs-demo-files-w`; `--crumb-x` / `--crumb-y` | `--resizable-panel-size` on `.docs-demo-files-pane`; UI SDK places the crumb menu |
+| Demo breadcrumb | segments `aria-haspopup` in server HTML | set once hydrated (the segments are triggers outside the one menu) |
+| Site sidebar | `.ds-site-nav-row`; `aria-current` on the row; `.ds-site-nav-toggle` a `button`; `.ds-site-nav-children` a `div` | a UI SDK tree: `[data-slot="tree-item"]`, `.ds-site-nav-link[data-current]`; `.ds-site-nav-toggle` an indicator `span` inside the link (`[data-expanded]`); `.ds-site-nav-children` a `ul` |
+| Site search | `.ds-site-search-hit[aria-selected]` | `[data-highlighted]` |
+| Site overlays | drawer and search `position: absolute` in the site | the top layer. A site that is the page: modal over the window. An embedded site (`routing="memory"`, `.ds-site[data-embedded]`): `modal="trap-focus"` (host page stays usable), placed from `--ds-site-frame-top` / `-left` / `-width` / `-height` |
+| Strudel | `.strudel-device__toggle[aria-pressed]`, `.docstream-strudel__toggle[aria-expanded]` | `[data-pressed]`, `[data-open]` |
+| Replay | `[data-slot="replay-devtools-pane"]`, `-tablist`, `-section`, `-button`, `-buttons`, `-chips`, `-node`, `-code`, `-detail-body`, `[data-slot="replay-preview-captions"]` | the same names in `data-part` |
+| Replay | the DevTools panel `role="dialog"` | a `section` named "DevTools" (a region docked in the player) |
+| Replay | the scrubber fill from `--replay-progress` / `--replay-progress-start` on the track; `--replay-window-start` / `-size` on `[data-slot="replay-preview-window"]` | `[data-slot="slider-indicator"]`; the window's `--replay-window-start` / `-size` on the scrubber, `[data-slot="replay-preview-scrubber"][data-window]` |
+
+No export was added or removed, and every component keeps its props.
 {% endstep %}
 {% step %}
-### Expect some markup to move
+### Expect popups and some keys to change
 
-Expandables, the properties sheet and OpenAPI responses are UI SDK collapsibles instead of `<details>`; a closed panel carries `hidden="until-found"`, so find-in-page still opens it. Menus, hover cards, search and the demo's fullscreen view render in place in the browser's top layer rather than in a portal, and hover-card content mounts only while open. The task checkbox is a `button[role=checkbox]` with a hidden input.
+Menus, hover cards, search and the demo's fullscreen view render in place in the browser's top layer rather than in a portal, and hover-card content mounts only while open. Menus of choices (a task's state, a breadcrumb's files) open on the current item.
+
+The rack's knobs take Shift+Arrow as the large step and Alt+Arrow as the fine one (Shift was fine). The fader is a slider: pressing the track jumps the thumb there (the drag was relative). A module's grip picks it up with Space or Enter before the arrows move it. In the replay player, Left and Right on the Console / Network buttons move between the two instead of seeking ±5 s.
 {% endstep %}
 {% step %}
 ### Drop react-aria if only docstream needed it
