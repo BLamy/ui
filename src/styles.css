@@ -4757,20 +4757,33 @@ details[open] > .oas-response-trigger .oas-response-caret {
     margin-inline: calc(var(--replay-thumb) / 2);
   }
 
-  /* The rail, end to end. Played: from the time window's start (0 without one) to the playhead. */
+  /* The rail, end to end. */
   :where([data-slot="replay-preview-scrubber"] [data-slot="slider-track"])::before {
     content: "";
     position: absolute;
     inset-block: 0;
     inset-inline: calc(var(--replay-thumb) / -2);
     border-radius: 999px;
-    background: linear-gradient(
-      to right,
-      color-mix(in srgb, var(--muted-foreground, #71717a) 26%, transparent) var(--replay-progress-start, 0%),
-      var(--primary, #4f46e5) var(--replay-progress-start, 0%),
-      var(--primary, #4f46e5) var(--replay-progress, 0%),
-      color-mix(in srgb, var(--muted-foreground, #71717a) 26%, transparent) var(--replay-progress, 0%)
-    );
+    background: color-mix(in srgb, var(--muted-foreground, #71717a) 26%, transparent);
+  }
+
+  /* Played: the Slider's indicator, from the rail's start (under the thumb's first half, as the rail reaches) to
+     the playhead. */
+  :where([data-slot="replay-preview-scrubber"] [data-slot="slider-indicator"]) {
+    box-sizing: content-box;
+    margin-inline-start: calc(var(--replay-thumb) / -2);
+    padding-inline-start: calc(var(--replay-thumb) / 2);
+    border-radius: 999px;
+    background: var(--primary, #4f46e5);
+  }
+
+  /* With a time window the played part starts at the window's start: UI SDK places the indicator inline (from 0 to
+     the value, --slider-indicator-size), so the start and width are moved over it here. */
+  :where([data-slot="replay-preview-scrubber"][data-window] [data-slot="slider-indicator"]) {
+    inset-inline-start: calc(var(--replay-window-start, 0) * 100%) !important;
+    width: max(0%, var(--slider-indicator-size, 0%) - var(--replay-window-start, 0) * 100%) !important;
+    margin-inline-start: 0;
+    padding-inline-start: 0;
   }
 
   :where([data-slot="replay-preview-scrubber"] [data-slot="slider-thumb"]) {

@@ -417,9 +417,12 @@ describe("player behaviour", () => {
     const playing = (p: boolean) => act(async () => props().onPlayingChange?.(p))
     expect(props().initialTime).toBe(3000)
     expect(props().loop).toBe(false)
-    const band = el.querySelector<HTMLElement>('[data-slot="replay-preview-window"]')!
-    expect(band.style.getPropertyValue("--replay-window-start")).toBe(String(3000 / DEMO_DURATION))
-    expect(band.style.getPropertyValue("--replay-window-size")).toBe(String(2000 / DEMO_DURATION))
+    // The window's place is set on the scrubber, where the band and the played fill both read it.
+    expect(el.querySelector('[data-slot="replay-preview-window"]')).not.toBeNull()
+    const scrubber = el.querySelector<HTMLElement>('[data-slot="replay-preview-scrubber"]')!
+    expect(scrubber.hasAttribute("data-window")).toBe(true)
+    expect(scrubber.style.getPropertyValue("--replay-window-start")).toBe(String(3000 / DEMO_DURATION))
+    expect(scrubber.style.getPropertyValue("--replay-window-size")).toBe(String(2000 / DEMO_DURATION))
     expect(el.querySelector('input[type="range"]')!.getAttribute("aria-valuetext")).toContain("segment 0:03 to 0:05")
 
     // Play from inside: at the window's end the stage pauses there, and the center button replays the segment.

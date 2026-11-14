@@ -76,8 +76,10 @@ describe("the scrubber (Slider)", () => {
     expect(q(scrubber, '[data-slot="slider"]').hasAttribute("data-disabled")).toBe(false)
     expect([slider.min, slider.step, slider.value]).toEqual(["0", "10", "8000"])
     expect(slider.getAttribute("aria-valuetext")).toMatch(/^0:08 of 0:0\d$/)
-    // The fill is painted from the same playhead the thumb sits at.
-    expect(q(scrubber, '[data-slot="slider-track"]').style.getPropertyValue("--replay-progress")).toMatch(/^9\d(\.\d+)?%$/)
+    // The played fill is the Slider's own indicator, placed from the same value as the thumb; no inline state of ours.
+    const indicator = q(scrubber, '[data-slot="slider-track"] > [data-slot="slider-indicator"]')
+    expect(indicator.style.getPropertyValue("--slider-indicator-size")).toMatch(/^(8|9)\d(\.\d+)?%$/)
+    expect(q(scrubber, '[data-slot="slider-track"]').getAttribute("style") ?? "").not.toContain("--replay-progress")
     expect(scrubber.querySelector('[data-slot="slider-thumb"]')).not.toBeNull()
   })
 

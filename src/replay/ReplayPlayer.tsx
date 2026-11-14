@@ -17,7 +17,7 @@ import {
   type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type Ref,
 } from 'react'
 import { useReducedMotion } from 'framer-motion'
-import { Slider, SliderControl, SliderThumb, SliderTrack } from '@ui-sdk/react/slider'
+import { Slider, SliderControl, SliderIndicator, SliderThumb, SliderTrack } from '@ui-sdk/react/slider'
 import { Toggle } from '@ui-sdk/react/toggle'
 import { Captions, CaptionsOff, Lock, Maximize, Minimize, Pause, Play, RotateCcw } from 'lucide-react'
 import { ReplayStage } from './ReplayStage'
@@ -730,13 +730,18 @@ function Scrubber({ time, duration, span, markers, disabled, onSeek, onMarker }:
     return out
   }, [markers, max])
   return (
-    <div data-slot="replay-preview-scrubber" data-markers={markers.length ? '' : undefined}>
+    <div
+      data-slot="replay-preview-scrubber"
+      data-markers={markers.length ? '' : undefined}
+      data-window={span ? '' : undefined}
+      // The time window is data (the inspected segment), not slider state: the window and the played fill read it.
+      style={span ? { '--replay-window-start': span.start / max, '--replay-window-size': (span.end - span.start) / max } as CSSProperties : undefined}
+    >
       {span ? (
         <div
           data-slot="replay-preview-window"
           aria-hidden="true"
           title={`${formatReplayTime(span.start)}–${formatReplayTime(span.end)}`}
-          style={{ '--replay-window-start': span.start / max, '--replay-window-size': (span.end - span.start) / max } as CSSProperties}
         />
       ) : null}
       {markers.length ? (
@@ -755,7 +760,7 @@ function Scrubber({ time, duration, span, markers, disabled, onSeek, onMarker }:
           ))}
         </div>
       ) : null}
-      {/* The fill is painted from --replay-progress on the track: it starts at the time window when there is one. */}
+      {/* The played fill is the Slider's indicator; with a time window it starts at the window (styles.css). */}
       <Slider
         value={value}
         min={0}
@@ -767,12 +772,8 @@ function Scrubber({ time, duration, span, markers, disabled, onSeek, onMarker }:
         onValueChange={(next) => onSeek(next as number)}
       >
         <SliderControl>
-          <SliderTrack
-            style={{
-              '--replay-progress': `${(value / max) * 100}%`,
-              ...(span ? { '--replay-progress-start': `${(span.start / max) * 100}%` } : {}),
-            } as CSSProperties}
-          >
+          <SliderTrack>
+            <SliderIndicator />
             <SliderThumb aria-label="Playback position" />
           </SliderTrack>
         </SliderControl>
