@@ -71,7 +71,7 @@ function referenceTrigger({ char, items, allowFreeForm = true }: ReferenceSugges
     label: LABEL[char],
     empty: EMPTY[char],
     type: KIND[char],
-    items: async (query) => {
+    items: async (query, context) => {
       let options: ReferenceOption[]
       try {
         options = await resolveReferenceOptions(items, query)
@@ -101,6 +101,9 @@ function referenceTrigger({ char, items, allowFreeForm = true }: ReferenceSugges
         next.set(query, { title: `${char}${query}`, icon })
         data.push({ value: query, label: query })
       }
+      // A newer query replaced this load: the menu drops its result, so it mustn't replace the map
+      // the newer list renders from.
+      if (context?.signal?.aborted) return []
       entries = next
       return data
     },
