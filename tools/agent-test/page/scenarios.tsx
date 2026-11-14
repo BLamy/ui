@@ -3,7 +3,7 @@
    its goal is about in `store`, which run.mjs checks after the model stops. Goals and checks live in
    ../scenarios.mjs. */
 import { useState, type ComponentType } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Combobox, ComboboxContent, ComboboxInput } from '@/components/ui/combobox';
 import { DatePicker, DatePickerContent, DatePickerField } from '@/components/ui/date-picker';
 import {
@@ -73,7 +73,7 @@ function DeleteProject() {
       <h1 className="text-title">Project “Aurora”</h1>
       <p className="m-0 text-subhead text-muted-foreground">{deleted ? 'The project was deleted.' : '24 files · 3 members'}</p>
       <AlertDialog onOpenChange={(open, details) => { if (!open && details.returnValue === 'delete') setDeleted(true); }}>
-        <AlertDialogTrigger render={<Button variant="destructive" className="justify-self-start" />}>Delete project</AlertDialogTrigger>
+        <AlertDialogTrigger className={`${buttonVariants({ variant: 'destructive' })} justify-self-start`}>Delete project</AlertDialogTrigger>
         <AlertDialogBackdrop />
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -114,7 +114,7 @@ function Rename() {
     <>
       <h1 className="text-title">Project: {name}</h1>
       <Dialog onOpenChange={(open) => open && setDraft(name)}>
-        <DialogTrigger render={<Button variant="secondary" className="justify-self-start" />}>Rename…</DialogTrigger>
+        <DialogTrigger className={`${buttonVariants({ variant: 'secondary' })} justify-self-start`}>Rename…</DialogTrigger>
         <DialogBackdrop />
         <DialogContent>
           <DialogClose />
@@ -233,7 +233,7 @@ function ArchivePhoto() {
     <>
       <h1 className="text-title">IMG_0412.heic</h1>
       <DropdownMenu onAction={(value) => setLast(value)}>
-        <DropdownMenuTrigger render={<Button variant="secondary" className="justify-self-start" aria-label="Photo actions" />}>•••</DropdownMenuTrigger>
+        <DropdownMenuTrigger className={`${buttonVariants({ variant: 'secondary' })} justify-self-start`} aria-label="Photo actions">•••</DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuItem value="copy">Copy</DropdownMenuItem>
           <DropdownMenuItem value="share">Share…</DropdownMenuItem>
