@@ -74,10 +74,10 @@ props are unchanged; what you install, one CSS line and the suggestion-menu expo
    `data-disabled`). The old state classes (`gb-tool-active`, `gb-tabs-tab-active`,
    `gb-demo-file-tab-active`, `gb-demo-files-toggle-active`, `gb-react-demo-file-active`,
    `slash-item-active`) are still set, but the editor's own CSS now keys off the attributes. Native
-   `<select>`, checkbox and radio inputs became UI SDK Select, Checkbox and Radio (buttons with
-   their roles), so overrides that targeted `select`, `input[type="checkbox"]` or `:disabled` in the
-   editor chrome should target the classes (`.gb-select`, `.gb-checkbox`, `.gb-radio`) and
-   `[data-disabled]`.
+   `<select>` and checkbox inputs became UI SDK Select and Checkbox (buttons with their roles), so
+   overrides that targeted `select`, `input[type="checkbox"]` or `:disabled` in the editor chrome
+   should target the classes (`.gb-select`, `.gb-checkbox`) and `[data-disabled]`. The demo block's
+   per-file "Entry" radio is now an "Entry file" checkbox (`.gb-checkbox`).
 7. **Link button.** The toolbar's Link button opens a popover with a URL field (Apply / Remove)
    instead of `window.prompt`.
 8. **The `/ @ # $` menus are UI SDK's [Trigger Menu](https://ui-sdk.dev)**, one per editor, reading
@@ -94,6 +94,11 @@ props are unchanged; what you install, one CSS line and the suggestion-menu expo
    open no menu.
 9. **Filtering** of the slash menu and of array reference sources uses UI SDK's text matching:
    it ignores case and the accents the reader's language ignores (`resu` finds "Résumé").
+10. **Demo and tabs markup.** The React demo editor's file list (`aside.gb-react-demo-files`, a
+    landmark) is now a `div` holding a vertical tablist. In the demo block, the file-path field is
+    no longer inside its tab but laid over it, in the tab strip. The tabs block's sections
+    (`.gb-tab`) are `role="tabpanel"`s labelled by their tabs, and the ones not selected carry
+    `hidden` (the old `.gb-tabs-content[data-active] .gb-tab:nth-child()` rules are gone).
 
 ### Document properties and task states (1.9)
 

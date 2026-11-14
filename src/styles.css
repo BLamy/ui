@@ -503,9 +503,8 @@
 .gb-select-item[data-highlighted] { background: var(--gb-accent); color: var(--gb-accent-foreground); }
 .gb-select-item[data-selected] { font-weight: 600; }
 
-/* ── Checkbox and radio ─────────────────────────────────── */
-.gb-checkbox,
-.gb-radio {
+/* ── Checkbox ───────────────────────────────────────────── */
+.gb-checkbox {
   box-sizing: border-box;
   display: inline-flex;
   flex-shrink: 0;
@@ -521,11 +520,8 @@
   color: #ffffff;
   cursor: pointer;
 }
-.gb-radio { border-radius: 50%; }
-.gb-checkbox[data-checked],
-.gb-radio[data-checked] { border-color: var(--gb-primary); background: var(--gb-primary); }
-.gb-checkbox:focus-visible,
-.gb-radio:focus-visible { outline: 2px solid var(--gb-ring, var(--gb-primary)); outline-offset: 2px; }
+.gb-checkbox[data-checked] { border-color: var(--gb-primary); background: var(--gb-primary); }
+.gb-checkbox:focus-visible { outline: 2px solid var(--gb-ring, var(--gb-primary)); outline-offset: 2px; }
 .gb-checkbox-indicator {
   width: 7px;
   height: 4px;
@@ -533,13 +529,6 @@
   border-left: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
   transform: rotate(-45deg);
-}
-.gb-radio[data-checked]::after {
-  content: "";
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
 }
 
 /* ── Hint / callout (mirrors .docs-hint) ────────────────── */
