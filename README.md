@@ -46,7 +46,7 @@ props are unchanged; what you install, one CSS line and the suggestion-menu expo
 1. **React 19.** `react` and `react-dom` peers are now `>=19` (UI SDK needs it); with TypeScript,
    `@types/react` 19.2.10 or newer.
 2. **Two new peer dependencies, one fewer.** Install `@ui-sdk/core` and `@ui-sdk/react`
-   (`>=0.1.0-beta.2`) next to the editor. They are
+   (`^0.1.0-beta.2`: the 0.1 line, which this release is tested against) next to the editor. They are
    peers so the editor and your own UI SDK components share one core. `@tiptap/suggestion` is no
    longer a peer; remove it if nothing else of yours uses it.
 3. **`react-aria` is gone.** The editor no longer depends on it; remove it if nothing else of yours uses it.

@@ -19,7 +19,7 @@ Every Tiptap peer is `^3.26.1`. All of them are required: `createGitbookExtensio
 | Peer | Range | What the editor uses it for |
 | --- | --- | --- |
 | `react`, `react-dom` | `>=19` | Everything that renders: the editor, its node views, its menus. |
-| `@ui-sdk/core`, `@ui-sdk/react` | `>=0.1.0-beta.2` | The toolbar, the `/ @ # $` trigger menus, selects, tabs, checkboxes, popovers and dialogs. |
+| `@ui-sdk/core`, `@ui-sdk/react` | `^0.1.0-beta.2` | The toolbar, the `/ @ # $` trigger menus, selects, tabs, checkboxes, popovers and dialogs. |
 | `@tiptap/core` | `^3.26.1` | `Node`, `Mark`, `Extension`, `getSchema`: the GitBook nodes and marks are built on it. |
 | `@tiptap/react` | `^3.26.1` | `useEditor`, `EditorContent` and the React node views (`ReactNodeViewRenderer`). |
 | `@tiptap/pm` | `^3.26.1` | ProseMirror: the schema, plugins, history (task-state changes close an undo step). |
