@@ -146,14 +146,19 @@ const suggestionMenu = definePrimitive({
     content: slot<{}, { open: boolean }>({
       present: (state) => state.open,
       state: (state) => ({ open: state.open }),
-      // A popover from its first render: never in the page's flow, where revealing the highlighted option would scroll the page to it.
-      attrs: (state) => ({ popover: "manual", ...openAttrs(state.open) }),
+      // The layer decides where it shows: the top layer, or (inside a layer host, which keeps popups in
+      // its box) in place. A `popover` attribute in the markup would hide it there, so none is rendered.
+      attrs: (state) => openAttrs(state.open),
       bind: (el, { api, store, id }) => {
         const layer = bindLayer(el, {
           topLayer: true,
           contains: (target) => !!api.input()?.contains(target),
           onDismiss: (reason, event) => api.dismiss(reason, event),
         })
+        // Out of the top layer (in a host, or a browser without one) it stacks by z-index, above the
+        // host's content, as UI SDK's own popups do there.
+        const raised = !el.hasAttribute("popover") && !el.style.zIndex
+        if (raised) el.style.zIndex = "2147483000"
         const placed = position(() => api.anchor(), el, { side: "bottom", align: "start", sideOffset: 6, collisionPadding: 6 })
         // The editor keeps focus, so it points at the list and, once an arrow key has moved the highlight, at the option.
         const input = api.input()
@@ -172,6 +177,7 @@ const suggestionMenu = definePrimitive({
           input?.removeAttribute("aria-activedescendant")
           placed()
           layer()
+          if (raised) el.style.removeProperty("z-index")
         }
       },
     }),

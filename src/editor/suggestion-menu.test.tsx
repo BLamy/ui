@@ -81,6 +81,24 @@ describe("slash menu", () => {
     expect(editor.view.dom.hasAttribute("aria-activedescendant")).toBe(false)
   })
 
+  it("out of the top layer (a layer host, or no popover support) it shows in place, raised by z-index", async () => {
+    // UI SDK keeps a popup out of the top layer where it can't use it; the markup must not hide it there.
+    const showPopover = HTMLElement.prototype.showPopover
+    ;(HTMLElement.prototype as { showPopover?: unknown }).showPopover = undefined
+    try {
+      const { editor } = await mount()
+      await type(editor, " /")
+      const content = listbox("Blocks")!.closest<HTMLElement>('[data-slot="suggestion-menu-content"]')!
+      expect(content.hasAttribute("popover")).toBe(false)
+      expect(content.style.zIndex).toBe("2147483000")
+      expect(content.hasAttribute("data-open")).toBe(true)
+      await press(editor, "Escape")
+      expect(listbox("Blocks")).toBeNull()
+    } finally {
+      HTMLElement.prototype.showPopover = showPopover
+    }
+  })
+
   it("moves the highlight with the arrows (wrapping), points the editor at it, and Enter inserts it", async () => {
     const { editor, markdown } = await mount()
     await type(editor, " /")
