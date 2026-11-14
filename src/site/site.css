@@ -315,24 +315,7 @@
   letter-spacing: 0.02em;
 }
 
-.ds-site .ds-site-nav-row {
-  display: flex;
-  align-items: center;
-  border-radius: 7px;
-}
-
-.ds-site .ds-site-nav-row:hover {
-  background: var(--ds-site-hover);
-}
-
-.ds-site .ds-site-nav-row[data-current] {
-  background: var(--ds-site-active-bg);
-}
-
-.ds-site .ds-site-nav-row .ds-site-nav-link:hover {
-  background: transparent;
-}
-
+/* A row is its item's label (UI SDK's Tree): a link for a page, with the section's chevron inside it. */
 .ds-site .ds-site-nav-link {
   display: flex;
   flex: 1;
@@ -354,14 +337,30 @@
   cursor: pointer;
 }
 
+.ds-site a.ds-site-nav-link[data-branch] {
+  gap: 10px;
+  padding: 3px 0 3px 10px;
+}
+
 .ds-site .ds-site-nav-link:hover {
   background: var(--ds-site-hover);
   color: var(--ds-site-fg);
 }
 
-.ds-site .ds-site-nav-link[aria-current="page"] {
+.ds-site .ds-site-nav-link[data-current] {
+  background: var(--ds-site-active-bg);
   color: var(--ds-site-link);
   font-weight: 600;
+}
+
+/* The item holds focus (one tab stop for the tree); its row shows the ring. */
+.ds-site [data-slot="tree-item"]:focus-visible {
+  outline: 0;
+}
+
+.ds-site [data-slot="tree-item"]:focus-visible > .ds-site-nav-link {
+  outline: 2px solid var(--ds-site-link);
+  outline-offset: 2px;
 }
 
 .ds-site .ds-site-nav-label {
@@ -397,8 +396,7 @@
   transition: transform 0.16s ease;
 }
 
-.ds-site [aria-expanded="true"] > .ds-site-nav-toggle svg,
-.ds-site .ds-site-nav-toggle[aria-expanded="true"] svg {
+.ds-site .ds-site-nav-toggle[data-expanded] svg {
   transform: rotate(90deg);
 }
 
@@ -633,16 +631,24 @@
   font-weight: 600;
 }
 
-/* Overlays (drawer, search): positioned in the site, so an embedded site keeps them inside. */
+/* Overlays (drawer, search): UI SDK's Drawer and Dialog, in the browser's top layer over the whole window. They
+   render inside the site, so they keep its theme and tokens. */
 .ds-site .ds-site-drawer-layer,
 .ds-site .ds-site-search-layer {
-  position: absolute;
-  z-index: 50;
+  position: fixed;
   inset: 0;
   background: rgba(10, 10, 16, 0.4);
-  animation: ds-site-fade 0.16s ease;
 }
 
+.ds-site .ds-site-search-layer {
+  transition: opacity 0.16s ease;
+}
+
+.ds-site .ds-site-search-layer:is([data-starting-style], [data-ending-style]) {
+  opacity: 0;
+}
+
+/* The drawer slides itself (and fades its backdrop): it only gets a size and a surface. */
 .ds-site .ds-site-drawer {
   display: flex;
   flex-direction: column;
@@ -650,7 +656,6 @@
   height: 100%;
   background: var(--ds-site-sidebar-bg, var(--ds-site-bg));
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
-  animation: ds-site-slide 0.24s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .ds-site .ds-site-drawer-head {
@@ -662,25 +667,37 @@
   border-bottom: 1px solid var(--ds-site-border);
 }
 
-.ds-site .ds-site-search-layer {
-  display: flex;
-  justify-content: center;
-  padding: min(12vh, 90px) 16px 16px;
-}
-
 .ds-site .ds-site-search {
+  position: fixed;
+  top: min(12vh, 90px);
+  left: 50%;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-width: 620px;
-  max-height: min(560px, 100%);
-  align-self: flex-start;
+  width: min(620px, calc(100vw - 32px));
+  max-height: min(560px, calc(100dvh - min(12vh, 90px) - 16px));
   overflow: hidden;
   border: 1px solid var(--ds-site-border);
   border-radius: 14px;
   background: var(--card, var(--ds-site-bg));
   box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.35);
-  animation: ds-site-pop 0.16s ease;
+  translate: -50% 0;
+  transition:
+    opacity 0.16s ease,
+    translate 0.16s ease,
+    scale 0.16s ease;
+}
+
+.ds-site .ds-site-search:is([data-starting-style], [data-ending-style]) {
+  opacity: 0;
+  translate: -50% -6px;
+  scale: 0.99;
+}
+
+.ds-site .ds-site-search > [data-slot="command"] {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .ds-site .ds-site-search-field {
@@ -732,6 +749,7 @@
   color: var(--ds-site-muted);
   font: inherit;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -741,11 +759,11 @@
 }
 
 .ds-site .ds-site-search-hit:hover,
-.ds-site .ds-site-search-hit[aria-selected="true"] {
+.ds-site .ds-site-search-hit[data-highlighted] {
   background: var(--ds-site-active-bg);
 }
 
-.ds-site .ds-site-search-hit[aria-selected="true"] svg {
+.ds-site .ds-site-search-hit[data-highlighted] svg {
   color: var(--ds-site-link);
 }
 
@@ -784,38 +802,21 @@
   color: var(--ds-site-fg);
 }
 
+/* Always in the page (it's a status region), so it takes room only while it says something. */
 .ds-site .ds-site-search-empty {
-  padding: 32px 16px;
   color: var(--ds-site-muted);
   font-size: 14px;
   text-align: center;
 }
 
-@keyframes ds-site-fade {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes ds-site-slide {
-  from {
-    transform: translateX(-100%);
-  }
-}
-
-@keyframes ds-site-pop {
-  from {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.99);
-  }
+.ds-site .ds-site-search-empty:not(:empty) {
+  padding: 32px 16px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ds-site .ds-site-drawer-layer,
   .ds-site .ds-site-search-layer,
-  .ds-site .ds-site-drawer,
   .ds-site .ds-site-search {
-    animation: none;
+    transition: none;
   }
 }
 

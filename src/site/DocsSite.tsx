@@ -11,17 +11,18 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
   type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
   type RefObject,
 } from "react"
-import { ArrowLeft, ArrowRight, ChevronRight, FileText, Hash, Menu, Moon, PencilLine, Search, Sun, X } from "lucide-react"
+import { createDialogController, DialogTrigger } from "@ui-sdk/react/dialog"
+import { createDrawerController, Drawer, DrawerBackdrop, DrawerClose, DrawerContent, DrawerTrigger } from "@ui-sdk/react/drawer"
+import { useShortcut, useShortcutHint } from "@ui-sdk/react/shortcuts"
+import { ArrowLeft, ArrowRight, ChevronRight, Menu, Moon, PencilLine, Search, Sun, X } from "lucide-react"
 
 import { AssetResolverContext, AssetResolverProvider, type AssetResolver } from "../asset-resolver"
 import { envNamesFromProperties } from "../doc-env"
@@ -29,7 +30,9 @@ import { MarkdownContent, type DocRenderOptions, type LivePreviewRenderer, type 
 import { DocPageActions, type DocPageActionsOptions } from "../docs/PageActions"
 import { documentOutline, type OutlineEntry } from "../gitbook/outline"
 import { parseMarkdown } from "../gitbook/parse"
-import { createDocsSearchIndex, type DocsSearchResult } from "./search"
+import { navNodes, navOpenFor } from "./nav"
+import { SiteNav } from "./SiteNav"
+import { SiteSearch } from "./SiteSearch"
 import { buildDocsTree, findLinkedAsset, findLinkedPage, type BuildDocsTreeOptions, type DocsFileContent, type DocsFiles, type DocsNavItem, type DocsPage, type DocsTree } from "./tree"
 
 export type DocsSiteRouting = "hash" | "history" | "memory"
@@ -275,228 +278,8 @@ function useSiteTheme(props: Pick<DocsSiteProps, "theme" | "defaultTheme" | "onT
 /** True for a plain left click that should navigate in place. */
 const plainClick = (e: ReactMouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey
 
-function containsSlug(item: DocsNavItem, slug: string): boolean {
-  if (item.kind === "page" && item.slug === slug) return true
-  return item.kind !== "link" && item.children.some((c) => containsSlug(c, slug))
-}
-
-interface NavProps {
-  items: DocsNavItem[]
-  current: string
-  href: (slug: string) => string
-  go: (slug: string) => void
-  depth?: number
-}
-
-function NavList({ items, current, href, go, depth = 0 }: NavProps) {
-  return (
-    <ul className="ds-site-nav-list" data-depth={depth}>
-      {items.map((item, i) => (
-        <NavEntry key={`${item.kind}:${item.title}:${i}`} item={item} current={current} href={href} go={go} depth={depth} />
-      ))}
-    </ul>
-  )
-}
-
-function NavEntry({ item, current, href, go, depth = 0 }: Omit<NavProps, "items"> & { item: DocsNavItem }) {
-  const active = containsSlug(item, current)
-  const [open, setOpen] = useState(active)
-  useEffect(() => {
-    if (active) setOpen(true)
-  }, [active])
-  const childrenId = useId()
-
-  if (item.kind === "group") {
-    return (
-      <li className="ds-site-nav-group">
-        <div className="ds-site-nav-group-title">{item.title}</div>
-        <NavList items={item.children} current={current} href={href} go={go} depth={depth} />
-      </li>
-    )
-  }
-  if (item.kind === "link") {
-    return (
-      <li>
-        <a className="ds-site-nav-link" href={item.href} target="_blank" rel="noreferrer">
-          {item.title}
-          <span className="ds-site-nav-external" aria-hidden="true">↗</span>
-        </a>
-      </li>
-    )
-  }
-  const hasChildren = item.children.length > 0
-  const toggle = hasChildren ? (
-    <button
-      type="button"
-      className="ds-site-nav-toggle"
-      aria-expanded={open}
-      aria-controls={childrenId}
-      aria-label={`${open ? "Collapse" : "Expand"} ${item.title}`}
-      onClick={(e) => {
-        setOpen((o) => !o)
-      }}
-    >
-      <ChevronRight size={14} aria-hidden="true" />
-    </button>
-  ) : null
-  return (
-    <li>
-      {item.kind === "page" ? (
-        <div className="ds-site-nav-row" data-current={item.slug === current || undefined}>
-          <a
-            className="ds-site-nav-link"
-            href={href(item.slug)}
-            aria-current={item.slug === current ? "page" : undefined}
-            onClick={(e) => {
-              if (!plainClick(e)) return
-              e.preventDefault()
-              go(item.slug)
-              if (hasChildren) setOpen(true)
-            }}
-          >
-            <span className="ds-site-nav-label">{item.title}</span>
-          </a>
-          {toggle}
-        </div>
-      ) : (
-        <button type="button" className="ds-site-nav-link ds-site-nav-folder" aria-expanded={open} aria-controls={childrenId} onClick={() => setOpen((o) => !o)}>
-          <span className="ds-site-nav-label">{item.title}</span>
-          <span className="ds-site-nav-toggle" aria-hidden="true">
-            <ChevronRight size={14} />
-          </span>
-        </button>
-      )}
-      {hasChildren && open ? (
-        <div id={childrenId} className="ds-site-nav-children">
-          <NavList items={item.children} current={current} href={href} go={go} depth={depth + 1} />
-        </div>
-      ) : null}
-    </li>
-  )
-}
-
-function SearchDialog({
-  tree,
-  onClose,
-  onPick,
-}: {
-  tree: DocsTree
-  onClose: () => void
-  onPick: (r: DocsSearchResult) => void
-}) {
-  const index = useMemo(() => createDocsSearchIndex(tree), [tree])
-  const [query, setQuery] = useState("")
-  const [active, setActive] = useState(0)
-  const results = useMemo(() => index.search(query, 30), [index, query])
-  const inputRef = useRef<HTMLInputElement>(null)
-  const listId = useId()
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null
-    inputRef.current?.focus()
-    return () => previous?.focus?.()
-  }, [])
-  useEffect(() => setActive(0), [query])
-  useEffect(() => {
-    document.getElementById(`${listId}-${active}`)?.scrollIntoView?.({ block: "nearest" })
-  }, [active, listId])
-
-  const onKeyDown = (e: ReactKeyboardEvent) => {
-    if (e.key === "Escape") {
-      e.preventDefault()
-      onClose()
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault()
-      setActive((a) => Math.min(a + 1, results.length - 1))
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault()
-      setActive((a) => Math.max(a - 1, 0))
-    } else if (e.key === "Enter" && results[active]) {
-      e.preventDefault()
-      onPick(results[active])
-    }
-  }
-
-  const suggestions = query ? null : tree.order.slice(0, 8)
-  return (
-    <div className="ds-site-search-layer" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="ds-site-search" role="dialog" aria-modal="true" aria-label="Search documentation" onKeyDown={onKeyDown}>
-        <div className="ds-site-search-field">
-          <Search size={17} aria-hidden="true" />
-          <input
-            ref={inputRef}
-            type="search"
-            placeholder="Search the docs…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            role="combobox"
-            aria-expanded={results.length > 0}
-            aria-controls={listId}
-            aria-activedescendant={results[active] ? `${listId}-${active}` : undefined}
-            aria-autocomplete="list"
-          />
-          <kbd>esc</kbd>
-        </div>
-        {suggestions ? (
-          <div className="ds-site-search-results" id={listId} role="listbox" aria-label="Pages">
-            <div className="ds-site-search-caption">Pages</div>
-            {suggestions.map((p) => (
-              <button key={p.slug} type="button" className="ds-site-search-hit" role="option" aria-selected={false} onClick={() => onPick({ page: p, snippet: "", score: 0 })}>
-                <FileText size={15} aria-hidden="true" />
-                <span className="ds-site-search-hit-main">
-                  <span className="ds-site-search-hit-title">{p.title}</span>
-                  {p.breadcrumbs.length ? <span className="ds-site-search-hit-path">{p.breadcrumbs.join(" › ")}</span> : null}
-                </span>
-              </button>
-            ))}
-          </div>
-        ) : results.length ? (
-          <div className="ds-site-search-results" id={listId} role="listbox" aria-label="Results">
-            {results.map((r, i) => (
-              <button
-                key={`${r.page.slug}#${r.anchor ?? ""}`}
-                id={`${listId}-${i}`}
-                type="button"
-                className="ds-site-search-hit"
-                role="option"
-                aria-selected={i === active}
-                onMouseMove={() => setActive(i)}
-                onClick={() => onPick(r)}
-              >
-                {r.heading ? <Hash size={15} aria-hidden="true" /> : <FileText size={15} aria-hidden="true" />}
-                <span className="ds-site-search-hit-main">
-                  <span className="ds-site-search-hit-title">
-                    {r.heading ? (
-                      <>
-                        {r.heading} <span className="ds-site-search-hit-page">· {r.page.title}</span>
-                      </>
-                    ) : (
-                      r.page.title
-                    )}
-                  </span>
-                  {r.snippet ? (
-                    <span className="ds-site-search-hit-snippet">
-                      {r.highlight ? (
-                        <>
-                          {r.snippet.slice(0, r.highlight[0])}
-                          <mark>{r.snippet.slice(r.highlight[0], r.highlight[1])}</mark>
-                          {r.snippet.slice(r.highlight[1])}
-                        </>
-                      ) : (
-                        r.snippet
-                      )}
-                    </span>
-                  ) : null}
-                </span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="ds-site-search-empty">No results for “{query}”</div>
-        )}
-      </div>
-    </div>
-  )
-}
+/** ⌘K on Apple platforms, Ctrl+K elsewhere. */
+const SEARCH_KEYS = "mod+k"
 
 function useActiveHeading(scroller: RefObject<HTMLElement | null>, outline: OutlineEntry[], pageKey: string) {
   const [active, setActive] = useState<string | undefined>(outline[0]?.id)
@@ -637,8 +420,10 @@ export function DocsSite(props: DocsSiteProps) {
   // A site without a root README opens on its first page.
   const shown = page ?? (location.slug === "" ? home : undefined)
 
+  // The phone navigation (a drawer) and search (a dialog): their buttons sit in the header, far from their content.
+  const [navDrawer] = useState(() => createDrawerController())
+  const [searchDialog] = useState(() => createDialogController())
   const [navOpen, setNavOpen] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const articleRef = useRef<HTMLElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -646,9 +431,9 @@ export function DocsSite(props: DocsSiteProps) {
   const go = useCallback(
     (slug: string, hash = "") => {
       navigate(slug, hash)
-      setNavOpen(false)
+      navDrawer.close()
     },
-    [navigate],
+    [navigate, navDrawer],
   )
 
   // After a navigation: scroll to the anchor, else to the top, and tell the host.
@@ -670,26 +455,15 @@ export function DocsSite(props: DocsSiteProps) {
       typeof opt === "function" ? opt(shown, siteTitle) : siteTitle && shown.title !== siteTitle ? `${shown.title} — ${siteTitle}` : shown.title
   }, [shown, siteTitle, props.documentTitle, routing])
 
-  // Keyboard: ⌘K / Ctrl+K anywhere, "/" outside text fields.
-  useEffect(() => {
-    if (!search) return
-    const onKey = (e: KeyboardEvent) => {
-      const typing = e.target instanceof HTMLElement && (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))
-      if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
-        // An embedded site only answers while it has focus, so a host page keeps its own ⌘K —
-        // and a site leaves ⌘K to a site nested in it that has focus.
-        const focusedSite = document.activeElement?.closest(".ds-site")
-        if (routing === "memory" ? focusedSite !== rootRef.current : focusedSite && focusedSite !== rootRef.current) return
-        e.preventDefault()
-        setSearchOpen((o) => !o)
-      } else if (e.key === "/" && !typing && routing !== "memory") {
-        e.preventDefault()
-        setSearchOpen(true)
-      }
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [search, routing])
+  // ⌘K / Ctrl+K anywhere, "/" outside text fields. An embedded site only answers while it has focus, so a host
+  // page keeps its own ⌘K, and a site leaves ⌘K to a site nested in it that has focus.
+  const answers = () => {
+    const focusedSite = document.activeElement?.closest(".ds-site")
+    return routing === "memory" ? focusedSite === rootRef.current : !focusedSite || focusedSite === rootRef.current
+  }
+  useShortcut(search ? SEARCH_KEYS : null, () => void searchDialog.open(), { when: answers, description: "Search documentation" })
+  useShortcut(search && routing !== "memory" ? "/" : null, () => void searchDialog.open(), { when: answers, description: "Search documentation" })
+  const searchHint = useShortcutHint(SEARCH_KEYS)
 
   const outline = useMemo(() => {
     if (!shown || !toc) return []
@@ -747,7 +521,16 @@ export function DocsSite(props: DocsSiteProps) {
     go(a.dataset.dsSlug ?? "", a.dataset.dsHash ?? "")
   }
 
-  const activeTab = tabs?.length ? tabForSlug(tabs, shown?.slug ?? location.slug) : undefined
+  const currentSlug = shown?.slug ?? location.slug
+  const activeTab = tabs?.length ? tabForSlug(tabs, currentSlug) : undefined
+  // The sidebar's sections: the ones around the page being read open with it, and stay as the reader left them.
+  const nav = useMemo(() => navNodes(activeTab ? navForTab(tree.nav, tabs!, activeTab) : tree.nav), [tree, tabs, activeTab])
+  const [expanded, setExpanded] = useState(() => navOpenFor(nav, currentSlug))
+  useEffect(() => {
+    const open = navOpenFor(nav, currentSlug)
+    setExpanded((prev) => (open.every((value) => prev.includes(value)) ? prev : [...new Set([...prev, ...open])]))
+  }, [nav, currentSlug])
+  const pageHref = useCallback((slug: string) => href(slug), [href])
   const order = activeTab ? tree.order.filter((p) => tabForSlug(tabs!, p.slug) === activeTab) : tree.order
   const index = shown ? order.indexOf(shown) : -1
   const prev = index > 0 ? order[index - 1] : undefined
@@ -798,8 +581,7 @@ export function DocsSite(props: DocsSiteProps) {
       {title ? <span className="ds-site-title">{title}</span> : null}
     </a>
   )
-  const navItems = activeTab ? navForTab(tree.nav, tabs!, activeTab) : tree.nav
-  const navTree = <NavList items={navItems} current={shown?.slug ?? location.slug} href={(s) => href(s)} go={(s) => go(s)} />
+  const navTree = <SiteNav nodes={nav} current={currentSlug} expanded={expanded} onExpandedChange={setExpanded} href={pageHref} go={go} />
   const tabTarget = (t: DocsSiteTab) => t.slug ?? tree.order.find((p) => tabForSlug(tabs!, p.slug) === t)?.slug ?? trimPath(t.path)
   const tabBar = (where: "header" | "drawer") => tabs?.length ? (
     <nav className={`ds-site-tabs ds-site-tabs-${where}`} aria-label="Sections">
@@ -831,18 +613,18 @@ export function DocsSite(props: DocsSiteProps) {
       style={rootStyle}
     >
       <header className="ds-site-header">
-        <button type="button" className="ds-site-icon-btn ds-site-menu" aria-label="Open navigation" aria-expanded={navOpen} onClick={() => setNavOpen(true)}>
+        <DrawerTrigger controller={navDrawer} className="ds-site-icon-btn ds-site-menu" aria-label="Open navigation">
           <Menu size={18} aria-hidden="true" />
-        </button>
+        </DrawerTrigger>
         {brand}
         {tabBar("header")}
         <div className="ds-site-header-spacer" />
         {search ? (
-          <button type="button" className="ds-site-search-btn" onClick={() => setSearchOpen(true)} aria-label="Search documentation" aria-keyshortcuts="Meta+K Control+K">
+          <DialogTrigger controller={searchDialog} className="ds-site-search-btn" aria-label="Search documentation" aria-keyshortcuts={searchHint.ariaKeyshortcuts}>
             <Search size={15} aria-hidden="true" />
             <span className="ds-site-search-btn-label">Search…</span>
-            <kbd>⌘K</kbd>
-          </button>
+            <kbd>{searchHint.text}</kbd>
+          </DialogTrigger>
         ) : null}
         {links.length ? (
           <nav className="ds-site-links" aria-label="Site links">
@@ -999,34 +781,29 @@ export function DocsSite(props: DocsSiteProps) {
         </div>
       </div>
 
-      {navOpen ? (
-        <div className="ds-site-drawer-layer" onMouseDown={(e) => e.target === e.currentTarget && setNavOpen(false)}>
-          <nav
-            className="ds-site-drawer"
-            aria-label="Documentation"
-            onKeyDown={(e) => {
-              if (e.key === "Escape") setNavOpen(false)
-            }}
-          >
-            <div className="ds-site-drawer-head">
-              {brand}
-              <button type="button" className="ds-site-icon-btn" aria-label="Close navigation" onClick={() => setNavOpen(false)} autoFocus>
-                <X size={18} aria-hidden="true" />
-              </button>
-            </div>
-            {tabBar("drawer")}
-            <div className="ds-site-sidebar-scroll">{navTree}</div>
-            {sidebarFooter ? <div className="ds-site-sidebar-foot">{sidebarFooter}</div> : null}
-          </nav>
-        </div>
-      ) : null}
+      <Drawer controller={navDrawer} side="left" onOpenChange={setNavOpen}>
+        <DrawerBackdrop className="ds-site-drawer-layer" />
+        <DrawerContent className="ds-site-drawer" aria-label="Navigation" initialFocus='[data-slot="drawer-close"]'>
+          <div className="ds-site-drawer-head">
+            {brand}
+            <DrawerClose className="ds-site-icon-btn" aria-label="Close navigation">
+              <X size={18} aria-hidden="true" />
+            </DrawerClose>
+          </div>
+          {tabBar("drawer")}
+          <nav className="ds-site-sidebar-scroll" aria-label="Documentation">{navTree}</nav>
+          {sidebarFooter ? <div className="ds-site-sidebar-foot">{sidebarFooter}</div> : null}
+        </DrawerContent>
+      </Drawer>
 
-      {searchOpen ? (
-        <SearchDialog
+      {search ? (
+        <SiteSearch
           tree={tree}
-          onClose={() => setSearchOpen(false)}
+          controller={searchDialog}
+          shortcut={SEARCH_KEYS}
+          href={href}
           onPick={(r) => {
-            setSearchOpen(false)
+            searchDialog.close()
             go(r.page.slug, r.anchor ?? "")
           }}
         />
