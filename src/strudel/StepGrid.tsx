@@ -54,12 +54,13 @@ export function StepGrid({ mini, onAtomChange, label }: StepGridProps) {
   for (const a of miniAtoms(mini, { ops: false })) if (!a.rest) counts.set(a.value, (counts.get(a.value) ?? 0) + 1)
   const fallback = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "x"
 
-  // A step is its place in the pattern: the nth atom drawn, which a typed value never changes.
-  const atoms: MiniAtom[] = []
-  const keyOf = (atom: MiniAtom) => String(atoms.push(atom) - 1)
+  // A step is keyed by its place in the pattern's structure: the path of layer and step indexes down to it, like
+  // "0.2/1.0". A typed value never changes it (a source offset would shift with every longer or shorter value before
+  // it), and neither does the order the cells happen to render in.
+  const atoms = new Map<string, MiniAtom>()
 
-  const cell = (atom: MiniAtom): ReactNode => {
-    const key = keyOf(atom)
+  const cell = (atom: MiniAtom, key: string): ReactNode => {
+    atoms.set(key, atom)
     return (
       <>
         <StepGridCell
@@ -77,31 +78,31 @@ export function StepGrid({ mini, onAtomChange, label }: StepGridProps) {
     )
   }
 
-  const row = (seq: MiniSequence, key: number | string): ReactNode => (
+  const row = (seq: MiniSequence, key: number | string, path: string): ReactNode => (
     <div key={key} className="strudel-step__row">
-      {seq.steps.map((s, i) => step(s, i))}
+      {seq.steps.map((s, i) => step(s, i, `${path}.${i}`))}
     </div>
   )
 
-  const group = (g: MiniGroup): ReactNode =>
+  const group = (g: MiniGroup, path: string): ReactNode =>
     g.type === "sequence" ? (
-      row(g, 0)
+      row(g, 0, `${path}0`)
     ) : (
       <div className="strudel-step__layers" data-kind={g.type}>
-        {g.layers.map((l, i) => row(l, i))}
+        {g.layers.map((l, i) => row(l, i, `${path}${i}`))}
       </div>
     )
 
-  const step = (s: MiniStep, key: number): ReactNode => {
+  const step = (s: MiniStep, key: number, path: string): ReactNode => {
     const badges = s.ops.map(badge).filter((b): b is string => !!b)
     const slice = s.slice
     let body: ReactNode
-    if (slice.type === "atom") body = cell(slice)
-    else if (slice.type === "subcycle") body = <div className="strudel-step__nest">{group(slice.body)}</div>
+    if (slice.type === "atom") body = cell(slice, path)
+    else if (slice.type === "subcycle") body = <div className="strudel-step__nest">{group(slice.body, `${path}/`)}</div>
     else
       body = (
         <div className="strudel-step__nest" data-kind={slice.type} title={slice.type === "alternation" ? "One per cycle" : "Polymeter"}>
-          <div className="strudel-step__layers">{slice.layers.map((l, i) => row(l, i))}</div>
+          <div className="strudel-step__layers">{slice.layers.map((l, i) => row(l, i, `${path}/${i}`))}</div>
         </div>
       )
     return (
@@ -112,17 +113,17 @@ export function StepGrid({ mini, onAtomChange, label }: StepGridProps) {
     )
   }
 
-  const drawn = group(mini)
+  const drawn = group(mini, "")
   return (
     <StepGridRoot
       className="strudel-steps"
       aria-label={label ?? "Steps"}
       onStepPress={(key) => {
-        const atom = atoms[Number(key)]
+        const atom = atoms.get(key)
         if (atom) onAtomChange(atom, atom.rest ? fallback : "~")
       }}
       onStepEdit={({ step: key, text }) => {
-        const atom = atoms[Number(key)]
+        const atom = atoms.get(key)
         const value = text.trim()
         if (atom && value && value !== atom.value && VALUE.test(value)) onAtomChange(atom, value)
       }}

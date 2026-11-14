@@ -31,7 +31,7 @@ import { MarkdownContent, type DocRenderOptions, type LivePreviewRenderer, type 
 import { DocPageActions, type DocPageActionsOptions } from "../docs/PageActions"
 import { documentOutline, type OutlineEntry } from "../gitbook/outline"
 import { parseMarkdown } from "../gitbook/parse"
-import { navNodes, navOpenFor } from "./nav"
+import { navCurrent, navNodes, navOpenFor } from "./nav"
 import { SiteNav } from "./SiteNav"
 import { SiteSearch } from "./SiteSearch"
 import { buildDocsTree, findLinkedAsset, findLinkedPage, type BuildDocsTreeOptions, type DocsFileContent, type DocsFiles, type DocsNavItem, type DocsPage, type DocsTree } from "./tree"
@@ -569,10 +569,13 @@ export function DocsSite(props: DocsSiteProps) {
   const activeTab = tabs?.length ? tabForSlug(tabs, currentSlug) : undefined
   // The sidebar's sections: the ones around the page being read open with it, and stay as the reader left them.
   const nav = useMemo(() => navNodes(activeTab ? navForTab(tree.nav, tabs!, activeTab) : tree.nav), [tree, tabs, activeTab])
+  // The first render (and the server's HTML) starts with them open. After that the Tree's `current` expands the
+  // page's ancestors itself; what's left here is opening the page's own section when it has pages under it.
   const [expanded, setExpanded] = useState(() => navOpenFor(nav, currentSlug))
   useEffect(() => {
-    const open = navOpenFor(nav, currentSlug)
-    setExpanded((prev) => (open.every((value) => prev.includes(value)) ? prev : [...new Set([...prev, ...open])]))
+    const own = navCurrent(nav, currentSlug)
+    if (!own || navOpenFor(nav, currentSlug).at(-1) !== own) return
+    setExpanded((prev) => (prev.includes(own) ? prev : [...prev, own]))
   }, [nav, currentSlug])
   const pageHref = useCallback((slug: string) => href(slug), [href])
   const order = activeTab ? tree.order.filter((p) => tabForSlug(tabs!, p.slug) === activeTab) : tree.order

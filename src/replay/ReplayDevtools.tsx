@@ -647,8 +647,8 @@ function ElementsPane({ getDocument, selected, onSelect, onHover }: ElementsProp
       </div>
       {path.length ? (
         <nav data-slot="replay-devtools-breadcrumb" aria-label="Selected element's ancestors">
-          {path.map((el, i) => (
-            <button key={i} type="button" data-current={el === selected || undefined} aria-current={el === selected || undefined} onClick={() => onSelect(el)} onPointerEnter={() => onHover(el)} onPointerLeave={() => onHover(null)}>
+          {path.map((el) => (
+            <button key={idOf(el)} type="button" data-current={el === selected || undefined} aria-current={el === selected || undefined} onClick={() => onSelect(el)} onPointerEnter={() => onHover(el)} onPointerLeave={() => onHover(null)}>
               {crumb(el)}
             </button>
           ))}

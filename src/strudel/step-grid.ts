@@ -1,7 +1,11 @@
 /* A step sequencer's keys: pressed-state buttons in rows that may nest, with one tab stop. Left and Right walk the
    steps in order, Up and Down go to the nearest step in the row above or below, Home and End to the ends. F2 or a
    double-click swaps a step for its editor: Enter (or leaving it) commits, Escape cancels, and focus goes back to
-   the step. */
+   the step.
+
+   The steps are toggle buttons in nested groups rather than a `grid` of `gridcell`s on purpose: a pattern's rows
+   split their width by weight and nest rows inside steps, so there are no shared columns for a grid's row and column
+   semantics (or its screen reader table navigation) to describe. Up and Down go to the spatially nearest step instead. */
 import { createRovingFocus, definePrimitive, dispatch, spatialMove, type ChangeDetails } from "@ui-sdk/core"
 
 export type StepGridOptions = {
