@@ -457,8 +457,18 @@
   transition: transform 160ms ease;
 }
 
-.docs-expandable-trigger[data-open] .docs-expandable-caret {
+.docs-expandable-trigger[data-open] .docs-expandable-caret,
+details[open] > .docs-expandable-trigger .docs-expandable-caret {
   transform: rotate(90deg);
+}
+
+/* Server HTML, before hydration: a native <details>/<summary> with no marker of its own. */
+summary:is(.docs-expandable-trigger, .oas-response-trigger) {
+  list-style: none;
+}
+
+summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-marker {
+  display: none;
 }
 
 .docs-expandable-body {
@@ -2170,7 +2180,8 @@
   transition: transform 150ms ease;
 }
 
-.oas-response-trigger[data-open] .oas-response-caret {
+.oas-response-trigger[data-open] .oas-response-caret,
+details[open] > .oas-response-trigger .oas-response-caret {
   transform: rotate(90deg);
 }
 

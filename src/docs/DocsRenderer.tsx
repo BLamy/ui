@@ -1,6 +1,6 @@
 import { useContext, useEffect, useId, useMemo, useState, type ComponentProps, type ReactNode } from "react"
 import { Tabs as TabsRoot, TabsIndicator, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs"
-import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@ui-sdk/react/collapsible"
+import { DetailsCollapsible } from "../ui/details-collapsible"
 import {
   AlertTriangle,
   CheckCircle2,
@@ -405,15 +405,17 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       return block.command ? <CommandBox block={block} /> : null
     case "expandable":
       return (
-        <Collapsible className="docs-expandable">
-          <CollapsibleTrigger className="docs-expandable-trigger">
+        <DetailsCollapsible
+          className="docs-expandable"
+          triggerClassName="docs-expandable-trigger"
+          panelClassName="docs-expandable-body"
+          summary={<>
             <ChevronRight className="docs-expandable-caret" width={14} height={14} strokeWidth={2.2} aria-hidden="true" />
             {block.summary}
-          </CollapsibleTrigger>
-          <CollapsiblePanel hiddenUntilFound className="docs-expandable-body">
-            <Blocks blocks={block.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
-          </CollapsiblePanel>
-        </Collapsible>
+          </>}
+        >
+          <Blocks blocks={block.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
+        </DetailsCollapsible>
       )
     case "stepper":
       return (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Check, ChevronRight, Plus, X } from "lucide-react"
 import { Checkbox, CheckboxIndicator } from "@ui-sdk/react/checkbox"
-import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@ui-sdk/react/collapsible"
+import { DetailsCollapsible } from "../ui/details-collapsible"
 import { Input } from "@ui-sdk/react/input"
 import { Textarea } from "@ui-sdk/react/textarea"
 import { parseDocument, stringify } from "yaml"
@@ -60,9 +60,9 @@ export function DocumentProperties({ properties, onChange, defaultOpen = false, 
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState("")
   const keys = Object.keys(values)
-  return <Collapsible defaultOpen={defaultOpen} className={["docs-document-properties", className].filter(Boolean).join(" ")} data-document-properties="">
-    <CollapsibleTrigger className="docs-properties-trigger"><ChevronRight size={13} aria-hidden="true" /><span>Properties</span><span className="docs-properties-count">{keys.length}</span></CollapsibleTrigger>
-    <CollapsiblePanel hiddenUntilFound className="docs-properties-panel">
+  return <DetailsCollapsible defaultOpen={defaultOpen} className={["docs-document-properties", className].filter(Boolean).join(" ")} data-document-properties=""
+    triggerClassName="docs-properties-trigger" panelClassName="docs-properties-panel"
+    summary={<><ChevronRight size={13} aria-hidden="true" /><span>Properties</span><span className="docs-properties-count">{keys.length}</span></>}>
     {error ? <div className="docs-properties-error" role="alert">
       <p>{error}</p>
       {onChange ? <Textarea aria-label="Document properties YAML" value={properties.yaml} onValueChange={(yaml) => onChange({ ...properties, yaml })} />
@@ -86,6 +86,5 @@ export function DocumentProperties({ properties, onChange, defaultOpen = false, 
         <button type="button" onClick={() => { setAdding(false); setName("") }}>Cancel</button></form>
         : <button type="button" className="docs-property-add" onClick={() => setAdding(true)}><Plus size={13} aria-hidden="true" />Add property</button> : null}
     </>}
-    </CollapsiblePanel>
-  </Collapsible>
+  </DetailsCollapsible>
 }

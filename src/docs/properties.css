@@ -7,7 +7,9 @@
 }
 .docs-document-properties .docs-properties-trigger { display: flex; align-items: center; gap: 6px; width: fit-content; padding-block: 5px; padding-inline: 0; user-select: none; }
 .docs-properties-trigger > svg { transition: transform 150ms ease; }
-.docs-properties-trigger[data-open] > svg { transform: rotate(90deg); }
+.docs-properties-trigger[data-open] > svg, details[open] > .docs-properties-trigger > svg { transform: rotate(90deg); }
+summary.docs-properties-trigger { list-style: none; cursor: pointer; }
+summary.docs-properties-trigger::-webkit-details-marker { display: none; }
 .docs-properties-count { font-variant-numeric: tabular-nums; opacity: .65; margin-left: 2px; }
 .docs-properties-list { margin: 6px 0; }
 .docs-property-row { display: grid; grid-template-columns: minmax(80px, 130px) minmax(0, 1fr) 22px; align-items: start; gap: 10px; padding-block: 6px; border-bottom: 1px solid var(--border, #e8e8e8); }
@@ -18,7 +20,7 @@
 .docs-document-properties textarea { resize: vertical; }
 .docs-document-properties .docs-property-checkbox { display: inline-grid; place-items: center; box-sizing: border-box; width: 15px; height: 15px; margin: 5px 0; padding: 0; border: 1px solid var(--border, #c8c8c8); border-radius: 4px; color: var(--primary-foreground, #fff); background: var(--background, transparent); }
 .docs-document-properties .docs-property-checkbox[data-checked] { border-color: var(--primary, #a87900); background: var(--primary, #a87900); }
-.docs-document-properties :is(input, textarea, button):focus-visible { outline: 2px solid var(--primary, #a87900); outline-offset: 2px; }
+.docs-document-properties :is(input, textarea, button, summary):focus-visible { outline: 2px solid var(--primary, #a87900); outline-offset: 2px; }
 .docs-document-properties button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: inherit; background: transparent; border: 0; border-radius: 4px; font: inherit; cursor: pointer; }
 .docs-property-remove { padding: 6px 3px; opacity: 0; }
 .docs-property-row:hover .docs-property-remove, .docs-property-remove:focus-visible { opacity: 1; }
