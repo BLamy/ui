@@ -1,10 +1,13 @@
 import { Node, mergeAttributes } from "@tiptap/core"
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model"
-import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from "@tiptap/react"
-import { ImageIcon } from "lucide-react"
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react"
-import { createPortal } from "react-dom"
+import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react"
+import { ImageIcon, X } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Button } from "@ui-sdk/react/button"
+import { Dialog, DialogBackdrop, DialogClose, DialogContent, DialogTitle } from "@ui-sdk/react/dialog"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@ui-sdk/react/hover-card"
 
+import { controlNodeView } from "./controls"
 import { useEditorRuntime } from "./runtime"
 
 /** A file the host owns, referenced from the document by an attachment chip. */
@@ -86,99 +89,10 @@ export function collectAttachmentIds(doc: ProseMirrorNode): Set<string> {
   return ids
 }
 
-// ---------- Hover card ----------
+// ---------- Chip ----------
 
 const HOVER_DELAY = 150
 const HIDE_GRACE = 120
-const GAP = 8
-const MARGIN = 8
-
-function AttachmentHoverCard({
-  anchor,
-  attachment,
-}: {
-  anchor: HTMLElement
-  attachment: EditorAttachment
-}) {
-  const cardRef = useRef<HTMLDivElement>(null)
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
-
-  const place = useCallback(() => {
-    const card = cardRef.current
-    if (!card) return
-    const a = anchor.getBoundingClientRect()
-    const { width, height } = card.getBoundingClientRect()
-    const vw = window.innerWidth
-    const vh = window.innerHeight
-    let top = a.top - GAP - height
-    if (top < MARGIN && a.bottom + GAP + height <= vh - MARGIN) top = a.bottom + GAP
-    top = Math.max(MARGIN, top)
-    const left = Math.min(Math.max(MARGIN, a.left + a.width / 2 - width / 2), Math.max(MARGIN, vw - MARGIN - width))
-    setPos({ top, left })
-  }, [anchor])
-
-  useLayoutEffect(place, [place, attachment.src])
-
-  const size = formatBytes(attachment.size)
-  const style: CSSProperties = pos
-    ? { top: pos.top, left: pos.left }
-    : { top: 0, left: 0, visibility: "hidden" }
-  return createPortal(
-    <div ref={cardRef} className="gb-attachment-card" style={style} role="tooltip">
-      {attachment.src ? (
-        <img className="gb-attachment-card-img" src={attachment.src} alt={attachment.name} onLoad={place} />
-      ) : (
-        <div className="gb-attachment-card-empty">
-          <ImageIcon className="size-5" />
-        </div>
-      )}
-      <div className="gb-attachment-card-meta">
-        <span className="gb-attachment-card-name">{attachment.name}</span>
-        {size && <span className="gb-attachment-card-size"> · {size}</span>}
-      </div>
-    </div>,
-    document.body
-  )
-}
-
-// ---------- Built-in viewer ----------
-
-function AttachmentViewer({ attachment, onClose }: { attachment: EditorAttachment; onClose: () => void }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault()
-        e.stopPropagation()
-        onClose()
-      }
-    }
-    document.addEventListener("keydown", onKey, true)
-    return () => document.removeEventListener("keydown", onKey, true)
-  }, [onClose])
-
-  return createPortal(
-    <div
-      className="gb-attachment-viewer"
-      role="dialog"
-      aria-modal="true"
-      aria-label={attachment.name}
-      onMouseDown={(e) => e.preventDefault()}
-      onClick={onClose}
-    >
-      {attachment.src ? (
-        <img className="gb-attachment-viewer-img" src={attachment.src} alt={attachment.name} />
-      ) : (
-        <div className="gb-attachment-viewer-empty">
-          <ImageIcon className="size-6" />
-          {attachment.name}
-        </div>
-      )}
-    </div>,
-    document.body
-  )
-}
-
-// ---------- Chip ----------
 
 function AttachmentView({ node, selected, editor }: NodeViewProps) {
   const { attachments, onAttachmentOpen } = useEditorRuntime()
@@ -187,104 +101,90 @@ function AttachmentView({ node, selected, editor }: NodeViewProps) {
   const attachment: EditorAttachment = { ...stored, id, name: stored?.name || String(node.attrs.name || "image") }
   const size = formatBytes(attachment.size)
 
-  const chipRef = useRef<HTMLSpanElement>(null)
   const [hovered, setHovered] = useState(false)
-  const [focused, setFocused] = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const [viewing, setViewing] = useState(false)
-  const showTimer = useRef<number | undefined>(undefined)
-  const hideTimer = useRef<number | undefined>(undefined)
-
-  const clearTimers = () => {
-    window.clearTimeout(showTimer.current)
-    window.clearTimeout(hideTimer.current)
-  }
-  useEffect(() => clearTimers, [])
 
   // A fresh selection of the chip re-arms a card dismissed with Escape.
   useEffect(() => {
     if (selected) setDismissed(false)
   }, [selected])
 
-  const cardOpen =
-    !viewing && !dismissed && (hovered || focused || (selected && editor.isFocused))
-
-  useEffect(() => {
-    if (!cardOpen) return
-    const hide = () => {
-      clearTimers()
-      setHovered(false)
-      setDismissed(true)
-    }
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") hide()
-    }
-    window.addEventListener("scroll", hide, true)
-    document.addEventListener("keydown", onKey, true)
-    return () => {
-      window.removeEventListener("scroll", hide, true)
-      document.removeEventListener("keydown", onKey, true)
-    }
-  }, [cardOpen])
+  // Selecting the chip in the document shows its card too, as hovering or focusing it does.
+  const held = selected && editor.isFocused
+  const cardOpen = !viewing && !dismissed && (hovered || held)
 
   const open = () => {
-    clearTimers()
     setHovered(false)
     if (onAttachmentOpen) onAttachmentOpen(attachment)
     else setViewing(true)
   }
 
-  const closeViewer = useCallback(() => setViewing(false), [])
-
   return (
     <NodeViewWrapper as="span" className="gb-attachment-wrap" contentEditable={false}>
-      <span
-        ref={chipRef}
-        className="gb-attachment"
-        role="button"
-        tabIndex={0}
-        aria-label={size ? `${attachment.name}, ${size}` : attachment.name}
-        data-attachment-id={id}
-        onMouseEnter={() => {
-          window.clearTimeout(hideTimer.current)
-          setDismissed(false)
-          showTimer.current = window.setTimeout(() => setHovered(true), HOVER_DELAY)
-        }}
-        onMouseLeave={() => {
-          window.clearTimeout(showTimer.current)
-          hideTimer.current = window.setTimeout(() => setHovered(false), HIDE_GRACE)
-        }}
-        onFocus={() => {
-          setDismissed(false)
-          setFocused(true)
-        }}
-        onBlur={() => setFocused(false)}
-        // Keep the caret where it is — the chip is a button, not a text target.
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={(e) => {
-          e.preventDefault()
-          open()
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault()
-            e.stopPropagation()
-            open()
-          }
+      <HoverCard
+        open={cardOpen}
+        delay={HOVER_DELAY}
+        closeDelay={HIDE_GRACE}
+        onOpenChange={(next, details) => {
+          setHovered(next)
+          if (next) setDismissed(false)
+          else if (details.reason === "escape-key") setDismissed(true)
+          else if (held) details.cancel()
         }}
       >
-        <span className="gb-attachment-thumb">
+        <HoverCardTrigger
+          render={<Button render={<span />} />}
+          className="gb-attachment"
+          aria-label={size ? `${attachment.name}, ${size}` : attachment.name}
+          data-attachment-id={id}
+          // Keep the caret where it is — the chip is a button, not a text target.
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={open}
+        >
+          <span className="gb-attachment-thumb">
+            {attachment.src ? (
+              <img src={attachment.src} alt="" draggable={false} />
+            ) : (
+              <ImageIcon className="gb-attachment-thumb-icon" aria-hidden="true" />
+            )}
+          </span>
+          <span className="gb-attachment-name">{attachment.name}</span>
+          {size && <span className="gb-attachment-size">{size}</span>}
+        </HoverCardTrigger>
+        <HoverCardContent render={<span />} className="gb-attachment-card" side="top" sideOffset={8} collisionPadding={8}>
           {attachment.src ? (
-            <img src={attachment.src} alt="" draggable={false} />
+            <img className="gb-attachment-card-img" src={attachment.src} alt="" />
           ) : (
-            <ImageIcon className="gb-attachment-thumb-icon" />
+            <span className="gb-attachment-card-empty">
+              <ImageIcon className="size-5" aria-hidden="true" />
+            </span>
           )}
-        </span>
-        <span className="gb-attachment-name">{attachment.name}</span>
-        {size && <span className="gb-attachment-size">{size}</span>}
-      </span>
-      {cardOpen && chipRef.current && <AttachmentHoverCard anchor={chipRef.current} attachment={attachment} />}
-      {viewing && <AttachmentViewer attachment={attachment} onClose={closeViewer} />}
+          <span className="gb-attachment-card-meta">
+            <span className="gb-attachment-card-name">{attachment.name}</span>
+            {size && <span className="gb-attachment-card-size"> · {size}</span>}
+          </span>
+        </HoverCardContent>
+      </HoverCard>
+      <Dialog open={viewing} onOpenChange={setViewing}>
+        <DialogBackdrop className="gb-attachment-backdrop" />
+        <DialogContent render={<span />} className="gb-attachment-viewer">
+          <DialogTitle render={<span />} className="gb-attachment-viewer-title">
+            {attachment.name}
+          </DialogTitle>
+          {attachment.src ? (
+            <img className="gb-attachment-viewer-img" src={attachment.src} alt={attachment.name} />
+          ) : (
+            <span className="gb-attachment-viewer-empty">
+              <ImageIcon className="size-6" aria-hidden="true" />
+              {attachment.name}
+            </span>
+          )}
+          <DialogClose className="gb-attachment-viewer-close" aria-label="Close">
+            <X className="size-4" aria-hidden="true" />
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
     </NodeViewWrapper>
   )
 }
@@ -354,6 +254,6 @@ export const GbAttachment = Node.create({
     }
   },
   addNodeView() {
-    return ReactNodeViewRenderer(AttachmentView)
+    return controlNodeView(AttachmentView)
   },
 })

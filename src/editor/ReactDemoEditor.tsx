@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react"
 import { FileCode2, Play } from "lucide-react"
+import { Button } from "@ui-sdk/react/button"
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs"
+import { Textarea } from "@ui-sdk/react/textarea"
 
 import type { LivePreviewRenderer } from "@brett_lamy/docstream"
 
@@ -68,6 +71,36 @@ export function ReactDemoEditor({
   }
 
   const wrapperClass = className ? `gb-react-demo-editor ${className}` : "gb-react-demo-editor"
+  const paths = Object.keys(draftFiles).sort()
+  const pane = (
+    <>
+      <div className="gb-react-demo-editor-toolbar">
+        <code>{selectedFile || "No file selected"}</code>
+        {autoPreview ? (
+          <span className="gb-react-demo-live-status">Live preview</span>
+        ) : (
+          <Button
+            className="gb-react-demo-preview-button"
+            disabled={!selectedFile}
+            onClick={() => {
+              setPreviewFiles({ ...draftFiles })
+              setPreviewRevision((value) => value + 1)
+            }}
+          >
+            <Play className="size-3.5" aria-hidden="true" /> Run demo
+          </Button>
+        )}
+      </div>
+      <Textarea
+        className="gb-react-demo-textarea"
+        value={selectedFile ? draftFiles[selectedFile] ?? "" : ""}
+        onValueChange={updateFile}
+        spellCheck={false}
+        disabled={!selectedFile}
+        aria-label={selectedFile ? `Edit ${selectedFile}` : "No file selected"}
+      />
+    </>
+  )
 
   return (
     <section className={wrapperClass} data-docstream-react-demo-editor="">
@@ -80,54 +113,39 @@ export function ReactDemoEditor({
           Live preview needs the playground runtime (pass <code>liveRenderer</code>). The code is shown below.
         </div>
       )}
-      <div className="gb-react-demo-editor-source">
-        <aside className="gb-react-demo-files" aria-label="Demo files">
+      <Tabs
+        className="gb-react-demo-editor-source"
+        orientation="vertical"
+        value={selectedFile || null}
+        onValueChange={(path) => {
+          if (path !== null) setSelectedFile(path)
+        }}
+      >
+        <div className="gb-react-demo-files">
           <div className="gb-react-demo-files-header">
             <span>Files</span>
-            <FileCode2 className="size-4" />
+            <FileCode2 className="size-4" aria-hidden="true" />
           </div>
-          {Object.keys(draftFiles)
-            .sort()
-            .map((path) => (
-              <button
-                type="button"
+          <TabsList className="gb-react-demo-file-list" aria-label="Demo files">
+            {paths.map((path) => (
+              <TabsTab
                 key={path}
-                className={path === selectedFile ? "gb-react-demo-file gb-react-demo-file-active" : "gb-react-demo-file"}
-                onClick={() => setSelectedFile(path)}
+                value={path}
+                className={(state) => (state.selected ? "gb-react-demo-file gb-react-demo-file-active" : "gb-react-demo-file")}
               >
                 {path.replace(/^\//, "")}
-              </button>
+              </TabsTab>
             ))}
-        </aside>
-        <div className="gb-react-demo-editor-pane">
-          <div className="gb-react-demo-editor-toolbar">
-            <code>{selectedFile || "No file selected"}</code>
-            {autoPreview ? (
-              <span className="gb-react-demo-live-status">Live preview</span>
-            ) : (
-              <button
-                type="button"
-                className="gb-react-demo-preview-button"
-                disabled={!selectedFile}
-                onClick={() => {
-                  setPreviewFiles({ ...draftFiles })
-                  setPreviewRevision((value) => value + 1)
-                }}
-              >
-                <Play className="size-3.5" /> Run demo
-              </button>
-            )}
-          </div>
-          <textarea
-            className="gb-react-demo-textarea"
-            value={selectedFile ? draftFiles[selectedFile] ?? "" : ""}
-            onChange={(event) => updateFile(event.target.value)}
-            spellCheck={false}
-            disabled={!selectedFile}
-            aria-label={selectedFile ? `Edit ${selectedFile}` : "No file selected"}
-          />
+          </TabsList>
         </div>
-      </div>
+        {selectedFile ? (
+          <TabsPanel value={selectedFile} className="gb-react-demo-editor-pane">
+            {pane}
+          </TabsPanel>
+        ) : (
+          <div className="gb-react-demo-editor-pane">{pane}</div>
+        )}
+      </Tabs>
     </section>
   )
 }

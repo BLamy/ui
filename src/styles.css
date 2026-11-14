@@ -1,9 +1,18 @@
+/* UI SDK adds its own few rules to the page in this layer. Naming it here, before anything else,
+   keeps it below every layer declared after it, so the rules in this file win. A host that imports
+   this file inside a layer of its own must declare `@layer ui-sdk;` itself, first (see the README). */
+@layer ui-sdk;
+
 @import "@brett_lamy/docstream/properties/styles.css";
 @import "@brett_lamy/docstream/tasks/styles.css";
 
 /*
  * Editor chrome for the GitBook node views (.gb-* classes emitted by
  * nodes.tsx, Editor.tsx, and slash-menu.tsx).
+ *
+ * Interactive parts are UI SDK components: they are styled from `data-slot`
+ * and their state attributes (`data-pressed`, `data-selected`, `data-open`,
+ * `data-highlighted`, `data-checked`, `data-disabled`), never from a state class.
  *
  * Visual parity contract: every block here mirrors its read-only twin in
  * @brett_lamy/docstream/styles.css (.docs-*) — same radii, spacing, hint
@@ -161,7 +170,8 @@
   cursor: pointer;
   white-space: nowrap;
 }
-.gb-demo-files-toggle-active { background: var(--gb-bg); color: var(--gb-text); }
+.gb-demo-files-toggle[data-open] { background: var(--gb-bg); color: var(--gb-text); }
+.gb-demo-files-toggle:focus-visible { outline: 2px solid var(--gb-ring, var(--gb-primary)); outline-offset: 1px; }
 
 /* Inline demo files: a tab per file and a code area. */
 .gb-demo-files {
@@ -170,14 +180,11 @@
   background: var(--gb-panel);
 }
 .gb-demo-block:not(.gb-demo-block-preview) .gb-demo-files,
-.gb-demo-files:last-child {
+.gb-demo-files-panel:last-child > .gb-demo-files {
   border-radius: 0 0 var(--gb-radius) var(--gb-radius);
 }
 .gb-demo-files-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px;
+  --gb-tab-pad: 10px;
   padding: 6px 8px 0;
   border-bottom: 1px solid var(--gb-border);
   background: var(--gb-muted);
@@ -187,14 +194,23 @@
   align-items: center;
   gap: 4px;
   padding: 5px 10px;
+  border: none;
+  background: transparent;
   border-radius: 8px 8px 0 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
   color: var(--gb-muted-foreground);
   cursor: pointer;
 }
-.gb-demo-file-tab-active { background: var(--gb-panel); color: var(--gb-text); }
-.gb-demo-file-path { font: inherit; color: inherit; background: transparent; border: none; outline: none; }
+.gb-demo-file-tab[data-selected] { background: var(--gb-panel); color: var(--gb-text); }
+.gb-demo-file-path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--gb-text);
+  background: transparent;
+  border: none;
+  outline: none;
+}
 .gb-demo-file-entry {
   padding: 0 5px;
   border-radius: 4px;
@@ -213,7 +229,7 @@
   color: var(--gb-muted-foreground);
 }
 .gb-demo-file-lang { width: 6rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-.gb-demo-file-entry-toggle { display: inline-flex; align-items: center; gap: 4px; }
+.gb-demo-file-entry-toggle { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
 .gb-demo-file-code {
   display: block;
   width: 100%;
@@ -258,6 +274,9 @@
 .gb-source-file-editor-status + button {
   margin-left: 0;
 }
+
+.gb-source-file-editor-header button[data-disabled] { opacity: 0.55; cursor: default; }
+.gb-source-file-editor-header button[data-pending] { cursor: progress; }
 
 .gb-source-file-editor > textarea {
   box-sizing: border-box;
@@ -312,9 +331,33 @@
   cursor: pointer;
 }
 .gb-tool:hover { background: var(--gb-accent); color: var(--gb-accent-foreground); }
-.gb-tool-active { background: var(--gb-accent); color: var(--gb-accent-foreground); }
+.gb-tool[data-pressed],
+.gb-tool[data-active],
+.gb-tool[data-open] { background: var(--gb-accent); color: var(--gb-accent-foreground); }
+.gb-tool:focus-visible { outline: 2px solid var(--gb-ring, var(--gb-primary)); outline-offset: 1px; }
+.gb-tool[data-disabled] { opacity: 0.45; cursor: default; }
+.gb-tool[data-disabled]:hover { background: transparent; color: var(--gb-muted-foreground); }
+.gb-tool > [data-slot="toggle-icon"] { display: inline-flex; }
 
-.gb-toolbar-sep { width: 1px; height: 18px; background: var(--gb-border); margin: 0 6px; }
+/* The link field, in a popover under its toolbar button. */
+.gb-link-popover {
+  padding: 6px;
+  border: 1px solid var(--gb-border);
+  border-radius: 10px;
+  background: var(--popover, var(--gb-panel));
+  color: var(--popover-foreground, var(--gb-text));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+}
+.gb-link-form { display: flex; align-items: center; gap: 6px; }
+.gb-link-input {
+  width: 260px;
+  max-width: 60vw;
+  padding: 4px 8px;
+  border: 1px solid var(--gb-border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+.gb-link-input:focus-visible { outline: 2px solid var(--gb-ring, var(--gb-primary)); outline-offset: -1px; }
 
 .gb-toolbar-hint {
   display: inline-flex;
@@ -419,6 +462,85 @@
   cursor: pointer;
 }
 .gb-icon-btn:hover { background: var(--gb-accent); color: var(--gb-accent-foreground); }
+.gb-icon-btn:focus-visible { outline: 2px solid var(--gb-ring, var(--gb-primary)); outline-offset: 1px; }
+
+/* ── Select: a compact trigger and its popup list ───────── */
+.gb-select {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 5px;
+  font: inherit;
+  line-height: 1.6;
+  background: transparent;
+  border: 1px solid var(--gb-border);
+  border-radius: 6px;
+  color: var(--gb-muted-foreground);
+  cursor: pointer;
+}
+.gb-select:hover,
+.gb-select[data-open] { background: var(--gb-accent); color: var(--gb-accent-foreground); }
+.gb-select:focus-visible { outline: 2px solid var(--gb-ring, var(--gb-primary)); outline-offset: 1px; }
+.gb-select-content {
+  box-sizing: border-box;
+  min-width: max(var(--anchor-width, 0px), 96px);
+  max-height: min(320px, var(--available-height, 320px));
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid var(--gb-border);
+  border-radius: 10px;
+  background: var(--popover, var(--gb-panel));
+  color: var(--popover-foreground, var(--gb-text));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+  font-size: 13px;
+}
+.gb-select-item {
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+}
+.gb-select-item[data-highlighted] { background: var(--gb-accent); color: var(--gb-accent-foreground); }
+.gb-select-item[data-selected] { font-weight: 600; }
+
+/* ── Checkbox and radio ─────────────────────────────────── */
+.gb-checkbox,
+.gb-radio {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--gb-muted-foreground);
+  border-radius: 3px;
+  background: var(--gb-bg);
+  color: #ffffff;
+  cursor: pointer;
+}
+.gb-radio { border-radius: 50%; }
+.gb-checkbox[data-checked],
+.gb-radio[data-checked] { border-color: var(--gb-primary); background: var(--gb-primary); }
+.gb-checkbox:focus-visible,
+.gb-radio:focus-visible { outline: 2px solid var(--gb-ring, var(--gb-primary)); outline-offset: 2px; }
+.gb-checkbox-indicator {
+  width: 7px;
+  height: 4px;
+  margin-top: -2px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+}
+.gb-radio[data-checked]::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
 
 /* ── Hint / callout (mirrors .docs-hint) ────────────────── */
 .gb-hint {
@@ -438,12 +560,9 @@
   flex-shrink: 0;
 }
 .gb-hint-style {
-  appearance: none;
   font-size: 10px;
-  background: transparent;
-  border: 1px solid var(--gb-border);
   border-radius: 4px;
-  color: var(--gb-muted-foreground);
+  padding: 0 3px;
 }
 .gb-hint-body { flex: 1; min-width: 0; }
 .gb-hint-body > :first-child { margin-top: 0; }
@@ -466,12 +585,54 @@
   overflow: hidden;
 }
 .gb-tabs-header {
-  display: flex;
-  gap: 2px;
   padding: 6px 8px 0;
   background: var(--gb-muted);
   border-bottom: 1px solid var(--gb-border);
 }
+
+/*
+ * A tab strip: one column per tab. The tab list holds only the tabs; the controls that edit a tab
+ * (its title field, its remove button) follow the list in the markup and are laid over the tab
+ * whose `--gb-tab` column they share, so the selected tab's title is edited in place.
+ */
+.gb-tabs-strip {
+  --gb-tab-pad: 14px;
+  --gb-tab-end: var(--gb-tab-pad);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  justify-content: start;
+  align-items: center;
+  gap: 2px;
+}
+.gb-tabs-strip[data-removable] { --gb-tab-end: 28px; }
+.gb-tabs-strip > .gb-tabs-list { display: contents; }
+.gb-tabs-strip > .gb-tabs-list > [data-slot="tabs-tab"],
+.gb-tabs-strip > .gb-tabs-title-input,
+.gb-tabs-strip > .gb-demo-file-path,
+.gb-tabs-strip > .gb-tabs-remove { grid-row: 1; grid-column: var(--gb-tab); }
+.gb-tabs-strip > .gb-tabs-list > [data-slot="tabs-tab"] { align-self: stretch; }
+.gb-tabs-strip > .gb-tabs-list > [data-slot="tabs-tab"]:focus-visible {
+  outline: 2px solid var(--gb-ring, var(--gb-primary));
+  outline-offset: -2px;
+}
+/* Room for the remove button, and a label that keeps its width while the field over it shows the title. */
+.gb-tabs-strip > .gb-tabs-list > [data-slot="tabs-tab"] { padding-left: var(--gb-tab-pad); padding-right: var(--gb-tab-end); }
+.gb-tabs-strip [data-slot="tabs-tab"][data-renaming] > .gb-tabs-tab-label { opacity: 0; }
+.gb-tabs-tab-label { display: inline-block; min-width: 3ch; min-height: 1em; white-space: pre; }
+.gb-tabs-strip > .gb-tabs-title-input,
+.gb-tabs-strip > .gb-demo-file-path {
+  z-index: 1;
+  justify-self: start;
+  box-sizing: border-box;
+  /* No width of its own, so the tab's label alone sizes the column; then it fills the label's room. */
+  width: 0;
+  min-width: calc(100% - var(--gb-tab-pad) - var(--gb-tab-end));
+  margin-left: var(--gb-tab-pad);
+  padding: 0;
+}
+.gb-tabs-strip > .gb-tabs-remove { z-index: 1; justify-self: end; margin-right: 6px; }
+
 .gb-tabs-tab {
   display: inline-flex;
   align-items: center;
@@ -480,16 +641,25 @@
   border: none;
   background: transparent;
   border-radius: 8px 8px 0 0;
+  font: inherit;
   font-size: 13.5px;
   cursor: pointer;
   color: var(--gb-muted-foreground);
 }
-.gb-tabs-tab-active {
+.gb-tabs-tab[data-selected] {
   background: var(--gb-bg);
   color: var(--gb-text);
   font-weight: 500;
 }
-.gb-tabs-title-input { width: 7ch; font-size: 13px; background: transparent; border: none; outline: none; color: inherit; }
+.gb-tabs-title-input {
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--gb-text);
+}
 .gb-tabs-content { padding: 14px 16px; }
 
 /* Show only the active tab panel (data-active is the active index). The .gb-tab
@@ -534,23 +704,17 @@
   border: 0;
 }
 .gb-tabs-section-input { width: 100%; font-weight: inherit; font-size: inherit; letter-spacing: inherit; }
-.gb-tabs-level {
-  font-size: 12px;
-  color: var(--gb-muted-foreground);
-  background: transparent;
-  border: 1px solid var(--gb-border);
-  border-radius: 6px;
-}
+.gb-tabs-level { font-size: 12px; }
 .gb-tabs-pills {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
+  --gb-tab-pad: 12px;
+  display: inline-grid;
   padding: 3px;
   border-radius: 999px;
   background: var(--gb-muted);
 }
 .gb-tabs-pills .gb-tabs-tab { padding: 4px 12px; border-radius: 999px; font-size: 13px; }
-.gb-tabs-pills .gb-tabs-tab-active { background: var(--gb-bg); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+.gb-tabs-pills .gb-tabs-tab[data-selected] { background: var(--gb-bg); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+.gb-tabs-pills > .gb-tabs-title-input { font-size: 13px; }
 .gb-tabs-section > .gb-tabs-content { padding: 0; }
 
 /* ── Command box: docstream's own box, with the editable npm command + overrides below ── */
@@ -568,7 +732,7 @@
   font-size: 12.5px;
 }
 .gb-command-field { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
-.gb-command-field > span {
+.gb-command-field > [data-slot="field-label"] {
   flex-shrink: 0;
   width: 2.8rem;
   color: var(--gb-muted-foreground);
@@ -662,6 +826,10 @@
   background: transparent; color: var(--gb-primary, currentColor); font: inherit; font-size: 12px; cursor: pointer;
 }
 .gb-pick-file:hover { background: var(--gb-muted); }
+.gb-pick-file[data-disabled] { opacity: 0.5; cursor: default; }
+.gb-pick-file[data-pending] { cursor: progress; }
+/* Positions the file input UI SDK keeps, visually hidden, beside its trigger. */
+.gb-upload-file { position: relative; display: inline-flex; flex-shrink: 0; }
 .gb-pick-file:focus-visible { outline: 2px solid var(--gb-ring, var(--gb-primary)); outline-offset: 1px; }
 .gb-content-ref {
   display: flex;
@@ -805,11 +973,13 @@
   font-weight: 400;
 }
 .gb-code-linenos {
+  position: relative;
   display: flex;
   gap: 4px;
   align-items: center;
   color: var(--gb-muted-foreground);
   font-size: 11px;
+  cursor: pointer;
 }
 .gb-code > pre {
   margin: 0;
@@ -860,11 +1030,14 @@
 .gb-openapi-path { min-width: 110px; font-family: ui-monospace, Menlo, monospace; }
 .gb-openapi-url { flex: 1; }
 
-/* ── Slash menu ─────────────────────────────────────────── */
+/* ── Slash and reference menus: a UI SDK listbox in the top layer, placed at the caret ── */
 .slash-menu {
-  z-index: 100;
+  /* A raw popover: the browser's own popover box (inset, margin, border, padding) is reset here. */
+  inset: auto;
+  box-sizing: border-box;
   min-width: 230px;
-  max-height: 320px;
+  max-height: min(320px, var(--available-height, 320px));
+  margin: 0;
   overflow-y: auto;
   background: var(--popover, var(--card, #ffffff));
   color: var(--popover-foreground, var(--foreground, #111827));
@@ -887,9 +1060,11 @@
   cursor: pointer;
   color: inherit;
 }
-.slash-item:hover,
-.slash-item-active { background: var(--accent, #f4f4f5); }
-.slash-item svg { color: var(--muted-foreground, #6b7280); }
+.slash-item[data-highlighted] { background: var(--accent, #f4f4f5); }
+.slash-item[aria-disabled="true"] { opacity: 0.5; cursor: default; }
+.slash-item svg { flex-shrink: 0; color: var(--muted-foreground, #6b7280); }
+/* What the typed text matched. */
+.slash-item mark { background: transparent; color: inherit; font-weight: 600; }
 .slash-empty { padding: 8px 10px; font-size: 13px; color: var(--muted-foreground, #6b7280); }
 .slash-group {
   padding: 8px 10px 3px;
@@ -910,11 +1085,13 @@
 }
 
 .gb-code-live {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 4px;
   color: var(--gb-muted-foreground);
   font-size: 11px;
+  cursor: pointer;
 }
 .gb-code-entry { flex: 1; min-width: 130px; }
 .gb-code-live-badge {
@@ -965,10 +1142,15 @@
   margin-left: auto;
   color: var(--gb-muted-foreground, var(--muted-foreground, #71717a));
 }
+.gb-react-demo-file-list { display: flex; flex-direction: column; }
 .gb-react-demo-file {
   display: block;
+  box-sizing: border-box;
   width: 100%;
   padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
   overflow: hidden;
   color: var(--gb-muted-foreground, var(--muted-foreground, #71717a));
   font-family: ui-monospace, Menlo, monospace;
@@ -977,10 +1159,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.gb-react-demo-file-active {
+.gb-react-demo-file[data-selected] {
   color: var(--gb-panel-foreground, var(--foreground, #18181b));
   background: var(--gb-panel, var(--card, #ffffff));
 }
+.gb-react-demo-file:focus-visible { outline: 2px solid var(--gb-ring, var(--gb-primary)); outline-offset: -2px; }
 .gb-react-demo-editor-pane {
   display: flex;
   min-width: 0;
@@ -1003,7 +1186,7 @@
   color: var(--gb-panel-foreground, var(--foreground, #18181b));
   font-size: 11px;
 }
-.gb-react-demo-preview-button:disabled { opacity: 0.5; }
+.gb-react-demo-preview-button[data-disabled] { opacity: 0.5; }
 .gb-react-demo-live-status {
   margin-left: auto;
   color: var(--gb-success, #22c55e);
@@ -1039,6 +1222,7 @@
     border-bottom: 1px solid var(--gb-border, var(--border, #e4e4e7));
   }
   .gb-react-demo-files-header { flex: 0 0 auto; border-bottom: 0; }
+  .gb-react-demo-file-list { flex-direction: row; }
   .gb-react-demo-file { width: auto; flex: 0 0 auto; }
 }
 
@@ -1173,10 +1357,8 @@
   white-space: nowrap;
 }
 
-/* Portaled to <body>, outside .gb — tokens resolve from the host directly. */
+/* A UI SDK hover card, in the top layer beside its chip. Tokens resolve from the host directly. */
 .gb-attachment-card {
-  position: fixed;
-  z-index: 1000;
   box-sizing: border-box;
   max-width: calc(100vw - 16px);
   padding: 6px;
@@ -1210,6 +1392,7 @@
   color: var(--muted-foreground, #6b7280);
 }
 .gb-attachment-card-meta {
+  display: block;
   max-width: 360px;
   padding: 6px 4px 1px;
   overflow: hidden;
@@ -1221,17 +1404,49 @@
 .gb-attachment-card-name { font-weight: 500; }
 .gb-attachment-card-size { color: var(--muted-foreground, #6b7280); }
 
-.gb-attachment-viewer {
+/* The built-in viewer: a UI SDK dialog over a dimmed page. A press on the backdrop closes it. */
+.gb-attachment-backdrop {
   position: fixed;
   inset: 0;
   z-index: 1001;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: rgba(0, 0, 0, 0.72);
   cursor: zoom-out;
   animation: gb-attachment-fade 140ms ease-out;
 }
+.gb-attachment-viewer {
+  position: fixed;
+  inset: 0;
+  width: fit-content;
+  height: fit-content;
+  margin: auto;
+  display: flex;
+  outline: none;
+  animation: gb-attachment-fade 140ms ease-out;
+}
+.gb-attachment-viewer-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.gb-attachment-viewer-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  cursor: pointer;
+}
+.gb-attachment-viewer-close:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
 .gb-attachment-viewer-img {
   max-width: 90vw;
   max-height: 90vh;
@@ -1244,6 +1459,7 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
+  padding: 48px 64px;
   color: #ffffff;
   font-size: 14px;
 }
@@ -1258,6 +1474,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .gb-attachment-card,
+  .gb-attachment-backdrop,
   .gb-attachment-viewer { animation: none; }
 }
 

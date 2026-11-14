@@ -1,13 +1,15 @@
 import { Node, mergeAttributes } from "@tiptap/core"
 import { CodeBlock } from "@tiptap/extension-code-block"
 import { gpuHighlightPlugin } from "./gpu-highlight"
-import { useEffect, useMemo, useState } from "react"
-import {
-  NodeViewContent,
-  NodeViewWrapper,
-  ReactNodeViewRenderer,
-  type NodeViewProps,
-} from "@tiptap/react"
+import { useEffect, useMemo, useState, type CSSProperties } from "react"
+import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from "@tiptap/react"
+import { Button } from "@ui-sdk/react/button"
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@ui-sdk/react/collapsible"
+import { Field, FieldLabel } from "@ui-sdk/react/field"
+import { Input } from "@ui-sdk/react/input"
+import { Radio, RadioGroup } from "@ui-sdk/react/radio"
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs"
+import { Textarea } from "@ui-sdk/react/textarea"
 import {
   AlertTriangle,
   AppWindow,
@@ -15,7 +17,6 @@ import {
   CheckCircle2,
   ChevronDown,
   FolderGit2,
-  FolderOpen,
   Hash,
   Heading,
   Info,
@@ -23,7 +24,6 @@ import {
   FileCode2,
   GripVertical,
   Plus,
-  Upload,
   X,
   XCircle,
 } from "lucide-react"
@@ -43,8 +43,9 @@ import { DemoViewer, prefetchDemoSources, useDemoVFSEntry, writeDocstreamClipboa
 import { pmToCommand, pmToDemo } from "./convert"
 import { clipboardForDoc, setActiveDemoDrag } from "./demo-clipboard"
 import { SourceFileEditor } from "./SourceFileEditor"
-import { useEditorRuntime, type FilePickKind } from "./runtime"
+import { useEditorRuntime } from "./runtime"
 import { GbAttachment } from "./attachments"
+import { ChoiceSelect, FlagCheckbox, PickFileButton, UploadFileButton, controlNodeView, type ChoiceOption } from "./controls"
 
 function useDebouncedValue<T>(value: T, delay = 350): T {
   const [debounced, setDebounced] = useState(value)
@@ -64,25 +65,23 @@ const HINT_META: Record<HintStyle, { icon: typeof Info; cls: string }> = {
   danger: { icon: XCircle, cls: "gb-hint-danger" },
 }
 
+const HINT_OPTIONS = (Object.keys(HINT_META) as HintStyle[]).map((style) => ({ value: style, label: style }))
+
 function HintView({ node, updateAttributes, editor }: NodeViewProps) {
   const style = (node.attrs.style as HintStyle) ?? "info"
   const { icon: Icon, cls } = HINT_META[style] ?? HINT_META.info
   return (
     <NodeViewWrapper className={`gb-hint ${cls}`}>
       <div className="gb-hint-gutter" contentEditable={false}>
-        <Icon className="size-4" />
+        <Icon className="size-4" aria-hidden="true" />
         {editor.isEditable && (
-          <select
+          <ChoiceSelect
             className="gb-hint-style"
+            label="Hint style"
             value={style}
-            onChange={(e) => updateAttributes({ style: e.target.value })}
-          >
-            {Object.keys(HINT_META).map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            options={HINT_OPTIONS}
+            onValueChange={(next) => updateAttributes({ style: next })}
+          />
         )}
       </div>
       <NodeViewContent className="gb-hint-body" />
@@ -105,11 +104,20 @@ export const GbHint = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-hint": node.attrs.style }), 0]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(HintView)
+    return controlNodeView(HintView)
   },
 })
 
 // ---------- Tabs ----------
+
+const LEVEL_OPTIONS: ChoiceOption<"2" | "3" | "4">[] = [
+  { value: "2", label: "H2" },
+  { value: "3", label: "H3" },
+  { value: "4", label: "H4" },
+]
+
+/** The column of a tab strip a tab, and the controls laid over it, sit in. */
+const tabColumn = (index: number) => ({ "--gb-tab": index + 1 }) as CSSProperties
 
 function TabsView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
   const active = Math.min(node.attrs.active ?? 0, node.childCount - 1)
@@ -149,62 +157,83 @@ function TabsView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
   const level = node.attrs.level === 3 || node.attrs.level === 4 ? node.attrs.level : 2
   // `{% tabs title="…" %}`: the set renders as a section — heading, then the switch on its row.
   const section = !!title || node.attrs.titled === true
+  const removable = editable && titles.length > 1
 
+  // Tabs carry no id: a tab is its place in the set.
   const tabStrip = (
     <>
+      <TabsList className="gb-tabs-list" aria-label={title || "Tabs"}>
         {titles.map((t, idx) => (
-          <div
+          <TabsTab
             key={idx}
-            className={`gb-tabs-tab ${idx === active ? "gb-tabs-tab-active" : ""}`}
-            onClick={() => updateAttributes({ active: idx })}
+            value={String(idx)}
+            className={(state) => (state.selected ? "gb-tabs-tab gb-tabs-tab-active" : "gb-tabs-tab")}
+            style={tabColumn(idx)}
+            data-renaming={editable && idx === active ? "" : undefined}
+            {...(t ? {} : { "aria-label": `Tab ${idx + 1}` })}
           >
-            {editor.isEditable && idx === active ? (
-              <input
-                className="gb-tabs-title-input"
-                value={t}
-                size={Math.max(t.length, 3)}
-                onChange={(e) => renameTab(idx, e.target.value)}
-              />
-            ) : (
-              <span>{t}</span>
-            )}
-            {editor.isEditable && titles.length > 1 && (
-              <button className="gb-icon-btn" onClick={() => removeTab(idx)} title="Remove tab">
-                <X className="size-3" />
-              </button>
-            )}
-          </div>
+            <span className="gb-tabs-tab-label">{t}</span>
+          </TabsTab>
         ))}
-        {editable && (
-          <button className="gb-icon-btn" onClick={addTab} title="Add tab">
-            <Plus className="size-3.5" />
-          </button>
-        )}
-        {editable && !section && (
-          <button
-            className="gb-icon-btn gb-tabs-add-title"
-            onClick={() => updateAttributes({ titled: true })}
-            title="Add a section title (renders the tabs as a titled section)"
+      </TabsList>
+      {editable && titles[active] !== undefined && (
+        <Input
+          className="gb-tabs-title-input"
+          style={tabColumn(active)}
+          aria-label="Tab title"
+          value={titles[active]}
+          onValueChange={(value) => renameTab(active, value)}
+        />
+      )}
+      {removable &&
+        titles.map((t, idx) => (
+          <Button
+            key={idx}
+            className="gb-icon-btn gb-tabs-remove"
+            style={tabColumn(idx)}
+            aria-label={`Remove ${t || `tab ${idx + 1}`}`}
+            title="Remove tab"
+            onClick={() => removeTab(idx)}
           >
-            <Heading className="size-3.5" />
-          </button>
-        )}
+            <X className="size-3" aria-hidden="true" />
+          </Button>
+        ))}
+      {editable && (
+        <Button className="gb-icon-btn" aria-label="Add tab" title="Add tab" onClick={addTab}>
+          <Plus className="size-3.5" aria-hidden="true" />
+        </Button>
+      )}
+      {editable && !section && (
+        <Button
+          className="gb-icon-btn gb-tabs-add-title"
+          aria-label="Add a section title"
+          title="Add a section title (renders the tabs as a titled section)"
+          onClick={() => updateAttributes({ titled: true })}
+        >
+          <Heading className="size-3.5" aria-hidden="true" />
+        </Button>
+      )}
     </>
   )
+
+  const selectTab = (value: string | null) => {
+    if (value !== null && Number(value) !== active) updateAttributes({ active: Number(value) })
+  }
 
   if (section) {
     const HeadingTag = `h${level}` as "h2" | "h3" | "h4"
     return (
-      <NodeViewWrapper className="gb-tabs gb-tabs-section" data-level={level}>
+      <Tabs value={String(active)} onValueChange={selectTab} render={<NodeViewWrapper className="gb-tabs gb-tabs-section" data-level={level} />}>
         <div className="gb-tabs-section-head" contentEditable={false}>
           <HeadingTag className="gb-tabs-section-title">
             {editable ? (
-              <input
+              <Input
                 className="gb-inline-input gb-tabs-section-input"
+                aria-label="Section title"
                 value={title}
                 placeholder="Section title…"
                 autoFocus={!title}
-                onChange={(e) => updateAttributes({ title: e.target.value || null })}
+                onValueChange={(value) => updateAttributes({ title: value || null })}
                 onBlur={(e) => {
                   if (!e.target.value) updateAttributes({ title: null, titled: false })
                 }}
@@ -214,31 +243,30 @@ function TabsView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
             )}
           </HeadingTag>
           {editable && (
-            <select
+            <ChoiceSelect
               className="gb-tabs-level"
-              value={level}
-              title="Heading level"
-              onChange={(e) => updateAttributes({ level: Number(e.target.value) === 2 ? null : Number(e.target.value) })}
-            >
-              <option value={2}>H2</option>
-              <option value={3}>H3</option>
-              <option value={4}>H4</option>
-            </select>
+              label="Heading level"
+              value={String(level) as "2" | "3" | "4"}
+              options={LEVEL_OPTIONS}
+              onValueChange={(next) => updateAttributes({ level: next === "2" ? null : Number(next) })}
+            />
           )}
-          <div className="gb-tabs-pills">{tabStrip}</div>
+          <div className="gb-tabs-pills gb-tabs-strip" data-removable={removable ? "" : undefined}>
+            {tabStrip}
+          </div>
         </div>
         <NodeViewContent className="gb-tabs-content" data-active={active} />
-      </NodeViewWrapper>
+      </Tabs>
     )
   }
 
   return (
-    <NodeViewWrapper className="gb-tabs">
-      <div className="gb-tabs-header" contentEditable={false}>
+    <Tabs value={String(active)} onValueChange={selectTab} render={<NodeViewWrapper className="gb-tabs" />}>
+      <div className="gb-tabs-header gb-tabs-strip" data-removable={removable ? "" : undefined} contentEditable={false}>
         {tabStrip}
       </div>
       <NodeViewContent className="gb-tabs-content" data-active={active} />
-    </NodeViewWrapper>
+    </Tabs>
   )
 }
 
@@ -279,7 +307,7 @@ export const GbTabs = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-tabs": "" }), 0]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(TabsView)
+    return controlNodeView(TabsView)
   },
 })
 
@@ -305,13 +333,14 @@ function ExpandableView({ node, updateAttributes, editor }: NodeViewProps) {
   return (
     <NodeViewWrapper className="gb-expandable">
       <div className="gb-expandable-summary" contentEditable={false}>
-        <ChevronDown className="size-4" />
+        <ChevronDown className="size-4" aria-hidden="true" />
         {editor.isEditable ? (
-          <input
+          <Input
             className="gb-inline-input"
+            aria-label="Expandable title"
             value={node.attrs.summary}
             placeholder="Expandable title…"
-            onChange={(e) => updateAttributes({ summary: e.target.value })}
+            onValueChange={(summary) => updateAttributes({ summary })}
           />
         ) : (
           <span>{node.attrs.summary}</span>
@@ -337,7 +366,7 @@ export const GbExpandable = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-expandable": "" }), 0]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(ExpandableView)
+    return controlNodeView(ExpandableView)
   },
 })
 
@@ -390,11 +419,12 @@ function StepView({ node, updateAttributes, editor, getPos }: NodeViewProps) {
         <div contentEditable={false} className={thumb ? "gb-step-head gb-step-head-thumb" : "gb-step-head"}>
           {thumb ? <ImageThumbnail image={thumb.image} label={thumb.label} /> : null}
           {editor.isEditable ? (
-            <input
+            <Input
               className="gb-inline-input gb-step-title"
+              aria-label="Step title"
               value={node.attrs.title}
               placeholder="Step title…"
-              onChange={(e) => setTitle(e.target.value)}
+              onValueChange={setTitle}
             />
           ) : (
             <div className="gb-step-title">{node.attrs.title}</div>
@@ -421,7 +451,7 @@ export const GbStep = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-step": "" }), 0]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(StepView)
+    return controlNodeView(StepView)
   },
 })
 
@@ -439,47 +469,6 @@ function isDirectVideo(url: string): boolean {
 
 function booleanAttribute(value: unknown): boolean | undefined {
   return typeof value === "boolean" ? value : undefined
-}
-
-/** "Choose file…": asks the host's `pickFile` for a path and sets it. Rendered only when the host has one. */
-function PickFileButton({ kind, current, onPick, label }: { kind: FilePickKind; current: string; onPick: (url: string) => void; label: string }) {
-  const { pickFile } = useEditorRuntime()
-  if (!pickFile) return null
-  return (
-    <button
-      type="button"
-      className="gb-pick-file"
-      onClick={async () => {
-        const url = await pickFile({ kind, current })
-        if (url) onPick(url)
-      }}
-    >
-      <FolderOpen className="size-3.5" aria-hidden="true" /> {label}
-    </button>
-  )
-}
-
-/** "Upload…": a native file chooser whose file goes to the host's `uploadFile`. Rendered only when the host has one. */
-function UploadFileButton({ kind, onPick, label }: { kind: FilePickKind; onPick: (url: string) => void; label: string }) {
-  const { uploadFile } = useEditorRuntime()
-  if (!uploadFile) return null
-  return (
-    <label className="gb-pick-file">
-      <Upload className="size-3.5" aria-hidden="true" /> {label}
-      <input
-        type="file"
-        hidden
-        {...(kind === "image" ? { accept: "image/*" } : {})}
-        onChange={async (event) => {
-          const file = event.currentTarget.files?.[0]
-          event.currentTarget.value = ""
-          if (!file) return
-          const url = await uploadFile(file, { kind })
-          if (url) onPick(url)
-        }}
-      />
-    </label>
-  )
 }
 
 // STL and Strudel files go through the host's asset resolver (a blob: URL of a local file, say).
@@ -529,17 +518,17 @@ function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
         />
       ) : (
         <a className="gb-embed-link" href={url} target="_blank" rel="noreferrer">
-          <Link2 className="size-4" /> {url || "Embed URL…"}
+          <Link2 className="size-4" aria-hidden="true" /> {url || "Embed URL…"}
         </a>
       )}
       {editor.isEditable && (
         <div className="gb-embed-fields">
-          <input
+          <Input
             className="gb-inline-input gb-embed-input"
             value={url}
             placeholder="https://… or ./file.stl, ./session.rrweb"
             aria-label="Embed URL"
-            onChange={(e) => updateAttributes({ url: e.target.value })}
+            onValueChange={(next) => updateAttributes({ url: next })}
           />
           <PickFileButton kind="embed" current={url} label="Choose file…" onPick={(next) => updateAttributes({ url: next })} />
           <UploadFileButton kind="embed" label="Upload…" onPick={(next) => updateAttributes({ url: next })} />
@@ -576,7 +565,7 @@ export const GbEmbed = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-embed": node.attrs.url })]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(EmbedView)
+    return controlNodeView(EmbedView)
   },
 })
 
@@ -585,20 +574,22 @@ export const GbEmbed = Node.create({
 function ContentRefView({ node, updateAttributes, editor }: NodeViewProps) {
   return (
     <NodeViewWrapper className="gb-content-ref" contentEditable={false}>
-      <Link2 className="size-4 shrink-0" />
+      <Link2 className="size-4 shrink-0" aria-hidden="true" />
       {editor.isEditable ? (
         <>
-          <input
+          <Input
             className="gb-inline-input"
+            aria-label="Page link label"
             value={node.attrs.label}
             placeholder="Label…"
-            onChange={(e) => updateAttributes({ label: e.target.value })}
+            onValueChange={(label) => updateAttributes({ label })}
           />
-          <input
+          <Input
             className="gb-inline-input gb-content-ref-url"
+            aria-label="Page link URL"
             value={node.attrs.url}
             placeholder="page.md or https://…"
-            onChange={(e) => updateAttributes({ url: e.target.value })}
+            onValueChange={(url) => updateAttributes({ url })}
           />
         </>
       ) : (
@@ -631,11 +622,16 @@ export const GbContentRef = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-content-ref": node.attrs.url })]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(ContentRefView)
+    return controlNodeView(ContentRefView)
   },
 })
 
 // ---------- Source ref ----------
+
+const KIND_OPTIONS: ChoiceOption<"component" | "story">[] = [
+  { value: "component", label: "component" },
+  { value: "story", label: "story" },
+]
 
 function SourceRefView({ node, updateAttributes, editor }: NodeViewProps) {
   const editable = editor.isEditable
@@ -651,16 +647,13 @@ function SourceRefView({ node, updateAttributes, editor }: NodeViewProps) {
   return (
     <NodeViewWrapper className={sourceClient && reference.path ? "gb-source-ref-block gb-source-ref-block-editing" : "gb-source-ref-block"} contentEditable={false}>
       <div className="gb-source-ref">
-        <FileCode2 className="size-4 shrink-0" />
+        <FileCode2 className="size-4 shrink-0" aria-hidden="true" />
         {editable ? (
           <>
-            <input className="gb-inline-input gb-source-ref-mount" value={node.attrs.mount} placeholder="mount" onChange={(event) => updateAttributes({ mount: event.target.value })} />
-            <input className="gb-inline-input gb-source-ref-path" value={node.attrs.path} placeholder="src/Button.tsx" onChange={(event) => updateAttributes({ path: event.target.value })} />
-            <input className="gb-inline-input gb-source-ref-export" value={node.attrs.exportName} placeholder="Button" onChange={(event) => updateAttributes({ exportName: event.target.value })} />
-            <select className="gb-source-ref-kind" value={node.attrs.kind} onChange={(event) => updateAttributes({ kind: event.target.value })}>
-              <option value="component">component</option>
-              <option value="story">story</option>
-            </select>
+            <Input className="gb-inline-input gb-source-ref-mount" aria-label="Source mount" value={node.attrs.mount} placeholder="mount" onValueChange={(mount) => updateAttributes({ mount })} />
+            <Input className="gb-inline-input gb-source-ref-path" aria-label="Source path" value={node.attrs.path} placeholder="src/Button.tsx" onValueChange={(path) => updateAttributes({ path })} />
+            <Input className="gb-inline-input gb-source-ref-export" aria-label="Export name" value={node.attrs.exportName} placeholder="Button" onValueChange={(exportName) => updateAttributes({ exportName })} />
+            <ChoiceSelect className="gb-source-ref-kind" label="Source kind" value={reference.kind ?? "component"} options={KIND_OPTIONS} onValueChange={(kind) => updateAttributes({ kind })} />
           </>
         ) : (
           <span>{node.attrs.title || `${node.attrs.path}#${node.attrs.exportName}`}</span>
@@ -701,7 +694,7 @@ export const GbSourceRef = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-source-ref": `${node.attrs.mount}:${node.attrs.path}` })]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(SourceRefView)
+    return controlNodeView(SourceRefView)
   },
 })
 
@@ -740,60 +733,82 @@ function DemoFilesEditor({ files, entry, onChange }: {
     onChange(files.filter((_, k) => k !== i), removed && entry === removed.path ? null : undefined)
     setSelected(Math.max(0, i - 1))
   }
+  const entryPath = entry || files[0]?.path || ""
+  // Files carry no id (a path can repeat while it's typed): a file is its place in the list.
   return (
-    <div className="gb-demo-files">
-      <div className="gb-demo-files-tabs" role="tablist" aria-label="Demo files">
+    <Tabs className="gb-demo-files" value={file ? String(index) : null} onValueChange={(value) => value !== null && setSelected(Number(value))}>
+      <div className="gb-demo-files-tabs gb-tabs-strip" data-removable="">
+        <TabsList className="gb-tabs-list" aria-label="Demo files">
+          {files.map((f, i) => (
+            <TabsTab
+              key={i}
+              value={String(i)}
+              className={(state) => (state.selected ? "gb-demo-file-tab gb-demo-file-tab-active" : "gb-demo-file-tab")}
+              style={tabColumn(i)}
+              data-renaming={i === index ? "" : undefined}
+            >
+              <span className="gb-tabs-tab-label">{f.path || "untitled"}</span>
+              {f.path && entry === f.path ? <span className="gb-demo-file-entry">entry</span> : null}
+            </TabsTab>
+          ))}
+        </TabsList>
+        {file ? (
+          <Input
+            className="gb-demo-file-path"
+            style={tabColumn(index)}
+            value={file.path}
+            placeholder="index.tsx"
+            aria-label="File path"
+            onValueChange={(path) => update({ path })}
+          />
+        ) : null}
         {files.map((f, i) => (
-          <div key={i} className={i === index ? "gb-demo-file-tab gb-demo-file-tab-active" : "gb-demo-file-tab"} onClick={() => setSelected(i)}>
-            {i === index ? (
-              <input
-                className="gb-demo-file-path"
-                value={f.path}
-                size={Math.max(f.path.length, 6)}
-                placeholder="index.tsx"
-                aria-label="File path"
-                onChange={(e) => update({ path: e.target.value })}
-              />
-            ) : (
-              <span>{f.path || "untitled"}</span>
-            )}
-            {f.path && entry === f.path ? <span className="gb-demo-file-entry">entry</span> : null}
-            <button type="button" className="gb-icon-btn" title={`Remove ${f.path || "file"}`} onClick={(e) => { e.stopPropagation(); remove(i) }}>
-              <X className="size-3" />
-            </button>
-          </div>
+          <Button
+            key={i}
+            className="gb-icon-btn gb-tabs-remove"
+            style={tabColumn(i)}
+            aria-label={`Remove ${f.path || "file"}`}
+            title={`Remove ${f.path || "file"}`}
+            onClick={() => remove(i)}
+          >
+            <X className="size-3" aria-hidden="true" />
+          </Button>
         ))}
-        <button type="button" className="gb-icon-btn" title="Add file" onClick={add}>
-          <Plus className="size-3.5" />
-        </button>
+        <Button className="gb-icon-btn" aria-label="Add file" title="Add file" onClick={add}>
+          <Plus className="size-3.5" aria-hidden="true" />
+        </Button>
       </div>
-      {file ? (
-        <div className="gb-demo-file-body">
+      {files.map((f, i) => (
+        <TabsPanel key={i} value={String(i)} className="gb-demo-file-body">
           <div className="gb-demo-file-meta">
-            <input
+            <Input
               className="gb-inline-input gb-demo-file-lang"
-              value={file.language ?? ""}
+              value={f.language ?? ""}
               placeholder="lang"
               aria-label="Language"
-              onChange={(e) => update({ language: e.target.value })}
+              onValueChange={(language) => update({ language })}
             />
-            <label className="gb-demo-file-entry-toggle">
-              <input
-                type="radio"
-                checked={entry ? entry === file.path : index === 0}
-                onChange={() => onChange(files, index === 0 ? null : file.path)}
-              />
-              Entry
-            </label>
+            <RadioGroup
+              className="gb-demo-file-entry-group"
+              aria-label="Entry file"
+              value={entryPath}
+              onValueChange={(path) => path !== null && onChange(files, path === files[0]?.path ? null : path)}
+            >
+              <label className="gb-demo-file-entry-toggle">
+                <Radio className="gb-radio" value={f.path} />
+                Entry
+              </label>
+            </RadioGroup>
           </div>
-          <textarea
+          <Textarea
             className="gb-demo-file-code"
-            value={file.content}
+            value={f.content}
             spellCheck={false}
-            rows={Math.min(24, Math.max(4, file.content.split("\n").length + 1))}
-            aria-label={`Edit ${file.path}`}
-            onChange={(e) => update({ content: e.target.value })}
+            rows={Math.min(24, Math.max(4, f.content.split("\n").length + 1))}
+            aria-label={`Edit ${f.path}`}
+            onValueChange={(content) => update({ content })}
             onKeyDown={(e) => {
+              // Tab indents the code. Shift+Tab and Escape still leave the field.
               if (e.key !== "Tab" || e.shiftKey) return
               e.preventDefault()
               const el = e.currentTarget
@@ -802,11 +817,12 @@ function DemoFilesEditor({ files, entry, onChange }: {
               requestAnimationFrame(() => el.setSelectionRange(a + 2, a + 2))
             }}
           />
-        </div>
-      ) : (
+        </TabsPanel>
+      ))}
+      {file ? null : (
         <div className="gb-demo-files-empty">No inline files — the demo resolves from its <code>src</code>.</div>
       )}
-    </div>
+    </Tabs>
   )
 }
 
@@ -858,13 +874,17 @@ function DemoView({ node, updateAttributes, editor, getPos }: NodeViewProps) {
     })
   }
   return (
-    <NodeViewWrapper className={preview || (editable && filesOpen) ? "gb-demo-block gb-demo-block-preview" : "gb-demo-block"} contentEditable={false}>
+    <Collapsible
+      open={editable && filesOpen}
+      onOpenChange={setFilesOpen}
+      disabled={!editable}
+      render={<NodeViewWrapper className={preview || (editable && filesOpen) ? "gb-demo-block gb-demo-block-preview" : "gb-demo-block"} contentEditable={false} />}
+    >
       <div className="gb-demo">
         <span
           className="gb-demo-grip"
           draggable
-          role="button"
-          aria-label="Drag demo"
+          aria-hidden="true"
           title="Drag this demo (with its files) — into another editor to copy it"
           data-gb-demo-grip=""
           onDragStart={onDragStart}
@@ -872,21 +892,18 @@ function DemoView({ node, updateAttributes, editor, getPos }: NodeViewProps) {
         >
           <GripVertical className="size-3.5" />
         </span>
-        <AppWindow className="size-4 shrink-0" />
+        <AppWindow className="size-4 shrink-0" aria-hidden="true" />
         {editable ? (
           <>
-            <input className="gb-inline-input gb-demo-src" value={node.attrs.src} placeholder="page/example" onChange={(event) => updateAttributes({ src: event.target.value })} />
-            <input className="gb-inline-input gb-demo-title" value={node.attrs.title} placeholder="Title" onChange={(event) => updateAttributes({ title: event.target.value })} />
-            <button
-              type="button"
-              className={filesOpen ? "gb-demo-files-toggle gb-demo-files-toggle-active" : "gb-demo-files-toggle"}
+            <Input className="gb-inline-input gb-demo-src" aria-label="Demo source" value={node.attrs.src} placeholder="page/example" onValueChange={(next) => updateAttributes({ src: next })} />
+            <Input className="gb-inline-input gb-demo-title" aria-label="Demo title" value={node.attrs.title} placeholder="Title" onValueChange={(title) => updateAttributes({ title })} />
+            <CollapsibleTrigger
+              className={(state) => (state.open ? "gb-demo-files-toggle gb-demo-files-toggle-active" : "gb-demo-files-toggle")}
               title="Edit the files carried inline by this demo"
-              aria-expanded={filesOpen}
-              onClick={() => setFilesOpen((open) => !open)}
             >
-              <FileCode2 className="size-3.5" />
+              <FileCode2 className="size-3.5" aria-hidden="true" />
               {hasFiles ? `${demo.files!.length} file${demo.files!.length === 1 ? "" : "s"}` : "Files"}
-            </button>
+            </CollapsibleTrigger>
           </>
         ) : (
           <>
@@ -895,9 +912,9 @@ function DemoView({ node, updateAttributes, editor, getPos }: NodeViewProps) {
           </>
         )}
       </div>
-      {editable && filesOpen ? (
+      <CollapsiblePanel className="gb-demo-files-panel">
         <DemoFilesEditor files={demo.files ?? []} entry={demo.entry ?? ""} onChange={setFiles} />
-      ) : null}
+      </CollapsiblePanel>
       {preview ? (
         <div className="gb-demo-preview">
           <DemoViewer
@@ -922,7 +939,7 @@ function DemoView({ node, updateAttributes, editor, getPos }: NodeViewProps) {
           />
         </div>
       ) : null}
-    </NodeViewWrapper>
+    </Collapsible>
   )
 }
 
@@ -983,7 +1000,7 @@ export const GbDemo = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-demo": node.attrs.src })]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(DemoView)
+    return controlNodeView(DemoView)
   },
 })
 
@@ -1012,29 +1029,29 @@ function CommandView({ node, updateAttributes, editor }: NodeViewProps) {
       ) : null}
       {editable ? (
         <div className="gb-command-fields">
-          <label className="gb-command-field gb-command-field-npm">
-            <span>npm</span>
-            <textarea
+          <Field className="gb-command-field gb-command-field-npm">
+            <FieldLabel>npm</FieldLabel>
+            <Textarea
               className="gb-command-input"
               value={command.command}
               placeholder="npm install <package>"
               spellCheck={false}
               rows={Math.max(1, command.command.split("\n").length)}
-              onChange={(e) => updateAttributes({ command: e.target.value })}
+              onValueChange={(next) => updateAttributes({ command: next })}
             />
-          </label>
+          </Field>
           {COMMAND_MANAGERS.map((pm) => (
-            <label key={pm} className="gb-command-field">
-              <span>{pm}</span>
-              <input
+            <Field key={pm} className="gb-command-field">
+              <FieldLabel>{pm}</FieldLabel>
+              <Input
                 className="gb-inline-input gb-command-override"
                 value={command.overrides?.[pm] ?? ""}
                 placeholder={derived[pm] || `${pm} (derived)`}
                 spellCheck={false}
                 title={`Override the derived ${pm} command (leave empty to derive it)`}
-                onChange={(e) => setOverride(pm, e.target.value)}
+                onValueChange={(value) => setOverride(pm, value)}
               />
-            </label>
+            </Field>
           ))}
         </div>
       ) : null}
@@ -1063,7 +1080,7 @@ export const GbCommand = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-command": "" }), node.attrs.command]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(CommandView)
+    return controlNodeView(CommandView)
   },
 })
 
@@ -1113,21 +1130,22 @@ function FigureView({ node, updateAttributes, editor }: NodeViewProps) {
       {editor.isEditable ? (
         <div className="gb-figure-fields">
           <div className="gb-embed-fields">
-            <input
+            <Input
               className="gb-inline-input"
               value={src}
               placeholder="Image URL…"
               aria-label="Image URL"
-              onChange={(e) => updateAttributes({ src: e.target.value })}
+              onValueChange={(next) => updateAttributes({ src: next })}
             />
             <PickFileButton kind="image" current={src} label="Choose image…" onPick={(next) => updateAttributes({ src: next })} />
             <UploadFileButton kind="image" label="Upload…" onPick={(next) => updateAttributes({ src: next })} />
           </div>
-          <input
+          <Input
             className="gb-inline-input"
+            aria-label="Caption"
             value={caption}
             placeholder="Caption…"
-            onChange={(e) => updateAttributes({ caption: e.target.value })}
+            onValueChange={(next) => updateAttributes({ caption: next })}
           />
         </div>
       ) : (
@@ -1152,7 +1170,7 @@ export const GbFigure = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-figure": node.attrs.src })]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(FigureView)
+    return controlNodeView(FigureView)
   },
 })
 
@@ -1170,12 +1188,12 @@ function MathView({ node, updateAttributes, editor }: NodeViewProps) {
             <span className="docs-split-label">LaTeX</span>
           </div>
           {editor.isEditable ? (
-            <textarea
+            <Textarea
               className="gb-math-input docs-split-source"
               aria-label="TeX"
               value={formula}
               rows={Math.max(1, formula.split("\n").length)}
-              onChange={(e) => updateAttributes({ formula: e.target.value })}
+              onValueChange={(next) => updateAttributes({ formula: next })}
             />
           ) : (
             <pre className="gb-math-formula docs-split-source">{formula}</pre>
@@ -1203,7 +1221,7 @@ export const GbMath = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-math": "" }), node.attrs.formula]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(MathView)
+    return controlNodeView(MathView)
   },
 })
 
@@ -1233,12 +1251,12 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
           <div className="docs-split-head" contentEditable={false}>
             <span className="docs-split-label">{xstate ? "XState" : tscircuit ? "tscircuit" : "Mermaid"}</span>
             {editor.isEditable ? (
-              <input
+              <Input
                 className="gb-inline-input gb-code-lang"
                 aria-label="Language"
                 value={node.attrs.language ?? ""}
                 placeholder="lang"
-                onChange={(e) => updateAttributes({ language: e.target.value || null })}
+                onValueChange={(language) => updateAttributes({ language: language || null })}
               />
             ) : null}
           </div>
@@ -1269,40 +1287,33 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
       <div className="gb-code-header" contentEditable={false}>
         {editor.isEditable ? (
           <>
-            <input
+            <Input
               className="gb-inline-input gb-code-title"
+              aria-label="Code title"
               value={node.attrs.title ?? ""}
               placeholder="Title (optional)"
-              onChange={(e) => updateAttributes({ title: e.target.value || null })}
+              onValueChange={(title) => updateAttributes({ title: title || null })}
             />
-            <input
+            <Input
               className="gb-inline-input gb-code-lang"
+              aria-label="Language"
               value={node.attrs.language ?? ""}
               placeholder="lang"
-              onChange={(e) => updateAttributes({ language: e.target.value || null })}
+              onValueChange={(language) => updateAttributes({ language: language || null })}
             />
-            <label className="gb-code-linenos">
-              <input
-                type="checkbox"
-                checked={!!node.attrs.lineNumbers}
-                onChange={(e) => updateAttributes({ lineNumbers: e.target.checked })}
-              />
+            <FlagCheckbox className="gb-code-linenos" label="Line numbers" checked={!!node.attrs.lineNumbers} onCheckedChange={(lineNumbers) => updateAttributes({ lineNumbers })}>
               #
-            </label>
-            <label className="gb-code-live">
-              <input
-                type="checkbox"
-                checked={!!node.attrs.live}
-                onChange={(e) => updateAttributes({ live: e.target.checked })}
-              />
+            </FlagCheckbox>
+            <FlagCheckbox className="gb-code-live" checked={!!node.attrs.live} onCheckedChange={(live) => updateAttributes({ live })}>
               Live
-            </label>
+            </FlagCheckbox>
             {node.attrs.live && (
-              <input
+              <Input
                 className="gb-inline-input gb-code-entry"
+                aria-label="Entry file"
                 value={node.attrs.entry ?? ""}
                 placeholder="entry (e.g. src/main.jsx)"
-                onChange={(e) => updateAttributes({ entry: e.target.value || null })}
+                onValueChange={(entry) => updateAttributes({ entry: entry || null })}
               />
             )}
           </>
@@ -1336,7 +1347,7 @@ export const GbCodeBlock = CodeBlock.extend({
     }
   },
   addNodeView() {
-    return ReactNodeViewRenderer(CodeView)
+    return controlNodeView(CodeView)
   },
   addProseMirrorPlugins() {
     return [...(this.parent?.() ?? []), gpuHighlightPlugin(this.name)]
@@ -1398,7 +1409,7 @@ export const GbInlineImage = Node.create({
     return ["img", mergeAttributes(HTMLAttributes, { "data-gb-inline-img": "", src: node.attrs.src })]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(InlineImageView)
+    return controlNodeView(InlineImageView)
   },
 })
 
@@ -1461,7 +1472,7 @@ export const GbReference = Node.create({
     ]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(ReferenceView)
+    return controlNodeView(ReferenceView)
   },
 })
 
@@ -1488,11 +1499,12 @@ function UpdateView({ node, updateAttributes, editor }: NodeViewProps) {
     <NodeViewWrapper className="gb-update">
       <div className="gb-update-date" contentEditable={false}>
         {editor.isEditable ? (
-          <input
+          <Input
             type="date"
             className="gb-inline-input"
+            aria-label="Update date"
             value={node.attrs.date}
-            onChange={(e) => updateAttributes({ date: e.target.value })}
+            onValueChange={(date) => updateAttributes({ date })}
           />
         ) : (
           <span>{node.attrs.date}</span>
@@ -1518,7 +1530,7 @@ export const GbUpdate = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-update": node.attrs.date }), 0]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(UpdateView)
+    return controlNodeView(UpdateView)
   },
 })
 
@@ -1530,29 +1542,33 @@ function OpenapiView({ node, updateAttributes, editor }: NodeViewProps) {
     <NodeViewWrapper className="gb-openapi" contentEditable={false}>
       {editor.isEditable && (
         <div className="gb-openapi-fields">
-          <input
+          <Input
             className="gb-inline-input"
+            aria-label="Spec name"
             value={spec}
             placeholder="spec name"
-            onChange={(e) => updateAttributes({ spec: e.target.value })}
+            onValueChange={(next) => updateAttributes({ spec: next })}
           />
-          <input
+          <Input
             className="gb-inline-input"
+            aria-label="HTTP method"
             value={method}
             placeholder="get"
-            onChange={(e) => updateAttributes({ method: e.target.value })}
+            onValueChange={(next) => updateAttributes({ method: next })}
           />
-          <input
+          <Input
             className="gb-inline-input gb-openapi-path"
+            aria-label="Operation path"
             value={path}
             placeholder="/path"
-            onChange={(e) => updateAttributes({ path: e.target.value })}
+            onValueChange={(next) => updateAttributes({ path: next })}
           />
-          <input
+          <Input
             className="gb-inline-input gb-openapi-url"
+            aria-label="Spec URL"
             value={specUrl}
             placeholder="https://…/openapi.yaml"
-            onChange={(e) => updateAttributes({ specUrl: e.target.value })}
+            onValueChange={(next) => updateAttributes({ specUrl: next })}
           />
         </div>
       )}
@@ -1581,7 +1597,7 @@ export const GbOpenapi = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-openapi": node.attrs.path })]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(OpenapiView)
+    return controlNodeView(OpenapiView)
   },
 })
 
@@ -1594,24 +1610,27 @@ function DefinitionView({ node, updateAttributes, editor }: NodeViewProps) {
       {editor.isEditable ? (
         <>
           <span className="gb-definition-bracket">[</span>
-          <input
+          <Input
             className="gb-inline-input gb-definition-label"
+            aria-label="Reference label"
             value={label}
             placeholder="label"
-            onChange={(e) => updateAttributes({ label: e.target.value })}
+            onValueChange={(next) => updateAttributes({ label: next })}
           />
           <span className="gb-definition-bracket">]:</span>
-          <input
+          <Input
             className="gb-inline-input gb-definition-url"
+            aria-label="Reference URL"
             value={url}
             placeholder="https://…"
-            onChange={(e) => updateAttributes({ url: e.target.value })}
+            onValueChange={(next) => updateAttributes({ url: next })}
           />
-          <input
+          <Input
             className="gb-inline-input gb-definition-title"
+            aria-label="Reference title"
             value={title ?? ""}
             placeholder="Title (optional)"
-            onChange={(e) => updateAttributes({ title: e.target.value || null })}
+            onValueChange={(next) => updateAttributes({ title: next || null })}
           />
         </>
       ) : (
@@ -1655,7 +1674,7 @@ export const GbDefinition = Node.create({
     ]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(DefinitionView)
+    return controlNodeView(DefinitionView)
   },
 })
 
@@ -1665,10 +1684,11 @@ function RawView({ node, updateAttributes, editor }: NodeViewProps) {
   return (
     <NodeViewWrapper className="gb-raw" contentEditable={false}>
       {editor.isEditable ? (
-        <input
+        <Input
           className="gb-inline-input gb-raw-input"
+          aria-label="Markdown"
           value={node.attrs.markdown}
-          onChange={(e) => updateAttributes({ markdown: e.target.value })}
+          onValueChange={(markdown) => updateAttributes({ markdown })}
         />
       ) : (
         <code>{node.attrs.markdown}</code>
@@ -1692,7 +1712,7 @@ export const GbRaw = Node.create({
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-raw": node.attrs.markdown })]
   },
   addNodeView() {
-    return ReactNodeViewRenderer(RawView)
+    return controlNodeView(RawView)
   },
 })
 
