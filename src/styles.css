@@ -1,6 +1,18 @@
+/* UI SDK adds a little CSS in the `ui-sdk` cascade layer once a component mounts. Declared first, that layer sits
+   under every docstream rule, layered or not. A host that imports this file inside a layer of its own (or wraps it
+   in Tailwind's) puts the same `@layer ui-sdk;` line at the top of its global stylesheet instead. */
+@layer ui-sdk;
+
 @import "./docs/properties.css";
 @import "./docs/tasks.css";
 @import "./site/site.css";
+
+/* Until a component hydrates, UI SDK's own rule that keeps a closed part hidden isn't in the page yet. */
+@layer ui-sdk {
+  :where([data-slot][hidden]:not([hidden="until-found"])) {
+    display: none !important;
+  }
+}
 
 [data-docstream],
 .docs-article {
