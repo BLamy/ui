@@ -7,7 +7,6 @@ import { Button } from "@ui-sdk/react/button"
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@ui-sdk/react/collapsible"
 import { Field, FieldLabel } from "@ui-sdk/react/field"
 import { Input } from "@ui-sdk/react/input"
-import { Radio, RadioGroup } from "@ui-sdk/react/radio"
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs"
 import { Textarea } from "@ui-sdk/react/textarea"
 import {
@@ -832,17 +831,17 @@ function DemoFilesEditor({ files, entry, onChange }: {
               aria-label="Language"
               onValueChange={(language) => update({ language })}
             />
-            <RadioGroup
-              className="gb-demo-file-entry-group"
-              aria-label="Entry file"
-              value={entryPath}
-              onValueChange={(path) => path !== null && onChange(files, path === files[0]?.path ? null : path)}
+            {/* On or off for this file: on makes it the entry; off goes back to the first file, so
+                the first file, while it's the entry by default, can't be turned off. */}
+            <FlagCheckbox
+              className="gb-demo-file-entry-toggle"
+              label="Entry file"
+              checked={entryPath === f.path}
+              readOnly={i === 0 && entryPath === f.path}
+              onCheckedChange={(on) => onChange(files, on && i !== 0 ? f.path : null)}
             >
-              <label className="gb-demo-file-entry-toggle">
-                <Radio className="gb-radio" value={f.path} />
-                Entry
-              </label>
-            </RadioGroup>
+              Entry
+            </FlagCheckbox>
           </div>
           <Textarea
             className="gb-demo-file-code"

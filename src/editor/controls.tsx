@@ -87,6 +87,7 @@ export function FlagCheckbox({
   onCheckedChange,
   className,
   label,
+  readOnly,
   children,
 }: {
   checked: boolean
@@ -94,6 +95,8 @@ export function FlagCheckbox({
   className?: string
   /** The checkbox's name, when its visible text is a symbol. */
   label?: string
+  /** Focusable, but can't be changed. */
+  readOnly?: boolean
   children: ReactNode
 }) {
   return (
@@ -102,6 +105,7 @@ export function FlagCheckbox({
         className="gb-checkbox"
         {...(label ? { "aria-label": label } : {})}
         checked={checked}
+        {...(readOnly ? { readOnly: true } : {})}
         onCheckedChange={(next) => onCheckedChange(next === true)}
       >
         <CheckboxIndicator className="gb-checkbox-indicator" aria-hidden="true" />

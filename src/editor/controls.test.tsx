@@ -245,7 +245,7 @@ describe("node view controls", () => {
     expect(byLabel("Entry file")).not.toBeNull()
   })
 
-  it("demo: the files toggle is a disclosure; its panel holds the file tabs, the entry radio and the code", async () => {
+  it("demo: the files toggle is a disclosure; its panel holds the file tabs, the entry checkbox and the code", async () => {
     const { markdown } = await mount({
       markdown: '{% demo src="a/b" title="Card" %}\n```tsx title="index.tsx"\nexport default () => null\n```\n```css title="styles.css"\n.b {}\n```\n{% enddemo %}\n',
     })
@@ -267,13 +267,22 @@ describe("node view controls", () => {
     expect(byLabel<HTMLInputElement>("File path", panel)!.value).toBe("styles.css")
     const visible = panel.querySelector<HTMLElement>('[role="tabpanel"]:not([hidden])')!
     expect(byLabel<HTMLTextAreaElement>("Edit styles.css", visible)!.value).toBe(".b {}")
-    const group = visible.querySelector<HTMLElement>('[role="radiogroup"]')!
-    expect(group.getAttribute("aria-label")).toBe("Entry file")
-    const radio = group.querySelector<HTMLElement>('[role="radio"]')!
-    expect(radio.getAttribute("aria-checked")).toBe("false")
-    await click(radio)
+    // The entry choice is one checkbox per file, not a radio group of one.
+    expect(panel.querySelector('[role="radiogroup"], [role="radio"]')).toBeNull()
+    const entry = visible.querySelector<HTMLElement>('[role="checkbox"][aria-label="Entry file"]')!
+    expect(entry.getAttribute("aria-checked")).toBe("false")
+    await click(entry)
     await flush()
     expect(markdown()).toContain('entry="styles.css"')
+    expect(visible.querySelector('[role="checkbox"][aria-label="Entry file"]')!.getAttribute("aria-checked")).toBe("true")
+    // Off goes back to the first file, the default entry, which can't itself be turned off.
+    await click(visible.querySelector('[role="checkbox"][aria-label="Entry file"]')!)
+    expect(markdown()).not.toContain("entry=")
+    await focus(Array.from(panel.querySelectorAll<HTMLElement>('[role="tab"]'))[1]!)
+    await key(Array.from(panel.querySelectorAll<HTMLElement>('[role="tab"]'))[1]!, "ArrowLeft")
+    const firstEntry = panel.querySelector<HTMLElement>('[role="tabpanel"]:not([hidden]) [role="checkbox"][aria-label="Entry file"]')!
+    expect(firstEntry.getAttribute("aria-checked")).toBe("true")
+    expect(firstEntry.getAttribute("aria-readonly")).toBe("true")
     expect(byLabel("Remove index.tsx", panel)).not.toBeNull()
     expect(byLabel("Add file", panel)).not.toBeNull()
 
