@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react"
+import { useEffect, useId, useRef, useState } from "react"
+import { OrbitCanvas, useOrbit } from "./orbit-parts"
 import { parseStl, type StlMesh } from "./parse"
 
 export interface StlViewerProps {
@@ -117,14 +118,22 @@ function formatSize(mesh: StlMesh): string {
 
 type Status = { kind: "loading" } | { kind: "error"; message: string } | { kind: "ready"; mesh: StlMesh }
 
-/** Interactive WebGL preview of an `.stl` model: drag to orbit, pinch / ⌘-scroll or +/− to zoom, double-click to reset. */
+/** Interactive WebGL preview of an `.stl` model: drag to orbit, pinch / ⌘-scroll or +/− to zoom, double-click to reset.
+ *  The canvas is the `orbit` primitive (orbit.ts), which holds the view; this draws it. */
 export function StlViewer({ src, title, className, color, autoRotate = true }: StlViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [status, setStatus] = useState<Status>({ kind: "loading" })
-  const view = useRef<View>({ ...HOME })
   const spinning = useRef(autoRotate)
   const draw = useRef<() => void>(() => {})
-  const drag = useRef<{ x: number; y: number; id: number } | null>(null)
+  const helpId = useId()
+  // Whatever someone does to the view (a drag, a key, a zoom, a reset) ends the idle spin and needs a frame.
+  const orbit = useOrbit({
+    defaultView: HOME,
+    onViewChange: () => {
+      spinning.current = false
+      draw.current()
+    },
+  })
 
   useEffect(() => {
     let live = true
@@ -187,14 +196,15 @@ export function StlViewer({ src, title, className, color, autoRotate = true }: S
       gl.viewport(0, 0, w, h)
       gl.clearColor(0, 0, 0, 0)
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-      gl.uniformMatrix4fv(uModel, false, modelMatrix(mesh, view.current))
+      const view = orbit.api.getView()
+      gl.uniformMatrix4fv(uModel, false, modelMatrix(mesh, view))
       gl.uniformMatrix4fv(uProjection, false, perspective(w / h))
       // Fit the unit sphere with a little margin, then apply zoom.
-      gl.uniform1f(uDistance, (1.12 / Math.sin(FOV / 2)) / view.current.zoom)
+      gl.uniform1f(uDistance, (1.12 / Math.sin(FOV / 2)) / view.zoom)
       gl.uniform3fv(uColor, rgb)
       gl.drawArrays(gl.TRIANGLES, 0, mesh.triangles * 3)
       if (spinning.current) {
-        view.current.yaw += 0.006
+        orbit.api.spin(0.006)
         frame = requestAnimationFrame(render)
       }
     }
@@ -221,93 +231,30 @@ export function StlViewer({ src, title, className, color, autoRotate = true }: S
     }
   }, [mesh, color])
 
-  const stop = () => {
-    spinning.current = false
-  }
-  const update = useCallback((next: Partial<View>) => {
-    const v = view.current
-    Object.assign(v, next)
-    v.pitch = Math.max(-1.5, Math.min(1.5, v.pitch))
-    v.zoom = Math.max(0.3, Math.min(8, v.zoom))
-    draw.current()
-  }, [])
   const reset = () => {
-    stop()
-    update({ ...HOME })
+    spinning.current = false
+    orbit.api.reset()
+    draw.current()
   }
-
-  const onPointerDown = (e: PointerEvent<HTMLCanvasElement>) => {
-    stop()
-    e.currentTarget.setPointerCapture(e.pointerId)
-    drag.current = { x: e.clientX, y: e.clientY, id: e.pointerId }
-  }
-  const onPointerMove = (e: PointerEvent<HTMLCanvasElement>) => {
-    const d = drag.current
-    if (!d || d.id !== e.pointerId) return
-    const v = view.current
-    update({ yaw: v.yaw + (e.clientX - d.x) * 0.01, pitch: v.pitch + (e.clientY - d.y) * 0.01 })
-    d.x = e.clientX
-    d.y = e.clientY
-  }
-  const onPointerUp = () => {
-    drag.current = null
-  }
-  // Plain scrolling keeps scrolling the page; pinch (ctrlKey) and ⌘/Ctrl-scroll zoom.
-  const onWheel = (e: WheelEvent) => {
-    if (!e.ctrlKey && !e.metaKey) return
-    e.preventDefault()
-    stop()
-    update({ zoom: view.current.zoom * Math.exp(-e.deltaY * 0.01) })
-  }
-  const onKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
-    const v = view.current
-    const step = 0.15
-    const next: Record<string, Partial<View>> = {
-      ArrowLeft: { yaw: v.yaw - step },
-      ArrowRight: { yaw: v.yaw + step },
-      ArrowUp: { pitch: v.pitch - step },
-      ArrowDown: { pitch: v.pitch + step },
-      "+": { zoom: v.zoom * 1.2 },
-      "=": { zoom: v.zoom * 1.2 },
-      "-": { zoom: v.zoom / 1.2 },
-      "0": { ...HOME },
-    }
-    const change = next[e.key]
-    if (!change) return
-    e.preventDefault()
-    stop()
-    update(change)
-  }
-
-  // React attaches wheel listeners passively; zoom needs preventDefault, so bind natively.
-  const wheelRef = useRef(onWheel)
-  wheelRef.current = onWheel
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const listener = (e: WheelEvent) => wheelRef.current(e)
-    canvas.addEventListener("wheel", listener, { passive: false })
-    return () => canvas.removeEventListener("wheel", listener)
-  }, [mesh])
 
   const label = title ?? src.split(/[?#]/)[0]!.split("/").pop() ?? "STL model"
   return (
     <figure className={`docstream-stl ${className ?? ""}`.trim()} data-state={status.kind}>
       <div className="docstream-stl__stage">
         {mesh ? (
-          <canvas
-            ref={canvasRef}
-            className="docstream-stl__canvas"
-            tabIndex={0}
-            role="img"
-            aria-label={`${label}: 3D model. Drag or use arrow keys to rotate, plus and minus to zoom, 0 to reset.`}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            onDoubleClick={reset}
-            onKeyDown={onKeyDown}
-          />
+          <>
+            <OrbitCanvas
+              orbit={orbit}
+              ref={canvasRef}
+              className="docstream-stl__canvas"
+              aria-label={`${label}: 3D model`}
+              aria-roledescription="3D viewer"
+              aria-describedby={helpId}
+            />
+            <span id={helpId} hidden>
+              Drag or use the arrow keys to rotate, plus and minus to zoom, 0 to reset.
+            </span>
+          </>
         ) : (
           <div className="docstream-stl__status" role={status.kind === "error" ? "alert" : "status"}>
             {status.kind === "error" ? `Couldn't load ${label}: ${status.message}` : `Loading ${label}…`}

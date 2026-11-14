@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
 import { Code2, Loader2, Pause, Play, SlidersHorizontal, Undo2 } from "lucide-react"
 import { HighlightedCode } from "../docs/HighlightedCode"
+import { Panel, PanelTrigger, usePanel } from "./panel"
 import {
   DEFAULT_SAMPLES,
   getStrudelSnapshot,
@@ -232,7 +233,8 @@ export function StrudelPlayer({
   }
 
   const label = title ?? (src ? src.split(/[?#]/)[0]!.split("/").pop()! : "Strudel pattern")
-  const codeId = `${id}-code`
+  const rackPanel = usePanel({ open: rackOpen, onOpenChange: setRackOpen })
+  const codePanel = usePanel({ open: codeOpen, onOpenChange: setCodeOpen })
   const sub =
     source.kind === "error"
       ? `Couldn't load: ${source.message}`
@@ -246,6 +248,7 @@ export function StrudelPlayer({
   return (
     <figure className={`docstream-strudel ${className ?? ""}`.trim()} data-state={status}>
       <div className="docstream-strudel__bar">
+        {/* A press while the sounds load stops it, so this stays a plain button rather than one that waits. */}
         <button
           type="button"
           className="docstream-strudel__play"
@@ -269,27 +272,14 @@ export function StrudelPlayer({
         </div>
         <canvas ref={canvasRef} className="docstream-strudel__roll" aria-hidden="true" />
         {source.kind === "ready" && rack && (
-          <button
-            type="button"
-            className="docstream-strudel__toggle"
-            aria-expanded={rackOpen}
-            aria-label={rackOpen ? "Hide equipment" : "Show equipment"}
-            onClick={() => setRackOpen((open) => !open)}
-          >
+          <PanelTrigger panel={rackPanel} className="docstream-strudel__toggle" aria-label="Equipment" title={rackOpen ? "Hide equipment" : "Show equipment"}>
             <SlidersHorizontal size={16} />
-          </button>
+          </PanelTrigger>
         )}
         {source.kind === "ready" && (
-          <button
-            type="button"
-            className="docstream-strudel__toggle"
-            aria-expanded={codeOpen}
-            aria-controls={codeId}
-            aria-label={codeOpen ? "Hide code" : "Show code"}
-            onClick={() => setCodeOpen((open) => !open)}
-          >
+          <PanelTrigger panel={codePanel} className="docstream-strudel__toggle" aria-label="Code" title={codeOpen ? "Hide code" : "Show code"}>
             <Code2 size={16} />
-          </button>
+          </PanelTrigger>
         )}
       </div>
       {error && (
@@ -297,20 +287,22 @@ export function StrudelPlayer({
           {error}
         </div>
       )}
-      {current !== null && rack && rackOpen && (
-        <Suspense fallback={<div className="docstream-strudel__sub">Loading equipment…</div>}>
-          {edited !== null && edited !== ready && (
-            <button type="button" className="docstream-strudel__revert" onClick={() => edit(ready!)}>
-              <Undo2 size={13} aria-hidden="true" /> Revert edits
-            </button>
-          )}
-          <StrudelRack code={current} onChange={edit} onPlayableChange={setPlayable} />
-        </Suspense>
+      {current !== null && rack && (
+        <Panel panel={rackPanel} className="docstream-strudel__equipment">
+          <Suspense fallback={<div className="docstream-strudel__sub">Loading equipment…</div>}>
+            {edited !== null && edited !== ready && (
+              <button type="button" className="docstream-strudel__revert" onClick={() => edit(ready!)}>
+                <Undo2 size={13} aria-hidden="true" /> Revert edits
+              </button>
+            )}
+            <StrudelRack code={current} onChange={edit} onPlayableChange={setPlayable} />
+          </Suspense>
+        </Panel>
       )}
-      {current !== null && codeOpen && (
-        <div id={codeId} className="docstream-strudel__code" tabIndex={0} role="region" aria-label={`${label} code`}>
+      {current !== null && (
+        <Panel panel={codePanel} className="docstream-strudel__code" tabIndex={0} role="region" aria-label={`${label} code`}>
           <HighlightedCode code={current.trim()} language="javascript" />
-        </div>
+        </Panel>
       )}
     </figure>
   )

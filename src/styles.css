@@ -529,7 +529,8 @@
   touch-action: none;
 }
 
-.docstream-stl__canvas:active {
+.docstream-stl__canvas:active,
+.docstream-stl__canvas[data-dragging] {
   cursor: grabbing;
 }
 
@@ -674,10 +675,17 @@
   cursor: pointer;
 }
 
-.docstream-strudel__toggle[aria-expanded="true"],
+.docstream-strudel__toggle[data-open],
 .docstream-strudel__toggle:hover {
   background: var(--gb-hover, var(--gb-accent));
   color: inherit;
+}
+
+/* The equipment panel lays out like the player around it. */
+.docstream-strudel__equipment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .docstream-strudel__error {
@@ -899,13 +907,13 @@
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 0 0 #0d0e10, 0 1px 2px rgb(0 0 0 / 0.5);
 }
 
-.strudel-device__toggle[data-kind="mute"][aria-pressed="true"] {
+.strudel-device__toggle[data-kind="mute"][data-pressed] {
   background: linear-gradient(180deg, #ffc266, var(--strudel-amber));
   color: #3a1d00;
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 2px 0 #7a4300, 0 0 12px color-mix(in srgb, var(--strudel-amber) 70%, transparent);
 }
 
-.strudel-device__toggle[data-kind="solo"][aria-pressed="true"] {
+.strudel-device__toggle[data-kind="solo"][data-pressed] {
   background: linear-gradient(180deg, #a6f0ff, var(--strudel-accent));
   color: #002a36;
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 2px 0 #00657d, 0 0 12px color-mix(in srgb, var(--strudel-accent) 70%, transparent);
@@ -937,17 +945,21 @@
   align-self: flex-start;
 }
 
-.strudel-device__selects label {
+.strudel-device__field {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 9px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+}
+
+.strudel-select__label {
   opacity: 0.85;
 }
 
-.strudel-device__selects select {
+/* A choice on the LCD: the chosen value as LCD text, which opens the list. */
+.strudel-select {
   appearance: none;
   padding: 0 2px;
   border: 0;
@@ -961,15 +973,69 @@
   cursor: pointer;
 }
 
-.strudel-device__selects select:focus-visible {
+.strudel-select:focus-visible {
   outline: 1px solid var(--strudel-lcd);
   border-radius: 2px;
 }
 
-.strudel-device__selects option,
-.strudel-device__add option {
-  background: #111;
-  color: #eee;
+/* The rack's popups: an LCD choice's list and the effects a module can add. They open in the top layer, from
+   inside the rack, so they read its tokens (the fallbacks are for a browser that has to move them to <body>). */
+.strudel-popup {
+  box-sizing: border-box;
+  min-width: max(var(--anchor-width, 0px), 132px);
+  max-height: min(var(--available-height, 320px), 320px);
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid #000;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #2c2f35, #17181c);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 12px 28px -8px rgb(0 0 0 / 0.7);
+  color: var(--strudel-silk, #d9dde4);
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  text-shadow: none;
+  transform-origin: var(--transform-origin);
+  transition: opacity 120ms, scale 120ms;
+}
+
+.strudel-popup[data-starting-style],
+.strudel-popup[data-ending-style] {
+  opacity: 0;
+  scale: 0.97;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .strudel-popup {
+    transition: none;
+  }
+}
+
+.strudel-popup__item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: default;
+  outline: none;
+}
+
+.strudel-popup__item[data-highlighted] {
+  background: #3d4149;
+  color: #fff;
+}
+
+.strudel-popup__item[data-selected] {
+  color: var(--strudel-lcd, #9dff9a);
+}
+
+.strudel-popup__hint {
+  font-size: 10px;
+  color: #9aa0a9;
 }
 
 .strudel-device__knobs {
@@ -1012,19 +1078,21 @@
   width: 40px;
   height: 40px;
   margin-top: 6px;
+  padding: 0;
   border-radius: 999px;
   border: 1px dashed #5d626b;
+  background: transparent;
   color: #8b9099;
-}
-
-.strudel-device__add select {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
   cursor: pointer;
 }
 
-.strudel-device__add:focus-within {
+.strudel-device__add:hover,
+.strudel-device__add[data-open] {
+  border-color: #8b9099;
+  color: var(--strudel-silk);
+}
+
+.strudel-device__add:focus-visible {
   outline: 2px solid var(--strudel-accent);
   outline-offset: 2px;
 }
@@ -1055,8 +1123,9 @@
   height: 64px;
 }
 
+/* The fader's focus is on the range input inside its cap. */
 .strudel-knob__dial:focus-visible,
-.strudel-fader__track:focus-visible {
+.strudel-fader__track:has(:focus-visible) {
   outline: 2px solid var(--strudel-accent);
   outline-offset: 2px;
 }
@@ -1143,10 +1212,14 @@
   box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.9), 0 1px 0 rgb(255 255 255 / 0.1);
 }
 
+/* The cap's travel: the slider's track, half a cap short of the slot at each end, so the cap stays on it. */
+.strudel-fader__travel {
+  height: calc(100% - 22px);
+  margin: 11px 1px;
+}
+
 .strudel-fader__cap {
-  position: absolute;
-  left: 1px;
-  right: 1px;
+  width: 100%;
   height: 22px;
   border-radius: 3px;
   background:
@@ -1157,6 +1230,7 @@
 }
 
 .strudel-rack__mode {
+  position: relative;
   display: inline-flex;
   padding: 2px;
   border-radius: 5px;
@@ -1178,7 +1252,12 @@
   cursor: pointer;
 }
 
-.strudel-rack__mode button[aria-checked="true"] {
+.strudel-rack__mode button:focus-visible {
+  outline: 2px solid var(--strudel-accent);
+  outline-offset: 1px;
+}
+
+.strudel-rack__mode button[data-checked] {
   background: linear-gradient(180deg, #4a4e56, #2b2e34);
   color: var(--strudel-accent);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18);
@@ -1201,10 +1280,20 @@
   transition: transform 0s;
 }
 
+/* A dragged module stays under the pointer while the others make room. */
 .strudel-grid__item[data-dragging] {
   z-index: 5;
   filter: drop-shadow(0 18px 22px rgb(0 0 0 / 0.6));
   cursor: grabbing;
+  transform: translate(var(--drag-x, 0), var(--drag-y, 0));
+}
+
+/* Picked up from the keyboard, or being resized. */
+.strudel-grid__item[data-moving]:not([data-dragging]),
+.strudel-grid__item[data-resizing] {
+  outline: 2px solid var(--strudel-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 .strudel-grid__content {
@@ -1249,7 +1338,7 @@
 /* The corner: three engraved ribs. */
 .strudel-grid__corner {
   position: absolute;
-  right: 0;
+  inset-inline-end: 0;
   bottom: 0;
   width: 18px;
   height: 18px;
@@ -1260,6 +1349,12 @@
   cursor: nwse-resize;
   touch-action: none;
   opacity: 0.7;
+}
+
+/* Right to left, the module grows from its left corner. */
+.strudel-grid__corner:dir(rtl) {
+  transform: scaleX(-1);
+  cursor: nesw-resize;
 }
 
 .strudel-grid__item:hover .strudel-grid__corner {
