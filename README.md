@@ -29,10 +29,61 @@ TipTap editor components for Docstream GitBook-style markdown documents.
 ```sh
 pnpm add @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block \
   @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm \
-  @tiptap/react @tiptap/starter-kit @tiptap/suggestion react react-dom
+  @tiptap/react @tiptap/starter-kit @tiptap/suggestion @ui-sdk/core @ui-sdk/react react react-dom
 ```
 
-React and the TipTap packages (including `@tiptap/extension-code`) are peer dependencies. `@brett_lamy/docstream` is a runtime dependency (pinned to the same version as the editor) because the editor uses the same parser, serializer, OpenAPI rendering, and asset helpers. Nothing in the install runs a build script, and the editor never references Docstream's optional almost-node playground (`@agent-wasm/core`) — see `liveRenderer` below to opt in.
+React 19, the TipTap packages (including `@tiptap/extension-code`) and [UI SDK](https://ui-sdk.dev)
+(`@ui-sdk/core` and `@ui-sdk/react`) are peer dependencies: the editor's toolbar, menus, selects,
+tabs, checkboxes, popovers and dialogs are UI SDK components, sharing your app's one copy of its core.
+
+`@brett_lamy/docstream` is a runtime dependency (pinned to the same version as the editor) because the editor uses the same parser, serializer, OpenAPI rendering, and asset helpers. Nothing in the install runs a build script, and the editor never references Docstream's optional almost-node playground (`@agent-wasm/core`) — see `liveRenderer` below to opt in.
+
+### Upgrading to 2.0
+
+2.0 rebuilds the editor's interactive UI on [UI SDK](https://ui-sdk.dev). Documents, Markdown, props
+and exports are unchanged; what you install and one CSS line change.
+
+1. **React 19.** `react` and `react-dom` peers are now `>=19` (UI SDK needs it); with TypeScript,
+   `@types/react` 19.2.10 or newer.
+2. **Two new peer dependencies.** Install `@ui-sdk/core` and `@ui-sdk/react` (`>=0.1.0-beta.2`)
+   next to the editor. They are peers so the editor and your own UI SDK components share one core.
+3. **`react-aria` is gone.** The editor no longer depends on it; remove it if nothing else of yours uses it.
+4. **The `ui-sdk` cascade layer.** UI SDK adds a few rules to the page (keeping closed popups hidden,
+   resetting popover boxes) in a layer named `ui-sdk`. The editor's stylesheet declares it first, so
+   imported as usual (unlayered) its rules win. If you import the editor's CSS **inside a layer of
+   your own** (Tailwind v4's `@import "…" layer(components)`, say), declare the UI SDK layer first,
+   at the top of your global stylesheet, so it stays below yours:
+
+   ```css
+   @layer ui-sdk;
+   @import "tailwindcss";
+   @import "@brett_lamy/docstream-editor/styles.css" layer(components);
+   ```
+
+   With a Content Security Policy that has no `'unsafe-inline'` for styles, give UI SDK your nonce
+   with `<meta property="csp-nonce" nonce="…">` (see "Content Security Policy" in UI SDK's
+   Styling and Animation docs, `node_modules/@ui-sdk/react/docs/styling-and-animation.md`).
+5. **Popups render in place.** The slash / reference menus open beside the editor, and the link
+   popover, selects, attachment hover card and viewer beside their controls, in the browser's top
+   layer instead of a `document.body` portal. They now inherit the editor's `.gb` tokens; a modal
+   dialog around the editor keeps them usable.
+6. **Styling hooks.** Interactive parts carry UI SDK's `data-slot` and state attributes
+   (`data-pressed`, `data-selected`, `data-highlighted`, `data-open`, `data-checked`,
+   `data-disabled`). The old state classes (`gb-tool-active`, `gb-tabs-tab-active`,
+   `gb-demo-file-tab-active`, `gb-demo-files-toggle-active`, `gb-react-demo-file-active`,
+   `slash-item-active`) are still set, but the editor's own CSS now keys off the attributes. Native
+   `<select>`, checkbox and radio inputs became UI SDK Select, Checkbox and Radio (buttons with
+   their roles), so overrides that targeted `select`, `input[type="checkbox"]` or `:disabled` in the
+   editor chrome should target the classes (`.gb-select`, `.gb-checkbox`, `.gb-radio`) and
+   `[data-disabled]`.
+7. **Link button.** The toolbar's Link button opens a popover with a URL field (Apply / Remove)
+   instead of `window.prompt`.
+8. **`SuggestionMenuView`** keeps its props and gains optional `query` (marks what matched), `label`
+   (names the list), `input` (the element that keeps focus, pointed at the list with
+   `aria-controls` / `aria-activedescendant`) and `onDismiss`. `createSuggestionRender(emptyLabel, { label, pluginKey })`
+   fills them in from TipTap's suggestion props.
+9. **Filtering** of the slash menu and of array reference sources uses UI SDK's text matching:
+   it ignores case and the accents the reader's language ignores (`resu` finds "Résumé").
 
 ### Document properties and task states (1.9)
 
@@ -380,8 +431,7 @@ const demoResolver = createGlobDemoResolver({ /* see the Docstream README */ })
 ## Copy and paste demos between editors
 
 Copying (or cutting) a selection that contains demo blocks — a single selected
-demo, or prose with demos in it — writes one clipboard item through react-aria's
-`useClipboard`:
+demo, or prose with demos in it — writes one clipboard item onto the copy event:
 
 | Type | Content |
 | --- | --- |
@@ -426,9 +476,8 @@ the pasted files.
 
 **Drag.** Each demo block has a grip: drag it into another docstream editor to
 copy the demo there (same payload, files included), or within its editor to move
-it. The drag uses native HTML5 drag-and-drop with the docstream payload rather than
-react-aria's `useDrag` / `useDrop`: `useDrag` insists on `useDrop` targets, which
-would sit on top of ProseMirror's own drop handling. Keyboard / screen-reader drag
+it. The drag uses native HTML5 drag-and-drop with the docstream payload, so it
+stays out of ProseMirror's own drop handling. Keyboard / screen-reader drag
 is future work (copy / paste covers it).
 
 Lower-level pieces are exported for custom editors: `selectionClipboard(editor, { resolver, vfs })`,
@@ -523,10 +572,15 @@ not as shadcn v3 HSL channel triplets such as `0 0% 100%`, which would produce i
 
 Editor-specific tokens (`--gb-radius`, `--gb-code-bg`, the `--gb-info` / `--gb-success` /
 `--gb-warning` / `--gb-danger` hint palette, …) are declared on `.gb`, so override them there. The
-slash / reference menus and the attachment hover card render into `document.body` and read the
-host tokens (plus `--popover` / `--popover-foreground`) from `:root`.
+slash / reference menus, selects, the link popover and the attachment hover card render in place
+(in the browser's top layer) and read the same tokens, plus `--popover` / `--popover-foreground`.
 
-The editor exposes classes such as `gb`, `gb-toolbar`, `gb-tool`, `gb-tool-active`, and `gb-content` for host app overrides.
+The editor exposes classes such as `gb`, `gb-toolbar`, `gb-tool`, `gb-content`, `gb-select`,
+`gb-checkbox` and `slash-menu` for host app overrides. Its controls are [UI SDK](https://ui-sdk.dev)
+components: style their states from the attributes they carry (`.gb-tool[data-pressed]`,
+`.gb-tabs-tab[data-selected]`, `.slash-item[data-highlighted]`, `[data-disabled]`, …). The
+stylesheet starts with `@layer ui-sdk;` so UI SDK's own few rules stay below it; see
+[Upgrading to 2.0](#upgrading-to-20) when you import it inside a layer.
 
 ## Bundler Notes
 
