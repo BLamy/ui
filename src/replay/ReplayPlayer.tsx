@@ -7,7 +7,8 @@
    highlights a segment on the scrubber, opens there and plays just that, until you scrub outside it. Until the player is ready a
    poster (a page-shaped skeleton by default) holds the frame's exact size, so nothing jumps.
 
-   Plain React + plain CSS (`@layer docstream.replay` in styles.css, `[data-slot]` hooks). Keys (focus inside
+   Plain CSS (`@layer docstream.replay` in styles.css, `[data-slot]` hooks); the scrubber is UI SDK's slider and the
+   captions button its toggle. Keys (focus inside
    the player): Space / K play and pause, ← → seek 5 s, J / L 10 s, < > speed, F fullscreen, Home / End jump
    to the ends. Everything drawn over the page is a function of the playhead, so scrubbing backwards replays
    the ripples and the URL too. */
@@ -16,6 +17,8 @@ import {
   type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type Ref,
 } from 'react'
 import { useReducedMotion } from 'framer-motion'
+import { Slider, SliderControl, SliderThumb, SliderTrack } from '@ui-sdk/react/slider'
+import { Toggle } from '@ui-sdk/react/toggle'
 import { Captions, CaptionsOff, Lock, Maximize, Minimize, Pause, Play, RotateCcw } from 'lucide-react'
 import { ReplayStage } from './ReplayStage'
 import { DevtoolsButtons, DevtoolsPanel, type ElementsProps, type ReplayDevtoolsTab, type SourcesProps } from './ReplayDevtools'
@@ -400,17 +403,18 @@ export function ReplayPlayer({
 
   const onKeyDown = (e: ReactKeyboardEvent) => {
     const target = e.target as HTMLElement
+    // A key a control inside has already used (the arrows of the DevTools buttons, the scrubber's own) is that control's.
+    if (e.defaultPrevented) return
     if (e.metaKey || e.ctrlKey || e.altKey || target.closest('input:not([type=range]), textarea, [contenteditable=true]')) return
-    const onSlider = target.matches('input[type=range]')
     const run = (fn: () => void) => { e.preventDefault(); fn() }
     switch (e.key) {
       case ' ': case 'k': case 'K': if (target.closest('button') && e.key === ' ') return; return run(toggle)
-      case 'ArrowLeft': if (onSlider) return; return run(() => seekBy(-5000))
-      case 'ArrowRight': if (onSlider) return; return run(() => seekBy(5000))
+      case 'ArrowLeft': return run(() => seekBy(-5000))
+      case 'ArrowRight': return run(() => seekBy(5000))
       case 'j': case 'J': return run(() => seekBy(-10000))
       case 'l': case 'L': return run(() => seekBy(10000))
-      case 'Home': if (onSlider) return; return run(() => handle.seek(0))
-      case 'End': if (onSlider) return; return run(() => handle.seek(duration))
+      case 'Home': return run(() => handle.seek(0))
+      case 'End': return run(() => handle.seek(duration))
       case '>': case '.': return run(() => cycleSpeed(1))
       case '<': case ',': return run(() => cycleSpeed(-1))
       case 'f': case 'F': return run(toggleFullscreen)
@@ -621,9 +625,9 @@ export function ReplayPlayer({
           />
           {chrome !== 'browser' ? toolButtons : null}
           {cues.length ? (
-            <button type="button" data-slot="replay-preview-captions" aria-label="Captions" aria-pressed={captionsOn} onClick={() => setCaptionsOn((on) => !on)}>
-              {captionsOn ? <Captions size={16} /> : <CaptionsOff size={16} />}
-            </button>
+            <Toggle data-part="replay-preview-captions" aria-label="Captions" pressed={captionsOn} onPressedChange={setCaptionsOn}>
+              {captionsOn ? <Captions size={16} aria-hidden="true" /> : <CaptionsOff size={16} aria-hidden="true" />}
+            </Toggle>
           ) : null}
           <button type="button" data-slot="replay-preview-speed" aria-label={`Playback speed ${speed}×`} onClick={() => cycleSpeed(1)}>
             {`${speed}×`}
@@ -751,21 +755,28 @@ function Scrubber({ time, duration, span, markers, disabled, onSeek, onMarker }:
           ))}
         </div>
       ) : null}
-      <input
-        type="range"
-        aria-label="Playback position"
-        aria-valuetext={`${formatReplayTime(value)} of ${formatReplayTime(duration)}${span ? `, segment ${formatReplayTime(span.start)} to ${formatReplayTime(span.end)}` : ''}`}
+      {/* The fill is painted from --replay-progress on the track: it starts at the time window when there is one. */}
+      <Slider
+        value={value}
         min={0}
         max={max}
         step={10}
-        value={value}
+        largeStep={5000}
         disabled={disabled}
-        style={{
-          '--replay-progress': `${(value / max) * 100}%`,
-          ...(span ? { '--replay-progress-start': `${(span.start / max) * 100}%` } : {}),
-        } as CSSProperties}
-        onChange={(e) => onSeek(Number(e.currentTarget.value))}
-      />
+        format={(at) => `${formatReplayTime(at)} of ${formatReplayTime(duration)}${span ? `, segment ${formatReplayTime(span.start)} to ${formatReplayTime(span.end)}` : ''}`}
+        onValueChange={(next) => onSeek(next as number)}
+      >
+        <SliderControl>
+          <SliderTrack
+            style={{
+              '--replay-progress': `${(value / max) * 100}%`,
+              ...(span ? { '--replay-progress-start': `${(span.start / max) * 100}%` } : {}),
+            } as CSSProperties}
+          >
+            <SliderThumb aria-label="Playback position" />
+          </SliderTrack>
+        </SliderControl>
+      </Slider>
     </div>
   )
 }

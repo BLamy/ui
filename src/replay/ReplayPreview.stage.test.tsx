@@ -176,7 +176,7 @@ describe("a stage of your own", () => {
 
   it("has no Console and Network buttons with nothing to show", async () => {
     const el = await mount(<ReplayPreview stage={custom} lazy={false} />)
-    expect(el.querySelector('[data-slot="replay-devtools-buttons"]')).toBeNull()
+    expect(el.querySelector('[data-part="replay-devtools-buttons"]')).toBeNull()
   })
 })
 
@@ -218,16 +218,16 @@ describe("DevTools as data", () => {
 
   it("new data can come at any time", async () => {
     const el = await mount(<ReplayPreview stage={custom} lazy={false} devtools={{ console: [], network: [] }} />, 500)
-    expect(el.querySelector('[data-slot="replay-devtools-buttons"]')).toBeNull()
+    expect(el.querySelector('[data-part="replay-devtools-buttons"]')).toBeNull()
     await act(async () => root.render(<ReplayPreview stage={custom} lazy={false} devtools={data} />))
     expect(el.querySelector('[data-tab="network"]')!.getAttribute("aria-label")).toBe("Network: 1 request, 0 failed")
   })
 
   it("false and disableDevtools both turn it off", async () => {
     const off = await mount(<ReplayPreview stage={custom} lazy={false} devtools={false} />)
-    expect(off.querySelector('[data-slot="replay-devtools-buttons"]')).toBeNull()
+    expect(off.querySelector('[data-part="replay-devtools-buttons"]')).toBeNull()
     await act(async () => root.render(<ReplayPreview stage={custom} lazy={false} devtools={data} disableDevtools />))
-    expect(off.querySelector('[data-slot="replay-devtools-buttons"]')).toBeNull()
+    expect(off.querySelector('[data-part="replay-devtools-buttons"]')).toBeNull()
   })
 
   it("markers come from the data too, under the same rules", async () => {

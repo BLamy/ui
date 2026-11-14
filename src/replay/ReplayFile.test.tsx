@@ -118,7 +118,7 @@ describe("ReplayFile", () => {
     const player = host.querySelector('[data-slot="replay-preview"]')!
     const track = () => player.querySelector('[data-slot="replay-preview-captions-track"]')
     expect(track()!.textContent).toBe("Step 1: open the cart")
-    const cc = player.querySelector<HTMLButtonElement>('[data-slot="replay-preview-captions"]')!
+    const cc = player.querySelector<HTMLButtonElement>('[data-part="replay-preview-captions"]')!
     await act(async () => cc.click())
     expect(cc.getAttribute("aria-pressed")).toBe("false")
     expect(track()).toBeNull()
