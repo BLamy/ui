@@ -31,7 +31,7 @@ import {
 } from "lucide-react"
 
 import type { PMNode } from "./convert"
-import { createSuggestionRender } from "./suggestion-menu"
+import { createSuggestionRender, matchesQuery } from "./suggestion-menu"
 
 const para = (text = ""): PMNode =>
   text ? { type: "paragraph", content: [{ type: "text", text }] } : { type: "paragraph" }
@@ -250,15 +250,12 @@ export function createSlashMenu(items: SlashItem[] = SLASH_ITEMS) {
           editor: this.editor,
           char: "/",
           startOfLine: false,
-          items: ({ query }) =>
-            items.filter((item) =>
-              `${item.title} ${item.keywords}`.toLowerCase().includes(query.toLowerCase())
-            ),
+          items: ({ query }) => items.filter((item) => matchesQuery(query, `${item.title} ${item.keywords}`)),
           command: ({ editor, range, props }) => {
             editor.chain().focus().deleteRange(range as Range).run()
             props.run(editor as Editor)
           },
-          render: createSuggestionRender<SlashItem>("No matching blocks"),
+          render: createSuggestionRender<SlashItem>("No matching blocks", { label: "Blocks" }),
         }),
       ]
     },

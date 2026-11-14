@@ -3,7 +3,7 @@ import Suggestion from "@tiptap/suggestion"
 import { PluginKey } from "@tiptap/pm/state"
 import { AtSign, FolderGit2, Hash, type LucideIcon } from "lucide-react"
 
-import { createSuggestionRender, type SuggestionMenuItem } from "./suggestion-menu"
+import { createSuggestionRender, matchesQuery, type SuggestionMenuItem } from "./suggestion-menu"
 
 export type ReferenceTrigger = "@" | "#" | "$"
 
@@ -49,16 +49,13 @@ const EMPTY: Record<ReferenceTrigger, string> = {
   "#": "Type a channel or tag",
   $: "Type a codebase",
 }
+const LABEL: Record<ReferenceTrigger, string> = { "@": "Mentions", "#": "Tags", $: "Codebases" }
 const MAX_OPTIONS = 50
 
 function normalize(option: string | ReferenceOption): ReferenceOption {
   return typeof option === "string" ? { id: option } : option
 }
 
-function matches(option: ReferenceOption, query: string): boolean {
-  if (!query) return true
-  return [option.id, option.label ?? ""].some((value) => value.toLowerCase().includes(query))
-}
 
 /** Resolve a source for a query into options (exported for hosts' tests). */
 export async function resolveReferenceOptions(
@@ -67,8 +64,7 @@ export async function resolveReferenceOptions(
 ): Promise<ReferenceOption[]> {
   if (source === undefined) return []
   if (typeof source === "function") return [...(await source(query))].slice(0, MAX_OPTIONS)
-  const q = query.toLowerCase()
-  return source.map(normalize).filter((option) => matches(option, q)).slice(0, MAX_OPTIONS)
+  return source.map(normalize).filter((option) => matchesQuery(query, option.id, option.label)).slice(0, MAX_OPTIONS)
 }
 
 /**
@@ -86,15 +82,16 @@ export function createReferenceSuggestion({
   return Extension.create({
     name: `${kind}Suggestion`,
     addProseMirrorPlugins() {
+      // Each Suggestion plugin needs its own key — the default is shared
+      // with the slash menu and would collide.
+      const pluginKey = new PluginKey(`${kind}Suggestion`)
       return [
         Suggestion<ReferenceItem>({
           editor: this.editor,
           char,
           startOfLine: false,
           allowSpaces: false,
-          // Each Suggestion plugin needs its own key — the default is shared
-          // with the slash menu and would collide.
-          pluginKey: new PluginKey(`${kind}Suggestion`),
+          pluginKey,
           items: async ({ query }) => {
             let options: ReferenceOption[]
             try {
@@ -127,7 +124,7 @@ export function createReferenceSuggestion({
               ])
               .run()
           },
-          render: createSuggestionRender<ReferenceItem>(EMPTY[char]),
+          render: createSuggestionRender<ReferenceItem>(EMPTY[char], { label: LABEL[char], pluginKey }),
         }),
       ]
     },
