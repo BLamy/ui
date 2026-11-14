@@ -7,7 +7,7 @@
    Everything is a function of the playhead: scrub back and the lists shrink to what DevTools showed then. A row's
    time jumps the player there. Esc closes the panel. An inspection (inspections.ts) selects its request or
    message and marks it. Plain React + plain CSS, like the player. */
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { ChevronRight, CircleX, Info, Network, SquareTerminal, TriangleAlert, X } from 'lucide-react'
 import type { ReplayConsoleEntry, ReplayDevtoolsState, ReplayRequest } from './devtools'
 import { sourceName, type ResolvedReplayEvidence } from './evidence'
@@ -425,7 +425,7 @@ function Body({ text, empty }: { text?: string; empty: string }) {
 }
 
 function highlight(code: string, spans: Span[], offset = 0) {
-  const out: (string | JSX.Element)[] = []
+  const out: ReactNode[] = []
   let cursor = 0
   spans.forEach((span, i) => {
     const start = Math.max(span.start - offset, 0)
