@@ -1,7 +1,7 @@
 'use client';
 import {
   Children, createContext, isValidElement, useContext, useMemo,
-  type ComponentProps, type ReactElement, type ReactNode,
+  type AriaAttributes, type ComponentProps, type ReactElement, type ReactNode,
 } from 'react';
 import { Button } from '@ui-sdk/react/button';
 import { createParts } from '@ui-sdk/react/primitive';
@@ -52,7 +52,7 @@ const parts = createParts(breadcrumb, {
 
 /* ── Variants ── */
 
-export const breadcrumbVariants = cva('relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px]', {
+export const breadcrumbVariants = cva('relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px] [contain:inline-size]', {
   variants: {
     size: {
       sm: 'text-caption',
@@ -93,8 +93,9 @@ const SEPARATOR_SIZE = { sm: 12, default: 13, lg: 15 } as const;
 
 /* ── Types ── */
 
-/** A sibling, or an entry of the `…` menu. */
-export interface BreadcrumbEntry {
+/** A sibling, or an entry of the `…` menu. `aria-haspopup` / `aria-expanded` / `aria-controls` make the item's
+ *  button the trigger of a popup the caller owns (a picker dialog, say). */
+export interface BreadcrumbEntry extends Pick<AriaAttributes, 'aria-haspopup' | 'aria-expanded' | 'aria-controls'> {
   id: string | number;
   /** The plain-text name: what shows, unless `children` gives richer content, and what the menu's type-to-select
    *  and an agent read. */
@@ -227,8 +228,12 @@ function ItemFace({ icon, children }: { icon?: ReactNode; children?: ReactNode }
 
 const itemClass = (isCurrent: boolean, className?: string) => cn('flex min-w-0 items-center', isCurrent ? 'shrink' : 'shrink-0', className);
 
-function BreadcrumbItemContent({ isCurrent, icon, href, onClick, items, selectedId, children }: BreadcrumbItemProps & { isCurrent: boolean }) {
+function BreadcrumbItemContent({
+  isCurrent, icon, href, onClick, items, selectedId, children,
+  'aria-haspopup': hasPopup, 'aria-expanded': expanded, 'aria-controls': controls,
+}: BreadcrumbItemProps & { isCurrent: boolean }) {
   const { size } = useContext(BreadcrumbContext);
+  const popup = { 'aria-haspopup': hasPopup, 'aria-expanded': expanded, 'aria-controls': controls };
   const face = <ItemFace icon={icon}>{children}</ItemFace>;
   const current = isCurrent ? 'page' as const : undefined;
   let control: ReactNode;
@@ -240,9 +245,9 @@ function BreadcrumbItemContent({ isCurrent, icon, href, onClick, items, selected
       </DropdownMenu>
     );
   } else if (href) {
-    control = <a data-slot="breadcrumb-link" href={href} onClick={onClick} aria-current={current} className={breadcrumbItemVariants({ size })}>{face}</a>;
+    control = <a data-slot="breadcrumb-link" href={href} onClick={onClick} aria-current={current} {...popup} className={breadcrumbItemVariants({ size })}>{face}</a>;
   } else if (onClick) {
-    control = <Button onClick={onClick} aria-current={current} className={breadcrumbItemVariants({ size })}>{face}</Button>;
+    control = <Button onClick={onClick} aria-current={current} {...popup} className={breadcrumbItemVariants({ size })}>{face}</Button>;
   } else {
     // Plain text: the current page, or an item with nothing to do.
     control = <span data-slot="breadcrumb-link" aria-current={current} className={breadcrumbItemVariants({ size, interactive: false })}>{face}</span>;
@@ -316,8 +321,14 @@ export function BreadcrumbEllipsis({ items, label = 'More', className }: Breadcr
 type ItemElement = ReactElement<BreadcrumbItemProps>;
 
 const entryOf = (el: ItemElement): BreadcrumbItemData => {
-  const { id, label, children, icon, href, onClick, items, selectedId } = el.props;
-  return { id: id ?? el.key ?? '', label: label ?? (typeof children === 'string' ? children : ''), children, icon, href, onClick, items, selectedId };
+  const {
+    id, label, children, icon, href, onClick, items, selectedId,
+    'aria-haspopup': hasPopup, 'aria-expanded': expanded, 'aria-controls': controls,
+  } = el.props;
+  return {
+    id: id ?? el.key ?? '', label: label ?? (typeof children === 'string' ? children : ''), children, icon, href, onClick, items, selectedId,
+    'aria-haspopup': hasPopup, 'aria-expanded': expanded, 'aria-controls': controls,
+  };
 };
 
 /** The key an item goes by: its `id`, else the key React gave it. */

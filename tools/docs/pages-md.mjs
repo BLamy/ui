@@ -23,6 +23,8 @@ execFileSync(process.execPath, [join(ROOT, 'tools/docs/install-md.mjs'), '--chec
 
 const server = await createServer({
   configFile: join(DOCS, 'vite.config.mts'),
+  // This middleware server must not replace chunks referenced by a running docs client.
+  cacheDir: join(ROOT, 'node_modules/.vite/tools/docs-pages-md'),
   server: { middlewareMode: true, hmr: false, watch: null },
   appType: 'custom',
   logLevel: 'error',

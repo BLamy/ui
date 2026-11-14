@@ -7,7 +7,8 @@ import {
   Tree as SdkTree, TreeGroup as SdkTreeGroup, TreeItem as SdkTreeItem, TreeItemCheckbox as SdkTreeItemCheckbox,
   TreeItemIndicator as SdkTreeItemIndicator, TreeItemLabel as SdkTreeItemLabel,
   createTreeController, treeFromPaths, visibleTreeRows,
-  type TreeController, type TreeExpandedChangeReason, type TreeItemData, type TreeMode, type TreeProps as SdkTreeProps,
+  type TreeActionDetails, type TreeController, type TreeExpandedChangeReason, type TreeItemData, type TreeMode,
+  type TreeProps as SdkTreeProps,
 } from '@ui-sdk/react/tree';
 import { createParts } from '@ui-sdk/react/primitive';
 import type { ChangeDetails } from '@ui-sdk/core';
@@ -23,7 +24,7 @@ import { cn, cx } from '@/lib/utils';
 /* ══ Tree — UI SDK's Tree with the kit's rows ══
    UI SDK owns the behavior: one tab stop, arrow keys between rows (Right and Left open, close and step in and out),
    Home and End, typing to find a row, selection (`mode`, `value`, `onValueChange`), expansion (`expanded`,
-   `onExpandedChange`), checkboxes (`checkable`), `onAction` for a press or Return, `current` for a page in a
+   `onExpandedChange`), checkboxes (`checkable`), `onAction` for a press (or a double press, `actionOn`) or Return, `current` for a page in a
    navigation tree, and a controller (`createTreeController`) to drive it from outside.
 
    Compose it from parts, for a short tree whose rows are yours:
@@ -153,6 +154,21 @@ export interface TreeNode extends Omit<TreeItemData, 'children'> {
   dimmed?: boolean;
 }
 
+/** Which pointer press runs a tree's `onAction`. */
+export type TreeActionOn = 'press' | 'double-press';
+
+/** `onAction`, run by a double press only: a click that is not the second of a pair is just a press (it selects).
+ *  A click with `detail` 0 comes from assistive technology or `click()`, not a pointer, so it still runs. */
+function actionFor<A extends (value: string, details: TreeActionDetails) => unknown>(onAction: A | undefined, actionOn: TreeActionOn | undefined) {
+  if (!onAction || actionOn !== 'double-press') return onAction;
+  return ((value, details) => {
+    const event = details.event;
+    const presses = event?.type === 'click' && event instanceof UIEvent ? event.detail : 0;
+    if (presses !== 0 && presses !== 2) return undefined;
+    return onAction(value, details);
+  }) as A;
+}
+
 export type TreeGitStatus = 'added' | 'modified' | 'deleted' | 'renamed' | 'untracked' | 'ignored';
 
 /** Where a drag would land: a folder, or the tree itself (`null`). */
@@ -176,6 +192,9 @@ export type TreeProps<Mode extends TreeMode = 'single'> = Omit<SdkTreeProps<Mode
   defaultExpanded?: string[] | 'all';
   /** Row height and indent. */
   density?: TreeDensity;
+  /** Which pointer press runs `onAction`: any press (the default), or only a double press, as a file browser opens
+   *  files while a single click only selects. Return runs it either way, and the arrow keys never do. */
+  actionOn?: TreeActionOn;
 
   /* What follows is for a tree drawn from `items` (or `paths`). */
 
@@ -224,10 +243,11 @@ export type TreeProps<Mode extends TreeMode = 'single'> = Omit<SdkTreeProps<Mode
 
 export function Tree<Mode extends TreeMode = 'single'>(props: TreeProps<Mode>) {
   if (props.children === undefined && (props.items || props.paths)) return <DataTree {...(props as TreeProps<TreeMode>)} />;
-  const { items, defaultExpanded, density, className, ...rest } = props as TreeProps<TreeMode>;
+  const { items, defaultExpanded, density, actionOn, onAction, className, ...rest } = props as TreeProps<TreeMode>;
   return (
     <SdkTree
       items={items as TreeItemData[] | undefined}
+      onAction={actionFor(onAction, actionOn)}
       defaultExpanded={defaultExpanded === 'all' ? branchValues(items ?? []) : defaultExpanded}
       className={cn(treeVariants({ density }), 'flex flex-col outline-none', className)}
       {...(rest as SdkTreeProps<TreeMode>)}
@@ -320,7 +340,7 @@ const own = (e: KeyboardEvent | MouseEvent) => e.stopPropagation();
 const ROOT = '\u0000root';
 
 function DataTree({
-  items: itemsProp, paths, defaultExpanded, expanded: expandedProp, onExpandedChange, autoExpand, density = 'default',
+  items: itemsProp, paths, defaultExpanded, expanded: expandedProp, onExpandedChange, autoExpand, density = 'default', actionOn,
   sort, search, flatten, icons = true, gitStatus, contextMenu, preview, editing, onEditingChange, onRename,
   canDrag, onDragStart, onMove, canMove, externalDrop, emptyMessage,
   mode, value, defaultValue, onValueChange, activation, expandOnPress, checkable, checked, defaultChecked, onCheckedChange, checkStrategy,
@@ -618,7 +638,7 @@ function DataTree({
           defaultChecked={defaultChecked}
           onCheckedChange={onCheckedChange}
           checkStrategy={checkStrategy}
-          onAction={onAction}
+          onAction={actionFor(onAction, actionOn)}
           pendingAnnouncement={pendingAnnouncement}
           loadChildren={loadChildren}
           current={current}

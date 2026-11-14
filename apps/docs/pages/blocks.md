@@ -87,6 +87,28 @@ import ReplayCanvas from '@/components/blocks/replay-canvas/page';
 <ReplayCanvas replayApiKey={replayAccessToken} />; // your Replay QA projects and test runs
 ```
 
+{% demo src="blocks/replay-debugger" layout="multi" %}
+
+The Replay Debugger block is a time-travel debugger composed from [CodeEditor](https://blamy.github.io/ui/#/code-editor), [CallStack](https://blamy.github.io/ui/#/call-stack), [ObjectTree](https://blamy.github.io/ui/#/object-tree), [LogList](https://blamy.github.io/ui/#/log-list), [DebugToolbar](https://blamy.github.io/ui/#/debug-toolbar) and [Workspace](https://blamy.github.io/ui/#/workspace). It includes forward and reverse stepping, source navigation, breakpoints, logpoints, scopes and expression evaluation. In a compact box it shows one panel at a time; widening it keeps the same model and selection. It installs as source into `components/blocks/replay-debugger` with the core components it imports; it does not need the npm package or a replay engine.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/replay-debugger.json{% endcommand %}
+
+```tsx
+import { ReplayDebugger, DebuggerModel } from '@/components/blocks/replay-debugger';
+import type { DebuggerHost, DebuggerSummary, StepClock } from '@/components/blocks/replay-debugger';
+import '@/components/blocks/replay-debugger/replay-debugger.css';
+
+const model = new DebuggerModel(recordingId, host);
+model.ready(summary, clock);
+await model.show(initialTime, initialStep);
+
+<ReplayDebugger model={model} logged={consoleRows} />;
+```
+
+`DebuggerHost` supplies plain source, step, frame and value data plus callbacks for navigation, pauses, evaluations and logpoints. `StepClock` maps indexed steps to the host's playhead. The host owns loading and persistence; dispose the model when replacing that session. The included `createDemoHost`, `DemoClock` and `DEMO_SUMMARY` answer from an in-memory table and show how to implement the interface.
+
+The summary's optional `engineLabel` is display text supplied by the host. An empty index can supply no sources and zero steps. The demo page's `empty` prop (or `variant="empty"` in the docs viewer) exercises that completed empty state, and `startAt` chooses its initial table step. `DebuggerModel` accepts an optional third argument, `{ now }`, for the monotonic clock used to display pause latency; it defaults to `performance.now`. The in-memory demo supplies a fixed clock so its screenshots repeat exactly.
+
 {% demo src="blocks/video-editor" layout="multi" %}
 
 The Video Editor block is iMovie and Final Cut in a page: a media library, a viewer that plays the edit live, an inspector and a timeline with a magnetic main track, titles over it and music under it. Drop files on the library (or drag cards onto a track), drag clips to move them, trim their edges, split at the playhead (S), dissolve between clips, give them a look, fill or fit the frame, set clips over the main track as picture in picture, and undo anything. [FFmpeg](https://blamy.github.io/ui/#/ffmpeg) does the reading and the writing on the device: it probes files, draws the filmstrips and waveforms, makes the sample clips and exports the timeline to WebM, MP4, GIF, MP3 or WAV with live progress and the command it ran. FFmpeg's threads need a cross-origin isolated page: in browsers other than Chrome, open the demo in its own tab. Where it can't run, the browser reads and plays what it can and exporting is off.

@@ -89,6 +89,37 @@ describe('Tree, drawn from its data', () => {
     expect(rows().filter((r) => r.getAttribute('aria-selected') === 'true').map((r) => r.getAttribute('data-key'))).toEqual(['README.md']);
   });
 
+  it('runs onAction on a double press only with actionOn="double-press"; a single press still selects, Return still acts', () => {
+    const onValueChange = vi.fn();
+    const onAction = vi.fn();
+    render(<Tree aria-label="Files" items={FILES} defaultExpanded={['src']} actionOn="double-press" onValueChange={onValueChange} onAction={onAction} />);
+    fireEvent.click(row('src/app.tsx'), { detail: 1 });
+    expect(onValueChange).toHaveBeenLastCalledWith('src/app.tsx', expect.objectContaining({ reason: 'item-press' }));
+    expect(onAction).not.toHaveBeenCalled();
+    fireEvent.click(row('src/app.tsx'), { detail: 2 });
+    expect(onAction).toHaveBeenCalledTimes(1);
+    expect(onAction).toHaveBeenLastCalledWith('src/app.tsx', expect.objectContaining({ event: expect.objectContaining({ type: 'click' }) }));
+    fireEvent.keyDown(row('src/app.tsx'), { key: 'ArrowDown' });
+    expect(onAction).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(row('src/Button.tsx'), { key: 'Enter' });
+    expect(onAction).toHaveBeenLastCalledWith('src/Button.tsx', expect.anything());
+  });
+
+  it('acts on the row a press started on, even when a search reshapes the rows under it', async () => {
+    const onAction = vi.fn();
+    render(<Tree aria-label="Files" items={FILES} defaultExpanded="all" search onAction={onAction} />);
+    const pressed = row('src/Button.tsx');
+    fireEvent.pointerDown(pressed);
+    // The search drops rows above it: a different row now sits where the press began.
+    fireEvent.input(screen.getByRole('searchbox', { name: 'Search Files' }), { target: { value: 'Button' } });
+    await tick();
+    expect(names()).toEqual(['src', 'src/Button.tsx']);
+    fireEvent.pointerUp(pressed);
+    fireEvent.click(pressed);
+    expect(onAction).toHaveBeenCalledTimes(1);
+    expect(onAction).toHaveBeenLastCalledWith('src/Button.tsx', expect.anything());
+  });
+
   it('selects several rows with mode="multiple", and none with mode="none"', () => {
     const onValueChange = vi.fn();
     const { unmount } = render(<Tree aria-label="Files" items={FILES} mode="multiple" defaultExpanded="all" onValueChange={onValueChange} />);
@@ -467,5 +498,19 @@ describe('Tree, composed from parts', () => {
     fireEvent.click(intro.querySelector('[data-slot="tree-indicator"]') as HTMLElement);
     expect(screen.queryByRole('treeitem', { name: 'Setup' })).toBeNull();
     expect(intro.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('takes actionOn too', () => {
+    const onAction = vi.fn();
+    render(
+      <Tree aria-label="Outline" actionOn="double-press" onAction={onAction}>
+        <TreeItem value="api"><TreeItemLabel>API</TreeItemLabel></TreeItem>
+      </Tree>,
+    );
+    const api = screen.getByRole('treeitem', { name: 'API' });
+    fireEvent.click(api, { detail: 1 });
+    expect(onAction).not.toHaveBeenCalled();
+    fireEvent.click(api, { detail: 2 });
+    expect(onAction).toHaveBeenCalledWith('api', expect.anything());
   });
 });

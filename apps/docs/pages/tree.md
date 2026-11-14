@@ -64,7 +64,7 @@ const MAILBOXES: TreeNode[] = [
 
 ## Selecting, opening and running
 
-These are UI SDK's, and they are three separate things. Selection is `value` / `defaultValue` / `onValueChange(value, details)`: one value or `null`, or an array with `mode="multiple"`. Which branches are open is `expanded` / `defaultExpanded` / `onExpandedChange(expanded, details)`; `defaultExpanded="all"` opens every branch, and `autoExpand` opens the branches you list (and the ones above them) whenever the list changes, while the user can still close them. `onAction(value, details)` runs on a press or Return, apart from selecting: open the file there. Return a Promise and the row shows `data-pending` until it settles. A press on a branch also opens or closes it; `expandOnPress={false}` leaves that to its chevron and the arrow keys. Every `details` has a `reason` (`item-press`, `list-navigation`, `trigger-press`, `imperative`) and `cancel()`.
+These are UI SDK's, and they are three separate things. Selection is `value` / `defaultValue` / `onValueChange(value, details)`: one value or `null`, or an array with `mode="multiple"`. Which branches are open is `expanded` / `defaultExpanded` / `onExpandedChange(expanded, details)`; `defaultExpanded="all"` opens every branch, and `autoExpand` opens the branches you list (and the ones above them) whenever the list changes, while the user can still close them. `onAction(value, details)` runs on a press or Return, apart from selecting: open the file there. Return a Promise and the row shows `data-pending` until it settles. `actionOn="double-press"` runs it on a double press instead, as a file browser does: a single press only selects, Return still runs it, and the arrow keys never do. A press on a branch also opens or closes it; `expandOnPress={false}` leaves that to its chevron and the arrow keys. Every `details` has a `reason` (`item-press`, `list-navigation`, `trigger-press`, `imperative`) and `cancel()`.
 
 `activation="automatic"` selects as the arrow keys move. `current` marks the row for the page you're on (`aria-current="page"`) and opens the branches above it, for a tree of links. A `createTreeController()` passed as `controller` opens and closes branches, selects, and `reveal(value)`s a row from outside.
 
@@ -115,6 +115,7 @@ It is a `tree` of `treeitem`s with `aria-level`, `aria-posinset`, `aria-setsize`
 | `expanded` / `defaultExpanded` / `onExpandedChange` | — | The open branches. `defaultExpanded` also takes `'all'`. |
 | `autoExpand` | — | Branches (and those above them) to open whenever this list changes. The user can still close them. |
 | `onAction` | — | `(value, details) => …` on a press or Return. |
+| `actionOn` | `'press'` | `'double-press'`: a pointer runs `onAction` only on a double press; a single press selects. Return still runs it. |
 | `activation`, `expandOnPress`, `current`, `checkable`, `checked`, `disabled`, `controller`… | — | UI SDK's, unchanged. |
 | `sort` | `false` | Folders first, then A→Z. Otherwise the order of `items`. |
 | `search` | `false` | A SearchField above the rows that filters to the matches. |

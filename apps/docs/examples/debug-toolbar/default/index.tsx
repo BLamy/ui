@@ -4,10 +4,10 @@ import { DebugToolbar, type DebugToolbarAction } from '@/components/ui/debug-too
 const LABELS: Record<DebugToolbarAction, string> = {
   continue: 'Continue',
   'step-over': 'Step over',
-  'step-into': 'Step into',
+  'step-into': 'Step in',
   'step-out': 'Step out',
   'step-back': 'Step back',
-  'reverse-continue': 'Reverse continue',
+  'reverse-continue': 'Reverse',
   restart: 'Restart',
   stop: 'Stop',
 }

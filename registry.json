@@ -11276,6 +11276,140 @@
       }
     },
     {
+      "name": "replay-debugger",
+      "type": "registry:block",
+      "title": "Replay Debugger",
+      "description": "A time-travel debugger with forward and reverse stepping, source navigation, breakpoints, logpoints, call stacks, scopes and expression evaluation. A plain DebuggerHost interface supplies data and callbacks; the included demo answers from an in-memory table.",
+      "categories": [
+        "developer-tools",
+        "application"
+      ],
+      "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/breadcrumb.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/call-stack.json",
+        "https://blamy.github.io/ui/r/call-stack-model.json",
+        "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/code-editor.json",
+        "https://blamy.github.io/ui/r/code-editor-model.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/debug-toolbar.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/log-list.json",
+        "https://blamy.github.io/ui/r/log-list-model.json",
+        "https://blamy.github.io/ui/r/object-tree.json",
+        "https://blamy.github.io/ui/r/object-tree-model.json",
+        "https://blamy.github.io/ui/r/object-tree-value.json",
+        "https://blamy.github.io/ui/r/object-value.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/tab-bar.json",
+        "https://blamy.github.io/ui/r/toggle.json",
+        "https://blamy.github.io/ui/r/tree.json",
+        "https://blamy.github.io/ui/r/utils.json",
+        "https://blamy.github.io/ui/r/workspace.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/replay-debugger/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/page.tsx"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/debugger.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/debugger.tsx"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/code.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/code.tsx"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/console.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/console.tsx"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/line-panels.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/line-panels.tsx"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/sources.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/sources.tsx"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/source-tree.ts",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/source-tree.ts"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/stack.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/stack.tsx"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/toolbar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/toolbar.tsx"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/use-model.ts",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/use-model.ts"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/values.ts",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/values.ts"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/model.ts",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/model.ts"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/host.ts",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/host.ts"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/demo-host.ts",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/demo-host.ts"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/index.ts",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/index.ts"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/replay-debugger.css",
+          "type": "registry:file",
+          "target": "components/blocks/replay-debugger/replay-debugger.css"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/seed-stops.ts",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/seed-stops.ts"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/styles.ts",
+          "type": "registry:component",
+          "target": "components/blocks/replay-debugger/styles.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/replay-debugger/page.tsx"
+      }
+    },
+    {
       "name": "saas-checkout",
       "type": "registry:block",
       "title": "SaaS checkout",

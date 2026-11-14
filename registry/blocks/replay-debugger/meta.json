@@ -1,0 +1,42 @@
+{
+  "name": "replay-debugger",
+  "title": "Replay Debugger",
+  "description": "A time-travel debugger with forward and reverse stepping, source navigation, breakpoints, logpoints, call stacks, scopes and expression evaluation. A plain DebuggerHost interface supplies data and callbacks; the included demo answers from an in-memory table.",
+  "categories": [
+    "developer-tools",
+    "application"
+  ],
+  "files": [
+    "page.tsx",
+    "debugger.tsx",
+    "code.tsx",
+    "console.tsx",
+    "line-panels.tsx",
+    "sources.tsx",
+    "source-tree.ts",
+    "stack.tsx",
+    "toolbar.tsx",
+    "use-model.ts",
+    "values.ts",
+    "model.ts",
+    "host.ts",
+    "demo-host.ts",
+    "index.ts",
+    "replay-debugger.css",
+    "seed-stops.ts",
+    "styles.ts"
+  ],
+  "dependencies": [
+    "@ui-sdk/react"
+  ],
+  "variants": [
+    {
+      "id": "recorded",
+      "label": "Recorded steps"
+    },
+    {
+      "id": "empty",
+      "label": "Empty data"
+    }
+  ]
+}

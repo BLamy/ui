@@ -107,6 +107,7 @@ An input needs a name. Inside a `Field`, the `FieldLabel` provides it; on its ow
 | `controller` | — | From `createInputController()`: `getValue()`, `setValue(value)`, `clear()`, `focus()`. |
 | `disabled` / `readOnly` / `required` | `false` | The native attributes; they also set `data-disabled`, `data-readonly` and `data-required`. |
 | `className` | — | Merged last; may be a function of the input's state (`filled`, `disabled`, `readOnly`, `required`). |
+| `ref` | — | The underlying `<input>`, for selection (`select()`, `setSelectionRange`) and programmatic focus. |
 
 ## Styling
 

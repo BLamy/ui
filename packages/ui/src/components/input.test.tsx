@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { useState } from 'react';
+import { createRef, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Input, createInputController } from '@/components/ui/input';
@@ -13,6 +13,16 @@ const box = (name = 'Email') => screen.getByRole('textbox', { name }) as HTMLInp
 const type = (el: HTMLInputElement, value: string) => fireEvent.input(el, { target: { value } });
 
 describe('Input', () => {
+  it('forwards ref to the native input, for selection and programmatic focus', () => {
+    const ref = createRef<HTMLInputElement>();
+    render(<Input ref={ref} aria-label="Email" defaultValue="hello world" />);
+    expect(ref.current).toBe(box());
+    act(() => { ref.current!.focus(); ref.current!.setSelectionRange(0, 5); });
+    expect(document.activeElement).toBe(box());
+    expect(box().selectionStart).toBe(0);
+    expect(box().selectionEnd).toBe(5);
+  });
+
   it('is a named native input in the iOS filled look, in the Tab order', () => {
     render(<Input aria-label="Email" size="sm" />);
     expect(box().tagName).toBe('INPUT');

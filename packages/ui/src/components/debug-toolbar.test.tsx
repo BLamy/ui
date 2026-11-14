@@ -51,7 +51,7 @@ describe('DebugToolbar', () => {
     expect(bar.getAttribute('data-size')).toBe('compact');
     const buttons = [...bar.querySelectorAll('button')];
     expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
-      'Continue', 'Step over', 'Step into', 'Step out', 'Step back', 'Reverse continue', 'Restart', 'Stop',
+      'Continue', 'Step over', 'Step in', 'Step out', 'Step back', 'Reverse', 'Restart', 'Stop',
     ]);
     const key = (target: Element, k: string) => act(() => { target.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); });
     act(() => buttons[0].focus());
@@ -68,5 +68,17 @@ describe('DebugToolbar', () => {
     act(() => buttons[6].focus());
     act(() => buttons[6].click());
     expect(onAction).toHaveBeenLastCalledWith('restart');
+  });
+
+  it('shows only the given actions, in the given order, and forwards style', () => {
+    const onAction = vi.fn();
+    const el = mount(<DebugToolbar onAction={onAction} actions={['stop', 'continue', 'step-back']} style={{ maxWidth: 200 }} />);
+    const bar = el.querySelector<HTMLElement>('[role="toolbar"]')!;
+    expect(bar.style.maxWidth).toBe('200px');
+    const buttons = [...bar.querySelectorAll('button')];
+    expect(buttons.map((b) => b.dataset.action)).toEqual(['stop', 'continue', 'step-back']);
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(['Stop', 'Continue', 'Step back']);
+    act(() => buttons[2].click());
+    expect(onAction).toHaveBeenCalledWith('step-back');
   });
 });

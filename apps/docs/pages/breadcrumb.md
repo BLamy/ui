@@ -57,6 +57,8 @@ The last item is plain text; give it an `onClick` or an `href` and it is pressab
 
 An item that carries `items` is a picker: pressing it opens a menu of the other entries of its parent, the `selectedId` one checked, and choosing one fires that entry's `href` or `onClick`. Use it for a file path, a project switcher or any hierarchy where the siblings are one step away. The item's own `href` and `onClick` are not used (the menu replaces them), so put the "go there" action in the entries.
 
+An item that opens a popup of your own instead (a file picker dialog, say) is a button with `onClick` plus `aria-haspopup`, `aria-expanded` and `aria-controls`, which go onto the item's button. In the `…` menu it is an ordinary item that runs `onClick`.
+
 {% demo src="breadcrumb/sibling-menus" %}
 
 ```tsx
@@ -137,7 +139,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/breadcrumb`. Base classes:
 
 ```text
-relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px]
+relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px] [contain:inline-size]
 ```
 
 **`size`** — default `default`

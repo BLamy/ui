@@ -2,16 +2,23 @@ import VibecoderBlock from '@/components/blocks/vibecoder/page';
 import { useCallback, useRef, useState } from 'react';
 import {
   loadOpenCodeRuntime,
+  type OpenCodeHostBridge,
   type OpenCodeMcpServer,
   type OpenCodeRuntime,
 } from '@/lib/open-code-host';
+import { createDocsHost } from './host';
 
 export default function Vibecoder() {
   const browser = useRef<OpenCodeMcpServer | undefined>(undefined);
+  const currentHost = useRef<OpenCodeHostBridge | undefined>(undefined);
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(
     'Test the live iframe without signing in to a model.',
+  );
+  const createHost = useCallback(
+    () => createDocsHost(import.meta.env.BASE_URL),
+    [],
   );
   const loadRuntime = useCallback(async () => {
     const runtime = await loadOpenCodeRuntime(
@@ -81,8 +88,37 @@ export default function Vibecoder() {
       <div className="min-h-0 flex-1">
         <VibecoderBlock
           basePath={import.meta.env.BASE_URL}
+          createHost={createHost}
           loadRuntime={loadRuntime}
-          onStateChange={(state) => setReady(state === 'running')}
+          onReady={(_session, host) => {
+            if (!host) return;
+            currentHost.current = host;
+            void host.processBridge
+              .exec({
+                command: 'node',
+                args: ['server.cjs'],
+                cwd: host.directory,
+              })
+              .then(
+                (result) => {
+                  if (currentHost.current === host && result.code !== 0)
+                    setResult(
+                      result.stderr ||
+                        `Starter exited with code ${result.code}.`,
+                    );
+                },
+                (error: unknown) => {
+                  if (currentHost.current === host)
+                    setResult(
+                      error instanceof Error ? error.message : String(error),
+                    );
+                },
+              );
+          }}
+          onStateChange={(state) => {
+            if (state !== 'running') currentHost.current = undefined;
+            setReady(state === 'running');
+          }}
         />
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-3 px-2 pb-2 text-xs">

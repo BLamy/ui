@@ -64,6 +64,7 @@ test.describe('basic demo', () => {
   });
 
   test('is keyboard-reachable, labelled, and described by its preview', async ({ page }) => {
+    await expect(page.locator(PREVIEW)).toBeVisible();
     const field = page.getByRole('textbox', { name: 'When' });
     for (let i = 0; i < 3 && !(await field.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press('Tab');
     await expect(field).toBeFocused();

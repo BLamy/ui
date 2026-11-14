@@ -277,7 +277,8 @@ export {
   createTreeController, treeFromPaths, visibleTreeRows, TreeFolderIcon, TreeFileIcon,
 } from './components/tree';
 export type {
-  TreeProps, TreeNode, TreeDensity, TreeDropTarget, TreeGitStatus, TreeEditDetails, TreeEditingChangeDetails, TreeController, TreeItemData, TreeMode,
+  TreeProps, TreeNode, TreeDensity, TreeActionOn, TreeDropTarget, TreeGitStatus, TreeEditDetails, TreeEditingChangeDetails, TreeController, TreeItemData,
+  TreeMode,
 } from './components/tree';
 export {
   Disclosure, DisclosureTrigger, DisclosurePanel,

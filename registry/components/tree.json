@@ -25,6 +25,7 @@
     "TreeProps",
     "TreeNode",
     "TreeDensity",
+    "TreeActionOn",
     "TreeDropTarget",
     "TreeGitStatus",
     "TreeEditDetails",
