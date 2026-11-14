@@ -5,7 +5,7 @@
    test cards decline in different ways — and ends on a receipt. Wide hosts: the form beside a sticky summary. Narrow:
    one column, with the summary folded into a bar on top. */
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
-import { ContentSwap } from '@/components/ui/animated-height';
+import { Swap } from '@/components/ui/swap';
 import { Badge } from '@/components/ui/badge';
 import { ProgressStepper } from '@/components/ui/progress-stepper';
 import { useSizeClass } from '@/lib/container';
@@ -64,9 +64,9 @@ export default function SaasCheckout({ initialStep, initial, today, onDashboard 
           stepper's muted default, so they stay readable. */}
       <ProgressStepper steps={steps} current={index} labels animated={status === 'processing'}
         className="[&>li:not([data-state=active])>span:last-child]:text-foreground/70" />
-      <ContentSwap id={step} direction={direction}>
+      <Swap value={step} direction={direction}>
         {step === 'plan' ? <PlanStep /> : step === 'account' ? <AccountStep /> : <PaymentStep />}
-      </ContentSwap>
+      </Swap>
     </div>
   );
   const toDashboard = () => (onDashboard && checkout.receipt ? onDashboard(checkout.receipt) : checkout.restart());

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Form } from '@/components/ui/form'
-import { Field, FieldLabel } from '@/components/ui/field'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
@@ -15,22 +14,25 @@ export default function IssueForm() {
   const invalid = tried && !body.trim()
 
   return (
-    <Form
-      style={{ maxWidth: 520, margin: '0 auto' }}
-      onSubmit={(e) => {
-        e.preventDefault()
-        setTried(true)
-        if (!body.trim()) return
-        setSubmitted(
-          Object.fromEntries(new FormData(e.currentTarget)) as Record<
-            string,
-            string
-          >,
-        )
-      }}
+    <FieldGroup
+      className="gap-5"
+      render={<form
+        style={{ maxWidth: 520, margin: '0 auto' }}
+        onSubmit={(e) => {
+          e.preventDefault()
+          setTried(true)
+          if (!body.trim()) return
+          setSubmitted(
+            Object.fromEntries(new FormData(e.currentTarget)) as Record<
+              string,
+              string
+            >,
+          )
+        }}
+      />}
     >
       <Field name="title">
-        <FieldLabel variant="field">Title</FieldLabel>
+        <FieldLabel>Title</FieldLabel>
         <Input required defaultValue="Tray snaps back on slow drags" />
       </Field>
       <div style={{ display: 'grid', gap: 6 }}>
@@ -76,6 +78,6 @@ export default function IssueForm() {
           {JSON.stringify(submitted, null, 2)}
         </pre>
       )}
-    </Form>
+    </FieldGroup>
   )
 }

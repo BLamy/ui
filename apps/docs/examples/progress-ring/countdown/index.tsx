@@ -47,13 +47,13 @@ export default function Countdown() {
             <NumberMorph value={code % 1000} format={fmt} />
           </div>
         </div>
-        <CountdownRing remaining={remaining} size="md" />
+        <CountdownRing remaining={remaining} size="default" />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         <CountdownRing remaining={8} size="sm" />
         <CountdownRing remaining={18} size="lg" />
         <CountdownRing remaining={4} size="lg" />
-        <CountdownRing remaining={42} duration={60} size="xl" warnAt={10} />
+        <CountdownRing remaining={42} duration={60} size="xl" urgentAt={10} />
       </div>
       <Button
         variant="secondary"

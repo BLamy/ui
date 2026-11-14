@@ -3,18 +3,18 @@ import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { Spinner, spinnerAnimations, type SpinnerAnimation, type SpinnerVariant } from '@/components/ui/spinner';
+import { Spinner, spinnerAnimations } from '@/components/ui/spinner';
 
 (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
 
 /** How many animated parts each loader has. */
 const PARTS: Record<string, [selector: string, count: number | number[]]> = {
   orbit: ['.bl-ld-orbit-dot', 8],
-  beacon: ['.bl-ld-beacon-indicator__bar', 5],
+  bars: ['.bl-ld-beacon-indicator__bar', 5],
   matrix: ['.bl-ld-matrix-indicator__dot', 9],
-  cells: ['.bl-ld-cell-indicator__cell', 4],
-  register: ['.bl-ld-register-indicator__bit', 6],
-  bands: ['.bl-ld-band-indicator__segment', 3],
+  merge: ['.bl-ld-cell-indicator__cell', 4],
+  encode: ['.bl-ld-register-indicator__bit', 6],
+  scan: ['.bl-ld-band-indicator__segment', 3],
   lift: ['.bl-ld-lift-queue-indicator__level', 4],
   // BL UI's own loaders: the parts that carry the staggered timing.
   steps: ['.bl-ld-st-dot', 4],
@@ -28,7 +28,7 @@ const PARTS: Record<string, [selector: string, count: number | number[]]> = {
   gyro: ['.bl-ld-gy-ring', 3],
   coalesce: ['.bl-ld-co-dot', 8],
   crystal: ['.bl-ld-ct-facet', 6],
-  loop: ['.bl-ld-lp-run', [1, 3, 1]], // `trail` has three runners, one per variant otherwise
+  loop: ['.bl-ld-lp-run', [1, 3, 1]], // `trail` has three runners, one per pattern otherwise
   relay: ['.bl-ld-rl-node', 3],
   robot: ['.bl-ld-rb-eye', 2],
   kettle: ['.bl-ld-kt-steam', 3],
@@ -38,22 +38,23 @@ const root = (c: HTMLElement) => c.querySelector('[data-slot=spinner]') as HTMLE
 const delaysOf = (c: HTMLElement, sel: string) => [...c.querySelectorAll<HTMLElement>(sel)].map((e) => e.style.getPropertyValue('--bl-ld-delay'));
 
 describe('spinnerAnimations', () => {
-  it('lists ios and the twenty-two loaders, three variants each', () => {
+  it('lists ios and the twenty-two loaders, three patterns each, with ids that match their labels', () => {
     expect(spinnerAnimations.map((a) => a.id)).toEqual([
-      'ios', 'orbit', 'beacon', 'matrix', 'cells', 'register', 'bands', 'lift',
+      'ios', 'orbit', 'bars', 'matrix', 'merge', 'encode', 'scan', 'lift',
       'steps', 'cradle', 'hourglass', 'balance', 'fanout', 'battery', 'bloom', 'sonar', 'gyro', 'coalesce', 'crystal', 'loop', 'relay', 'robot', 'kettle',
     ]);
-    for (const a of spinnerAnimations.filter((x) => x.id !== 'ios')) expect(a.variants).toHaveLength(3);
-    expect(spinnerAnimations[0].variants).toEqual([]);
+    for (const a of spinnerAnimations.filter((x) => x.id !== 'ios')) expect(a.patterns).toHaveLength(3);
+    expect(spinnerAnimations[0].patterns).toEqual([]);
+    for (const a of spinnerAnimations) expect(a.label.toLowerCase()).toBe(a.id);
   });
 });
 
 describe('Spinner loaders', () => {
-  it.each(Object.entries(PARTS))('%s renders its parts for every variant, each with its own timing', (animation, [sel, count]) => {
-    const variants = spinnerAnimations.find((a) => a.id === animation)?.variants ?? [];
+  it.each(Object.entries(PARTS))('%s renders its parts for every pattern, each with its own timing', (animation, [sel, count]) => {
+    const variants = spinnerAnimations.find((a) => a.id === animation)?.patterns ?? [];
     expect(variants).toHaveLength(3);
     for (const [i, variant] of variants.entries()) {
-      const { container, unmount } = render(<Spinner animation={animation as SpinnerAnimation} variant={variant as SpinnerVariant} />);
+      const { container, unmount } = render(<Spinner animation={animation as 'orbit'} pattern={variant as never} />);
       const parts = [...container.querySelectorAll<HTMLElement>(sel)];
       expect(parts, `${animation}/${variant}`).toHaveLength(Array.isArray(count) ? count[i] : count);
       for (const p of parts) {
@@ -66,15 +67,15 @@ describe('Spinner loaders', () => {
     }
   });
 
-  it('variants differ in their timing', () => {
-    const chase = render(<Spinner animation="orbit" variant="chase" />);
-    const oppose = render(<Spinner animation="orbit" variant="oppose" />);
+  it('patterns differ in their timing', () => {
+    const chase = render(<Spinner animation="orbit" pattern="chase" />);
+    const oppose = render(<Spinner animation="orbit" pattern="oppose" />);
     expect(delaysOf(chase.container, '.bl-ld-orbit-dot')).not.toEqual(delaysOf(oppose.container, '.bl-ld-orbit-dot'));
     expect(delaysOf(chase.container, '.bl-ld-orbit-dot')[7]).toBe('840ms');
   });
 
-  it('falls back to the first variant for an unknown one', () => {
-    const { container } = render(<Spinner animation="matrix" variant={'nope' as SpinnerVariant} />);
+  it('falls back to the first pattern for an unknown one', () => {
+    const { container } = render(<Spinner animation="matrix" pattern={'nope' as never} />);
     expect(container.querySelector('[data-variant]')?.getAttribute('data-variant')).toBe('diagonal');
   });
 
@@ -95,18 +96,30 @@ describe('Spinner loaders', () => {
   });
 
   it('marks itself paused when asked', () => {
-    expect(root(render(<Spinner animation="bands" paused />).container).hasAttribute('data-paused')).toBe(true);
-    expect(root(render(<Spinner animation="bands" />).container).hasAttribute('data-paused')).toBe(false);
+    expect(root(render(<Spinner animation="scan" paused />).container).hasAttribute('data-paused')).toBe(true);
+    expect(root(render(<Spinner animation="scan" />).container).hasAttribute('data-paused')).toBe(false);
   });
 
   it('is decorative unless given a label', () => {
-    const plain = root(render(<Spinner animation="cells" />).container);
+    const plain = root(render(<Spinner animation="merge" />).container);
     expect(plain.getAttribute('aria-hidden')).toBe('true');
     expect(plain.getAttribute('role')).toBeNull();
-    const named = root(render(<Spinner animation="cells" label="Saving" />).container);
+    const named = root(render(<Spinner animation="merge" label="Saving" />).container);
     expect(named.getAttribute('role')).toBe('status');
+    // A live region announces its text, so the label is text inside it; status takes its name from the attribute.
     expect(named.getAttribute('aria-label')).toBe('Saving');
+    expect(named.textContent).toBe('Saving');
+    expect(named.querySelector('.sr-only')?.textContent).toBe('Saving');
+    expect(named.querySelector('.bl-ld-stage')?.getAttribute('aria-hidden')).toBe('true');
     expect(named.getAttribute('aria-hidden')).toBeNull();
+  });
+
+  it('passes ref and DOM props through', () => {
+    let node: HTMLSpanElement | null = null;
+    const el = root(render(<Spinner animation="orbit" ref={(n) => { node = n; }} id="busy" data-test="x" />).container);
+    expect(node).toBe(el);
+    expect(el.id).toBe('busy');
+    expect(el.dataset.test).toBe('x');
   });
 
   it('merges className and style onto the root', () => {
@@ -118,19 +131,25 @@ describe('Spinner loaders', () => {
 });
 
 describe('Spinner ios (the default)', () => {
-  it('is the eight-spoke svg, unchanged', () => {
-    const { container } = render(<Spinner spin size={30} />);
-    const svg = root(container);
-    expect(svg.tagName.toLowerCase()).toBe('svg');
-    expect(svg.getAttribute('width')).toBe('30');
-    expect(svg.querySelectorAll('rect')).toHaveLength(8);
-    expect(svg.getAttribute('class')).toContain('animate-[blSpin_.75s_steps(8)_infinite]');
-    expect(svg.getAttribute('aria-hidden')).toBe('true');
+  it('is the eight-spoke svg, turning by default', () => {
+    const { container } = render(<Spinner size={30} />);
+    const el = root(container);
+    expect(el.style.width).toBe('30px');
+    expect(el.querySelectorAll('svg rect')).toHaveLength(8);
+    expect(el.getAttribute('class')).toContain('animate-[blSpin_.75s_steps(8)_infinite]');
+    expect(el.getAttribute('aria-hidden')).toBe('true');
   });
-  it('defaults to 22px and only spins when asked', () => {
-    const svg = root(render(<Spinner />).container);
-    expect(svg.getAttribute('width')).toBe('22');
-    expect(svg.getAttribute('class')).not.toContain('blSpin');
+  it('defaults to 22px and holds still when paused', () => {
+    const el = root(render(<Spinner paused />).container);
+    expect(el.style.width).toBe('22px');
+    expect(el.getAttribute('class')).not.toContain('blSpin');
+    expect(el.hasAttribute('data-paused')).toBe(true);
+  });
+  it('names itself with text when labelled', () => {
+    const el = root(render(<Spinner label="Loading" />).container);
+    expect(el.getAttribute('role')).toBe('status');
+    expect(el.textContent).toBe('Loading');
+    expect(el.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
   });
 });
 

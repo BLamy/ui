@@ -86,7 +86,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 /* Paused by the prop, or automatically while off screen or in a hidden tab. */
 .bl-ld[data-paused] .bl-ld-stage *{animation-play-state:paused}
 /* Reduced motion: hold a still frame instead of looping. */
-@media (prefers-reduced-motion:reduce){.bl-ld .bl-ld-stage *{animation:none!important;opacity:.65;scale:1;translate:none;rotate:none}}
+@media (prefers-reduced-motion:reduce){.bl-ld .bl-ld-stage *{animation:none!important;opacity:.85;scale:1;translate:none;rotate:none}}
 .bl-ld-orbit-indicator {
   position: relative;
   width: 24px;
@@ -94,7 +94,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
   flex: 0 0 24px;
 }
 
-/* ── BL UI's own loaders (components/spinner-shapes.tsx) ─────────────────────────────────────────────────────
+/* ── BL UI's own loaders (lib/spinner-shapes.tsx) ─────────────────────────────────────────────────────
    Original designs on the same 24px grid and the same timing variables as the ported loaders above. They do not use
    `translate` for layout (a still frame under reduced motion must keep its shape), only for motion. */
 @layer components {
@@ -676,8 +676,8 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 
 
 /* ── ProgressStepper ───────────────────────────────────────────────────────────────────────
-   Styled with utilities on the component; the active segment's sweep. */
-@keyframes ck-stepper-sweep{0%{transform:translateX(0)}100%{transform:translateX(200%)}}
+   Styled with utilities on the component; the current segment's sweep. */
+@keyframes bl-stepper-sweep{0%{transform:translateX(0)}100%{transform:translateX(200%)}}
 
 /* ══ Workbench (WorkbenchShell, Composer, MarkdownView, terminal) — the `workbench` / `terminal` theme scopes ══ */
 /* BL UI Workbench — framework-owned CSS (scrollbars, caret pulse, spin, markdown). */

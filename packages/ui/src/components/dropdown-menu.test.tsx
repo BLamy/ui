@@ -6,8 +6,9 @@ import { buttonVariants } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuGroup, DropdownMenuGroupLabel, DropdownMenuItem,
   DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent,
-  DropdownMenuSubTrigger, DropdownMenuTrigger, createMenuController, type MenuData,
+  DropdownMenuSubTrigger, DropdownMenuTrigger, createDropdownMenuController, type DropdownMenuData,
 } from '@/components/ui/dropdown-menu';
+import { setPlatform } from '@ui-sdk/core/testing';
 import { ThemeScope } from '@/lib/theme';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
@@ -213,7 +214,7 @@ describe('DropdownMenu', () => {
   });
 
   it('draws a data menu with the same rows', async () => {
-    const items: MenuData = [
+    const items: DropdownMenuData = [
       { value: 'open', label: 'Open…', shortcut: 'mod+o' },
       { type: 'separator' },
       { type: 'checkbox', value: 'toolbar', label: 'Toolbar', defaultChecked: true },
@@ -240,7 +241,7 @@ describe('DropdownMenu', () => {
   });
 
   it('opens and closes from a controller', async () => {
-    const controller = createMenuController();
+    const controller = createDropdownMenuController();
     render(<Actions controller={controller} />);
     await act(async () => { void controller.open(); });
     await settle();
@@ -254,5 +255,73 @@ describe('DropdownMenu', () => {
     render(<ThemeScope scope="terminal"><Actions defaultOpen /></ThemeScope>);
     await settle();
     expect(screen.getByRole('menu').getAttribute('data-theme-scope')).toBe('terminal');
+  });
+
+  it('keeps a description out of the row name: it describes the row', async () => {
+    render(<Actions defaultOpen />);
+    await settle();
+    const share = screen.getByRole('menuitem', { name: 'Share' });
+    expect(document.getElementById(share.getAttribute('aria-describedby')!)?.textContent).toBe('By mail or message');
+    // A row without a description keeps its own name and no description.
+    expect(screen.getByRole('menuitem', { name: /Copy/ }).hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it("draws an item's shortcut with Apple's modifier order, once", async () => {
+    setPlatform('apple');
+    try {
+      render(
+        <DropdownMenu defaultOpen>
+          <DropdownMenuTrigger>File</DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem value="save-as" shortcut="mod+shift+s">Save As…</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>,
+      );
+      await settle();
+      const row = screen.getByRole('menuitem', { name: /Save As/ });
+      const shown = [...row.querySelectorAll<HTMLElement>('[data-slot=menu-shortcut]')].filter((el) => el.hasAttribute('data-kit'));
+      expect(shown.map((el) => el.textContent)).toEqual(['⇧⌘S']);
+      expect(row.getAttribute('aria-keyshortcuts')).toBe('Meta+Shift+S');
+    } finally {
+      setPlatform('other');
+    }
+  });
+
+  it('sets its density on the content and every row, submenus included', async () => {
+    render(
+      <DropdownMenu defaultOpen>
+        <DropdownMenuTrigger>Effort</DropdownMenuTrigger>
+        <DropdownMenuContent size="sm">
+          <DropdownMenuItem value="low">Low</DropdownMenuItem>
+          <DropdownMenuSub defaultOpen>
+            <DropdownMenuSubTrigger>More</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent aria-label="More">
+              <DropdownMenuItem value="max">Max</DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuContent>
+      </DropdownMenu>,
+    );
+    await settle();
+    const menus = document.querySelectorAll('[data-slot=menu-content]');
+    expect([...menus].map((m) => m.getAttribute('data-size'))).toEqual(['sm', 'sm']);
+    expect(screen.getByRole('menuitem', { name: 'Low' }).className).toContain('text-footnote');
+  });
+
+  it("copies its trigger's palette with palette=\"trigger\"", async () => {
+    render(
+      <div className="dark" data-theme-scope="workbench">
+        <DropdownMenu defaultOpen>
+          <DropdownMenuTrigger>Workspace</DropdownMenuTrigger>
+          <DropdownMenuContent palette="trigger">
+            <DropdownMenuItem value="rename">Rename</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>,
+    );
+    await settle();
+    const menu = screen.getByRole('menu');
+    expect(menu.getAttribute('data-theme-scope')).toBe('workbench');
+    expect(menu.classList.contains('dark')).toBe(true);
   });
 });

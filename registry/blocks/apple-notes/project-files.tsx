@@ -2,12 +2,12 @@
    file), "Choose file…" lists every file in it, and files dropped on the note are copied next to it and embedded. */
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { CredenzaClose } from '@/components/ui/credenza';
+import { DialogClose } from '@/components/ui/dialog';
 import { Listbox, ListboxItem } from '@/components/ui/list-box';
-import { SearchField } from '@/components/ui/search-field';
-import { TreeFileIcon } from '@/components/ui/tree';
+import { SearchInput } from '@/components/ui/search-input';
+import { FileBadgeIcon } from '@/lib/file-icons';
 import type { Note } from './data';
-import { NotesCredenza } from './dialogs';
+import { NotesDialog } from './dialogs';
 import { draggedPaths, hasComputerFiles, hasNotesFiles } from './drag';
 import type { NotesState } from './use-notes';
 
@@ -90,23 +90,23 @@ function FilePicker({ notes, root, dir, self, picking, onDone }: {
   const q = query.trim().toLowerCase();
   const items = all.filter((path) => !q || path.toLowerCase().includes(q)).slice(0, 300);
   const choose = (path: string | null) => { setQuery(''); setChosen(null); onDone(path ? relativePath(dir, path) : null); };
-  return <NotesCredenza open={!!picking} onClose={() => choose(null)} title={images ? 'Choose an Image' : 'Choose a File'}>
+  return <NotesDialog open={!!picking} onClose={() => choose(null)} title={images ? 'Choose an Image' : 'Choose a File'}>
     <div className="flex flex-col gap-3 px-4 pt-0.5 pb-4">
-      <SearchField aria-label="Search files" value={query} onValueChange={setQuery} autoFocus />
+      <SearchInput aria-label="Search files" value={query} onValueChange={setQuery} autoFocus />
       <div className="max-h-[50vh] min-h-40 overflow-auto rounded-lg border border-border">
         {/* Arrows or a press pick a file; a double press or Return chooses it. */}
         {items.length ? <Listbox aria-label="Files" value={chosen} onValueChange={setChosen}
           onKeyDown={(e) => { if (e.key === 'Enter' && chosen) { e.preventDefault(); choose(chosen); } }}>
-          {items.map((path) => <ListboxItem key={path} value={path} label={path.slice(path.lastIndexOf('/') + 1)} icon={<TreeFileIcon name={path} />}
+          {items.map((path) => <ListboxItem key={path} value={path} label={path.slice(path.lastIndexOf('/') + 1)} icon={<FileBadgeIcon name={path} />}
             description={parent(path.slice(root.length + 1)) || undefined} onDoubleClick={() => choose(path)}>
             {path.slice(path.lastIndexOf('/') + 1)}
           </ListboxItem>)}
         </Listbox> : <p className="m-0 px-4 py-10 text-center text-detail text-muted-foreground">{q ? 'No files match.' : images ? 'No images in this folder.' : 'No other files in this folder.'}</p>}
       </div>
       <div className="flex gap-2">
-        <CredenzaClose render={<Button variant="secondary" className="flex-1" />}>Cancel</CredenzaClose>
+        <DialogClose render={<Button variant="secondary" className="flex-1" />}>Cancel</DialogClose>
         <Button className="flex-1" disabled={!chosen} onClick={() => choose(chosen)}>Choose</Button>
       </div>
     </div>
-  </NotesCredenza>;
+  </NotesDialog>;
 }

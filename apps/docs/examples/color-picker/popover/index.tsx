@@ -17,7 +17,7 @@ export default function PopoverExample() {
   return (
     <ThemeScope className="mx-auto grid max-w-sm gap-3">
       <Field>
-        <FieldLabel variant="field">Accent</FieldLabel>
+        <FieldLabel>Accent</FieldLabel>
         <ColorPicker value={color} onValueChange={setColor}>
           <Popover>
             <ColorPickerTrigger />

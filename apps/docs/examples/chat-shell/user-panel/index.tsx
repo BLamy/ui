@@ -56,7 +56,7 @@ export default function Me() {
           </SidebarContent>
           <SidebarFooter>
             <div className="flex items-center gap-2 px-1">
-              <Avatar c={me} size={28} />
+              <Avatar name={`${me.f} ${me.l}`} size={28} />
               <div className="min-w-0 flex-1 leading-tight">
                 <div className="truncate text-[13px] font-semibold text-foreground">
                   Ada Lovelace

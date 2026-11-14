@@ -35,7 +35,7 @@ The `Select` root renders no element: it holds the value and the open state. Lay
 
 ```tsx
 <Field>
-  <FieldLabel variant="field">Repeat</FieldLabel>
+  <FieldLabel>Repeat</FieldLabel>
   <Select placeholder="Choose…" defaultValue="week">
     <SelectTrigger />
     <SelectContent>

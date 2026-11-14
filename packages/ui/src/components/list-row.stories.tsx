@@ -24,20 +24,47 @@ type Story = StoryObj<typeof ListRow>;
 
 export const Basic: Story = {
   args: { title: 'Ringtone', divider: false },
+  argTypes: {
+    tone: { control: 'inline-radio', options: ['default', 'success', 'warning', 'destructive'] },
+    align: { control: 'inline-radio', options: ['center', 'top'] },
+    justify: { control: 'inline-radio', options: ['start', 'center'] },
+    accessory: { control: 'inline-radio', options: [undefined, 'chevron', 'check'] },
+  },
 };
 
-export const SubtitleAndLeading: Story = {
+/** The anatomy: `icon`, `title`, `description`, `trailing`, then the `accessory`. */
+export const Anatomy: Story = {
   render: () => (
     <ListRow
       title={<span>Wei <span style={{ fontWeight: 600 }}>Chen</span></span>}
-      subtitle="iOS Engineer · Parallel"
-      leading={<Avatar c={{ f: 'Wei', l: 'Chen' }} />}
+      description="iOS Engineer · Parallel"
+      icon={<Avatar name="Wei Chen" />}
       trailing={<Icon name="starF" size={13} className="text-warning" />}
       divider={false}
       onClick={() => undefined}
     />
   ),
 };
+
+export const AnatomyDark: Story = { ...Anatomy, parameters: { dark: true } };
+
+function StateRows() {
+  return (
+    <>
+      <ListRow title="Rest" description="Pressable, drills in" accessory="chevron" onClick={() => undefined} />
+      <ListRow title="Current" description="The open item: a wash and aria-current" accessory="chevron" current onClick={() => undefined} />
+      <ListRow title="Disabled" description="Can't be pressed or swiped" accessory="chevron" disabled onClick={() => undefined}
+        trailingActions={[{ label: 'Delete', destructive: true, onAction: () => undefined }]} />
+      <ListRow title="Checked" accessory="check" checked onClick={() => undefined} />
+      <ListRow title="Connected" tone="success" trailing={<Icon name="check" size={15} sw={2.6} className="text-success" />} />
+      <ListRow title="Sign Out" tone="destructive" justify="center" onClick={() => undefined} divider={false} />
+    </>
+  );
+}
+
+/** Rest, `current`, `disabled`, `checked`, `tone`, and a centered button row (`justify="center"`). */
+export const States: Story = { render: () => <StateRows /> };
+export const StatesDark: Story = { render: () => <StateRows />, parameters: { dark: true } };
 
 export const Chevron: Story = {
   args: { title: 'Share Contact', accessory: 'chevron', onClick: () => undefined, divider: false },
@@ -64,8 +91,8 @@ export const SwipeToDelete: Story = {
     return (
       <>
         {people.map(([f, l], i) => (
-          <ListRow key={f} title={f + ' ' + l} leading={<Avatar c={{ f, l }} size={34} />}
-            onDelete={() => setGone((g) => new Set([...g, f]))}
+          <ListRow key={f} title={f + ' ' + l} icon={<Avatar name={`${f} ${l}`} size={34} />}
+            trailingActions={[{ label: 'Delete', destructive: true, onAction: () => setGone((g) => new Set([...g, f])) }]}
             onClick={() => undefined}
             divider={i < people.length - 1} />
         ))}
@@ -87,8 +114,8 @@ export const EditMode: Story = {
           <Switch checked={edit} onCheckedChange={setEdit} aria-label="Edit mode" />
         </div>
         {[['Amelia', 'Adler'], ['Wei', 'Chen'], ['Anya', 'Kowalski']].map(([f, l], i) => (
-          <ListRow key={f} title={f + ' ' + l} leading={<Avatar c={{ f, l }} size={34} />}
-            edit={edit} checked={picked.has(f)}
+          <ListRow key={f} title={f + ' ' + l} icon={<Avatar name={`${f} ${l}`} size={34} />}
+            editing={edit} checked={picked.has(f)}
             onClick={() => setPicked((p) => { const n = new Set(p); if (n.has(f)) n.delete(f); else n.add(f); return n; })}
             divider={i < 2} />
         ))}
@@ -118,12 +145,12 @@ function MailRows() {
         ];
         const trailing: ListRowAction[] = [
           { label: 'Trash', icon: 'trash', destructive: true, onAction: () => setRows((r) => r.filter((x) => x[0] !== from)) },
-          { label: flag.has(from) ? 'Unflag' : 'Flag', icon: 'starF', tint: '#FF9F0A', onAction: () => setFlag((f) => toggle(f, from)) },
-          { label: 'More', icon: 'info', tint: '#8E8E93', onAction: () => undefined },
+          { label: flag.has(from) ? 'Unflag' : 'Flag', icon: 'starF', tint: 'var(--warning)', onAction: () => setFlag((f) => toggle(f, from)) },
+          { label: 'More', icon: 'info', tint: 'var(--muted-foreground)', onAction: () => undefined },
         ];
         return (
-          <ListRow key={from} title={<span style={{ fontWeight: unread.has(from) ? 600 : 400 }}>{from}</span>} subtitle={subject}
-            leading={<span aria-hidden style={{ width: 9, height: 9, borderRadius: 5, background: unread.has(from) ? 'var(--primary)' : 'transparent' }} />}
+          <ListRow key={from} title={<span style={{ fontWeight: unread.has(from) ? 600 : 400 }}>{from}</span>} description={subject}
+            icon={<span aria-hidden style={{ width: 9, height: 9, borderRadius: 5, background: unread.has(from) ? 'var(--primary)' : 'transparent' }} />}
             trailing={flag.has(from) ? <Icon name="starF" size={13} className="text-warning" /> : null}
             leadingActions={leading} trailingActions={trailing}
             onClick={() => undefined} divider={i < rows.length - 1} />
@@ -163,13 +190,13 @@ function ControlRows() {
     <>
       {/* No onClick: the row is a plain container. Pressing its label flips the switch. */}
       <ListRow title="Airplane Mode" accessory={<Switch checked={air} onCheckedChange={setAir} />} />
-      <ListRow title="Wi-Fi" subtitle={wifi ? 'Lamy Home' : 'Off'} accessory={<Switch checked={wifi} onCheckedChange={setWifi} />} />
+      <ListRow title="Wi-Fi" description={wifi ? 'Lamy Home' : 'Off'} accessory={<Switch checked={wifi} onCheckedChange={setWifi} />} />
       {/* A slider fills the row; its accessible name comes from the row title. */}
       <ListRow title="Volume" accessory={
         <Slider value={vol} onValueChange={(v) => setVol(v as number)} className="w-[150px]" />
       } />
       {/* onClick and a control side by side: the row button and the control are siblings, not nested. */}
-      <ListRow title="Downloads" subtitle={n ? `${n} queued` : 'Nothing queued'} onClick={() => undefined} divider={false}
+      <ListRow title="Downloads" description={n ? `${n} queued` : 'Nothing queued'} onClick={() => undefined} divider={false}
         accessory={<Button size="sm" variant="secondary" onClick={() => setN((x) => x + 1)}>Get</Button>} />
     </>
   );
@@ -194,11 +221,11 @@ function LayoutRows() {
   const [sel, setSel] = useState('inbox');
   return (
     <>
-      {/* align="top": the leading circle sits on the first line of a wrapping title. */}
+      {/* align="top": the icon sits on the first line of a wrapping title. */}
       <ListRow align="top" onClick={() => setDone((d) => !d)}
-        leading={<span className={cn('box-border block size-[22px] rounded-full border-[1.6px]', done ? 'border-primary bg-primary' : 'border-tertiary-foreground')} />}
+        icon={<span className={cn('box-border block size-[22px] rounded-full border-[1.6px]', done ? 'border-primary bg-primary' : 'border-tertiary-foreground')} />}
         title={<span className="block whitespace-normal">Book the cabin ferry for the long weekend, and check whether dogs ride free</span>}
-        subtitle="Friday, 9:00" />
+        description="Friday, 9:00" />
       {/* children: a control that spans the row. */}
       <ListRow>
         <div className="flex items-center gap-2">
@@ -209,14 +236,14 @@ function LayoutRows() {
       </ListRow>
       {/* A wrapped Switch is labelled by the title; contentClassName restyles the row surface. */}
       <ListRow title="Shake to Undo" contentClassName="min-h-[52px]" accessory={<SettingSwitch on={shake} onChange={setShake} />} />
-      {/* selected → aria-current on the row button. */}
+      {/* current → a wash and aria-current on the row button. */}
       {['inbox', 'archive'].map((m, i) => (
-        <ListRow key={m} title={m === 'inbox' ? 'Inbox' : 'Archive'} selected={sel === m} onClick={() => setSel(m)} divider={i === 0} />
+        <ListRow key={m} title={m === 'inbox' ? 'Inbox' : 'Archive'} current={sel === m} onClick={() => setSel(m)} divider={i === 0} />
       ))}
     </>
   );
 }
 
 /** `align="top"`, full-width `children`, `contentClassName`, a wrapped Switch named by the row title, and
-    `selected` (aria-current). */
+    `current` (aria-current). */
 export const Layouts: Story = { render: () => <LayoutRows /> };

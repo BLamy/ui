@@ -1,11 +1,16 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
-import { AdaptivePane, type AdaptivePanePresentation } from '@/components/ui/adaptive-pane'
+import {
+  AdaptivePane,
+  AdaptivePaneClose,
+  AdaptivePaneHeader,
+  AdaptivePaneTitle,
+  type AdaptivePanePresentation,
+} from '@/components/ui/adaptive-pane'
 
 const panel: CSSProperties = {
-  height: '100%',
-  padding: 16,
+  flex: 1,
+  padding: '4px 16px 16px',
   boxSizing: 'border-box',
-  background: 'var(--card)',
   fontSize: 13.5,
 }
 
@@ -14,8 +19,8 @@ export default function PaneModes({
 }: {
   variant?: string
 }) {
-  // column | drawer | cover | hidden — a real shell picks this from its
-  // measured width. `resizable` and `drawer-resizable` add the divider.
+  // column | drawer | push | cover | hidden — a real shell lets `auto` pick
+  // it from its size class. `resizable` and `drawer-resizable` add the divider.
   const resizable = variant === 'resizable' || variant === 'drawer-resizable'
   const mode: AdaptivePanePresentation =
     variant === 'resizable' ? 'column' : variant === 'drawer-resizable' ? 'drawer' : (variant as AdaptivePanePresentation)
@@ -36,10 +41,13 @@ export default function PaneModes({
           columnWidth={200}
           drawerWidth={240}
           zIndex={20}
-          columnStyle={{ borderRight: '1px solid var(--border)' }}
+          className="border-r border-border bg-card"
         >
+          <AdaptivePaneHeader>
+            <AdaptivePaneTitle>Pane</AdaptivePaneTitle>
+            <AdaptivePaneClose backLabel="Page" />
+          </AdaptivePaneHeader>
           <div style={panel}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Pane</div>
             <div style={{ color: 'var(--muted-foreground)' }}>
               Same children, presentation: {mode}
             </div>
@@ -64,7 +72,7 @@ export default function PaneModes({
             the resizable variants have a divider to drag.
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {mode === 'drawer' ? (
+            {!open ? (
               <TintButton label="Open pane" onClick={() => setOpen(true)} />
             ) : null}
             <TintButton
@@ -82,8 +90,11 @@ export default function PaneModes({
           drawerWidth={240}
           zIndex={40}
         >
+          <AdaptivePaneHeader>
+            <AdaptivePaneTitle>Right drawer</AdaptivePaneTitle>
+            <AdaptivePaneClose />
+          </AdaptivePaneHeader>
           <div style={panel}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Right drawer</div>
             <div style={{ color: 'var(--muted-foreground)' }}>
               Scrim + panel. Tap the scrim, press Escape or swipe right to close.
             </div>

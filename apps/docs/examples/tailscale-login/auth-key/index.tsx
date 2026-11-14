@@ -2,7 +2,7 @@ import { useState } from 'react'
 import wasmURL from '@agent-wasm/tailscale-connect/main.wasm?url'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button'
+import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-controls'
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect'
 import { TailscaleProvider } from '@/lib/tailscale-react'
 
@@ -18,7 +18,7 @@ export default function AuthKey() {
   return (
     <div className="mx-auto grid w-full max-w-sm gap-4">
       <Field>
-        <FieldLabel variant="field" className="text-foreground/70">Auth key</FieldLabel>
+        <FieldLabel className="text-foreground/70">Auth key</FieldLabel>
         <Input type="password" autoComplete="off" value={key} onValueChange={setKey} placeholder="tskey-auth-…" />
         <FieldDescription className="text-foreground/70">An ephemeral key from your admin console. Used once, never stored.</FieldDescription>
       </Field>

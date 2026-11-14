@@ -7,6 +7,7 @@ import {
   TooltipShortcut as SdkTooltipShortcut,
 } from '@ui-sdk/react/tooltip';
 import { popoverArrow, popoverArrowGlyph, popoverMotion } from '@/lib/primitives';
+import { shortcutText } from '@/lib/shortcut-text';
 import { cx } from '@/lib/utils';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
 
@@ -16,7 +17,7 @@ import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
    names a trigger that has no name of its own (an icon button) and describes any other. It renders into
    BLProvider's root (see `useLayerHost`).
    <Tooltip>
-     <TooltipTrigger className={buttonVariants({ variant: 'secondary', size: 'icon' })}><Icon name="link" /></TooltipTrigger>
+     <TooltipTrigger render={<Button variant="secondary" size="icon" />}><Icon name="link" /></TooltipTrigger>
      <TooltipContent>Copy link</TooltipContent>
    </Tooltip>
    One tooltip can serve a whole toolbar through a controller (`createTooltipController`). ══ */
@@ -45,7 +46,7 @@ export function TooltipContent<Payload = unknown>({ className, style, sideOffset
       sideOffset={sideOffset}
       className={cx(
         [
-          'box-border max-w-60 rounded-[9px] bg-foreground px-2.5 py-1.5 text-footnote leading-[17px] font-medium text-background shadow-[0_4px_14px_black] shadow-black/18',
+          'box-border max-w-60 rounded-ctl bg-foreground px-2.5 py-1.5 text-footnote leading-[17px] font-medium text-background shadow-tooltip',
           popoverMotion,
           scope.className,
         ],
@@ -75,7 +76,12 @@ export function TooltipArrow({ className, ...props }: ComponentProps<typeof SdkT
   );
 }
 
-/** The keys of the tooltip's `shortcut` (`⌘S`, or `Ctrl+S` off Apple platforms), after its text. */
-export function TooltipShortcut({ className, ...props }: ComponentProps<typeof SdkTooltipShortcut>) {
-  return <SdkTooltipShortcut className={cx('ms-2 font-normal opacity-60', className)} {...props} />;
+/** The keys of the tooltip's `shortcut` (`⇧⌘S`, or `Ctrl+Shift+S` off Apple platforms), after its text: the same
+    rendering as a menu's and the command menu's shortcuts (see `lib/shortcut-text`). */
+export function TooltipShortcut({ className, children, ...props }: ComponentProps<typeof SdkTooltipShortcut>) {
+  return (
+    <SdkTooltipShortcut className={cx('ms-2 font-normal opacity-60', className)} {...props}>
+      {children ?? ((state) => shortcutText(state.text))}
+    </SdkTooltipShortcut>
+  );
 }

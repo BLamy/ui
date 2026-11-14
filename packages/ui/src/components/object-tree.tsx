@@ -1,13 +1,13 @@
 'use client';
-import { createContext, use, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type HTMLAttributes, type KeyboardEvent, type ReactNode } from 'react';
-import { Tree, TreeItem, TreeItemIndicator, TreeItemLabel, visibleTreeRows, type TreeItemData, type TreeValueChangeReason } from '@ui-sdk/react/tree';
-import { announce, type ChangeDetails } from '@ui-sdk/core';
-import { cva } from 'class-variance-authority';
+import { createContext, use, useCallback, useLayoutEffect, useMemo, useRef, useState, type HTMLAttributes, type KeyboardEvent, type ReactNode } from 'react';
+import type { TreeValueChangeReason } from '@ui-sdk/react/tree';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import type { ChangeDetails } from '@ui-sdk/core';
 import { Button } from '@/components/ui/button';
 import { ObjectValue } from '@/components/ui/object-value';
-import { PlainButton } from '@/components/ui/plain-button';
 import { Popover, PopoverContent, createPopoverController, type PopoverController } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
+import { Tree, TreeItemIndicator, TreeItemLabel, type TreeDensity, type TreeNode } from '@/components/ui/tree';
 import { isRowPress } from '@/lib/grid-behaviors';
 import { Icon, type IconName } from '@/lib/icon';
 import {
@@ -16,13 +16,15 @@ import {
   type ObjectTreeGetterResult, type ObjectTreeNode, type ObjectTreeRoot, type ObjectTreeRow, type ObjectTreeRows, type ObjectTreeState,
 } from '@/lib/object-tree-model';
 import { previewText } from '@/lib/object-tree-value';
-import { useVirtualRows } from '@/lib/use-virtual-rows';
+import { useCopy } from '@/lib/use-copy';
+import { usePaced } from '@/lib/use-paced';
 import { cn } from '@/lib/utils';
 
-/* ══ ObjectTree — values as a debugger shows them: scopes, objects opened level by level, any JSON-like data.
-   UI SDK's Tree over its virtualizer: arrow keys move, open and close, typing finds a row, and only rows on screen are
-   in the DOM. Children load when a row opens, and a node with thousands of them groups in ranges (`[0 … 99]`), so a
-   100,000 element array is a few hundred rows.
+/* ══ ObjectTree — values as a debugger shows them: scopes, objects opened level by level, any JSON-like data ══
+   Rows of its own on the kit's Tree (one row look, density scale, selection and virtualizer with Tree and CallStack):
+   arrow keys move, open and close, typing finds a row, and only rows on screen are in the DOM. Children load when a
+   row opens, and a node with thousands of them groups in ranges (`[0 … 99]`), so a 100,000 element array is a few
+   hundred rows.
    <ObjectTree aria-label="Scopes" root={scopes} loadChildren={(node) => readProperties(node)} />
    <ObjectTree aria-label="Response" root={nodeFromValue(json, { defaultExpanded: true })} value={key} onValueChange={(k) => setKey(k)} /> ══ */
 
@@ -30,7 +32,8 @@ import { cn } from '@/lib/utils';
 export type ObjectTreeValueChangeDetails<T = unknown> = ChangeDetails<TreeValueChangeReason> & { node: ObjectTreeNode<T> | null };
 
 export interface ObjectTreeProps<T = unknown> extends Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'onSelect' | 'onCopy' | 'defaultValue'> {
-  'aria-label': string;
+  /** The tree's name. Default "Values". */
+  'aria-label'?: string;
   /** What's at the top level: one node, or several, with `section: true` for Local, Closure and Global. A new `root` is a
    *  new moment: what was loaded goes, and an answer still on its way is dropped. Keep it the same object until it changes. */
   root: ObjectTreeRoot<T>;
@@ -52,36 +55,26 @@ export interface ObjectTreeProps<T = unknown> extends Omit<HTMLAttributes<HTMLDi
   onValueChange?: (value: string | null, details: ObjectTreeValueChangeDetails<T>) => void;
   /** The text copying a value gives. Default: a string's text, JSON for `nodeFromValue` values, otherwise the preview. */
   copyValue?: (node: ObjectTreeNode<T>) => Promise<string> | string;
+  /** Writes a copied value yourself, instead of `navigator.clipboard`: a host with a clipboard of its own. */
+  onValueCopy?: (text: string, node: ObjectTreeNode<T>) => void | Promise<void>;
   /** Indexed children to a range before they group. Default 100. */
   groupSize?: number;
-  /** Row height in px. Default 24. */
-  rowHeight?: number;
-  /** Shown when `root` is an empty list. */
-  emptyMessage?: ReactNode;
+  /** Row height: Tree's scale, `compact` (24px, the default, as DevTools), `default` (30px) or `comfortable` (36px, for
+   *  touch). */
+  density?: TreeDensity;
+  /** Shown when `root` is an empty list: a node, or the title of the kit's `EmptyState`. Default "Nothing to show". */
+  emptyState?: ReactNode;
 }
 
 /* ── Rows ── */
 
-/** A row's label, inside its item. The indent stops at a quarter of its width, so deep rows keep room for their name
- *  and value. Keyboard focus is on the item around it (`group/row`). */
-export const objectTreeRowVariants = cva(
-  [
-    'flex h-full w-full cursor-default items-center gap-1 pr-1',
-    'pl-[min(calc((var(--tree-level)-1)*var(--object-tree-indent)),25%)]',
-    'text-caption leading-none text-foreground',
-    'data-selected:bg-accent group-focus-visible/row:[box-shadow:inset_0_0_0_2px_var(--ring)]',
-  ],
-  {
-    variants: {
-      kind: {
-        node: 'font-mono hover:bg-accent/50',
-        section: 'font-sans font-semibold shadow-hairline-b hover:bg-accent/50',
-        range: 'font-mono text-muted-foreground hover:bg-accent/50',
-        note: 'font-sans text-muted-foreground',
-      },
-      stale: { true: 'opacity-60' },
-    },
-  },
+/** The kit's tree row, with what a value row adds: the caption size, a monospace name and value, and an indent that
+ *  stops at a quarter of the row's width, so deep rows keep room for their name and value. */
+const rowClass = cn(
+  'text-caption',
+  'ps-[min(calc(var(--tree-pad-x)+(var(--tree-level,1)-1)*var(--tree-indent)),25%)]',
+  'data-[kind=node]:font-mono data-[kind=range]:font-mono data-[kind=range]:text-muted-foreground data-[kind=section]:font-semibold',
+  'data-[kind=note]:text-muted-foreground data-stale:opacity-60',
 );
 
 type ValueRow = Extract<ObjectTreeRow, { kind: 'node' }>;
@@ -106,7 +99,7 @@ const rowButton = 'shrink-0 cursor-default rounded-md border-0 bg-transparent ou
 
 function RowButton({ icon, label, onUse, active }: { icon: IconName; label: string; onUse: (el: Element) => void; active?: boolean }) {
   return (
-    <PlainButton
+    <SdkButton
       aria-label={label}
       title={label}
       tabIndex={-1}
@@ -115,16 +108,12 @@ function RowButton({ icon, label, onUse, active }: { icon: IconName; label: stri
       className={cn(rowButton, 'grid size-5 place-items-center p-0 text-muted-foreground hover:text-foreground', active && 'text-success')}
     >
       <Icon name={icon} size={13} />
-    </PlainButton>
+    </SdkButton>
   );
 }
 
 function Chevron() {
-  return (
-    <TreeItemIndicator className="grid h-full w-4 shrink-0 cursor-default place-items-center text-muted-foreground">
-      <Icon name="chevron-right" size={10} sw={3} className="transition-transform duration-100 group-data-expanded/row:rotate-90 motion-reduce:transition-none" />
-    </TreeItemIndicator>
-  );
+  return <TreeItemIndicator />;
 }
 
 const noChevron = <span className="size-4 shrink-0" />;
@@ -159,9 +148,9 @@ function NodeRow({ row }: { row: ValueRow }) {
       {isGetter ? (
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
           {getter?.status === 'invoking' ? (
-            <Spinner spin size={12} label="Calling the getter" className="text-muted-foreground" />
+            <Spinner size={12} label="Calling the getter" className="text-muted-foreground" />
           ) : (
-            <PlainButton
+            <SdkButton
               aria-label={`Call the getter ${node.name}`}
               title="Call the getter"
               tabIndex={-1}
@@ -171,15 +160,15 @@ function NodeRow({ row }: { row: ValueRow }) {
               className={cn(rowButton, 'px-1 py-0.5 font-mono text-caption text-muted-foreground hover:text-foreground')}
             >
               (...)
-            </PlainButton>
+            </SdkButton>
           )}
           {getter?.status === 'failed' ? <span className="min-w-0 flex-1 truncate font-sans text-destructive" title={getter.error}>{getter.error}</span> : null}
         </span>
       ) : value ? (
-        <ObjectValue value={value} expandable={false} title={text} className="min-w-0 flex-1 truncate leading-5 whitespace-pre" />
+        <ObjectValue value={value} actions={false} title={text} className="min-w-0 flex-1 truncate leading-5 whitespace-pre" />
       ) : <span className="flex-1" />}
       {value && !isGetter ? (
-        <span className="hidden shrink-0 items-center group-focus-within/row:flex group-hover/row:flex">
+        <span className="hidden shrink-0 items-center group-focus-within/tree-item:flex group-hover/tree-item:flex">
           {text.length > LONG_VALUE ? <RowButton icon="ellipsis" label="Show the whole value" onUse={(el) => api.showValue(row, el)} /> : null}
           <RowButton
             icon={api.copiedKey === row.key ? 'check' : 'copy'}
@@ -209,7 +198,7 @@ function RowContent({ row }: { row: ObjectTreeRow }) {
       return (
         // Quick answers don't flash: it fades in after a moment.
         <span className="flex items-center gap-1.5 pl-5 transition-opacity delay-150 duration-150 starting:opacity-0 motion-reduce:transition-none">
-          <Spinner spin size={12} />
+          <Spinner size={12} />
           Loading…
         </span>
       );
@@ -218,14 +207,14 @@ function RowContent({ row }: { row: ObjectTreeRow }) {
         <span className="flex min-w-0 flex-1 items-center gap-1.5 pl-5" title={row.error}>
           <Icon name="warning" size={13} className="text-destructive" />
           <span className="min-w-0 truncate text-destructive">{row.error}</span>
-          <PlainButton
+          <SdkButton
             tabIndex={-1}
             {...ownPress}
             onClick={(e) => { e.stopPropagation(); api.retry(row.owner); }}
             className={cn(rowButton, 'px-1 py-0.5 text-caption font-medium text-primary')}
           >
             Retry
-          </PlainButton>
+          </SdkButton>
         </span>
       );
     case 'empty':
@@ -243,26 +232,29 @@ function isBranch(row: ObjectTreeRow) {
 }
 
 /** The rows as the Tree's data, so it knows every row that shows, in the DOM or not. A closed row that can open is an
- *  empty branch: its children may not exist yet. Rows that didn't change keep their item. */
-function treeItemsOf(rows: readonly ObjectTreeRow[], cache: WeakMap<ObjectTreeRow, TreeItemData>): TreeItemData[] {
+ *  empty branch: its children may not exist yet. Rows that didn't change keep their node. */
+function treeNodesOf(rows: readonly ObjectTreeRow[], cache: WeakMap<ObjectTreeRow, TreeNode>): TreeNode[] {
   return rows.map((row) => {
-    let item = cache.get(row);
-    if (!item) {
-      const children = 'children' in row && row.children ? treeItemsOf(row.children, cache) : isBranch(row) ? [] : undefined;
-      item = { value: row.key, label: rowText(row), ...(children ? { children } : {}) };
-      cache.set(row, item);
+    let node = cache.get(row);
+    if (!node) {
+      const children = 'children' in row && row.children ? treeNodesOf(row.children, cache) : isBranch(row) ? [] : undefined;
+      node = { value: row.key, label: rowText(row), ...(children ? { children } : {}) };
+      cache.set(row, node);
     }
-    return item;
+    return node;
   });
 }
 
-function Row({ row, top, height, onOpen }: { row: ObjectTreeRow; top: number; height: number; onOpen?: (row: ObjectTreeRow) => void }) {
+function Row({ row, onOpen }: { row: ObjectTreeRow; onOpen?: (row: ObjectTreeRow) => void }) {
   return (
-    <TreeItem value={row.key} data-key={row.key} data-kind={rowKind(row)} className="group/row absolute inset-x-0 outline-none" style={{ top, height }}>
-      <TreeItemLabel className={objectTreeRowVariants({ kind: rowKind(row), stale: 'stale' in row && row.stale })} onDoubleClick={onOpen ? () => onOpen(row) : undefined}>
-        <RowContent row={row} />
-      </TreeItemLabel>
-    </TreeItem>
+    <TreeItemLabel
+      data-kind={rowKind(row)}
+      data-stale={'stale' in row && row.stale ? '' : undefined}
+      className={rowClass}
+      onDoubleClick={onOpen ? () => onOpen(row) : undefined}
+    >
+      <RowContent row={row} />
+    </TreeItemLabel>
   );
 }
 
@@ -326,33 +318,9 @@ function settle<V>(ask: () => Promise<V> | V, done: (value: V) => void, failed: 
   else done(answer as V);
 }
 
-/** How long to wait, after one lot of new data has finished going in, before taking the next. */
-const PACE_MS = 16;
-
-/** The latest value: at once when things are quiet, and while new ones keep coming (a playhead dragged through thousands
- *  of steps) the newest every so often, skipping those in between. The wait starts after the last one has committed, so
- *  a slow render makes it take fewer. Without this, new keys every frame hit React's limit on nested updates. */
-function usePaced<T>(value: T): T {
-  const [paced, setPaced] = useState({ value, quiet: true });
-  const latest = useRef(value);
-  latest.current = value;
-  let current = paced;
-  if (current.quiet && !Object.is(current.value, value)) {
-    current = { value, quiet: false };
-    setPaced(current);
-  }
-  useEffect(() => {
-    if (current.quiet) return undefined;
-    const timer = setTimeout(() => {
-      setPaced((p) => (Object.is(p.value, latest.current) ? { value: p.value, quiet: true } : { value: latest.current, quiet: false }));
-    }, PACE_MS);
-    return () => clearTimeout(timer);
-  }, [current]);
-  return current.value;
-}
-
 export function ObjectTree<T = unknown>({
-  'aria-label': ariaLabel, root: rootProp, loadChildren, onInvokeGetter, mode: modeProp, value, defaultValue, onValueChange, copyValue, groupSize, rowHeight = 24, emptyMessage = 'Nothing to show', className, style, ...props
+  'aria-label': ariaLabel = 'Values', root: rootProp, loadChildren, onInvokeGetter, mode: modeProp, value, defaultValue, onValueChange, copyValue,
+  onValueCopy, groupSize, density = 'compact', emptyState = 'Nothing to show', className, style, ...props
 }: ObjectTreeProps<T>) {
   const root = usePaced(rootProp);
   const [stored, setModel] = useState<Model<T>>(() => {
@@ -368,8 +336,8 @@ export function ObjectTree<T = unknown>({
   }
   const { rows } = model;
 
-  const live = useRef({ loadChildren, onInvokeGetter, onValueChange, copyValue, rows });
-  live.current = { loadChildren, onInvokeGetter, onValueChange, copyValue, rows };
+  const live = useRef({ loadChildren, onInvokeGetter, onValueChange, copyValue, onValueCopy, rows });
+  live.current = { loadChildren, onInvokeGetter, onValueChange, copyValue, onValueCopy, rows };
   const update = useCallback((change: (state: ObjectTreeState<T>) => ObjectTreeState<T>) => {
     setModel((m) => stepModel(m, change(m.state)));
   }, []);
@@ -399,8 +367,12 @@ export function ObjectTree<T = unknown>({
   const selectedKey = value === undefined ? ownValue : value;
   const [shownValue, setShownValue] = useState<string | null>(null);
   const valuePopover = useMemo(() => createPopoverController<string>(), []);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const copiedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  /** The node a copy is for, for `onValueCopy`. */
+  const copying = useRef<ObjectTreeNode<T> | null>(null);
+  const { copy, copied } = useCopy<string>({
+    write: onValueCopy ? (text) => live.current.onValueCopy?.(text, copying.current as ObjectTreeNode<T>) : undefined,
+  });
+  const copiedKey = typeof copied === 'string' ? copied : null;
 
   const api = useMemo<TreeApi>(() => ({
     copiedKey,
@@ -421,12 +393,8 @@ export function ObjectTree<T = unknown>({
       settle(
         () => live.current.copyValue?.(node) ?? copyTextOfNode(node),
         (text) => {
-          void navigator.clipboard?.writeText(text).then(() => {
-            announce('Copied');
-            setCopiedKey(row.key);
-            clearTimeout(copiedTimer.current);
-            copiedTimer.current = setTimeout(() => setCopiedKey(null), 1200);
-          }, () => {});
+          copying.current = node;
+          void copy(text, row.key);
         },
         () => {},
       );
@@ -435,9 +403,7 @@ export function ObjectTree<T = unknown>({
       setShownValue(row.key);
       void valuePopover.open({ payload: row.key, ...(anchor ? { anchor } : {}) });
     },
-  }), [copiedKey, update, valuePopover]);
-
-  useEffect(() => () => clearTimeout(copiedTimer.current), []);
+  }), [copiedKey, copy, update, valuePopover]);
 
   /** Opens or closes a row, or does what a row that can't open has to offer. */
   const act = (row: ObjectTreeRow) => {
@@ -467,88 +433,61 @@ export function ObjectTree<T = unknown>({
     api.copy(row);
   };
 
-  /* The Tree gets every row that shows as data, and draws the ones in view. */
-  const itemCache = useRef(new WeakMap<ObjectTreeRow, TreeItemData>());
-  const items = useMemo(() => treeItemsOf(rows.rows as readonly ObjectTreeRow[], itemCache.current), [rows]);
+  /* The Tree gets every row that shows as data, and draws the ones in view with `renderRow`. */
+  const nodeCache = useRef(new WeakMap<ObjectTreeRow, TreeNode>());
+  const items = useMemo(() => treeNodesOf(rows.rows as readonly ObjectTreeRow[], nodeCache.current), [rows]);
   const expanded = useMemo(() => [...rows.expandedKeys], [rows]);
-  const flat = useMemo(() => visibleTreeRows(items, expanded), [items, expanded]);
-  const indexOf = useMemo(() => new Map(flat.map((r, i) => [r.item.value, i])), [flat]);
-  /** The row with keyboard focus stays in the DOM while it is scrolled away. */
-  const focusedKey = useRef<string | null>(null);
-  const virtual = useVirtualRows({
-    rows: flat,
-    count: flat.length,
-    rowHeight,
-    keyOf: (index) => flat[index]?.item.value ?? String(index),
-    keep: () => {
-      const index = focusedKey.current == null ? undefined : indexOf.get(focusedKey.current);
-      return index === undefined ? [] : [index];
-    },
-  });
-
   const shownRow = shownValue == null ? undefined : rows.byKey.get(shownValue);
 
   return (
     <div
       ref={rootRef}
       data-slot="object-tree"
-      className={cn('flex h-full min-h-0 w-full min-w-0 flex-col [--object-tree-indent:14px]', className)}
+      className={cn('flex h-full min-h-0 w-full min-w-0 flex-col', className)}
       style={style}
       onKeyDownCapture={onKeyDownCapture}
       {...props}
     >
       <TreeApiContext.Provider value={api}>
-        <div
-          ref={virtual.scrollerRef}
-          data-slot="object-tree-scroller"
-          className="bl-scroll min-h-0 flex-1 overflow-auto"
-          onFocusCapture={(e) => { focusedKey.current = (e.target as Element).closest?.('[data-key]')?.getAttribute('data-key') ?? null; }}
-          onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) focusedKey.current = null; }}
-        >
-          {flat.length ? (
-            <Tree
-              aria-label={ariaLabel}
-              items={items}
-              mode={mode}
-              value={mode === 'single' ? selectedKey : null}
-              onValueChange={(key, details) => {
-                const row = key == null ? undefined : live.current.rows.byKey.get(key);
-                // Selected or not, only a value can be chosen.
-                if (row && !isSelectable(row)) return details.cancel();
-                const node = row?.kind === 'node' ? (row.node as ObjectTreeNode<T>) : null;
-                live.current.onValueChange?.(key, Object.assign(details, { node }));
-                if (!details.canceled) setOwnValue(key);
-              }}
-              expanded={expanded}
-              onExpandedChange={(next) => {
-                const before = live.current.rows.expandedKeys;
-                update((s) => applyExpanded(s, before, new Set(next)));
-              }}
-              // What a press does depends on the row, so the tree leaves opening to `onAction`.
-              expandOnPress={false}
-              onAction={(key, details) => {
-                const row = live.current.rows.byKey.get(key);
-                if (!row) return;
-                if (details.event?.type === 'click') {
-                  // A drag that selected text, or a press on a row's own button, isn't a press on the row.
-                  const rowEl = (details.event.target as Element | null)?.closest?.('[data-key]');
-                  if ((rowEl && !isRowPress(details.event, rowEl)) || selects(row)) return;
-                }
-                act(row);
-              }}
-              onHighlight={(_key, { index }) => virtual.scrollToIndex(index)}
-              className="relative w-full outline-none"
-              style={{ height: virtual.size }}
-            >
-              {virtual.items.map(({ index, start }) => {
-                const row = rows.byKey.get(flat[index]?.item.value ?? '');
-                return row ? <Row key={row.key} row={row} top={start} height={rowHeight} onOpen={selects(row) ? act : undefined} /> : null;
-              })}
-            </Tree>
-          ) : (
-            <div className="px-3 py-6 text-center text-footnote text-muted-foreground">{emptyMessage}</div>
-          )}
-        </div>
+        <Tree
+          aria-label={ariaLabel}
+          items={items}
+          icons={false}
+          density={density}
+          mode={mode}
+          value={mode === 'single' ? selectedKey : null}
+          onValueChange={(key, details) => {
+            const row = key == null ? undefined : live.current.rows.byKey.get(key);
+            // Selected or not, only a value can be chosen.
+            if (row && !isSelectable(row)) return details.cancel();
+            const node = row?.kind === 'node' ? (row.node as ObjectTreeNode<T>) : null;
+            live.current.onValueChange?.(key, Object.assign(details, { node }));
+            if (!details.canceled) setOwnValue(key);
+          }}
+          expanded={expanded}
+          onExpandedChange={(next) => {
+            const before = live.current.rows.expandedKeys;
+            update((s) => applyExpanded(s, before, new Set(next)));
+          }}
+          // What a press does depends on the row, so the tree leaves opening to `onAction`.
+          expandOnPress={false}
+          onAction={(key, details) => {
+            const row = live.current.rows.byKey.get(key);
+            if (!row) return;
+            if (details.event?.type === 'click') {
+              // A drag that selected text, or a press on a row's own button, isn't a press on the row.
+              const rowEl = (details.event.target as Element | null)?.closest?.('[data-key]');
+              if ((rowEl && !isRowPress(details.event, rowEl)) || selects(row)) return;
+            }
+            act(row);
+          }}
+          renderRow={(node) => {
+            const row = rows.byKey.get(node.value);
+            return row ? <Row row={row} onOpen={selects(row) ? act : undefined} /> : null;
+          }}
+          emptyState={emptyState}
+          className="min-h-0 flex-1"
+        />
         <ValuePopover
           controller={valuePopover}
           row={shownRow?.kind === 'node' ? shownRow : undefined}

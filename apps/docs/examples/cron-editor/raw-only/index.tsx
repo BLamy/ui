@@ -20,7 +20,7 @@ export default function RawOnly() {
         defaultValue="*/15 9-17 * * mon-fri"
         label="Schedule"
         description="Minute, hour, day of month, month, day of week."
-        from="2026-10-02T10:00:00Z"
+        reference="2026-10-02T10:00:00Z"
         timeZone="UTC"
         locale="en-US"
         nextRunCount={4}

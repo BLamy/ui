@@ -1,6 +1,6 @@
 # Slider
 
-UI SDK's `Slider` in the iOS style: a 4px track with a tint fill and a 26px white thumb. Pass a number for one thumb or an array for a range with two. Use it to choose a value on a continuum (brightness, volume, a price range); for an exact number or a few discrete choices, prefer a field or a [ToggleGroup](https://blamy.github.io/ui/#/toggle-group).
+UI SDK's `Slider` in the iOS style: a 4px track with a tint fill and a 26px white thumb. Pass a number for one thumb or an array for a range with two. Use it to choose a value on a continuum (brightness, volume, a price range); for an exact number or a few discrete choices, prefer a field or a [ToggleGroup](https://blamy.github.io/ui/#/toggle).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}

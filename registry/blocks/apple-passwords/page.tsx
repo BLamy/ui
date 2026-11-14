@@ -4,7 +4,7 @@
    (GitHub, Fly.io, Netlify, Replay) and keep the token encrypted with a passkey. Wide: three tiled columns. Tablet: list + detail with the sidebar floating. Phone: one column at
    a time, pushed like iOS. All sample data is invented. */
 import { useEffect, useMemo, useState } from 'react';
-import { PasskeyEnrollDialog } from '@/components/ui/passkey-enroll-dialog';
+import { VaultEnrollDialog } from '@/components/ui/vault-gate';
 import {
   SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSupplementary, type SplitViewValue,
 } from '@/components/ui/split-view';
@@ -20,7 +20,7 @@ import { SERVICES, createDeviceAuth, type DeviceAuth, type DeviceGrant, type Ser
 import { ItemList } from './item-list';
 import { HudProvider, useClock } from './parts';
 import { Sidebar } from './sidebar';
-import { SignInCredenza, serviceItemId } from './sign-in';
+import { SignInDialog, serviceItemId } from './sign-in';
 import { SignInsProvider, useSignInStore } from './sign-ins';
 import { passwordsTailnetOptions, tailnetOrProxy } from './tailnet';
 import { firstEntry, sectionsFor, useVault, type Selection } from './vault';
@@ -153,13 +153,13 @@ function Passwords({ initialCategory = 'all', initialItem, live = true, auth: au
           <SplitViewDetail>
             <Detail entry={entry} vault={vault} now={now} editing={editing} onEditing={setEditing} />
           </SplitViewDetail>
-          {/* Inside the SplitView, whose size class the Credenza follows: a tray in one column, a card beside several. */}
-          <SignInCredenza service={signIn} auth={auth} live={live} onClose={() => setSignIn(null)} onSaved={saveGrant}
+          {/* Inside the SplitView, whose size class the dialog follows: a tray in one column, a card beside several. */}
+          <SignInDialog service={signIn} auth={auth} live={live} onClose={() => setSignIn(null)} onSaved={saveGrant}
             onSavePasskey={savePasskey} />
         </SplitView>
         <ToastRegion variant="hud" toaster={hud.toaster} aria-label="Passwords notifications" />
       </HudProvider>
-      <PasskeyEnrollDialog open={enrolling} onOpenChange={setEnrolling} appName="Passwords"
+      <VaultEnrollDialog open={enrolling} onOpenChange={setEnrolling} appName="Passwords"
         protects="the developer sign-in tokens Passwords keeps in this browser" />
       </SignInsProvider>
     </BLProvider>

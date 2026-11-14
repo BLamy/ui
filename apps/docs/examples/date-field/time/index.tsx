@@ -10,17 +10,17 @@ export default function WithTime() {
   return (
     <div className="mx-auto grid max-w-sm gap-5">
       <Field>
-        <FieldLabel variant="field">Alarm</FieldLabel>
+        <FieldLabel>Alarm</FieldLabel>
         <TimeField locale="en-US" defaultValue="09:30" />
       </Field>
 
       <Field>
-        <FieldLabel variant="field">Departure (24-hour, with seconds)</FieldLabel>
+        <FieldLabel>Departure (24-hour, with seconds)</FieldLabel>
         <TimeField locale="en-US" hourCycle={24} granularity="second" defaultValue="14:45:10" />
       </Field>
 
       <Field>
-        <FieldLabel variant="field">Starts</FieldLabel>
+        <FieldLabel>Starts</FieldLabel>
         <DateField locale="en-US" granularity="minute" defaultValue="2026-09-09T09:30" />
       </Field>
     </div>

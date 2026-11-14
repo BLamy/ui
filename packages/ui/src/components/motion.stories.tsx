@@ -3,10 +3,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
 import { TextMorph } from '@/components/ui/text-morph';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { Chevron, IconSwap, type ChevronDirection } from '@/components/ui/icon-swap';
-import { AnimatedHeight, ContentSwap } from '@/components/ui/animated-height';
+import { AnimatedHeight } from '@/components/ui/animated-height';
+import { Swap } from '@/components/ui/swap';
 import { Celebrate } from '@/components/ui/celebrate';
-import { Icon } from '@/lib/icon';
+import { Chevron, Icon, type ChevronDirection } from '@/lib/icon';
 import { useDirection } from '@/lib/motion';
 import { Pad } from '../stories/frame';
 
@@ -62,9 +62,9 @@ export const IconsInPlace: Story = {
     return (
       <div className="flex items-center gap-4">
         <Button variant="secondary" onClick={() => setCopied((c) => !c)}>
-          <IconSwap id={copied ? 'check' : 'copy'}>
+          <Swap effect="pop" value={copied ? 'check' : 'copy'}>
             <Icon name={copied ? 'check' : 'layers'} size={18} sw={2.2} />
-          </IconSwap>
+          </Swap>
           <TextMorph>{copied ? 'Copied' : 'Copy'}</TextMorph>
         </Button>
         <Button variant="secondary" aria-label="Turn" onClick={() => setD((x) => (x + 1) % 4)}>
@@ -90,12 +90,12 @@ export const TrayHeight: Story = {
     return (
       <div className="rounded-[24px] bg-card p-1 shadow-[0_12px_40px_--alpha(black/14%),0_0_0_1px_var(--border)]">
         <AnimatedHeight>
-          <ContentSwap id={step} direction={dir}>
+          <Swap value={step} direction={dir}>
             <div className="p-4">
               <div className="text-[18px] font-bold">{s.title}</div>
               <p className="mt-1 mb-3 text-[15px] text-muted-foreground">{s.body}</p>
             </div>
-          </ContentSwap>
+          </Swap>
         </AnimatedHeight>
         <div className="flex gap-2 px-4 pb-4">
           <Button variant="secondary" disabled={step === 0} onClick={() => setStep(step - 1)}>Back</Button>
@@ -112,10 +112,9 @@ export const CelebrateBurst: Story = {
     const [n, setN] = useState(0);
     return (
       <div className="grid place-items-center py-10">
-        <span className="relative isolate">
+        <Celebrate fire={n}>
           <Button size="lg" onClick={() => setN((x) => x + 1)}>Back up wallet</Button>
-          <Celebrate fire={n} />
-        </span>
+        </Celebrate>
       </div>
     );
   },

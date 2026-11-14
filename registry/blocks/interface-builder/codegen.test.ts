@@ -16,11 +16,11 @@ describe('generate', () => {
     expect(paths).toContain('storyboard.tsx');
   });
 
-  it('writes the kit’s containers: a TabView of scenes, a NavigationStack around one, a Screen’s bar', () => {
+  it('writes the kit’s containers: a TabsScreen of scenes, a NavigationStack around one, a Screen’s bar', () => {
     const tabs = file(SAMPLE_DOC, 'scenes/MainTabs.tsx');
-    expect(tabs).toContain("from '@/components/ui/tab-view'");
-    expect(tabs).toContain('<TabViewTab value="Garden"');
-    expect(tabs).toContain('<TabViewPanel value="Garden" keepMounted');
+    expect(tabs).toContain("from '@/components/ui/tabs'");
+    expect(tabs).toContain('<TabsTab value="Garden"');
+    expect(tabs).toContain('<TabsPanel value="Garden" keepMounted');
     expect(tabs).toContain('value={tab} onValueChange={');
     expect(tabs).toContain('<GardenNav />');
     expect(tabs).toContain("useSizeClass({ breakpoints: { medium: 700 }, initial: 'compact' })");
@@ -44,7 +44,7 @@ describe('generate', () => {
     expect(schedule).toContain('<Calendar aria-label={\'Watering day\'} value={day} onValueChange={(v) => setDay(v)} />');
     const add = file(SAMPLE_DOC, 'scenes/AddPlant.tsx');
     expect(add).toContain("items={[{ value: '3 days', label: '3 days' }");
-    expect(add).toContain('<FieldLabel variant="field">Water every</FieldLabel>');
+    expect(add).toContain('<FieldLabel>Water every</FieldLabel>');
   });
 
   it('writes 6.0’s API: onClick, Field and its parts, and nothing from react-aria', () => {

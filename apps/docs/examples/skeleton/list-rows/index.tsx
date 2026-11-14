@@ -19,14 +19,14 @@ export default function ListRows() {
         boxShadow: '0 0 0 1px var(--border)',
       }}
     >
-      <List inset>
+      <List variant="inset">
         <ListSection title="Recents">
           {widths.map((w, i) => (
             <ListRow
               key={i}
-              leading={<Skeleton shape="circle" width={40} height={40} />}
+              icon={<Skeleton shape="circle" width={40} height={40} />}
               title={<Skeleton shape="text" width={w} />}
-              subtitle={
+              description={
                 <Skeleton
                   shape="text"
                   width={w * 0.6}

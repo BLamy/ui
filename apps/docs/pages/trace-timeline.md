@@ -2,6 +2,8 @@
 
 A long session on one clock, for a time-travel debugger or anything else that records up to an hour of what happened. `orientation="horizontal"` is a strip: a ruler over rows of diamonds, density with marks over it, thread activity and requests, on several lanes with a shared clock. `orientation="vertical"` is the same timeline as a rail for narrow windows: a thin overlay on the window's edge, in the style of [IndexBar](https://blamy.github.io/ui/#/index-bar)'s wave, with each lane a column and landmarks as dashes that swell around the pointer. It takes plain data and knows nothing about what made it. Where [VideoTimeline](https://blamy.github.io/ui/#/video-timeline) edits clips on DOM lanes, this draws hundreds of thousands of marks on a canvas, at most one thing per device pixel.
 
+Use a sibling instead when the timeline is a plain list of landmarks to jump between ([IndexBar](https://blamy.github.io/ui/#/index-bar)'s `wave` variant: same rail, no clock), when it is media to edit (VideoTimeline), or when the rows themselves are what matters ([LogList](https://blamy.github.io/ui/#/log-list), whose marker follows the same playhead).
+
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/trace-timeline.json https://blamy.github.io/ui/r/trace-timeline-model.json{% endcommand %}
@@ -70,11 +72,11 @@ const [view, setView] = useState(range)
   range={range} lanes={lanes} stops={stops} value={time} onValueChange={setTime}
   view={view} onViewChange={setView}
   orientation={width < 600 ? 'vertical' : 'horizontal'}
-  side="right" top={8} bottom={8}
+  side="right" className={width < 600 ? 'inset-y-2' : undefined}
 />
 ```
 
-The strip fills the width of its parent and is as tall as its rows want, unless you give it a height: thread rows share what's there, from 4 to 14 px each. The rail is positioned like IndexBar: absolute on an edge of the nearest positioned ancestor, with `side`, `top` and `bottom`, so put it next to your scroller and not inside it. A right-hand rail publishes how far list rows run under it as `--bl-index-bar-inset` on its parent, with the same meaning as IndexBar's, so `ListRow`s keep their accessories clear of it (`insetContent={false}` opts out).
+The strip fills the width of its parent and is as tall as its rows want, unless you give it a height: thread rows share what's there, from 4 to 14 px each. The rail is positioned like IndexBar: absolute on an edge (`side`) of the nearest positioned ancestor, the full height of it and 44 px wide, so put it next to your scroller and not inside it. Move or size it with classes: `className="inset-y-2"` keeps it 8 px from the top and bottom, `w-14` widens it. A right-hand rail publishes how far list rows run under it as `--bl-index-bar-inset` on its parent, with the same meaning as IndexBar's, so `ListRow`s keep their accessories clear of it (`insetContent={false}` opts out).
 
 | On a strip | On a rail |
 | --- | --- |
@@ -97,7 +99,7 @@ The strip fills the width of its parent and is as tall as its rows want, unless 
 | `marks` | `[{ key, times, shape, tone, color }]`: over the density row. A `bar` runs its full height and a `dot` sits along its far edge. Unsorted `times` are sorted once and remembered. |
 | `threads` | `[{ id, label, color }]`: a row of activity each, from `fetchActivity`. |
 
-Requests are for the whole timeline, on the shared clock: `requests={[{ id, time, from, to, color, tone }]}` draws a dot at `time`, a band over `from`…`to` (a range, when that's all that's known) and a line between them. Press one to select it (`selectedRequest`, `onSelectedRequestChange`). Pressing a row focuses its lane (`focusedLane`, `onFocusedLaneChange`) and a thread row selects its thread (`selectedThread`, `onSelectedThreadChange`, whose `details.lane` is the thread's lane), and the gutter picks without seeking. Each is held for you (`defaultFocusedLane`, `defaultSelectedThread`, `defaultSelectedRequest`) or yours to hold, and each callback gets UI SDK's change details: `reason` is `item-press` (or `imperative` from an agent), with `event`, `source` and `cancel()`.
+Requests are for the whole timeline, on the shared clock: `requests={[{ id, time, from, to, color, tone }]}` draws a dot at `time`, a band over `from`…`to` (a range, when that's all that's known) and a line between them. Press one to select it (`selectedRequest`, `onSelectedRequestChange`). Pressing a row focuses its lane (`focusedLane`, `onFocusedLaneChange`) and a thread row selects its thread (`selectedThread`, `onSelectedThreadChange`, whose `details.lane` is the thread's lane), and the gutter picks without seeking. The keyboard picks them too: Alt+↑ / Alt+↓ step through the lanes, `[` / `]` select the request before or after the selected one (or the playhead) and move the playhead to it, and `{` / `}` step through the focused lane's threads; each pick is announced. Each is held for you (`defaultFocusedLane`, `defaultSelectedThread`, `defaultSelectedRequest`) or yours to hold, and each callback gets UI SDK's change details: `reason` is `item-press`, `list-navigation` (a key) or `imperative` (an agent), with `event`, `source` and `cancel()`.
 
 **Activity** is fetched for the view, not stored up front. `fetchActivity(laneKey, edges, signal)` runs once per lane with bucket edges in that lane's own time, one bucket per 2 px, and answers with `[{ id, counts }]`, a count per bucket per thread. It waits for the view to rest for `activityDebounce` (60 ms), and an answer that's out of date is dropped and its `signal` aborted. Until the new answer comes the old one stays on screen, moved to where its times now are, so zooming stays smooth.
 
@@ -107,7 +109,7 @@ Keep `axis`, `stops` and `requests` stable between renders, with `useMemo` or at
 
 ## Stops
 
-Landmarks: an [IndexBar](https://blamy.github.io/ui/#/index-bar) item plus a time. `{ key, time, caption, preview, tone, level, trailing, dim }`. Each is a dash on the rail's inner side at its place on the axis, with the same proportions, raised-cosine swell and card as IndexBar's wave, and a soft snap as you drag past. PageUp and PageDown go from one to the next.
+Landmarks: an [IndexBar](https://blamy.github.io/ui/#/index-bar) item plus a time. `{ key, time, caption, preview, tone, level, trailing, dim }`. Each is a dash on the rail's inner side at its place on the axis, with the same proportions, raised-cosine swell and card as IndexBar's wave (both come from `lib/wave-rail`), and a soft snap as you drag past. PageUp and PageDown go from one to the next.
 
 There can be thousands of them. `selectStops(stops, { axis, win, length, minGap })`, which you can call yourself, chooses what's shown for the view and the rail's length: the lowest `level` first, then the rest, each merging into the nearest dash already placed if it would land less than `minGap` (10 px) from it. A cluster wears its most severe member's `tone` (`error`, then `warning`, `info`, `success`), stands for its lowest-level stop, and its card says how many more are there. Zooming in spreads them out, so more fit.
 
@@ -149,7 +151,13 @@ const stepAxis = (times, range, timeShare = 0.25) => ({
 
 A speed change never moves the playhead: the scrub starts again from where the playhead is, at the new speed. Without this a 600 px rail over an hour moves 6 s a pixel; at the slowest speed it moves about 94 ms. A second finger coming down takes back the first finger's jump, so a pinch leaves the playhead alone. The drag is UI SDK's `bindDrag`, so it keeps the pointer outside the timeline and outside the window; all of it is pointer events, so a mouse, a pen and touch all work.
 
-The preview card appears beside the pointer while hovering or dragging on a rail, showing the stop's `caption` and `preview`, or else the time. On a strip it appears over a stop in the stops row. `renderPreview(time, stop)` puts a slot at the top of the card for a thumbnail of that moment, and then a strip shows it wherever you hover.
+The preview card appears beside the pointer while hovering or dragging on a rail, showing the stop's `caption` and `preview`, or else the time. On a strip it appears over a stop in the stops row. A `TraceTimelinePreview` child configures it: `lines` of `preview` shown (2), its widest `width` in px (260), and a render function as its children that puts a slot at the top of the card for a thumbnail of that moment, after which a strip shows the card wherever you hover.
+
+```tsx
+<TraceTimeline range={range} stops={stops} orientation="vertical">
+  <TraceTimelinePreview lines={3} width={280}>{(time, stop) => <Thumbnail at={time} />}</TraceTimelinePreview>
+</TraceTimeline>
+```
 
 ## From code
 
@@ -161,7 +169,7 @@ The preview card appears beside the pointer while hovering or dragging on a rail
 
 ## Accessibility
 
-The root is a `slider`, with `aria-valuemin`, `aria-valuemax`, `aria-valuenow` and `aria-valuetext` (the time, and the stop's caption when it's on one). `label` names it.
+The root is a `slider`, with `aria-valuemin`, `aria-valuemax`, `aria-valuenow` and `aria-valuetext` (the time, and the stop's caption when it's on one). `aria-label` names it ("Timeline" by default), or `aria-labelledby`. `aria-keyshortcuts` lists the picking keys it has.
 
 | Key | Effect |
 | --- | --- |
@@ -170,8 +178,11 @@ The root is a `slider`, with `aria-valuemin`, `aria-valuemax`, `aria-valuenow` a
 | Home, End | The start or the end. |
 | `+`, `-` | Zoom in or out around the playhead. |
 | `0` | Fit the whole range. |
+| Alt+↑, Alt+↓ | The previous or next lane (with several lanes). |
+| `[`, `]` | The request before or after the selected one, or the playhead; the playhead moves to it. |
+| `{`, `}` | The previous or next thread of the focused lane. |
 
-Picking a lane, a thread or a request takes a pointer, so offer them in a list as well if they matter to keyboard users. The canvases are hidden from assistive technology. Motion follows `prefers-reduced-motion`: the dashes stop easing and the card stops moving.
+Each pick by key is announced ("Server lane", "Request 42, 25:06"). The canvases are hidden from assistive technology. Motion follows `prefers-reduced-motion`: the dashes stop easing and the card stops moving.
 
 ## Props
 
@@ -185,8 +196,6 @@ Picking a lane, a thread or a request takes a pointer, so offer them in a list a
 | `axis` | `linearAxis(range)` | Turns times into positions. |
 | `orientation` | `horizontal` | `horizontal` is the strip, `vertical` the rail. |
 | `side` | `right` | Rail: the edge it sits on. Its stops and card are on the inner side. |
-| `top` / `bottom` | `0` | Rail: insets from its parent. Numbers are px. |
-| `railWidth` | `44` | Rail: its width in px. |
 | `insetContent` | `true` | Rail: publish `--bl-index-bar-inset` on its parent (right side only). |
 | `gutter` | `64` | Strip: the width of the label gutter, 0 for none. |
 | `requestsLabel` / `stopsLabel` | `requests` / `stops` | Strip: the gutter's labels for those rows. |
@@ -197,12 +206,11 @@ Picking a lane, a thread or a request takes a pointer, so offer them in a list a
 | `step` | a pixel's worth | What an arrow key moves the playhead by. |
 | `minSpan` | `1e-5` | The shortest stretch of time the view can show. |
 | `formatTime` | `formatTraceTime` | `(time, resolution) => string`, where `resolution` is how far apart the times worth telling apart are. |
-| `renderPreview` | none | `(time, stop) => node`: a slot at the top of the preview card. |
-| `previewLines` / `previewWidth` | `2` / `260` | The card: lines of `preview` shown, and its widest in px. |
-| `label` | `Timeline` | The slider's accessible name. |
+| `children` | none | A `TraceTimelinePreview` (`lines`, `width`, and a `(time, stop) => node` thumbnail slot) to configure the preview card. |
+| `aria-label` / `aria-labelledby` | `Timeline` | The slider's accessible name. |
 | `onDraw` | none | Called after each canvas redraw with what it took. |
 | `ref` | none | `fit`, `setView`, `pixelTimes`, `redraw`, `focus`. |
-| `className` / `style` | none | On the root, last. |
+| `className` / `style` | none | On the root, last. A rail's place and width are classes (`inset-y-2`, `w-14`). |
 
 ## Styling
 
@@ -226,8 +234,8 @@ font-sans touch-none select-none
 
 | Value | Adds |
 | --- | --- |
-| `horizontal` (default) | `relative block h-(--tt-height) w-full cursor-crosshair bg-background -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline:2px_solid_var(--p…` |
-| `vertical` | `absolute top-(--tt-top) bottom-(--tt-bottom) z-80 w-(--tt-width) cursor-pointer rounded-lg -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[out…` |
+| `horizontal` (default) | `relative block h-(--tt-height) w-full cursor-crosshair rounded-[inherit] bg-background -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline…` |
+| `vertical` | `absolute top-0 bottom-0 z-80 w-11 cursor-pointer rounded-lg -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline:2px_solid_var(--primary)]` |
 
 **`side`** — default `right`
 

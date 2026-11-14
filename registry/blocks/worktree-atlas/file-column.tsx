@@ -61,9 +61,9 @@ function ChangeCard({ file, diff, worktreeId }: { file: DiffFile; diff: Worktree
   return (
     <div className="flex flex-col gap-2">
       <HoverCardHeader
-        media={<span className="grid size-9 place-items-center rounded-ctl bg-secondary text-muted-foreground"><Icon name="doc" size={18} /></span>}
+        icon={<span className="grid size-9 place-items-center rounded-ctl bg-secondary text-muted-foreground"><Icon name="doc" size={18} /></span>}
         title={file.path.slice(slash + 1)}
-        subtitle={<span className="font-mono">{slash > 0 ? file.path.slice(0, slash) : '/'}</span>}
+        description={<span className="font-mono">{slash > 0 ? file.path.slice(0, slash) : '/'}</span>}
       />
       <div className="flex flex-wrap items-center gap-2 text-footnote text-muted-foreground tabular-nums">
         <Chip tone={STATUS_TONE[file.status]}>{STATUS_WORD[file.status]}</Chip>

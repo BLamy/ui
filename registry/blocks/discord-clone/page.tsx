@@ -1,6 +1,6 @@
 import './chat-theme.css';
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewList, TabViewPill, TabViewTab } from '@/components/ui/tab-view';
+import { Tabs, TabsAction, TabsBar, TabsFooter, TabsList, TabsPill, TabsTab } from '@/components/ui/tabs';
 import { Icon } from '@/lib/icon';
 import { type Appearance } from '@/lib/theme';
 import { ChatShell, ChatShellAside, ChatShellBack, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderAction, ChatShellHeaderActions, ChatShellHeaderToggle, ChatShellHeaderIcon, ChatShellMain, ChatShellNav, ChatShellNavTrigger, ChatShellPanel, ChatShellSidebar, ChatShellTitle } from './components/chat-shell';
@@ -70,21 +70,21 @@ export default function DiscordClone({
     <ChatUsersProvider users={USERS} presence={PRESENCE}>
       <ChatShell tint={tint} appearance={appearance} className={className} style={style}>
         <ChatShellNav>
-          <TabView orientation="vertical" defaultValue="blui" className="contents">
-            <TabViewBar variant="workspace">
-              <TabViewList aria-label="Workspaces">
+          <Tabs variant="workspace" defaultValue="blui" className="contents">
+            <TabsBar>
+              <TabsList aria-label="Workspaces">
                 {WORKSPACES.map((w) => (
-                  <TabViewTab key={w.id} value={w.id} aria-label={w.title}>
-                    <TabViewPill />
+                  <TabsTab key={w.id} value={w.id} aria-label={w.title}>
+                    <TabsPill />
                     <WorkspaceTile color={w.color} title={w.title}>{w.label}</WorkspaceTile>
-                  </TabViewTab>
+                  </TabsTab>
                 ))}
-              </TabViewList>
-              <TabViewFooter>
-                <TabViewAction aria-label="Add workspace" icon="plus" />
-              </TabViewFooter>
-            </TabViewBar>
-          </TabView>
+              </TabsList>
+              <TabsFooter>
+                <TabsAction aria-label="Add workspace" icon="plus" />
+              </TabsFooter>
+            </TabsBar>
+          </Tabs>
           <ChatShellSidebar>
             <ServerHeader>BL UI HQ</ServerHeader>
             <ChannelList

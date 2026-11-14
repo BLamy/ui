@@ -1,6 +1,6 @@
 # Hover Card
 
-A card that previews what its trigger points at — a person, a repository, a file, a commit — while the pointer rests on the trigger or keyboard focus stays on it, on [UI SDK](https://ui-sdk.dev)'s Hover Card. Where a [Tooltip](https://blamy.github.io/ui/#/tooltip) names a control in a line of text, a hover card is a small page: an avatar and a title, a line or two of detail, even a button. The pointer can move into it to select its text or press that button without it closing. Hover cards are how BL UI previews references everywhere: Avatar takes a `card`, ListRow a `preview`, Tree a `preview(node)`, and the blocks use them for people, links, files and the like.
+A card that previews what its trigger points at — a person, a repository, a file, a commit — while the pointer rests on the trigger or keyboard focus stays on it, on [UI SDK](https://ui-sdk.dev)'s Hover Card. Where a [Tooltip](https://blamy.github.io/ui/#/tooltip) names a control in a line of text, a hover card is a small page: an avatar and a title, a line or two of detail, even a button. The pointer can move into it to select its text or press that button without it closing. Hover cards are how BL UI previews references everywhere: Avatar takes a `card`, ListRow a `preview`, Tree a `preview(node)`, and the blocks use them for people, links, files and the like. Use a [Popover](https://blamy.github.io/ui/#/popover) instead for content that is opened on purpose (a press) or must work on touch, and a Tooltip for a short label.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -31,14 +31,14 @@ import {
 
 ## Usage
 
-`HoverCard` is the root. `HoverCardTrigger` is the trigger, a link by default (give it an `href`); `render` makes it any other element that has a name — a button, a row, an avatar with an `aria-label`. `HoverCardContent` is the card and holds whatever previews it. `HoverCardHeader` lays out the usual top: media, a title, a subtitle and an action.
+`HoverCard` is the root. `HoverCardTrigger` is the trigger, a link by default (give it an `href`); `render` makes it any other element that has a name — a button, a row, an avatar with an `aria-label`. `HoverCardContent` is the card and holds whatever previews it. `HoverCardHeader` lays out the usual top in the kit's row anatomy: an `icon` (an Avatar, a glyph, a thumbnail), a `title` (the card's heading), a `description` under it and a `trailing` control.
 
 ```tsx
 <HoverCard>
   <HoverCardTrigger href="/u/ada">@ada</HoverCardTrigger>
   <HoverCardContent align="start">
-    <HoverCardHeader media={<Avatar name="Ada Lovelace" />} title="Ada Lovelace" subtitle="@ada"
-      action={<Button size="sm" variant="secondary">Follow</Button>} />
+    <HoverCardHeader icon={<Avatar name="Ada Lovelace" />} title="Ada Lovelace" description="@ada"
+      trailing={<Button size="sm" variant="secondary">Follow</Button>} />
     <p>Maintainer · reviews the motion and layout parts.</p>
   </HoverCardContent>
 </HoverCard>
@@ -71,7 +71,7 @@ const profile = createHoverCardController<Person>()
   </HoverCardTrigger>
 ))}
 <HoverCard controller={profile}>
-  <HoverCardContent>{({ payload }) => payload && <HoverCardHeader title={payload.name} subtitle={`@${payload.handle}`} />}</HoverCardContent>
+  <HoverCardContent>{({ payload }) => payload && <HoverCardHeader title={payload.name} description={`@${payload.handle}`} />}</HoverCardContent>
 </HoverCard>
 ```
 
@@ -120,10 +120,13 @@ The trigger stays a plain link (or the element you render), and pressing it does
 
 | Prop | Effect |
 | --- | --- |
-| `media` | An Avatar, icon or thumbnail on the leading side. |
-| `title` / `subtitle` | The name, and a handle, path or kind under it. |
-| `action` | A trailing control: a Follow button, a status Badge. |
+| `icon` | An Avatar, glyph or thumbnail on the leading side. |
+| `title` | What the card previews, as a heading (`h3`). |
+| `description` | A handle, path or kind under the title. |
+| `trailing` | A trailing control or status: a Follow button, a Badge. |
+
+Other props (`id`, `aria-*`, `data-*`, `className`, `style`, `ref`) go on its `div`.
 
 ## Styling
 
-Slots (from UI SDK): `hover-card-trigger`, `hover-card-content`, `hover-card-arrow`, plus `hover-card-header`. The card is on the same surface as [Popover](https://blamy.github.io/ui/#/popover) (`popover` colors, the 14px radius and shadow) with the same motion: it grows out of the trigger as it enters (`data-starting-style`), leaves quicker (`data-ending-style`), and only fades under reduced motion; `data-side` / `data-align` give where it landed. Only the trigger that opened it gets `data-open`. It renders into BLProvider's root (the browser's top layer without one), and inside a [ThemeScope](https://blamy.github.io/ui/#/theming) it takes the scope's appearance.
+Slots (from UI SDK): `hover-card-trigger`, `hover-card-content`, `hover-card-arrow`, plus `hover-card-header`. The card is on the same surface as [Popover](https://blamy.github.io/ui/#/popover) (`popover` colors, `rounded-card` from the `--radius` scale and `shadow-popover`) with the same motion: it grows out of the trigger as it enters (`data-starting-style`), leaves quicker (`data-ending-style`), and only fades under reduced motion; `data-side` / `data-align` give where it landed. Only the trigger that opened it gets `data-open`. It renders into BLProvider's root (the browser's top layer without one), and inside a [ThemeScope](https://blamy.github.io/ui/#/theming) it takes the scope's appearance.

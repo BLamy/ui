@@ -47,12 +47,11 @@ export function ReceiptView({ onDashboard }: { onDashboard: () => void }) {
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="relative isolate mt-2 grid place-items-center">
-        <Celebrate fire={burst} spread={84} />
+      <Celebrate fire={burst} spread={84} className="mt-2" render={<div />}>
         <span className="grid size-16 place-items-center rounded-full bg-success text-white shadow-[0_0_0_8px_color-mix(in_oklab,var(--success)_18%,transparent)]">
           <Icon name="check" size={32} sw={3} />
         </span>
-      </div>
+      </Celebrate>
       <div className="flex flex-col gap-1.5 text-center">
         <h2 ref={heading} tabIndex={-1} className="m-0 text-[26px] leading-8 font-bold tracking-[-.4px] text-foreground outline-none">
           Welcome to {PRODUCT.name} {r.quote.plan.name}

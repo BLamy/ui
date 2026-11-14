@@ -37,7 +37,7 @@ export type {
    fits beside the centered title, "Back" when only a sliver is left, else the chevron alone) and its title flies
    into it on a push, and back on a pop. Escape, the platform back and a swipe from the leading edge pop the
    innermost stack first; focus goes into a pushed page and back to what pushed it. Large titles collapse into the bar
-   on scroll, the bar rides away as the content scrolls down (with any TabBar, through the shared chrome state), and
+   on scroll, the bar rides away as the content scrolls down (with any `Tabs` bar, through the shared chrome state), and
    a page can pull to refresh. Built on the `navigationStack` primitive (lib/navigation-stack-primitive.ts).
 
    <NavigationStack pages={pages} onPagesChange={setPages}>
@@ -524,7 +524,7 @@ export function NavigationStackContent({ onRefresh, maxWidth, bottomInset, class
           {onRefresh ? (
             <RefreshIndicator value={value}
               className="pointer-events-none absolute top-[calc(var(--screen-bar-h)+8px)] left-1/2 z-5 text-muted-foreground opacity-[var(--pull-progress,0)] [transform:translateX(-50%)_rotate(calc(var(--pull-progress,0)*166deg))_scale(min(1,calc(.5_+_var(--pull-progress,0)*.58)))] transition-opacity duration-spring-snappy ease-spring-snappy group-data-pulling/nav-scroll:transition-none group-data-pending/nav-scroll:opacity-100 group-data-pending/nav-scroll:[transform:translateX(-50%)]">
-              <Spinner spin={s.refreshing} />
+              <Spinner paused={!s.refreshing} />
             </RefreshIndicator>
           ) : null}
           {/* The content follows a pull, and holds open while the refresh runs. */}

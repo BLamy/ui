@@ -40,7 +40,7 @@ import { cn, cx } from '@/lib/utils';
    query (`query` / `onQueryChange`). Arrow keys open the list and move, Enter chooses, Esc closes and brings the
    chosen label back. The root renders no element: lay the label and the field out with a Field.
    <Field>
-     <FieldLabel variant="field">City</FieldLabel>
+     <FieldLabel>City</FieldLabel>
      <Combobox>
        <ComboboxInput placeholder="Search cities" />
        <ComboboxContent>

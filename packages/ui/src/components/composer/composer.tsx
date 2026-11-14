@@ -10,7 +10,8 @@ import { createVelocityTracker, rubberBand } from '@ui-sdk/core/gesture';
 import { Dialog, DialogBackdrop, DialogClose, DialogContent, type DialogCloseActionDetails, type DialogOptions } from '@ui-sdk/react/dialog';
 import { FileInput, FileInputDropzone, FileInputTrigger, type FileInputValueChangeDetails, type FileRejection } from '@ui-sdk/react/file-input';
 import { MenuContent, MenuItemIndicator, MenuRadioItem } from '@ui-sdk/react/menu';
-import { PlainButton as Button, PlainToggleButton as ToggleButton, type PlainButtonProps as ButtonProps } from '@/components/ui/plain-button';
+import { Button } from '@ui-sdk/react/button';
+import { Toggle as ToggleButton } from '@ui-sdk/react/toggle';
 import { DropdownMenu, DropdownMenuRadioGroup, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator, type SeparatorProps } from '@/components/ui/separator';
 import { cn, cx, pressable } from '@/lib/utils';
@@ -34,11 +35,13 @@ import {
 } from '@/components/ui/composer/composer-files';
 import { flipPlay, flipSnapshot, prefersReducedMotion, springs, type FlipSnapshot } from '@/lib/motion';
 import { useEnterExit, usePresence, usePresenceList, type PresenceEntry } from '@/lib/presence';
-import { IconSwap } from '@/components/ui/icon-swap';
+import { Swap } from '@/components/ui/swap';
 import { TextMorph } from '@/components/ui/text-morph';
 import { themeScopeProps, useLayerHost } from '@/lib/theme';
 import { changeDetails, type ChangeGiven } from '@/lib/change-details';
 import { useControllableChange } from '@/lib/controllable-state';
+
+type ButtonProps = React.ComponentProps<typeof Button>;
 
 /* ══ Composer — a compositional prompt box, in the spirit of shadcn's InputGroup ══
 
@@ -1337,7 +1340,7 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', className, ..
       )}
       {...props}
     >
-      <IconSwap id={stopping ? `stop-${stopVariant}` : 'send'} className="size-full">
+      <Swap effect="pop" value={stopping ? `stop-${stopVariant}` : 'send'} className="size-full">
         {!stopping ? (
           <Icon name="arrow-up-compact" size={16} sw={2.4} />
         ) : stopVariant === 'solid' ? (
@@ -1348,7 +1351,7 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', className, ..
             <Icon name="stop-square" size={12} sw={2.4} />
           </>
         )}
-      </IconSwap>
+      </Swap>
     </Button>
   );
 }
@@ -1436,9 +1439,9 @@ export function ComposerExpand({ className }: { className?: string }) {
       onPressedChange={(pressed, details) => setExpanded(pressed, details)}
       title={label}
     >
-      <IconSwap id={expanded ? 'restore' : 'expand'} className="size-full">
+      <Swap effect="pop" value={expanded ? 'restore' : 'expand'} className="size-full">
         <Icon name={expanded ? 'arrows-collapse' : 'arrows-expand'} size={14} sw={2} />
-      </IconSwap>
+      </Swap>
     </ToggleButton>
   );
 }

@@ -1,11 +1,11 @@
-/* The Details sheet (Credenza: a centered dialog on wide screens, a bottom tray on phones): title, notes and URL,
+/* The Details sheet (a Dialog: a centered dialog on wide screens, a bottom tray on phones): title, notes and URL,
    status (docstream's task states), date and time with quick picks, flag, priority, list, and subtasks you can check
    off or add to. A task from a Markdown file keeps only what its line holds: the title, status and subtasks. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { TASK_STATES } from '@brett_lamy/docstream/gitbook';
 import { TASK_STATE_ICONS } from '@brett_lamy/docstream/tasks';
 import { Button } from '@/components/ui/button';
-import { Credenza, CredenzaBackdrop, CredenzaClose, CredenzaContent, CredenzaHeader, CredenzaTitle, CredenzaView } from '@/components/ui/credenza';
+import { Dialog, DialogBackdrop, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogView } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ListRow, ListSection } from '@/components/ui/list';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
@@ -46,7 +46,7 @@ function StatusRow({ r }: { r: Reminder }) {
   const Current = TASK_STATE_ICONS[state];
   return (
     <ListSection>
-      <ListRow leading={<Tile glyph="checklist" color={SYSTEM.green} />} title="Status" divider={false}
+      <ListRow icon={<Tile glyph="checklist" color={SYSTEM.green} />} title="Status" divider={false}
         accessory={<DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="gap-1.5 text-primary" />}>
             {/* The menu is named by its trigger: "Status: Pending". */}
@@ -82,8 +82,8 @@ function FileBody({ r }: { r: Reminder }) {
       </div>
       <StatusRow r={r} />
       <ListSection>
-        <ListRow leading={<ListIcon glyph={list?.glyph ?? 'checklist'} color={list?.color ?? SYSTEM.blue} size={29} />} title={list?.name ?? 'List'}
-          subtitle={<span className="break-all">{r.source!.path} · line {r.source!.line + 1}</span>} divider={false} />
+        <ListRow icon={<ListIcon glyph={list?.glyph ?? 'checklist'} color={list?.color ?? SYSTEM.blue} size={29} />} title={list?.name ?? 'List'}
+          description={<span className="break-all">{r.source!.path} · line {r.source!.line + 1}</span>} divider={false} />
       </ListSection>
       {r.subtasks?.length ? (
         <ListSection title="Subtasks">
@@ -131,14 +131,14 @@ function LocalBody({ r }: { r: Reminder }) {
       <StatusRow r={r} />
 
       <ListSection>
-        <ListRow leading={<Tile glyph="calendar" color={SYSTEM.red} />} title="Date" subtitle={r.due != null ? <span className="text-primary">{dueLabel({ due: r.due })}</span> : undefined}
+        <ListRow icon={<Tile glyph="calendar" color={SYSTEM.red} />} title="Date" description={r.due != null ? <span className="text-primary">{dueLabel({ due: r.due })}</span> : undefined}
           accessory={<Switch checked={r.due != null} onCheckedChange={(v) => up(v ? { due: 0 } : { due: undefined, time: undefined })} />} divider={r.due != null} />
         <Reveal open={r.due != null}>
           <Segmented aria-label="Due date" className={tight} value={r.due != null ? String(r.due) : null} onValueChange={(d) => { if (d) up({ due: Number(d) }); }}>
             {DAYS.map((d) => <SegmentedItem key={d.value} value={d.value}>{d.label}</SegmentedItem>)}
           </Segmented>
         </Reveal>
-        <ListRow leading={<Tile glyph="clock" color={SYSTEM.blue} />} title="Time" subtitle={r.time ? <span className="text-primary">{r.time}</span> : undefined}
+        <ListRow icon={<Tile glyph="clock" color={SYSTEM.blue} />} title="Time" description={r.time ? <span className="text-primary">{r.time}</span> : undefined}
           accessory={<Switch checked={!!r.time} onCheckedChange={(v) => up(v ? { time: '9:00 AM', due: r.due ?? 0 } : { time: undefined })} />} divider={!!r.time} />
         <Reveal open={!!r.time}>
           <Segmented aria-label="Due time" className={tight} value={r.time ?? null} onValueChange={(t) => { if (t) up({ time: t }); }}>
@@ -148,7 +148,7 @@ function LocalBody({ r }: { r: Reminder }) {
       </ListSection>
 
       <ListSection>
-        <ListRow leading={<Tile glyph="flag-fill" color={SYSTEM.orange} />} title="Flag" divider={false}
+        <ListRow icon={<Tile glyph="flag-fill" color={SYSTEM.orange} />} title="Flag" divider={false}
           accessory={<Switch checked={!!r.flagged} onCheckedChange={(v) => up({ flagged: v })} />} />
       </ListSection>
 
@@ -162,7 +162,7 @@ function LocalBody({ r }: { r: Reminder }) {
 
       {list ? (
         <ListSection>
-          <ListRow leading={<ListIcon glyph={list.glyph} color={list.color} size={29} />} title="List" trailing={<span className="text-muted-foreground">{list.name}</span>} divider={false} />
+          <ListRow icon={<ListIcon glyph={list.glyph} color={list.color} size={29} />} title="List" trailing={<span className="text-muted-foreground">{list.name}</span>} divider={false} />
         </ListSection>
       ) : null}
 
@@ -195,13 +195,13 @@ export function DetailsSheet() {
   const last = useRef<Reminder | null>(null);
   if (r) last.current = r;
   return (
-    // A tray while the split view is compact, a dialog beside its columns otherwise (Credenza's `"auto"`).
-    <Credenza open={!!r} onOpenChange={(open) => { if (!open) api.openDetails(null); }}>
-      <CredenzaBackdrop />
-      <CredenzaContent className="bg-muted">
-        <CredenzaHeader><CredenzaTitle>Details</CredenzaTitle><CredenzaClose /></CredenzaHeader>
-        <CredenzaView>{last.current ? <Body r={r ?? last.current} /> : null}</CredenzaView>
-      </CredenzaContent>
-    </Credenza>
+    // A tray while the split view is compact, a dialog beside its columns otherwise (the Dialog's `"auto"`).
+    <Dialog open={!!r} onOpenChange={(open) => { if (!open) api.openDetails(null); }}>
+      <DialogBackdrop />
+      <DialogContent variant="tray" className="bg-muted">
+        <DialogHeader variant="bar"><DialogTitle>Details</DialogTitle><DialogClose /></DialogHeader>
+        <DialogView>{last.current ? <Body r={r ?? last.current} /> : null}</DialogView>
+      </DialogContent>
+    </Dialog>
   );
 }

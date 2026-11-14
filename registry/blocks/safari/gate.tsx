@@ -4,7 +4,7 @@
 import { useState, type ComponentProps } from 'react';
 import { DialogContent, DialogDescription, DialogTitle } from '@ui-sdk/react/dialog';
 import { Dialog } from '@/components/ui/dialog';
-import { TailscaleLoginButton, TailscaleMark, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button';
+import { TailscaleLoginButton, TailscaleMark, TailscaleStatusBadge } from '@/components/ui/tailscale-controls';
 import { Icon, type IconName } from '@/lib/icon';
 import { tailscaleErrorMessage } from '@/lib/tailscale';
 import { useTailscaleStatus } from '@/lib/tailscale-react';
@@ -38,7 +38,7 @@ export function Gate({ open, initialFocus, finalFocus }: GateProps) {
     if (open) setTouched(false);
   }
   return (
-    <Dialog open={open} dismissible={false}>
+    <Dialog open={open} dismissible={false} presentation="dialog">
       <DialogContent initialFocus={initialFocus} finalFocus={touched ? finalFocus : 'none'}
         onFocus={() => { if (!touched) setTouched(true); }} className="fixed inset-0 grid place-items-center overflow-auto bg-background p-6 text-foreground outline-none">
         <div data-slot="safari-gate" className="flex w-full max-w-sm flex-col items-center gap-5 text-center">

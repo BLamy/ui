@@ -5,13 +5,13 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ResultTable } from '@/components/ui/result-table';
-import { SchemaTree } from '@/components/ui/schema-tree';
+import { Tree } from '@/components/ui/tree';
 import { SqlEditor, useSqlHistory, type SqlEditorHandle } from '@/components/ui/sql-editor';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs';
 import { PGliteError, DataDirVersionError, identifier, runSql, type RunOutcome, type SqlError } from '@/lib/pglite-core';
 import { useDatabaseStatus } from '@/lib/pglite';
-import { useSchema } from '@/lib/pglite-schema';
+import { schemaTreeItems, useSchema, type SchemaTreeNode } from '@/lib/pglite-schema';
 import { downloadFile, pickFile } from '@/lib/pglite-files';
 import { exportDatabase, importDatabase, type ExportFormat } from '@/lib/pglite-transfer';
 import { formatFileSize } from '@ui-sdk/core/file-input';
@@ -209,7 +209,7 @@ export function SqlConsole({
               {info.kind === 'memory' ? <span className="text-caption text-foreground/65">Gone when you reload</span> : null}
             </>
           ) : status === 'loading' ? (
-            <span className="flex items-center gap-2 text-footnote text-foreground/65"><Spinner spin size={14} /> Starting PostgreSQL…</span>
+            <span className="flex items-center gap-2 text-footnote text-foreground/65"><Spinner size={14} /> Starting PostgreSQL…</span>
           ) : null}
           <span className="flex-1" />
           {headerActions}
@@ -251,12 +251,20 @@ export function SqlConsole({
                     <TabsTab value="history">History{history.entries.length ? ` (${history.entries.length})` : ''}</TabsTab>
                   </TabsList>
                   <TabsPanel value="schema" className="flex h-80 flex-col">
-                    <SchemaTree
-                      schema={schema}
+                    <Tree
+                      aria-label="Database schema"
+                      items={schemaTreeItems(schema)}
+                      icons={false}
+                      density="compact"
                       loading={schemaLoading || !ready}
-                      variant="card"
-                      className="flex-1"
-                      onAction={(_id, { table, column }) => { if (!column) insertTable(table.schema, table.name); }}
+                      emptyState="No tables yet"
+                      // Schemas open as they appear; tables stay closed until opened.
+                      autoExpand={schemaTreeItems(schema).map((n) => n.value)}
+                      onAction={(_id, { node }) => {
+                        const n = node as SchemaTreeNode | undefined;
+                        if (n?.kind === 'table') insertTable(n.table.schema, n.table.name);
+                      }}
+                      className="min-h-0 flex-1 rounded-panel bg-card p-1 shadow-hairline"
                     />
                   </TabsPanel>
                   <TabsPanel value="history" className="max-h-80 overflow-y-auto">

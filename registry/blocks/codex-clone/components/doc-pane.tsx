@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Input } from '@ui-sdk/react/input';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { PlainToggleButton } from '@/components/ui/plain-button';
+import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -132,16 +132,17 @@ function DocTools({ editorRef, format, onFormat, disabled }: { editorRef: RefObj
   );
   return (
     <>
-      <PlainToggleButton
+      <Toggle
         aria-label="Format text"
         title="Format text"
         pressed={format}
         onPressedChange={onFormat}
         disabled={disabled}
-        className={buttonVariants({ variant: 'quiet', size: 'icon-sm' })}
+        variant="quiet"
+        size="icon-sm"
       >
         <Icon name="textformat" size={17} sw={1.7} />
-      </PlainToggleButton>
+      </Toggle>
       {tool('Checklist', 'checklist', () => editorRef.current?.chain()?.toggleList('taskList', 'taskItem').run())}
       {tool('Table', 'table', () => editorRef.current?.insertMarkdown('| Column | Column |\n| --- | --- |\n|  |  |\n|  |  |'))}
       {tool('Insert block', 'plus', () => editorRef.current?.chain()?.insertContent('/').run())}

@@ -60,12 +60,12 @@ export function setDevice(doc: Doc, device: DeviceId): Doc {
   return { ...doc, device, scenes: doc.scenes.map((s) => ({ ...s, x: Math.round(s.x * kx), y: Math.round(s.y * ky) })) };
 }
 
-/** A container scene around `child`: a NavigationStack, a TabView or a SplitView showing it. */
-export function containerScene(doc: Doc, kind: 'NavigationStack' | 'TabView' | 'SplitView', child: Scene, x: number, y: number): Scene {
+/** A container scene around `child`: a NavigationStack, a TabsScreen or a SplitView showing it. */
+export function containerScene(doc: Doc, kind: 'NavigationStack' | 'TabsScreen' | 'SplitView', child: Scene, x: number, y: number): Scene {
   const ref = makeNode('SceneRef', { props: { scene: child.id } });
   const base = { id: newId('s'), x, y, props: [], state: [], memos: [], effects: [], background: null };
   if (kind === 'NavigationStack') return { ...base, name: uniqueName(`${child.name}Nav`, doc.scenes.map((s) => s.name)), root: makeNode('NavigationStack', { children: [ref] }) };
-  if (kind === 'TabView') return { ...base, name: uniqueName(`${child.name}Tabs`, doc.scenes.map((s) => s.name)), root: makeNode('TabView', { props: { tabs: `${child.name}:star`, value: child.name }, children: [ref] }) };
+  if (kind === 'TabsScreen') return { ...base, name: uniqueName(`${child.name}Tabs`, doc.scenes.map((s) => s.name)), root: makeNode('TabsScreen', { props: { tabs: `${child.name}:star`, value: child.name }, children: [ref] }) };
   return { ...base, name: uniqueName(`${child.name}Split`, doc.scenes.map((s) => s.name)), root: makeNode('SplitView', { slots: { sidebar: [ref], supplementary: [], detail: [] } }) };
 }
 
@@ -73,7 +73,7 @@ export function containerScene(doc: Doc, kind: 'NavigationStack' | 'TabView' | '
  * Xcode's Editor › Embed In: a new container scene to the left of `sceneId` showing it. The container takes the
  * entry point, and segues that presented the scene (anything but a push) now present the container.
  */
-export function embedScene(doc: Doc, sceneId: string, kind: 'NavigationStack' | 'TabView' | 'SplitView'): [Doc, string] {
+export function embedScene(doc: Doc, sceneId: string, kind: 'NavigationStack' | 'TabsScreen' | 'SplitView'): [Doc, string] {
   const scene = doc.scenes.find((s) => s.id === sceneId);
   if (!scene) return [doc, ''];
   const box = containerScene(doc, kind, scene, scene.x - 520, scene.y);

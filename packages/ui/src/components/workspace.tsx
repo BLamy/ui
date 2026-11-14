@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { createParts, usePart, usePrimitive, type PartProps } from '@ui-sdk/react/primitive';
 import { Resizable, ResizableHandle, ResizablePanel } from '@ui-sdk/react/resizable';
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@ui-sdk/react/tabs';
+import { useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn, cx } from '@/lib/utils';
 import {
@@ -13,11 +14,12 @@ import {
   workspaceTabsets,
   type SplitNode,
   type TabNode,
-  type WorkspaceTabPlacement,
+  type WorkspaceTabSide,
   type TabsetNode,
   type WorkspaceMinSize,
   type WorkspaceNode,
 } from '@/lib/workspace-model';
+import { Tabs as KitTabs, TabsBar, TabsList as KitTabsList, TabsTab as KitTabsTab } from '@/components/ui/tabs';
 import {
   workspace,
   type WorkspaceApi,
@@ -39,7 +41,7 @@ export type {
   WorkspaceNode,
   WorkspaceNodeInput,
   WorkspaceOrientation,
-  WorkspaceTabPlacement,
+  WorkspaceTabSide,
 } from '@/lib/workspace-model';
 export { createWorkspaceController } from '@/lib/workspace-primitive';
 export type {
@@ -81,7 +83,7 @@ export type WorkspaceClassNames = {
   split?: string;
   /** The handle between two children of a split (`data-hovering`, `data-dragging`). */
   handle?: string;
-  /** A tabset (`data-active`, `data-maximized`, `data-empty`, `data-tab-placement`). */
+  /** A tabset (`data-active`, `data-maximized`, `data-empty`, `data-tab-side`). */
   tabset?: string;
   /** The strip that holds a tabset's tabs and toolbar. */
   header?: string;
@@ -99,11 +101,11 @@ export type WorkspaceClassNames = {
   dropIndicator?: string;
 };
 
-const PLACED: Record<WorkspaceTabPlacement, { tabset: string; header: string; list: string; tab: string }> = {
-  top: { tabset: 'flex-col', header: 'min-h-9 border-b', list: 'px-1', tab: 'border-r data-selected:shadow-hairline-b' },
-  bottom: { tabset: 'flex-col-reverse', header: 'min-h-9 border-t', list: 'px-1', tab: 'border-r data-selected:shadow-hairline-t' },
-  left: { tabset: 'flex-row', header: 'min-w-9 flex-col border-r', list: 'flex-col py-1', tab: 'border-b' },
-  right: { tabset: 'flex-row-reverse', header: 'min-w-9 flex-col border-l', list: 'flex-col py-1', tab: 'border-b' },
+const PLACED: Record<WorkspaceTabSide, { tabset: string; header: string; list: string; tab: string }> = {
+  top: { tabset: 'flex-col', header: 'min-h-9 border-b', list: 'px-1', tab: 'border-e data-selected:shadow-hairline-b' },
+  bottom: { tabset: 'flex-col-reverse', header: 'min-h-9 border-t', list: 'px-1', tab: 'border-e data-selected:shadow-hairline-t' },
+  start: { tabset: 'flex-row', header: 'min-w-9 flex-col border-e', list: 'flex-col py-1', tab: 'border-b' },
+  end: { tabset: 'flex-row-reverse', header: 'min-w-9 flex-col border-s', list: 'flex-col py-1', tab: 'border-b' },
 };
 
 const HANDLE =
@@ -114,15 +116,16 @@ const HEADER = 'flex min-w-0 items-center border-border bg-muted';
 const TAB_LIST = 'flex min-h-0 min-w-0 flex-1 items-stretch gap-0.5 overflow-auto';
 // The copy that follows the pointer is this element again, out of the strip, so it brings its own surface.
 const TAB =
-  'group relative flex max-w-56 shrink-0 cursor-default touch-none items-center gap-2 border-border px-3 py-2 text-xs text-muted-foreground select-none hover:text-foreground data-selected:bg-background data-selected:text-foreground data-moving:bg-accent data-moving:text-foreground data-dragging:opacity-50 has-[[role=tab]:focus-visible]:ring-2 has-[[role=tab]:focus-visible]:ring-ring has-[[role=tab]:focus-visible]:ring-inset data-drag-preview:rounded-md data-drag-preview:border data-drag-preview:bg-background data-drag-preview:font-sans data-drag-preview:text-foreground data-drag-preview:shadow-lg';
+  'group relative flex max-w-56 shrink-0 cursor-default touch-none items-center gap-2 border-border px-3 py-2 text-xs text-muted-foreground select-none hover:text-foreground data-selected:bg-background data-selected:text-foreground data-moving:bg-accent data-moving:text-foreground data-dragging:opacity-50 has-[[role=tab]:focus-visible]:ring-2 has-[[role=tab]:focus-visible]:ring-ring/45 has-[[role=tab]:focus-visible]:ring-inset data-drag-preview:rounded-md data-drag-preview:border data-drag-preview:bg-background data-drag-preview:font-sans data-drag-preview:text-foreground data-drag-preview:shadow-lg';
 // Its hit area covers the whole tab, under the close button.
 const TAB_TRIGGER =
   'flex min-w-0 cursor-default appearance-none items-center gap-[inherit] border-0 bg-transparent p-0 text-inherit [font:inherit] outline-none after:absolute after:inset-0';
+// On touch, the close button's and the tools' hit areas grow to 44px around what they draw.
 const TAB_CLOSE =
-  'relative flex size-5 shrink-0 appearance-none border-0 bg-transparent p-0 items-center justify-center rounded text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring';
+  'relative flex size-5 shrink-0 appearance-none border-0 bg-transparent p-0 items-center justify-center rounded text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/45 pointer-coarse:after:absolute pointer-coarse:after:-inset-3';
 const TOOLBAR = 'flex shrink-0 items-center gap-1 px-1.5';
 const TOOL =
-  'flex size-7 appearance-none items-center border-0 bg-transparent p-0 justify-center rounded text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring';
+  'relative flex size-7 appearance-none items-center border-0 bg-transparent p-0 justify-center rounded text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/45 pointer-coarse:after:absolute pointer-coarse:after:-inset-2';
 const TAB_PANELS = 'relative min-h-0 min-w-0 flex-1 bg-background';
 const TAB_CONTENT = 'h-full min-h-0 w-full overflow-auto outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset';
 const DROP_INDICATOR =
@@ -162,8 +165,14 @@ export type WorkspaceProps<TabData = unknown, TabsetData = unknown> = WorkspaceO
     tabsetMinHeight?: WorkspaceMinSize;
     /** What a screen reader hears after a tab's name: how to move and close it. */
     tabDescription?: string;
+    /** `docked` lays the tabsets out in their splits; `tabs` shows every tab in one strip along the bottom, one at a time,
+     *  with nothing to drag (a phone's layout). `auto` (the default) is `tabs` while the workspace's own box is compact
+     *  (narrower than 640px) and `docked` otherwise. The layout is kept either way. */
+    presentation?: WorkspacePresentation;
     classNames?: WorkspaceClassNames;
   };
+
+export type WorkspacePresentation = 'auto' | 'docked' | 'tabs';
 
 type AnyTab = TabNode<any>;
 type AnyTabset = TabsetNode<any, any>;
@@ -189,8 +198,8 @@ function useWorkspaceContext(part: string) {
   if (!context) throw new Error(`${part} must be rendered inside a Workspace.`);
   return context;
 }
-const TabContext = createContext<{ tab: AnyTab; placement: WorkspaceTabPlacement } | null>(null);
-const PlacementContext = createContext<WorkspaceTabPlacement>('top');
+const TabContext = createContext<{ tab: AnyTab; placement: WorkspaceTabSide } | null>(null);
+const PlacementContext = createContext<WorkspaceTabSide>('top');
 
 /** A dockable workspace: tabs move between resizable tabsets and onto their edges, and keep their state as they go. */
 export function Workspace<TabData = unknown, TabsetData = unknown>({
@@ -201,7 +210,7 @@ export function Workspace<TabData = unknown, TabsetData = unknown>({
   disabled,
   accepts,
   tabsetLabel,
-  tabPlacement,
+  tabSide,
   controller,
   debug,
   renderTabContent,
@@ -212,11 +221,23 @@ export function Workspace<TabData = unknown, TabsetData = unknown>({
   tabsetMinWidth,
   tabsetMinHeight,
   tabDescription = TAB_HINT,
+  presentation = 'auto',
   classNames,
   className,
+  ref,
   ...props
 }: WorkspaceProps<TabData, TabsetData>) {
-  const handle = usePrimitive(workspace, { layout, defaultLayout, onLayoutChange, onLayoutCommit, disabled, accepts, tabsetLabel, tabPlacement, controller, debug } as WorkspaceOptions<any, any>);
+  const [measure, sizeClass] = useSizeClass<HTMLDivElement>({ initial: 'regular' });
+  const tabsOnly = presentation === 'tabs' || (presentation === 'auto' && sizeClass === 'compact');
+  const rootRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      measure(el);
+      if (typeof ref === 'function') ref(el);
+      else if (ref) ref.current = el;
+    },
+    [measure, ref],
+  );
+  const handle = usePrimitive(workspace, { layout, defaultLayout, onLayoutChange, onLayoutCommit, disabled, accepts, tabsetLabel, tabSide, controller, debug } as WorkspaceOptions<any, any>);
   const hintId = useId();
   const [hosts] = useState(() => new Map<string, HTMLElement>());
   const host = useCallback(
@@ -253,12 +274,15 @@ export function Workspace<TabData = unknown, TabsetData = unknown>({
     {},
     {
       ...props,
-      className: cx('h-full min-h-0 min-w-0 overflow-hidden font-sans rounded-xl border border-border bg-background text-foreground', className),
+      ref: rootRef,
+      ...({ 'data-presentation': tabsOnly ? 'tabs' : 'docked' } as Record<string, string>),
+      className: cx('h-full min-h-0 min-w-0 overflow-hidden font-sans bg-background text-foreground', className),
       children: (state) => (
         <WorkspaceView
           state={state}
           shared={shared}
           hosts={hosts}
+          tabsOnly={tabsOnly}
           description={tabDescription}
           renderTabContent={renderTabContent as (tab: AnyTab, state: WorkspaceTabContentState) => ReactNode}
         />
@@ -272,12 +296,14 @@ function WorkspaceView({
   state,
   shared,
   hosts,
+  tabsOnly,
   description,
   renderTabContent,
 }: {
   state: WorkspaceState<any, any>;
   shared: Omit<WorkspaceContextValue, 'tab'>;
   hosts: Map<string, HTMLElement>;
+  tabsOnly: boolean;
   description: string;
   renderTabContent: (tab: AnyTab, state: WorkspaceTabContentState) => ReactNode;
 }) {
@@ -303,7 +329,13 @@ function WorkspaceView({
       <span id={shared.hintId} hidden>
         {description}
       </span>
-      {maximized ? <TabsetView node={maximized} {...tabsetProps(maximized)} /> : <NodeView node={layout.root} tabsetProps={tabsetProps} />}
+      {tabsOnly ? (
+        <TabsView tabsets={tabsets} activeTabsetId={activeTabsetId} />
+      ) : maximized ? (
+        <TabsetView node={maximized} {...tabsetProps(maximized)} />
+      ) : (
+        <NodeView node={layout.root} tabsetProps={tabsetProps} />
+      )}
       {tabsets.flatMap((tabset) =>
         tabset.tabs.map((tab) => {
           const selected = tabset.selectedId === tab.id;
@@ -313,6 +345,45 @@ function WorkspaceView({
         }),
       )}
     </WorkspaceContext.Provider>
+  );
+}
+
+/** The compact presentation: every tab of every tabset in one strip along the bottom, the active tabset's tab on show.
+ *  Picking a tab selects it in its tabset and makes that tabset the active one; nothing can be dragged. */
+function TabsView({ tabsets, activeTabsetId }: { tabsets: AnyTabset[]; activeTabsetId: string | null }) {
+  const { api, keepMounted } = useWorkspaceContext('The tab strip');
+  const active = tabsets.find((tabset) => tabset.id === activeTabsetId) ?? tabsets.find((tabset) => tabset.tabs.length);
+  const tabs = tabsets.flatMap((tabset) => tabset.tabs.map((tab) => ({ tab, tabsetId: tabset.id })));
+  return (
+    <KitTabs
+      variant="plain"
+      side="bottom"
+      value={active?.selectedId ?? tabs[0]?.tab.id ?? null}
+      onValueChange={(value, details) => {
+        if (value === null) return;
+        const owner = tabsets.find((tabset) => tabset.tabs.some((tab) => tab.id === value));
+        if (!owner) return;
+        // Already on show in its tabset: only that tabset becomes the active one.
+        if (owner.selectedId !== value && !api.internal.select(value, details)) return details.cancel();
+        api.internal.activate(owner.id);
+      }}
+      className="size-full"
+    >
+      <TabsBar className={cn(HEADER, PLACED.bottom.header)}>
+        <KitTabsList aria-label="Tabs" className={cn(TAB_LIST, PLACED.bottom.list)}>
+          {tabs.map(({ tab }) => (
+            <KitTabsTab key={tab.id} value={tab.id} className={cn(TAB, PLACED.bottom.tab, 'touch-auto pointer-coarse:min-h-11 focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-inset')}>
+              <span className="truncate">{tab.title ?? tab.id}</span>
+            </KitTabsTab>
+          ))}
+        </KitTabsList>
+      </TabsBar>
+      <div className={TAB_PANELS}>
+        {tabs.map(({ tab }) => (
+          <TabPanel key={tab.id} tab={tab} keepMounted={typeof keepMounted === 'function' ? keepMounted(tab) : keepMounted} />
+        ))}
+      </div>
+    </KitTabs>
   );
 }
 
@@ -376,33 +447,33 @@ function SplitView({ node, tabsetProps }: { node: SplitNode<any, any>; tabsetPro
 
 // A resize gives a tabset a new size and nothing else, and its view never reads the size.
 const sameTabset = (a: AnyTabset, b: AnyTabset) =>
-  a === b || (a.id === b.id && a.tabs === b.tabs && a.selectedId === b.selectedId && a.tabPlacement === b.tabPlacement && a.data === b.data && a.keepWhenEmpty === b.keepWhenEmpty);
+  a === b || (a.id === b.id && a.tabs === b.tabs && a.selectedId === b.selectedId && a.tabSide === b.tabSide && a.data === b.data && a.keepWhenEmpty === b.keepWhenEmpty);
 const sameIds = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((id, index) => id === b[index]);
 
 const TabsetView = memo(
   function TabsetView({ node, ids, label, active, maximized, only }: TabsetProps & { node: AnyTabset }) {
     const { api, classNames, keepMounted, tab: tabOf, renderTab, renderTabsetToolbar, renderEmptyTabset } = useWorkspaceContext('A tabset');
     return (
-      <parts.Tabset value={node.id} aria-label={label} className={(state) => cn(TABSET, PLACED[state.tabPlacement].tabset, classNames.tabset)}>
-        {({ tabPlacement, empty, selectedTabId }) => (
-          <PlacementContext.Provider value={tabPlacement}>
+      <parts.Tabset value={node.id} aria-label={label} className={(state) => cn(TABSET, PLACED[state.tabSide].tabset, classNames.tabset)}>
+        {({ tabSide, empty, selectedTabId }) => (
+          <PlacementContext.Provider value={tabSide}>
             <Tabs
               value={node.selectedId ?? null}
-              orientation={tabPlacement === 'left' || tabPlacement === 'right' ? 'vertical' : 'horizontal'}
+              orientation={tabSide === 'start' || tabSide === 'end' ? 'vertical' : 'horizontal'}
               onValueChange={(value, details) => {
                 if (value !== null && !api.internal.select(value, details)) details.cancel();
               }}
               className="contents"
             >
-              <parts.Header className={cn(HEADER, PLACED[tabPlacement].header, classNames.header)}>
-                <TabsList aria-label={`${label} tabs`} className={cn(TAB_LIST, PLACED[tabPlacement].list, classNames.tabList)}>
+              <parts.Header className={cn(HEADER, PLACED[tabSide].header, classNames.header)}>
+                <TabsList aria-label={`${label} tabs`} className={cn(TAB_LIST, PLACED[tabSide].list, classNames.tabList)}>
                   {ids.map((id) => {
                     const tab = tabOf(id);
                     return tab ? <Fragment key={id}>{renderTab ? renderTab(tab) : <WorkspaceTab value={id} />}</Fragment> : null;
                   })}
                 </TabsList>
                 <div className={cn(TOOLBAR, classNames.toolbar)}>
-                  {renderTabsetToolbar ? renderTabsetToolbar(node, { active, maximized, only, empty, selectedTabId, tabPlacement }) : <WorkspaceToolbar />}
+                  {renderTabsetToolbar ? renderTabsetToolbar(node, { active, maximized, only, empty, selectedTabId, tabSide }) : <WorkspaceToolbar />}
                 </div>
               </parts.Header>
               <parts.Panels className={cn(TAB_PANELS, classNames.tabPanels)}>

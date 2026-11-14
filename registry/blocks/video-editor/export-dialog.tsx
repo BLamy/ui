@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogBackdrop, DialogBody, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle';
 import { FfmpegError, type Ffmpeg, type FfmpegProgress } from '@/lib/ffmpeg';
 import { formatFileSize } from '@ui-sdk/react/file-input';
 import { Icon } from '@/lib/icon';

@@ -1,16 +1,26 @@
 'use client';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { renderElement, type PartProps } from '@ui-sdk/react/primitive';
+import { motion, useReducedMotionConfig } from 'framer-motion';
+import { cx } from '@/lib/utils';
 
 /* ══ Celebrate — a burst for rare moments ══
    Family's delight curve: the less often a moment happens, the more it may celebrate. A backup finishing,
-   a first payment, a streak — not a tab switch. Drop <Celebrate fire={n} /> next to the thing that succeeded,
-   inside a `relative isolate` wrapper: every time `fire` changes, a ring pulses and confetti bursts out from
-   behind it, then falls away.
-   Reduced motion gets the ring only, as a soft fade. */
+   a first payment, a streak — not a tab switch. Wrap the thing that succeeded:
+     <Celebrate fire={n}><SuccessBadge /></Celebrate>
+   Every time `fire` changes, a ring pulses and confetti bursts out from behind it, then falls away. Celebrate is
+   an `inline-grid` span around its child (`render={<div />}` for another element, `className` to place it), with
+   the burst on a layer behind the child. Reduced motion gets the ring only, as a soft fade. */
 
-const PALETTE = ['var(--primary)', 'var(--success, oklch(0.723 0.191 149.6))', '#FFD60A', '#FF375F', '#BF5AF2', '#FF9F0A'];
+/** The theme's own colours, so a ThemeScope recolours the confetti too. */
+const PALETTE = [
+  'var(--color-primary)',
+  'var(--color-success)',
+  'var(--color-warning)',
+  'var(--color-destructive)',
+  'var(--chart-5, var(--color-primary))',
+  'var(--chart-3, var(--color-warning))',
+];
 
 /** Small deterministic PRNG so a burst looks the same each time it is replayed (and in screenshots). */
 function rand(seed: number) {
@@ -34,20 +44,22 @@ function pieces(n: number, spread: number, seed: number, colors: string[]): Piec
   });
 }
 
-export interface CelebrateProps {
+export interface CelebrateProps extends Omit<PartProps<'span'>, 'children'> {
+  /** What succeeded: the burst comes out from behind it. */
+  children?: ReactNode;
   /** Change this (e.g. a counter) to fire a burst. Falsy values never fire. */
   fire?: number | string | boolean | null;
   /** Number of confetti pieces (default 22). */
   count?: number;
   /** How far pieces fly, in px (default 100). */
   spread?: number;
+  /** Confetti colours, any CSS colours (default the theme's primary, success, warning, destructive and two chart
+   *  colours). */
   colors?: string[];
-  className?: string;
-  style?: CSSProperties;
 }
 
-export function Celebrate({ fire, count = 22, spread = 100, colors = PALETTE, className, style }: CelebrateProps) {
-  const reduced = useReducedMotion();
+export function Celebrate({ fire, count = 22, spread = 100, colors = PALETTE, className, render, children, ...props }: CelebrateProps) {
+  const reduced = useReducedMotionConfig();
   const [bursts, setBursts] = useState<number[]>([]);
   const n = useRef(0);
   // The value last seen, so only a change fires (the first render, and Strict Mode's second effect run, don't).
@@ -73,9 +85,8 @@ export function Celebrate({ fire, count = 22, spread = 100, colors = PALETTE, cl
     }, 1400);
     timers.current.add(t);
   }, [fire]);
-  return (
-    <span data-slot="celebrate" aria-hidden="true"
-      className={cn('pointer-events-none absolute inset-0 -z-1 grid place-items-center overflow-visible', className)} style={style}>
+  const layer = (
+    <span data-slot="celebrate-burst" aria-hidden="true" className="pointer-events-none absolute inset-0 -z-1 grid place-items-center overflow-visible">
       {bursts.map((id) => (
         <span key={id} className="relative size-0">
           <motion.span
@@ -104,5 +115,20 @@ export function Celebrate({ fire, count = 22, spread = 100, colors = PALETTE, cl
         </span>
       ))}
     </span>
+  );
+  return renderElement(
+    'span',
+    {
+      'data-slot': 'celebrate',
+      ...props,
+      className: cx('relative isolate inline-grid place-items-center', className),
+      children: (
+        <>
+          {layer}
+          {children}
+        </>
+      ),
+    },
+    render,
   );
 }

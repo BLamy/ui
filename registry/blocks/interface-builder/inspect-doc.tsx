@@ -2,7 +2,7 @@
    prepare(for:sender:) — and the destination's delegate, implemented here), a context (its fields, and who reads
    them), the entry point, and the storyboard itself (its device, the commands the app handles, and its JSON). */
 import { FontStackPicker } from '@/components/ui/font-picker';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { ActionList } from './actions';
 import { TransitionEditor } from './curves';
@@ -96,9 +96,9 @@ export function SeguePanel({ segue, doc }: { segue: Segue; doc: Doc }) {
       </Section>
 
       <Section title="Danger">
-        <PlainButton onClick={() => b.commit((d) => removeSegue(d, segue.id), { kind: 'scene', scene: from.id })} className={danger}>
+        <SdkButton onClick={() => b.commit((d) => removeSegue(d, segue.id), { kind: 'scene', scene: from.id })} className={danger}>
           <Icon name="trash" size={13} sw={2.2} /> Delete Segue
-        </PlainButton>
+        </SdkButton>
       </Section>
     </>
   );
@@ -134,15 +134,15 @@ export function ContextPanel({ ctx, doc }: { ctx: ContextDef; doc: Doc }) {
       </Section>
       <Section title="Read by">
         {readers.length ? readers.map((s) => (
-          <PlainButton key={s.id} onClick={() => b.select({ kind: 'scene', scene: s.id })} className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-2 text-left text-footnote outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+          <SdkButton key={s.id} onClick={() => b.select({ kind: 'scene', scene: s.id })} className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-2 text-left text-footnote outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
             <Icon name="circle-fill" size={11} sw={2} className="text-warning" /> {s.name}
-          </PlainButton>
+          </SdkButton>
         )) : <Help>No scene reads it yet. Bind a prop to {ctx.alias}.field.</Help>}
       </Section>
       <Section title="Danger">
-        <PlainButton onClick={() => b.commit((d) => ({ ...d, contexts: d.contexts.filter((c) => c.id !== ctx.id) }), { kind: 'none' })} className={danger}>
+        <SdkButton onClick={() => b.commit((d) => ({ ...d, contexts: d.contexts.filter((c) => c.id !== ctx.id) }), { kind: 'none' })} className={danger}>
           <Icon name="trash" size={13} sw={2.2} /> Delete Context
-        </PlainButton>
+        </SdkButton>
       </Section>
     </>
   );
@@ -221,21 +221,21 @@ export function DocPanel({ doc }: { doc: Doc }) {
       </Section>
       <Section title="File">
         <div className="flex flex-wrap gap-1.5">
-          <PlainButton onClick={download} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring"><Icon name="download" size={13} sw={2.1} /> Export JSON</PlainButton>
-          <PlainButton onClick={open} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring"><Icon name="folder" size={13} sw={2.1} /> Open…</PlainButton>
-          <PlainButton onClick={() => b.load(blankDoc())} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring"><Icon name="doc" size={13} sw={2.1} /> New</PlainButton>
+          <SdkButton onClick={download} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring"><Icon name="download" size={13} sw={2.1} /> Export JSON</SdkButton>
+          <SdkButton onClick={open} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring"><Icon name="folder" size={13} sw={2.1} /> Open…</SdkButton>
+          <SdkButton onClick={() => b.load(blankDoc())} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring"><Icon name="doc" size={13} sw={2.1} /> New</SdkButton>
         </div>
         <Help>New and Open can be undone.</Help>
       </Section>
       <Section title="Samples">
-        <PlainButton onClick={() => b.load(SAMPLE_DOC)} className="flex w-full cursor-pointer items-start gap-2 rounded-lg border-0 bg-secondary px-2.5 py-2 text-left outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+        <SdkButton onClick={() => b.load(SAMPLE_DOC)} className="flex w-full cursor-pointer items-start gap-2 rounded-lg border-0 bg-secondary px-2.5 py-2 text-left outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
           <Icon name="flower" size={16} sw={2} className="mt-0.5 shrink-0 text-success" />
-          <span className="flex flex-col"><span className="text-footnote font-medium">Plant Pal · iPhone</span><span className="text-caption2 text-muted-foreground">TabView of NavigationStacks, sheets, delegates, the responder chain</span></span>
-        </PlainButton>
-        <PlainButton onClick={() => b.load(SPLIT_SAMPLE)} className="flex w-full cursor-pointer items-start gap-2 rounded-lg border-0 bg-secondary px-2.5 py-2 text-left outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+          <span className="flex flex-col"><span className="text-footnote font-medium">Plant Pal · iPhone</span><span className="text-caption2 text-muted-foreground">TabsScreen of NavigationStacks, sheets, delegates, the responder chain</span></span>
+        </SdkButton>
+        <SdkButton onClick={() => b.load(SPLIT_SAMPLE)} className="flex w-full cursor-pointer items-start gap-2 rounded-lg border-0 bg-secondary px-2.5 py-2 text-left outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
           <Icon name="sidebar-left" size={16} sw={2} className="mt-0.5 shrink-0 text-primary" />
           <span className="flex flex-col"><span className="text-footnote font-medium">Mail · iPad</span><span className="text-caption2 text-muted-foreground">A three-column SplitView: mailboxes, messages, and a Show Detail segue</span></span>
-        </PlainButton>
+        </SdkButton>
       </Section>
     </>
   );
@@ -246,9 +246,9 @@ export function DeleteScene({ sceneId, doc }: { sceneId: string; doc: Doc }) {
   const b = useBuilder();
   return (
     <Section title="Danger">
-      <PlainButton disabled={doc.scenes.length <= 1} onClick={() => b.commit((d) => removeScene(d, sceneId), { kind: 'none' })} className={danger}>
+      <SdkButton disabled={doc.scenes.length <= 1} onClick={() => b.commit((d) => removeScene(d, sceneId), { kind: 'none' })} className={danger}>
         <Icon name="trash" size={13} sw={2.2} /> Delete Scene
-      </PlainButton>
+      </SdkButton>
     </Section>
   );
 }

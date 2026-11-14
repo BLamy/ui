@@ -7,10 +7,10 @@
    either is opened. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
-import { ToggleGroup } from '@ui-sdk/react/toggle';
-import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { Toggle as SdkToggle, ToggleGroup } from '@ui-sdk/react/toggle';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Button } from '@/components/ui/button';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuContextTrigger } from '@/components/ui/dropdown-menu';
 import { HoverCardHeader } from '@/components/ui/hover-card';
 import { Spinner } from '@/components/ui/spinner';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
@@ -38,14 +38,14 @@ function Rail({ atlas }: { atlas: AtlasState }) {
       className="flex w-[52px] shrink-0 flex-col items-center gap-1.5 shadow-[inset_-1px_0_0_var(--border)]">
       <div aria-hidden="true" data-slot="atlas-rail-top" className="h-toolbar w-full shrink-0" />
       {VIEWS.map((v) => (
-        <PlainToggleButton key={v.id} value={v.id} aria-label={v.label}
+        <SdkToggle key={v.id} value={v.id} aria-label={v.label}
           className={cn(
             'bl-btn grid size-10 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent text-muted-foreground outline-none transition-colors duration-150',
             'focus-visible:ring-2 focus-visible:ring-ring',
             'not-data-pressed:hover:bg-secondary/60 not-data-pressed:hover:text-foreground data-pressed:bg-secondary data-pressed:text-foreground',
           )}>
           {v.icon}
-        </PlainToggleButton>
+        </SdkToggle>
       ))}
     </ToggleGroup>
   );
@@ -65,9 +65,9 @@ function WorktreeCard({ p, w }: { p: Project; w: Worktree }) {
   return (
     <div className="flex flex-col gap-2.5">
       <HoverCardHeader
-        media={<span className="grid size-9 place-items-center rounded-ctl bg-secondary text-muted-foreground"><BranchIcon size={18} /></span>}
+        icon={<span className="grid size-9 place-items-center rounded-ctl bg-secondary text-muted-foreground"><BranchIcon size={18} /></span>}
         title={<span className={cn(!w.branch && 'italic')}>{branchLabel(w)}</span>}
-        subtitle={p.name}
+        description={p.name}
       />
       <code className="block rounded-ctl bg-secondary px-2 py-1 text-caption break-all text-muted-foreground select-text">{shortPath(w.path)}</code>
       <span className="flex flex-wrap gap-1 empty:hidden"><WorktreeChips w={w} /></span>
@@ -92,12 +92,12 @@ function WorktreeItem({ atlas, p, w }: { atlas: AtlasState; p: Project; w: Workt
   const s = useSplitView();
   const show = (view: AtlasView) => { atlas.showView(view); atlas.open(w.id); s.select('sidebar', w.id); };
   return (
-    <ContextMenu onAction={(value) => {
+    <DropdownMenu onAction={(value) => {
       if (value === 'files' || value === 'changes') show(value);
       else if (value === 'copy') void navigator.clipboard?.writeText(w.path);
       else if (value === 'delete') atlas.requestDelete([w]);
     }}>
-      <ContextMenuTrigger className="flex w-full">
+      <DropdownMenuContextTrigger className="flex w-full">
         <SplitViewItem id={w.id} className="min-h-[34px] w-full py-1 pl-10" preview={<WorktreeCard p={p} w={w} />}>
           <span className="flex min-w-0 flex-1 items-center gap-2">
             <span className={cn('min-w-0 flex-1 truncate text-subhead leading-[1.3]', !w.branch && 'italic', (w.missing || w.unreachable) && 'opacity-55')}>
@@ -109,17 +109,17 @@ function WorktreeItem({ atlas, p, w }: { atlas: AtlasState; p: Project; w: Workt
             </span>
           </span>
         </SplitViewItem>
-      </ContextMenuTrigger>
-      <ContextMenuContent aria-label={`${branchLabel(w)} actions`}>
-        <ContextMenuItem value="changes" icon={<ChangesIcon size={18} />}>Show Changes</ContextMenuItem>
-        <ContextMenuItem value="files" icon={<Icon name="folder" size={18} />}>Browse Files</ContextMenuItem>
-        <ContextMenuItem value="copy" icon={<Icon name="copy" size={18} />}>Copy Path</ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem value="delete" destructive disabled={!atlas.deletable(w)} icon={<Icon name="trash" size={18} />}>
+      </DropdownMenuContextTrigger>
+      <DropdownMenuContent aria-label={`${branchLabel(w)} actions`}>
+        <DropdownMenuItem value="changes" icon={<ChangesIcon size={18} />}>Show Changes</DropdownMenuItem>
+        <DropdownMenuItem value="files" icon={<Icon name="folder" size={18} />}>Browse Files</DropdownMenuItem>
+        <DropdownMenuItem value="copy" icon={<Icon name="copy" size={18} />}>Copy Path</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem value="delete" destructive disabled={!atlas.deletable(w)} icon={<Icon name="trash" size={18} />}>
           {w.clone ? 'Delete Clone…' : 'Delete Worktree…'}
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -146,10 +146,10 @@ function ProjectGroup({ atlas, p, where, expanded, onExpandedChange }: {
           <div className="flex flex-col gap-px pb-1">
             {shown.map((w) => <WorktreeItem key={w.id} atlas={atlas} p={p} w={w} />)}
             {rows.length > limit ? (
-              <PlainButton onClick={() => setLimit(nextLimit(limit))}
+              <SdkButton onClick={() => setLimit(nextLimit(limit))}
                 className="bl-btn flex h-8 w-full cursor-pointer items-center rounded-ctl border-0 bg-transparent pl-10 text-left [font-family:inherit] text-subhead text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
                 Show more
-              </PlainButton>
+              </SdkButton>
             ) : null}
             {rows.length === 0 ? <div className="pl-10 py-1.5 text-footnote text-muted-foreground">No worktrees</div> : null}
           </div>

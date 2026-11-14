@@ -2,10 +2,10 @@
    My Lists, then one section per place Markdown task lists come from — In This Browser and each folder you add
    (both shared with Apple Notes). On a phone it's the root screen and search results show right here. Resting on
    a list previews what's next in it (ListPreview). */
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuContextTrigger } from '@/components/ui/dropdown-menu';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { PlainButton } from '@/components/ui/plain-button';
-import { SearchField } from '@/components/ui/search-field';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { SearchInput } from '@/components/ui/search-input';
 import { SplitViewContent, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { SMART, SYSTEM, TODAY_NUMBER, type RList, type Smart } from './data';
@@ -91,15 +91,15 @@ function RootSection({ root, collapsed }: { root: TaskRoot; collapsed: boolean }
     <span className="min-w-0 flex-1 truncate">{root.name}</span>
   </span>;
   return (
-    <SplitViewSection title={root.source === 'local' ? <ContextMenu>
-      <ContextMenuTrigger>{heading}</ContextMenuTrigger>
-      <ContextMenuContent aria-label={`${root.name} actions`}>
-        <ContextMenuItem value="remove" icon={<Icon name="xmark-circle" size={20} />} onSelect={() => api.removeFolder(root.path)}>Remove from Reminders and Notes</ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu> : heading}>
+    <SplitViewSection title={root.source === 'local' ? <DropdownMenu>
+      <DropdownMenuContextTrigger>{heading}</DropdownMenuContextTrigger>
+      <DropdownMenuContent aria-label={`${root.name} actions`}>
+        <DropdownMenuItem value="remove" icon={<Icon name="xmark-circle" size={20} />} onSelect={() => api.removeFolder(root.path)}>Remove from Reminders and Notes</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu> : heading}>
       {!root.connected ? (
-        <PlainButton onClick={() => api.reconnect(root.path)}
-          className="bl-btn w-full cursor-pointer rounded-panel border-0 bg-card px-4 py-3 text-left [font-family:inherit] text-body text-primary">Reconnect folder</PlainButton>
+        <SdkButton onClick={() => api.reconnect(root.path)}
+          className="bl-btn w-full cursor-pointer rounded-panel border-0 bg-card px-4 py-3 text-left [font-family:inherit] text-body text-primary">Reconnect folder</SdkButton>
       ) : lists.length ? (
         <div className="overflow-hidden rounded-panel bg-card">
           {lists.map((l) => <ListItem key={l.id} l={l} collapsed={collapsed} />)}
@@ -120,7 +120,7 @@ export function ListsSidebar() {
   return (
     <SplitViewSidebar aria-label="Lists" width={330} minWidth={280} maxWidth={400} className="bg-muted">
       <SplitViewContent className="px-4 pb-4">
-        <SearchField value={api.query} onValueChange={api.setQuery} aria-label="Search reminders" className="mt-3 mb-4" />
+        <SearchInput value={api.query} onValueChange={api.setQuery} aria-label="Search reminders" className="mt-3 mb-4" />
         {api.query && s.collapsed ? <InlineResults /> : (
           <>
             <div className="grid grid-cols-2 gap-3">{SMART.map((t) => <SmartTile key={t.id} t={t} />)}</div>
@@ -136,9 +136,9 @@ export function ListsSidebar() {
       </SplitViewContent>
       <div className="flex h-[50px] shrink-0 items-center justify-between px-4">
         {api.canAddFolder ? (
-          <PlainButton onClick={api.addFolder} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-body" style={{ color: SYSTEM.blue }}>Add Folder…</PlainButton>
+          <SdkButton onClick={api.addFolder} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-body" style={{ color: SYSTEM.blue }}>Add Folder…</SdkButton>
         ) : <span />}
-        <PlainButton onClick={addList} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-body" style={{ color: SYSTEM.blue }}>Add List</PlainButton>
+        <SdkButton onClick={addList} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-body" style={{ color: SYSTEM.blue }}>Add List</SdkButton>
       </div>
     </SplitViewSidebar>
   );

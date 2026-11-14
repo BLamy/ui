@@ -83,7 +83,7 @@ export const CHANNELS: Channel[] = [
     id: 'dev',
     group: 'Team',
     name: 'dev',
-    topic: 'Sidebar thread → full view · preview card → SideDrawer',
+    topic: 'Sidebar thread → full view · preview card → AdaptivePane',
     unread: true,
     messages: [
       { id: 'd1', user: 'ada', time: '10:08 AM', text: "that's the evals one", reactions: [r('👍', 1)] },

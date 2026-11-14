@@ -3,7 +3,7 @@
    path. They only show what opening the item shows in full, so touch (which never opens them) misses nothing. */
 import { parseMarkdown, plainText } from '@brett_lamy/docstream/gitbook';
 import { HoverCardHeader } from '@/components/ui/hover-card';
-import { TreeFileIcon } from '@/components/ui/tree';
+import { FileBadgeIcon } from '@/lib/file-icons';
 import { Icon, type IconName } from '@/lib/icon';
 import type { Folder, Note } from './data';
 import { viewerLabel } from './file-views';
@@ -28,7 +28,7 @@ export function NotePreview({ notes, note }: { notes: NotesState; note: Note }) 
   const text = excerpt(notes.drafts[note.id]?.body ?? note.body);
   const words = note.body.split(/\s+/).filter(Boolean).length;
   return <>
-    <HoverCardHeader media={<Tile icon="note" />} title={note.file.name} subtitle={note.file.standalone ? 'Opened file' : where(note.file.path)} />
+    <HoverCardHeader icon={<Tile icon="note" />} title={note.file.name} description={note.file.standalone ? 'Opened file' : where(note.file.path)} />
     <p className="m-0 mt-3 line-clamp-5 text-footnote leading-snug text-foreground">{text || <span className="text-muted-foreground">Empty note</span>}</p>
     <div className="mt-2.5 text-caption text-muted-foreground">
       Edited {edited(note.updated)} · {words} {words === 1 ? 'word' : 'words'}
@@ -42,8 +42,8 @@ export function FolderPreview({ notes, folder }: { notes: NotesState; folder: Fo
   const recent = notes.notes.filter((n) => n.folder === folder.id).sort((a, b) => b.updated.getTime() - a.updated.getTime()).slice(0, 3);
   const count = notes.count(folder);
   return <>
-    <HoverCardHeader media={<Tile icon="folder" />} title={folder.title}
-      subtitle={[`${count} ${count === 1 ? 'note' : 'notes'}`, subfolders ? `${subfolders} ${subfolders === 1 ? 'folder' : 'folders'}` : ''].filter(Boolean).join(' · ')} />
+    <HoverCardHeader icon={<Tile icon="folder" />} title={folder.title}
+      description={[`${count} ${count === 1 ? 'note' : 'notes'}`, subfolders ? `${subfolders} ${subfolders === 1 ? 'folder' : 'folders'}` : ''].filter(Boolean).join(' · ')} />
     {recent.length ? <ul className="m-0 mt-3 list-none! p-0">
       {recent.map((n) => <li key={n.id} className="flex items-baseline gap-2 py-0.5 text-footnote">
         <span className="min-w-0 flex-1 truncate text-foreground">{n.file.name}</span>
@@ -56,8 +56,8 @@ export function FolderPreview({ notes, folder }: { notes: NotesState; folder: Fo
 
 export function FilePreview({ file }: { file: OtherFile }) {
   return <>
-    <HoverCardHeader media={<span className="grid size-10 place-items-center rounded-lg bg-secondary"><TreeFileIcon name={file.name} /></span>}
-      title={file.name} subtitle={viewable(file.kind) ? viewerLabel(file) : 'Drag onto a note to embed it'} />
+    <HoverCardHeader icon={<span className="grid size-10 place-items-center rounded-lg bg-secondary"><FileBadgeIcon name={file.name} /></span>}
+      title={file.name} description={viewable(file.kind) ? viewerLabel(file) : 'Drag onto a note to embed it'} />
     <div className="mt-2.5 truncate text-caption text-muted-foreground">{file.path}</div>
   </>;
 }

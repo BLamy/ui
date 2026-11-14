@@ -2,6 +2,8 @@
 
 A command palette: a search field over grouped, fuzzy-matched commands, with nested pages you open and go back from, shortcuts, a keyboard legend and ⌘1–⌘9 quick picks. It renders inline, or in a ⌘K dialog. It is UI SDK's [Command](https://ui-sdk.dev/docs/react/components/command) with the kit's look: the field keeps focus the whole time and the highlighted command follows with `aria-activedescendant`, so typing, arrows and Enter never fight over focus.
 
+Use it for a launcher over many commands, places or records that people search by name. For a short list of actions on a button or an item, use a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu); to pick a value for a form field by typing, use a [Combobox](https://blamy.github.io/ui/#/combobox).
+
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/command-menu.json{% endcommand %}
@@ -35,13 +37,13 @@ import {
 import {
   CommandMenu, CommandMenuInput, CommandMenuEmpty, CommandMenuList, CommandMenuPage,
   CommandMenuGroup, CommandMenuGroupLabel, CommandMenuItem, CommandMenuFooter,
-  CommandMenuDialog, CommandMenuDialogTrigger, CommandMenuDialogContent,
+  CommandMenuDialog, CommandMenuDialogContent, DialogTrigger, Button,
 } from '@brett_lamy/ui'
 
 <CommandMenuDialog>
-  <CommandMenuDialogTrigger shortcut="mod+k" className={buttonVariants({ variant: 'secondary' })}>
+  <DialogTrigger shortcut="mod+k" render={<Button variant="secondary" />}>
     Search…
-  </CommandMenuDialogTrigger>
+  </DialogTrigger>
   <CommandMenuDialogContent aria-label="Command menu">
     <CommandMenu onAction={run}>
       <CommandMenuInput placeholder="Search commands..." />
@@ -50,9 +52,9 @@ import {
         <CommandMenuPage>
           <CommandMenuGroup>
             <CommandMenuGroupLabel>Actions</CommandMenuGroupLabel>
-            <CommandMenuItem value="new-thread" icon="square-pencil" title="New thread" shortcut="mod+shift+o" />
-            <CommandMenuItem icon="square-pencil" title="New thread in..." page="projects" />
-            <CommandMenuItem icon="link" title="Copy thread ID" description={id} onSelect={copyId} />
+            <CommandMenuItem value="new-thread" icon="square-pencil" shortcut="mod+shift+o">New thread</CommandMenuItem>
+            <CommandMenuItem icon="square-pencil" page="projects">New thread in…</CommandMenuItem>
+            <CommandMenuItem icon="link" description={id} onSelect={copyId}>Copy thread ID</CommandMenuItem>
           </CommandMenuGroup>
         </CommandMenuPage>
         <CommandMenuPage value="projects" title="Projects" numbered>
@@ -65,13 +67,15 @@ import {
 </CommandMenuDialog>
 ```
 
-Leave out the three dialog parts and the same `CommandMenu` renders in place.
+Leave out the dialog parts and the same `CommandMenu` renders in place. The button that opens the dialog is the kit's `DialogTrigger` (from the Dialog module), styled with `render={<Button … />}` like every popup trigger.
+
+A command's text is its children, as in every menu row: `<CommandMenuItem>New thread</CommandMenuItem>` (or the `title` prop, which takes any node). It sits beside the `icon`, over the `description`, and shows what the search matched in bold. A row of your own is a function child (`{(state) => …}`) or any non-text node, which replaces icon, title, description and trailing.
 
 ## Running commands
 
 Enter, a click or a command's `shortcut` runs it: its `onSelect(event)` first, then the menu's `onAction(value, details)`, or, when it has a `page`, that page opens. `event.preventDefault()` in `onSelect` skips the rest. Return a Promise from either and the command is pending until it settles (`data-pending`, `aria-busy`); a rejection lands in its `error` state.
 
-A command's `value` identifies it (default: its `title`, when that is a string). `shortcut` (`"mod+shift+o"`, `mod` being ⌘ on Apple platforms and Ctrl elsewhere) runs the command while the list is mounted, even when the search or the current page hides it, sets `aria-keyshortcuts`, and shows the keys for the platform (⇧⌘O, or Ctrl+Shift+O). To show keys the app handles itself, without registering them, pass `trailing={<CommandMenuShortcut shortcut="mod+p" />}`.
+A command's `value` identifies it (default: its text, when that is a string). `shortcut` (`"mod+shift+o"`, `mod` being ⌘ on Apple platforms and Ctrl elsewhere) runs the command while the list is mounted, even when the search or the current page hides it, sets `aria-keyshortcuts`, and shows the keys for the platform (⇧⌘O, or Ctrl+Shift+O). To show keys the app handles itself, without registering them, pass `trailing={<CommandMenuShortcut shortcut="mod+p" />}`.
 
 Inside a CommandMenuDialog, a command that runs closes the dialog (`closeOnSelect`, default true; a command's own `closeOnSelect` overrides it). A command that opens a page never closes it, and one whose action returns a Promise closes it once that settles.
 
@@ -123,16 +127,16 @@ For async results, pass `status` (`'loading'`, `'error'`, `'idle'`) and `filter=
 | `CommandMenuList` | `stickyHeadings`; at most 360px tall (`className="max-h-…"` to change it). Without children it renders the menu's `items`. |
 | `CommandMenuPage` | `value`, `placeholder`, `title`, `filter`, `numbered`, `onKeyDown`. |
 | `CommandMenuGroup` · `CommandMenuGroupLabel` | `columns` (a grid) on the group; the label names it and sticks over its rows. |
-| `CommandMenuItem` | `value`, `icon` (an Icon name or a node), `title`, `description`, `trailing` (a Badge, keys), `shortcut`, `page`, `chevron`, `disabled` (skipped, can't run), `dimmed` (grey but runnable), `onSelect`, `closeOnSelect`, `label`, `keywords`; or custom `children` (a node or a function of the command's state). |
+| `CommandMenuItem` | `value`, `icon` (an Icon name or a node), text children or `title`, `description` (the option's accessible description, not part of its name), `trailing` (a Badge, keys), `shortcut`, `page`, `chevron`, `disabled` (skipped, can't run), `dimmed` (grey but runnable), `onSelect`, `closeOnSelect`, `label`, `keywords`; or a custom row (a non-text node, or a function of the command's state). |
 | `CommandMenuItemIcon` · `CommandMenuItemText` · `CommandMenuItemDescription` · `CommandMenuShortcut` | The row's pieces, for custom rows. `CommandMenuItemText` bolds what matched; `CommandMenuShortcut` shows its command's `shortcut`, or its own. |
 | `CommandMenuItems` | Renders data (`CommandMenuData`) as the kit's rows. |
-| `CommandMenuEmpty` | Shown, and announced, while nothing matches. Goes beside the list. |
+| `CommandMenuEmpty` | Shown, and announced, while nothing matches: the kit's [EmptyState](https://blamy.github.io/ui/#/empty-state) (`icon`, `title` or text children, default "No results", `description`, `action`). Goes beside the list. |
 | `CommandMenuStatus` | A polite live region for loading and result counts. |
 | `CommandMenuSeparator` | A line between groups. |
 | `CommandMenuFooter` | `legend` (`true`, `false` or your own `{ keys, label }[]`), children on the right. The default legend says Esc closes in a dialog, and Esc clears inline (only while there is a search). |
 | `CommandMenuDialog` | The dialog's `open` / `defaultOpen` / `onOpenChange(open, details)`, `controller`, `container`. |
-| `CommandMenuDialogTrigger` | `shortcut` (`"mod+k"`) opens it from anywhere; `className={buttonVariants({ … })}` for the kit's look. |
-| `CommandMenuDialogContent` | The card hanging from the top of its host, and its scrim (`overlayClassName`). It is at most 640px tall and leaves 160px of its host free, so in a framed app it fits the frame. Name it with `aria-label` (default "Command menu"). |
+| `DialogTrigger` (Dialog's) | `shortcut` (`"mod+k"`) opens it from anywhere; `render={<Button … />}` for the kit's look. |
+| `CommandMenuDialogContent` | The card hanging from the top of its host, and its scrim (`backdropClassName`). It is at most 640px tall and leaves 160px of its host free, so in a framed app it fits the frame. Name it with `aria-label` (default "Command menu"). |
 
 `useCommandMenuValue()` returns the highlighted command's `value`, for preview panes and footers that follow the highlight.
 
@@ -148,7 +152,7 @@ The dialog renders into BLProvider's root, so its scrim covers the app it opened
 
 ### ⌘K dialog
 
-`CommandMenuDialogTrigger shortcut="mod+k"` opens it from anywhere on the page. `container` renders it into a layer inside the host, so the scrim covers just this frame and the palette keeps the host's theme.
+`<DialogTrigger shortcut="mod+k">` opens it from anywhere on the page. `container` renders it into a layer inside the host, so the scrim covers just this frame and the palette keeps the host's theme.
 
 {% demo src="command-menu/dialog" %}
 

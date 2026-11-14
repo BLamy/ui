@@ -12,13 +12,24 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-const bursts = (container: HTMLElement) => container.querySelector('[data-slot=celebrate]')!.children.length;
+const bursts = (container: HTMLElement) => container.querySelector('[data-slot=celebrate-burst]')!.children.length;
 
 describe('Celebrate', () => {
-  it('is decorative, and does not fire on its first render, even in Strict Mode', () => {
-    const { container } = render(<StrictMode><Celebrate fire={1} /></StrictMode>);
-    expect(container.querySelector('[data-slot=celebrate]')!.getAttribute('aria-hidden')).toBe('true');
+  it('wraps its subject, with a decorative burst layer behind it, and does not fire on its first render, even in Strict Mode', () => {
+    const { container, getByRole } = render(<StrictMode><Celebrate fire={1}><button type="button">Done</button></Celebrate></StrictMode>);
+    const root = container.querySelector<HTMLElement>('[data-slot=celebrate]')!;
+    expect(root.className).toContain('relative isolate');
+    expect(root.contains(getByRole('button', { name: 'Done' }))).toBe(true);
+    expect(container.querySelector('[data-slot=celebrate-burst]')!.getAttribute('aria-hidden')).toBe('true');
     expect(bursts(container)).toBe(0);
+  });
+
+  it('passes props through and renders another element with `render`', () => {
+    const { container } = render(<Celebrate fire={0} render={<div />} id="win" className="mt-2" />);
+    const root = container.querySelector<HTMLElement>('[data-slot=celebrate]')!;
+    expect(root.tagName).toBe('DIV');
+    expect(root.id).toBe('win');
+    expect(root.className).toContain('mt-2');
   });
 
   it('fires a burst each time `fire` changes and removes it afterwards', () => {

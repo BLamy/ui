@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FileDropZone } from '@/components/ui/file-upload'
+import { FileUploadDropzone } from '@/components/ui/file-upload'
 import { StlViewer } from '@/components/ui/stl-viewer'
 
 // A model from your computer: choose or drop an .stl and it is shown from a blob: URL. Nothing is uploaded.
@@ -11,8 +11,8 @@ export default function LocalFile() {
   }
   return (
     <div className="flex w-full max-w-[640px] flex-col gap-3">
-      <FileDropZone
-        size="compact"
+      <FileUploadDropzone
+        orientation="horizontal"
         multiple={false}
         rules={{ accept: ['.stl', 'model/stl'] }}
         title={model ? model.name : 'Drop an .stl file here'}

@@ -2,7 +2,7 @@
    JSX and its scene's file; otherwise any file of the app (App.tsx, each scene, the contexts, the runtime). */
 import { useMemo, useState } from 'react';
 import { CodeEditor } from '@/components/ui/code-editor';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { generate, nodeSnippet } from './codegen';
 import { ChoiceInput, Help, Section } from './fields';
@@ -31,9 +31,9 @@ export function CodePanel({ doc, scene, node }: { doc: Doc; scene: Scene | null;
         </Section>
       ) : null}
       <Section title="File" action={(
-        <PlainButton onClick={() => void copyAll()} className="flex h-6 cursor-pointer items-center gap-1 rounded-md border-0 bg-secondary px-1.5 text-caption2 font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+        <SdkButton onClick={() => void copyAll()} className="flex h-6 cursor-pointer items-center gap-1 rounded-md border-0 bg-secondary px-1.5 text-caption2 font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
           <Icon name={copied ? 'checkmark' : 'copy'} size={12} sw={2.2} /> {copied ? 'Copied' : 'Copy all files'}
-        </PlainButton>
+        </SdkButton>
       )}>
         <ChoiceInput label="File" value={file.path} options={files.map((f) => ({ id: f.path, label: f.path }))} onChange={setPicked} />
         <CodeEditor readOnly value={file.code} language="tsx" title={file.path} showCopy maxHeight={520} className="text-caption2" />

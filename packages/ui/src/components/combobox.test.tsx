@@ -123,7 +123,7 @@ describe('Combobox', () => {
   it('takes its name and description from a Field', async () => {
     render(
       <Field name="assignee">
-        <FieldLabel variant="field">Assignee</FieldLabel>
+        <FieldLabel>Assignee</FieldLabel>
         <Combobox defaultValue="kim">
           <ComboboxInput />
           <ComboboxContent>

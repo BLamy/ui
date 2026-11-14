@@ -48,9 +48,9 @@ function BrushCard({ tool, ink, wi, strokes }: { tool: PencilTool; ink: string; 
   return (
     <div className="flex flex-col gap-3">
       <HoverCardHeader
-        media={<span className="grid size-9 place-items-center rounded-lg bg-secondary text-foreground"><Icon name={PK_TOOL_ICONS[tool]} size={20} /></span>}
+        icon={<span className="grid size-9 place-items-center rounded-lg bg-secondary text-foreground"><Icon name={PK_TOOL_ICONS[tool]} size={20} /></span>}
         title={info.title}
-        subtitle={tool === 'eraser' ? `${strokes} stroke${strokes === 1 ? '' : 's'} on the page` : `Width ${wi + 1} · ${PK_W[wi].m}×`} />
+        description={tool === 'eraser' ? `${strokes} stroke${strokes === 1 ? '' : 's'} on the page` : `Width ${wi + 1} · ${PK_W[wi].m}×`} />
       {tool !== 'eraser' ? <BrushSample tool={tool} ink={ink} w={PK_W[wi].m} /> : null}
       <p className="m-0 text-footnote text-muted-foreground">{info.about}</p>
     </div>

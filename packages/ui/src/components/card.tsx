@@ -1,15 +1,27 @@
-import type { ComponentProps } from 'react';
+import { renderElement, type PartProps } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { cx } from '@/lib/utils';
 
-/* ══ Card — shadcn's card as an iOS inset-grouped panel ══ */
-export const cardVariants = cva('flex flex-col overflow-hidden rounded-card text-card-foreground', {
+/* ══ Card — shadcn's card as an iOS inset-grouped panel ══
+   <Card>
+     <CardHeader>
+       <CardTitle>Pro plan</CardTitle>
+       <CardDescription>Billed yearly</CardDescription>
+       <CardAction><Badge variant="tinted">Current</Badge></CardAction>
+     </CardHeader>
+     <CardContent>…</CardContent>
+     <CardFooter>…</CardFooter>
+   </Card>
+   Every part takes `render`: `<Card render={<article />}>`, `<CardTitle render={<h2 />}>`, and a whole card that is
+   a link is `<Card render={<a href="…" />}>`. The surface (radius, fill) is the one List and DisclosureGroup's
+   `inset` variant use. */
+export const cardVariants = cva('flex flex-col overflow-hidden rounded-panel text-card-foreground', {
   variants: {
     variant: {
       /** Inset-grouped: a card on the grouped (bg2) background. */
-      default: 'bg-card',
+      default: 'bg-card [--avatar-ring:var(--card)]',
       /** Floating: lifts off any background. */
-      elevated: 'bg-card shadow-[0_6px_24px_--alpha(black/10%),0_0_0_.5px_var(--border)]',
+      elevated: 'bg-card shadow-raised [--avatar-ring:var(--card)]',
       /** Hairline outline, no fill. */
       outline: 'bg-transparent shadow-hairline',
     },
@@ -17,34 +29,55 @@ export const cardVariants = cva('flex flex-col overflow-hidden rounded-card text
   defaultVariants: { variant: 'default' },
 });
 
-export interface CardProps extends ComponentProps<'div'>, VariantProps<typeof cardVariants> {}
+export interface CardProps extends PartProps<'div'>, VariantProps<typeof cardVariants> {}
 
-export function Card({ className, variant, ...props }: CardProps) {
-  return <div data-slot="card" className={cn(cardVariants({ variant }), className)} {...props} />;
+export function Card({ className, variant, render, ...props }: CardProps) {
+  return renderElement('div', { 'data-slot': 'card', ...props, className: cx(cardVariants({ variant }), className) }, render);
 }
 
-export function CardHeader({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="card-header" className={cn('flex flex-col gap-1 px-4 pt-4 pb-1', className)} {...props} />;
-}
-
-export function CardTitle({ className, ...props }: ComponentProps<'h3'>) {
-  return (
-    <h3
-      data-slot="card-title"
-      className={cn('m-0 text-body leading-[22px] font-semibold tracking-[-.2px] text-foreground', className)}
-      {...props}
-    />
+/** Title, description and an optional `CardAction`, which takes the top-right corner. */
+export function CardHeader({ className, render, ...props }: PartProps<'div'>) {
+  return renderElement(
+    'div',
+    {
+      'data-slot': 'card-header',
+      ...props,
+      className: cx('grid auto-rows-min items-start gap-1 px-4 pt-4 pb-1 has-data-[slot=card-action]:grid-cols-[1fr_auto]', className),
+    },
+    render,
   );
 }
 
-export function CardDescription({ className, ...props }: ComponentProps<'p'>) {
-  return <p data-slot="card-description" className={cn('m-0 text-footnote leading-[18px] text-muted-foreground', className)} {...props} />;
+/** An `h3` by default: `render={<h2 />}` for another level. */
+export function CardTitle({ className, render, ...props }: PartProps<'h3'>) {
+  return renderElement(
+    'h3',
+    { 'data-slot': 'card-title', ...props, className: cx('m-0 text-body leading-[22px] font-semibold tracking-[-.2px] text-foreground', className) },
+    render,
+  );
 }
 
-export function CardContent({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="card-content" className={cn('px-4 py-3 text-subhead leading-[20px]', className)} {...props} />;
+export function CardDescription({ className, render, ...props }: PartProps<'p'>) {
+  return renderElement(
+    'p',
+    { 'data-slot': 'card-description', ...props, className: cx('m-0 text-footnote leading-[18px] text-muted-foreground', className) },
+    render,
+  );
 }
 
-export function CardFooter({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="card-footer" className={cn('flex items-center gap-2 px-4 pt-1 pb-4', className)} {...props} />;
+/** The header's top-right slot (a badge, a menu button, a link), beside the title and the description. */
+export function CardAction({ className, render, ...props }: PartProps<'div'>) {
+  return renderElement(
+    'div',
+    { 'data-slot': 'card-action', ...props, className: cx('col-start-2 row-span-2 row-start-1 self-start justify-self-end', className) },
+    render,
+  );
+}
+
+export function CardContent({ className, render, ...props }: PartProps<'div'>) {
+  return renderElement('div', { 'data-slot': 'card-content', ...props, className: cx('px-4 py-3 text-subhead leading-[20px]', className) }, render);
+}
+
+export function CardFooter({ className, render, ...props }: PartProps<'div'>) {
+  return renderElement('div', { 'data-slot': 'card-footer', ...props, className: cx('flex items-center gap-2 px-4 pt-1 pb-4', className) }, render);
 }

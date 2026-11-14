@@ -4,17 +4,18 @@ import {
   type ComponentProps, type CSSProperties, type RefObject, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactElement, type ReactNode,
 } from 'react';
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList, type ListAnnouncement } from '@ui-sdk/react/command';
-import { Input } from '@ui-sdk/react/input';
 import { Listbox, ListboxItem, ListboxItemIndicator } from '@ui-sdk/react/listbox';
 import { createParts } from '@ui-sdk/react/primitive';
 import { useShortcut } from '@ui-sdk/react/shortcuts';
 import { Toolbar, ToolbarButton } from '@ui-sdk/react/toolbar';
 import { announce as announceText, createFocusRecovery, type ChangeDetails, type ChangeSource } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button } from '@/components/ui/button';
 import { checkboxVariants } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { listboxItemVariants, listboxVariants } from '@/components/ui/list-box';
-import { PlainButton } from '@/components/ui/plain-button';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger, createPopoverController, type PopoverProps } from '@/components/ui/popover';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import {
@@ -23,10 +24,10 @@ import {
   type DatePreset, type DateValue, type Filter, type FilterField, type FilterOperator, type FilterOption, type FilterValue, type RelativeUnit,
 } from '@/lib/filter-model';
 import { Icon } from '@/lib/icon';
-import type { ChangeGiven } from '@/lib/change-details';
+import { changeDetails, type ChangeGiven } from '@/lib/change-details';
 import { useControllableChange } from '@/lib/controllable-state';
 import { optionSearch } from '@/lib/option-search-primitive';
-import { selectableText } from '@/lib/primitives';
+import { pressableFocusRing, selectableText } from '@/lib/primitives';
 import { cn, cx } from '@/lib/utils';
 
 /* ══ Filter — Linear-style filtering ══
@@ -34,14 +35,14 @@ import { cn, cx } from '@/lib/utils';
    multi-select (or a date, number or text editor) of its values; the filter lands as a chip you can edit in place —
    the operator and the value are each a button of their own — or remove (× · Backspace · Delete).
 
-   <FilterBar fields={fields} defaultValue={[…]} onValueChange={setFilters} hotkey="f" />
+   <FilterBar fields={fields} defaultValue={[…]} onValueChange={setFilters} />   // Filter button, chips, Clear all
 
    or composed:
 
    <FilterBar fields={fields} value={filters} onValueChange={setFilters}>
      <FilterInput />                       // components/filter-input — a sentence → chips
      <FilterToolbar>
-       <FilterMenu />  <FilterList />  <FilterMatch />  <FilterClear />
+       <FilterMenu shortcut="f" />  <FilterList />  <FilterMatch />  <FilterClear />
      </FilterToolbar>
    </FilterBar>
 
@@ -150,12 +151,11 @@ const InToolbar = createContext(false);
 
 /* ── variants ── */
 
-export const filterBarVariants = cva('flex min-w-0 flex-col gap-2');
-
-export const filterToolbarVariants = cva('flex min-w-0 flex-wrap items-center gap-1.5');
+const barClass = 'flex min-w-0 flex-col gap-2';
+const toolbarClass = 'flex min-w-0 flex-wrap items-center gap-1.5';
 
 export const filterChipVariants = cva(
-  'box-border inline-flex max-w-full min-w-0 items-stretch overflow-hidden rounded-lg text-foreground',
+  'box-border inline-flex max-w-full min-w-0 items-stretch rounded-lg text-foreground',
   {
     variants: {
       size: {
@@ -163,23 +163,30 @@ export const filterChipVariants = cva(
         sm: 'h-6 text-caption',
       },
       /** `preview` is a chip that is not a filter yet (what the natural-language input will apply). */
-      tone: {
+      variant: {
         default: 'bg-secondary shadow-hairline',
         preview: 'bg-primary/10 text-foreground shadow-hairline',
       },
     },
-    defaultVariants: { size: 'default', tone: 'default' },
+    defaultVariants: { size: 'default', variant: 'default' },
   },
 );
 
-/** One part of a chip (field, operator, value, remove): a hairline from its neighbour, its own hover, press and focus. */
+/* Focus: a button of the row draws the kit's pressable ring (2px, offset); a part of a chip draws the same ring inset,
+   since its neighbours touch it. The search row of a popup list underlines in the tint (its field keeps focus while
+   the popup is open). Typed values are the kit's Input, with its own ring. */
+
+/** One part of a chip (field, operator, value, remove): a hairline from its neighbour, its own hover, press and focus.
+    The outer parts round with the chip, so their hover fill follows its corners. */
 const chipPart =
-  'bl-btn flex min-w-0 items-center gap-1.5 border-0 border-l border-border bg-transparent px-2 [font-family:inherit] text-inherit outline-none first:border-l-0';
+  'bl-btn flex min-w-0 items-center gap-1.5 border-0 border-l border-border bg-transparent px-2 [font-family:inherit] text-inherit outline-none first:rounded-s-lg first:border-l-0 last:rounded-e-lg';
 const chipButton =
   'cursor-pointer hover:bg-accent active:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
 
-const triggerButton =
-  'bl-btn box-border inline-flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 [font-family:inherit] text-footnote font-medium text-foreground/70 outline-none transition-[background-color] duration-spring-snappy ease-spring-snappy hover:bg-accent active:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none';
+const triggerButton = cn(
+  'bl-btn box-border inline-flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 [font-family:inherit] text-footnote font-medium text-foreground/70 transition-[background-color] duration-spring-snappy ease-spring-snappy hover:bg-accent active:bg-secondary-strong motion-reduce:transition-none',
+  pressableFocusRing,
+);
 
 const popupList = cn(listboxVariants({ variant: 'popup' }));
 const popupRow = listboxItemVariants({ variant: 'popup' });
@@ -199,7 +206,7 @@ type BarButtonProps = Omit<ComponentProps<'button'>, 'className' | 'onClick'> & 
 function BarButton({ render, ...props }: BarButtonProps) {
   const inBar = useContext(InToolbar);
   if (inBar) return <ToolbarButton render={render} {...props} />;
-  return render ? cloneElement(render, props) : <PlainButton {...props} />;
+  return render ? cloneElement(render, props) : <SdkButton {...props} />;
 }
 
 const dotStyle = (color: string) => ({ '--c': color }) as CSSProperties;
@@ -242,7 +249,7 @@ function fallbackField(filter: Filter): FilterField {
 }
 
 /** The search row above a list: an icon and the field, which keeps focus while the arrows move through the list. */
-const searchRow = 'flex h-10 items-center gap-2 border-b border-border px-3 focus-within:ring-2 focus-within:ring-inset focus-within:ring-ring/45';
+const searchRow = 'flex h-10 items-center gap-2 border-b border-border px-3 transition-[border-color] duration-spring-snappy ease-spring-snappy focus-within:border-primary motion-reduce:transition-none';
 const searchInput = cn(
   'min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-foreground outline-none placeholder:text-tertiary-foreground [&::-webkit-search-cancel-button]:appearance-none',
   selectableText,
@@ -299,9 +306,9 @@ export interface FilterValueEditorProps {
   operator?: FilterOperator;
   /** The current value, if there is one. */
   value?: FilterValue;
-  /** Called as the value changes: on every toggle of a select, on Enter or blur for typed values. `options` carries the
-   *  event and source behind it, for the change's details. */
-  onChange: (value: FilterValue, options?: FilterChangeOptions) => void;
+  /** Called as the value changes: on every toggle of a select, on Enter or blur for typed values, with UI SDK's change
+   *  details (reason `update`, the event and source behind it). */
+  onValueChange: (value: FilterValue, details: FilterChangeDetails) => void;
   /** Called when the choice is complete (a preset picked, Enter pressed) so the host can close. */
   onDone?: () => void;
   /** Called by Backspace on an empty search: the host's way back. */
@@ -356,8 +363,6 @@ function BooleanEditor({ value, onChange, onDone }: { value?: FilterValue; onCha
   );
 }
 
-const fieldInput = 'rounded-lg border-0 bg-input px-3 [font-family:inherit] text-subhead text-foreground outline-none focus:ring-2 focus:ring-ring/45';
-
 /** Text or a number, applied on Enter, on the button, or when the field loses focus. */
 function TypedEditor({ field, value, onChange, onDone, onBack }: { field: FilterField; value?: FilterValue; onChange: (value: FilterValue, options: FilterChangeOptions) => void; onDone?: () => void; onBack?: () => void }) {
   const numeric = field.kind === 'number';
@@ -385,13 +390,11 @@ function TypedEditor({ field, value, onChange, onDone, onBack }: { field: Filter
           else if (e.key === 'Backspace' && draft === '' && onBack) onBack();
         }}
         onBlur={(e) => commit(false, from(e))}
-        className={cn('box-border h-9 w-full placeholder:text-tertiary-foreground', fieldInput, selectableText)}
+        size="sm"
       />
       <div className="flex items-center justify-between gap-2 text-caption text-foreground/70">
         <span>Press Enter to apply</span>
-        <PlainButton onClick={(e) => commit(true, from(e))} disabled={draft.trim() === ''} className="bl-btn h-7 cursor-pointer rounded-lg border-0 bg-primary px-3 [font-family:inherit] text-footnote font-semibold text-primary-foreground outline-none data-disabled:cursor-default data-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-          Apply
-        </PlainButton>
+        <Button size="sm" onClick={(e) => commit(true, from(e))} disabled={draft.trim() === ''}>Apply</Button>
       </div>
     </div>
   );
@@ -421,10 +424,11 @@ function DateEditor({ operator, value, onChange, onDone }: { operator?: FilterOp
           autoFocus
           min={1}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); send(amount, relative.unit, from(e)); onDone?.(); } }}
-          className={cn('box-border h-9 w-full tabular-nums', fieldInput, selectableText)}
+          size="sm"
+          className="tabular-nums"
         />
         <Segmented<RelativeUnit> aria-label="Unit" value={relative.unit} onValueChange={(unit, details) => { if (unit) send(amount, unit, via(details)); }}>
-          {RELATIVE_UNITS.map((u) => <SegmentedItem key={u} value={u}>{`${u}s`}</SegmentedItem>)}
+          {RELATIVE_UNITS.map((u) => <SegmentedItem key={u} value={u} className="px-1.5">{`${u}s`}</SegmentedItem>)}
         </Segmented>
       </div>
     );
@@ -452,7 +456,7 @@ function DateEditor({ operator, value, onChange, onDone }: { operator?: FilterOp
           onValueChange={(d) => setDay(d)}
           onBlur={(e) => commitDay(false, from(e))}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitDay(true, from(e)); } }}
-          className={cn('box-border h-9 w-full', fieldInput, selectableText)}
+          size="sm"
         />
       </div>
     </div>
@@ -460,7 +464,8 @@ function DateEditor({ operator, value, onChange, onDone }: { operator?: FilterOp
 }
 
 /** The editor for a field's value: searchable checkbox rows, Yes / No, date presets and a date input, a number or text box. */
-export function FilterValueEditor({ field, operator, value, onChange, onDone, onBack }: FilterValueEditorProps) {
+export function FilterValueEditor({ field, operator, value, onValueChange, onDone, onBack }: FilterValueEditorProps) {
+  const onChange = (next: FilterValue, options?: FilterChangeOptions) => onValueChange(next, changeDetails({ reason: 'update', ...options }));
   switch (field.kind) {
     case 'select':
     case 'multiselect':
@@ -487,7 +492,7 @@ export interface FilterMenuProps {
   /** Needed outside a FilterBar: `useFilters()`. */
   state?: FilterActions;
   /** The first press of this key (no modifier, nothing editable focused) opens the menu: `'f'` is Linear's. Off by default. */
-  hotkey?: string | null;
+  shortcut?: string | null;
   /** The trigger's element, such as `<Button variant="secondary" />`. Default: the kit's quiet "Filter" button. */
   render?: ReactElement<Record<string, unknown>>;
   /** The trigger's content. Default: a filter icon and "Filter". */
@@ -498,8 +503,10 @@ export interface FilterMenuProps {
   /** Where the popover opens. Default below, start-aligned. */
   side?: ComponentProps<typeof PopoverContent>['side'];
   align?: ComponentProps<typeof PopoverContent>['align'];
+  /** The trigger's classes. */
   className?: string;
-  popoverClassName?: string;
+  /** Props for the popover's content (its `className`, `sideOffset`…). */
+  contentProps?: Omit<ComponentProps<typeof PopoverContent>, 'children' | 'side' | 'align'>;
   /** Fields already filtered stay in the list when true (default: a field is offered once). */
   allowDuplicates?: boolean;
 }
@@ -521,8 +528,8 @@ const countWhileShown = (search: RefObject<HTMLInputElement | null>) => (change:
 };
 
 export function FilterMenu({
-  fields: fieldsProp, state, hotkey = null, render, children, open, defaultOpen, onOpenChange, side = 'bottom', align = 'start',
-  className, popoverClassName, allowDuplicates: duplicatesProp,
+  fields: fieldsProp, state, shortcut = null, render, children, open, defaultOpen, onOpenChange, side = 'bottom', align = 'start',
+  className, contentProps, allowDuplicates: duplicatesProp,
 }: FilterMenuProps) {
   const bar = useOptionalFilterBar();
   const fields = fieldsProp ?? bar?.fields ?? [];
@@ -534,14 +541,18 @@ export function FilterMenu({
   const fieldSearch = useRef<HTMLInputElement>(null);
   const [fieldCount] = useState(() => countWhileShown(fieldSearch));
 
+  // The open state is kept here, not in the controller: UI SDK drops a controller's `defaultOpen` when React
+  // remounts the popover (StrictMode), so the Popover is always controlled and the controller only drives it.
+  const [innerOpen, setInnerOpen] = useState(defaultOpen ?? false);
   const changeOpen: OpenChange = (next, details) => {
     // Start from the field list each time it opens (not on close: the exit animation would flash it).
     if (next) { setField(null); setDraftId(null); }
     onOpenChange?.(next, details);
+    if (open === undefined && !details.canceled) setInnerOpen(next);
   };
 
   // A page shortcut: UI SDK pauses it while a modal layer is open, and skips text fields.
-  useShortcut(hotkey ? hotkey.toLowerCase() : null, (event) => { popover.setOpen(true, { reason: 'shortcut', event }); });
+  useShortcut(shortcut ? shortcut.toLowerCase() : null, (event) => { popover.setOpen(true, { reason: 'shortcut', event }); });
 
   if (!api) return null;
   const draft = draftId ? api.filters.find((f) => f.id === draftId) : undefined;
@@ -549,8 +560,9 @@ export function FilterMenu({
   const available = fields.filter((f) => allowDuplicates || !taken.has(f.id));
 
   // The first value picked creates the filter; later ones edit it (and an emptied select removes it again).
-  const change = (value: FilterValue, options?: FilterChangeOptions) => {
+  const change = (value: FilterValue, details: FilterChangeDetails) => {
     if (!field) return;
+    const options = via(details);
     if (draft) {
       if (Array.isArray(value) && value.length === 0) { if (api.remove(draft.id, options)) setDraftId(null); return; }
       const next = withValue(field, draft, value);
@@ -562,11 +574,11 @@ export function FilterMenu({
   };
 
   return (
-    <Popover controller={popover} open={open} defaultOpen={defaultOpen} onOpenChange={changeOpen}>
+    <Popover controller={popover} open={open ?? innerOpen} onOpenChange={changeOpen}>
       <BarButton
         render={<PopoverTrigger render={render} />}
         data-filter-trigger=""
-        aria-keyshortcuts={hotkey ? hotkey.toUpperCase() : undefined}
+        aria-keyshortcuts={shortcut ? shortcut.toUpperCase() : undefined}
         className={render ? className : cn(triggerButton, className)}
       >
         {children ?? (
@@ -578,17 +590,18 @@ export function FilterMenu({
       </BarButton>
       <PopoverContent
         variant="surface"
+        {...contentProps}
         side={side}
         align={align}
-        className={cn('w-64 min-w-0 overflow-hidden outline-none', popoverClassName)}
+        className={cx('w-64 min-w-0 overflow-hidden outline-none', contentProps?.className)}
       >
         <PopoverTitle className="sr-only">{field ? `${field.label} filter` : 'Add filter'}</PopoverTitle>
         {field ? (
           <div data-slot="filter-menu-value">
             <div className="flex items-center gap-1 border-b border-border px-1.5 py-1">
-              <PlainButton aria-label="Back to fields" onClick={() => { setField(null); }} className="bl-btn grid size-7 shrink-0 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-foreground/70 outline-none hover:bg-accent active:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+              <Button variant="quiet" size="icon-sm" aria-label="Back to fields" onClick={() => { setField(null); }}>
                 <Icon name="chevron-left" size={16} sw={2.4} />
-              </PlainButton>
+              </Button>
               <FieldMark field={field} />
               <span className="truncate text-subhead font-semibold">{field.label}</span>
             </div>
@@ -596,7 +609,7 @@ export function FilterMenu({
               field={field}
               operator={draft?.operator}
               value={draft?.value}
-              onChange={change}
+              onValueChange={change}
               onDone={() => popover.close()}
               onBack={() => setField(null)}
             />
@@ -629,8 +642,9 @@ export interface FilterChipProps extends Omit<ComponentProps<'div'>, 'onChange' 
   filter: Filter;
   /** Default: the enclosing FilterBar's field of that id. */
   field?: FilterField;
-  /** Default: the enclosing FilterBar's update. `options` carries the event and source behind the edit. */
-  onChange?: (filter: Filter, options?: FilterChangeOptions) => void;
+  /** An edit of the operator or value, with UI SDK's change details (reason `update`). In a FilterBar the bar then
+      applies it, unless `details.cancel()` was called; outside one, apply it yourself. */
+  onValueChange?: (filter: Filter, details: FilterChangeDetails) => void;
   /** Default: the enclosing FilterBar's remove (focus moves to a neighbour). `options`: the press or key behind it. */
   onRemove?: (options?: FilterChangeOptions) => void;
   /** Plain text: no buttons, no editing (a preview of what a phrase will apply). */
@@ -676,7 +690,7 @@ function ValueButton({ filter, field, locale, onChange }: { filter: Filter; fiel
           field={field}
           operator={filter.operator}
           value={filter.value}
-          onChange={(value, options) => onChange(withValue(field, filter, value), options)}
+          onValueChange={(value, details) => onChange(withValue(field, filter, value), via(details))}
           onDone={() => popover.close()}
         />
       </PopoverContent>
@@ -689,7 +703,7 @@ function ValueButton({ filter, field, locale, onChange }: { filter: Filter; fiel
  * the same searchable picker the menu used), × removes. It is a labelled group — "Status is any of Open, Confirmed" —
  * and Backspace / Delete on any part removes it.
  */
-export function FilterChip({ filter, field: fieldProp, onChange, onRemove, readOnly, size, tone, locale: localeProp, className, onKeyDown, ref, ...props }: FilterChipProps) {
+export function FilterChip({ filter, field: fieldProp, onValueChange, onRemove, readOnly, size, variant, locale: localeProp, className, onKeyDown, ref, ...props }: FilterChipProps) {
   const bar = useOptionalFilterBar();
   // While in a bar, a chip that leaves with focus hands it to a neighbour (the bar's focus recovery).
   const bindChip = readOnly ? undefined : bar?.bindChip;
@@ -709,7 +723,11 @@ export function FilterChip({ filter, field: fieldProp, onChange, onRemove, readO
   const field = fieldProp ?? bar?.fields.find((f) => f.id === filter.field) ?? fallbackField(filter);
   const locale = localeProp ?? bar?.locale ?? 'en-US';
   const sentence = describeFilter(filter, [field], locale);
-  const change = onChange ?? ((next: Filter, options?: FilterChangeOptions) => { bar?.update(filter.id, { operator: next.operator, value: next.value }, options); });
+  const change = (next: Filter, options?: FilterChangeOptions) => {
+    const details = changeDetails<FilterChangeReason>({ reason: 'update', ...options });
+    onValueChange?.(next, details);
+    if (!details.canceled) bar?.update(filter.id, { operator: next.operator, value: next.value }, { event: details.event, source: details.source });
+  };
   const remove = onRemove ?? ((options?: FilterChangeOptions) => { bar?.remove(filter.id, options); });
   const count = Array.isArray(filter.value) ? filter.value.length : 2;
 
@@ -728,7 +746,7 @@ export function FilterChip({ filter, field: fieldProp, onChange, onRemove, readO
           remove(from(e));
         }
       }}
-      className={cn(filterChipVariants({ size, tone }), className)}
+      className={cn(filterChipVariants({ size, variant }), className)}
       {...props}
     >
       <span data-slot="filter-chip-field" className={cn(chipPart, 'font-medium')}>
@@ -744,7 +762,8 @@ export function FilterChip({ filter, field: fieldProp, onChange, onRemove, readO
         <>
           <OperatorButton filter={filter} field={field} onChange={change} />
           <ValueButton filter={filter} field={field} locale={locale} onChange={change} />
-          <BarButton data-part="remove" aria-label={`Remove filter: ${sentence}`} onClick={(e) => remove(from(e))} className={cn(chipPart, chipButton, 'px-1.5 text-foreground/70')}>
+          {/* A 12px glyph: the hit area reaches past the chip's top and bottom, and widens on touch. */}
+          <BarButton data-part="remove" aria-label={`Remove filter: ${sentence}`} onClick={(e) => remove(from(e))} className={cn(chipPart, chipButton, "relative px-1.5 text-foreground/70 after:absolute after:inset-x-0 after:-inset-y-2 after:content-[''] pointer-coarse:px-3")}>
             <Icon name="xmark" size={12} sw={2.6} />
           </BarButton>
         </>
@@ -790,13 +809,15 @@ export function FilterClear({ className, children = 'Clear all', ...props }: Fil
   );
 }
 
+export type FilterMatchProps = Omit<BarButtonProps, 'onClick' | 'render' | 'children'>;
+
 /** "Match all ▾" — whether every filter must hold or any one. Shown from two filters on. */
-export function FilterMatch({ className }: { className?: string }) {
+export function FilterMatch({ className, ...props }: FilterMatchProps) {
   const { filters, match, setMatch } = useFilterBar();
   if (filters.length < 2) return null;
   return (
     <DropdownMenu>
-      <BarButton render={<DropdownMenuTrigger />} aria-label={`Match mode: ${match === 'all' ? 'all filters' : 'any filter'}`} className={cn(triggerButton, className)}>
+      <BarButton render={<DropdownMenuTrigger />} aria-label={`Match mode: ${match === 'all' ? 'all filters' : 'any filter'}`} {...props} className={cn(triggerButton, className)}>
         Match {match}
         <Icon name="chevron-down" size={11} sw={2.4} className="opacity-60" />
       </BarButton>
@@ -816,21 +837,20 @@ export function FilterMatch({ className }: { className?: string }) {
 }
 
 export type FilterToolbarProps = Omit<ComponentProps<typeof Toolbar>, 'children'> & {
-  hotkey?: string | null;
-  showMatch?: boolean;
+  /** Default: `<FilterMenu /> <FilterList /> <FilterClear />`. Compose your own to add `<FilterMatch />` or a
+      `shortcut` on the menu. */
   children?: ReactNode;
 };
 
 /** The row: one tab stop, ←/→ across the Filter button, every chip's parts and Clear all (UI SDK's Toolbar). */
-export function FilterToolbar({ className, children, hotkey, showMatch = false, ...props }: FilterToolbarProps) {
+export function FilterToolbar({ className, children, ...props }: FilterToolbarProps) {
   return (
     <InToolbar value>
-      <Toolbar aria-label="Filters" className={cx(filterToolbarVariants(), className)} {...props}>
+      <Toolbar aria-label="Filters" className={cx(toolbarClass, className)} {...props}>
         {children ?? (
           <>
-            <FilterMenu hotkey={hotkey} />
+            <FilterMenu />
             <FilterList />
-            {showMatch ? <FilterMatch /> : null}
             <FilterClear />
           </>
         )}
@@ -844,10 +864,6 @@ export interface FilterBarProps extends Omit<ComponentProps<'div'>, 'defaultValu
   fields: readonly FilterField[];
   /** Offer a field again once it is filtered (default: each field once; edit its chip instead). */
   allowDuplicates?: boolean;
-  /** The Filter button's shortcut when no children are given: `'f'`. */
-  hotkey?: string | null;
-  /** Show the "Match all / any" menu when no children are given. */
-  showMatch?: boolean;
   /** Locale for dates in chips (default `en-US`). */
   locale?: string;
   /** Default: a `FilterToolbar`. Add a `FilterInput` for the natural-language box. */
@@ -859,7 +875,7 @@ export interface FilterBarProps extends Omit<ComponentProps<'div'>, 'defaultValu
  * what changes (UI SDK's `announce()`). With no children it renders the Filter button, the chips and Clear all.
  */
 export function FilterBar({
-  fields, value, defaultValue, onValueChange, match, defaultMatch, onMatchChange, allowDuplicates = false, hotkey = null, showMatch = false,
+  fields, value, defaultValue, onValueChange, match, defaultMatch, onMatchChange, allowDuplicates = false,
   locale = 'en-US', className, children, ...props
 }: FilterBarProps) {
   // What the bar last asked for, so it announces a change only once it is rendered: a controlled consumer that
@@ -972,8 +988,8 @@ export function FilterBar({
 
   return (
     <FilterBarContext.Provider value={ctx}>
-      <div ref={rootRef} data-slot="filter-bar" className={cn(filterBarVariants(), className)} {...props}>
-        {children ?? <FilterToolbar hotkey={hotkey} showMatch={showMatch} />}
+      <div ref={rootRef} data-slot="filter-bar" className={cn(barClass, className)} {...props}>
+        {children ?? <FilterToolbar />}
       </div>
     </FilterBarContext.Provider>
   );

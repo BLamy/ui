@@ -4,10 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { setPlatform } from '@ui-sdk/core/testing';
 import {
-  CommandMenu, CommandMenuDialog, CommandMenuDialogContent, CommandMenuDialogTrigger, CommandMenuEmpty, CommandMenuFooter, CommandMenuGroup,
+  CommandMenu, CommandMenuDialog, CommandMenuDialogContent, CommandMenuEmpty, CommandMenuFooter, CommandMenuGroup,
   CommandMenuGroupLabel, CommandMenuInput, CommandMenuItem, CommandMenuList, CommandMenuPage, CommandMenuShortcut, CommandMenuStatus,
   createCommandMenuController, useCommandMenu, useCommandMenuValue, type CommandMenuData, type CommandMenuProps,
 } from '@/components/ui/command-menu';
+import { DialogTrigger } from '@/components/ui/dialog';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
 globalThis.__UI_SDK_STRICT__ = true;
@@ -33,7 +34,7 @@ function Palette({ children, ...props }: Partial<CommandMenuProps> & { children?
         <CommandMenuPage>
           <CommandMenuGroup>
             <CommandMenuGroupLabel>Actions</CommandMenuGroupLabel>
-            <CommandMenuItem value="new" icon="square-pencil" title="New thread" />
+            <CommandMenuItem value="new" icon="square-pencil">New thread</CommandMenuItem>
             <CommandMenuItem value="in" title="New thread in…" page="projects" />
             <CommandMenuItem value="copy" title="Copy thread ID" description="b7578c63" />
             <CommandMenuItem value="prs" title="Show linked pull requests" disabled />
@@ -325,7 +326,9 @@ describe('CommandMenu', () => {
     );
     await settle();
     expect(shown()).toEqual(['new', 'copy', 'list', 'Inbox']);
-    expect(option('Copy thread ID b7578c63')).toBeTruthy();
+    // The description describes the option; it is not part of its name.
+    const copy = option('Copy thread ID');
+    expect(document.getElementById(copy.getAttribute('aria-describedby')!)?.textContent).toBe('b7578c63');
     type('thr');
     await settle();
     // The group with the best match leads.
@@ -397,7 +400,7 @@ describe('CommandMenuDialog', () => {
     return (
       <>
         <CommandMenuDialog onOpenChange={(open, details) => onOpenChange?.(open, details.reason)}>
-          <CommandMenuDialogTrigger shortcut="mod+k">Search docs</CommandMenuDialogTrigger>
+          <DialogTrigger shortcut="mod+k">Search docs</DialogTrigger>
           <CommandMenuDialogContent aria-label="Search docs">
             <CommandMenu onAction={(value) => { setLast(value); onAction?.(value); }}>
               <CommandMenuInput placeholder="Search pages…" />

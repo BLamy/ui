@@ -1,18 +1,18 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-/* ══ WorkspaceTile — a server tile for a `TabViewBar variant="workspace"` rail ══
-   <TabView orientation="vertical" defaultValue="blui">
-     <TabViewBar variant="workspace">
-       <TabViewList aria-label="Workspaces">
-         <TabViewTab value="blui" aria-label="BL UI HQ">
-           <TabViewPill attention={unread} />
+/* ══ WorkspaceTile — a server tile for a `Tabs variant="workspace"` rail ══
+   <Tabs variant="workspace" defaultValue="blui">
+     <TabsBar>
+       <TabsList aria-label="Workspaces">
+         <TabsTab value="blui" aria-label="BL UI HQ">
+           <TabsPill attention={unread} />
            <WorkspaceTile color="#0A84FF" mentions={4}>B</WorkspaceTile>
-         </TabViewTab>
-       </TabViewList>
-       <TabViewFooter><TabViewAction aria-label="Add workspace" icon="plus" /></TabViewFooter>
-     </TabViewBar>
-   </TabView>
+         </TabsTab>
+       </TabsList>
+       <TabsFooter><TabsAction aria-label="Add workspace" icon="plus" /></TabsFooter>
+     </TabsBar>
+   </Tabs>
    Discord's tile: a circle at rest that morphs to a rounded square when its tab is hovered or selected (filling
    with the workspace color), with a mention badge. It reads the tab's state through `group-data-*`. */
 

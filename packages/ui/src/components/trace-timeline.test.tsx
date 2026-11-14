@@ -3,7 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { StrictMode, createRef, useState } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ListRow } from '@/components/ui/list';
-import { TraceTimeline, traceTimelineVariants, type TraceTimelineHandle, type TraceTimelineProps } from '@/components/ui/trace-timeline';
+import { TraceTimeline, TraceTimelinePreview, traceTimelineVariants, type TraceTimelineHandle, type TraceTimelineProps } from '@/components/ui/trace-timeline';
 import type { TraceActivity, TraceLane, TraceRange, TraceStop } from '@/lib/trace-timeline-model';
 
 const RANGE: TraceRange = { start: 0, end: 3_600_000 };
@@ -68,7 +68,7 @@ afterEach(() => {
 
 describe('ARIA', () => {
   it('is a slider with its range, value and text, in both orientations', () => {
-    const { rerender } = render(rail({ defaultValue: 1_500_000, label: 'Session' }));
+    const { rerender } = render(rail({ defaultValue: 1_500_000, 'aria-label': 'Session' }));
     const el = slider();
     expect(el.getAttribute('aria-label')).toBe('Session');
     expect(el.getAttribute('aria-valuemin')).toBe('0');
@@ -78,7 +78,7 @@ describe('ARIA', () => {
     expect(el.getAttribute('aria-orientation')).toBe('vertical');
     expect(el.getAttribute('tabindex')).toBe('0');
     expect(el.getAttribute('data-slot')).toBe('trace-timeline');
-    rerender(rail({ defaultValue: 1_500_000, label: 'Session', orientation: 'horizontal' }));
+    rerender(rail({ defaultValue: 1_500_000, 'aria-label': 'Session', orientation: 'horizontal' }));
     expect(slider().getAttribute('aria-orientation')).toBe('horizontal');
   });
 
@@ -93,6 +93,16 @@ describe('ARIA', () => {
     const onValueChange = vi.fn();
     render(rail({ 'aria-label': 'Mine', onPointerDown, onBlur, onValueChange, stops: [] }));
     expect(slider().getAttribute('aria-label')).toBe('Mine');
+    // Unnamed, it's a "Timeline"; named by another element, it has no aria-label of its own.
+    cleanup();
+    render(rail());
+    expect(slider().getAttribute('aria-label')).toBe('Timeline');
+    cleanup();
+    render(<><h2 id="tt-title">Session</h2>{rail({ 'aria-labelledby': 'tt-title' })}</>);
+    expect(slider().hasAttribute('aria-label')).toBe(false);
+    expect(slider().getAttribute('aria-labelledby')).toBe('tt-title');
+    cleanup();
+    render(rail({ 'aria-label': 'Mine', onPointerDown, onBlur, onValueChange, stops: [] }));
     pointer('pointerDown', 360, 100);
     expect(onPointerDown).toHaveBeenCalledTimes(1);
     expect(onValueChange).toHaveBeenCalledTimes(1);
@@ -104,7 +114,8 @@ describe('ARIA', () => {
     render(rail({ className: 'extra w-[50px]', style: { zIndex: 3 } }));
     expect(slider().className).toContain('extra');
     expect(slider().className).toContain('w-[50px]');
-    expect(slider().className).not.toContain('w-(--tt-width)');
+    // The caller's width wins over the rail's 44px.
+    expect(slider().className).not.toContain('w-11');
     expect(slider().style.zIndex).toBe('3');
     expect(traceTimelineVariants({ orientation: 'vertical', side: 'left' })).toContain('left-0');
     expect(traceTimelineVariants({ orientation: 'vertical', side: 'right' })).toContain('right-0');
@@ -315,10 +326,11 @@ describe('controlled and uncontrolled', () => {
 });
 
 describe('the rail', () => {
-  it('sits on its edge with insets, and draws one dash per stop', () => {
-    render(rail({ top: 8, bottom: '2rem', side: 'left' }));
-    expect(slider().style.getPropertyValue('--tt-top')).toBe('8px');
-    expect(slider().style.getPropertyValue('--tt-bottom')).toBe('2rem');
+  it('sits on its edge, placed by its classes, and draws one dash per stop', () => {
+    render(rail({ className: 'top-2 bottom-8', side: 'left' }));
+    expect(slider().className).toContain('top-2');
+    expect(slider().className).toContain('bottom-8');
+    expect(slider().className).not.toContain('top-0');
     expect(slider().className).toContain('left-0');
     const dashes = [...document.querySelectorAll<HTMLElement>('[data-slot=trace-timeline-stop]')];
     expect(dashes).toHaveLength(3);
@@ -384,7 +396,7 @@ describe('the rail', () => {
   it('gives the card a slot for a thumbnail of the moment', () => {
     const frame = manualFrames();
     const renderPreview = vi.fn((time: number, stop: TraceStop<string> | null) => <img alt={stop?.caption ?? String(time)} />);
-    render(rail({ renderPreview }));
+    render(rail({ children: <TraceTimelinePreview<string>>{renderPreview}</TraceTimelinePreview> }));
     pointer('pointerMove', 360, 100);
     frame();
     expect(screen.getByAltText('First')).toBeTruthy();
@@ -780,6 +792,44 @@ describe('the strip', () => {
     pointer('pointerUp', 64 + 300 + 5, rowsAt.request);
     // Still null, so the second press asks again.
     expect(onSelectedRequestChange).toHaveBeenCalledTimes(2);
+  });
+
+  it('steps through lanes, requests and threads from the keyboard, and says so', async () => {
+    const onFocusedLaneChange = vi.fn();
+    const onSelectedRequestChange = vi.fn();
+    const onSelectedThreadChange = vi.fn();
+    const onValueChange = vi.fn();
+    const requests = [{ id: 'late', time: 2_400_000 }, { id: 'early', time: 600_000 }, { id: 'mid', time: 1_800_000 }];
+    render(rail({
+      orientation: 'horizontal', lanes, stops: [], requests, defaultValue: 1_000_000, defaultFocusedLane: 'a',
+      onFocusedLaneChange, onSelectedRequestChange, onSelectedThreadChange, onValueChange,
+    }));
+    expect(slider().getAttribute('aria-keyshortcuts')).toBe('Alt+ArrowUp Alt+ArrowDown [ ] { }');
+    const key = (k: string, init = {}) => fireEvent.keyDown(slider(), { key: k, ...init });
+    // Alt+↓: the next lane. Alt+← is left to the browser (history).
+    key('ArrowDown', { altKey: true });
+    expect(onFocusedLaneChange).toHaveBeenCalledWith('b', expect.objectContaining({ reason: 'list-navigation' }));
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(key('ArrowLeft', { altKey: true })).toBe(true);
+    expect(onValueChange).not.toHaveBeenCalled();
+    key('ArrowUp', { altKey: true });
+    expect(onFocusedLaneChange).toHaveBeenLastCalledWith('a', expect.objectContaining({ reason: 'list-navigation' }));
+    // ]: the first request after the playhead, in time order, with the playhead on it; then the next one.
+    key(']');
+    expect(onSelectedRequestChange).toHaveBeenLastCalledWith('mid', expect.objectContaining({ reason: 'list-navigation' }));
+    expect(onValueChange.mock.lastCall?.[0]).toBe(1_800_000);
+    key(']');
+    expect(onSelectedRequestChange).toHaveBeenLastCalledWith('late', expect.anything());
+    key('[');
+    key('[');
+    expect(onSelectedRequestChange).toHaveBeenLastCalledWith('early', expect.anything());
+    // } and {: the focused lane's threads.
+    key('}');
+    expect(onSelectedThreadChange).toHaveBeenLastCalledWith(1, expect.objectContaining({ reason: 'list-navigation', lane: 'a' }));
+    key('}');
+    expect(onSelectedThreadChange).toHaveBeenLastCalledWith(2, expect.anything());
+    await act(async () => { await new Promise((r) => setTimeout(r, 150)); });
+    expect(document.querySelector('[data-ui-sdk-announcer]')?.textContent).toBe('T2 thread');
   });
 
   it('selects a request near a press in its row', () => {

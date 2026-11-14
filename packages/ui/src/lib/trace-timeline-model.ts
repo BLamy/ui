@@ -8,6 +8,7 @@
    Times are numbers on the shared clock, in milliseconds as far as formatting and ruler ticks are concerned. A lane's
    own data stays in its own time, and its `offset` puts it on the shared clock. ══ */
 import type { ReactNode } from 'react';
+import { waveSwell } from '@/lib/wave-rail';
 
 /* ── Data ── */
 
@@ -888,17 +889,10 @@ export function placeStripCard({ along, width, height, above, below, cardWidth, 
   return { left, top: RULER + margin };
 }
 
-/* ── The wave: the same dash and falloff as IndexBar's ── */
+/* ── The wave: IndexBar's dash and falloff (lib/wave-rail), in px ── */
 
-export const TRACE_WAVE_REST = 9;
-export const TRACE_WAVE_PEAK = 28;
-const WAVE_REACH = 3.2;
-
-/** Raised-cosine falloff: 1 at the pointer, 0 at 3.2 stops away, with a stop's room being `TRACE_STOP_GAP` px. */
-export const traceSwell = (px: number) => {
-  const d = Math.abs(px) / TRACE_STOP_GAP;
-  return d >= WAVE_REACH ? 0 : (1 + Math.cos((Math.PI * d) / WAVE_REACH)) / 2;
-};
+/** The swell `px` from the pointer, a stop's room being `TRACE_STOP_GAP` px. */
+export const traceSwell = (px: number) => waveSwell(px / TRACE_STOP_GAP);
 
 /** Whether two lane lists draw the same, so a host that rebuilds them on every render doesn't cost a redraw. */
 export function sameLanes(a: readonly TraceLane[], b: readonly TraceLane[]): boolean {

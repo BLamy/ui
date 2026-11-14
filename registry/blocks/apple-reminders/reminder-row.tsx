@@ -6,11 +6,10 @@ import { TASK_STATES } from '@brett_lamy/docstream/gitbook';
 import { TASK_STATE_ICONS } from '@brett_lamy/docstream/tasks';
 import { Checkbox } from '@ui-sdk/react/checkbox';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
-import { ContextMenu, ContextMenuContent, ContextMenuRadioGroup, ContextMenuRadioItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuContextTrigger } from '@/components/ui/dropdown-menu';
 import { HoverCardHeader } from '@/components/ui/hover-card';
-import { Chevron } from '@/components/ui/icon-swap';
-import { PlainButton } from '@/components/ui/plain-button';
-import { Icon, type IconName } from '@/lib/icon';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Chevron, Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { SYSTEM, dueLabel, stateOf, type Reminder, type RList } from './data';
 import type { TaskState } from './markdown-tasks';
@@ -33,8 +32,8 @@ export function ListPreview({ list: l, items }: { list: RList; items: Reminder[]
   const done = mine.length - open.length;
   return (
     <>
-      <HoverCardHeader media={<ListIcon glyph={l.glyph} color={l.color} size={36} />} title={<span style={{ color: l.color }}>{l.name}</span>}
-        subtitle={open.length ? `${open.length} remaining${done ? ` · ${done} completed` : ''}` : done ? `All done · ${done} completed` : 'No reminders'} />
+      <HoverCardHeader icon={<ListIcon glyph={l.glyph} color={l.color} size={36} />} title={<span style={{ color: l.color }}>{l.name}</span>}
+        description={open.length ? `${open.length} remaining${done ? ` · ${done} completed` : ''}` : done ? `All done · ${done} completed` : 'No reminders'} />
       {open.length ? (
         <ul className="m-0 mt-3 flex list-none flex-col gap-1.5 p-0">
           {open.slice(0, 4).map((r) => (
@@ -74,17 +73,17 @@ export function CheckCircle({ done, state = done ? 'verified' : 'pending', color
   );
   if (!onState) return circle;
   return (
-    <ContextMenu>
-      <ContextMenuTrigger className="grid shrink-0">{circle}</ContextMenuTrigger>
-      <ContextMenuContent aria-label="Task state">
-        <ContextMenuRadioGroup value={state} onValueChange={(value) => onState(value as TaskState)}>
+    <DropdownMenu>
+      <DropdownMenuContextTrigger className="grid shrink-0">{circle}</DropdownMenuContextTrigger>
+      <DropdownMenuContent aria-label="Task state">
+        <DropdownMenuRadioGroup value={state} onValueChange={(value) => onState(value as TaskState)}>
           {TASK_STATES.map((s) => {
             const ItemIcon = TASK_STATE_ICONS[s.id];
-            return <ContextMenuRadioItem key={s.id} closeOnSelect value={s.id} label={s.label} icon={<ItemIcon aria-hidden="true" size={19} strokeWidth={1.8} />}>{s.label}</ContextMenuRadioItem>;
+            return <DropdownMenuRadioItem key={s.id} closeOnSelect value={s.id} label={s.label} icon={<ItemIcon aria-hidden="true" size={19} strokeWidth={1.8} />}>{s.label}</DropdownMenuRadioItem>;
           })}
-        </ContextMenuRadioGroup>
-      </ContextMenuContent>
-    </ContextMenu>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -111,11 +110,11 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
                 {r.title}
               </div>
               {r.flagged ? <Icon name="flag-fill" size={16} className="mt-0.5" style={{ color: SYSTEM.orange }} /> : null}
-              <PlainButton aria-label={`Details for “${r.title}”`} onClick={() => api.openDetails(r.id)}
+              <SdkButton aria-label={`Details for “${r.title}”`} onClick={() => api.openDetails(r.id)}
                 className={cn('bl-btn -my-0.5 grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-primary transition-opacity duration-150',
                   phone ? 'opacity-100' : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100')}>
                 <Icon name="info" size={22} weight="light" />
-              </PlainButton>
+              </SdkButton>
             </div>
             {r.source ? <div className="mt-0.5 truncate text-footnote text-muted-foreground" title={`${r.source.path}, line ${r.source.line + 1}`}>
               {r.state && r.state !== 'pending' && r.state !== 'verified' ? `${TASK_STATES.find((t) => t.id === r.state)?.label} · ` : ''}{r.source.path.split('/').slice(1).join('/')}
@@ -137,7 +136,7 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
                 <CollapsibleTrigger
                   className="bl-btn mt-1 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-muted-foreground">
                   {subsDone} of {subs.length} subtasks
-                  <Chevron direction={open ? 'down' : 'right'} size={13} sw={2.6} />
+                  <Chevron direction={open ? 'down' : 'right'} size={13} strokeWidth={2.6} />
                 </CollapsibleTrigger>
                 <CollapsiblePanel className="h-(--collapsible-panel-height) overflow-clip transition-[height,opacity] duration-spring-tray ease-spring-tray data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0 motion-reduce:transition-none">
                   <div className="flex flex-col gap-2.5 pt-2.5">

@@ -58,7 +58,7 @@ const color = parseColor(accent) // { space: 'srgb', coords: [0.4, 0.2, 0.6], al
 
 ```tsx
 <Field>
-  <FieldLabel variant="field">Accent</FieldLabel>
+  <FieldLabel>Accent</FieldLabel>
   <ColorField defaultValue="#7f5af0" />
   <FieldDescription>Any CSS color.</FieldDescription>
   <FieldError />

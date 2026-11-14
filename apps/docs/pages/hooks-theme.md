@@ -103,7 +103,7 @@ function FloatingAction() {
 }
 ```
 
-`NavigationStack` publishes it while its top page scrolls: the bar hides after a downward scroll of more than 5px once the scroll position is past about 70% of the bar height, and shows again on an upward scroll of more than 5px or near the top. A page opts out with `<NavigationStackBar hideOnScroll={false}>`, and the stack's `onBarHiddenChange(hidden)` reports the same change. `TabBar` and `TabView` (`hideOnScroll`), `List`'s sticky headers, and `useHideOnScroll` (behind `FloatingSheet` and `FloatingChat`) read it. To drive it from a scroller of your own, set the store: `chromeStore.set(true)` hides, `chromeStore.set(false)` shows.
+`NavigationStack` publishes it while its top page scrolls: the bar hides after a downward scroll of more than 5px once the scroll position is past about 70% of the bar height, and shows again on an upward scroll of more than 5px or near the top. A page opts out with `<NavigationStackBar hideOnScroll={false}>`, and the stack's `onBarHiddenChange(hidden)` reports the same change. the `Tabs` bar (`TabsBar hideOnScroll`), `List`'s sticky headers, and `useHideOnScroll` (behind `FloatingSheet` and `FloatingChat`) read it. To drive it from a scroller of your own, set the store: `chromeStore.set(true)` hides, `chromeStore.set(false)` shows.
 
 Gotchas:
 

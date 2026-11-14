@@ -27,7 +27,7 @@ export function SiteMapTab({ project }: { project: Project }) {
   return (
     <div className="grid gap-5 @4xl:grid-cols-[1fr_240px]!">
       <Panel title="Pages" icon="network" trailing={<span className="text-caption text-muted-foreground">{all.length} pages</span>} bodyClassName="py-2">
-        <Tree aria-label="Site map" mode="none" density="relaxed" defaultExpanded={BRANCHES} expandOnPress={false}
+        <Tree aria-label="Site map" mode="none" density="comfortable" defaultExpanded={BRANCHES} expandOnPress={false}
           onAction={(path) => { if (all.find((n) => n.path === path)?.bugs) qa.setTab('bugs'); }}
           className="px-2 text-[length:inherit] [--tree-indent:22px] [--tree-pad-x:8px]">
           <Node node={SITE_MAP} depth={0} max={max} />

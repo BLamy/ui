@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { FilterBar, FilterChip } from '@/components/ui/filter';
-import type { Filter, FilterField } from '@/lib/filter-model';
+import { FilterBar, FilterChip, FilterClear, FilterList, FilterMatch, FilterMenu, FilterToolbar, FilterValueEditor } from '@/components/ui/filter';
+import type { Filter, FilterField, FilterValue } from '@/lib/filter-model';
+import { popoverSurface } from '@/lib/primitives';
+import { cn } from '@/lib/utils';
 import { Pad } from '../stories/frame';
 
 const fields: FilterField[] = [
@@ -17,7 +19,8 @@ const fields: FilterField[] = [
 const meta: Meta<typeof FilterBar> = {
   title: 'Molecules/Filter',
   component: FilterBar,
-  decorators: [(Story) => <Pad w={760}><div style={{ minHeight: 200 }}><Story /></div></Pad>],
+  // Tall enough for the Filter menu and the value popovers to open inside the frame (the layer host).
+  decorators: [(Story) => <Pad w={760}><div className="min-h-[480px]"><Story /></div></Pad>],
 };
 export default meta;
 type Story = StoryObj<typeof FilterBar>;
@@ -38,15 +41,75 @@ const many: Filter[] = [
   { id: 'f', field: 'blocked', operator: 'is', value: false },
 ];
 
-/** One of every kind, with the match all / any menu. */
-export const AllKinds: Story = { args: { fields, defaultValue: many, showMatch: true } };
+/** One of every kind, composed with the match all / any menu (it shows from two filters on). */
+export const AllKinds: Story = {
+  render: (args) => (
+    <FilterBar {...args}>
+      <FilterToolbar>
+        <FilterMenu shortcut="f" />
+        <FilterList />
+        <FilterMatch />
+        <FilterClear />
+      </FilterToolbar>
+    </FilterBar>
+  ),
+  args: { fields, defaultValue: many },
+};
+
+/** The Filter menu open: the searchable list of fields not yet filtered. Held open (`open`) for review, so a click
+    elsewhere doesn't close it. */
+export const MenuOpen: Story = {
+  render: (args) => (
+    <FilterBar {...args}>
+      <FilterToolbar>
+        <FilterMenu open />
+        <FilterList />
+        <FilterClear />
+      </FilterToolbar>
+    </FilterBar>
+  ),
+  args: { fields, defaultValue: [{ id: 'a', field: 'status', operator: 'is_any_of', value: ['open', 'wip'] }] },
+};
+
+/** A value editor on its own, on the popup surface it opens on. */
+function Editor({ field, value }: { field: FilterField; value?: FilterValue }) {
+  return (
+    <div className={cn(popoverSurface, 'relative w-64 overflow-hidden')}>
+      <FilterValueEditor field={field} value={value} operator={field.kind === 'date' && value && typeof value === 'object' && 'type' in value && value.type === 'relative' ? 'in_the_last' : undefined} onValueChange={() => undefined} />
+    </div>
+  );
+}
+
+/** A select's values: checkbox rows (with marks and counts) behind a search that keeps focus. */
+export const SelectEditor: Story = { render: () => <Editor field={fields[0]} value={['open']} /> };
+
+/** A date: the presets and a date input; and the "in the last" span. */
+export const DateEditor: Story = {
+  render: () => (
+    <div className="flex items-start gap-4">
+      <Editor field={fields[2]} value={{ type: 'preset', preset: 'today' }} />
+      <Editor field={fields[2]} value={{ type: 'relative', amount: 2, unit: 'week' }} />
+    </div>
+  ),
+};
+
+/** A number (and, the same box, text): applied on Enter, the button or blur. */
+export const NumberEditor: Story = { render: () => <Editor field={fields[3]} value={3} /> };
+
+/** Yes / No. */
+export const BooleanEditor: Story = { render: () => <Editor field={fields[5]} value={false} /> };
+
+export const Dark: Story = {
+  decorators: [(Story) => <Pad w={760} dark><div className="min-h-[200px]"><Story /></div></Pad>],
+  args: { fields, defaultValue: many.slice(0, 3) },
+};
 
 /** Chips on their own, and the read-only preview chip the natural-language box draws. */
 export const Chips: Story = {
   render: () => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-      {many.map((f) => <FilterChip key={f.id} filter={f} field={fields.find((x) => x.id === f.field)} onChange={() => undefined} onRemove={() => undefined} />)}
-      <FilterChip readOnly tone="preview" size="sm" filter={many[0]} field={fields[0]} />
+      {many.map((f) => <FilterChip key={f.id} filter={f} field={fields.find((x) => x.id === f.field)} onValueChange={() => undefined} onRemove={() => undefined} />)}
+      <FilterChip readOnly variant="preview" size="sm" filter={many[0]} field={fields[0]} />
     </div>
   ),
 };

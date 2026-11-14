@@ -1,6 +1,6 @@
 # SqlConsole
 
-A SQL workbench for a PGlite database: a highlighted editor, a schema tree, a result table per statement, errors that point at the offending token, history, and SQL / data-directory export and import. It composes four parts you can also use alone — `SqlEditor`, `ResultTable` (a grid primitive on UI SDK behaviors), `SchemaTree` (UI SDK's Tree) and the `useSchema` hook. It reads its database from a [PGliteProvider](https://blamy.github.io/ui/#/pglite), so read that page first for installing the engine, the WebAssembly download and where data is stored.
+A SQL workbench for a PGlite database: a highlighted editor, a schema tree, a result table per statement, errors that point at the offending token, history, and SQL / data-directory export and import. It composes parts you can also use alone — `SqlEditor`, `ResultTable` (a grid primitive on UI SDK behaviors), the schema tree (the kit's [Tree](https://blamy.github.io/ui/#/tree) over `schemaTreeItems(schema)`) and the `useSchema` hook. It reads its database from a [PGliteProvider](https://blamy.github.io/ui/#/pglite), so read that page first for installing the engine, the WebAssembly download and where data is stored.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -12,7 +12,8 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 import { SqlConsole } from '@/components/ui/sql-console'
 import { SqlEditor } from '@/components/ui/sql-editor'
 import { ResultTable } from '@/components/ui/result-table'
-import { SchemaTree } from '@/components/ui/schema-tree'
+import { Tree } from '@/components/ui/tree'
+import { schemaTreeItems, useSchema } from '@/lib/pglite-schema'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -24,7 +25,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  SqlConsole, SqlEditor, ResultTable, SchemaTree,
+  SqlConsole, SqlEditor, ResultTable, Tree, schemaTreeItems, useSchema,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
@@ -64,15 +65,22 @@ Rows render in pages (`maxRows`, then "Show more"): there is no virtualization, 
 <ResultTable result={{ fields, rows, command: 'SELECT' }} durationMs={3.2} resizable />
 ```
 
-## SchemaTree
+## Schema tree
 
-Schemas → tables and views → columns, on UI SDK's Tree: arrow keys move, → expands and ← collapses, Enter or a click on a table or a column calls `onAction(id, details)`, with `details.table`, `details.column` (for a column) and `details.event`. A column shows its type, a key for the primary key, `→ table.column` for a foreign key, and a heavier name when it is `NOT NULL`. Tables show their row count (`rowCounts: 'exact'` by default; use `'estimate'` or `'none'` for large databases). A schema that appears later (`create schema`) opens by itself, and one you closed stays closed. While `loading` with no schema yet, the root is `aria-busy` and shows a named placeholder group.
+Schemas → tables and views → columns is a [Tree](https://blamy.github.io/ui/#/tree) over `schemaTreeItems(schema)`: arrow keys move, → expands and ← collapses, and Enter or a click on a row calls `onAction(value, details)`, where `details.node` is a `SchemaTreeNode` with its `kind` (`schema`, `table` or `column`), the `table` and, for a column, the `column`. A column's detail is its type, `→ table.column` for a foreign key and `not null`; a primary key wears a key. A table's detail is its kind (when it isn't a plain table) and row count (`rowCounts: 'exact'` by default; use `'estimate'` or `'none'` for large databases). `autoExpand` with the schemas' values opens a schema that appears later (`create schema`), and one you closed stays closed. While `loading` with no rows yet, the tree is `aria-busy` and shows placeholder rows; `emptyState` says what an empty database shows. The same `schema` always gives the same items, so the call can sit in render.
 
 {% demo src="sql-console/schema-tree" %}
 
 ```tsx
 const { schema, isLoading } = useSchema()
-<SchemaTree schema={schema} loading={isLoading} onAction={(_id, { table, column }) => { if (!column) editor.current?.insert(`select * from ${table.name};`) }} />
+const items = schemaTreeItems(schema)
+
+<Tree aria-label="Database schema" items={items} icons={false} density="compact"
+  loading={isLoading} emptyState="No tables yet" autoExpand={items.map((n) => n.value)}
+  onAction={(_value, { node }) => {
+    const n = node as SchemaTreeNode
+    if (n.kind === 'table') editor.current?.insert(`select * from ${n.table.name};`)
+  }} />
 ```
 
 ## SqlEditor
@@ -130,19 +138,13 @@ The result table is a grid (`role="grid"`, one tab stop, arrow keys inside); the
 | `density` | `compact` | `comfortable` for touch. |
 | `emptyMessage` / `onCopy` | — | Text for no rows; callback after a copy. |
 
-### SchemaTree
+### `schemaTreeItems(schema)`
 
-| Prop | Default | Effect |
-| --- | --- | --- |
-| `schema` | — | From `useSchema()` / `loadSchema()`; `null` while loading. |
-| `loading` | — | Skeleton rows until the first schema arrives. |
-| `onAction` | — | `(id, { table, column?, event? }) => void`: Enter or click on a table or column. |
-| `defaultExpandAll` | `false` | Open tables as well as schemas at first. |
-| `variant` | `default` | `card` puts it on its own card. |
+Takes a `SchemaInfo` from `useSchema()` / `loadSchema()` (or `null` while loading, which gives no rows) and returns `SchemaTreeNode[]` for `Tree`'s `items`. Values are `schema:<name>`, `table:<schema>.<name>` and `column:<schema>.<table>.<name>`. The tree's own props are on the [Tree page](https://blamy.github.io/ui/#/tree).
 
 ## Styling
 
-Slots: `sql-console`, `sql-console-header`, `sql-console-sidebar`, `sql-console-results`, `sql-console-error`, `sql-console-notice`, `sql-editor`, `textarea` (the editor's input), `sql-editor-highlight`, `sql-editor-footer`, `result-table`, `result-table-toolbar`, `result-table-summary` and `schema-tree`. Variants are `sqlConsoleVariants`, `sqlEditorVariants`, `resultTableVariants` and `schemaTreeVariants`.
+Slots: `sql-console`, `sql-console-header`, `sql-console-sidebar`, `sql-console-results`, `sql-console-error`, `sql-console-notice`, `sql-editor`, `textarea` (the editor's input), `sql-editor-highlight`, `sql-editor-footer`, `result-table`, `result-table-toolbar` and `result-table-summary`; the schema tree is a Tree's `tree-view`. Variants are `sqlConsoleVariants`, `sqlEditorVariants` and `resultTableVariants`.
 
 ## cva recipes
 
@@ -162,22 +164,6 @@ flex min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-fo
 | --- | --- |
 | `compact` (default) | `[--result-pad:calc(var(--spacing)*1.5)]` |
 | `comfortable` | `[--result-pad:calc(var(--spacing)*2.5)]` |
-
-### `schemaTreeVariants`
-
-Defined in `@/components/ui/schema-tree`. Base classes:
-
-```text
-flex min-h-0 min-w-0 flex-col text-footnote text-foreground outline-none
-```
-
-**`variant`** — default `default`
-
-| Value | Adds |
-| --- | --- |
-| `default` (default) | — |
-| `card` | `rounded-panel bg-card p-1 shadow-hairline` |
-
 ### `sqlConsoleVariants`
 
 Defined in `@/components/ui/sql-console`. Base classes:

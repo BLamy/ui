@@ -2,14 +2,13 @@ import { useState, type ReactNode } from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
-  Credenza,
-  CredenzaBackdrop,
-  CredenzaClose,
-  CredenzaContent,
-  CredenzaHeader,
-  CredenzaTitle,
-  CredenzaView,
-} from '@/components/ui/credenza'
+  Dialog,  DialogBackdrop,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogView,
+} from '@/components/ui/dialog'
 import { List, ListRow, ListSection } from '@/components/ui/list'
 import {
   NavigationStack,
@@ -19,7 +18,7 @@ import {
   NavigationStackPage,
   NavigationStackTitle,
 } from '@/components/ui/navigation-stack'
-import { TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab } from '@/components/ui/tab-view'
+import { Tabs, TabsBar, TabsList, TabsPanel, TabsPanels, TabsTab } from '@/components/ui/tabs'
 import { BLProvider } from '@/lib/theme'
 
 const friends = [
@@ -45,14 +44,14 @@ function FriendsTab() {
           </NavigationStackBar>
           <NavigationStackContent bottomInset={62}>
             <NavigationStackLargeTitle />
-            <List inset>
+            <List variant="inset">
               <ListSection>
                 {friends.map((p, i) => (
                   <ListRow
                     key={p.l}
-                    leading={<Avatar c={p} size={34} />}
+                    icon={<Avatar name={`${p.f} ${p.l}`} size={34} />}
                     title={`${p.f} ${p.l}`}
-                    subtitle={p.city}
+                    description={p.city}
                     accessory="chevron"
                     divider={i < friends.length - 1}
                     onClick={() => setOpen(p)}
@@ -69,27 +68,27 @@ function FriendsTab() {
             </NavigationStackBar>
             <NavigationStackContent>
               <div style={{ padding: 24, textAlign: 'center' }}>
-                <Avatar c={open} size={72} style={{ margin: '0 auto 12px' }} />
+                <Avatar name={`${open.f} ${open.l}`} size={72} style={{ margin: '0 auto 12px' }} />
                 <Button onClick={() => setInviting(true)}>Invite {open.f}</Button>
               </div>
             </NavigationStackContent>
           </NavigationStackPage>
         ) : null}
       </NavigationStack>
-      <Credenza
+      <Dialog
         presentation="sheet"
         open={inviting}
         onOpenChange={(o) => {
           if (!o) setInviting(false)
         }}
       >
-        <CredenzaBackdrop />
-        <CredenzaContent>
-          <CredenzaHeader>
-            <CredenzaTitle>Invite sent</CredenzaTitle>
-            <CredenzaClose />
-          </CredenzaHeader>
-          <CredenzaView>
+        <DialogBackdrop />
+        <DialogContent variant="tray">
+          <DialogHeader variant="bar">
+            <DialogTitle>Invite sent</DialogTitle>
+            <DialogClose />
+          </DialogHeader>
+          <DialogView>
             <p
               style={{
                 margin: 0,
@@ -99,9 +98,9 @@ function FriendsTab() {
             >
               {open?.f} will get a notification.
             </p>
-          </CredenzaView>
-        </CredenzaContent>
-      </Credenza>
+          </DialogView>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
@@ -135,27 +134,32 @@ export default function FirstApp() {
   return (
     <Window width={390}>
       <BLProvider style={{ height: 480 }}>
-        <TabView
+        <Tabs
+          variant="bar"
           defaultValue="friends"
           style={{ position: 'absolute', inset: 0 }}
         >
-          <TabViewBar hideOnScroll={false}>
-            <TabViewList aria-label="App">
-              <TabViewTab value="friends" icon="person2" title="Friends" />
-              <TabViewTab value="settings" icon="gear" title="Settings" />
-            </TabViewList>
-          </TabViewBar>
-          <TabViewPanels>
-            <TabViewPanel value="friends" keepMounted>
+          <TabsBar hideOnScroll={false}>
+            <TabsList aria-label="App">
+              <TabsTab value="friends" icon="person2">
+                Friends
+              </TabsTab>
+              <TabsTab value="settings" icon="gear">
+                Settings
+              </TabsTab>
+            </TabsList>
+          </TabsBar>
+          <TabsPanels>
+            <TabsPanel value="friends" keepMounted>
               <FriendsTab />
-            </TabViewPanel>
-            <TabViewPanel value="settings" keepMounted>
+            </TabsPanel>
+            <TabsPanel value="settings" keepMounted>
               <p style={{ padding: 24, color: 'var(--muted-foreground)' }}>
                 Each tab keeps its own stack and state.
               </p>
-            </TabViewPanel>
-          </TabViewPanels>
-        </TabView>
+            </TabsPanel>
+          </TabsPanels>
+        </Tabs>
       </BLProvider>
     </Window>
   )

@@ -8,7 +8,7 @@ function RingtonePicker() {
   const [signedIn, setSignedIn] = useState(true)
   return (
     <div style={{ padding: '18px 0' }}>
-      <List inset>
+      <List variant="inset">
         <ListSection
           title="Ringtone"
           footer="The checked tone plays for calls from everyone."
@@ -26,8 +26,8 @@ function RingtonePicker() {
         </ListSection>
         <ListSection>
           <ListRow
-            center
-            destructive={signedIn}
+            justify="center"
+            tone={signedIn ? 'destructive' : undefined}
             divider={false}
             title={signedIn ? 'Sign Out' : 'Sign In'}
             onClick={() => setSignedIn(!signedIn)}

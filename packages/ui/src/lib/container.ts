@@ -8,7 +8,7 @@ import { bindSizeClass, type SizeClass, type SizeClassBreakpoints } from '@/lib/
    `lib/size-class`, which also writes `data-size-class` on the element for CSS); code that needs pixels measures.
 
    Size-class scope: every container that measures its size class (BLProvider's root, SplitView, NavigationStack,
-   SidebarProvider, SideDrawer, ArtifactChatContainer…) provides it to what it renders with `SizeClassProvider`.
+   SidebarProvider, ArtifactChatContainer…) provides it to what it renders with `SizeClassProvider`.
    React context crosses portals, so a popup rendered into BLProvider's root from inside a compact SplitView column
    still sees "compact": the kit's popup wrappers resolve `presentation="auto"` from it (`usePresentation`). ══ */
 

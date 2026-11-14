@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { animate } from 'framer-motion';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
-import { PlainButton as Button, type PlainButtonProps } from '@/components/ui/plain-button';
+import { Button } from '@ui-sdk/react/button';
 import { cn, cx, pressable, brandTile } from '@/lib/utils';
 import { Icon, type IconName } from '@/lib/icon';
 import { springs } from '@/lib/motion';
@@ -183,7 +183,7 @@ export function ConversationSuggestions({ className, children }: Div) {
   );
 }
 
-export type SuggestionProps = PlainButtonProps;
+export type SuggestionProps = React.ComponentProps<typeof Button>;
 
 /** A suggestion chip: a UI SDK Button, so it takes `onClick`, `disabled` and the rest. */
 export function Suggestion({ className, ...props }: SuggestionProps) {

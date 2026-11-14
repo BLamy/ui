@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu'
+import { DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { Tree, type TreeNode } from '@/components/ui/tree'
 import { Icon } from '@/lib/icon'
 import { ThemeScope } from '@/lib/theme'
@@ -65,13 +65,13 @@ export default function FileTree() {
           editing={editing} onEditingChange={setEditing}
           onRename={(node, label) => setNodes((list) => renamed(list, node.value, label))}
           contextMenu={(node) => (
-            <ContextMenuContent aria-label={`${node.label} actions`}>
-              {node.children ? <ContextMenuItem value="new" icon={<Icon name="doc" size={20} />}>New File…</ContextMenuItem> : null}
-              <ContextMenuItem value="rename" icon={<Icon name="pencil" size={20} />} onSelect={() => setEditing(node.value)}>Rename</ContextMenuItem>
-              <ContextMenuItem value="copy" icon={<Icon name="link" size={20} />}>Copy Path</ContextMenuItem>
-              <ContextMenuSeparator />
-              <ContextMenuItem value="delete" destructive icon={<Icon name="trash" size={20} />} onSelect={() => setNodes((list) => prune(list, node.value))}>Delete</ContextMenuItem>
-            </ContextMenuContent>
+            <DropdownMenuContent aria-label={`${node.label} actions`}>
+              {node.children ? <DropdownMenuItem value="new" icon={<Icon name="doc" size={20} />}>New File…</DropdownMenuItem> : null}
+              <DropdownMenuItem value="rename" icon={<Icon name="pencil" size={20} />} onSelect={() => setEditing(node.value)}>Rename</DropdownMenuItem>
+              <DropdownMenuItem value="copy" icon={<Icon name="link" size={20} />}>Copy Path</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem value="delete" destructive icon={<Icon name="trash" size={20} />} onSelect={() => setNodes((list) => prune(list, node.value))}>Delete</DropdownMenuItem>
+            </DropdownMenuContent>
           )}
           className="min-h-0 flex-1 p-1.5" />
         <div className="truncate border-t border-border bg-muted/50 px-3 py-1.5 font-mono text-caption text-muted-foreground">{selected ?? 'Nothing selected'}</div>

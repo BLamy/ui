@@ -19,7 +19,7 @@ export default function Composition() {
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <FilterMenu fields={fields} state={state} hotkey="g" render={<Button variant="secondary" size="sm" />}>
+        <FilterMenu fields={fields} state={state} shortcut="g" render={<Button variant="secondary" size="sm" />}>
           <Icon name="plus" size={14} sw={2.4} />
           Add filter
         </FilterMenu>
@@ -28,7 +28,7 @@ export default function Composition() {
             key={filter.id}
             filter={filter}
             field={fields.find((f) => f.id === filter.field)}
-            onChange={(next) => state.update(filter.id, { operator: next.operator, value: next.value })}
+            onValueChange={(next, details) => state.update(filter.id, { operator: next.operator, value: next.value }, details)}
             onRemove={() => state.remove(filter.id)}
           />
         ))}

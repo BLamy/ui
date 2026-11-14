@@ -20,13 +20,6 @@
     "shadow": 0,
     "font": 0
   },
-  "packages/ui/src/components/toast.tsx": {
-    "color": 1,
-    "radius": 0,
-    "text": 0,
-    "shadow": 0,
-    "font": 0
-  },
   "registry/blocks/macos/pages.tsx": {
     "color": 2,
     "radius": 0,

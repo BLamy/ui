@@ -30,18 +30,18 @@ function Controls() {
   const [queued, setQueued] = useState(0)
   return (
     <div style={{ padding: '18px 0' }}>
-      <List inset>
+      <List variant="inset">
         {/* No onClick: each row is a plain container, the Switch is the
             control, and pressing the row's label flips it. The Switch is named
             by the row title. */}
         <ListSection footer="Tap anywhere on a row to flip its switch.">
           <ListRow
-            leading={<Tile icon="link" color="#0A84FF" />}
+            icon={<Tile icon="link" color="#0A84FF" />}
             title="Bluetooth"
             accessory={<Switch checked={bluetooth} onCheckedChange={setBluetooth} />}
           />
           <ListRow
-            leading={<Tile icon="wave" color="#FF2D55" />}
+            icon={<Tile icon="wave" color="#FF2D55" />}
             title="Sound Effects"
             divider={false}
             accessory={<Switch checked={sounds} onCheckedChange={setSounds} />}
@@ -64,9 +64,9 @@ function Controls() {
             content, so the two are siblings, never nested. */}
         <ListSection>
           <ListRow
-            leading={<Tile icon="doc" color="#34C759" />}
+            icon={<Tile icon="doc" color="#34C759" />}
             title="Field Guide"
-            subtitle={queued ? `${queued} queued` : 'Offline copy'}
+            description={queued ? `${queued} queued` : 'Offline copy'}
             onClick={() => {}}
             divider={false}
             accessory={

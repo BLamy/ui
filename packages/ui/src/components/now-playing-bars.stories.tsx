@@ -8,7 +8,8 @@ const meta: Meta<typeof NowPlayingBars> = {
   title: 'Atoms/NowPlayingBars',
   component: NowPlayingBars,
   args: { playing: true },
-  decorators: [(Story) => <Panel><Story /></Panel>],
+  // `parameters.dark` switches the frame; a Dark story's own frame would nest inside this one.
+  decorators: [(Story, { parameters }) => <Panel dark={parameters.dark}><Story /></Panel>],
 };
 export default meta;
 type Story = StoryObj<typeof NowPlayingBars>;
@@ -47,6 +48,12 @@ const variants = (
       <NowPlayingBars size={20} bars={5} />
       <NowPlayingBars size={32} bars={6} barWidth={4} gap={3} />
     </div>
+    <Caption>Speed (a multiplier, as on Spinner): 0.5, 1, 2</Caption>
+    <div className="flex items-end gap-6 text-primary">
+      <NowPlayingBars speed={0.5} />
+      <NowPlayingBars />
+      <NowPlayingBars speed={2} />
+    </div>
     <Caption>Paused</Caption>
     <div className="flex items-end gap-6 text-muted-foreground">
       <NowPlayingBars playing={false} />
@@ -56,7 +63,7 @@ const variants = (
 );
 
 export const Variants: Story = { render: () => variants };
-export const Dark: Story = { decorators: [(Story) => <Panel dark><Story /></Panel>], render: () => variants };
+export const Dark: Story = { parameters: { dark: true }, render: () => variants };
 
 function Toggle() {
   const [playing, setPlaying] = useState(true);

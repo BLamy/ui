@@ -1,13 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  DisclosureGroup, DisclosureGroupHeader, DisclosureGroupItem, DisclosureGroupPanel, DisclosureGroupTrigger, Disclosure, DisclosurePanel, DisclosureTrigger,
+  DisclosureGroup, DisclosureGroupHeader, DisclosureGroupItem, DisclosureGroupPanel, DisclosureGroupTrigger, Disclosure, DisclosureHeader, DisclosurePanel, DisclosureTrigger,
 } from '@/components/ui/disclosure';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Disclosure> = {
   title: 'Molecules/Disclosure',
   component: Disclosure,
-  decorators: [(Story) => <Panel><Story /></Panel>],
+  // `parameters.dark` switches the frame; a Dark story's own frame would nest inside this one.
+  decorators: [(Story, { parameters }) => <Panel dark={parameters.dark}><Story /></Panel>],
 };
 export default meta;
 type Story = StoryObj<typeof Disclosure>;
@@ -21,9 +22,23 @@ const faq = [
 export const Single: Story = {
   render: () => (
     <Disclosure defaultOpen>
-      <DisclosureTrigger>Advanced</DisclosureTrigger>
+      <DisclosureHeader><DisclosureTrigger>Advanced</DisclosureTrigger></DisclosureHeader>
       <DisclosurePanel>Proxy, DNS and certificate settings live here.</DisclosurePanel>
     </Disclosure>
+  ),
+};
+
+/** A disabled item stays in place, dimmed, and is skipped by the arrow keys. */
+export const Disabled: Story = {
+  render: () => (
+    <DisclosureGroup variant="inset" defaultValue={['sync']}>
+      {faq.map(([id, q, a]) => (
+        <DisclosureGroupItem key={id} value={id} disabled={id === 'share'}>
+          <DisclosureGroupHeader><DisclosureGroupTrigger>{q}</DisclosureGroupTrigger></DisclosureGroupHeader>
+          <DisclosureGroupPanel>{a}</DisclosureGroupPanel>
+        </DisclosureGroupItem>
+      ))}
+    </DisclosureGroup>
   ),
 };
 
@@ -54,15 +69,21 @@ export const Inset: Story = {
 };
 
 export const Dark: Story = {
-  decorators: [(Story) => <Panel dark><Story /></Panel>],
+  parameters: { dark: true },
   render: () => (
-    <DisclosureGroup variant="inset" defaultValue={['share']}>
-      {faq.map(([id, q, a]) => (
-        <DisclosureGroupItem key={id} value={id}>
-          <DisclosureGroupHeader><DisclosureGroupTrigger>{q}</DisclosureGroupTrigger></DisclosureGroupHeader>
-          <DisclosureGroupPanel>{a}</DisclosureGroupPanel>
-        </DisclosureGroupItem>
-      ))}
-    </DisclosureGroup>
+    <>
+      <DisclosureGroup variant="inset" defaultValue={['share']}>
+        {faq.map(([id, q, a]) => (
+          <DisclosureGroupItem key={id} value={id}>
+            <DisclosureGroupHeader><DisclosureGroupTrigger>{q}</DisclosureGroupTrigger></DisclosureGroupHeader>
+            <DisclosureGroupPanel>{a}</DisclosureGroupPanel>
+          </DisclosureGroupItem>
+        ))}
+      </DisclosureGroup>
+      <Disclosure defaultOpen>
+        <DisclosureHeader><DisclosureTrigger>Advanced</DisclosureTrigger></DisclosureHeader>
+        <DisclosurePanel>Proxy, DNS and certificate settings live here.</DisclosurePanel>
+      </Disclosure>
+    </>
   ),
 };

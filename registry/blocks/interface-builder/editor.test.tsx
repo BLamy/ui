@@ -161,12 +161,12 @@ describe('InterfaceBuilder panes', () => {
     expect(toggle.getAttribute('aria-pressed')).toBe('false');
     await act(async () => toggle.click());
     await settle();
-    const drawer = document.querySelector<HTMLElement>('[data-edge-drawer][aria-label="Inspector"]')!;
+    const drawer = document.querySelector<HTMLElement>('[data-variant=panel][aria-label="Inspector"]')!;
     expect(drawer).not.toBeNull();
     expect(toggle.getAttribute('aria-pressed')).toBe('true');
     expect(drawer.contains(document.activeElement)).toBe(true);
     // Not modal: no scrim, nothing inert.
-    expect(document.querySelector('[data-edge-drawer-scrim]')).toBeNull();
+    expect(document.querySelector('[data-slot=drawer-backdrop]')).toBeNull();
     expect(inert(host.querySelector('[data-slot=canvas]'))).toBe(false);
     await press('Escape');
     await settle();

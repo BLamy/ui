@@ -7,9 +7,10 @@
    (lib/trace-timeline), so a redraw costs the pixels and not the marks. Colours come in resolved: the component reads
    them from the theme's CSS variables, and re-reads them when the theme changes. ══ */
 import {
-  TRACE_RULER, TRACE_WAVE_REST, laneEnd, poolBuckets, poolDensity, poolPresence, sortedTimes,
+  TRACE_RULER, laneEnd, poolBuckets, poolDensity, poolPresence, sortedTimes,
   type DensityPool, type TraceAxis, type TraceKey, type TraceLane, type TraceRequest, type TraceRow, type TraceStopMark, type TraceTick, type TraceTone, type TraceWindow,
 } from '@/lib/trace-timeline-model';
+import { waveDashLength } from '@/lib/wave-rail';
 
 export interface TraceColors {
   foreground: string;
@@ -149,11 +150,18 @@ function clear(f: TraceFrame) {
   f.ctx.globalAlpha = 1;
 }
 
-/** A rail has no room for words: labels are the strip's, in its gutter. */
+/** A rail has no room for words: labels are the strip's, in its gutter. One too long for it ends in an ellipsis
+ *  rather than being squeezed narrower. */
 function label(f: TraceFrame, text: string | undefined, row: TraceRow, color = f.colors.muted) {
   if (f.vertical || !f.start || !text || row.size < 9) return;
+  const max = f.start - 12;
+  let shown = text;
+  if (f.ctx.measureText(shown).width > max) {
+    while (shown.length > 1 && f.ctx.measureText(shown + '…').width > max) shown = shown.slice(0, -1);
+    shown += '…';
+  }
   f.ctx.fillStyle = color;
-  f.ctx.fillText(text, 6, row.at + row.size / 2, f.start - 12);
+  f.ctx.fillText(shown, 6, row.at + row.size / 2, max);
 }
 
 function background(f: TraceFrame, row: TraceRow, color = f.colors.surface) {
@@ -449,7 +457,7 @@ function drawStops(f: TraceFrame, s: TraceScene, row: TraceRow) {
   label(f, s.stopsLabel, row);
   const mid = row.at + row.size / 2;
   for (const mark of s.stopMarks) {
-    const length = (mark.stop.level ?? 1) > 1 ? TRACE_WAVE_REST - 3 : TRACE_WAVE_REST;
+    const length = waveDashLength(0, mark.stop.level ?? 1);
     ctx.fillStyle = mark.tone === 'default' ? colors.faint : toneColor(colors, mark.tone);
     ctx.globalAlpha = mark.dim ? 0.55 : 1;
     ctx.fillRect(start + mark.along - 1, mid - length / 2, 2, length);

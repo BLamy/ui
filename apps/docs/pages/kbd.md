@@ -45,7 +45,7 @@ In a menu, give the item a `shortcut` instead of a `Kbd`: the item draws the hin
 
 ## Accessibility
 
-The keycaps are display only: they do not make a shortcut work. Bind the key yourself (`useShortcut` from `@ui-sdk/react/shortcuts`, or `useHotkey` in the [command menu](https://blamy.github.io/ui/#/command-menu)), and use the keycaps to show it. A screen reader reads the glyphs as typed, so `⌘` may be announced by name; where that matters, put the spelled-out shortcut in `aria-label` on the `Kbd`. Keycaps have `pointer-events-none` and `select-none`, so they are never clickable or selectable.
+The keycaps are display only: they do not make a shortcut work. Bind the key yourself (`useShortcut` from `@ui-sdk/react/shortcuts`, or `useHotkey` in the [command menu](https://blamy.github.io/ui/#/command-menu)), and use the keycaps to show it. With `keys`, the glyphs are hidden from screen readers and the shortcut is spelled out for them in a visually hidden span ("Command Shift P", "Control Shift P"; Alt is "Option" on Apple platforms). Keys you spell out as children are read as written, so prefer `keys` for a shortcut, or write words (`<Kbd>Esc</Kbd>`). Keycaps have `pointer-events-none` and `select-none`, so they are never clickable or selectable.
 
 ## Props
 
@@ -56,4 +56,4 @@ The keycaps are display only: they do not make a shortcut work. Bind the key you
 
 ## Styling
 
-`data-slot="kbd"` and `data-slot="kbd-group"`. The keycap is `inline-flex`, `h-5 min-w-5`, `rounded-[5px]`, `bg-secondary`, `text-muted-foreground`, with a `shadow-hairline-b` underline. Override any of it with `className` (merged last).
+`data-slot="kbd"` and `data-slot="kbd-group"`. The keycap is `inline-flex`, `h-5 min-w-5`, `rounded-sm`, `bg-secondary`, `text-muted-foreground`, with a `shadow-hairline-b` underline. Override any of it with `className` (merged last).

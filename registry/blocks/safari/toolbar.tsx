@@ -1,12 +1,12 @@
 /* Safari's chrome: the toolbar (back, forward, address, reload, Tailscale, tabs), the tab strip and the tab overview. */
 import { useMemo, useState, type FormEvent, type RefObject } from 'react';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxList } from '@/components/ui/combobox';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
-import { PlainToggleButton } from '@/components/ui/plain-button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Toggle } from '@/components/ui/toggle';
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
-import { TailscaleMenu } from '@/components/ui/tailscale-menu';
+import { TailscaleExitNodes, TailscaleLoginButton, TailscaleSummary } from '@/components/ui/tailscale-controls';
 // The bare input: the kit's ComboboxInput is a filled field with its own disclosure button, and this one sits in the pill.
 import { ComboboxInput } from '@ui-sdk/react/combobox';
 import { Icon } from '@/lib/icon';
@@ -119,7 +119,7 @@ function AddressField({ browser, snapshot, history, inputRef }: { browser: Brows
           />
           {loading ? (
             <Button variant="quiet" size="icon" className="-mr-1 size-6 shrink-0 p-0" aria-label="Stop loading" onClick={browser.stop}>
-              <Spinner spin size={14} />
+              <Spinner size={14} />
             </Button>
           ) : (
             <Button variant="quiet" size="icon" className="-mr-1 size-6 shrink-0 p-0" aria-label="Reload page" disabled={tab.index < 0} onClick={browser.reload}>
@@ -165,15 +165,20 @@ export function Toolbar({ browser, snapshot, history, totals, inputRef, overview
           <Icon name="shield-check-fill" size={18} className="text-primary" />
         </PopoverTrigger>
         <PopoverContent align="end" className="w-80">
-          <TailscaleMenu variant="radio" onExitNode={onExitNode} detail={`${totals.pages} pages and ${totals.requests} requests this session, all through Tailscale.`} />
+          <PopoverTitle className="sr-only">Tailscale connection</PopoverTitle>
+          <div className="flex flex-col gap-3">
+            <TailscaleSummary detail={`${totals.pages} pages and ${totals.requests} requests this session, all through Tailscale.`} />
+            <TailscaleExitNodes onAction={onExitNode} />
+            <TailscaleLoginButton size="sm" variant="outline" />
+          </div>
         </PopoverContent>
       </Popover>
       {!compact ? <Button variant="quiet" size="icon" className="size-8" aria-label="New tab" onClick={() => { browser.openTab(); requestAnimationFrame(() => inputRef.current?.focus()); }}><Icon name="plus" size={18} /></Button> : null}
-      {/* A UI SDK Toggle in the quiet icon-button look: pressed while the overview is up. */}
-      <PlainToggleButton pressed={overview} onPressedChange={onOverviewChange} className={cn(buttonVariants({ variant: 'quiet', size: 'icon' }), 'relative size-8')} aria-label={`Show tab overview, ${browser.state.tabs.length} ${browser.state.tabs.length === 1 ? 'tab' : 'tabs'}`}>
+      {/* Pressed while the overview is up. */}
+      <Toggle variant="quiet" size="icon" pressed={overview} onPressedChange={onOverviewChange} className="relative size-8" aria-label={`Show tab overview, ${browser.state.tabs.length} ${browser.state.tabs.length === 1 ? 'tab' : 'tabs'}`}>
         <Icon shapes={TABS_ICON} size={18} />
         {browser.state.tabs.length > 1 ? <span aria-hidden="true" className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-caption2 font-semibold text-primary-foreground">{browser.state.tabs.length}</span> : null}
-      </PlainToggleButton>
+      </Toggle>
     </div>
   );
 }
@@ -190,9 +195,9 @@ function TabCard({ tab }: { tab: Tab }) {
   return (
     <div className="flex flex-col gap-2">
       <HoverCardHeader
-        media={<span aria-hidden="true" className="grid size-9 place-items-center rounded-ctl bg-secondary text-foreground/70"><Icon name="globe" size={18} /></span>}
+        icon={<span aria-hidden="true" className="grid size-9 place-items-center rounded-ctl bg-secondary text-foreground/70"><Icon name="globe" size={18} /></span>}
         title={tabTitle(tab)}
-        subtitle={entry ? hostOf(entry.url) : 'New tab'}
+        description={entry ? hostOf(entry.url) : 'New tab'}
       />
       {entry ? <code className="block truncate rounded-ctl bg-secondary px-2 py-1 text-caption text-foreground/70 select-text">{displayAddress(entry.url)}</code> : null}
       <p className="m-0 text-footnote text-muted-foreground">
@@ -212,7 +217,7 @@ export function TabStrip({ browser }: { browser: Browser }) {
           <div key={tab.id} className={cn('group/tab relative flex h-7 max-w-52 min-w-24 flex-1 items-center rounded-lg transition-colors duration-spring-snappy ease-spring-snappy', isActive ? 'bg-secondary' : 'hover:bg-secondary/60')}>
             <HoverCard>
               <HoverCardTrigger render={<Button variant="quiet" aria-current={isActive ? 'page' : undefined} onClick={() => browser.selectTab(tab.id)} className="h-7 min-w-0 flex-1 justify-start gap-1.5 rounded-lg bg-transparent px-2.5 pr-7 text-footnote font-normal text-foreground hover:bg-transparent" />}>
-                {tab.status === 'loading' ? <Spinner spin size={12} /> : <Icon name="globe" size={12} className="shrink-0 text-foreground/70" />}
+                {tab.status === 'loading' ? <Spinner size={12} /> : <Icon name="globe" size={12} className="shrink-0 text-foreground/70" />}
                 <span className="min-w-0 truncate">{tabTitle(tab)}</span>
               </HoverCardTrigger>
               <HoverCardContent side="bottom" align="start"><TabCard tab={tab} /></HoverCardContent>

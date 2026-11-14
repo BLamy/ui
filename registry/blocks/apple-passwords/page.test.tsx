@@ -82,12 +82,12 @@ async function openSignIn() {
   return document.querySelector<HTMLElement>('[role="dialog"]')!;
 }
 
-it('the sign-in Credenza follows the SplitView: a card beside several columns', async () => {
+it('the sign-in dialog follows the SplitView: a card beside several columns', async () => {
   await mount({});
   expect((await openSignIn()).getAttribute('data-presentation')).toBe('dialog');
 });
 
-it('the sign-in Credenza follows the SplitView: a tray in one column', async () => {
+it('the sign-in dialog follows the SplitView: a tray in one column', async () => {
   width = 390;
   await mount({});
   expect(document.querySelector('[data-slot="split-view"]')?.getAttribute('data-size-class')).toBe('compact');

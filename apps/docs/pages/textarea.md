@@ -45,7 +45,7 @@ As with `Input`, the label, description and validation come from the wrapper, an
 
 ```tsx
 <Field name="bio" invalid={bio.length > 140 ? true : undefined}>
-  <FieldLabel variant="field">Bio</FieldLabel>
+  <FieldLabel>Bio</FieldLabel>
   <Textarea size="sm" value={bio} onValueChange={setBio} />
   <FieldDescription>Shown on your public profile.</FieldDescription>
 </Field>
@@ -90,7 +90,7 @@ Name it like any field: a `FieldLabel` inside a `Field`, or `aria-label` when us
 
 ## Styling
 
-The root is `<textarea data-slot="textarea">` with UI SDK's `data-filled`, `data-disabled`, `data-readonly` and `data-required`, plus the field's `data-invalid`, `data-valid` and `data-focused` inside a `Field`. Focus is styled from the native `:focus` and invalid from `aria-invalid`. `textareaVariants({ size })` returns the class list.
+The root is `<textarea data-slot="textarea">` with UI SDK's `data-filled`, `data-disabled`, `data-readonly` and `data-required`, plus the field's `data-invalid`, `data-valid` and `data-focused` inside a `Field`. The box is Input's shared field surface, `fieldSurfaceVariants({ size })` (fill, radius, focus and invalid rings, disabled dim), with a minimum height in place of a fixed one; `textareaVariants({ size })` adds the multi-line parts (the minimum height, padding, line height). Focus is styled from `:focus-within` and invalid from `aria-invalid`.
 
 ## cva recipes
 

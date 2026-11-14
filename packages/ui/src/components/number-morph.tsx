@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, type HTMLAttributes, type Ref } from 'react';
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from 'framer-motion';
 import { fades, springs } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
    stays the units digit, the thousands comma stays the thousands comma. So typing 1234 → 12345 slides the
    comma one digit left instead of re-rendering the string, and 19 → 20 rolls the tens digit up one notch
    (and the units digit up through 0) instead of swapping glyphs. Digits roll up when the value rises and
-   down when it falls. */
+   down when it falls. Screen readers read the formatted number as text; the animated layer is hidden from them. */
 
 type Part = { key: string; type: string; value: string };
 
@@ -63,19 +63,18 @@ function Digit({ value, trend }: { value: string; trend: number }) {
   );
 }
 
-export interface NumberMorphProps {
+export interface NumberMorphProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
   value: number;
   /** Intl.NumberFormat options (currency, percent, fraction digits, compact notation, …). */
   format?: Intl.NumberFormatOptions;
-  locales?: string | string[];
-  className?: string;
-  style?: CSSProperties;
+  /** The locale to format in (default: the browser's). */
+  locale?: string | string[];
+  ref?: Ref<HTMLSpanElement>;
 }
 
-export function NumberMorph({ value, format, locales, className, style }: NumberMorphProps) {
-  const fmtKey = JSON.stringify([locales, format]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const fmt = useMemo(() => new Intl.NumberFormat(locales, format), [fmtKey]);
+export function NumberMorph({ value, format, locale, className, ...props }: NumberMorphProps) {
+  const fmtKey = JSON.stringify([locale, format]);
+  const fmt = useMemo(() => new Intl.NumberFormat(locale, format), [fmtKey]);
   const parts = partsOf(value, fmt);
   const prev = useRef(value);
   const trend = value === prev.current ? 0 : value > prev.current ? 1 : -1;
@@ -83,15 +82,17 @@ export function NumberMorph({ value, format, locales, className, style }: Number
   const reduced = useReducedMotion();
   const layoutT = reduced ? { duration: 0 } : springs.snappy;
   return (
-    <span data-slot="number-morph" className={cn('inline-flex items-baseline whitespace-pre tabular-nums', className)} style={style}
-      role="img" aria-label={fmt.format(value)}>
+    <span {...props} data-slot="number-morph" className={cn('relative inline-flex items-baseline whitespace-pre tabular-nums', className)}>
+      <span className="sr-only">{fmt.format(value)}</span>
+      {/* The rolling layer, clipped to the line box (plus the reels' soft edge) so nothing mid-roll draws above or below the text. */}
+      <span aria-hidden="true" className="relative -my-[.12em] inline-flex items-baseline py-[.12em] [overflow-y:clip]">
       <AnimatePresence initial={false} mode="popLayout">
         {parts.map((p) => (
           <motion.span
             key={p.key}
             layout="position"
             className="inline-block"
-            initial={{ opacity: 0, scale: 0.6, filter: 'blur(3px)', y: trend > 0 ? '.35em' : '-.35em' }}
+            initial={{ opacity: 0, scale: 0.6, filter: 'blur(3px)', y: trend > 0 ? '.2em' : '-.2em' }}
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)', y: 0 }}
             exit={{ opacity: 0, scale: 0.6, filter: 'blur(3px)', transition: fades.out }}
             transition={{ layout: layoutT, y: layoutT, scale: layoutT, default: fades.in }}
@@ -100,6 +101,7 @@ export function NumberMorph({ value, format, locales, className, style }: Number
           </motion.span>
         ))}
       </AnimatePresence>
+      </span>
     </span>
   );
 }

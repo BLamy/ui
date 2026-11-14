@@ -1,6 +1,6 @@
 # TextMorph
 
-A label that morphs into the next one. "Continue" becomes "Confirm": the letters the two words share slide to their new places, the rest blur out and in, and the box springs to the new width. [Button](https://blamy.github.io/ui/#/button) already wraps a plain-text child in `TextMorph`, so most labels morph with no extra code; use `TextMorph` directly for other text that changes: a status line, a heading, a tab title. For numbers use [NumberMorph](https://blamy.github.io/ui/#/number-morph); for icons [IconSwap](https://blamy.github.io/ui/#/icon-swap).
+A label that morphs into the next one. "Continue" becomes "Confirm": the letters the two words share slide to their new places, the rest blur out and in, and the box springs to the new width. [Button](https://blamy.github.io/ui/#/button) already wraps a plain-text child in `TextMorph`, so most labels morph with no extra code; use `TextMorph` directly for other text that changes: a status line, a heading, a tab title. For numbers use [NumberMorph](https://blamy.github.io/ui/#/number-morph); for icons and whole views [Swap](https://blamy.github.io/ui/#/swap).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -42,7 +42,7 @@ Pass the text as a single string child; changing it runs the morph. At rest it r
 - `children` must be a string. A Button whose children are anything else (an icon next to text, an array) does not morph.
 - There is no morph for multi-line text: if either the old or new text contains a newline, or the user prefers reduced motion, it swaps at once.
 - The morph measures the rendered run, so the element needs the final font; a web font that loads late is re-measured once `document.fonts` is ready.
-- While morphing the element becomes `inline-block` with its width springing; at rest it is `display: contents`, so the text sits in whatever element you put around it.
+- The root is an `inline-block` at rest and while morphing, so box utilities (`truncate`, padding, a background) apply the same way throughout; only its width is pinned (and springs) during a morph.
 
 ## Accessibility
 
@@ -53,7 +53,8 @@ The resting text is the real text node. During a morph the animated letters are 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `children` | — | The text (a `string`). Changing it starts a morph. |
-| `className` / `style` | — | Merged onto the root `span`. |
+| `className` / `style` | — | Merged onto the root `span` (an `inline-block`). |
+| `ref`, DOM props | — | Passed to the root `span` (`id`, `aria-*`, `data-*`, events). |
 
 ## Styling
 

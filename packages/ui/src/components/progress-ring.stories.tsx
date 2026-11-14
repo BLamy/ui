@@ -23,7 +23,7 @@ const all = (
     <Caption>Sizes</Caption>
     <div className={row}>
       <ProgressRing aria-label="Small" size="sm" value={40} />
-      <ProgressRing aria-label="Medium" size="md" value={55} showValue />
+      <ProgressRing aria-label="Default" size="default" value={55} />
       <ProgressRing aria-label="Large" size="lg" value={70} showValue />
       <ProgressRing aria-label="Extra large" size="xl" value={85} showValue />
     </div>
@@ -56,9 +56,9 @@ export const WithContent: Story = {
   render: () => (
     <div className={row}>
       <ProgressRing aria-label="Downloading" size="lg" value={42}>
-        <span className="block size-3 rounded-[2px] bg-primary" />
+        <span className="block size-3 rounded-xs bg-primary" />
       </ProgressRing>
-      <span className="text-[15px] text-muted-foreground">Downloading…</span>
+      <span className="text-subhead text-muted-foreground">Downloading…</span>
     </div>
   ),
 };
@@ -84,12 +84,23 @@ function Live() {
   const { remaining } = useCountdown(30, { running });
   return (
     <div className="flex items-center gap-4">
-      <span className="text-[22px] font-medium tabular-nums">482 913</span>
+      <span className="text-title font-medium tabular-nums">482 913</span>
       <CountdownRing remaining={remaining} />
       <Button variant="secondary" size="sm" onClick={() => setRunning((r) => !r)}>{running ? 'Pause' : 'Start'}</Button>
     </div>
   );
 }
+
+/** The countdown's last seconds are urgent (red), whatever the ring's tone; `urgentAt` moves the threshold. */
+export const Urgent: Story = {
+  render: () => (
+    <div className={row}>
+      <CountdownRing remaining={8} size="lg" />
+      <CountdownRing remaining={3} size="lg" />
+      <CountdownRing remaining={12} size="lg" urgentAt={15} />
+    </div>
+  ),
+};
 
 /** `useCountdown` driving a verification-code ring (starts paused). */
 export const LiveCountdown: Story = { render: () => <Live /> };

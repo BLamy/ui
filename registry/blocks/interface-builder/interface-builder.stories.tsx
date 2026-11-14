@@ -28,10 +28,10 @@ const meta: Meta<Args> = {
 export default meta;
 type Story = StoryObj<Meta<Args>>;
 
-/** The Plant Pal sample: a TabView of NavigationStacks, sheets, delegates and the responder chain. */
+/** The Plant Pal sample: a TabsScreen of NavigationStacks, sheets, delegates and the responder chain. */
 export const PlantPal: Story = {};
 
-/** A scene selected inside the TabView that shows it, edited in place. */
+/** A scene selected inside the TabsScreen that shows it, edited in place. */
 export const SelectedInPlace: Story = { args: { initialSelection: { kind: 'node', scene: 'garden', ids: ['plant-list'] } } };
 
 /** The Mail sample on iPad: a three-column SplitView. */

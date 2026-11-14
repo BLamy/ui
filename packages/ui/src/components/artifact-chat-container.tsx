@@ -112,7 +112,7 @@ export interface ArtifactChatContainerProps {
   workingLabel?: ReactNode;
   /** Called when the working status is tapped before the composer is revealed. */
   onAdd?: () => void;
-  /** Follow NavigationStack/List scroll chrome, like TabBar. */
+  /** Follow NavigationStack/List scroll chrome, like the `Tabs` bar. */
   hideOnScroll?: boolean;
   /** Resting position after the floating chat is dragged down into its FAB. */
   fabPosition?: ArtifactChatFabPosition;

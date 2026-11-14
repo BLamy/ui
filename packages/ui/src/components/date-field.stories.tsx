@@ -21,7 +21,7 @@ type Story = StoryObj<typeof DateField>;
 export const Default: Story = {
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Birthday</FieldLabel>
+      <FieldLabel>Birthday</FieldLabel>
       <DateField {...args} defaultValue="2026-09-09" />
       <FieldDescription>Month, day, then year — type or use the arrow keys.</FieldDescription>
     </Field>
@@ -31,7 +31,7 @@ export const Default: Story = {
 export const Empty: Story = {
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Due</FieldLabel>
+      <FieldLabel>Due</FieldLabel>
       <DateField {...args} />
     </Field>
   ),
@@ -51,7 +51,7 @@ export const WithTime: Story = {
   name: 'Date and time',
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Starts</FieldLabel>
+      <FieldLabel>Starts</FieldLabel>
       <DateField {...args} granularity="minute" defaultValue="2026-09-09T09:30" />
     </Field>
   ),
@@ -60,7 +60,7 @@ export const WithTime: Story = {
 export const Invalid: Story = {
   render: (args) => (
     <Field invalid>
-      <FieldLabel variant="field">Due</FieldLabel>
+      <FieldLabel>Due</FieldLabel>
       <DateField {...args} defaultValue="2026-09-09" />
       <FieldError>Pick a date after today.</FieldError>
     </Field>
@@ -71,7 +71,7 @@ export const OutOfRange: Story = {
   name: 'Before min',
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Check-in</FieldLabel>
+      <FieldLabel>Check-in</FieldLabel>
       <DateField {...args} defaultValue="2026-08-20" min="2026-09-01" />
       <FieldDescription>From 1 September 2026.</FieldDescription>
     </Field>
@@ -81,7 +81,7 @@ export const OutOfRange: Story = {
 export const Disabled: Story = {
   render: (args) => (
     <Field disabled>
-      <FieldLabel variant="field">Due</FieldLabel>
+      <FieldLabel>Due</FieldLabel>
       <DateField {...args} defaultValue="2026-09-09" />
     </Field>
   ),
@@ -90,7 +90,7 @@ export const Disabled: Story = {
 export const TimeOnly: Story = {
   render: ({ size, variant }) => (
     <Field>
-      <FieldLabel variant="field">Alarm</FieldLabel>
+      <FieldLabel>Alarm</FieldLabel>
       <TimeField locale="en-US" size={size} variant={variant} defaultValue="09:30" />
     </Field>
   ),
@@ -100,7 +100,7 @@ export const TimeWithSeconds: Story = {
   name: 'Time, 24-hour with seconds',
   render: ({ size, variant }) => (
     <Field>
-      <FieldLabel variant="field">Departure</FieldLabel>
+      <FieldLabel>Departure</FieldLabel>
       <TimeField locale="en-US" size={size} variant={variant} hourCycle={24} granularity="second" defaultValue="14:45:10" />
     </Field>
   ),
@@ -110,7 +110,7 @@ export const Dark: Story = {
   decorators: [(Story) => <Panel w={360} dark><Story /></Panel>],
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Birthday</FieldLabel>
+      <FieldLabel>Birthday</FieldLabel>
       <DateField {...args} defaultValue="2026-09-09" />
     </Field>
   ),

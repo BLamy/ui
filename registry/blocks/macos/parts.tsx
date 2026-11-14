@@ -1,12 +1,11 @@
 /* The desktop's pieces that aren't the launcher's menu: app tiles and file glyphs, the hat, the desktop (wallpaper,
    menu bar, dock) and the power overlays (lock screen, sleep, restart, shut down). */
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
-import { createMenuController } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuContextTrigger, createDropdownMenuController } from '@/components/ui/dropdown-menu';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
-import { IconSwap } from '@/components/ui/icon-swap';
+import { Swap } from '@/components/ui/swap';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { APPS, type DesktopApp } from './apps';
@@ -211,9 +210,9 @@ export function MenuBar({ dark, onAlfred, initialMenu }: { dark: boolean; onAlfr
             </span>
           </span>
         ) : null}
-        <PlainButton onClick={onAlfred} aria-label="Show Alfred" className="grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-inherit opacity-90 hover:opacity-100">
+        <SdkButton onClick={onAlfred} aria-label="Show Alfred" className="grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-inherit opacity-90 hover:opacity-100">
           <Hat size={16} />
-        </PlainButton>
+        </SdkButton>
         <Icon name="battery-full" size={20} sw={1.6} />
         <TailscaleStatusItem defaultOpen={initialMenu === 'tailscale'} />
         <WifiStatusItem defaultOpen={initialMenu === 'wifi'} />
@@ -249,12 +248,12 @@ export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; 
   };
   // One menu for the whole Dock. Its payload is the icon it was opened on (that app's Open or Show and Quit above the
   // preferences), or null for the Dock itself (the preferences alone).
-  const [menu] = useState(() => createMenuController<string | null>());
+  const [menu] = useState(() => createDropdownMenuController<string | null>());
   // The app the menu is about, for its name (the content draws from the payload itself).
   const [menuApp, setMenuApp] = useState<string | null>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   /** A right-click opens the menu where it landed along the Dock, just above its top edge, as on a Mac. The menu
-   *  key and Shift+F10 still reach the focused icon's ContextMenuTrigger, which opens it at the icon. */
+   *  key and Shift+F10 still reach the focused icon's DropdownMenuContextTrigger, which opens it at the icon. */
   const onContextMenuCapture = (e: ReactMouseEvent) => {
     const top = dockRef.current?.getBoundingClientRect().top;
     if (e.button !== 2 || top == null) return;
@@ -265,12 +264,12 @@ export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; 
   };
   // The dock's own preferences, at the foot of every one of its menus.
   const prefsItems = [
-    <ContextMenuItem key="magnify" value="magnify" onSelect={() => onPrefs({ ...prefs, magnify: !magnify })}>
+    <DropdownMenuItem key="magnify" value="magnify" onSelect={() => onPrefs({ ...prefs, magnify: !magnify })}>
       {magnify ? 'Turn Magnification Off' : 'Turn Magnification On'}
-    </ContextMenuItem>,
-    <ContextMenuItem key="hide" value="hide" onSelect={() => onPrefs({ ...prefs, hide: !hide })}>
+    </DropdownMenuItem>,
+    <DropdownMenuItem key="hide" value="hide" onSelect={() => onPrefs({ ...prefs, hide: !hide })}>
       {hide ? 'Turn Hiding Off' : 'Turn Hiding On'}
-    </ContextMenuItem>,
+    </DropdownMenuItem>,
   ];
   const well = cn('grid place-items-center rounded-[27%]', dark ? 'bg-white/12 text-white/80' : 'bg-white/60 text-black/60');
   const slot = cn(
@@ -288,7 +287,7 @@ export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; 
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false); }}
     >
       {hide ? <div data-slot="macos-dock-edge" aria-hidden="true" className="pointer-events-auto absolute inset-x-0 bottom-0 h-3" onPointerDown={() => setNear(true)} /> : null}
-      <ContextMenu controller={menu} onOpenChange={onMenuOpenChange} onPayloadChange={(p) => setMenuApp(typeof p === 'string' ? p : null)}>
+      <DropdownMenu controller={menu} onOpenChange={onMenuOpenChange} onPayloadChange={(p) => setMenuApp(typeof p === 'string' ? p : null)}>
         <div
           ref={dockRef}
           data-slot="macos-dock"
@@ -303,10 +302,10 @@ export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; 
           {APPS.map((app) => {
             const running = d.isOpen(app.id);
             return (
-              <ContextMenuTrigger key={app.id} payload={app.id} data-dock-app={app.id} className="grid">
+              <DropdownMenuContextTrigger key={app.id} payload={app.id} data-dock-app={app.id} className="grid">
                 {/* Resting on an icon trades its name label for a card about the app; never while a menu is up. */}
                 <HoverCard disabled={menuOpen}>
-                  <HoverCardTrigger render={<PlainButton aria-label={`${running ? 'Show' : 'Open'} ${app.name}`} onClick={() => d.open(app.id)} className={cn(slot, 'group/card')} />}>
+                  <HoverCardTrigger render={<SdkButton aria-label={`${running ? 'Show' : 'Open'} ${app.name}`} onClick={() => d.open(app.id)} className={cn(slot, 'group/card')} />}>
                     <DockLabel dark={dark}>{app.name}</DockLabel>
                     <AppTile app={app} size={tile} />
                     {running ? <span aria-hidden="true" className={cn('absolute -bottom-1 size-1 rounded-full', dark ? 'bg-white/80' : 'bg-black/60')} /> : null}
@@ -316,35 +315,35 @@ export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; 
                     <DockCard app={app} />
                   </HoverCardContent>
                 </HoverCard>
-              </ContextMenuTrigger>
+              </DropdownMenuContextTrigger>
             );
           })}
           <span aria-hidden="true" className={cn('mx-0.5 w-px self-center', dark ? 'bg-white/20' : 'bg-black/12')} style={{ height: tile - 4 }} />
-          <PlainButton aria-label="Alfred" onClick={onAlfred} className={slot}>
+          <SdkButton aria-label="Alfred" onClick={onAlfred} className={slot}>
             <DockLabel dark={dark}>Alfred</DockLabel>
             <Tile tone="alfred" size={tile} glyph={<Hat size={Math.round(tile * 0.62)} />} />
-          </PlainButton>
+          </SdkButton>
           <span aria-label="Trash" role="img" className={cn('group/dock relative', well)} style={{ width: tile, height: tile }}>
-            <IconSwap id={trash ? 'full' : 'empty'}><Icon name={trash ? 'trash-fill' : 'trash'} size={Math.round(tile * 0.57)} sw={1.7} /></IconSwap>
+            <Swap effect="pop" value={trash ? 'full' : 'empty'}><Icon name={trash ? 'trash-fill' : 'trash'} size={Math.round(tile * 0.57)} sw={1.7} /></Swap>
             <DockLabel dark={dark}>Trash</DockLabel>
           </span>
         </div>
-        <ContextMenuContent side="top" aria-label={menuApp ? `${APPS.find((a) => a.id === menuApp)?.name ?? menuApp} dock menu` : 'Dock'}>
+        <DropdownMenuContent side="top" aria-label={menuApp ? `${APPS.find((a) => a.id === menuApp)?.name ?? menuApp} dock menu` : 'Dock'}>
           {({ payload }) => {
             const app = typeof payload === 'string' ? APPS.find((a) => a.id === payload) : undefined;
             if (!app) return prefsItems;
             const running = d.isOpen(app.id);
             return (
               <>
-                <ContextMenuItem value="open" onSelect={() => d.open(app.id)}>{running ? 'Show' : 'Open'}</ContextMenuItem>
-                {running ? <ContextMenuItem value="quit" onSelect={() => d.close(app.id)}>Quit</ContextMenuItem> : null}
-                <ContextMenuSeparator />
+                <DropdownMenuItem value="open" onSelect={() => d.open(app.id)}>{running ? 'Show' : 'Open'}</DropdownMenuItem>
+                {running ? <DropdownMenuItem value="quit" onSelect={() => d.close(app.id)}>Quit</DropdownMenuItem> : null}
+                <DropdownMenuSeparator />
                 {prefsItems}
               </>
             );
           }}
-        </ContextMenuContent>
-      </ContextMenu>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
@@ -357,7 +356,7 @@ function DockCard({ app }: { app: DesktopApp }) {
   const where = !win ? 'Not open' : win.minimized ? 'Minimized to the Dock' : d.front === app.id ? 'Open, in front' : 'Open, behind other windows';
   return (
     <div className="flex flex-col gap-2">
-      <HoverCardHeader media={<AppTile app={app} size={40} />} title={app.name} subtitle={(
+      <HoverCardHeader icon={<AppTile app={app} size={40} />} title={app.name} description={(
         <span className="inline-flex items-center gap-1.5">
           <span aria-hidden="true" className={cn('size-1.5 rounded-full', win ? 'bg-primary' : 'bg-muted-foreground/40')} />
           {where}
@@ -439,9 +438,9 @@ export function PowerOverlay({ state, onWake, dark }: { state: PowerState; onWak
           <BootBar />
         </>
       ) : state === 'off' ? (
-        <PlainButton onClick={onWake} className="grid size-14 cursor-pointer place-items-center rounded-full border-0 bg-white/10 text-white/80 shadow-[inset_0_0_0_.5px_rgba(255,255,255,.25)] hover:bg-white/15" aria-label="Power on">
+        <SdkButton onClick={onWake} className="grid size-14 cursor-pointer place-items-center rounded-full border-0 bg-white/10 text-white/80 shadow-[inset_0_0_0_.5px_rgba(255,255,255,.25)] hover:bg-white/15" aria-label="Power on">
           <Icon name="power" size={24} sw={2} />
-        </PlainButton>
+        </SdkButton>
       ) : (
         <span className="text-[12.5px] text-white/25">Press any key to wake</span>
       )}

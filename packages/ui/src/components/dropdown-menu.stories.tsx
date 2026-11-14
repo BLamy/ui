@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ComponentProps } from 'react';
 import {
-  DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuGroupLabel, DropdownMenuItem, DropdownMenuRadioGroup,
-  DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger,
-  type MenuData,
+  DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuContextTrigger, DropdownMenuGroupLabel, DropdownMenuItem,
+  DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
+  DropdownMenuTrigger, type DropdownMenuData,
 } from '@/components/ui/dropdown-menu';
-import { buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Icon } from '@/lib/icon';
 import { Screen } from '../stories/primitive-frame';
 
@@ -20,8 +20,8 @@ type Story = StoryObj<typeof DropdownMenu>;
 function Actions({ open = true, ...menu }: { open?: boolean } & ComponentProps<typeof DropdownMenu>) {
   return (
     <DropdownMenu defaultOpen={open} {...menu}>
-      <DropdownMenuTrigger className={buttonVariants({ variant: 'secondary', size: 'icon' })} aria-label="More">
-        <span className="text-[20px] leading-none">⋯</span>
+      <DropdownMenuTrigger render={<Button variant="secondary" size="icon" aria-label="More" />}>
+        <Icon name="ellipsis" size={20} />
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuItem value="copy" icon={<Icon name="layers" size={20} />}>Copy</DropdownMenuItem>
@@ -45,7 +45,7 @@ export const Selectable: Story = {
     <Screen h={560}>
       <div>
         <DropdownMenu defaultOpen>
-          <DropdownMenuTrigger className={buttonVariants({ variant: 'secondary' })}>Sort</DropdownMenuTrigger>
+          <DropdownMenuTrigger render={<Button variant="secondary" />}>Sort</DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuRadioGroup defaultValue="date">
               <DropdownMenuGroupLabel>Sort By</DropdownMenuGroupLabel>
@@ -68,7 +68,7 @@ export const ShortcutsAndSubmenu: Story = {
     <Screen h={560}>
       <div>
         <DropdownMenu defaultOpen>
-          <DropdownMenuTrigger className={buttonVariants({ variant: 'secondary' })}>File</DropdownMenuTrigger>
+          <DropdownMenuTrigger render={<Button variant="secondary" />}>File</DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem value="new" shortcut="mod+n">New Window</DropdownMenuItem>
             <DropdownMenuItem value="open" shortcut="mod+o">Open…</DropdownMenuItem>
@@ -88,9 +88,9 @@ export const ShortcutsAndSubmenu: Story = {
   ),
 };
 
-const file: MenuData = [
-  { value: 'open', label: 'Open…', shortcut: 'mod+o' },
-  { value: 'duplicate', label: 'Duplicate', shortcut: 'mod+d' },
+const file: DropdownMenuData = [
+  { value: 'open', label: 'Open…', shortcut: 'mod+o', icon: <Icon name="folder" size={20} /> },
+  { value: 'duplicate', label: 'Duplicate', shortcut: 'mod+shift+d', description: 'Next to the original' },
   { type: 'separator' },
   { type: 'checkbox', value: 'toolbar', label: 'Toolbar', defaultChecked: true },
   { type: 'radio-group', name: 'sort', label: 'Sort by', defaultValue: 'name', items: [{ value: 'name', label: 'Name' }, { value: 'date', label: 'Date modified' }] },
@@ -105,7 +105,7 @@ export const FromData: Story = {
     <Screen h={640}>
       <div>
         <DropdownMenu defaultOpen items={file}>
-          <DropdownMenuTrigger className={buttonVariants({ variant: 'secondary' })}>File</DropdownMenuTrigger>
+          <DropdownMenuTrigger render={<Button variant="secondary" />}>File</DropdownMenuTrigger>
           <DropdownMenuContent />
         </DropdownMenu>
       </div>
@@ -113,7 +113,105 @@ export const FromData: Story = {
   ),
 };
 
-/** `presentation="sheet"`: the menu slides up from the bottom of its host; a submenu takes its place. */
+/** `presentation="sheet"`: the menu slides up from the bottom of its host, with the Sheet's grabber; a submenu
+    takes its place. `presentation="auto"` does this in a compact container (a phone). */
 export const Sheet: Story = { args: { presentation: 'sheet' }, render: (args) => <Screen h={560}><div><Actions {...args} /></div></Screen> };
+export const SheetDark: Story = { args: { presentation: 'sheet' }, render: (args) => <Screen dark h={560}><div><Actions {...args} /></div></Screen> };
+
+/** `size="sm"` on the content: the dense desktop menu, 32px rounded rows of footnote text and hairline separators.
+    Submenus inherit it. */
+function Compact({ dark = false }: { dark?: boolean }) {
+  return (
+    <Screen dark={dark} h={480}>
+      <div>
+        <DropdownMenu defaultOpen>
+          <DropdownMenuTrigger render={<Button variant="secondary" size="sm" />}>Effort: Medium</DropdownMenuTrigger>
+          <DropdownMenuContent size="sm" align="start">
+            <DropdownMenuRadioGroup defaultValue="medium">
+              <DropdownMenuGroupLabel>Reasoning effort</DropdownMenuGroupLabel>
+              <DropdownMenuRadioItem value="low" closeOnSelect description="Fastest">Low</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="medium" closeOnSelect description="Balanced">Medium</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="high" closeOnSelect description="Most thorough" disabled>High</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem value="settings" shortcut="mod+,">Settings…</DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>Model</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem value="opus">Opus</DropdownMenuItem>
+                <DropdownMenuItem value="sonnet">Sonnet</DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </Screen>
+  );
+}
+export const Small: Story = { render: () => <Compact /> };
+export const SmallDark: Story = { render: () => <Compact dark /> };
+
+/** Disabled items stay in place, dimmed, and the keyboard skips them; a destructive item is tinted. */
+export const DisabledAndDestructive: Story = {
+  render: () => (
+    <Screen h={420}>
+      <div>
+        <DropdownMenu defaultOpen>
+          <DropdownMenuTrigger render={<Button variant="secondary" />}>Edit</DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem value="undo" disabled shortcut="mod+z">Undo</DropdownMenuItem>
+            <DropdownMenuItem value="redo" disabled shortcut="mod+shift+z">Redo</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem value="delete" destructive icon={<Icon name="trash" size={20} />}>Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </Screen>
+  ),
+};
+
+/** A context menu: the same menu with a DropdownMenuContextTrigger. Right-click the tile (long-press on a touch
+    screen, or focus it and press the menu key or Shift+F10). Open here at the tile. */
+function Tile({ dark = false, open = true }: { dark?: boolean; open?: boolean }) {
+  return (
+    <Screen dark={dark} h={480}>
+      <DropdownMenu defaultOpen={open}>
+        <DropdownMenuContextTrigger className="rounded-xl">
+          <button type="button" className="grid h-40 w-full cursor-pointer place-items-center rounded-xl border-0 bg-muted font-[inherit] text-body text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            Right-click me
+          </button>
+        </DropdownMenuContextTrigger>
+        <DropdownMenuContent aria-label="Photo actions">
+          <DropdownMenuItem value="copy" icon={<Icon name="layers" size={20} />}>Copy</DropdownMenuItem>
+          <DropdownMenuItem value="favorite" icon={<Icon name="star" size={20} />} shortcut="mod+d">Favorite</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem value="delete" destructive icon={<Icon name="trash" size={20} />}>Delete</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </Screen>
+  );
+}
+export const ContextMenu: Story = { render: () => <Tile /> };
+export const ContextMenuDark: Story = { render: () => <Tile dark /> };
+export const ContextMenuClosed: Story = { render: () => <Tile open={false} /> };
+
+/** `palette="trigger"`: the trigger sits on a surface painted by CSS (here plain classes and variables, not a
+    ThemeScope), and the menu, which renders in the layer host, copies that surface's palette when it opens. */
+export const TriggerPalette: Story = {
+  render: () => (
+    <Screen h={480}>
+      <div className="dark rounded-card bg-card p-4 text-foreground [--card:oklch(0.27_0.04_265)] [--popover:oklch(0.27_0.04_265)]">
+        <p className="m-0 mb-3 text-footnote text-muted-foreground">A surface painted by CSS</p>
+          <DropdownMenu defaultOpen>
+            <DropdownMenuTrigger render={<Button variant="secondary" size="sm" />}>Workspace</DropdownMenuTrigger>
+            <DropdownMenuContent size="sm" palette="trigger" align="start">
+              <DropdownMenuItem value="rename">Rename…</DropdownMenuItem>
+              <DropdownMenuItem value="archive">Archive</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+      </div>
+    </Screen>
+  ),
+};
 
 export const Closed: Story = { render: (args) => <Screen h={260}><div><Actions open={false} {...args} /></div></Screen> };

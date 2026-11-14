@@ -13,8 +13,8 @@ import { Avatar } from '@/components/ui/avatar';
 import {
   NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLeading, NavigationStackPage, NavigationStackTitle, NavigationStackTrailing,
 } from '@/components/ui/navigation-stack';
-import { PlainButton } from '@/components/ui/plain-button';
-import { TabView, TabViewBar, TabViewList, TabViewPanels } from '@/components/ui/tab-view';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Tabs, TabsBar, TabsList } from '@/components/ui/tabs';
 import { WorkbenchTheme } from '@/components/ui/workbench-theme';
 import { SizeClassProvider, useSizeClass, useSizeClassScope } from '@/lib/container';
 import type { Tailscale } from '@/lib/tailscale';
@@ -64,7 +64,7 @@ export interface GithubCloneProps {
 export default function GithubClone({ keychain = true, auth, tailscale, ...props }: GithubCloneProps) {
   const appearance = useAppearance() === 'dark' ? 'dark' : 'light';
   // Phone below 640px, GitHub's desktop layout with sidebars from 1012px; the block's box is the size-class scope
-  // its screens and Credenzas read.
+  // its screens and Dialogs read.
   const [ref, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: GITHUB_BREAKPOINTS });
   const app = <GithubApp {...props} dark={appearance === 'dark'} />;
   return (
@@ -172,10 +172,10 @@ function RepoScreens({ ui, source, keychain, openPicker, initialTab, initialPull
           <NavigationStackPage value="repo">
             <NavigationStackBar hideOnScroll={false}>
               <NavigationStackLeading>
-                <PlainButton aria-label="Choose repository" onClick={openPicker} className={cn(ghButton(), 'ml-2 w-8 px-0')}><Oct name="menu" /></PlainButton>
+                <SdkButton aria-label="Choose repository" onClick={openPicker} className={cn(ghButton(), 'ml-2 w-8 px-0')}><Oct name="menu" /></SdkButton>
               </NavigationStackLeading>
               <NavigationStackTitle>{name}</NavigationStackTitle>
-              {viewer.data ? <NavigationStackTrailing><Avatar c={viewer.data} src={viewer.data.avatar} size={28} className="mr-2.5" /></NavigationStackTrailing> : null}
+              {viewer.data ? <NavigationStackTrailing><Avatar name={`${viewer.data.f} ${viewer.data.l}`} src={viewer.data.avatar} size={28} className="mr-2.5" /></NavigationStackTrailing> : null}
             </NavigationStackBar>
             <NavigationStackContent>{page}</NavigationStackContent>
           </NavigationStackPage>
@@ -209,11 +209,11 @@ function RepoPage({ ui, tab, onTab, path, pr, issue, nav, labelFilter, prTab }: 
   const { source } = useRepo();
   const counts = useLoad(source.id + ':counts', source.counts).data;
   return (
-    <TabView placement="top" value={tab} onValueChange={(k) => { if (!k) return; onTab(k as GithubTab); if (k === 'pulls') nav.openPr(null); if (k === 'issues') nav.openIssue(null); }}>
+    <Tabs variant="plain" value={tab} onValueChange={(k) => { if (!k) return; onTab(k as GithubTab); if (k === 'pulls') nav.openPr(null); if (k === 'issues') nav.openIssue(null); }}>
       <div className="border-b border-border">
         <RepoHeader ui={ui} />
-        <TabViewBar variant="plain" className="mt-2 overflow-x-auto px-2 [scrollbar-width:none] @3xl/gh:px-4">
-          <TabViewList aria-label="Repository" className="flex gap-1">
+        <TabsBar className="mt-2 overflow-x-auto px-2 [scrollbar-width:none] @3xl/gh:px-4">
+          <TabsList aria-label="Repository" className="flex gap-1">
             <UnderlineTab value="code" icon="code" label="Code" />
             <UnderlineTab value="issues" icon="issue" label="Issues" count={counts?.issues.open} />
             <UnderlineTab value="pulls" icon="pr" label="Pull requests" count={counts?.pulls.open} />
@@ -221,18 +221,18 @@ function RepoPage({ ui, tab, onTab, path, pr, issue, nav, labelFilter, prTab }: 
             {!ui.phone ? <UnderlineTab value="insights" icon="pulse" label="Insights" /> : null}
             {!ui.phone ? <UnderlineTab value="settings" icon="gear" label="Settings" /> : null}
             <UnderlineIndicator />
-          </TabViewList>
-        </TabViewBar>
+          </TabsList>
+        </TabsBar>
       </div>
-      <TabViewPanels className="mx-auto w-full max-w-[1280px] px-4 py-6 @3xl/gh:px-6">
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-6 @3xl/gh:px-6">
         <FlowPanel value="code">{path ? <PathView ui={ui} path={path} nav={nav} /> : <CodeHome ui={ui} nav={nav} />}</FlowPanel>
         <FlowPanel value="issues">{issue ? <IssueView ui={ui} number={issue} nav={nav} /> : <IssueList ui={ui} nav={nav} labelFilter={labelFilter} />}</FlowPanel>
         <FlowPanel value="pulls">{pr ? <PullRequestView ui={ui} number={pr} nav={nav} initialTab={prTab} /> : <PullList ui={ui} nav={nav} />}</FlowPanel>
         <FlowPanel value="actions"><ActionsView ui={ui} /></FlowPanel>
         <FlowPanel value="insights"><Placeholder icon="pulse" title="Insights" text="Pulse, contributors, traffic and dependency graphs." /></FlowPanel>
         <FlowPanel value="settings"><Placeholder icon="gear" title="Settings" text="Only repository admins can change settings." /></FlowPanel>
-      </TabViewPanels>
-    </TabView>
+      </div>
+    </Tabs>
   );
 }
 

@@ -127,7 +127,8 @@ describe('banner', () => {
     act(() => { toaster.loading('Uploading…'); });
     await pass();
     expect(toasts()[0].getAttribute('data-type')).toBe('loading');
-    expect(toasts()[0].firstElementChild?.className).toContain('animate-spin');
+    // The kit's Spinner, not a ring of its own.
+    expect(toasts()[0].firstElementChild?.querySelector('[data-slot=spinner]')).toBeTruthy();
   });
 
   it('closes on its own after its duration, and waits while the pointer rests on the region', async () => {
@@ -350,5 +351,17 @@ describe('useToast', () => {
     await pass();
     expect(toaster.toasts().map((t) => t.id)).toEqual(['rejected']);
     expect(toasts()[0].getAttribute('data-type')).toBe('warning');
+  });
+
+  it('is also what a banner region inside the provider shows, without a toaster of its own', async () => {
+    const toaster = createToaster();
+    function Save() {
+      const toast = useToast();
+      return <button type="button" onClick={() => toast('Saved', { id: 'saved' })}>Save</button>;
+    }
+    render(<ToastProvider toaster={toaster}><Save /><ToastRegion /></ToastProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await pass();
+    expect(titles()).toEqual(['Saved']);
   });
 });

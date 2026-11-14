@@ -24,11 +24,13 @@ function MailShell() {
     >
       <AdaptivePane
         presentation={compact ? 'drawer' : 'column'}
-        open={open}
+        // Docked, the mailboxes always show; compact, `open` is the drawer's.
+        open={!compact || open}
         onOpenChange={setOpen}
         columnWidth={200}
         drawerWidth={250}
-        columnStyle={{ borderRight: '1px solid var(--border)' }}
+        aria-label="Mailboxes"
+        className="border-r border-border"
       >
         <nav
           style={{
@@ -103,7 +105,7 @@ function MailShell() {
                 <ListRow
                   key={s}
                   title={s}
-                  subtitle={box}
+                  description={box}
                   divider={i < 2}
                   onClick={() => {}}
                 />

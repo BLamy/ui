@@ -5,7 +5,7 @@ import { CronEditor } from '@/components/ui/cron-editor'
 // schedule in words and the value follows on every keystroke, with the next
 // runs to check it by. Without WebGPU the box is replaced by a note and the raw
 // expression editor. "Now" and the zone are pinned so the next runs read the
-// same for everyone; in an app, leave `from` out.
+// same for everyone; in an app, leave `reference` out.
 export default function Basic() {
   const [cron, setCron] = useState('0 9 * * 1-5')
   return (
@@ -13,7 +13,7 @@ export default function Basic() {
       <CronEditor
         value={cron}
         onValueChange={setCron}
-        from="2026-10-02T10:00:00Z"
+        reference="2026-10-02T10:00:00Z"
         timeZone="UTC"
         locale="en-US"
       />

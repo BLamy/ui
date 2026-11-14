@@ -193,9 +193,9 @@ test('a public address picks the exit node itself, honours None until Try Again,
   // The shield menu shows the pick and can drop it. None is remembered: reloading shows why the page fails, and picks nothing.
   await page.getByRole('button', { name: 'Tailscale connection' }).click();
   const popover = page.getByRole('dialog', { name: 'Tailscale connection' });
-  await expect(popover.getByRole('radio', { name: 'exit-node' })).toBeChecked();
-  await popover.getByText('None: your devices only').click(); // radios are visually hidden inputs under a label: click the label
-  await expect(popover.getByRole('radio', { name: /None/ })).toBeChecked();
+  await expect(popover.getByRole('option', { name: /^exit-node/ })).toHaveAttribute('aria-selected', 'true');
+  await popover.getByRole('option', { name: /^None/ }).click();
+  await expect(popover.getByRole('option', { name: /^None/ })).toHaveAttribute('aria-selected', 'true');
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Reload page' }).click();
   await expect(page.getByRole('heading', { name: 'example.com is not on your tailnet' })).toBeVisible();
@@ -207,7 +207,7 @@ test('a public address picks the exit node itself, honours None until Try Again,
   await page.getByRole('button', { name: 'Try Again' }).click();
   await expect(frame(page).getByRole('heading', { name: 'More information' })).toBeVisible();
   await page.getByRole('button', { name: 'Tailscale connection' }).click();
-  await expect(popover.getByRole('radio', { name: 'exit-node' })).toBeChecked();
+  await expect(popover.getByRole('option', { name: /^exit-node/ })).toHaveAttribute('aria-selected', 'true');
   await popover.press('Escape'); // nothing inside has focus yet: press it on the dialog itself
   await expect(popover).toHaveCount(0);
 

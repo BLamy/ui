@@ -1,6 +1,6 @@
 # Separator
 
-A one-pixel rule in the border colour, horizontal or vertical, on UI SDK's `Separator`: a `div` with `role="separator"` and its `aria-orientation`, or, when it is `decorative`, a line screen readers skip. Use it between blocks of content, between rows of a list, and between inline items.
+A one-pixel rule in the border colour, horizontal or vertical, on UI SDK's `Separator`: a `div` with `role="separator"` and its `aria-orientation`, or, when it is `decorative`, a line screen readers skip. Use it between blocks of content, between rows of a list, and between inline items. Inside a menu use DropdownMenu's own separator, and between the rows of a [List](https://blamy.github.io/ui/#/lists) the list draws its own hairlines.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -84,7 +84,5 @@ m-0 shrink-0 border-0 bg-border
 
 | Value | Adds |
 | --- | --- |
-| `true` | — |
+| `true` | `ml-4 w-[calc(100%-16px)] data-[orientation=vertical]:ml-0 data-[orientation=vertical]:w-px` |
 | `false` (default) | — |
-
-1 compound variant — see the source.

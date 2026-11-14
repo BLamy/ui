@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { createAgent } from '@ui-sdk/react/agent';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FileDropZone, FileItem, FileList, FileUpload, FileUploadButton } from '@/components/ui/file-upload';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import { FileUploadDropzone, FileUploadItem, FileUploadList, FileUpload, FileUploadTrigger } from '@/components/ui/file-upload';
 import type { UploadContext, UploadFile } from '@/lib/file-upload-model';
 import { createFileUploadController, type FileUploadValueChangeDetails } from '@/lib/file-upload-primitive';
 import { useFileUpload } from '@/lib/use-file-upload';
@@ -47,7 +48,7 @@ describe('FileUpload', () => {
     const hint = within(zone).getByText('Images · up to 5 MB each · up to 3 files');
     const browse = within(zone).getByRole('button', { name: 'Browse files' });
     expect(browse.getAttribute('aria-describedby')).toContain(hint.id);
-    expect(container.querySelector('[data-slot=file-list]')).toBeNull();
+    expect(container.querySelector('[data-slot=file-upload-list]')).toBeNull();
     const input = container.querySelector('input[type=file]') as HTMLInputElement;
     expect(input.accept).toBe('image/*');
     expect(input.multiple).toBe(true);
@@ -201,7 +202,7 @@ describe('FileUpload', () => {
   it('children can be a function of the context, and a zone can take over its contents', () => {
     render(
       <FileUpload>
-        {(api) => <FileDropZone>{(state) => <p>{`files: ${api.files.length}, over: ${String(state.dragging)}`}</p>}</FileDropZone>}
+        {(api) => <FileUploadDropzone>{(state) => <p>{`files: ${api.files.length}, over: ${String(state.dragging)}`}</p>}</FileUploadDropzone>}
       </FileUpload>,
     );
     expect(screen.getByText('files: 0, over: false')).toBeTruthy();
@@ -365,8 +366,35 @@ describe('FileUpload', () => {
     expect(rows()[0].getAttribute('data-status')).toBe('uploading');
   });
 
+  it('passes the root\'s own props (id, aria-*, data-*) to the FileInput element', () => {
+    const { container } = render(<FileUpload id="uploads" aria-label="Attachments" data-testid="root" />);
+    const root = container.querySelector('[data-slot=file-upload]') as HTMLElement;
+    expect(root.id).toBe('uploads');
+    expect(root.getAttribute('aria-label')).toBe('Attachments');
+    expect(root.dataset.testid).toBe('root');
+  });
+
+  it('is a Field control: `required` blocks an empty submit and the Field shows its error', async () => {
+    const onSubmit = vi.fn((event: React.FormEvent) => event.preventDefault());
+    render(
+      <form onSubmit={onSubmit}>
+        <Field name="docs">
+          <FieldLabel>Documents</FieldLabel>
+          <FileUpload required />
+          <FieldError match="valueMissing">Add at least one document.</FieldError>
+        </Field>
+        <button type="submit">Send</button>
+      </form>,
+    );
+    await act(() => new Promise<void>((r) => setTimeout(r, 0)));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await act(() => new Promise<void>((r) => setTimeout(r, 0)));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText('Add at least one document.')).toBeTruthy();
+  });
+
   it('merges className last', () => {
-    const { container } = render(<FileUpload className="custom-root"><FileDropZone className="custom-zone p-0" /></FileUpload>);
+    const { container } = render(<FileUpload className="custom-root"><FileUploadDropzone className="custom-zone p-0" /></FileUpload>);
     expect(container.querySelector('[data-slot=file-upload]')?.classList.contains('custom-root')).toBe(true);
     const zone = container.querySelector('[data-slot=file-input-dropzone]') as HTMLElement;
     expect(zone.classList.contains('custom-zone')).toBe(true);
@@ -375,18 +403,27 @@ describe('FileUpload', () => {
 });
 
 describe('parts used alone', () => {
-  it('shows the zone invalid with its message and an icon, not just a color', () => {
-    render(<FileDropZone invalid error="Add at least one file." onFiles={() => undefined} />);
-    const msg = screen.getByText('Add at least one file.');
-    expect(msg.querySelector('svg')).toBeTruthy();
-    expect(document.querySelector('[data-slot=file-input-dropzone]')?.hasAttribute('data-invalid')).toBe(true);
-    expect(screen.getByRole('button', { name: 'Browse files' }).getAttribute('aria-describedby')).toContain(msg.id);
+  it('takes its invalid state and message from a Field: an icon with the message, not just a color', async () => {
+    render(
+      <Field invalid>
+        <FieldLabel>Photos</FieldLabel>
+        <FileUploadDropzone onFiles={() => undefined} />
+        <FieldError>Add at least one file.</FieldError>
+      </Field>,
+    );
+    await act(() => new Promise<void>((r) => setTimeout(r, 0)));
+    const error = document.querySelector('[data-slot=field-error]') as HTMLElement;
+    expect(error.textContent).toBe('Add at least one file.');
+    expect(error.querySelector('svg')).toBeTruthy();
+    expect(document.querySelector('[data-slot=field]')?.hasAttribute('data-invalid')).toBe(true);
+    // The zone's red border reads the Field's data-invalid (or the trigger's) from the DOM.
+    expect(document.querySelector('[data-slot=file-input-dropzone]')?.className).toContain('in-data-invalid:border-destructive');
   });
 
-  it('FileUploadButton opens the chooser and hands the accepted files to onFiles', () => {
+  it('FileUploadTrigger opens the chooser and hands the accepted files to onFiles', () => {
     const onFiles = vi.fn();
     const onReject = vi.fn();
-    const { container } = render(<FileUploadButton onFiles={onFiles} onReject={onReject} accept={['.pdf']}>Attach</FileUploadButton>);
+    const { container } = render(<FileUploadTrigger onFiles={onFiles} onReject={onReject} accept={['.pdf']}>Attach</FileUploadTrigger>);
     expect(screen.getByRole('button', { name: 'Attach' })).toBeTruthy();
     expect((container.querySelector('input[type=file]') as HTMLInputElement).accept).toBe('.pdf');
     choose(container, file('a.pdf'), file('b.txt'));
@@ -399,18 +436,18 @@ describe('parts used alone', () => {
     expect(onFiles).toHaveBeenCalledTimes(2);
   });
 
-  it('FileDropZone takes onFiles and passes directory and capture to the input', () => {
-    const { container } = render(<FileDropZone directory capture="environment" onFiles={() => undefined} />);
+  it('FileUploadDropzone takes onFiles and passes directory and capture to the input', () => {
+    const { container } = render(<FileUploadDropzone directory capture="environment" onFiles={() => undefined} />);
     const input = container.querySelector('input[type=file]') as HTMLInputElement;
     expect(input.hasAttribute('webkitdirectory')).toBe(true);
     expect(input.getAttribute('capture')).toBe('environment');
   });
 
-  it('FileItem renders a given UploadFile with its own handlers, and FileList renders rows', () => {
+  it('FileUploadItem renders a given UploadFile with its own handlers, and FileUploadList renders rows', () => {
     const item: UploadFile = { id: '1', file: file('x.png', 100, 'image/png'), path: 'dir/x.png', status: 'error', progress: 0, error: 'Nope' };
     const onRetry = vi.fn();
     const onRemove = vi.fn();
-    render(<FileList files={[item]}>{(it) => <FileItem item={it} onRetry={onRetry} onRemove={onRemove} />}</FileList>);
+    render(<FileUploadList files={[item]}>{(it) => <FileUploadItem item={it} onRetry={onRetry} onRemove={onRemove} />}</FileUploadList>);
     const group = screen.getByRole('group', { name: 'x.png' });
     expect(group.getAttribute('data-file-id')).toBe('1');
     expect(group.textContent).toContain('Nope');
@@ -421,9 +458,9 @@ describe('parts used alone', () => {
     expect(onRemove).toHaveBeenCalledWith(item);
   });
 
-  it('FileItem with no handlers and no FileUpload shows no actions', () => {
+  it('FileUploadItem with no handlers and no FileUpload shows no actions', () => {
     const item: UploadFile = { id: '1', file: file('x.txt'), path: 'x.txt', status: 'done', progress: 1 };
-    render(<FileItem item={item} />);
+    render(<FileUploadItem item={item} />);
     expect(screen.queryByRole('button')).toBeNull();
   });
 });

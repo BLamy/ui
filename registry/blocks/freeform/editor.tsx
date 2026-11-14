@@ -4,7 +4,7 @@
 import { useLayoutEffect, useRef, useState, type DragEvent } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { PencilTool } from '@/components/ui/pencilkit/constants';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useContainerSize } from '@/lib/container';
 import { Icon } from '@/lib/icon';
@@ -102,10 +102,10 @@ export function BoardEditor({ compact, onBack }: { compact: boolean; onBack: () 
   return (
     <div data-slot="freeform-editor" className="absolute inset-0 flex animate-bl-fade-in flex-col bg-background">
       <header className="flex h-toolbar shrink-0 items-center gap-1 border-b border-border bg-card px-2.5">
-        <PlainButton aria-label="Boards" onClick={onBack} className="flex h-9 cursor-pointer items-center gap-0.5 rounded-lg border-0 bg-transparent pr-2 pl-1 text-detail font-medium text-primary hover:bg-secondary">
+        <SdkButton aria-label="Boards" onClick={onBack} className="flex h-9 cursor-pointer items-center gap-0.5 rounded-lg border-0 bg-transparent pr-2 pl-1 text-detail font-medium text-primary hover:bg-secondary">
           <Icon name="chevron-left" size={22} sw={2.2} />
           {compact ? null : 'Boards'}
-        </PlainButton>
+        </SdkButton>
         <div className="flex min-w-0 flex-1 justify-center">
           <TitleField key={board.id + board.title} title={board.title} onCommit={(t) => f.renameBoard(board.id, t)} />
         </div>

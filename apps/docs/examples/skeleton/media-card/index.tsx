@@ -16,8 +16,8 @@ function CardPlaceholder() {
       <Skeleton shape="rect" style={{ aspectRatio: '16 / 9', width: '100%' }} />
       <div style={{ display: 'grid', gap: 12, padding: 14 }}>
         <Skeleton shape="text" height={16} width="70%" />
-        <SkeletonText lines={2} lastLineWidth="45%" lineHeight={12} />
-        <Skeleton shape="rounded" height={34} width={112} />
+        <SkeletonText lines={2} lastLineWidth="45%" lineClassName="h-3" />
+        <Skeleton height={34} width={112} />
       </div>
     </div>
   )

@@ -1,10 +1,11 @@
 /* Freeform's floating chrome: the insert bar (select, hand, draw, shapes, stickies, text, photos, links,
    connectors), the drawing palette (the core PencilToolbar), the zoom cluster and the bar over a selection. */
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PK_INKS, PK_W, type PencilTool } from '@/components/ui/pencilkit/constants';
 import { InkPicker, PencilToolbar, PencilToolbarDivider, ToolPicker, WidthPicker, pencilToolButtonVariants } from '@/components/ui/pencilkit/pencil-toolbar';
-import { PlainButton, PlainToggleButton, type PlainButtonProps, type PlainToggleButtonProps } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger, createPopoverController } from '@/components/ui/popover';
 import { Icon, type IconShape } from '@/lib/icon';
 import { cn, cx } from '@/lib/utils';
@@ -21,26 +22,26 @@ import type { DrawSettings, Tool } from './surface';
 
 /* ── Buttons ── */
 
-/** A 38×34 icon button for the board's chrome. It passes every other prop to its PlainButton, so it can be a
+/** A 38×34 icon button for the board's chrome. It passes every other prop to its SdkButton, so it can be a
  *  popover or menu trigger's `render`. */
-export function ToolButton({ icon, shapes, label, children, className, ...rest }: Omit<PlainButtonProps, 'children'> & {
+export function ToolButton({ icon, shapes, label, children, className, ...rest }: Omit<ComponentProps<typeof SdkButton>, 'children'> & {
   icon?: string; shapes?: readonly IconShape[]; label: string; children?: ReactNode;
 }) {
   return (
-    <PlainButton aria-label={label} title={label} className={cx(pencilToolButtonVariants(), className)} {...rest}>
+    <SdkButton aria-label={label} title={label} className={cx(pencilToolButtonVariants(), className)} {...rest}>
       {children ?? <Icon name={icon} shapes={shapes} size={21} sw={1.7} />}
-    </PlainButton>
+    </SdkButton>
   );
 }
 
 /** The same button as a UI SDK Toggle (`aria-pressed`), filled while pressed: a mode tool, or Lock. */
-function ToolToggle({ icon, shapes, label, children, className, ...rest }: Omit<PlainToggleButtonProps, 'children'> & {
+function ToolToggle({ icon, shapes, label, children, className, ...rest }: Omit<ComponentProps<typeof SdkToggle>, 'children'> & {
   icon?: string; shapes?: readonly IconShape[]; label: string; children?: ReactNode;
 }) {
   return (
-    <PlainToggleButton aria-label={label} title={label} className={cx(pencilToolButtonVariants(), className)} {...rest}>
+    <SdkToggle aria-label={label} title={label} className={cx(pencilToolButtonVariants(), className)} {...rest}>
       {children ?? <Icon name={icon} shapes={shapes} size={21} sw={1.7} />}
-    </PlainToggleButton>
+    </SdkToggle>
   );
 }
 
@@ -148,7 +149,7 @@ function LinkForm({ onSubmit }: { onSubmit: (url: string, title: string) => void
         value={url} onChange={(e) => setUrl(e.target.value)} placeholder="example.com/page" aria-label="Link address" autoFocus
         className="h-10 w-full rounded-ctl border-0 bg-secondary px-3 text-detail text-foreground outline-none select-text placeholder:text-tertiary-foreground focus-visible:ring-2 focus-visible:ring-primary"
       />
-      <PlainButton onClick={submit} disabled={!url.trim()} className="h-9 cursor-pointer rounded-ctl border-0 bg-primary px-3 text-detail font-semibold text-primary-foreground data-disabled:opacity-40">Add Link</PlainButton>
+      <SdkButton onClick={submit} disabled={!url.trim()} className="h-9 cursor-pointer rounded-ctl border-0 bg-primary px-3 text-detail font-semibold text-primary-foreground data-disabled:opacity-40">Add Link</SdkButton>
     </form>
   );
 }
@@ -178,9 +179,9 @@ export function ZoomCluster({ zoom, onZoom, onFit, onActual }: { zoom: number; o
   return (
     <div data-slot="freeform-zoom" onPointerDown={(e) => e.stopPropagation()} className={cn('absolute right-3.5 bottom-3.5 flex items-center gap-0.5 p-1', cardClass)}>
       <ToolButton icon="minus" label="Zoom out (⌘−)" onClick={() => onZoom(0.8)} />
-      <PlainButton aria-label="Actual size" title="Actual size (⌘1)" onClick={onActual} className="h-[34px] min-w-[52px] cursor-pointer rounded-[9px] border-0 bg-transparent px-1 text-footnote font-semibold text-muted-foreground tabular-nums hover:bg-secondary">
+      <SdkButton aria-label="Actual size" title="Actual size (⌘1)" onClick={onActual} className="h-[34px] min-w-[52px] cursor-pointer rounded-[9px] border-0 bg-transparent px-1 text-footnote font-semibold text-muted-foreground tabular-nums hover:bg-secondary">
         {Math.round(zoom * 100)}%
-      </PlainButton>
+      </SdkButton>
       <ToolButton icon="plus" label="Zoom in (⌘+)" onClick={() => onZoom(1.25)} />
       <PencilToolbarDivider className="mx-0.5 my-1.5" />
       <ToolButton icon="arrows-expand" label="Fit to screen (⌘0)" onClick={onFit} />

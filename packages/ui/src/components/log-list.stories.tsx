@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
 import { FilterBar, FilterToolbar } from '@/components/ui/filter';
 import { FilterInput } from '@/components/ui/filter-input';
 import { LogList, LogRowContent, createLogListController, type LogListController, type LogRowState } from '@/components/ui/log-list';
@@ -301,13 +302,12 @@ function FilteredDemo() {
         {LOG_LEVELS.map((level) => {
           const on = !hidden.has(level);
           return (
-            <Button
+            <Toggle
               key={level}
               variant="quiet"
-              active={on}
               size="sm"
-              aria-pressed={on}
-              onClick={() => {
+              pressed={on}
+              onPressedChange={() => {
                 const next = new Set(hidden);
                 if (!next.delete(level)) next.add(level);
                 setHidden(next);
@@ -316,7 +316,7 @@ function FilteredDemo() {
             >
               <span className={LEVEL_TINT[level]}>{level}</span>
               <span className="tabular-nums">{all[level].toLocaleString('en-US')}</span>
-            </Button>
+            </Toggle>
           );
         })}
         <span className="ms-auto text-caption text-muted-foreground tabular-nums" role="status">

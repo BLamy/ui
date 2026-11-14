@@ -1,17 +1,16 @@
 /* The master list lives in NavigationStack, rooted at the sidebar's location. Only folder rows change its pages. */
 import { useRef, useState, type ReactNode } from 'react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Chevron } from '@/components/ui/icon-swap';
 import {
   NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackLeading, NavigationStackPage,
   NavigationStackTitle, NavigationStackTrailing,
 } from '@/components/ui/navigation-stack';
 import { Button } from '@/components/ui/button';
-import { SearchField } from '@/components/ui/search-field';
-import { TreeFileIcon } from '@/components/ui/tree';
+import { SearchInput } from '@/components/ui/search-input';
+import { FileBadgeIcon } from '@/lib/file-icons';
 import type { MarkdownEditorHandle } from '@/components/ui/markdown-editor';
 import { SplitViewContent, SplitViewDetail, SplitViewEmpty, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
-import { Icon } from '@/lib/icon';
+import { Chevron, Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import type { Folder } from './data';
 import { fileDragProps, hasComputerFiles, useDropTarget } from './drag';
@@ -73,7 +72,7 @@ function OtherFileRows({ notes, files, onOpen }: { notes: NotesState; files: Oth
             className={cn('flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg border-0 bg-transparent px-2 text-left text-subhead text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring',
               selected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary')} />}>
             {f.kind === 'stl' || f.kind === 'image' || f.kind === 'csv' ? <Icon name={f.kind === 'stl' ? 'cube' : f.kind === 'csv' ? 'table' : 'photo'} size={18} className={cn('shrink-0', !selected && 'text-primary')} />
-              : <TreeFileIcon name={f.name} className="shrink-0" />}
+              : <FileBadgeIcon name={f.name} className="shrink-0" />}
             <span className="min-w-0 flex-1 truncate">{f.name}{where}</span>
           </HoverCardTrigger>
           <HoverCardContent side="right" align="start"><FilePreview file={f} /></HoverCardContent>
@@ -81,7 +80,7 @@ function OtherFileRows({ notes, files, onOpen }: { notes: NotesState; files: Oth
       }
       return <li key={f.id} {...fileDragProps(f.path)} title={`${f.path} · Drag onto a note to embed it`}
         className="flex min-h-11 cursor-grab items-center gap-2 rounded-lg px-2 text-subhead text-muted-foreground opacity-60">
-        <TreeFileIcon name={f.name} className="shrink-0" />
+        <FileBadgeIcon name={f.name} className="shrink-0" />
         <span className="min-w-0 flex-1 truncate">{f.name}{where}</span>
       </li>;
     })}
@@ -119,7 +118,7 @@ export function ListColumn({ notes }: { notes: NotesState }) {
       <NavigationStackContent bottomInset={s.collapsed ? 50 : 0}>
         <NavigationStackLargeTitle />
         <div className="flex items-center gap-1.5 pr-2.5 pb-3 pl-4">
-          <SearchField value={notes.query} onValueChange={notes.setQuery} aria-label={`Search ${folder.title}`} className="min-w-0 flex-1" />
+          <SearchInput value={notes.query} onValueChange={notes.setQuery} aria-label={`Search ${folder.title}`} className="min-w-0 flex-1" />
           <FilterMenu filter={notes.filter} onChange={notes.setFilter} />
         </div>
         {active && notes.files.error ? <div role="alert" className="mx-4 mb-3 break-words text-detail text-destructive">{notes.files.error}</div> : null}

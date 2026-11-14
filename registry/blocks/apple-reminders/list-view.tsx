@@ -7,7 +7,7 @@ import { Celebrate } from '@/components/ui/celebrate';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -98,10 +98,10 @@ export function ListView() {
         <div className="relative mx-auto max-w-[760px] pb-6">
           {id !== 'completed' ? (
             // The open count sits on the large title's line, on the trailing edge.
-            <span className="absolute right-5 -top-[47px] isolate text-[34px] leading-[1.15] font-semibold tabular-nums" style={{ color: view.color }}>
+            <Celebrate fire={fire} count={16} spread={72} colors={[view.color, SYSTEM.yellow, SYSTEM.green, SYSTEM.pink]}
+              className="absolute right-5 -top-[47px] text-[34px] leading-[1.15] font-semibold tabular-nums" style={{ color: view.color }}>
               <NumberMorph value={view.open} />
-              <Celebrate fire={fire} count={16} spread={72} colors={[view.color, SYSTEM.yellow, SYSTEM.green, SYSTEM.pink]} />
-            </span>
+            </Celebrate>
           ) : null}
 
           {list && view.completed ? (
@@ -109,11 +109,11 @@ export function ListView() {
               <span>{view.completed} Completed</span>
               {list.file ? null : <>
                 <span aria-hidden="true">·</span>
-                <PlainButton onClick={() => api.clearCompleted(list.id)} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">Clear</PlainButton>
+                <SdkButton onClick={() => api.clearCompleted(list.id)} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">Clear</SdkButton>
               </>}
-              <PlainButton onClick={() => api.setShowCompleted(list.id, !shown)} className="bl-btn ml-auto cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">
+              <SdkButton onClick={() => api.setShowCompleted(list.id, !shown)} className="bl-btn ml-auto cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">
                 {shown ? 'Hide' : 'Show'}
-              </PlainButton>
+              </SdkButton>
             </div>
           ) : null}
 
@@ -150,11 +150,11 @@ export function ListView() {
       </SplitViewContent>
       {canAdd ? (
         <div className="flex h-[54px] shrink-0 items-center px-4">
-          <PlainButton onClick={() => setAdding(true)} style={{ color: view.color }}
+          <SdkButton onClick={() => setAdding(true)} style={{ color: view.color }}
             className="bl-btn flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-body font-semibold transition-[scale] duration-spring-snappy ease-spring-snappy active:scale-95">
             <span className="grid size-[23px] place-items-center rounded-full text-white" style={{ background: view.color }}><Icon name="plus" size={15} sw={2.8} /></span>
             New Reminder
-          </PlainButton>
+          </SdkButton>
         </div>
       ) : null}
     </SplitViewDetail>

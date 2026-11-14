@@ -1,6 +1,6 @@
 # ProgressRing
 
-Circular progress in the iOS style: a track and a round-capped arc that starts at twelve o'clock and fills clockwise. `ProgressRing` is determinate progress — it springs to each new value and its percentage rolls digit by digit — and `CountdownRing` is the verification-code timer that drains one second at a time and turns red near the end.
+Circular progress in the iOS style: a track and a round-capped arc that starts at twelve o'clock and fills clockwise. `ProgressRing` is determinate progress — it springs to each new value and its percentage rolls digit by digit — and `CountdownRing` is the verification-code timer that drains one second at a time and turns red near the end. For a bar use [Progress](https://blamy.github.io/ui/#/progress); for a wait with no value and no room for a ring use [Spinner](https://blamy.github.io/ui/#/spinner); for a list of milestones use [ProgressStepper](https://blamy.github.io/ui/#/progress-stepper).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -29,7 +29,7 @@ import { ProgressRing, CountdownRing } from '@brett_lamy/ui'
 
 ## ProgressRing
 
-`ProgressRing` is UI SDK's `Progress` (`role="progressbar"`, `aria-valuenow`, `aria-valuetext`) drawn as a ring. Give it an `aria-label` and a `value` (0–100 by default, or set `min` / `max`); `showValue` puts the rolling percentage in the middle (a custom `format` shows UI SDK's text as is), or pass children — a stop square, a check. Leave `value` out (or pass `null`) for a spinning quarter arc.
+`ProgressRing` is UI SDK's `Progress` (`role="progressbar"`, `aria-valuenow`, `aria-valuetext`) drawn as a ring. Give it an `aria-label` and a `value` (0–100 by default, or set `min` / `max`); `showValue` puts the rolling percentage in the middle from `lg` up (smaller rings have no room for "100%" inside the stroke; a custom `format` shows UI SDK's text as is), or pass children — a stop square, a check. Leave `value` out (or pass `null`) for a spinning quarter arc; under reduced motion it is a still, dim full ring instead, so it never reads as a quarter done.
 
 {% demo src="progress-ring/rings" %}
 
@@ -41,7 +41,7 @@ import { ProgressRing, CountdownRing } from '@brett_lamy/ui'
 
 ## CountdownRing
 
-A countdown is a clock, so its arc runs at constant speed — one linear second per tick — rather than on a spring. The seconds in the middle roll (NumberMorph); at `warnAt` seconds (5 by default) the arc and the digits turn the warning color. When the period restarts the arc jumps straight back to full instead of spinning backwards through the turnover.
+A countdown is a clock, so its arc runs at constant speed — one linear second per tick — rather than on a spring. The seconds in the middle roll (NumberMorph); at `urgentAt` seconds (5 by default) the arc and the digits turn the urgent color, red (`--destructive`; this is not the amber `warning` tone). When the period restarts the arc jumps straight back to full instead of spinning backwards through the turnover.
 
 `useCountdown(duration, { running, loop, onEnd, offset })` drives one. It runs on the wall clock (`Date.now()`), so throttled timers catch up instead of drifting, and returns `remaining` (whole seconds left), `period` (periods completed, for the code window), `elapsed` and `reset`. By default it loops like a TOTP period; `offset` starts it part-way through (align it with a clock).
 
@@ -60,14 +60,16 @@ The ring has `role="timer"` and an `aria-label` of "N seconds left" (override wi
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `value` / `min` / `max` | `null` / 0 / 100 | The progress (UI SDK `Progress`). Leave `value` out or `null` for the spinning quarter arc (still under reduced motion). |
+| `value` / `min` / `max` | `null` / 0 / 100 | The progress (UI SDK `Progress`). Leave `value` out or `null` for the spinning quarter arc (a dim full ring under reduced motion). |
+| `locale` | page language | The locale of the value, passed to the rolling percentage too. |
 | `format` / `getValueLabel` | percent | The value text and its screen-reader label, as on [Progress](https://blamy.github.io/ui/#/progress). |
-| `size` | `md` | `sm` 20 · `md` 28 · `lg` 44 · `xl` 72 px, or any number of px. |
+| `size` | `default` | `sm` 20 · `default` 28 · `lg` 44 · `xl` 72 px, or any number of px. |
 | `thickness` | scales with size | Stroke width in px. |
 | `tone` | `default` | `success`, `warning`, `destructive`. |
 | `color` / `trackColor` | tint / fill | Any CSS colors. |
-| `showValue` | `false` | The rolling percentage (sizes `md` and up). |
+| `showValue` | `false` | The rolling percentage (`lg`, `xl`, or 40px and up; ignored below). |
 | `children` | — | Custom content in the middle. |
+| `ref`, DOM props | — | Passed to the root (UI SDK `Progress`). |
 
 ### CountdownRing
 
@@ -75,13 +77,13 @@ The ring has `role="timer"` and an `aria-label` of "N seconds left" (override wi
 | --- | --- | --- |
 | `remaining` | — | Seconds left. |
 | `duration` | `30` | Seconds in a full period. |
-| `warnAt` | `5` | Turn the warning color at or below this; `0` never. |
-| `size` / `thickness` | `md` | As for ProgressRing. |
-| `color` / `warnColor` / `trackColor` | tint / red / fill | Any CSS colors. |
-| `showLabel` | on from `md` | The seconds in the middle. |
-| `labelSize` | scales with the ring | `sm` 9.36 · `md` 10.5 · `lg` 13 · `xl` 20 px, independent of the ring's size (`countdownRingLabelVariants`). |
+| `urgentAt` | `5` | Turn the urgent color at or below this; `0` never. |
+| `size` / `thickness` | `default` | As for ProgressRing. |
+| `color` / `urgentColor` / `trackColor` | tint / red / fill | Any CSS colors. |
+| `showLabel` | on from 26px | The seconds in the middle, sized with the ring (36% of its diameter). |
+| `ref`, DOM props | — | Passed to the root `span`. |
 
-A ProgressRing is UI SDK's Progress root, so it carries `data-slot="progress"` and its state attributes (`data-indeterminate`, `data-progressing`, `data-complete`); the value in the middle is `progress-value`. A CountdownRing carries `data-slot="countdown-ring"` (with `data-warning` while warning); the arc of either is `data-slot="progress-ring-arc"`.
+A ProgressRing is UI SDK's Progress root, so it carries `data-slot="progress"` and its state attributes (`data-indeterminate`, `data-progressing`, `data-complete`); the value in the middle is `progress-value`. A CountdownRing carries `data-slot="countdown-ring"` (with `data-urgent` for the last seconds); the arc of either is `data-slot="progress-ring-arc"`.
 
 ## cva recipes
 
@@ -100,8 +102,8 @@ relative inline-grid size-(--ring-px) shrink-0 place-items-center align-middle
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `[--ring-color:var(--primary)]` |
-| `success` | `[--ring-color:var(--success,oklch(0.723_0.191_149.6))]` |
-| `warning` | `[--ring-color:var(--warning,oklch(0.769_0.165_70.1))]` |
+| `success` | `[--ring-color:var(--color-success)]` |
+| `warning` | `[--ring-color:var(--color-warning)]` |
 | `destructive` | `[--ring-color:var(--destructive)]` |
 
 ### `countdownRingLabelVariants`
@@ -109,22 +111,12 @@ relative inline-grid size-(--ring-px) shrink-0 place-items-center align-middle
 Defined in `@/components/ui/progress-ring`. Base classes:
 
 ```text
-absolute inset-0 grid place-items-center font-semibold tabular-nums transition-colors duration-300
+absolute inset-0 grid place-items-center font-semibold tabular-nums text-(length:--ring-font) transition-colors duration-300
 ```
 
-**`labelSize`** — default `auto`
-
-| Value | Adds |
-| --- | --- |
-| `auto` (default) | `text-(length:--ring-font)` |
-| `sm` | `text-[9.36px]` |
-| `md` | `text-[10.5px]` |
-| `lg` | `text-footnote` |
-| `xl` | `text-title` |
-
-**`warn`** — default `false`
+**`urgent`** — default `false`
 
 | Value | Adds |
 | --- | --- |
 | `false` (default) | `text-muted-foreground` |
-| `true` | `text-(--ring-warn)` |
+| `true` | `text-(--ring-urgent)` |

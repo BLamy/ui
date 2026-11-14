@@ -88,7 +88,7 @@ function MiniCard({ arg }: { arg: Mini }) {
   return (
     <div className="flex flex-col gap-3">
       <HoverCardHeader title={<span className="font-mono">“{arg.source}”</span>}
-        subtitle={`${steps} step${steps === 1 ? '' : 's'} per cycle${layers > 1 ? ` · ${layers} layers (${g.type})` : ''}`} />
+        description={`${steps} step${steps === 1 ? '' : 's'} per cycle${layers > 1 ? ` · ${layers} layers (${g.type})` : ''}`} />
       <div className="flex flex-col gap-1">
         {/* Mini-notation ranges count from the string's own first character. */}
         <div className="flex flex-col gap-px"><Group g={g} code={arg.source} /></div>
@@ -103,7 +103,7 @@ function TrackCard({ track, song }: { track: StrudelTrack; song: StrudelSong }) 
   return (
     <div className="flex flex-col gap-3">
       <HoverCardHeader title={track.label ?? `Track ${track.index + 1}`}
-        subtitle={[track.kind, track.sound, `${calls} call${calls === 1 ? '' : 's'}`, track.muted ? 'muted' : null].filter(Boolean).join(' · ')} />
+        description={[track.kind, track.sound, `${calls} call${calls === 1 ? '' : 's'}`, track.muted ? 'muted' : null].filter(Boolean).join(' · ')} />
       <pre className="m-0 max-h-40 overflow-auto rounded-md bg-black/60 p-2 font-mono text-caption2 leading-relaxed whitespace-pre-wrap text-success">
         {song.code.slice(track.start, track.end)}
       </pre>

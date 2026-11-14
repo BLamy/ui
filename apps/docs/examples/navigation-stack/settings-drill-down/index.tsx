@@ -40,16 +40,16 @@ function SettingsDrillDown() {
     <div style={{ position: 'relative', height: 420 }}>
       <NavigationStack pages={pages} onPagesChange={setPages}>
         <Page value="settings" title="Settings">
-          <List inset>
+          <List variant="inset">
             <ListSection>
               <ListRow
-                leading={<Icon name="gear" size={22} />}
+                icon={<Icon name="gear" size={22} />}
                 title="General"
                 accessory="chevron"
                 onClick={() => push('general')}
               />
               <ListRow
-                leading={<Icon name="lock" size={22} />}
+                icon={<Icon name="lock" size={22} />}
                 title="Privacy"
                 accessory="chevron"
                 divider={false}
@@ -59,7 +59,7 @@ function SettingsDrillDown() {
           </List>
         </Page>
         <Page value="general" title="General">
-          <List inset>
+          <List variant="inset">
             <ListSection>
               <ListRow
                 title="About"
@@ -76,14 +76,14 @@ function SettingsDrillDown() {
           </List>
         </Page>
         <Page value="privacy" title="Privacy">
-          <List inset>
+          <List variant="inset">
             <ListSection footer="Apps must ask before they use your location.">
               {detail('Location Services', 'On', true)}
             </ListSection>
           </List>
         </Page>
         <Page value="about" title="About">
-          <List inset>
+          <List variant="inset">
             <ListSection>
               {detail('Name', 'Ada’s iPhone')}
               {detail('Version', '26.1')}
@@ -92,7 +92,7 @@ function SettingsDrillDown() {
           </List>
         </Page>
         <Page value="update" title="Software Update">
-          <List inset>
+          <List variant="inset">
             <ListSection footer="Updates install overnight while charging.">
               <ListRow
                 title="Automatic Updates"

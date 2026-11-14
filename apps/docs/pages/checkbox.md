@@ -27,7 +27,7 @@ import { Checkbox, CheckboxGroup } from '@brett_lamy/ui'
 
 ## Shapes and states
 
-The root is the box itself; with no children it renders its `CheckboxIndicator`, the tick. Put it and its text in a [Label](https://blamy.github.io/ui/#/label) with `variant="control"` so the whole line presses it, or give it an `aria-label`. `checked` / `defaultChecked` + `onCheckedChange(checked, details)` control it, where `checked` is `true`, `false` or `'indeterminate'` (a dash instead of a tick); `disabled` dims it and its label. A `required` checkbox in a [Form](https://blamy.github.io/ui/#/form) blocks the submit until it is checked; inside a [Field](https://blamy.github.io/ui/#/field) marked `invalid` the box turns red.
+The root is the box itself; with no children it renders its `CheckboxIndicator`, the tick. Put it and its text in a [Label](https://blamy.github.io/ui/#/label) with `variant="control"` so the whole line presses it, or give it an `aria-label`. `checked` / `defaultChecked` + `onCheckedChange(checked, details)` control it, where `checked` is `true`, `false` or `'indeterminate'` (a dash instead of a tick); `disabled` dims it and its label. A `required` checkbox in a [form](https://blamy.github.io/ui/#/form) blocks the submit until it is checked; inside a [Field](https://blamy.github.io/ui/#/field) marked `invalid` the box turns red.
 
 {% demo src="checkbox/states" %}
 

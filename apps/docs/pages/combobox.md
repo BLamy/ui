@@ -35,7 +35,7 @@ The `Combobox` root renders no element: lay the label, the field and any help te
 
 ```tsx
 <Field>
-  <FieldLabel variant="field">City</FieldLabel>
+  <FieldLabel>City</FieldLabel>
   <Combobox>
     <ComboboxInput placeholder="Search cities" />
     <ComboboxContent>
@@ -84,7 +84,7 @@ With `multiple` the value is a list, and choosing an option toggles it and keeps
 
 ```tsx
 <Field>
-  <FieldLabel variant="field">Cities</FieldLabel>
+  <FieldLabel>Cities</FieldLabel>
   <Combobox multiple defaultValue={['Berlin']}>
     <ComboboxInput chips clearable placeholder="Add a city" />
     <ComboboxContent>

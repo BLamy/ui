@@ -6,7 +6,7 @@
 import { useMemo, useState, type PointerEvent, type RefObject } from 'react';
 import { bindDrag, dragThreshold } from '@ui-sdk/core';
 import { createHoverCardController, HoverCard, HoverCardContent, HoverCardTrigger, type HoverCardController } from '@/components/ui/hover-card';
-import { SearchField } from '@/components/ui/search-field';
+import { SearchInput } from '@/components/ui/search-input';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { LIBRARY, SECTIONS, specOf, type LibraryItem } from './catalog';
@@ -44,7 +44,7 @@ export function LibraryList({ onDragStart, onInserted, autoFocus, className }: {
   return (
     <div data-slot="ib-library" className={cn('flex min-h-0 flex-col', className)}>
       <div className="p-2.5 pb-1.5">
-        <SearchField value={q} onValueChange={setQ} placeholder="Filter components" autoFocus={autoFocus} aria-label="Filter components" />
+        <SearchInput value={q} onValueChange={setQ} placeholder="Filter components" autoFocus={autoFocus} aria-label="Filter components" />
       </div>
       <div className="bl-scroll min-h-0 flex-1 overflow-y-auto px-1.5 pb-3">
         {groups.length ? groups.map((g) => (

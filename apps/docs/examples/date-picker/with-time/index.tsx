@@ -17,7 +17,7 @@ export default function WithTime() {
     <ThemeScope className="mx-auto grid max-w-sm gap-1.5">
       <div className="flex items-end gap-2">
         <Field className="min-w-0 flex-1">
-          <FieldLabel variant="field">Starts</FieldLabel>
+          <FieldLabel>Starts</FieldLabel>
           <DatePicker locale="en-US" value={date} onValueChange={setDate}>
             <DatePickerField />
             <DatePickerContent />

@@ -11,9 +11,9 @@ const fields: FilterField[] = [
 ];
 
 const meta: Meta<typeof FilterInput> = {
-  title: 'Molecules/FilterInput',
+  title: 'Molecules/Filter/FilterInput',
   component: FilterInput,
-  decorators: [(Story) => <Pad w={760}><div style={{ minHeight: 200 }}><Story /></div></Pad>],
+  decorators: [(Story) => <Pad w={760}><div className="min-h-[200px]"><Story /></div></Pad>],
 };
 export default meta;
 type Story = StoryObj<typeof FilterInput>;
@@ -22,7 +22,7 @@ type Story = StoryObj<typeof FilterInput>;
 export const Default: Story = {
   render: () => (
     <FilterBar fields={fields}>
-      <FilterInput defaultValue="priority urgent and points over 3" query={{ now: new Date(2026, 0, 14) }} />
+      <FilterInput defaultValue="priority urgent and points over 3" parse={{ reference: new Date(2026, 0, 14) }} />
       <FilterToolbar />
     </FilterBar>
   ),
@@ -42,6 +42,26 @@ export const Empty: Story = {
   render: () => (
     <FilterBar fields={fields}>
       <FilterInput />
+      <FilterToolbar />
+    </FilterBar>
+  ),
+};
+
+/** `description={false}`: no line under the box (an app that explains the model elsewhere). */
+export const NoDescription: Story = {
+  render: () => (
+    <FilterBar fields={fields}>
+      <FilterInput description={false} />
+      <FilterToolbar />
+    </FilterBar>
+  ),
+};
+
+export const Dark: Story = {
+  decorators: [(Story) => <Pad w={760} dark><div className="min-h-[200px]"><Story /></div></Pad>],
+  render: () => (
+    <FilterBar fields={fields}>
+      <FilterInput defaultValue="priority urgent and points over 3" parse={{ reference: new Date(2026, 0, 14) }} />
       <FilterToolbar />
     </FilterBar>
   ),

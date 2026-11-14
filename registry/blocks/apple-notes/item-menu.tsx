@@ -1,8 +1,7 @@
 /* Everything in Notes has the same actions wherever you reach it: right-click a sidebar location, a folder or
    note row, a tree item, or use the note's … button. Rename edits the name in place; Delete asks first. */
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu';
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuContextTrigger, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { ROOT_FOLDER } from './data';
@@ -67,7 +66,7 @@ function useAct(notes: NotesState, id: string, place: RenamePlace) {
   };
 }
 
-/** The menu's items, for a ContextMenuContent or a DropdownMenuContent. Each runs its action through its own
+/** The menu's items, for a DropdownMenuContent or a DropdownMenuContent. Each runs its action through its own
     `onSelect`, so the same items work in a Tree's `contextMenu` too. */
 export function ItemMenuItems({ notes, id, place = 'list' }: { notes: NotesState; id: string; place?: RenamePlace }) {
   const act = useAct(notes, id, place);
@@ -78,11 +77,11 @@ export function ItemMenuItems({ notes, id, place = 'list' }: { notes: NotesState
       icon={entry.icon ? <Icon name={entry.icon} size={20} /> : undefined}>{entry.label}</DropdownMenuItem>);
 }
 
-/** The item's right-click menu, for a ContextMenu (or a Tree's `contextMenu`). */
+/** The item's right-click menu, for a DropdownMenu (or a Tree's `contextMenu`). */
 export function ItemMenuContent({ notes, id, label, place }: { notes: NotesState; id: string; label: string; place?: RenamePlace }) {
-  return <ContextMenuContent aria-label={`${label} actions`} finalFocus={() => renameFieldOf(id)}>
+  return <DropdownMenuContent aria-label={`${label} actions`} finalFocus={() => renameFieldOf(id)}>
     <ItemMenuItems notes={notes} id={id} place={place} />
-  </ContextMenuContent>;
+  </DropdownMenuContent>;
 }
 
 /** Where a menu whose Rename… started an in-place rename sends focus as it closes: the item's name field, once it
@@ -94,10 +93,10 @@ export const hasItemMenu = (notes: NotesState, id: string) => actionsFor(notes, 
 /** Right-click (or long-press, or the menu key) on `children` for the item's actions. */
 export function ItemMenu({ notes, id, label, children, className }: { notes: NotesState; id: string; label: string; children: ReactNode; className?: string }) {
   const empty = !hasItemMenu(notes, id);
-  return <ContextMenu>
-    <ContextMenuTrigger disabled={empty} className={className}>{children}</ContextMenuTrigger>
+  return <DropdownMenu>
+    <DropdownMenuContextTrigger disabled={empty} className={className}>{children}</DropdownMenuContextTrigger>
     {empty ? null : <ItemMenuContent notes={notes} id={id} label={label} />}
-  </ContextMenu>;
+  </DropdownMenu>;
 }
 
 /** The name, edited in place: Return keeps it, Escape (or an unchanged name) leaves it as it was. The stem is

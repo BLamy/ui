@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import wasmURL from '@agent-wasm/tailscale-connect/main.wasm?url'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button'
+import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-controls'
 import { webStorageTailscalePersistence } from '@/lib/tailscale'
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect'
 import { exitNodeName, exitNodePeers, pickExitNode } from '@/lib/tailscale-exit'
@@ -99,7 +99,7 @@ export default function Intercept() {
       >
         <div className="flex flex-wrap items-center gap-3">
           <TailscaleLoginButton />
-          <TailscaleStatusBadge compact />
+          <TailscaleStatusBadge variant="pill" />
         </div>
         <ExitNode />
         <Console />

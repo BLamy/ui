@@ -1,5 +1,5 @@
 import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { cn, cx } from '@/lib/utils';
 import { useOptionalChatShell } from './chat-shell-context';
@@ -91,7 +91,7 @@ export const channelThreadItemVariants = cva(
   },
 );
 
-export interface ChannelItemProps extends Omit<ComponentProps<typeof PlainButton>, 'value' | 'children'> {
+export interface ChannelItemProps extends Omit<ComponentProps<typeof SdkButton>, 'value' | 'children'> {
   /** the channel this row opens; the list's `value` when it is current */
   value: string;
   children?: ReactNode;
@@ -110,7 +110,7 @@ export function ChannelItem({ value, icon, unread, mentions, active, className, 
   const shell = useOptionalChatShell();
   const on = active ?? list.value === value;
   return (
-    <PlainButton
+    <SdkButton
       data-unread={unread || undefined}
       aria-current={on ? 'page' : undefined}
       onClick={(e, details) => {
@@ -125,11 +125,11 @@ export function ChannelItem({ value, icon, unread, mentions, active, className, 
       <span className="grid text-tertiary-foreground">{icon ?? <Icon name="number" size={13} sw={2} />}</span>
       <span className="flex-1 truncate">{children}</span>
       {mentions ? <MentionPill n={mentions} /> : unread && !on && <span className="size-[7px] rounded-[50%] bg-primary" />}
-    </PlainButton>
+    </SdkButton>
   );
 }
 
-export interface ChannelThreadItemProps extends Omit<ComponentProps<typeof PlainButton>, 'children'> {
+export interface ChannelThreadItemProps extends Omit<ComponentProps<typeof SdkButton>, 'children'> {
   children?: ReactNode;
   /** the thread is open (full view) */
   active?: boolean;
@@ -139,7 +139,7 @@ export interface ChannelThreadItemProps extends Omit<ComponentProps<typeof Plain
 export function ChannelThreadItem({ active, className, children, onClick, ...props }: ChannelThreadItemProps) {
   const shell = useOptionalChatShell();
   return (
-    <PlainButton
+    <SdkButton
       aria-current={active ? 'page' : undefined}
       onClick={(e, details) => {
         onClick?.(e, details);
@@ -150,6 +150,6 @@ export function ChannelThreadItem({ active, className, children, onClick, ...pro
     >
       <span className="-mt-[6px] size-[8px] shrink-0 rounded-[0_0_0_4px] border-b-[1.5px] border-l-[1.5px] border-border" />
       <span className="truncate">{children}</span>
-    </PlainButton>
+    </SdkButton>
   );
 }

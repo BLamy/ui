@@ -1,5 +1,7 @@
 'use client';
-import { useId, type CSSProperties } from 'react';
+import { useId, useRef, type CSSProperties, type HTMLAttributes, type Ref } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { springs } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { WORKBENCH_SHAPES } from '@/lib/icon-shapes/workbench';
 import { CHAT_SHAPES } from '@/lib/icon-shapes/chat';
@@ -608,5 +610,46 @@ export function Icon({ name, shapes, size, weight, sw, className, style, title, 
       {label ? <title>{title ?? label}</title> : null}
       {body}
     </svg>
+  );
+}
+
+/* ══ Chevron — one chevron that turns to face a new direction ══
+   Forward → down when a row expands, forward → back when a flow reverses. It accumulates its angle, so it always
+   turns the short way round (up → right is a quarter turn forward, not three quarters back), on the snappy spring.
+   Decorative: `aria-hidden`; put the meaning (`aria-expanded`, the label) on the control around it. */
+const CHEVRON_ANGLE = { right: 0, down: 90, left: 180, up: 270 } as const;
+export type ChevronDirection = keyof typeof CHEVRON_ANGLE;
+
+export interface ChevronProps
+  extends Omit<HTMLAttributes<HTMLSpanElement>, 'children' | 'onAnimationStart' | 'onDrag' | 'onDragStart' | 'onDragEnd' | 'onAnimationEnd' | 'onAnimationIteration'> {
+  /** Which way it points (default `right`). Changing it turns the chevron. */
+  direction?: ChevronDirection;
+  /** Glyph size in px (default 17). */
+  size?: number;
+  /** Stroke width on the 24px grid (default 2.4). */
+  strokeWidth?: number;
+  ref?: Ref<HTMLSpanElement>;
+}
+
+export function Chevron({ direction = 'right', size = 17, strokeWidth = 2.4, className, ...props }: ChevronProps) {
+  const reduced = useReducedMotion();
+  const acc = useRef<{ dir: ChevronDirection; deg: number }>({ dir: direction, deg: CHEVRON_ANGLE[direction] });
+  if (acc.current.dir !== direction) {
+    const delta = ((CHEVRON_ANGLE[direction] - (acc.current.deg % 360) + 540) % 360) - 180;
+    acc.current = { dir: direction, deg: acc.current.deg + (delta === -180 ? 180 : delta) };
+  }
+  return (
+    <motion.span
+      {...props}
+      data-slot="chevron"
+      data-direction={direction}
+      aria-hidden="true"
+      className={cn('inline-grid shrink-0 place-items-center', className)}
+      initial={false}
+      animate={{ rotate: acc.current.deg }}
+      transition={reduced ? { duration: 0 } : springs.snappy}
+    >
+      <Icon name="chev" size={size} sw={strokeWidth} />
+    </motion.span>
   );
 }

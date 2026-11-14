@@ -1,7 +1,6 @@
 import { DialogClose, DialogContent } from '@ui-sdk/react/dialog';
-import { ToggleGroup } from '@ui-sdk/react/toggle';
+import { Toggle as SdkToggle, ToggleGroup } from '@ui-sdk/react/toggle';
 import { Dialog } from '@/components/ui/dialog';
-import { PlainToggleButton } from '@/components/ui/plain-button';
 import { type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { TINTS } from '../lib/data';
@@ -29,7 +28,7 @@ export function ThemeEditor({
   container?: Element | null;
 }) {
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onClose()} modal={false} container={container}>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()} modal={false} container={container} presentation="dialog">
       <DialogContent
         aria-label="Theme editor"
         className={cn(
@@ -54,19 +53,19 @@ export function ThemeEditor({
           className="mb-3 grid grid-cols-2 gap-1 rounded-[9px] bg-secondary p-0.5"
         >
           {(['light', 'dark'] as const).map((a) => (
-            <PlainToggleButton
+            <SdkToggle
               key={a}
               value={a}
               className="h-7 cursor-pointer rounded-[7px] border-0 bg-transparent font-[inherit] text-[12.5px] font-medium text-muted-foreground capitalize transition-colors data-pressed:bg-card data-pressed:text-foreground data-pressed:shadow-[0_1px_2px_color-mix(in_srgb,black_18%,transparent)]"
             >
               {a}
-            </PlainToggleButton>
+            </SdkToggle>
           ))}
         </ToggleGroup>
         <div className="mb-1.5 text-caption text-muted-foreground">Accent</div>
         <ToggleGroup aria-label="Accent" value={[tint]} deselectable={false} onValueChange={([t]) => t && onTint(t)} className="flex gap-2">
           {TINTS.map((t) => (
-            <PlainToggleButton
+            <SdkToggle
               key={t}
               value={t}
               aria-label={`Accent ${t}`}

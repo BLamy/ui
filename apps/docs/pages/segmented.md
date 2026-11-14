@@ -1,6 +1,6 @@
 # Segmented
 
-The iOS segmented control: a short row of mutually exclusive options in a tinted track, with one card under the selected option that slides (and resizes) to the next on a spring. It is UI SDK's `SegmentedControl`, a radio group, so it picks a *value* — a time range, a filter, a view mode — and does not own any panels. If each option reveals its own content, use [Tabs](https://blamy.github.io/ui/#/tabs), which has the same look (`variant="segmented"`) with tab and panel semantics; for the bottom navigation bar use [TabBar](https://blamy.github.io/ui/#/tab-bar), and for a richer tab container [TabView](https://blamy.github.io/ui/#/tab-view).
+The iOS segmented control: a short row of mutually exclusive options in a tinted track, with one card under the selected option that slides (and resizes) to the next on a spring. It is UI SDK's `SegmentedControl`, a radio group, so it picks a *value* — a time range, a filter, a view mode — and does not own any panels. If each option reveals its own content, use [Tabs](https://blamy.github.io/ui/#/tabs), which has the same look (`variant="segmented"`) with tab and panel semantics; for the bottom navigation bar use [Tabs](https://blamy.github.io/ui/#/tabs) with `variant="bar"`, and for a richer tab container [Tabs](https://blamy.github.io/ui/#/tabs) with a bar.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}

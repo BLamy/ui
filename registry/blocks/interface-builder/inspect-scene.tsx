@@ -2,7 +2,7 @@
    that make up its delegate protocol), useState, useMemo and useEffect, the contexts it reads (found from its
    expressions) and the outlets it holds. Its First Responder proxy edits the commands the scene handles; its Exit
    proxy lists the unwinds. */
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { ActionList } from './actions';
@@ -74,16 +74,16 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
         <Field label="Component"><NameInput label="Component name" value={scene.name} taken={doc.scenes.filter((s) => s.id !== scene.id).map((s) => s.name)} onCommit={(v) => upd((s) => ({ ...s, name: pascal(v) }))} /></Field>
         <Field label="Initial scene">
           {doc.entry === scene.id ? <span className="flex items-center gap-1.5 text-footnote text-success"><Icon name="checkmark" size={13} sw={2.6} /> Is the entry point</span>
-            : <PlainButton onClick={() => b.commit((d) => ({ ...d, entry: scene.id }))} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">Make initial scene</PlainButton>}
+            : <SdkButton onClick={() => b.commit((d) => ({ ...d, entry: scene.id }))} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">Make initial scene</SdkButton>}
         </Field>
         <Field label="Background"><ColorInput label="Background" value={scene.background ?? null} onChange={(v) => upd((s) => ({ ...s, background: v }))} /></Field>
         <Field label="Embed in">
           <div className="flex flex-wrap gap-1">
-            {(['NavigationStack', 'TabView', 'SplitView'] as const).map((k) => (
-              <PlainButton key={k} onClick={() => { const [next, id] = embedScene(doc, scene.id, k); b.commit(() => next, { kind: 'scene', scene: id }); }}
+            {(['NavigationStack', 'TabsScreen', 'SplitView'] as const).map((k) => (
+              <SdkButton key={k} onClick={() => { const [next, id] = embedScene(doc, scene.id, k); b.commit(() => next, { kind: 'scene', scene: id }); }}
                 className="h-6 cursor-pointer rounded-md border-0 bg-secondary px-1.5 font-mono text-caption2 outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
                 {k}
-              </PlainButton>
+              </SdkButton>
             ))}
           </div>
         </Field>
@@ -113,10 +113,10 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
           </div>
         ))}
         <div className="flex gap-1">
-          <PlainButton onClick={() => upd((s) => ({ ...s, props: [...s.props, { name: fresh(s, 'onDone'), type: 'any', default: 'undefined', callback: true, params: ['value'] }] }))}
+          <SdkButton onClick={() => upd((s) => ({ ...s, props: [...s.props, { name: fresh(s, 'onDone'), type: 'any', default: 'undefined', callback: true, params: ['value'] }] }))}
             className="flex h-7 cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-1.5 text-caption font-medium text-primary outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring">
             <Icon name="plus" size={11} sw={2.6} /> Callback (delegate)
-          </PlainButton>
+          </SdkButton>
         </div>
         {!scene.props.length ? <Help>Props come from the segue that presents the scene (its arguments). A callback prop is a delegate: the scene calls it, and the presenting scene implements it on the segue.</Help> : null}
       </Section>
@@ -192,11 +192,11 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
             {[...out.map((g) => ({ g, dir: 'out' as const })), ...into.map((g) => ({ g, dir: 'in' as const }))].map(({ g, dir }) => (
               <li key={`${dir}${g.id}`}>
-                <PlainButton onClick={() => b.select({ kind: 'segue', segue: g.id })} className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-2 text-left text-footnote outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+                <SdkButton onClick={() => b.select({ kind: 'segue', segue: g.id })} className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-2 text-left text-footnote outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
                   <Icon name={dir === 'out' ? 'arrow-right' : 'arrow-left'} size={12} sw={2.4} className="text-primary" />
                   <span className="truncate">{dir === 'out' ? `to ${doc.scenes.find((s) => s.id === g.to)?.name}` : `from ${doc.scenes.find((s) => s.id === g.from)?.name}`}</span>
                   <span className="ml-auto text-caption text-muted-foreground">{SEGUE_KINDS.find((k) => k.id === g.kind)?.label}</span>
-                </PlainButton>
+                </SdkButton>
               </li>
             ))}
           </ul>

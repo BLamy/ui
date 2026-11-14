@@ -33,7 +33,7 @@ import { cx } from '@/lib/utils';
    root renders no element: lay the label and the button out with a Field, which also gives the select its name and
    its error.
    <Field>
-     <FieldLabel variant="field">Repeat</FieldLabel>
+     <FieldLabel>Repeat</FieldLabel>
      <Select placeholder="Choose…">
        <SelectTrigger />
        <SelectContent><SelectItem value="never">Never</SelectItem>…</SelectContent>

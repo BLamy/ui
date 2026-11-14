@@ -1,16 +1,16 @@
 /* Signing in to a developer service with a device code, the way the app builder's Login buttons do: the sidebar's
-   service buttons open a Credenza that morphs Requesting → the code and the button that opens the service →
+   service buttons open a Dialog that morphs Requesting → the code and the button that opens the service →
    Signed In (or an error with Try Again). The token is kept by the sign-in store (sign-ins.tsx) and shown as an
    item whose detail starts with ServiceCard: who the token belongs to and what it can see, fetched with it. */
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { Tailscale } from '@/lib/tailscale';
 import { useOptionalTailscale } from '@/lib/tailscale-react';
-import { TailscaleLoginButton } from '@/components/ui/tailscale-login-button';
+import { TailscaleLoginButton } from '@/components/ui/tailscale-controls';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Credenza, CredenzaBackdrop, CredenzaClose, CredenzaContent, CredenzaHeader, CredenzaTitle, CredenzaView } from '@/components/ui/credenza';
+import { Dialog, DialogBackdrop, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogView } from '@/components/ui/dialog';
 import { SplitViewSection } from '@/components/ui/split-view';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -35,10 +35,10 @@ export function ServiceButtons({ onOpen }: { onOpen: (id: ServiceId) => void }) 
   return (
     <SplitViewSection title="Developer Sign-In" className="mt-2">
       {passkeys.status === 'locked' ? (
-        <PlainButton onClick={() => void passkeys.unlock().catch(() => {})}
+        <SdkButton onClick={() => void passkeys.unlock().catch(() => {})}
           className="bl-btn mb-1.5 flex w-full cursor-pointer items-center gap-2 rounded-panel border-0 bg-transparent px-2.5 py-1.5 text-left [font-family:inherit] text-detail text-primary">
           <Icon name="passkey" size={16} />Unlock saved sign-ins with your passkey
-        </PlainButton>
+        </SdkButton>
       ) : null}
       <div className="grid grid-cols-2 gap-2.5 px-0.5 pt-1">
         {SERVICES.map((s) => {
@@ -46,7 +46,7 @@ export function ServiceButtons({ onOpen }: { onOpen: (id: ServiceId) => void }) 
           const check = checks[s.id];
           const status = grant ? STATUS[check?.state ?? 'checking'] : null;
           return (
-            <PlainButton key={s.id} onClick={() => (grant && check?.state !== 'rejected' ? onOpen(s.id) : signIn(s.id))}
+            <SdkButton key={s.id} onClick={() => (grant && check?.state !== 'rejected' ? onOpen(s.id) : signIn(s.id))}
               aria-label={grant ? `${s.name}: ${grant.account}, ${status!.label}` : `Sign in to ${s.name}`}
               className={cn(
                 'bl-btn flex cursor-pointer items-center gap-2.5 rounded-panel border-0 bg-card p-2.5 text-left [font-family:inherit] text-foreground outline-none',
@@ -60,7 +60,7 @@ export function ServiceButtons({ onOpen }: { onOpen: (id: ServiceId) => void }) 
                   {status ? <>{check?.state === 'ok' ? <Icon name="check-circle-fill" size={11} /> : null}{status.label}</> : 'Sign In'}
                 </span>
               </span>
-            </PlainButton>
+            </SdkButton>
           );
         })}
       </div>
@@ -114,7 +114,7 @@ function useSecondsLeft(until: number | undefined, live: boolean) {
   return until == null ? 0 : Math.max(0, Math.round((until - now) / 1000));
 }
 
-export function SignInCredenza({ service: id, auth, live, onClose, onSaved, onSavePasskey }: {
+export function SignInDialog({ service: id, auth, live, onClose, onSaved, onSavePasskey }: {
   /** The service being signed in to; null when closed. */
   service: ServiceId | null;
   auth: DeviceAuth;
@@ -164,12 +164,12 @@ export function SignInCredenza({ service: id, auth, live, onClose, onSaved, onSa
   const title = !service ? '' : step.view === 'done' ? 'Signed In' : step.view === 'error' ? 'Couldn’t Sign In' : `Sign In to ${service.name}`;
 
   return (
-    <Credenza open={!!id} onOpenChange={(open) => { if (!open) onClose(); }}
+    <Dialog open={!!id} onOpenChange={(open) => { if (!open) onClose(); }}
       view={step.view === 'approving' ? 'code' : step.view}>
-      <CredenzaBackdrop />
-      <CredenzaContent>
-      <CredenzaHeader><CredenzaTitle>{title}</CredenzaTitle><CredenzaClose /></CredenzaHeader>
-      <CredenzaView>
+      <DialogBackdrop />
+      <DialogContent variant="tray">
+      <DialogHeader variant="bar"><DialogTitle>{title}</DialogTitle><DialogClose /></DialogHeader>
+      <DialogView>
       {service ? (
         <div className="px-4 pt-1 pb-4">
           {step.view === 'starting' ? (
@@ -202,7 +202,7 @@ export function SignInCredenza({ service: id, auth, live, onClose, onSaved, onSa
                   <Icon name="arrow-up-right" size={16} weight="semibold" />
                   {prompt.userCode ? `Copy Code & ${service.verb}` : service.verb}
                 </Button>
-                <CredenzaClose render={<Button size="pill" variant="secondary" autoFocus />}>Cancel</CredenzaClose>
+                <DialogClose render={<Button size="pill" variant="secondary" autoFocus />}>Cancel</DialogClose>
               </div>
             </>
           ) : null}
@@ -225,8 +225,8 @@ export function SignInCredenza({ service: id, auth, live, onClose, onSaved, onSa
                   <Button size="pill" onClick={() => { onClose(); onSavePasskey(); }}>
                     <Icon name="passkey" size={17} />{passkeys.status === 'empty' ? 'Save with a Passkey' : 'Unlock to Save'}
                   </Button>
-                  <CredenzaClose render={<Button size="pill" variant="secondary" />}>Not Now</CredenzaClose>
-                </> : <CredenzaClose render={<Button size="pill" />}>Done</CredenzaClose>}
+                  <DialogClose render={<Button size="pill" variant="secondary" />}>Not Now</DialogClose>
+                </> : <DialogClose render={<Button size="pill" />}>Done</DialogClose>}
               </div>
             </div>
           ) : null}
@@ -239,15 +239,15 @@ export function SignInCredenza({ service: id, auth, live, onClose, onSaved, onSa
               </div>
               <div className="mt-4 grid gap-2">
                 <Button size="pill" onClick={() => setAttempt((n) => n + 1)}>Try Again</Button>
-                <CredenzaClose render={<Button size="pill" variant="secondary" />}>Cancel</CredenzaClose>
+                <DialogClose render={<Button size="pill" variant="secondary" />}>Cancel</DialogClose>
               </div>
             </>
           ) : null}
         </div>
       ) : null}
-      </CredenzaView>
-      </CredenzaContent>
-    </Credenza>
+      </DialogView>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -286,9 +286,9 @@ export function ServiceCard({ id }: { id: ServiceId }) {
         <Icon name="passkey" size={13} />
         {isSaved(id) ? 'Saved, encrypted with your passkey.' : passkeys.status === 'unsupported' ? 'Kept until you close this page (no passkey encryption in this browser).' : 'Kept until you close this page.'}
         {!isSaved(id) && (passkeys.status === 'empty' || passkeys.status === 'locked') ? (
-          <PlainButton onClick={savePasskey} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-caption text-primary">
+          <SdkButton onClick={savePasskey} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-caption text-primary">
             {passkeys.status === 'empty' ? 'Save with a Passkey' : 'Unlock to Save'}
-          </PlainButton>
+          </SdkButton>
         ) : null}
       </div>
       <div className="flex flex-wrap gap-2">

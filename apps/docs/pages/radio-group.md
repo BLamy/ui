@@ -44,13 +44,13 @@ To pick from elsewhere, pass a controller from `createRadioGroupController()` as
 
 ## Validation
 
-Put a `required` group in a [Field](https://blamy.github.io/ui/#/field) with a `FieldError`: submitting a [Form](https://blamy.github.io/ui/#/form) without a choice turns the radios red, shows the error under the group and moves focus to it. `invalid` on the Field marks it invalid yourself.
+Put a `required` group in a [Field](https://blamy.github.io/ui/#/field) with a `FieldError`: submitting its [form](https://blamy.github.io/ui/#/form) without a choice turns the radios red, shows the error under the group and moves focus to it. `invalid` on the Field marks it invalid yourself.
 
 {% demo src="radio-group/validation" %}
 
 ```tsx
 <Field>
-  <FieldLabel variant="field">Data region</FieldLabel>
+  <FieldLabel>Data region</FieldLabel>
   <RadioGroup name="region" required>
     <Label variant="control"><Radio value="us" />United States</Label>
     <Label variant="control"><Radio value="eu" />European Union</Label>

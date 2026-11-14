@@ -71,7 +71,7 @@ A controlled editor beside a `MarkdownView` of the same value. Every edit serial
 
 ```tsx
 <Field name="notes">
-  <FieldLabel>Notes</FieldLabel>
+  <FieldLabel variant="default">Notes</FieldLabel>
   <MarkdownEditor />
   <FieldDescription>Markdown is fine.</FieldDescription>
 </Field>

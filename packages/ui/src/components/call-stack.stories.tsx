@@ -45,9 +45,9 @@ function Frame({ w = 760, h = 560, dark, children }: { w?: number; h?: number; d
   return <Phone w={w} h={h} dark={dark}><div className="absolute inset-0 bg-card py-2">{children}</div></Phone>;
 }
 
-function Stack({ frames, initial }: { frames: readonly CallStackFrame[]; initial: string }) {
+function Stack({ frames, initial, density }: { frames: readonly CallStackFrame[]; initial: string; density?: 'compact' | 'default' | 'comfortable' }) {
   const [selected, setSelected] = useState(initial);
-  return <CallStack frames={frames} value={selected} onValueChange={setSelected} />;
+  return <CallStack frames={frames} value={selected} onValueChange={setSelected} density={density} />;
 }
 
 export const Desktop: Story = { render: () => <Frame><Stack frames={CHECKOUT} initial="a" /></Frame> };
@@ -55,7 +55,9 @@ export const SelectedBelowTheTop: Story = { render: () => <Frame><Stack frames={
 export const Dark: Story = { render: () => <Frame dark><Stack frames={CHECKOUT} initial="d" /></Frame> };
 export const PhoneWidth: Story = { name: 'Phone', render: () => <Frame w={390} h={720}><Stack frames={CHECKOUT} initial="d" /></Frame> };
 export const PhoneDark: Story = { name: 'Phone, dark', render: () => <Frame w={390} h={720} dark><Stack frames={CHECKOUT} initial="d" /></Frame> };
-export const Empty: Story = { render: () => <Frame h={200}><CallStack frames={[]} emptyMessage="No JS is on the stack at this point." /></Frame> };
+/** Touch: Tree's `comfortable` density, 36px rows. */
+export const PhoneComfortable: Story = { name: 'Phone, comfortable', render: () => <Frame w={390} h={720}><Stack frames={CHECKOUT} initial="d" density="comfortable" /></Frame> };
+export const Empty: Story = { render: () => <Frame h={200}><CallStack frames={[]} emptyState="No JS is on the stack at this point." /></Frame> };
 
 /** A stopped frame, a thousand rounds of recursion through app and React frames, and two async boundaries. */
 function recursiveStack(rounds: number): CallStackFrame[] {

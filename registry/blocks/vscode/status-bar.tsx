@@ -3,8 +3,7 @@ import { useSyncExternalStore } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverClose, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Icon } from '@/lib/icon';
-import { TailscaleMark } from '@/components/ui/tailscale-login-button';
-import { TailscaleMenu } from '@/components/ui/tailscale-menu';
+import { TailscaleExitNodes, TailscaleLoginButton, TailscaleMark, TailscaleSummary } from '@/components/ui/tailscale-controls';
 import { useTailscaleStatus } from '@/lib/tailscale-react';
 import { languageFromPath } from '@/lib/syntax';
 import { cn } from '@/lib/utils';
@@ -77,7 +76,11 @@ export function StatusBar({ store }: { store: VSCodeStore }) {
             <span>{tailnet.status === 'connected' ? 'Tailscale: Connected' : 'Tailscale'}</span>
           </PopoverTrigger>
           <PopoverContent variant="surface" side="top" align="start" className="w-72 p-3.5 outline-none">
-            <TailscaleMenu />
+            <div className="flex flex-col gap-3">
+              <TailscaleSummary />
+              <TailscaleExitNodes />
+              <TailscaleLoginButton size="sm" variant="outline" />
+            </div>
           </PopoverContent>
         </Popover>
         {problem ? <span role="status" className="min-w-0 truncate">{problem}</span> : null}

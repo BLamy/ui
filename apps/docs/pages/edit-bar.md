@@ -1,6 +1,6 @@
 # EditBar
 
-The action bar an iOS list shows in edit mode: Favorite (or Unfavorite) on the left, how many rows are selected in the middle, Delete in red on the right, on a blurred bar pinned to the bottom. It holds no state — you own the selection and decide what the actions do — and its three labels are fixed. Use it for multi-select on a list; for a general bottom navigation bar use [TabBar](https://blamy.github.io/ui/#/tab-bar), and for a toolbar with other actions build your own row on the `bg-bar` surface.
+The action bar an iOS list shows in edit mode: Favorite (or Unfavorite) on the left, how many rows are selected in the middle, Delete in red on the right, on a blurred bar pinned to the bottom. It holds no state — you own the selection and decide what the actions do — and its three labels are fixed. Use it for multi-select on a list; for a general bottom navigation bar use [Tabs](https://blamy.github.io/ui/#/tabs) with `variant="bar"`, and for a toolbar with other actions build your own row on the `bg-bar` surface.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}

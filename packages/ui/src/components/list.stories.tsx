@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Avatar } from '@/components/ui/avatar';
+import { EmptyState as EmptyStateView } from '@/components/ui/empty-state';
 import { EditBar } from '@/components/ui/edit-bar';
 import { IndexBar, AL } from '@/components/ui/index-bar';
-import { List } from '@/components/ui/list';
+import { List, ListRow, ListSection } from '@/components/ui/list';
+import { Switch } from '@/components/ui/switch';
 import {
   NavigationStack,
   NavigationStackBar,
@@ -15,14 +17,18 @@ import {
   NavigationStackTitle,
   NavigationStackTrailing,
 } from '@/components/ui/navigation-stack';
-import { SearchField } from '@/components/ui/search-field';
+import { SearchInput } from '@/components/ui/search-input';
 import { Icon } from '@/lib/icon';
 import { BARH } from '@/lib/utils';
-import { Phone } from '../stories/frame';
+import { Pad, Phone } from '../stories/frame';
 
 const meta: Meta<typeof List> = {
   title: 'Organisms/List',
   component: List,
+  argTypes: {
+    variant: { control: 'inline-radio', options: ['plain', 'inset'] },
+    density: { control: 'inline-radio', options: ['compact', 'default', 'comfortable'] },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof List>;
@@ -101,34 +107,30 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
   const exitEdit = () => { setEdit(false); setPick(new Set()); };
   const selN = pick.size;
   const content = (
-    <div style={{ padding: grouped ? '0 16px' : 0 }}>
-      {sections.length === 0 ? (
-        <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--muted-foreground)', fontSize: 15 }}>
-          No results{ql ? ' for “' + q + '”' : ''}
-        </div>
-      ) : null}
+    <List variant={grouped ? 'inset' : 'plain'}
+      emptyState={<EmptyStateView size="sm" icon={<Icon name="magnifyingglass" />} title="No Results" description={ql ? `No contacts match “${q}”.` : 'No contacts.'} />}>
       {sections.map((s) => (
-        <List.Section key={s.L} sticky={!grouped} title={s.L} ref={(el) => { if (el) secEls.current[s.L] = el; }}>
+        <ListSection key={s.L} sticky={!grouped} title={s.L} ref={(el) => { if (el) secEls.current[s.L] = el; }}>
           {s.items.map((c, i) => (
-            <List.Row key={c.id}
+            <ListRow key={c.id}
               title={<span>{c.f} <span style={{ fontWeight: 600 }}>{c.l}</span></span>}
-              subtitle={c.role + (c.com ? ' · ' + c.com : '')}
-              leading={<Avatar c={c} />}
+              description={c.role + (c.com ? ' · ' + c.com : '')}
+              icon={<Avatar name={`${c.f} ${c.l}`} />}
               trailing={favs.has(c.id) ? <Icon name="starF" size={13} className="text-warning" /> : null}
               accessory={edit ? undefined : 'chevron'}
-              edit={edit} checked={pick.has(c.id)}
+              editing={edit} checked={pick.has(c.id)}
               onClick={() => { if (edit) togglePick(c.id); }}
-              onDelete={edit ? undefined : () => setGone((g) => new Set([...g, c.id]))}
+              trailingActions={[{ label: 'Delete', destructive: true, onAction: () => setGone((g) => new Set([...g, c.id])) }]}
               divider={i < s.items.length - 1} />
           ))}
-        </List.Section>
+        </ListSection>
       ))}
       {sections.length ? (
         <div style={{ padding: '16px 0 4px', textAlign: 'center', fontSize: 14.5, color: 'var(--muted-foreground)' }}>
           {visible.length} Contact{visible.length === 1 ? '' : 's'}{gone.size ? ' · pull down to restore ' + gone.size + ' deleted' : ''}
         </div>
       ) : null}
-    </div>
+    </List>
   );
   return (
     <>
@@ -147,7 +149,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
           <NavigationStackContent onRefresh={() => { if (gone.size) { setGone(new Set()); } }}>
             <NavigationStackLargeTitle />
             <NavigationStackSubheader>
-              <SearchField value={q} onValueChange={setQ} aria-label="Search contacts" />
+              <SearchInput value={q} onValueChange={setQ} aria-label="Search contacts" />
             </NavigationStackSubheader>
             {content}
           </NavigationStackContent>
@@ -193,14 +195,14 @@ export const StickySearchHeader: Story = {
     return (
       <Phone>
         <div className="bl-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', background: 'var(--background)' }}>
-          <List header={<div style={{ padding: '10px 16px' }}><SearchField value={q} onValueChange={setQ} /></div>}>
+          <List header={<div style={{ padding: '10px 16px' }}><SearchInput value={q} onValueChange={setQ} /></div>}>
             {sections.map((s) => (
-              <List.Section key={s.L} sticky title={s.L}>
+              <ListSection key={s.L} sticky title={s.L}>
                 {s.items.map((c, i) => (
-                  <List.Row key={c.id} title={c.f + ' ' + c.l} subtitle={c.role} leading={<Avatar c={c} size={34} />}
+                  <ListRow key={c.id} title={c.f + ' ' + c.l} description={c.role} icon={<Avatar name={`${c.f} ${c.l}`} size={34} />}
                     divider={i < s.items.length - 1} />
                 ))}
-              </List.Section>
+              </ListSection>
             ))}
           </List>
         </div>
@@ -222,12 +224,12 @@ export const SwipeToDelete: Story = {
             <NavigationStackContent>
             <NavigationStackLargeTitle />
             <List>
-              <List.Section sticky title="Contacts">
+              <ListSection sticky title="Contacts">
                 {items.map((c, i) => (
-                  <List.Row key={c.id} title={c.f + ' ' + c.l} subtitle={c.role} leading={<Avatar c={c} />}
-                    onDelete={() => setGone((g) => new Set([...g, c.id]))} divider={i < items.length - 1} />
+                  <ListRow key={c.id} title={c.f + ' ' + c.l} description={c.role} icon={<Avatar name={`${c.f} ${c.l}`} />}
+                    trailingActions={[{ label: 'Delete', destructive: true, onAction: () => setGone((g) => new Set([...g, c.id])) }]} divider={i < items.length - 1} />
                 ))}
-              </List.Section>
+              </ListSection>
             </List>
             </NavigationStackContent>
           </NavigationStackPage>
@@ -256,12 +258,12 @@ export const EditModeWithEditBar: Story = {
             <NavigationStackContent>
             <NavigationStackLargeTitle />
             <List>
-              <List.Section sticky title="Contacts">
+              <ListSection sticky title="Contacts">
                 {items.map((c, i) => (
-                  <List.Row key={c.id} title={c.f + ' ' + c.l} subtitle={c.role} leading={<Avatar c={c} />}
-                    edit checked={pick.has(c.id)} onClick={() => toggle(c.id)} divider={i < items.length - 1} />
+                  <ListRow key={c.id} title={c.f + ' ' + c.l} description={c.role} icon={<Avatar name={`${c.f} ${c.l}`} />}
+                    editing checked={pick.has(c.id)} onClick={() => toggle(c.id)} divider={i < items.length - 1} />
                 ))}
-              </List.Section>
+              </ListSection>
             </List>
             </NavigationStackContent>
           </NavigationStackPage>
@@ -273,7 +275,8 @@ export const EditModeWithEditBar: Story = {
   },
 };
 
-/** Empty state: no sections, centered "No results" message (search for anything to reproduce live). */
+/** `emptyState`: the list shows it when no section has rows (here a search that matches nothing). It defaults to a
+ *  small `EmptyState` titled "No items". */
 export const EmptyState: Story = {
   render: () => (
     <Phone h={480}>
@@ -283,11 +286,11 @@ export const EmptyState: Story = {
           <NavigationStackContent>
             <NavigationStackLargeTitle />
             <NavigationStackSubheader>
-              <SearchField aria-label="Search contacts" value="zzzz" onValueChange={() => undefined} />
+              <SearchInput aria-label="Search contacts" value="zzzz" onValueChange={() => undefined} />
             </NavigationStackSubheader>
-            <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--muted-foreground)', fontSize: 15 }}>
-              No results for &ldquo;zzzz&rdquo;
-            </div>
+            <List emptyState={<EmptyStateView size="sm" icon={<Icon name="magnifyingglass" />} title="No Results" description="No contacts match “zzzz”." />}>
+              <ListSection sticky title="Z">{[]}</ListSection>
+            </List>
           </NavigationStackContent>
         </NavigationStackPage>
       </NavigationStack>
@@ -295,26 +298,90 @@ export const EmptyState: Story = {
   ),
 };
 
-export const WithFooter: Story = {
-  render: () => (
-    <Phone h={480}>
-      <NavigationStack pages={['footer']}>
-        <NavigationStackPage value="footer" grouped>
-          <NavigationStackBar><NavigationStackTitle>Settings</NavigationStackTitle></NavigationStackBar>
-          <NavigationStackContent>
+const tile = (glyph: string, bg: string) => (
+  <span aria-hidden className="grid size-[29px] place-items-center rounded-md text-white" style={{ background: bg }}>
+    <Icon name={glyph} size={17} sw={2.2} />
+  </span>
+);
+
+/** An iOS Settings screen: `variant="inset"` sections with grouped titles and footers, icon tiles, values,
+ *  switches, a disabled row and a centered destructive button row. */
+function SettingsDemo({ density }: { density?: 'compact' | 'default' | 'comfortable' }) {
+  const [airplane, setAirplane] = useState(false);
+  return (
+    <List variant="inset" density={density}>
+      <ListSection title="Connectivity">
+        <ListRow icon={tile('airplane', 'var(--warning)')} title="Airplane Mode"
+          accessory={<Switch checked={airplane} onCheckedChange={setAirplane} />} />
+        <ListRow icon={tile('wifi', 'var(--primary)')} title="Wi-Fi" trailing={<span className="text-muted-foreground">Home</span>}
+          accessory="chevron" onClick={() => undefined} />
+        <ListRow icon={tile('hotspot', 'var(--success)')} title="Personal Hotspot" description="Not available on this plan"
+          accessory="chevron" onClick={() => undefined} disabled divider={false} />
+      </ListSection>
+      <ListSection title="Contacts table view"
+        footer="UITableView styles: .plain keeps sticky letter headers; .insetGrouped floats each letter section as a card.">
+        {CONTACTS.slice(0, 3).map((c, i) => (
+          <ListRow key={c.id} title={c.f + ' ' + c.l} description={c.role} icon={<Avatar name={`${c.f} ${c.l}`} size={34} />}
+            accessory="chevron" onClick={() => undefined} current={i === 0} divider={i < 2} />
+        ))}
+      </ListSection>
+      <ListSection>
+        <ListRow title="Sign Out" justify="center" tone="destructive" onClick={() => undefined} divider={false} />
+      </ListSection>
+    </List>
+  );
+}
+
+function SettingsScreen({ density }: { density?: 'compact' | 'default' | 'comfortable' }) {
+  return (
+    <NavigationStack pages={['settings']}>
+      <NavigationStackPage value="settings" grouped>
+        <NavigationStackBar><NavigationStackTitle>Settings</NavigationStackTitle></NavigationStackBar>
+        <NavigationStackContent>
           <NavigationStackLargeTitle />
-          <List inset>
-            <List.Section title="Contacts table view" footer="UITableView styles: .plain keeps sticky letter headers; .insetGrouped floats each letter section as a card.">
-              {CONTACTS.slice(0, 3).map((c, i) => (
-                <List.Row key={c.id} title={c.f + ' ' + c.l} subtitle={c.role} leading={<Avatar c={c} size={34} />}
-                  accessory="chevron" onClick={() => undefined} divider={i < 2} />
-              ))}
-            </List.Section>
+          <SettingsDemo density={density} />
+        </NavigationStackContent>
+      </NavigationStackPage>
+    </NavigationStack>
+  );
+}
+
+/** Section titles and footers, a `current` row, a `disabled` row, and a centered `tone="destructive"` button row. */
+export const WithFooter: Story = { render: () => <Phone h={760}><SettingsScreen /></Phone> };
+export const WithFooterDark: Story = { render: () => <Phone h={760} dark><SettingsScreen /></Phone> };
+
+/** `density`: `compact` 36px rows, `default` 46px, `comfortable` 56px. */
+export const Density: Story = {
+  render: () => (
+    <Pad w={1000}><div className="grid grid-cols-3 gap-2">
+      {(['compact', 'default', 'comfortable'] as const).map((d) => (
+        <div key={d}>
+          <div className="mb-2 px-4 text-footnote text-muted-foreground">{d}</div>
+          <List variant="inset" density={d}>
+            <ListSection>
+              <ListRow icon={tile('wifi', 'var(--primary)')} title="Wi-Fi" trailing={<span className="text-muted-foreground">Home</span>} accessory="chevron" onClick={() => undefined} />
+              <ListRow icon={tile('bluetooth', 'var(--primary)')} title="Bluetooth" trailing={<span className="text-muted-foreground">On</span>} accessory="chevron" onClick={() => undefined} divider={false} />
+            </ListSection>
           </List>
-          </NavigationStackContent>
-        </NavigationStackPage>
-      </NavigationStack>
-    </Phone>
+        </div>
+      ))}
+    </div></Pad>
+  ),
+};
+
+/** Controls: `variant` and `density` on a small list. */
+export const Playground: Story = {
+  args: { variant: 'inset', density: 'default' },
+  render: (args) => (
+    <Pad w={420}>
+      <List {...args}>
+        <ListSection title="General" footer="Rows press, drill in, or hold a control.">
+          <ListRow icon={tile('gear', 'var(--muted-foreground)')} title="About" accessory="chevron" onClick={() => undefined} />
+          <ListRow icon={tile('arrow-clockwise', 'var(--muted-foreground)')} title="Software Update" description="iOS 26.1" accessory="chevron" onClick={() => undefined} />
+          <ListRow icon={tile('moon', 'var(--primary)')} title="Dark Appearance" accessory={<Switch defaultChecked />} divider={false} />
+        </ListSection>
+      </List>
+    </Pad>
   ),
 };
 
@@ -341,16 +408,16 @@ function ReorderDemo({ startEditing = true }: { startEditing?: boolean }) {
         </NavigationStackBar>
         <NavigationStackContent>
         <NavigationStackLargeTitle />
-        <List inset>
-          <List.Section animate onOrderChange={edit ? (_, { from, to }) => move(from, to) : undefined}
+        <List variant="inset">
+          <ListSection animate onOrderChange={edit ? (_, { from, to }) => move(from, to) : undefined}
             footer={edit ? 'Drag a grip, or focus it and press Space, ↑/↓, Space.' : 'Add inserts at the top; swipe a row to remove it.'}>
             {songs.map((t, i) => (
-              <List.Row key={t} title={t} subtitle={`Track ${PLAYLIST.indexOf(t) + 1}`}
-                leading={<span aria-hidden style={{ width: 34, height: 34, borderRadius: 7, background: `hsl(${PLAYLIST.indexOf(t) * 45} 70% 60%)` }} />}
+              <ListRow key={t} title={t} description={`Track ${PLAYLIST.indexOf(t) + 1}`}
+                icon={<span aria-hidden style={{ width: 34, height: 34, borderRadius: 7, background: `hsl(${PLAYLIST.indexOf(t) * 45} 70% 60%)` }} />}
                 trailingActions={edit ? undefined : [{ label: 'Remove', icon: 'trash', destructive: true, onAction: () => setSongs((s) => s.filter((x) => x !== t)) }]}
                 divider={i < songs.length - 1} />
             ))}
-          </List.Section>
+          </ListSection>
         </List>
         </NavigationStackContent>
       </NavigationStackPage>
@@ -358,7 +425,7 @@ function ReorderDemo({ startEditing = true }: { startEditing?: boolean }) {
   );
 }
 
-/** `List.Section animate`: keyed rows grow in, collapse out and slide on reorder. `onOrderChange` adds a grip to
+/** `ListSection animate`: keyed rows grow in, collapse out and slide on reorder. `onOrderChange` adds a grip to
  *  every row — drag it, or focus it and press Space, ↑/↓, Space. */
 export const AnimatedReorder: Story = { render: () => <Phone h={600}><ReorderDemo /></Phone> };
 export const AnimatedReorderDark: Story = { render: () => <Phone h={600} dark><ReorderDemo /></Phone> };

@@ -92,10 +92,17 @@ describe('LogList', () => {
 
   it('shows empty state and footer', () => {
     const { rerender } = render(<LogList rows={[]} emptyState="Nothing logged yet" />);
-    expect(screen.getByText('Nothing logged yet').getAttribute('data-slot')).toBe('log-list-empty');
+    // A string is the title of the shared EmptyState, inside the list's empty part.
+    const title = screen.getByText('Nothing logged yet');
+    expect(title.getAttribute('data-slot')).toBe('empty-state-title');
+    expect(title.closest('[data-slot=log-list-empty]')).toBeTruthy();
     rerender(<LogList rows={makeRows(2)} emptyState="Nothing logged yet" footer="12 more later" />);
     expect(screen.queryByText('Nothing logged yet')).toBeNull();
     expect(screen.getByText('12 more later')).toBeTruthy();
+    rerender(<LogList rows={[]} />);
+    expect(screen.getByText('No messages')).toBeTruthy();
+    rerender(<LogList rows={[]} emptyState={null} />);
+    expect(screen.queryByText('No messages')).toBeNull();
   });
 });
 
@@ -333,6 +340,9 @@ describe('press and selection', () => {
     expect(writeText).toHaveBeenLastCalledWith('0:00.300 [log] Message 3 (app.js:3)');
     expect(onAction).not.toHaveBeenCalled();
     expect(within(row(3)).getByRole('button', { name: 'Copied' })).toBeTruthy();
+    // Screen readers hear it too (UI SDK's live region, filled after 100ms).
+    await act(async () => { await new Promise((r) => setTimeout(r, 150)); });
+    expect(document.querySelector('[data-ui-sdk-announcer]')?.textContent).toBe('Copied');
   });
 });
 

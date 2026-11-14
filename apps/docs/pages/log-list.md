@@ -2,6 +2,8 @@
 
 A console for a recording: a virtualized list of log rows that stays smooth at 100,000 rows, with a marker that says where you are. Rows are plain data, so it doesn't know what produced them. Long messages wrap or open on press, the rows after the marker are dimmed as the future, and the marker can move on every frame without rendering a single row. Its partner for requests is [RequestTable](https://blamy.github.io/ui/#/request-table).
 
+Use a sibling instead when the rows have **columns** to sort and resize (RequestTable, or the SQL console's results table), when they are **pressable rows** of a settings or navigation screen ([List](https://blamy.github.io/ui/#/lists)), or when they form a **hierarchy** ([Tree](https://blamy.github.io/ui/#/tree), [CallStack](https://blamy.github.io/ui/#/call-stack)).
+
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/log-list.json{% endcommand %}
@@ -81,7 +83,7 @@ A row has `data-future` and `data-current` while it is those, so custom content 
 
 ## Filtering
 
-Filtering is the host's: LogList shows the rows it's given and holds its place on the row at the top of the view, or the next one that survived. `countLogLevels` counts a list by level for your buttons or a [FilterBar](https://blamy.github.io/ui/#/filter) field's options, and [FilterInput](https://blamy.github.io/ui/#/filter-input) can fill the bar in from a sentence.
+Filtering is the host's: LogList shows the rows it's given and holds its place on the row at the top of the view, or the next one that survived. `countLogLevels` counts a list by level for your buttons or a [FilterBar](https://blamy.github.io/ui/#/filter) field's options, and [FilterInput](https://blamy.github.io/ui/#/filter) can fill the bar in from a sentence.
 
 {% demo src="log-list/filters" %}
 
@@ -111,7 +113,7 @@ The limit is the browser's: the list's full height has to fit in an element, whi
 
 It's an ARIA treegrid with one tab stop, built on [UI SDK](https://ui-sdk.dev)'s virtualizer, grid focus and stick-to-bottom: focus is on the active row itself, which stays rendered while it has focus, so it can't be lost when the rows around it scroll out and unmount, and a key that moves to a row that isn't rendered yet scrolls it in first. `aria-rowcount` gives the full length and each row has `aria-rowindex`. The current row has `aria-current`, and a row with more to show has `aria-expanded`. The marker's line is drawn for sighted users and hidden from assistive technology.
 
-A press on a row is the row's own click, so touch, mouse and a screen reader's click all reach it, and dragging across text to select it isn't a press. The Copy and way-back buttons are UI SDK buttons. Copy is a single button that moves to the row under the pointer, or the active row, which is how touch and keys get to it.
+A press on a row is the row's own click, so touch, mouse and a screen reader's click all reach it, and dragging across text to select it isn't a press. The Copy and way-back buttons are UI SDK buttons, and a copy (the button or ⌘C) is announced as "Copied". Copy is a single button that moves to the row under the pointer, or the active row, which is how touch and keys get to it.
 
 ## Props
 
@@ -136,9 +138,11 @@ A press on a row is the row's own click, so touch, mouse and a screen reader's c
 | `getRowText` / `onRowCopy` | `logRowText` / none | What's copied, and hearing about it, with the text, for a host with a clipboard of its own. |
 | `renderRow` | `LogRowContent` | A row's content. Must be stable. |
 | `formatTime` | `formatLogTime` | How times read. Must be stable. |
-| `density` | `compact` | `comfortable` for touch. |
+| `density` | `compact` | One line's height: `compact` 24px · `default` 28px · `comfortable` 32px (for touch). |
 | `estimatedRowHeight` | one line | A row's height until it's measured. |
-| `emptyState` / `footer` | "No messages" / none | Shown with no rows, and after the last row. |
+| `emptyState` | `<EmptyState size="sm" title="No messages" />` | Shown with no rows. A string is the [EmptyState](https://blamy.github.io/ui/#/empty-state)'s title; `null` shows nothing. |
+| `footer` | none | Shown after the last row. |
+| `aria-label` | `"Log"` | The grid's name. |
 
 ### A row
 
@@ -171,7 +175,7 @@ A press on a row is the row's own click, so touch, mouse and a screen reader's c
 
 ## Styling
 
-The root is `data-slot="log-list"`, inside it `log-list-grid`, `log-list-rows`, `log-list-marker`, `log-list-marker-label`, `log-list-jump`, `log-list-empty` and `log-list-footer`. A row is `log-list-row`, with `data-level` and, while they hold, `data-selected`, `data-active`, `data-expanded`, `data-future` and `data-current`, and has `log-list-toggle`, `log-list-icon`, `log-list-message`, `log-list-count`, `log-list-meta`, `log-list-source`, `log-list-time`, `log-list-detail` and `log-list-actions`. It takes its colors from the theme, on the surface [ResultTable](https://blamy.github.io/ui/#/result-table) and Spreadsheet use.
+The root is `data-slot="log-list"`, inside it `log-list-grid`, `log-list-rows`, `log-list-marker`, `log-list-marker-label`, `log-list-jump`, `log-list-empty` and `log-list-footer`. A row is `log-list-row`, with `data-level` and, while they hold, `data-selected`, `data-active`, `data-expanded`, `data-future` and `data-current`, and has `log-list-toggle`, `log-list-icon`, `log-list-message`, `log-list-count`, `log-list-meta`, `log-list-source`, `log-list-time`, `log-list-detail` and `log-list-actions`. It takes its colors from the theme, on the surface RequestTable and Spreadsheet use, and its rows share their hover, selection, hairline and focus layers with RequestTable's (`dataRowLayers`).
 
 ## cva recipes
 
@@ -190,4 +194,5 @@ Defined in `@/components/ui/log-list`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `compact` (default) | `[--log-pad:3px]` |
+| `default` | `[--log-pad:5px]` |
 | `comfortable` | `[--log-pad:7px]` |

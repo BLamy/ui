@@ -139,7 +139,7 @@ interface SceneCode {
   runtime: Set<string>;
   /** The scenes it shows as components. */
   scenes: Set<string>;
-  /** Hooks its JSX needs (a TabView measuring its width). */
+  /** Hooks its JSX needs (a TabsScreen measuring its width). */
   hooks: string[];
   /** For unique names. */
   seq: number;
@@ -245,7 +245,7 @@ function jsx(n: Node, parent: Axis, c: SceneCode, depth = 0): string {
   let el: string;
   if (n.type === 'SceneRef') el = sceneRefJsx(n, c);
   else if (n.type === 'NavigationStack') el = navStackJsx(n, c, depth);
-  else if (n.type === 'TabView') el = tabViewJsx(n, c);
+  else if (n.type === 'TabsScreen') el = tabsScreenJsx(n, c);
   else if (n.type === 'SplitView') el = splitViewJsx(n, c, depth);
   else if (spec.container === 'frame' || n.type === 'Spacer') {
     const tag = motion.length ? 'motion.div' : 'div';
@@ -354,19 +354,21 @@ function navStackJsx(n: Node, c: SceneCode, depth: number): string {
   return `<NavStack\n  ${bar.join('\n  ')}\n  root={\n${indent(content, 4)}\n  }\n/>`;
 }
 
-/** A TabView: the kit's, a tab per child; `auto` placement follows its own size class (a tab bar when compact, a
-    side rail from 700px). */
-function tabViewJsx(n: Node, c: SceneCode): string {
-  for (const part of ['TabView', 'TabViewBar', 'TabViewList', 'TabViewTab', 'TabViewPanels', 'TabViewPanel']) c.imports.add(`@/components/ui/tab-view|${part}`);
+/** A TabsScreen: the kit's Tabs on a bar, a tab per child; `auto` side follows its own size class (a tab bar when
+    compact, a side rail from 700px). */
+function tabsScreenJsx(n: Node, c: SceneCode): string {
+  for (const part of ['Tabs', 'TabsBar', 'TabsList', 'TabsTab', 'TabsPanels', 'TabsPanel']) c.imports.add(`@/components/ui/tabs|${part}`);
   const tabs = itemsOf(n.props.tabs);
-  const asked = ['bottom', 'start', 'top'].find((x) => x === n.props.placement);
-  let placement = `"${asked}"`;
+  const asked = ['bottom', 'start', 'top'].find((x) => x === n.props.side);
+  let side = `"${asked}"`;
+  let variant = asked === 'start' ? '"rail"' : '"bar"';
   let box = '';
   if (!asked) {
     const i = ++c.seq;
     c.imports.add('@/lib/container|useSizeClass');
     c.hooks.push(`// A tab bar when compact, a side rail from 700px.\nconst [tabBox${i}, tabSize${i}] = useSizeClass({ breakpoints: { medium: 700 }, initial: 'compact' });`);
-    placement = `{tabSize${i} === 'compact' ? 'bottom' : 'start'}`;
+    side = `{tabSize${i} === 'compact' ? 'bottom' : 'start'}`;
+    variant = `{tabSize${i} === 'compact' ? 'bar' : 'rail'}`;
     box = `tabBox${i}`;
   }
   const bound = n.bind?.value;
@@ -375,18 +377,18 @@ function tabViewJsx(n: Node, c: SceneCode): string {
   const panels = tabs.map((t, i) => {
     const child = n.children?.[i];
     const content = child ? jsx(child, 'vertical', c) : `<div /* drop a scene here for ${t.label} */ />`;
-    return `<TabViewPanel value=${JSON.stringify(t.id)} keepMounted className="overflow-hidden">\n${indent(content, 2)}\n</TabViewPanel>`;
+    return `<TabsPanel value=${JSON.stringify(t.id)} keepMounted className="overflow-hidden">\n${indent(content, 2)}\n</TabsPanel>`;
   });
-  const view = `<TabView placement=${placement} ${selection}${change} className="relative size-full">
-  <TabViewBar>
-    <TabViewList aria-label="Tabs">
-${indent(tabs.map((t) => `<TabViewTab value=${JSON.stringify(t.id)} icon=${JSON.stringify(t.icon ?? 'circle')} title=${JSON.stringify(t.label)} />`).join('\n'), 6)}
-    </TabViewList>
-  </TabViewBar>
-  <TabViewPanels>
+  const view = `<Tabs variant=${variant} side=${side} ${selection}${change} className="relative size-full">
+  <TabsBar>
+    <TabsList aria-label="Tabs">
+${indent(tabs.map((t) => `<TabsTab value=${JSON.stringify(t.id)} icon=${JSON.stringify(t.icon ?? 'circle')}>${t.label}</TabsTab>`).join('\n'), 6)}
+    </TabsList>
+  </TabsBar>
+  <TabsPanels>
 ${indent(panels.join('\n'), 4)}
-  </TabViewPanels>
-</TabView>`;
+  </TabsPanels>
+</Tabs>`;
   return box ? `<div ref={${box}} className="relative size-full">\n${indent(view, 2)}\n</div>` : view;
 }
 
@@ -485,14 +487,15 @@ function leaf(n: Node, kids: string[], c: SceneCode, events: string[]): string {
     }
     case 'Icon': return `<Icon name=${p('name')} size=${p('size')} sw=${p('sw')}${n.props.color ? ` className="${colorClass('text', n.props.color as string)}"` : ''} />`;
     case 'ListRow': {
-      const leading = (n.slots?.leading ?? []).map((x) => jsx(x, 'horizontal', c)).join('\n');
+      const icon = (n.slots?.icon ?? []).map((x) => jsx(x, 'horizontal', c)).join('\n');
       const control = (n.slots?.accessory ?? []).map((x) => jsx(x, 'horizontal', c)).join('\n');
-      const attrs = ['title', 'subtitle', 'trailing'].map((k) => [k, p(k)] as const).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`);
+      const attrs = ['title', 'description', 'trailing'].map((k) => [k, p(k)] as const).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`);
       // The accessory: a control in its slot (a Switch, which the row names), else the chevron or the check.
       if (control) attrs.push(`accessory={\n${indent(control, 4)}\n  }`);
       else if (n.props.accessory && n.props.accessory !== 'none') attrs.push(`accessory="${n.props.accessory}"`);
-      for (const k of ['checked', 'destructive']) { const v = p(k); if (v && v !== '{false}') attrs.push(v === '{true}' ? k : `${k}=${v}`); }
-      if (leading) attrs.push(`leading={\n${indent(leading, 4)}\n  }`);
+      { const v = p('checked'); if (v && v !== '{false}') attrs.push(v === '{true}' ? 'checked' : `checked=${v}`); }
+      if (n.props.tone && n.props.tone !== 'default') attrs.push(`tone=${p('tone')}`);
+      if (icon) attrs.push(`icon={\n${indent(icon, 4)}\n  }`);
       return `<ListRow\n${indent([...attrs, ...events].join('\n'), 2)}\n/>`;
     }
     default: {

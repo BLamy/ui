@@ -7,7 +7,8 @@ import { bindDrag, dragThreshold, type BindDragOptions } from '@ui-sdk/core';
 import { formatColor, parseColor } from '@ui-sdk/core/color';
 import { ColorPicker, ColorPickerArea, ColorPickerSlider } from '@/components/ui/color-picker';
 import { ColorFieldGroup, ColorFieldInput, ColorFieldSwatch } from '@/components/ui/color-field';
-import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
@@ -47,17 +48,17 @@ export function Field({ label, children, hint, htmlFor, wide }: { label: ReactNo
 /** A round add button for a section header. */
 export function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <PlainButton aria-label={label} title={label} onClick={onClick} className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+    <SdkButton aria-label={label} title={label} onClick={onClick} className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
       <Icon name="plus" size={14} sw={2.3} />
-    </PlainButton>
+    </SdkButton>
   );
 }
 
 export function IconAction({ icon, label, onClick, className, tone }: { icon: string; label: string; onClick: () => void; className?: string; tone?: 'danger' }) {
   return (
-    <PlainButton aria-label={label} title={label} onClick={onClick} className={cn('grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring', tone === 'danger' ? 'hover:text-destructive' : 'hover:text-foreground', className)}>
+    <SdkButton aria-label={label} title={label} onClick={onClick} className={cn('grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring', tone === 'danger' ? 'hover:text-destructive' : 'hover:text-foreground', className)}>
       <Icon name={icon} size={13} sw={2.2} />
-    </PlainButton>
+    </SdkButton>
   );
 }
 
@@ -340,12 +341,12 @@ export function ColorInput({ value, onChange, label, allowNone = true }: { value
             <div className="mb-1.5 text-caption2 font-semibold tracking-wide text-muted-foreground uppercase">Theme</div>
             <div className="grid grid-cols-6 gap-1.5">
               {allowNone ? (
-                <PlainButton aria-label="None" title="None" onClick={() => onChange(null)} className={cn('relative size-7 cursor-pointer overflow-hidden rounded-md border-0 bg-background p-0 shadow-hairline outline-none focus-visible:ring-2 focus-visible:ring-ring', !value && 'ring-2 ring-primary')}>
+                <SdkButton aria-label="None" title="None" onClick={() => onChange(null)} className={cn('relative size-7 cursor-pointer overflow-hidden rounded-md border-0 bg-background p-0 shadow-hairline outline-none focus-visible:ring-2 focus-visible:ring-ring', !value && 'ring-2 ring-primary')}>
                   <span aria-hidden="true" className="absolute inset-x-[-4px] top-1/2 h-0.5 -rotate-45 bg-destructive" />
-                </PlainButton>
+                </SdkButton>
               ) : null}
               {THEME_COLORS.map((t) => (
-                <PlainButton key={t.id} aria-label={t.label} title={t.label} onClick={() => onChange(t.id)} className={cn('size-7 cursor-pointer rounded-md border-0 p-0 shadow-hairline outline-none focus-visible:ring-2 focus-visible:ring-ring', value === t.id && 'ring-2 ring-primary ring-offset-1 ring-offset-popover')} style={{ background: cssColor(t.id) }} />
+                <SdkButton key={t.id} aria-label={t.label} title={t.label} onClick={() => onChange(t.id)} className={cn('size-7 cursor-pointer rounded-md border-0 p-0 shadow-hairline outline-none focus-visible:ring-2 focus-visible:ring-ring', value === t.id && 'ring-2 ring-primary ring-offset-1 ring-offset-popover')} style={{ background: cssColor(t.id) }} />
               ))}
             </div>
           </div>
@@ -353,7 +354,7 @@ export function ColorInput({ value, onChange, label, allowNone = true }: { value
             <div className="mb-1.5 text-caption2 font-semibold tracking-wide text-muted-foreground uppercase">System</div>
             <div className="grid grid-cols-6 gap-1.5">
               {SYSTEM_COLORS.map((c) => (
-                <PlainButton key={c} aria-label={c} title={c} onClick={() => onChange(c)} className={cn('size-7 cursor-pointer rounded-md border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-ring', value?.toUpperCase() === c && 'ring-2 ring-primary ring-offset-1 ring-offset-popover')} style={{ background: c }} />
+                <SdkButton key={c} aria-label={c} title={c} onClick={() => onChange(c)} className={cn('size-7 cursor-pointer rounded-md border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-ring', value?.toUpperCase() === c && 'ring-2 ring-primary ring-offset-1 ring-offset-popover')} style={{ background: c }} />
               ))}
             </div>
           </div>
@@ -420,7 +421,7 @@ export function IconInput({ value, onChange, label, allowNone = true }: { value:
 /** The ƒ toggle beside a prop: bound (an expression) or a literal. */
 export function BindToggle({ bound, onToggle, label }: { bound: boolean; onToggle: () => void; label: string }) {
   return (
-    <PlainToggleButton
+    <SdkToggle
       aria-label={bound ? `Unbind ${label}` : `Bind ${label} to an expression`}
       title={bound ? 'Bound to an expression: press to use a value instead' : 'Bind to state, props or context (an expression)'}
       pressed={bound}
@@ -431,7 +432,7 @@ export function BindToggle({ bound, onToggle, label }: { bound: boolean; onToggl
       )}
     >
       ƒ
-    </PlainToggleButton>
+    </SdkToggle>
   );
 }
 

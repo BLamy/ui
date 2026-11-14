@@ -11,7 +11,7 @@ export default function Basic() {
   return (
     <div className="mx-auto grid max-w-sm gap-5">
       <Field>
-        <FieldLabel variant="field">Birthday</FieldLabel>
+        <FieldLabel>Birthday</FieldLabel>
         <DateField locale="en-US" value={date} onValueChange={setDate} />
         <FieldDescription>
           Click a part, then type digits or press the arrow keys. Selected:{' '}
@@ -22,7 +22,7 @@ export default function Basic() {
       <DateField aria-label="Due, small" locale="en-US" size="sm" defaultValue="2026-09-09" />
 
       <Field disabled>
-        <FieldLabel variant="field">Locked by an admin</FieldLabel>
+        <FieldLabel>Locked by an admin</FieldLabel>
         <DateField locale="en-US" defaultValue="2026-09-09" />
       </Field>
     </div>

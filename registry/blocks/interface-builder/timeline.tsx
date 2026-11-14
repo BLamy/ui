@@ -8,7 +8,7 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { createParts } from '@ui-sdk/react/primitive';
 import { Slider, SliderControl, SliderThumb, SliderTrack } from '@ui-sdk/react/slider';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { appearSchedule, instanceKey, scheduleLength, type Slot } from './appear';
@@ -102,21 +102,21 @@ export function Timeline({ sceneId, frameAt, onFrameAt, onPlay }: { sceneId: str
       onKeyDown={(e) => { if (e.key === 'Escape' && frameAt != null) { e.preventDefault(); onFrameAt(null); } }}
     >
       <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-2">
-        <PlainButton
+        <SdkButton
           aria-label="Play the appear"
           onClick={() => { onFrameAt(null); onPlay(); }}
           className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-primary text-primary-foreground outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Icon name="play" size={12} sw={2} />
-        </PlainButton>
+        </SdkButton>
         <span className="font-semibold">{scene?.name ?? 'Scene'}</span>
         <span className="text-muted-foreground tabular-nums">
           {frameAt != null ? seconds(frameAt) : 'At rest'} · {seconds(total)}
         </span>
         {frameAt != null ? (
-          <PlainButton onClick={() => onFrameAt(null)} className="ml-auto cursor-pointer rounded-md border-0 bg-secondary px-2 py-1 text-caption outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+          <SdkButton onClick={() => onFrameAt(null)} className="ml-auto cursor-pointer rounded-md border-0 bg-secondary px-2 py-1 text-caption outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
             Let go (Esc)
-          </PlainButton>
+          </SdkButton>
         ) : <span className="ml-auto text-muted-foreground">Drag on the timeline to scrub · drag a bar to move it</span>}
       </div>
 
@@ -179,14 +179,14 @@ export function Timeline({ sceneId, frameAt, onFrameAt, onPlay }: { sceneId: str
                 const bar = shown.find((x) => x.id === t.node.id)!;
                 return (
                   <div key={t.node.id} className={cn('flex border-b border-border/60', on && 'bg-primary/6')} style={{ height: ROW_H }}>
-                    <PlainButton
+                    <SdkButton
                       onClick={() => b.selectNode(t.node.id)}
                       className={cn('pointer-events-auto flex shrink-0 cursor-pointer items-center gap-1.5 truncate border-0 border-r border-border bg-card px-2 text-left text-caption outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset', on ? 'font-semibold text-primary' : 'text-foreground')}
                       style={{ width: LABEL_W }}
                     >
                       <span className="truncate">{nodeLabel(t.node, b.doc)}</span>
                       {t.slots.length > 1 ? <span className="shrink-0 text-muted-foreground">×{t.slots.length}</span> : null}
-                    </PlainButton>
+                    </SdkButton>
                     <BarTrack value={t.node.id} className="flex-1">
                       {/* The rest of a repeat: its stagger, following the bar. */}
                       {t.slots.slice(1).map((s, i) => (

@@ -1,6 +1,6 @@
 # Progress
 
-A horizontal progress bar in the iOS style, on UI SDK's `Progress`: a rounded track, a fill that springs to each new value, and an optional label and percentage above it. Use it for a long task with a known length (an upload, a sync); omit `value` for an indeterminate bar that slides. For a circular version see [ProgressRing](https://blamy.github.io/ui/#/progress-ring), for multi-step flows [ProgressStepper](https://blamy.github.io/ui/#/progress-stepper), and for an unmeasured wait a [Spinner](https://blamy.github.io/ui/#/spinner).
+A horizontal progress bar in the iOS style, on UI SDK's `Progress`: a rounded track, a fill that springs to each new value, and an optional label and percentage above it. Use it for a long task with a known length (an upload, a sync); omit `value` for an indeterminate bar that slides. For a circular version see [ProgressRing](https://blamy.github.io/ui/#/progress-ring), for multi-step flows [ProgressStepper](https://blamy.github.io/ui/#/progress-stepper), and for an unmeasured wait a [Spinner](https://blamy.github.io/ui/#/spinner). For a level in a range (storage used, battery) use UI SDK's `Meter` (`role="meter"`, not a progressbar); `progressVariants` and `progressIndicatorVariants` style it the same way.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -63,7 +63,7 @@ With no children `Progress` renders its parts from `label`, `showValue`, `size` 
 
 ## Accessibility
 
-UI SDK provides `role="progressbar"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax` and `aria-valuetext`; an indeterminate bar omits `aria-valuenow`. The `label` (a `ProgressLabel`) is wired up with `aria-labelledby`. Without a `label` you must pass `aria-label` or `aria-labelledby`. The rolling number is an `img` with the formatted text as its label, so it is not read as stray digits. Screen readers do not announce progress on their own: for a task the person is waiting on, announce completion in a `role="status"` region.
+UI SDK provides `role="progressbar"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax` and `aria-valuetext`; an indeterminate bar omits `aria-valuenow`. The `label` (a `ProgressLabel`) is wired up with `aria-labelledby`. Without a `label` you must pass `aria-label` or `aria-labelledby`. The rolling number keeps the formatted text as plain (visually hidden) text and hides its reels, so it is not read as stray digits. Screen readers do not announce progress on their own: for a task the person is waiting on, announce completion in a `role="status"` region.
 
 ## Props
 
@@ -71,9 +71,10 @@ UI SDK provides `role="progressbar"` with `aria-valuenow`, `aria-valuemin`, `ari
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `value` / `min` / `max` | `null` / 0 / 100 | The progress. Leave `value` out (or `null`) for indeterminate: the bar slides (a still bar under reduced motion) and the value is hidden. |
+| `value` / `min` / `max` | `null` / 0 / 100 | The progress. Leave `value` out (or `null`) for indeterminate: the bar slides (under reduced motion a dim full-width fill, so it never reads as part done) and the value is hidden. |
+| `locale` | page language | The locale of the value, passed to the rolling percentage too. |
 | `size` | `default` | Track height: `sm` 4px, `default` 6px, `lg` 10px. |
-| `tone` | `default` | Fill colour: `default` (primary), `success`, `destructive`. |
+| `tone` | `default` | Fill colour: `default` (primary), `success`, `warning`, `destructive`. |
 | `label` | — | Text above the bar; it names the progressbar. |
 | `showValue` | `false` | Show the value opposite the label (never while indeterminate). |
 | `format` / `getValueLabel` | percent | Custom value text; see above. |
@@ -109,7 +110,7 @@ relative w-full overflow-hidden rounded-full bg-secondary-strong
 Defined in `@/components/ui/progress`. Base classes:
 
 ```text
-absolute inset-y-0 left-0 rounded-full transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none data-indeterminate:w-2/5 data-indeterminate:animate-bl-progress data-indeterminate:transition-none motion-reduce:data-indeterminate:animate-none
+absolute inset-y-0 left-0 rounded-full transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none data-indeterminate:w-2/5 data-indeterminate:animate-bl-progress data-indeterminate:transition-none motion-reduce:data-indeterminate:w-full motion-reduce:data-indeterminate:animate-none motion-reduce:data-indeterminate:opacity-35
 ```
 
 **`tone`** — default `default`
@@ -118,4 +119,5 @@ absolute inset-y-0 left-0 rounded-full transition-[width] duration-spring-smooth
 | --- | --- |
 | `default` (default) | `bg-primary` |
 | `success` | `bg-success` |
+| `warning` | `bg-warning` |
 | `destructive` | `bg-destructive` |

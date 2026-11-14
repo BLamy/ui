@@ -8,9 +8,11 @@ import {
   PopoverTitle as SdkPopoverTitle,
 } from '@ui-sdk/react/popover';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { popoverArrow, popoverArrowGlyph, popoverMotion, popoverSurface } from '@/lib/primitives';
+import { popoverArrow, popoverArrowGlyph, popoverMotion, popoverSheet, popoverSurface } from '@/lib/primitives';
 import { cx } from '@/lib/utils';
+import { surfaceDescriptionVariants, surfaceTitleVariants } from '@/components/ui/dialog';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
+import { useTriggerPalette, type PopupPalette } from '@/lib/trigger-palette';
 import { usePresentation } from '@/lib/container';
 
 /* ══ Popover — UI SDK's Popover on the kit's floating surface ══
@@ -19,7 +21,7 @@ import { usePresentation } from '@/lib/container';
    `presentation="auto"`, which turns it into a bottom sheet in a compact container. It renders into BLProvider's
    root (see `useLayerHost`), so it keeps the theme tokens and stays inside the app's frame.
    <Popover>
-     <PopoverTrigger className={buttonVariants({ variant: 'secondary' })}>Dimensions</PopoverTrigger>
+     <PopoverTrigger render={<Button variant="secondary" />}>Dimensions</PopoverTrigger>
      <PopoverContent align="start">
        <PopoverTitle>Dimensions</PopoverTitle>
        …
@@ -39,15 +41,9 @@ export function Popover({ container, presentation, ...props }: PopoverProps) {
   return <SdkPopover container={container === undefined ? host : container} presentation={shown} {...props} />;
 }
 
-/* The kit's floating surface. As a sheet it is shaped like the kit's bottom Sheet: the full width of its host, square
-   at the bottom edge. Its `--sheet-backdrop` only dims the page when the popup is in the top layer: in a layer host
-   (BLProvider is one) a popover sheet has no scrim behind it, unlike the kit's Sheet. */
+/* The kit's floating surface. As a sheet it is shaped like the kit's bottom Sheet, grabber included (`popoverSheet`). */
 export const popoverContentVariants = cva(
-  [
-    popoverSurface,
-    popoverMotion,
-    'box-border data-[presentation=sheet]:max-h-[calc(100%-48px)] data-[presentation=sheet]:w-full data-[presentation=sheet]:min-w-0 data-[presentation=sheet]:rounded-t-card data-[presentation=sheet]:rounded-b-none data-[presentation=sheet]:pb-[max(16px,env(safe-area-inset-bottom))] data-[presentation=sheet]:[--sheet-backdrop:var(--overlay,color-mix(in_oklab,black_40%,transparent))]',
-  ],
+  [popoverSurface, popoverMotion, popoverSheet, 'box-border'],
   {
     variants: {
       variant: {
@@ -62,25 +58,43 @@ export const popoverContentVariants = cva(
 );
 
 export type PopoverContentProps<Payload = unknown> =
-  Parameters<typeof SdkPopoverContent<Payload>>[0] & VariantProps<typeof popoverContentVariants>;
+  Parameters<typeof SdkPopoverContent<Payload>>[0] & VariantProps<typeof popoverContentVariants> & {
+    /** Draw a pointer toward the trigger (default false). Leave the surface's overflow visible. */
+    arrow?: boolean;
+    /** Where the colors come from: the ThemeScope it was opened from (`scope`, the default), or the trigger's
+        element (`trigger`), for a trigger on a surface that CSS paints rather than a ThemeScope (see `useTriggerPalette`). */
+    palette?: PopupPalette;
+  };
 
 /** The floating surface. It has the dialog role: name it with a PopoverTitle (`sr-only` to hide it); without one it
     takes its trigger's name (UI SDK points `aria-labelledby` at the trigger, which wins over an `aria-label`). */
-export function PopoverContent<Payload = unknown>({ className, style, variant, sideOffset = 8, ...props }: PopoverContentProps<Payload>) {
+export function PopoverContent<Payload = unknown>({
+  className, style, variant, sideOffset = 8, arrow = false, palette = 'scope', ref, children, ...props
+}: PopoverContentProps<Payload>) {
   const scope = useThemeScopeProps();
+  const trigger = useTriggerPalette(palette === 'trigger', ref);
+  const colors = trigger.props ?? scope;
   return (
     <SdkPopoverContent<Payload>
-      data-theme-scope={scope['data-theme-scope']}
+      ref={trigger.ref}
+      data-theme-scope={colors['data-theme-scope']}
       sideOffset={sideOffset}
-      className={cx([popoverContentVariants({ variant }), scope.className], className)}
-      style={scopeStyle(scope.style, style)}
+      className={cx([popoverContentVariants({ variant }), colors.className], className)}
+      style={scopeStyle(colors.style, style)}
       {...props}
-    />
+    >
+      {(state) => (
+        <>
+          {arrow ? <PopoverArrow /> : null}
+          {typeof children === 'function' ? children(state) : children}
+        </>
+      )}
+    </SdkPopoverContent>
   );
 }
 
-/** A pointer on the surface's edge toward the trigger. Put it first inside PopoverContent, and leave the surface's
-    overflow visible. */
+/** The pointer on the surface's edge toward the trigger. PopoverContent draws one with `arrow`; place this yourself
+    only to style it (first inside the content). */
 export function PopoverArrow({ className, ...props }: ComponentProps<typeof SdkPopoverArrow>) {
   return (
     <SdkPopoverArrow className={cx([popoverArrow, '[--bl-arrow-h:6px] [--bl-arrow-w:12px]'], className)} {...props}>
@@ -91,12 +105,12 @@ export function PopoverArrow({ className, ...props }: ComponentProps<typeof SdkP
   );
 }
 
-/** Names the popover. */
+/** Names the popover: a heading in the kit's small surface title (`surfaceTitleVariants({ size: 'sm' })`). */
 export function PopoverTitle({ className, ...props }: ComponentProps<typeof SdkPopoverTitle>) {
-  return <SdkPopoverTitle className={cx('m-0 text-body font-semibold text-foreground', className)} {...props} />;
+  return <SdkPopoverTitle className={cx(surfaceTitleVariants({ size: 'sm' }), className)} {...props} />;
 }
 
 /** Describes the popover, under its title. */
 export function PopoverDescription({ className, ...props }: ComponentProps<typeof SdkPopoverDescription>) {
-  return <SdkPopoverDescription className={cx('m-0 text-footnote text-muted-foreground', className)} {...props} />;
+  return <SdkPopoverDescription className={cx(surfaceDescriptionVariants({ size: 'sm' }), className)} {...props} />;
 }

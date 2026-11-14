@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAgent } from '@ui-sdk/react/agent';
-import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu';
+import { DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import {
   Tree, TreeGroup, TreeItem, TreeItemIndicator, TreeItemLabel, createTreeController, type TreeEditDetails, type TreeEditingChangeDetails, type TreeNode,
 } from '@/components/ui/tree';
@@ -175,7 +175,7 @@ describe('Tree, drawn from its data', () => {
 
   it('draws a file-type icon that stays out of a row\'s name and of typing', () => {
     render(<Tree aria-label="Files" items={FILES} defaultExpanded={['src']} />);
-    expect(row('src/app.tsx').querySelector('[data-slot="tree-type-icon"]')!.getAttribute('data-type')).toBe('typescript');
+    expect(row('src/app.tsx').querySelector('[data-slot="file-type-icon"]')!.getAttribute('data-type')).toBe('typescript');
     // The name is the label; the detail describes the row.
     expect(screen.getByRole('treeitem', { name: 'app.tsx' })).toBe(row('src/app.tsx'));
     expect(row('src/app.tsx').getAttribute('aria-description')).toBe('2,048 bytes');
@@ -188,7 +188,7 @@ describe('Tree, drawn from its data', () => {
     const items = [{ value: '.gitignore', label: '.gitignore' }, { value: 'README.md', label: 'README.md' }, { value: 'LICENSE', label: 'LICENSE' },
       { value: 'page.mdx.tsx', label: 'page.mdx.tsx' }, { value: 'notes', label: 'Release notes for May' }];
     render(<Tree aria-label="Files" items={items} />);
-    const type = (v: string) => row(v).querySelector('[data-slot="tree-type-icon"]')!.getAttribute('data-type');
+    const type = (v: string) => row(v).querySelector('[data-slot="file-type-icon"]')!.getAttribute('data-type');
     expect([type('.gitignore'), type('README.md'), type('LICENSE'), type('page.mdx.tsx')]).toEqual(['git', 'markdown', 'default', 'markdown']);
     // Shown in two pieces that give way on their own, read as one name.
     expect(screen.getByRole('treeitem', { name: 'Release notes for May' })).toBe(row('notes'));
@@ -205,6 +205,75 @@ describe('Tree, drawn from its data', () => {
     expect(screen.queryByRole('tree')).toBeNull();
     fireEvent.input(field, { target: { value: '' } });
     await waitFor(() => expect(names()).toEqual(['src', 'README.md', 'docs']));
+  });
+
+  it('says when there is nothing, in the kit\'s EmptyState, or in what it is given', () => {
+    const { rerender } = render(<Tree aria-label="Files" items={[]} />);
+    expect(document.querySelector('[data-slot="empty-state"]')?.textContent).toBe('No items');
+    rerender(<Tree aria-label="Files" items={[]} emptyState="No files yet" />);
+    expect(document.querySelector('[data-slot="empty-state"]')?.textContent).toBe('No files yet');
+    rerender(<Tree aria-label="Files" items={[]} emptyState={<p>Drop files here</p>} />);
+    expect(screen.getByText('Drop files here').tagName).toBe('P');
+    rerender(<Tree aria-label="Files" items={[]} emptyState={null} />);
+    expect(document.querySelector('[data-slot="empty-state"]')).toBeNull();
+  });
+
+  it('shows placeholder rows while it loads, and is busy until the rows come', () => {
+    const { container, rerender } = render(<Tree aria-label="Files" loading />);
+    const root = container.querySelector('[data-slot="tree-view"]') as HTMLElement;
+    expect(root.getAttribute('aria-busy')).toBe('true');
+    expect(screen.getByRole('group', { name: 'Loading Files' }).querySelectorAll('[data-slot="skeleton"]').length).toBe(5);
+    expect(screen.queryByRole('tree')).toBeNull();
+    // Rows that are already there show while more load.
+    rerender(<Tree aria-label="Files" items={FILES} loading />);
+    expect(screen.getByRole('tree')).toBeTruthy();
+    rerender(<Tree aria-label="Files" items={FILES} />);
+    expect(root.hasAttribute('aria-busy')).toBe(false);
+  });
+
+  it('gives onAction the node that ran', () => {
+    const onAction = vi.fn();
+    render(<Tree aria-label="Files" items={FILES} defaultExpanded={['src']} onAction={onAction} />);
+    fireEvent.click(row('src/app.tsx').querySelector('[data-slot="tree-label"]') as HTMLElement);
+    expect(onAction).toHaveBeenCalledWith('src/app.tsx', expect.objectContaining({ node: FILES[0]!.children![1] }));
+  });
+
+  it('draws rows of your own with renderRow, on the same items and keyboard', () => {
+    const renderRow = vi.fn((node: TreeNode, state: { level: number; branch: boolean; expanded: boolean }) => (
+      <TreeItemLabel data-own="">
+        {state.branch ? <TreeItemIndicator /> : null}
+        {node.label} @{state.level}{state.expanded ? ' open' : ''}
+      </TreeItemLabel>
+    ));
+    render(<Tree aria-label="Files" items={FILES} defaultExpanded={['src']} renderRow={renderRow} />);
+    expect(row('src').textContent).toBe('src @1 open');
+    expect(row('src/app.tsx').textContent).toBe('app.tsx @2');
+    expect(row('src/app.tsx').querySelector('[data-slot="tree-label"]')!.hasAttribute('data-own')).toBe(true);
+    expect(row('src/app.tsx').querySelector('[data-slot="file-type-icon"]')).toBeNull();
+    row('src').focus();
+    fireEvent.keyDown(row('src'), { key: 'ArrowLeft' });
+    expect(row('src').getAttribute('aria-expanded')).toBe('false');
+    expect(names()).toEqual(['src', 'README.md', 'docs']);
+  });
+
+  it('sets its row height by density', () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(300);
+    const many = Array.from({ length: 100 }, (_, i): TreeNode => ({ value: `f${i}`, label: `file-${i}.ts` }));
+    const { rerender } = render(<Tree aria-label="Files" items={many} density="compact" />);
+    expect(screen.getByRole('tree').style.height).toBe(`${100 * 24}px`);
+    rerender(<Tree aria-label="Files" items={many} density="comfortable" />);
+    expect(screen.getByRole('tree').style.height).toBe(`${100 * 36}px`);
+  });
+
+  it('brings a row selected from outside into view: a step to the edge, a jump mid-list', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(300);
+    const many = Array.from({ length: 1000 }, (_, i): TreeNode => ({ value: `f${i}`, label: `file-${i}.ts` }));
+    const { rerender } = render(<Tree aria-label="Files" items={many} value="f0" />);
+    const list = screen.getByRole('tree').parentElement as HTMLElement;
+    rerender(<Tree aria-label="Files" items={many} value="f500" />);
+    await waitFor(() => expect(list.scrollTop).toBe(500 * 30 - (300 - 30) / 2));
+    rerender(<Tree aria-label="Files" items={many} value="f510" />);
+    await waitFor(() => expect(list.scrollTop).toBe(510 * 30 + 30 - 300));
   });
 
   it('marks Git status on a row, and on the folders above a change', () => {
@@ -367,9 +436,9 @@ describe('Tree, drawn from its data', () => {
     const onSelect = vi.fn();
     render(
       <Tree aria-label="Files" items={FILES} contextMenu={(node) => (node.children ? null : (
-        <ContextMenuContent aria-label={`${node.label} actions`}>
-          <ContextMenuItem value="open" onSelect={() => onSelect(node.value)}>Open {node.label}</ContextMenuItem>
-        </ContextMenuContent>
+        <DropdownMenuContent aria-label={`${node.label} actions`}>
+          <DropdownMenuItem value="open" onSelect={() => onSelect(node.value)}>Open {node.label}</DropdownMenuItem>
+        </DropdownMenuContent>
       ))} />,
     );
     fireEvent.contextMenu(row('README.md'), { clientX: 10, clientY: 10 });
@@ -393,9 +462,9 @@ describe('Tree, drawn from its data', () => {
           <button type="button" onClick={() => setEditing('src/lib/utils.ts')}>Rename utils</button>
           <Tree aria-label="Files" items={FILES} editing={editing} onEditingChange={setEditing} onRename={onRename}
             contextMenu={(node) => (
-              <ContextMenuContent aria-label={`${node.label} actions`}>
-                <ContextMenuItem value="rename" onSelect={() => setEditing(node.value)}>Rename</ContextMenuItem>
-              </ContextMenuContent>
+              <DropdownMenuContent aria-label={`${node.label} actions`}>
+                <DropdownMenuItem value="rename" onSelect={() => setEditing(node.value)}>Rename</DropdownMenuItem>
+              </DropdownMenuContent>
             )} />
         </>
       );

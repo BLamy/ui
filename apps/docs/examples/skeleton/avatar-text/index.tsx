@@ -35,7 +35,7 @@ export default function AvatarText() {
             </div>
           </div>
           {s.avatar === 64 ? (
-            <SkeletonText lines={2} lastLineWidth="70%" lineHeight={12} />
+            <SkeletonText lines={2} lastLineWidth="70%" lineClassName="h-3" />
           ) : null}
         </div>
       ))}

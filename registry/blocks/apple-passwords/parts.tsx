@@ -1,9 +1,10 @@
 /* Pieces the columns share: site and Wi-Fi tiles, the grouped card and its rows, copy buttons (confirmed by the
    block's "Copied" HUD), the password that reveals by morphing, and the verification code with its countdown ring. */
 import { createContext, use, useEffect, useRef, useState, type ReactNode } from 'react';
-import { IconSwap } from '@/components/ui/icon-swap';
+import { Swap } from '@/components/ui/swap';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { CountdownRing, useCountdown } from '@/components/ui/progress-ring';
 import { TextMorph } from '@/components/ui/text-morph';
 import { hud as pageHud, type Hud } from '@/components/ui/toast';
@@ -60,7 +61,7 @@ export function CopyButton({ label, value }: { label: string; value: string }) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
   return (
-    <PlainButton aria-label={`Copy ${label}`}
+    <SdkButton aria-label={`Copy ${label}`}
       onClick={() => {
         try { void navigator.clipboard?.writeText(value).catch(() => {}); } catch { /* no clipboard */ }
         hud(`${label} Copied`, { type: 'success' });
@@ -72,10 +73,10 @@ export function CopyButton({ label, value }: { label: string; value: string }) {
         'bl-btn grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-primary',
         'transition-[background-color,opacity,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90',
       )}>
-      <IconSwap id={done ? 'done' : 'copy'}>
+      <Swap effect="pop" value={done ? 'done' : 'copy'}>
         <Icon name={done ? 'check' : 'copy'} size={17} weight={done ? 'bold' : 'regular'} className={cn(done && 'text-success')} />
-      </IconSwap>
-    </PlainButton>
+      </Swap>
+    </SdkButton>
   );
 }
 
@@ -110,10 +111,10 @@ export function PasswordValue({ password, revealed }: { password: string; reveal
 /** The eye: a toggle that stays pressed while the password shows. */
 export function RevealButton({ revealed, onRevealedChange }: { revealed: boolean; onRevealedChange: (revealed: boolean) => void }) {
   return (
-    <PlainToggleButton aria-label="Show password" pressed={revealed} onPressedChange={(pressed) => onRevealedChange(pressed)}
+    <SdkToggle aria-label="Show password" pressed={revealed} onPressedChange={(pressed) => onRevealedChange(pressed)}
       className="bl-btn grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90">
-      <IconSwap id={revealed ? 'off' : 'on'}><Icon name={revealed ? 'eye-slash' : 'eye'} size={18} /></IconSwap>
-    </PlainToggleButton>
+      <Swap effect="pop" value={revealed ? 'off' : 'on'}><Icon name={revealed ? 'eye-slash' : 'eye'} size={18} /></Swap>
+    </SdkToggle>
   );
 }
 
@@ -131,7 +132,7 @@ export function CodeValue({ seed, now, size = 'md' }: { seed: string; now: CodeC
         <NumberMorph value={Math.floor(code / 1000)} format={fmt} />
         <NumberMorph value={code % 1000} format={fmt} />
       </span>
-      <CountdownRing remaining={left} size={26} thickness={2.4} labelSize="sm" />
+      <CountdownRing remaining={left} size={26} thickness={2.4} />
     </span>
   );
 }

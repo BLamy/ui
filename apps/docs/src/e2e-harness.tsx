@@ -8,7 +8,7 @@ import MacOS from '@/components/blocks/macos/page'
 import { createTailscale } from '@/lib/tailscale'
 import ReplayCanvas, { type Recording } from '@/components/blocks/replay-canvas/page'
 import { createDemoTailnet } from '@/components/blocks/safari/data'
-import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button'
+import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-controls'
 import { createFakeTailscaleClient } from '@/lib/tailscale-fake'
 import { TailscaleProvider, useTailscaleStatus } from '@/lib/tailscale-react'
 import { useTailscaleRouter } from '@/lib/tailscale-router/react'
@@ -139,7 +139,7 @@ function Router() {
     <TailscaleProvider options={{ client: fake.client, popup: false, lockName: 'harness-router' }}>
       <div className="flex flex-wrap items-center gap-3">
         <TailscaleLoginButton />
-        <TailscaleStatusBadge compact />
+        <TailscaleStatusBadge variant="pill" />
       </div>
       <Console />
     </TailscaleProvider>

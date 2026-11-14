@@ -17,7 +17,7 @@ describe('List', () => {
     const { getByRole, getAllByRole } = render(
       <List>
         <ListSection title="General">
-          <ListRow key="a" title="About" subtitle="Version 6" onClick={onClick} accessory="chevron" />
+          <ListRow key="a" title="About" description="Version 6" onClick={onClick} accessory="chevron" />
           <ListRow key="b" title="Plain" />
         </ListSection>
       </List>,
@@ -30,7 +30,7 @@ describe('List', () => {
   });
 
   it('marks the selected row as current', () => {
-    const { getByRole } = render(<ListRow title="Inbox" selected onClick={() => {}} />);
+    const { getByRole } = render(<ListRow title="Inbox" current onClick={() => {}} />);
     expect(getByRole('button', { name: 'Inbox' }).getAttribute('aria-current')).toBe('true');
   });
 
@@ -94,7 +94,7 @@ describe('List', () => {
 
   it('runs a destructive action with the Delete key once the row has slid away and collapsed (its exit)', async () => {
     const onDelete = vi.fn();
-    const { getByRole, container } = render(<ListRow title="Draft" onClick={() => {}} onDelete={onDelete} />);
+    const { getByRole, container } = render(<ListRow title="Draft" onClick={() => {}} trailingActions={[{ label: 'Delete', destructive: true, onAction: onDelete }]} />);
     const root = container.querySelector<HTMLElement>('[data-slot=list-row]')!;
     Object.defineProperty(root, 'offsetHeight', { configurable: true, value: 44 });
     // happy-dom runs no transitions: stand in for the collapse that a browser would be running.
@@ -181,6 +181,68 @@ describe('List', () => {
     expect(getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Alpha', 'Charlie']);
     rerender(rows(['Alpha', 'Delta', 'Charlie']));
     expect(getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Alpha', 'Delta', 'Charlie']);
+  });
+
+  it('names a section list by its title and passes ref and DOM props through', () => {
+    let listEl: HTMLDivElement | null = null;
+    let rowEl: HTMLDivElement | null = null;
+    const { getByRole, container } = render(
+      <List variant="inset" id="settings" aria-label="Settings" ref={(el) => { listEl = el; }}>
+        <ListSection title="Network" data-testid="network">
+          <ListRow key="w" title="Wi-Fi" data-row="wifi" ref={(el) => { rowEl = el; }} />
+        </ListSection>
+      </List>,
+    );
+    expect(getByRole('list', { name: 'Network' })).toBeTruthy();
+    const list = container.querySelector<HTMLElement>('[data-slot=list]')!;
+    expect(list).toBe(listEl);
+    expect(list.id).toBe('settings');
+    expect(list.getAttribute('aria-label')).toBe('Settings');
+    expect(list.getAttribute('data-variant')).toBe('inset');
+    expect(container.querySelector('[data-testid=network]')).toBeTruthy();
+    expect(rowEl).toBe(container.querySelector('[data-row=wifi]'));
+  });
+
+  it('shows the empty state when no section has rows; null shows nothing', () => {
+    const { container, rerender, getByText } = render(<List><ListSection title="Results">{[]}</ListSection></List>);
+    expect(getByText('No items')).toBeTruthy();
+    expect(container.querySelector('[data-slot=list]')!.hasAttribute('data-empty')).toBe(true);
+    rerender(<List emptyState={<p>No results for “zz”</p>}>{null}</List>);
+    expect(getByText('No results for “zz”')).toBeTruthy();
+    rerender(<List emptyState={null}><ListSection>{[]}</ListSection></List>);
+    expect(container.querySelector('[data-slot=list]')!.textContent).toBe('');
+    rerender(<List><ListSection><ListRow key="a" title="Alpha" /></ListSection></List>);
+    expect(container.querySelector('[data-slot=list]')!.hasAttribute('data-empty')).toBe(false);
+  });
+
+  it('a disabled row is a disabled button that does not swipe or run its actions', async () => {
+    const onClick = vi.fn();
+    const onAction = vi.fn();
+    const { getByRole, container } = render(
+      <ListRow title="Private Relay" disabled onClick={onClick} trailingActions={[{ label: 'Delete', destructive: true, onAction }]} />,
+    );
+    const button = getByRole('button', { name: 'Private Relay' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(container.querySelector('[data-slot=list-row]')!.hasAttribute('data-disabled')).toBe(true);
+    expect(container.querySelector('[data-slot=list-row-actions]')).toBeNull();
+    expect(button.hasAttribute('aria-keyshortcuts')).toBe(false);
+    fireEvent.click(button);
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('in edit mode a row reports its check as pressed and does not swipe', () => {
+    const { getByRole, container, rerender } = render(
+      <ListRow title="Inbox" editing checked onClick={() => {}} trailingActions={[{ label: 'Archive', onAction: () => {} }]} />,
+    );
+    expect(getByRole('button', { name: 'Inbox' }).getAttribute('aria-pressed')).toBe('true');
+    expect(container.querySelector('[data-slot=list-row-actions]')).toBeNull();
+    rerender(<ListRow title="Inbox" checked onClick={() => {}} />);
+    expect(getByRole('button', { name: 'Inbox' }).hasAttribute('aria-pressed')).toBe(false);
+  });
+
+  it('density sets the row height', () => {
+    const { container } = render(<List density="compact"><ListSection><ListRow key="a" title="Alpha" /></ListSection></List>);
+    expect(container.querySelector('[data-slot=list-row-content]')!.className).toContain('min-h-9');
   });
 
   it('reorders with a grip from the keyboard and reports the new order', async () => {

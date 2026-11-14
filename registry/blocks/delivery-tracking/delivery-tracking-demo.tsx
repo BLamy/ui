@@ -7,8 +7,8 @@ import {
   HoverCardTrigger,
   createHoverCardController,
 } from '@/components/ui/hover-card';
-import { PlainButton as Button } from '@/components/ui/plain-button';
-import { ProgressStepper, type ProgressStep } from '@/components/ui/progress-stepper';
+import { Button } from '@ui-sdk/react/button';
+import { ProgressStepper, type ProgressStepItem } from '@/components/ui/progress-stepper';
 import { springs, useReducedMotion } from '@/lib/motion';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { themeScopeProps, useAppearance } from '@/lib/theme';
@@ -144,9 +144,9 @@ function StoreCard({ accent, remainingMeters, arrived }: { accent: string; remai
   return (
     <div className="flex flex-col gap-2">
       <HoverCardHeader
-        media={<span className="grid size-9 place-items-center rounded-[50%] text-white" style={{ background: accent }}><Icon name="store" size={18} /></span>}
+        icon={<span className="grid size-9 place-items-center rounded-[50%] text-white" style={{ background: accent }}><Icon name="store" size={18} /></span>}
         title={STORE_NAME}
-        subtitle={`${STORE_ADDRESS} · ${STORE_HOURS}`}
+        description={`${STORE_ADDRESS} · ${STORE_HOURS}`}
       />
       <p className="m-0 text-footnote leading-[1.4] text-muted-foreground">
         Pickup at the counter. {arrived ? 'You’re here.' : `You’re ${formatDistance(remainingMeters)} away.`}
@@ -160,7 +160,7 @@ function MenuCard({ item, index }: { item: (typeof MENU)[number]; index: number 
   return (
     <div className="flex flex-col gap-2">
       <div className="aspect-[2/1] w-full rounded-panel [background:var(--ck-tile-bg)]" style={{ '--ck-tile-bg': tileColor(index) } as CSSProperties} />
-      <HoverCardHeader title={item.name} subtitle={STORE_NAME} action={<span className="text-subhead font-semibold tabular-nums">${item.price.toFixed(2)}</span>} />
+      <HoverCardHeader title={item.name} description={STORE_NAME} trailing={<span className="text-subhead font-semibold tabular-nums">${item.price.toFixed(2)}</span>} />
       <p className="m-0 text-footnote leading-[1.4] text-muted-foreground">{item.blurb}</p>
     </div>
   );
@@ -277,7 +277,7 @@ export function DeliveryTrackingDemo({
   ];
   const route: MapRoute = { points: ROUTE, color: DELIVERY_MAP_INK[scheme].route };
 
-  const steps: ProgressStep[] = DELIVERY_STAGES.map((s, i) => ({ id: s.id, label: s.step, icon: <Icon name={STEP_ICONS[i]} size={16} /> }));
+  const steps: ProgressStepItem[] = DELIVERY_STAGES.map((s, i) => ({ id: s.id, label: s.step, icon: <Icon name={STEP_ICONS[i]} size={16} /> }));
 
   const total = ORDER_ITEMS.reduce((sum, item) => sum + item.qty * item.price, 0);
   const storeCard = <StoreCard accent={accent} remainingMeters={remainingMeters} arrived={arrived} />;
@@ -309,9 +309,9 @@ export function DeliveryTrackingDemo({
         maxZoom={16}
         pinPreview={(pin) => (pin.id === 'store' ? storeCard : pin.id === 'car' ? (
           <HoverCardHeader
-            media={<span className="grid size-9 place-items-center rounded-[50%] bg-secondary text-foreground"><Icon name="car" size={18} /></span>}
+            icon={<span className="grid size-9 place-items-center rounded-[50%] bg-secondary text-foreground"><Icon name="car" size={18} /></span>}
             title="Your car"
-            subtitle={`${etaMinutes} min · ${formatDistance(remainingMeters)} to ${STORE_NAME}`}
+            description={`${etaMinutes} min · ${formatDistance(remainingMeters)} to ${STORE_NAME}`}
           />
         ) : null)}
       >

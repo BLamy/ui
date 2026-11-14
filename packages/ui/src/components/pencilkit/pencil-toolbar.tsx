@@ -3,12 +3,12 @@ import * as React from 'react';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { ScrollArea, ScrollAreaViewport } from '@ui-sdk/react/scroll-area';
 import { Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator } from '@ui-sdk/react/toolbar';
-import { ToggleGroup, type ToggleGroupValueChangeReason } from '@ui-sdk/react/toggle';
+import { Toggle as SdkToggle, ToggleGroup, type ToggleGroupValueChangeReason } from '@ui-sdk/react/toggle';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn, cx } from '@/lib/utils';
 import { PK_INKS, PK_TOOL_ICONS, PK_W, type PencilTool } from '@/components/ui/pencilkit/constants';
 import { Icon, type IconName } from '@/lib/icon';
-import { PlainButton, PlainToggleButton, type PlainButtonProps } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { HoverCardTrigger, type HoverCardController } from '@/components/ui/hover-card';
 
 /* ---------------------------------- button ---------------------------------- */
@@ -27,7 +27,7 @@ export const pencilToolButtonVariants = cva(
   },
 );
 
-export type PencilToolButtonProps = Omit<PlainButtonProps, 'children'> & VariantProps<typeof pencilToolButtonVariants> & {
+export type PencilToolButtonProps = Omit<React.ComponentProps<typeof SdkButton>, 'children'> & VariantProps<typeof pencilToolButtonVariants> & {
   /** The Icon to draw (e.g. `pencil-tip`, `arrow-uturn-backward`). */
   icon: IconName;
   /** Its accessible name and tooltip (default: the icon's name). */
@@ -39,9 +39,9 @@ const InToolbar = React.createContext(false);
 
 /** The 38×34 icon button used across the PencilKit toolbar (`onClick`, `disabled`). Inside a PencilToolbar it is a
  *  ToolbarButton, so it joins the toolbar's one tab stop (a disabled one stays reachable with `aria-disabled`);
- *  elsewhere a PlainButton. */
+ *  elsewhere a SdkButton. */
 export function PencilToolButton({ icon, active, label, className, ...rest }: PencilToolButtonProps) {
-  const Part = (React.useContext(InToolbar) ? ToolbarButton : PlainButton) as typeof PlainButton;
+  const Part = (React.useContext(InToolbar) ? ToolbarButton : SdkButton) as typeof SdkButton;
   return (
     <Part
       aria-label={label || icon}
@@ -133,9 +133,9 @@ export function PencilToolbarDivider({ className, style, ...rest }: React.HTMLAt
    reaches, with UI SDK's hover intent (delays, the path into the card, the next button opening at once). */
 
 /** A picker's toggle, or with a controller the toggle as a HoverCardTrigger for `payload`. */
-function PickerToggle<P>({ hoverCard, payload, ...props }: React.ComponentProps<typeof PlainToggleButton> & { hoverCard?: HoverCardController<P>; payload: P }) {
-  if (!hoverCard) return <PlainToggleButton {...props} />;
-  return <HoverCardTrigger controller={hoverCard} payload={payload} render={<PlainToggleButton {...props} />} />;
+function PickerToggle<P>({ hoverCard, payload, ...props }: React.ComponentProps<typeof SdkToggle> & { hoverCard?: HoverCardController<P>; payload: P }) {
+  if (!hoverCard) return <SdkToggle {...props} />;
+  return <HoverCardTrigger controller={hoverCard} payload={payload} render={<SdkToggle {...props} />} />;
 }
 
 type PickerRootProps<T extends string = string> = Omit<React.ComponentProps<typeof ToggleGroup<T>>, 'value' | 'defaultValue' | 'onValueChange' | 'multiple' | 'deselectable' | 'children'>;
@@ -186,7 +186,7 @@ export function InkPicker({ value, onValueChange, inks = PK_INKS, className, ...
       {...rest}
     >
       {inks.map((c, i) => (
-        <PlainToggleButton
+        <SdkToggle
           key={c}
           value={String(i)}
           aria-label={'Ink ' + c}

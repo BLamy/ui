@@ -1,6 +1,6 @@
 # ObjectTree
 
-Values as a debugger shows them: scopes in collapsible sections, objects opened level by level, DevTools-style previews tinted by type. Children load when a row opens, failures stay on the row that failed, and a node with thousands of children groups them in ranges, so a 100,000 element array is a few rows. It takes plain data and knows nothing about where the values came from, so it fits any JSON-like value as well. Its previews are a part of their own, ObjectValue, for a console row or anywhere else a value shows up.
+Values as a debugger shows them: scopes in collapsible sections, objects opened level by level, DevTools-style previews tinted by type. Children load when a row opens, failures stay on the row that failed, and a node with thousands of children groups them in ranges, so a 100,000 element array is a few rows. It takes plain data and knows nothing about where the values came from, so it fits any JSON-like value as well. Its rows are drawn on the kit's [Tree](https://blamy.github.io/ui/#/tree) (`renderRow`), so it shares Tree's row look, densities, selection, empty state and virtualizer with Tree and [CallStack](https://blamy.github.io/ui/#/call-stack). Its previews are a component of their own, [ObjectValue](https://blamy.github.io/ui/#/object-value), for a console line or anywhere else one value shows up. For a hierarchy that isn't values (files, a schema), use Tree itself.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -82,7 +82,7 @@ A new `root` is a new moment. What was loaded goes, and an answer still on its w
 
 An object, array, map or set left without its contents shows only its name, `Cart` or `Array(3)`, and `overflow` adds an ellipsis when the preview doesn't list everything. Five properties or ten items show, each a word or two.
 
-ObjectValue is the same preview on its own. A long string or an error's stack gets Show more and Copy beside it, and `quote={false}` gives the bare text a console shows for a top-level string.
+[ObjectValue](https://blamy.github.io/ui/#/object-value) is the same preview on its own. A long string or an error's stack gets Show more and Copy beside it, and `quote={false}` gives the bare text a console shows for a top-level string.
 
 {% demo src="object-tree/values" %}
 
@@ -114,7 +114,7 @@ The tree follows its own width and has nothing to reset as it changes. The inden
 
 ## Accessibility
 
-It's [UI SDK](https://ui-sdk.dev)'s Tree over its virtualizer: a `tree` of `treeitem`s with `aria-level`, `aria-posinset`, `aria-setsize` and `aria-expanded`, and one tab stop. Up and Down move, Right opens a row and then steps into it, Left closes it or goes to the parent, Home and End reach either end, `*` opens the rows beside the focused one, and typing a name jumps to it. The keyboard reaches rows that aren't in the DOM: the list scrolls to them. Each row is announced by its name and value, with its level and whether it's open.
+It's the kit's Tree ([UI SDK](https://ui-sdk.dev)'s Tree over its virtualizer): a `tree` of `treeitem`s with `aria-level`, `aria-posinset`, `aria-setsize` and `aria-expanded`, and one tab stop. Up and Down move, Right opens a row and then steps into it, Left closes it or goes to the parent, Home and End reach either end, `*` opens the rows beside the focused one, and typing a name jumps to it. The keyboard reaches rows that aren't in the DOM: the list scrolls to them. Each row is announced by its name and value, with its level and whether it's open.
 
 Return does what a press does: it opens or closes a row, calls a getter, shows the whole of a value its row cut off, and retries a load that failed. ⌘C or Ctrl+C copies the focused value, unless you've selected text, which copies as usual. A copy is announced ("Copied") through UI SDK's shared live region. The buttons in a row (copy, the whole value, `(...)`, Retry) are for the pointer and stay out of the tab order.
 
@@ -133,7 +133,7 @@ const [key, setKey] = useState<string | null>(objectTreeKey(['local', 'user']))
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `aria-label` | required | Names the tree. |
+| `aria-label` | `Values` | Names the tree. |
 | `root` | required | One node or a list. A new object is a new moment: see Lazy children. |
 | `loadChildren` | children of `nodeFromValue` values | `(node) => nodes`, or a promise of them. |
 | `onInvokeGetter` | calls `nodeFromValue` getters | `(node) => ({ value, hasChildren?, children?, data? })`, or a promise of that. A whole node works too. |
@@ -141,9 +141,10 @@ const [key, setKey] = useState<string | null>(objectTreeKey(['local', 'user']))
 | `value` / `defaultValue` | none | The selected row's key (`objectTreeKey(ids)`), or `null`. |
 | `onValueChange` | none | `(key \| null, details) => void`; `details.node`, `details.reason`, `details.cancel()`. |
 | `copyValue` | see below | `(node) => text`, or a promise of it. By default a string's own text, an error's stack, JSON for `nodeFromValue` values, otherwise the preview. |
+| `onValueCopy` | none | `(text, node) => void`: writes a copied value yourself, instead of `navigator.clipboard` (a host with a clipboard of its own). |
 | `groupSize` | `100` | Indexed children to a range. |
-| `rowHeight` | `24` | Row height in px. |
-| `emptyMessage` | `Nothing to show` | Shown when `root` is an empty list. |
+| `density` | `'compact'` | Tree's scale: `'compact'` (24px rows, as DevTools), `'default'` (30px) or `'comfortable'` (36px, for touch). |
+| `emptyState` | `Nothing to show` | Shown when `root` is an empty list: a string is [EmptyState](https://blamy.github.io/ui/#/empty-state)'s title, a node shows as it is, `null` shows nothing. |
 | `className` / `style` | | On the root, merged last. |
 
 ### Nodes
@@ -160,42 +161,8 @@ const [key, setKey] = useState<string | null>(objectTreeKey(['local', 'user']))
 | `dim` | Faded, as DevTools shows non-enumerable properties. |
 | `data` | Anything of yours. |
 
-### ObjectValue
-
-| Prop | Default | Effect |
-| --- | --- | --- |
-| `value` | required | A `ValuePreview`. |
-| `maxLength` | `100` | Characters of a long string to show at first. |
-| `quote` | `true` | `false` for the bare text of a top-level console string. |
-| `expandable` | `true` | Show more and Copy. Off for a row of fixed height. |
+ObjectValue's props are on [its own page](https://blamy.github.io/ui/#/object-value).
 
 ## Styling
 
-The tree is `data-slot="object-tree"`. Its rows are UI SDK's `tree-item`s, each with a `tree-label` inside, and an item's `data-kind` is `node`, `section`, `range` or `note`; `objectTreeRowVariants` is the label's recipe, and selection (`data-selected`) and the open state (`data-expanded`) show on both. Set `--object-tree-indent` on it to change the indent, 14px by default. The value is `object-value`, with its type in `data-type`. Tints are CodeEditor's token colors, so a value and the code beside it read alike, and its `--bl-syntax-*` properties retheme both.
-
-## cva recipes
-
-Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
-
-### `objectTreeRowVariants`
-
-Defined in `@/components/ui/object-tree`. Base classes:
-
-```text
-[ 'flex h-full w-full cursor-default items-center gap-1 pr-1', 'pl-[min(calc((var(--tree-level)-1)*var(--object-tree-indent)),25%)]', 'text-caption leading-none text-foreground', 'data-selected:bg-accent group-focus-visible/row:[box-shadow:inset_0_0_0_2px_var(--ring)]', ]
-```
-
-**`kind`**
-
-| Value | Adds |
-| --- | --- |
-| `node` | `font-mono hover:bg-accent/50` |
-| `section` | `font-sans font-semibold shadow-hairline-b hover:bg-accent/50` |
-| `range` | `font-mono text-muted-foreground hover:bg-accent/50` |
-| `note` | `font-sans text-muted-foreground` |
-
-**`stale`**
-
-| Value | Adds |
-| --- | --- |
-| `true` | `opacity-60` |
+The tree is `data-slot="object-tree"`, around a Tree's `tree-view`. Its rows are UI SDK's `tree-item`s, each with a `tree-label` inside drawn with Tree's `treeRowVariants`: selection (`data-selected`), the open state (`data-expanded`) and keyboard focus look as they do in a Tree. A label's `data-kind` is `node`, `section`, `range` or `note`, and a value kept from the last moment while its new children load has `data-stale` (faded). The indent is Tree's `--tree-indent` (set it in `className`), and stops at a quarter of the row. The value is `object-value`, with its type in `data-type`. Tints are CodeEditor's token colors, so a value and the code beside it read alike, and its `--bl-syntax-*` properties retheme both.

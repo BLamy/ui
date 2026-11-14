@@ -29,26 +29,26 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@brett_lamy/ui'
 
 ## Usage
 
-`Tooltip` is the root, `TooltipTrigger` the control it belongs to (`render` one of ours, a focusable one) and `TooltipContent` the label.
+`Tooltip` is the root, `TooltipTrigger` the control it belongs to (`render` one of ours, a focusable one: `render={<Button … />}`, as on every popup trigger in the kit) and `TooltipContent` the label.
 
 ```tsx
 <Tooltip>
-  <TooltipTrigger className={buttonVariants({ variant: 'ghost', size: 'icon' })}><Icon name="link" /></TooltipTrigger>
+  <TooltipTrigger render={<Button variant="ghost" size="icon" />}><Icon name="link" /></TooltipTrigger>
   <TooltipContent>Copy link</TooltipContent>
 </Tooltip>
 ```
 
-`Tooltip` waits 500ms before opening on hover (`delay`) and keeps the tooltip 200ms after the pointer leaves (`closeDelay`), so the pointer can cross the gap between two triggers; while one is warm the next opens at once as you sweep across a toolbar, and only one is open at a time. Keyboard focus opens it at once. Pass `delay={0}` for an instant one. `side` (`top` by default; also `bottom`, `left`, `right`, `start`, `end`) and `align` sit on the `TooltipContent`; it flips when there is no room. `arrow={false}` drops the pointer and `sideOffset` (8px) changes the gap.
+`Tooltip` waits 500ms before opening on hover (`delay`) and keeps the tooltip 200ms after the pointer leaves (`closeDelay`), so the pointer can cross the gap between two triggers; while one is warm the next opens at once as you sweep across a toolbar, and only one is open at a time. Keyboard focus opens it at once. Pass `delay={0}` for an instant one. `side` (`top` by default; also `bottom`, `left`, `right`, `start`, `end`) and `align` sit on the `TooltipContent`; it flips when there is no room. `arrow={false}` drops the pointer (a tooltip draws one by default; PopoverContent and HoverCardContent take the same `arrow` prop, off by default) and `sideOffset` (8px) changes the gap.
 
 {% demo src="tooltip/toolbar" %}
 
 ## Shortcuts
 
-`shortcut="mod+s"` on the `Tooltip` is the keyboard shortcut of what the trigger does; a `TooltipShortcut` inside the content shows it (`⌘S`, or `Ctrl+S` off Apple platforms) and the trigger gets `aria-keyshortcuts`. It is a hint: the trigger's own `shortcut` binds the keys.
+`shortcut="mod+s"` on the `Tooltip` is the keyboard shortcut of what the trigger does; a `TooltipShortcut` inside the content shows it (`⇧⌘S` for `mod+shift+s`, or `Ctrl+Shift+S` off Apple platforms) and the trigger gets `aria-keyshortcuts`. Modifiers come in Apple's order (⌃⌥⇧⌘) whatever order you write them, the same rendering as a DropdownMenu item's and the CommandMenu's shortcuts. It is a hint: the trigger's own `shortcut` binds the keys.
 
 ```tsx
 <Tooltip shortcut="mod+shift+s">
-  <TooltipTrigger className={buttonVariants({ variant: 'ghost', size: 'icon' })}><Icon name="share" /></TooltipTrigger>
+  <TooltipTrigger render={<Button variant="ghost" size="icon" />}><Icon name="share" /></TooltipTrigger>
   <TooltipContent>Share<TooltipShortcut /></TooltipContent>
 </Tooltip>
 ```
@@ -93,4 +93,4 @@ The tooltip has `role="tooltip"`. On a trigger with no name of its own — an ic
 
 ## Styling
 
-Slots (from UI SDK): `tooltip-trigger`, `tooltip-content`, `tooltip-arrow`, `tooltip-shortcut`. The tooltip is in the `foreground` color on text in `background`, so it inverts with the theme. It enters and exits with the shared popover motion (`popoverMotion`: a short scale and drift out of the trigger from `data-starting-style`, a quicker exit on `data-ending-style`, a plain fade under reduced motion), and the next tooltip opened while one is warm (`data-instant`) skips it. It renders into BLProvider's root, or the browser's top layer without one. Inside a [ThemeScope](https://blamy.github.io/ui/#/theming) it takes the scope's appearance, tint and variables — [see the scoped demo on Popover](https://blamy.github.io/ui/#/popover).
+Slots (from UI SDK): `tooltip-trigger`, `tooltip-content`, `tooltip-arrow`, `tooltip-shortcut`. The tooltip is in the `foreground` color on text in `background`, so it inverts with the theme; its corners are `rounded-ctl` from the `--radius` scale and its shadow the `shadow-tooltip` token. It enters and exits with the shared popover motion (`popoverMotion`: a short scale and drift out of the trigger from `data-starting-style`, a quicker exit on `data-ending-style`, a plain fade under reduced motion), and the next tooltip opened while one is warm (`data-instant`) skips it. It renders into BLProvider's root, or the browser's top layer without one. Inside a [ThemeScope](https://blamy.github.io/ui/#/theming) it takes the scope's appearance, tint and variables — [see the scoped demo on Popover](https://blamy.github.io/ui/#/popover).

@@ -142,6 +142,7 @@ function Panes({
   return (
     <Workspace
       aria-label={label}
+      className="rounded-card border border-border"
       controller={workspace}
       defaultLayout={defaultLayout}
       renderTabContent={renderTabContent}

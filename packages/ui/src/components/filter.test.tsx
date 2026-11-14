@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
-import { useState } from 'react';
+import { StrictMode, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { FilterBar, FilterChip, FilterMenu, FilterToolbar, useFilters, type FilterChangeDetails } from '@/components/ui/filter';
+import { FilterBar, FilterChip, FilterClear, FilterList, FilterMatch, FilterMenu, FilterToolbar, useFilters, type FilterChangeDetails } from '@/components/ui/filter';
 import type { Filter, FilterField } from '@/lib/filter-model';
 
 (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
@@ -37,9 +37,19 @@ const seed = (): Filter[] => [{ id: 'f1', field: 'status', operator: 'is_any_of'
 const press = (el: Element) => fireEvent.click(el);
 const key = (el: Element, k: string) => { fireEvent.keyDown(el, { key: k }); fireEvent.keyUp(el, { key: k }); };
 
-function Harness({ initial = seed(), onChange, ...rest }: { initial?: Filter[]; onChange?: (f: Filter[], details: FilterChangeDetails) => void; hotkey?: string }) {
+function Harness({ initial = seed(), onChange, shortcut }: { initial?: Filter[]; onChange?: (f: Filter[], details: FilterChangeDetails) => void; shortcut?: string }) {
   const [filters, setFilters] = useState(initial);
-  return <FilterBar fields={fields} value={filters} onValueChange={(f, details) => { setFilters(f); onChange?.(f, details); }} {...rest} />;
+  return (
+    <FilterBar fields={fields} value={filters} onValueChange={(f, details) => { setFilters(f); onChange?.(f, details); }}>
+      {shortcut ? (
+        <FilterToolbar>
+          <FilterMenu shortcut={shortcut} />
+          <FilterList />
+          <FilterClear />
+        </FilterToolbar>
+      ) : undefined}
+    </FilterBar>
+  );
 }
 
 const chip = (name: RegExp | string) => screen.getByRole('group', { name });
@@ -234,7 +244,9 @@ describe('FilterBar', () => {
   it('is uncontrolled with defaultValue, and shows the match menu from two filters on', async () => {
     const seen = vi.fn();
     render(
-      <FilterBar fields={fields} defaultValue={[...seed(), { id: 'f2', field: 'points', operator: 'gt', value: 3 }]} showMatch onMatchChange={seen} />,
+      <FilterBar fields={fields} defaultValue={[...seed(), { id: 'f2', field: 'points', operator: 'gt', value: 3 }]} onMatchChange={seen}>
+        <FilterToolbar><FilterMenu /><FilterList /><FilterMatch /><FilterClear /></FilterToolbar>
+      </FilterBar>,
     );
     press(screen.getByRole('button', { name: 'Match mode: all filters' }));
     press(await screen.findByRole('menuitemradio', { name: 'Match any filter' }));
@@ -316,8 +328,8 @@ describe('FilterBar', () => {
     expect(onChange).toHaveBeenLastCalledWith([expect.objectContaining({ field: 'labels', value: ['bug'] })], details('add', { source: 'programmatic', event: expect.any(KeyboardEvent) }));
   });
 
-  it('opens the menu from the hotkey, but not while typing', async () => {
-    render(<><input aria-label="note" /><Harness initial={[]} hotkey="f" /></>);
+  it('opens the menu from its shortcut, but not while typing', async () => {
+    render(<><input aria-label="note" /><Harness initial={[]} shortcut="f" /></>);
     const note = screen.getByRole('textbox', { name: 'note' });
     note.focus();
     fireEvent.keyDown(note, { key: 'f' });
@@ -337,11 +349,11 @@ describe('FilterBar', () => {
   });
 });
 
-describe('FilterBar hotkey and other layers', () => {
+describe('FilterMenu shortcut and other layers', () => {
   it('stays quiet while a modal dialog is open, and while a menu has focus', async () => {
     render(
       <>
-        <Harness initial={[]} hotkey="f" />
+        <Harness initial={[]} shortcut="f" />
         <Dialog>
           <DialogTrigger>Open dialog</DialogTrigger>
           <DialogContent aria-label="Settings"><button type="button">Inside</button></DialogContent>
@@ -372,17 +384,45 @@ describe('FilterBar hotkey and other layers', () => {
   });
 });
 
+describe('FilterMenu open state', () => {
+  it('opens on defaultOpen, also under StrictMode', async () => {
+    function Menu() {
+      const state = useFilters();
+      return <FilterMenu defaultOpen fields={fields} state={state} />;
+    }
+    render(<StrictMode><Menu /></StrictMode>);
+    expect(await screen.findByRole('dialog', { name: 'Add filter' })).toBeTruthy();
+  });
+});
+
+describe('FilterChip in a bar', () => {
+  it('reports an edit through onValueChange first; canceling it keeps the bar as it was', async () => {
+    const seen = vi.fn((_: Filter, d: FilterChangeDetails) => d.cancel());
+    const onBar = vi.fn();
+    render(
+      <FilterBar fields={fields} defaultValue={[{ id: 'u', field: 'urgent', operator: 'is', value: true }]} onValueChange={onBar}>
+        <FilterToolbar><FilterList>{(f) => <FilterChip filter={f} onValueChange={seen} />}</FilterList></FilterToolbar>
+      </FilterBar>,
+    );
+    press(screen.getByRole('button', { name: 'Urgent value: Yes' }));
+    press(await screen.findByRole('option', { name: 'No' }));
+    expect(seen).toHaveBeenCalledWith(expect.objectContaining({ value: false }), details('update', { canceled: true }));
+    expect(onBar).not.toHaveBeenCalled();
+    expect(chip('Urgent is Yes')).toBeTruthy();
+  });
+});
+
 describe('FilterChip standalone', () => {
   it('works with your own state and no bar', async () => {
     const onChange = vi.fn();
     const onRemove = vi.fn();
     const filter: Filter = { id: 'x', field: 'urgent', operator: 'is', value: true };
-    render(<FilterChip filter={filter} field={fields[5]} onChange={onChange} onRemove={onRemove} />);
+    render(<FilterChip filter={filter} field={fields[5]} onValueChange={onChange} onRemove={onRemove} />);
     expect(chip('Urgent is Yes')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /operator/ })).toBeNull(); // boolean has the one operator: plain text
     press(screen.getByRole('button', { name: 'Urgent value: Yes' }));
     press(await screen.findByRole('option', { name: 'No' }));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ value: false }), expect.objectContaining({ event: expect.any(Event) }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ value: false }), details('update', { event: expect.any(Event) }));
     press(screen.getByRole('button', { name: 'Remove filter: Urgent is Yes' }));
     expect(onRemove).toHaveBeenCalled();
   });
@@ -395,12 +435,12 @@ describe('FilterChip standalone', () => {
 
   it('edits a date: presets, a picked day, and a span for "in the last"', async () => {
     const onChange = vi.fn();
-    render(<FilterChip filter={{ id: 'd', field: 'created', operator: 'is', value: { type: 'preset', preset: 'today' } }} field={fields[2]} onChange={onChange} onRemove={() => undefined} />);
+    render(<FilterChip filter={{ id: 'd', field: 'created', operator: 'is', value: { type: 'preset', preset: 'today' } }} field={fields[2]} onValueChange={onChange} onRemove={() => undefined} />);
     press(screen.getByRole('button', { name: 'Created value: Today' }));
     press(await screen.findByRole('option', { name: 'Last 7 days' }));
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ value: { type: 'preset', preset: 'last_7_days' } }), expect.objectContaining({ source: expect.any(String) }));
     cleanup();
-    render(<FilterChip filter={{ id: 'd', field: 'created', operator: 'in_the_last', value: { type: 'relative', amount: 7, unit: 'day' } }} field={fields[2]} onChange={onChange} onRemove={() => undefined} />);
+    render(<FilterChip filter={{ id: 'd', field: 'created', operator: 'in_the_last', value: { type: 'relative', amount: 7, unit: 'day' } }} field={fields[2]} onValueChange={onChange} onRemove={() => undefined} />);
     press(screen.getByRole('button', { name: 'Created value: 7 days' }));
     const amount = await screen.findByRole('spinbutton', { name: 'How many' });
     fireEvent.input(amount, { target: { value: '3' } });

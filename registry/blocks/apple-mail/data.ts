@@ -238,8 +238,3 @@ export function longTime(d: Date) {
 
 /** Preview lines under the subject: the body without quoted text. */
 export const preview = (m: Message) => m.body.filter((l) => !l.startsWith('>')).join(' ');
-
-export const initials = (who: Person) => {
-  const [f = '', l = ''] = who.name.split(' ');
-  return { f: f || who.name, l: l || ' ' };
-};

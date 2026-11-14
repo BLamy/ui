@@ -1,7 +1,7 @@
 'use client';
 import {
   Children, createContext, forwardRef, isValidElement, useContext, useMemo, useRef,
-  type ComponentType, type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode,
+  type ComponentType, type HTMLAttributes, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode,
 } from 'react';
 import { AnimatePresence, LayoutGroup, MotionConfig, motion, useReducedMotion, type Transition } from 'framer-motion';
 import { bindDrag, dragThreshold } from '@ui-sdk/core';
@@ -12,15 +12,15 @@ import { cn } from '@/lib/utils';
 /* ══ Morph — one element, two layouts (a shared-element transition) ══
    The mini player that becomes the full player; the thumbnail that becomes the detail's hero; the pill that
    becomes the panel. Render the element in whichever layout the state calls for — both places use the same
-   `<Morph id>` — and when one unmounts as the other mounts, the element springs from the old frame to the new
+   `<Morph layoutId>` — and when one unmounts as the other mounts, the element springs from the old frame to the new
    one (position, size and corner radius) instead of cross-fading two copies. Nest `<Morph>`s (the artwork inside
    the player) and each piece flies to its own new place. Built on framer-motion's `layoutId`, scoped by
    `<MorphGroup>` so two groups on a page never trade elements.
 
      <MorphGroup>
        {open
-         ? <Morph id="player" radius={0} dragToDismiss onDismiss={close}>…full…<Morph id="art" radius={12}/></Morph>
-         : <Morph id="player" radius={14} onClick={open}>…mini…<Morph id="art" radius={6}/></Morph>}
+         ? <Morph layoutId="player" radius={0} dragToDismiss onDismiss={close}>…full…<Morph layoutId="art" radius={12}/></Morph>
+         : <Morph layoutId="player" radius={14} onClick={open}>…mini…<Morph layoutId="art" radius={6}/></Morph>}
      </MorphGroup>
 
    Drag to dismiss: the expanded element follows the finger down (rubber-banded up), and past `dismissDistance`
@@ -28,16 +28,17 @@ import { cn } from '@/lib/utils';
    gesture is UI SDK's `bindDrag`; the offset is the CSS `translate` property (`--morph-drag-y`), apart from the
    `transform` framer-motion animates, and springs back on the smooth spring token. The flick is UI SDK's velocity
    tracker (the one Drawer measures a release with).
-   `render` swaps the element, as on UI SDK parts: `<Morph id="card" render={<button type="button" />}>`. The
+   `render` swaps the element, as on UI SDK parts: `<Morph layoutId="card" render={<button type="button" />}>`. The
    element's type becomes the framer-motion element (`motion.button`, or `motion.create(Component)` for a component
    that forwards its ref), and its props sit under Morph's.
-   Reduced motion: the layouts swap at once with a short cross-fade. */
+   Into a dialog: `<DialogContent render={<Morph layoutId="player" />}>` keeps the dialog's focus and dismissal and
+   adds the morph. Reduced motion: the layouts swap at once with a short cross-fade. */
 
 interface MorphCtx { transition: Transition; reduced: boolean }
 const MorphContext = createContext<MorphCtx | null>(null);
 
 export interface MorphGroupProps {
-  /** Scope for the ids inside (defaults to a unique id per group). */
+  /** Scope for the `layoutId`s inside (defaults to a unique id per group). */
   id?: string;
   /** Spring preset for every morph in the group (default `smooth`). */
   spring?: SpringName;
@@ -79,9 +80,11 @@ function motionElement(type: unknown): typeof motion.div {
 /** A flick faster than this (px/ms, downward) dismisses whatever the distance. */
 const FLICK_SPEED = 0.65;
 
-export interface MorphProps {
-  /** The shared identity: the same id in both layouts. */
-  id: string;
+type MotionConflicts = 'onAnimationStart' | 'onAnimationEnd' | 'onAnimationIteration' | 'onDrag' | 'onDragStart' | 'onDragEnd' | 'onDragOver' | 'onDragEnter' | 'onDragLeave' | 'onDrop';
+
+export interface MorphProps extends Omit<HTMLAttributes<HTMLElement>, MotionConflicts> {
+  /** The shared identity: the same `layoutId` in both layouts (framer-motion's name). `id` stays the DOM id. */
+  layoutId: string;
   /** Corner radius for this layout (px). Animated with the frame and kept undistorted while it scales. */
   radius?: number;
   /** The element to render instead of a `div`, like `<button type="button" />` or `<li />`: its type and props
@@ -100,25 +103,18 @@ export interface MorphProps {
   /** Fade in on mount and out on unmount (inside `MorphPresence`), for an element that has no partner in the
       other layout. Leave off (the default) for shared elements — they morph rather than fade. */
   fade?: boolean;
-  className?: string;
-  style?: CSSProperties;
-  children?: ReactNode;
-  onClick?: (e: MouseEvent) => void;
-  /** Extra DOM attributes (aria-*, data-*, role, href, src, alt, type …). */
-  [attr: `aria-${string}` | `data-${string}`]: unknown;
-  role?: string;
+  /** Attributes of the rendered element that a `div` does not have (`href`, `src`, `alt`, `type`). */
   href?: string;
   src?: string;
   alt?: string;
   type?: 'button' | 'submit' | 'reset';
-  tabIndex?: number;
-  title?: string;
+  [attr: `data-${string}`]: unknown;
 }
 
 /** An element that morphs between its layouts. Use inside a `<MorphGroup>`. */
 export const Morph = forwardRef<HTMLElement, MorphProps>(function Morph(
   {
-    id, radius, render, dragToDismiss, onDismiss, dismissDistance = 120, layout = true, fade = false,
+    layoutId, radius, render, dragToDismiss, onDismiss, dismissDistance = 120, layout = true, fade = false,
     className, style, children, ...rest
   },
   ref,
@@ -167,8 +163,8 @@ export const Morph = forwardRef<HTMLElement, MorphProps>(function Morph(
       {...(renderProps as object)}
       ref={ref as never}
       data-slot="morph"
-      data-morph-id={id}
-      layoutId={id}
+      data-morph-id={layoutId}
+      layoutId={layoutId}
       layout={layout}
       transition={{ ...transition, opacity: reduced ? { duration: 0.12 } : { duration: 0.18 } }}
       {...(fade ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } } : null)}

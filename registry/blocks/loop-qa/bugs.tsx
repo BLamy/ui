@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FilterBar, FilterToolbar } from '@/components/ui/filter';
 import { FilterInput } from '@/components/ui/filter-input';
-import { SearchField } from '@/components/ui/search-field';
+import { SearchInput } from '@/components/ui/search-input';
 import { matchFilters, serializeFilters, type Filter, type FilterField } from '@/lib/filter-model';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -54,7 +54,7 @@ export function BugsTab({ project }: { project: Project }) {
             Reset
           </Button>
         ) : null}
-        <SearchField aria-label="Search bugs" placeholder="Search bugs" value={query} onValueChange={setQuery} className="max-w-[260px] min-w-[160px] flex-1" />
+        <SearchInput aria-label="Search bugs" placeholder="Search bugs" value={query} onValueChange={setQuery} className="max-w-[260px] min-w-[160px] flex-1" />
         <span className="flex-1" />
         <div className="flex gap-1.5">
           <Button size="sm" variant="secondary" className="h-8 rounded-[9px]" onClick={() => qa.copyBugReports(project.id)}>

@@ -1,23 +1,23 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { Resizable, ResizableHandle, ResizablePanel } from '@ui-sdk/react/resizable';
-import { ToggleGroup, type ToggleGroupValueChangeReason } from '@ui-sdk/react/toggle';
+import { Toggle as ToggleButton, ToggleGroup, type ToggleGroupValueChangeReason } from '@ui-sdk/react/toggle';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { AdaptivePane, type AdaptivePanePresentation } from '@/components/ui/adaptive-pane';
 import { FloatingSheet } from '@/components/ui/floating-sheet';
-import { PlainToggleButton as ToggleButton } from '@/components/ui/plain-button';
 import { useWorkbenchAppearance, WorkbenchAppearanceProvider } from '@/components/ui/workbench-theme';
 import { SizeClassProvider, useSizeClass, type SizeClass } from '@/lib/container';
 import { Icon, type IconName } from '@/lib/icon';
 import { type Appearance, themeScopeProps, ThemeScope } from '@/lib/theme';
 import { cn, pressable } from '@/lib/utils';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
 
 
 /* ══ WorkbenchShell — a thin layout root and the parts that compose an IDE-style agent workspace ══
 
    <WorkbenchShell>                      grid root: measures itself, owns region state, provides context
-     <WorkbenchSidebar/>                 left column ⇄ EdgeDrawer (compact)          — AdaptivePane
+     <WorkbenchSidebar/>                 left column ⇄ drawer (compact)              — AdaptivePane
      <WorkbenchMain>                     centre column: a vertical Resizable
        <WorkbenchHeader/>                title bar: triggers, title, actions
        <WorkbenchContent/>               the resizable panel above the dock
@@ -166,11 +166,6 @@ export function WorkbenchShell({
   );
 }
 
-/* Drawers over a light shell: a lighter scrim and a softer shadow than EdgeDrawer's dark defaults. */
-const LIGHT_DRAWER = { scrim: 'rgba(0,0,0,.22)', shadow: '0 0 36px rgba(0,0,0,.14)' };
-/* The panel drawer's shadow over a dark shell. */
-const DARK_PANEL_SHADOW = '0 0 44px rgba(0,0,0,.55)';
-
 /* ── Sidebar ── */
 export interface WorkbenchSidebarProps {
   /** docked column width. Default 242. */
@@ -179,25 +174,23 @@ export interface WorkbenchSidebarProps {
   drawerWidth?: number | string;
   children?: React.ReactNode;
 }
-/** The left region: a docked column, or an EdgeDrawer over the whole shell at compact width. */
+/** The left region: a docked column, or a drawer over the whole shell at compact width. */
 export function WorkbenchSidebar({ width = 242, drawerWidth = 280, children }: WorkbenchSidebarProps) {
   const shell = useOptionalWorkbenchShell();
   if (!shell) return <>{children}</>;
-  const { compact, sidebarOpen, setSidebarOpen, appearance } = shell;
-  const presentation: AdaptivePanePresentation = compact ? 'drawer' : sidebarOpen ? 'column' : 'hidden';
+  const { compact, sidebarOpen, setSidebarOpen } = shell;
   return (
     <AdaptivePane
-      presentation={presentation}
+      presentation={compact ? 'drawer' : 'column'}
       side="left"
       aria-label="Sidebar"
-      open={compact && sidebarOpen}
+      open={sidebarOpen}
       onOpenChange={(open) => setSidebarOpen(open)}
       columnWidth={width}
-      columnStyle={{ gridColumn: 1, gridRow: 1, borderRight: '1px solid var(--border)' }}
       drawerWidth={drawerWidth}
-      drawerMaxWidth="84%"
+      className="border-r border-border"
+      style={{ gridColumn: 1, gridRow: 1 }}
       zIndex={80}
-      {...(appearance === 'light' ? LIGHT_DRAWER : null)}
     >
       {children}
     </AdaptivePane>
@@ -210,20 +203,21 @@ interface TriggerProps {
   className?: string;
   style?: React.CSSProperties;
 }
-/* A header toggle: UI SDK's Toggle (`aria-pressed`) in the quiet icon-button look, filled while pressed. */
-const headerToggle = buttonVariants({ variant: 'quiet', size: 'icon-sm' });
+/* A header toggle: the kit's quiet Toggle (`aria-pressed`), filled while pressed. */
 function HeaderToggle({ label, pressed, onPressedChange, className, style, children }: { label: string; pressed: boolean; onPressedChange: (pressed: boolean) => void; className?: string; style?: React.CSSProperties; children: React.ReactNode }) {
   return (
-    <ToggleButton
+    <Toggle
+      variant="quiet"
+      size="icon-sm"
       aria-label={label}
       title={label}
       pressed={pressed}
       onPressedChange={(next) => onPressedChange(next)}
-      className={cn(headerToggle, className)}
+      className={className}
       style={style}
     >
       {children}
-    </ToggleButton>
+    </Toggle>
   );
 }
 
@@ -485,7 +479,7 @@ export interface WorkbenchPanelProps {
   children?: React.ReactNode;
 }
 /**
- * The right region (an inspector: surfaces, a diff, a preview). A column at regular width, an EdgeDrawer at
+ * The right region (an inspector: surfaces, a diff, a preview). A column at regular width, a drawer at
  * medium width, and a cover over everything but the tab bar when fullscreen or on the compact panel page.
  * The children render in a `bg-sidebar` column either way, so their state survives every move.
  */
@@ -497,9 +491,8 @@ export function WorkbenchPanel({ className, style, children }: WorkbenchPanelPro
     </div>
   );
   if (!shell) return body;
-  const { compact, sizeClass, panelOpen, panelFullscreen, setPanelOpen, appearance } = shell;
-  const light = appearance === 'light';
-  const mode: AdaptivePanePresentation = compact || panelFullscreen ? (panelOpen ? 'cover' : 'hidden') : sizeClass === 'medium' ? 'drawer' : panelOpen ? 'column' : 'hidden';
+  const { compact, sizeClass, panelOpen, panelFullscreen, setPanelOpen } = shell;
+  const mode: AdaptivePanePresentation = compact || panelFullscreen ? 'cover' : sizeClass === 'medium' ? 'drawer' : 'column';
   const pane = (
     <AdaptivePane
       presentation={mode}
@@ -508,18 +501,16 @@ export function WorkbenchPanel({ className, style, children }: WorkbenchPanelPro
       open={panelOpen}
       onOpenChange={(open) => setPanelOpen(open)}
       columnWidth="clamp(300px, 32cqw, 420px)"
-      columnStyle={{ gridColumn: 3, gridRow: 1, borderLeft: '1px solid var(--border)' }}
       drawerWidth="min(420px, 94%)"
       zIndex={mode === 'cover' ? 60 : 58}
-      shadow={light ? LIGHT_DRAWER.shadow : DARK_PANEL_SHADOW}
-      {...(light ? { scrim: LIGHT_DRAWER.scrim } : null)}
-      className="border-l border-border"
+      className="border-l border-border max-w-[94%]"
+      style={{ gridColumn: 3, gridRow: 1 }}
     >
       {body}
     </AdaptivePane>
   );
   // The cover spans the first grid row — the whole shell above the (compact) tab bar.
-  return mode === 'cover' ? <div className="relative z-60 col-span-full row-start-1">{pane}</div> : pane;
+  return mode === 'cover' && panelOpen ? <div className="relative z-60 col-span-full row-start-1">{pane}</div> : pane;
 }
 /** Header toggle for the panel; hidden at compact width, where the tab bar switches views. */
 export function WorkbenchPanelTrigger({ onClick, className, style }: TriggerProps) {

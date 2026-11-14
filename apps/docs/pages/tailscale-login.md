@@ -1,18 +1,18 @@
 # Sign in with Tailscale
 
-Join a tailnet from a browser tab: a "Sign in with Tailscale" button, the state machine behind it (`createTailscale`, `TailscaleProvider`, `useTailscaleStatus`), and a tailnet client that is created only when someone signs in. Once connected, `useTailscaleFetch` sends requests for `*.ts.net` names and Tailscale addresses through the tailnet; the [request router](https://blamy.github.io/ui/#/tailscale-router) does the same for every `fetch` on the page without changing your code.
+Join a tailnet from a browser tab: a "Sign in with Tailscale" button and the parts of a connection panel (the exit node chooser), the state machine behind it (`createTailscale`, `TailscaleProvider`, `useTailscaleStatus`), and a tailnet client that is created only when someone signs in. Once connected, `useTailscaleFetch` sends requests for `*.ts.net` names and Tailscale addresses through the tailnet; the [request router](https://blamy.github.io/ui/#/tailscale-router) does the same for every `fetch` on the page without changing your code.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/tailscale-login-button.json https://blamy.github.io/ui/r/tailscale.json https://blamy.github.io/ui/r/tailscale-connect.json{% endcommand %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/tailscale-controls.json https://blamy.github.io/ui/r/tailscale.json https://blamy.github.io/ui/r/tailscale-connect.json{% endcommand %}
 
 Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
 import { TailscaleProvider } from '@/lib/tailscale-react'
 import {
-  TailscaleLoginButton, TailscaleStatusBadge,
-} from '@/components/ui/tailscale-login-button'
+  TailscaleLoginButton, TailscaleStatusBadge, TailscaleSummary, TailscaleExitNodes,
+} from '@/components/ui/tailscale-controls'
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect'
 ```
 {% endtab %}
@@ -25,7 +25,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  TailscaleProvider, TailscaleLoginButton, TailscaleStatusBadge,
+  TailscaleProvider, TailscaleLoginButton, TailscaleStatusBadge, TailscaleSummary, TailscaleExitNodes,
   createTailscaleConnectClient,
 } from '@brett_lamy/ui'
 ```
@@ -42,7 +42,7 @@ The demos on this page are real: they run Tailscale's client (`createTailscaleCo
 import wasmURL from '@agent-wasm/tailscale-connect/main.wasm?url'   // Vite: host the 26 MB binary yourself
 import { TailscaleProvider } from '@/lib/tailscale-react'
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect'
-import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button'
+import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-controls'
 
 export function Network() {
   return (
@@ -57,6 +57,97 @@ export function Network() {
 The real client is the optional peer dependency `@agent-wasm/tailscale-connect` (the `tailscale-connect` registry item installs it; with the npm package, `npm install @agent-wasm/tailscale-connect` yourself). Without it, use your own `TailscaleClient` or the fake.
 
 Press the button: a popup opens at once (inside the press, so popup blockers allow it), the WebAssembly client loads and asks Tailscale's control server for a sign-in URL, the popup goes there, the person signs in with their identity provider, and the client reports `Running`. Nothing is downloaded before the press. If no popup could open, the badge shows a **Continue to Tailscale** link instead and `onLoginUrl` is called.
+
+## Components
+
+Five parts in one module (`@/components/ui/tailscale-controls`). Each reads the nearest `TailscaleProvider`, or the controller you pass as `tailscale`. Use **TailscaleLoginButton** and **TailscaleStatusBadge** wherever someone signs in (a gate, a settings row); compose **TailscaleSummary**, **TailscaleExitNodes** and the login button into a [connection panel](#the-connection-panel) once they are connected.
+
+### TailscaleLoginButton
+
+{% demo src="tailscale-login/states" %}
+
+The kit's [Button](https://blamy.github.io/ui/#/button), so it takes Button's `variant` and `size` and sits beside other buttons at the same height. By state: **Sign in with Tailscale** (idle, signed out) with the mark; **Signing in…** / **Connecting…** / **Waiting for approval…** with a spinner, where a press cancels (`aria-busy` and `data-pending` are set, and the accessible name ends with "Press to cancel."); **Sign out of Tailscale** (connected); **Try again** after a failure, with a warning glyph (its accessible name is "Try again to sign in to Tailscale"). The label and glyph carry the state, never colour alone, and the button keeps the `variant` you chose in every state.
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `variant` | `contrast` | Any Button variant: `contrast` is the usual dark-on-light "Sign in with …" look; `outline` and `secondary` are quieter. |
+| `size` | `default` | Any Button size: `sm` 32px, `default` 36px, `lg` 44px, `pill` (full width). |
+| `labels` | English | `signIn`, `signingIn`, `connecting`, `approval`, `signOut`, `retry` (the visible text), `retryName` (the accessible name after a failure; start it with `retry`), `cancelHint`. |
+| `onSignIn` / `onCancel` / `onSignOut` | the controller's | Replace what a press does in that state. |
+| `status` | the controller's | Show this status instead (stories, a controller of your own). |
+| `tailscale` | the provider's | The controller. |
+
+Every other Button prop applies (`disabled`, `render`, `className`, `aria-*`). It carries `data-slot="button"` (UI SDK's) and `data-status`.
+
+### TailscaleStatusBadge
+
+A polite `role="status"` region: a pill with an icon and a word, and the details: the tailnet when connected, the error (in the error colour) when failed, "An admin has to approve this device." while waiting, and a **Continue to Tailscale** link while signing in if no popup could open.
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `variant` | `inline` | `inline` (details beside the pill) · `stacked` (details under it) · `pill` (the pill alone). |
+| `status` / `tailnet` / `loginUrl` / `error` | the controller's | Show these instead. |
+| `tailscale` | the provider's | The controller. |
+
+### TailscaleMark
+
+The nine-dot mark in `currentColor`, `aria-hidden`: `size` (px, default 16) and `className`. Tailscale's name and logo are Tailscale Inc.'s trademarks; check their brand guidelines before you ship them.
+
+## The connection panel
+
+Once connected, a popover or a menu-bar extra shows where you are, lets you choose the exit node, and signs out. There is no wrapper for it: write the three parts in the popup, in the order you want.
+
+{% demo src="tailscale-login/panel" %}
+
+The demo is real: it runs Tailscale's client and needs a Tailscale account; approve the sign-in popup and the panel lists the exit nodes of your tailnet.
+
+```tsx
+<Popover>
+  <PopoverTrigger className={buttonVariants({ variant: 'quiet', size: 'icon' })} aria-label="Tailscale connection">
+    <TailscaleMark />
+  </PopoverTrigger>
+  <PopoverContent align="end" className="w-80">
+    <PopoverTitle className="sr-only">Tailscale</PopoverTitle>
+    <div className="flex flex-col gap-3">
+      <TailscaleSummary detail="3 pages and 9 requests this session." />
+      <TailscaleExitNodes onAction={choose} />
+      <TailscaleLoginButton size="sm" variant="outline" />
+    </div>
+  </PopoverContent>
+</Popover>
+```
+
+### TailscaleSummary
+
+"Connected to *tailnet*" and "As *this device*", with an optional `detail` line under them (Safari: how many pages and requests this session went through the tailnet). `tailscale` and `className`; `data-slot="tailscale-summary"`.
+
+### TailscaleExitNodes
+
+The exit node chooser, read like a Wi-Fi menu: which device carries your traffic to the public internet. A [Listbox](https://blamy.github.io/ui/#/list-box) under an "Exit node" heading that names it: **None** first, a leading check on the node in use, each device's name and a trailing glyph, offline devices dimmed, marked "Offline" and not selectable. The arrow keys move without switching (`activation="manual"`); a press, Space or Enter switches. While a switch runs its row says **Connecting…** with a spinner and the list ignores further presses; if it fails, the message shows under the list in the error colour. With no exit node on the tailnet it says how to offer one instead.
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `value` | the controller's | The exit node shown as chosen: an id, or `null` for None. |
+| `onValueChange(value, details)` | — | Called first when a row is chosen; `details.cancel()` stops the switch. |
+| `onAction(value)` | `tailscale.setExitNode` | Does the switch. Return a Promise to show the row as connecting until it settles; a rejection shows its message. |
+| `glyph(peer, state)` | signal / warning / spinner | The trailing glyph of a row; `state` is `{ selected, connecting, online }`. |
+| `labels` | English | `group` (the heading and the list's name), `none`, `noneDetail`, `offline`, `connecting`, `empty`, `failed`. |
+| `tailscale` | the provider's | The controller. |
+
+It carries `data-slot="tailscale-exit-nodes"` and `aria-busy` while a switch runs.
+
+### Choosing an exit node
+
+`pickExitNode(snapshot, { exclude, prefer })` returns the id of the best exit node, or `null`. It considers only peers that offer to be an exit node, have an id and are **online**; it takes `prefer` (the one used before) if that still qualifies, else the first by name; `exclude` leaves out ids (the node that just failed). It does not talk to the controller:
+
+```ts
+import { pickExitNode } from '@/lib/tailscale-exit'
+
+const id = pickExitNode(tailscale.getSnapshot(), { prefer: lastUsed })
+if (id) await tailscale.setExitNode(id)
+```
+
+`exitNodePeers(snapshot)` lists the candidates (offline ones included, by name), `exitNodeOnline(snapshot)` says whether the exit node in use is up, and `exitNodeName(peer)` is the first DNS label. The [Safari block](https://blamy.github.io/ui/#/blocks) uses them to pick an exit node for you when a public site needs one.
 
 ## Where this comes from
 
@@ -193,20 +284,6 @@ interface TailscaleClient {
 
 `onEvent` takes `{ state?, loginUrl?, netMap?, error? }`, where `state` is the backend state Tailscale reports (`NeedsLogin`, `Starting`, `Running`, `NeedsMachineAuth` …). `createTailscaleConnectClient({ wasmURL, load?, acceptDns? })` is the real one; `createFakeTailscaleClient({ routes, approveAfterMs, acceptKeys, tailnet, failStart })` the fake (it also has `approve()`, `crash()` and the list of `requests` it answered). To run the real client in a Worker, as almostnode does, implement this interface over `postMessage`.
 
-## Components
-
-### TailscaleLoginButton
-
-{% demo src="tailscale-login/states" %}
-
-A UI SDK `Button`. By state: **Sign in with Tailscale** (idle, signed out), **Signing in…** / **Connecting…** / **Waiting for approval…** with a spinner (a press cancels; `aria-busy` is set and the accessible name says so), **Sign out of Tailscale** (connected), **Try again** (error). Props: `variant` (`default`, `outline`, `secondary`), `size` (`default`, `sm`, `lg`, `pill`), `labels`, `onSignIn` / `onCancel` / `onSignOut` to replace the defaults, `status` to drive it without a provider, `tailscale`, `className`, and the Button's own props (`disabled`, `render`…). `data-slot="button"` (UI SDK's) and `data-status`.
-
-### TailscaleStatusBadge
-
-A polite `role="status"` region: a pill with an icon and a word, the tailnet when connected, the error when failed, and the sign-in link while signing in. `compact` shows the pill alone; `layout` is `inline` or `stacked`. Props `status`, `tailnet`, `loginUrl` and `error` override the controller's.
-
-`TailscaleMark` is the nine-dot mark in `currentColor`. Tailscale's name and logo are Tailscale Inc.'s trademarks; check their brand guidelines before you ship them.
-
 ## Limits
 
 What was **verified** here:
@@ -242,51 +319,18 @@ Use the fake: `createTailscale({ client: createFakeTailscaleClient({ routes: { '
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
 
-### `tailscaleLoginButtonVariants`
-
-Defined in `@/components/ui/tailscale-login-button`. Base classes:
-
-```text
-box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] font-semibold whitespace-nowrap outline-none transition-[scale,background-color,opacity] duration-spring-snappy ease-spring-snappy active:not-data-disabled:scale-[.97] motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-disabled:cursor-default data-disabled:opacity-40
-```
-
-**`variant`** — default `default`
-
-| Value | Adds |
-| --- | --- |
-| `default` (default) | `bg-foreground text-background` |
-| `outline` | `bg-background text-foreground shadow-hairline hover:not-data-disabled:bg-secondary` |
-| `secondary` | `bg-secondary text-secondary-foreground` |
-
-**`size`** — default `default`
-
-| Value | Adds |
-| --- | --- |
-| `default` (default) | `h-10 rounded-ctl px-4 text-subhead` |
-| `sm` | `h-8 rounded-lg px-3 text-footnote` |
-| `lg` | `h-11 rounded-xl px-5 text-callout` |
-| `pill` | `h-11 w-full rounded-card px-4 text-callout` |
-
-**`tone`** — default `idle`
-
-| Value | Adds |
-| --- | --- |
-| `idle` (default) | — |
-| `busy` | — |
-| `connected` | — |
-| `error` | `bg-secondary text-foreground shadow-none` |
-
 ### `tailscaleStatusBadgeVariants`
 
-Defined in `@/components/ui/tailscale-login-button`. Base classes:
+Defined in `@/components/ui/tailscale-controls`. Base classes:
 
 ```text
 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-footnote
 ```
 
-**`layout`** — default `inline`
+**`variant`** — default `inline`
 
 | Value | Adds |
 | --- | --- |
 | `inline` (default) | — |
 | `stacked` | `flex-col items-start` |
+| `pill` | — |

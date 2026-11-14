@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { AnimatedHeight, ContentSwap } from '@/components/ui/animated-height'
+import { AnimatedHeight } from '@/components/ui/animated-height'
+import { Swap } from '@/components/ui/swap'
 import { Button } from '@/components/ui/button'
 import { Skeleton, SkeletonText } from '@/components/ui/skeleton'
 
@@ -19,7 +20,7 @@ function Loading() {
     <div style={{ display: 'grid', gap: 12, padding: 18 }}>
       <Skeleton shape="text" height={20} width={140} />
       <Skeleton shape="text" height={12} width={100} />
-      <SkeletonText lines={3} lastLineWidth="100%" gap={14} />
+      <SkeletonText lines={3} lastLineWidth="100%" className="gap-3.5" />
     </div>
   )
 }
@@ -61,7 +62,7 @@ function Loaded() {
   )
 }
 
-// The placeholder and the content share one card: ContentSwap cross-fades
+// The placeholder and the content share one card: Swap cross-fades
 // between them by key and AnimatedHeight springs the card to the new height,
 // so the page below never jumps. "Reload" fetches again (a 1.2s fake delay).
 export default function LoadingSwap() {
@@ -82,9 +83,9 @@ export default function LoadingSwap() {
         }}
       >
         <div aria-busy={loading} aria-live="polite">
-          <ContentSwap id={loading ? 'loading' : 'loaded'}>
+          <Swap value={loading ? 'loading' : 'loaded'}>
             {loading ? <Loading /> : <Loaded />}
-          </ContentSwap>
+          </Swap>
         </div>
       </AnimatedHeight>
       <Button

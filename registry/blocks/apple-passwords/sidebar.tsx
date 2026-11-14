@@ -3,6 +3,7 @@
    A group row and the family avatars preview who's in the group. */
 import type { CSSProperties } from 'react';
 import { Avatar } from '@/components/ui/avatar';
+import { AvatarGroup } from '@/components/ui/avatar-group';
 import { HoverCardHeader } from '@/components/ui/hover-card';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection } from '@/components/ui/split-view';
@@ -44,12 +45,12 @@ export function Sidebar({ vault, onOpenService }: { vault: Vault; onOpenService:
         </SplitViewSection>
         <ServiceButtons onOpen={onOpenService} />
         <div className="mt-5 flex items-center gap-2 px-2.5 text-[12.5px] text-muted-foreground">
-          <span className="flex -space-x-1.5">
+          <AvatarGroup size={20} label={GROUPS[0].name} className="[--avatar-ring:var(--sidebar)]">
             {GROUPS[0].members.map((m) => (
-              <Avatar key={m.f} c={m} size={20} className="ring-2 ring-sidebar"
-                card={<HoverCardHeader media={<Avatar c={m} size={40} />} title={`${m.f} ${m.l}`} subtitle={`${GROUPS[0].name} · Shared passwords`} />} />
+              <Avatar key={m.f} name={`${m.f} ${m.l}`}
+                card={<HoverCardHeader icon={<Avatar name={`${m.f} ${m.l}`} size={40} />} title={`${m.f} ${m.l}`} description={`${GROUPS[0].name} · Shared passwords`} />} />
             ))}
-          </span>
+          </AvatarGroup>
           Family members can see passwords in Family.
         </div>
       </SplitViewContent>

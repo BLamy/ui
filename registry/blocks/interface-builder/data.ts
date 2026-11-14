@@ -1,7 +1,7 @@
-/* The sample storyboard: Plant Pal, an iPhone app composed the way @brett_lamy/ui apps are — a TabView whose tabs
+/* The sample storyboard: Plant Pal, an iPhone app composed the way @brett_lamy/ui apps are — a TabsScreen whose tabs
    are NavigationStacks of list screens, sheets that are NavigationStacks of their own. All of it is invented.
 
-     Welcome ──modal──▶ SignInNav ⊟ SignIn ──replace──▶ MainTabs (TabView)
+     Welcome ──modal──▶ SignInNav ⊟ SignIn ──replace──▶ MainTabs (TabsScreen)
                                                           ├⊟ GardenNav (NavigationStack) ⊟ Garden ──push──▶ PlantDetail
                                                           │                                  └──modal──▶ AddPlantNav ⊟ AddPlant
                                                           ├⊟ Schedule
@@ -137,9 +137,9 @@ const signIn = scene('sign-in', 'SignIn', COL * 2, 0, n('Screen', {
   },
 });
 
-/* ── The app: a TabView of NavigationStacks ── */
+/* ── The app: a TabsScreen of NavigationStacks ── */
 
-const mainTabs = scene('main', 'MainTabs', COL, ROW, n('TabView', {
+const mainTabs = scene('main', 'MainTabs', COL, ROW, n('TabsScreen', {
   id: 'main-root',
   props: { tabs: 'Garden:flower, Schedule:calendar, Settings:gear', value: 'Garden' },
   bind: { value: 'tab' },
@@ -211,13 +211,13 @@ const garden = scene('garden', 'Garden', COL * 3, ROW, n('Screen', {
       children: [
         n('ListRow', {
           id: 'plant-row', name: 'Plant Cell',
-          props: { title: 'Plant', subtitle: 'Every 7 days', accessory: 'chevron' },
-          bind: { title: 'plant.name', subtitle: "plant.watered ? 'Watered today' : `Every ${plant.every} days`" },
+          props: { title: 'Plant', description: 'Every 7 days', accessory: 'chevron' },
+          bind: { title: 'plant.name', description: "plant.watered ? 'Watered today' : `Every ${plant.every} days`" },
           repeat: { each: 'plants', as: 'plant', key: 'plant.id' },
           motion: { appear: { target: { opacity: 0, x: 28 }, transition: T.rise, trigger: 'mount', once: true }, exit: { target: { opacity: 0, x: -28 }, transition: tweenSpec(0.2, 'easeIn') } },
           on: { onClick: [act({ do: 'segue', segue: 'to-plant' })] },
           slots: {
-            leading: [n('Image', {
+            icon: [n('Image', {
               id: 'plant-thumb',
               props: { emoji: '🪴', from: '#A8E063', to: '#56AB2F' },
               bind: { emoji: 'plant.emoji' },
@@ -302,9 +302,9 @@ const plantDetail = scene('plant', 'PlantDetail', COL * 4, ROW, n('Screen', {
         n('ListRow', {
           id: 'reminder-row',
           props: { title: 'Remind me', accessory: 'none' },
-          slots: { leading: [n('Icon', { id: 'reminder-icon', props: { name: 'bell-fill', size: 20, color: '$warning' } })], accessory: [n('Switch', { id: 'reminder-switch', props: { 'aria-label': 'Remind me' }, bind: { checked: 'reminders' } })] },
+          slots: { icon: [n('Icon', { id: 'reminder-icon', props: { name: 'bell-fill', size: 20, color: '$warning' } })], accessory: [n('Switch', { id: 'reminder-switch', props: { 'aria-label': 'Remind me' }, bind: { checked: 'reminders' } })] },
         }),
-        n('ListRow', { id: 'every-row', props: { title: 'Water every', accessory: 'none' }, bind: { trailing: '`${plant.every} days`' }, slots: { leading: [n('Icon', { id: 'every-icon', props: { name: 'drop', size: 20, color: '$primary' } })], accessory: [] } }),
+        n('ListRow', { id: 'every-row', props: { title: 'Water every', accessory: 'none' }, bind: { trailing: '`${plant.every} days`' }, slots: { icon: [n('Icon', { id: 'every-icon', props: { name: 'drop', size: 20, color: '$primary' } })], accessory: [] } }),
       ],
     }),
   ],
@@ -355,13 +355,13 @@ const settings = scene('settings', 'Settings', COL * 3, ROW * 3, n('Screen', {
           id: 'account-row',
           props: { title: 'Signed in', accessory: 'none' },
           bind: { title: "session.user || 'Not signed in'" },
-          slots: { leading: [n('Avatar', { id: 'account-avatar', props: { name: 'Ada Lovelace', size: 36 }, bind: { name: "session.user || 'Guest'" } })], accessory: [] },
+          slots: { icon: [n('Avatar', { id: 'account-avatar', props: { name: 'Ada Lovelace', size: 36 }, bind: { name: "session.user || 'Guest'" } })], accessory: [] },
         }),
         n('ListRow', {
           id: 'sign-out-row',
-          props: { title: 'Sign Out', accessory: 'none', destructive: true },
+          props: { title: 'Sign Out', accessory: 'none', tone: 'destructive' },
           on: { onClick: [act({ do: 'set', target: 'session.user', value: "''" }), act({ do: 'segue', segue: 'to-welcome' })] },
-          slots: { leading: [], accessory: [] },
+          slots: { icon: [], accessory: [] },
         }),
       ],
     }),
@@ -373,12 +373,12 @@ const settings = scene('settings', 'Settings', COL * 3, ROW * 3, n('Screen', {
         n('ListRow', {
           id: 'remind-row',
           props: { title: 'Watering reminders', accessory: 'none' },
-          slots: { leading: [], accessory: [n('Switch', { id: 'remind-switch', props: { 'aria-label': 'Watering reminders' }, bind: { checked: 'reminders' } })] },
+          slots: { icon: [], accessory: [n('Switch', { id: 'remind-switch', props: { 'aria-label': 'Watering reminders' }, bind: { checked: 'reminders' } })] },
         }),
         n('ListRow', {
           id: 'units-row',
           props: { title: 'Units', trailing: 'Metric', accessory: 'chevron' },
-          slots: { leading: [], accessory: [] },
+          slots: { icon: [], accessory: [] },
         }),
       ],
     }),
@@ -499,7 +499,7 @@ export const SPLIT_SAMPLE: Doc = {
           id: 'mailbox-row', props: { title: 'Inbox', accessory: 'chevron' },
           bind: { title: 'box.name', trailing: "box.count ? String(box.count) : ''" },
           repeat: { each: 'boxes', as: 'box', key: 'box.id' },
-          slots: { leading: [n('Icon', { id: 'mailbox-icon', props: { name: 'tray', size: 20, color: '$primary' }, bind: { name: 'box.icon' } })], accessory: [] },
+          slots: { icon: [n('Icon', { id: 'mailbox-icon', props: { name: 'tray', size: 20, color: '$primary' }, bind: { name: 'box.icon' } })], accessory: [] },
         })],
       })],
     }), { state: [{ name: 'boxes', type: 'list', initial: MAILBOXES }] }),
@@ -510,11 +510,11 @@ export const SPLIT_SAMPLE: Doc = {
       children: [n('ListSection', {
         id: 'message-list', props: {}, layout: { axis: 'vertical', width: 'fill' },
         children: [n('ListRow', {
-          id: 'message-row', props: { title: 'From', subtitle: 'Subject', accessory: 'none' },
-          bind: { title: 'm.from', subtitle: 'm.subject' },
+          id: 'message-row', props: { title: 'From', description: 'Subject', accessory: 'none' },
+          bind: { title: 'm.from', description: 'm.subject' },
           repeat: { each: 'messages', as: 'm', key: 'm.id' },
           on: { onClick: [act({ do: 'segue', segue: 'to-message' })] },
-          slots: { leading: [n('Avatar', { id: 'message-avatar', props: { name: 'Maya', size: 36 }, bind: { name: 'm.from' } })], accessory: [] },
+          slots: { icon: [n('Avatar', { id: 'message-avatar', props: { name: 'Maya', size: 36 }, bind: { name: 'm.from' } })], accessory: [] },
         })],
       })],
     }), { state: [{ name: 'messages', type: 'list', initial: MESSAGES }] }),

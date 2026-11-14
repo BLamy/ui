@@ -30,7 +30,8 @@ const FRAMES: CallStackFrame[] = [
 
 const rows = () => screen.getAllByRole('treeitem');
 const row = (start: string) => rows().find((r) => r.textContent?.includes(start)) as HTMLElement;
-const scroller = () => document.querySelector('[data-slot="call-stack-scroller"]') as HTMLElement;
+const label = (start: string) => row(start).querySelector('[data-slot="tree-label"]') as HTMLElement;
+const scroller = () => screen.getByRole('tree').parentElement as HTMLElement;
 const selected = () => rows().filter((r) => r.getAttribute('aria-selected') === 'true').map((r) => r.getAttribute('data-key'));
 const focused = () => document.activeElement?.getAttribute('data-key');
 
@@ -50,11 +51,11 @@ describe('CallStack', () => {
 
   it('marks its parts, so a host can find them', () => {
     render(<CallStack frames={FRAMES} />);
-    expect(row('top').getAttribute('data-row')).toBe('frame');
-    expect(row('top').getAttribute('data-kind')).toBe('app');
-    expect(row('3 React frames').getAttribute('data-row')).toBe('run');
+    expect(label('top').getAttribute('data-row')).toBe('frame');
+    expect(label('top').getAttribute('data-kind')).toBe('app');
+    expect(label('3 React frames').getAttribute('data-row')).toBe('run');
     expect(row('3 React frames').getAttribute('aria-expanded')).toBe('false');
-    expect(row('await load').getAttribute('data-row')).toBe('separator');
+    expect(label('await load').getAttribute('data-row')).toBe('separator');
     expect(row('await load').getAttribute('aria-disabled')).toBe('true');
   });
 
@@ -68,10 +69,10 @@ describe('CallStack', () => {
 
   it('marks the top frame apart from the selected one', () => {
     render(<CallStack frames={FRAMES} value="b" />);
-    expect(row('top').getAttribute('data-top')).toBe('true');
+    expect(label('top').getAttribute('data-top')).toBe('true');
     expect(row('top').getAttribute('aria-selected')).toBe('false');
     expect(row('b.ts').getAttribute('aria-selected')).toBe('true');
-    expect(row('b.ts').getAttribute('data-top')).toBeNull();
+    expect(label('b.ts').getAttribute('data-top')).toBeNull();
   });
 
   it('selects on press, and says which frame', () => {
@@ -216,7 +217,7 @@ describe('CallStack', () => {
   });
 
   it('says when there are no frames', () => {
-    render(<CallStack frames={[]} emptyMessage="No JS is on the stack at this point." />);
+    render(<CallStack frames={[]} emptyState="No JS is on the stack at this point." />);
     expect(screen.getByText('No JS is on the stack at this point.')).toBeTruthy();
   });
 
@@ -232,7 +233,7 @@ describe('CallStack', () => {
     const frames = Array.from({ length: 1000 }, (_, i) => app(`f${i}`));
     render(<CallStack frames={frames} />);
     expect(rows().length).toBeLessThan(60);
-    expect(screen.getByRole('tree').style.height).toBe('26000px');
+    expect(screen.getByRole('tree').style.height).toBe('24000px');
     expect(row('f3.ts').getAttribute('aria-setsize')).toBe('1000');
   });
 
@@ -244,7 +245,7 @@ describe('CallStack', () => {
     row('f0.ts').focus();
     fireEvent.keyDown(row('f0.ts'), { key: 'End' });
     expect(onSelect).toHaveBeenLastCalledWith('f199', 199, 'list-navigation');
-    await waitFor(() => expect(scroller().scrollTop).toBe(200 * 26 - 260));
+    await waitFor(() => expect(scroller().scrollTop).toBe(200 * 24 - 260));
     await act(async () => { fireEvent.scroll(scroller()); });
     expect(focused()).toBe('f199');
     expect(selected()).toEqual(['f199']);
@@ -257,14 +258,14 @@ describe('CallStack', () => {
     const list = scroller();
     // A jump lands mid-list.
     rerender(<CallStack frames={frames} value="f500" />);
-    await waitFor(() => expect(list.scrollTop).toBe(500 * 26 - (260 - 26) / 2));
+    await waitFor(() => expect(list.scrollTop).toBe(500 * 24 - (260 - 24) / 2));
     // A step lands at the nearest edge, or nowhere if the frame's on show.
     const before = list.scrollTop;
     rerender(<CallStack frames={frames} value="f503" />);
     await new Promise((resolve) => { setTimeout(resolve, 60); });
     expect(list.scrollTop).toBe(before);
     rerender(<CallStack frames={frames} value="f510" />);
-    await waitFor(() => expect(list.scrollTop).toBe(510 * 26 + 26 - 260));
+    await waitFor(() => expect(list.scrollTop).toBe(510 * 24 + 24 - 260));
     rerender(<CallStack frames={frames} value="f0" />);
     await waitFor(() => expect(list.scrollTop).toBe(0));
   });

@@ -1,19 +1,19 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { ProgressStepper, type ProgressStep } from '@/components/ui/progress-stepper'
+import { ProgressStepper, type ProgressStepItem } from '@/components/ui/progress-stepper'
 import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Switch } from '@/components/ui/switch'
 import { Icon } from '@/lib/icon'
 
-const steps: ProgressStep[] = [
+const steps: ProgressStepItem[] = [
   { id: 'placed', label: 'Placed', icon: <Icon name="check-circle" size={22} /> },
   { id: 'packed', label: 'Packed', icon: <Icon name="archivebox" size={22} /> },
   { id: 'shipped', label: 'Shipped', icon: <Icon name="airplane" size={22} /> },
   { id: 'delivered', label: 'Delivered', icon: <Icon name="house" size={22} /> },
 ]
 
-// `current` is the step in progress: earlier steps are done, later ones to do.
-// Step past the end (4) and every milestone reads as done.
+// `current` is the step in progress: earlier steps are complete, later ones upcoming.
+// Step past the end (4) and every milestone reads as complete.
 export default function Order() {
   const [current, setCurrent] = useState(2)
   const [variant, setVariant] = useState<'bars' | 'line'>('bars')

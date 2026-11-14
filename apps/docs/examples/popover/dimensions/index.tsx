@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import {
@@ -21,13 +21,13 @@ export default function Dimensions() {
   return (
     <ThemeScope className="mx-auto grid max-w-sm justify-items-start gap-4">
       <Popover>
-        <PopoverTrigger className={buttonVariants({ variant: 'secondary' })}>Dimensions</PopoverTrigger>
+        <PopoverTrigger render={<Button variant="secondary" />}>Dimensions</PopoverTrigger>
         <PopoverContent align="start">
           <PopoverTitle>Dimensions</PopoverTitle>
           <PopoverDescription className="mt-1 mb-3">Set the size of the layer.</PopoverDescription>
           <div className="flex flex-col gap-3">
             <Field>
-              <FieldLabel variant="field">Width</FieldLabel>
+              <FieldLabel>Width</FieldLabel>
               <Input
                 size="sm"
                 inputMode="numeric"
@@ -36,7 +36,7 @@ export default function Dimensions() {
               />
             </Field>
             <Field>
-              <FieldLabel variant="field">Height</FieldLabel>
+              <FieldLabel>Height</FieldLabel>
               <Input
                 size="sm"
                 value={size.height}

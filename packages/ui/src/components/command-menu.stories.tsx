@@ -1,12 +1,13 @@
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  CommandMenu, CommandMenuDialog, CommandMenuDialogContent, CommandMenuDialogTrigger, CommandMenuEmpty, CommandMenuFooter, CommandMenuGroup,
+  CommandMenu, CommandMenuDialog, CommandMenuDialogContent, CommandMenuEmpty, CommandMenuFooter, CommandMenuGroup,
   CommandMenuGroupLabel, CommandMenuInput, CommandMenuItem, CommandMenuList, CommandMenuPage, CommandMenuShortcut, CommandMenuStatus,
   useCommandMenuValue, type CommandMenuData, type CommandMenuProps,
 } from '@/components/ui/command-menu';
+import { DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Pad } from '../stories/frame';
 
 const meta: Meta<typeof CommandMenu> = {
@@ -184,7 +185,7 @@ function DialogDemo() {
   return (
     <div className="relative h-[600px]">
       <CommandMenuDialog open={open} onOpenChange={setOpen}>
-        <CommandMenuDialogTrigger shortcut="mod+k" className={buttonVariants()}>Open ⌘K</CommandMenuDialogTrigger>
+        <DialogTrigger shortcut="mod+k" render={<Button />}>Open ⌘K</DialogTrigger>
         <CommandMenuDialogContent aria-label="Command menu">
           <Palette />
         </CommandMenuDialogContent>

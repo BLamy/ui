@@ -4,7 +4,8 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { useShortcut } from '@ui-sdk/react/shortcuts';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
@@ -28,18 +29,18 @@ export function ToolButton({ icon, label, onClick, disabled, children, className
   icon?: string; label: string; onClick?: () => void; disabled?: boolean; children?: ReactNode; className?: string;
 }) {
   return (
-    <PlainButton aria-label={label} title={label} onClick={onClick} disabled={disabled} className={toolButtonClass(false, className)}>
+    <SdkButton aria-label={label} title={label} onClick={onClick} disabled={disabled} className={toolButtonClass(false, className)}>
       {children ?? <Icon name={icon} size={18} sw={1.9} />}
-    </PlainButton>
+    </SdkButton>
   );
 }
 
 /** A toolbar button that shows something while it's on (a pane, the timeline): a toggle with `aria-pressed`. */
 export function ToolToggle({ icon, label, pressed, onPressedChange }: { icon: string; label: string; pressed: boolean; onPressedChange: (pressed: boolean) => void }) {
   return (
-    <PlainToggleButton aria-label={label} title={label} pressed={pressed} onPressedChange={onPressedChange} className={toolButtonClass()}>
+    <SdkToggle aria-label={label} title={label} pressed={pressed} onPressedChange={onPressedChange} className={toolButtonClass()}>
       <Icon name={icon} size={18} sw={1.9} />
-    </PlainToggleButton>
+    </SdkToggle>
   );
 }
 
@@ -80,7 +81,7 @@ export function Toolbar(p: ToolbarProps) {
     <header ref={bar} data-slot="ib-toolbar" className="flex h-toolbar shrink-0 items-center gap-1 border-b border-border bg-card px-2">
       <ToolToggle icon="sidebar-left" label="Navigator" pressed={p.navOpen} onPressedChange={p.onToggleNav} />
       {/* One button that runs and stops, so focus comes back to it when the preview closes. */}
-      <PlainButton
+      <SdkButton
         aria-label={p.running ? 'Stop' : 'Run'}
         title={p.running ? 'Stop (⌘.)' : 'Run (⌘R)'}
         onClick={(e) => (p.running ? p.onStop(e.nativeEvent) : p.onRun(e.nativeEvent))}
@@ -92,7 +93,7 @@ export function Toolbar(p: ToolbarProps) {
         )}
       >
         {p.running ? <Icon name="stop" size={14} sw={2} /> : <Icon name="play" size={15} sw={2} />}
-      </PlainButton>
+      </SdkButton>
       <DropdownMenu onAction={(id) => b.commit((d) => setDevice(d, id as DeviceId))}>
         <DropdownMenuTrigger aria-label={`Device: ${device.name}`} className="ml-1 flex h-8 min-w-0 cursor-pointer items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 text-footnote font-medium text-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
           <Icon name={b.doc.device === 'desktop' ? 'laptop' : 'iphone'} size={16} sw={1.9} className="text-muted-foreground" />

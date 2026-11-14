@@ -31,9 +31,9 @@ function SongCard({ song, code }: { song: StudioSong; code: string }) {
   return (
     <div className="flex flex-col gap-3">
       <HoverCardHeader
-        media={<span className="grid size-9 place-items-center rounded-lg bg-success/15 text-success"><Icon name="music-note" size={19} /></span>}
+        icon={<span className="grid size-9 place-items-center rounded-lg bg-success/15 text-success"><Icon name="music-note" size={19} /></span>}
         title={song.title}
-        subtitle={parsed ? [parsed.tempo ? `${Math.round(parsed.tempo.cps * 240)} bpm` : null, `${parsed.tracks.length} tracks`].filter(Boolean).join(' · ') : 'Doesn’t parse yet'} />
+        description={parsed ? [parsed.tempo ? `${Math.round(parsed.tempo.cps * 240)} bpm` : null, `${parsed.tracks.length} tracks`].filter(Boolean).join(' · ') : 'Doesn’t parse yet'} />
       {parsed ? (
         <ul className="m-0 flex list-none flex-col gap-1 p-0">
           {parsed.tracks.map((t) => (

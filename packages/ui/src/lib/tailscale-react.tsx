@@ -4,7 +4,7 @@ import { createTailscale, createTailscaleFetch, type Tailscale, type TailscaleOp
 
 /* ══ tailscale-react — a provider and hooks over lib/tailscale ══
    <TailscaleProvider options={{ client: () => createTailscaleConnectClient({ wasmURL }) }}>
-     <TailscaleLoginButton />          // components/tailscale-login-button
+     <TailscaleLoginButton />          // components/tailscale-controls
    </TailscaleProvider>
    The snapshot is read with `useSyncExternalStore`; server rendering sees `idle`. */
 

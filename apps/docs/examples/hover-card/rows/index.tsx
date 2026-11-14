@@ -31,19 +31,19 @@ const INFO: Record<string, { size: string; changed: string; by: string }> = {
 export default function Rows() {
   return (
     <ThemeScope className="mx-auto grid max-w-2xl gap-6 py-4 sm:grid-cols-[1fr_220px]">
-      <List inset>
+      <List variant="inset">
         <ListSection title="Team">
           {people.map((p) => (
             <ListRow
               key={p.l}
-              leading={<Avatar c={p} size={36} />}
+              icon={<Avatar name={`${p.f} ${p.l}`} size={36} />}
               title={`${p.f} ${p.l}`}
-              subtitle={p.role}
+              description={p.role}
               accessory="chevron"
               onClick={() => {}}
               preview={
                 <>
-                  <HoverCardHeader media={<Avatar c={p} size={44} />} title={`${p.f} ${p.l}`} subtitle={p.role} />
+                  <HoverCardHeader icon={<Avatar name={`${p.f} ${p.l}`} size={44} />} title={`${p.f} ${p.l}`} description={p.role} />
                   <p className="mt-3 mb-0 text-footnote text-muted-foreground">{p.where} · {p.projects} projects</p>
                 </>
               }
@@ -57,7 +57,7 @@ export default function Rows() {
             const info = INFO[node.value]
             return info ? (
               <>
-                <HoverCardHeader title={node.label} subtitle={node.value} />
+                <HoverCardHeader title={node.label} description={node.value} />
                 <p className="mt-2 mb-0 text-footnote text-muted-foreground">{info.size} · changed {info.changed} by {info.by}</p>
               </>
             ) : null

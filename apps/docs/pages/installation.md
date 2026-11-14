@@ -208,7 +208,7 @@ import { List, ListRow, ListSection } from '@/components/ui/list'
 
 export function TodoList() {
   return (
-    <List inset>
+    <List variant="inset">
       <ListSection title="Today">
         <ListRow title="Ship the docs" onClick={() => {}} />
       </ListSection>

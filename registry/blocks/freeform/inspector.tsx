@@ -1,10 +1,11 @@
 /* The Format panel: what you can change about the selection, by kind, and how it's arranged. With nothing selected
    it formats the board itself. Sliders checkpoint once when a change starts, change live, and end it on commit. */
 import { useRef, type ReactNode } from 'react';
-import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Slider } from '@/components/ui/slider';
-import { ToggleGroup } from '@/components/ui/toggle-group';
+import { ToggleGroup } from '@/components/ui/toggle';
 import { Icon, type IconShape } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { boundsOf } from './geometry';
@@ -42,17 +43,17 @@ function Swatches({ value, colors, onChange, none, label }: { value: string | nu
       className="flex flex-wrap items-center gap-2"
     >
       {none ? (
-        <PlainToggleButton
+        <SdkToggle
           value={NONE} aria-label={none === 'clear' ? 'No fill' : 'Automatic'} title={none === 'clear' ? 'None' : 'Automatic'}
           className={cn('relative grid size-6 cursor-pointer place-items-center overflow-hidden rounded-full border border-border bg-background p-0', ring)}
         >
           {none === 'clear'
             ? <span aria-hidden="true" className="absolute h-px w-8 rotate-45 bg-destructive" />
             : <span aria-hidden="true" className="absolute inset-y-0 right-0 w-1/2 bg-foreground" />}
-        </PlainToggleButton>
+        </SdkToggle>
       ) : null}
       {colors.map((c) => (
-        <PlainToggleButton
+        <SdkToggle
           key={c} value={c} aria-label={c} title={c}
           className={cn('size-6 cursor-pointer rounded-full border border-black/10 p-0', ring)}
           style={{ background: c }}
@@ -67,18 +68,18 @@ const chip = 'grid h-8 min-w-9 cursor-pointer place-items-center rounded-lg bord
 /** An action chip. */
 function Chip({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
   return (
-    <PlainButton aria-label={label} title={label} onClick={onClick} className={chip}>
+    <SdkButton aria-label={label} title={label} onClick={onClick} className={chip}>
       {children}
-    </PlainButton>
+    </SdkButton>
   );
 }
 
 /** An on/off chip (a UI SDK Toggle), or one choice of a ChipGroup when given a `value`. */
 function ChipToggle({ label, value, pressed, onPressedChange, children }: { label: string; value?: string; pressed?: boolean; onPressedChange?: (pressed: boolean) => void; children: ReactNode }) {
   return (
-    <PlainToggleButton aria-label={label} title={label} value={value} pressed={pressed} onPressedChange={onPressedChange} className={chip}>
+    <SdkToggle aria-label={label} title={label} value={value} pressed={pressed} onPressedChange={onPressedChange} className={chip}>
       {children}
-    </PlainToggleButton>
+    </SdkToggle>
   );
 }
 
@@ -161,12 +162,12 @@ export function FormatPanel() {
           <Section title="Shape">
             <div className="grid grid-cols-6 gap-1">
               {SHAPE_KINDS.map((s) => (
-                <PlainButton
+                <SdkButton
                   key={s.kind} aria-label={s.label} title={s.label} onClick={() => set(isShape, { shape: s.kind })}
                   className={cn('grid size-9 cursor-pointer place-items-center rounded-lg border-0 p-0', shape.shape === s.kind ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary')}
                 >
                   <ShapeGlyph kind={s.kind} size={24} />
-                </PlainButton>
+                </SdkButton>
               ))}
             </div>
             <Swatches label="Fill" none="clear" value={shape.fill} colors={[...SHAPE_FILLS, ...SWATCHES]} onChange={(c) => set(isShape, { fill: c })} />

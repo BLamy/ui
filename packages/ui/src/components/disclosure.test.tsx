@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
-  Disclosure, DisclosureGroup, DisclosureGroupHeader, DisclosureGroupItem, DisclosureGroupPanel, DisclosureGroupTrigger,
+  Disclosure, DisclosureHeader, DisclosureGroup, DisclosureGroupHeader, DisclosureGroupItem, DisclosureGroupPanel, DisclosureGroupTrigger,
   DisclosurePanel, DisclosureTrigger, createAccordionController, createCollapsibleController, type DisclosureGroupProps,
 } from '@/components/ui/disclosure';
 
@@ -35,6 +35,19 @@ function Faq(props: DisclosureGroupProps<Question>) {
 }
 
 describe('Disclosure', () => {
+  it('puts its trigger in a heading with DisclosureHeader, at the level you render', async () => {
+    render(
+      <Disclosure>
+        <DisclosureHeader render={<h2 />}><DisclosureTrigger>Advanced</DisclosureTrigger></DisclosureHeader>
+        <DisclosurePanel>Proxy and DNS.</DisclosurePanel>
+      </Disclosure>,
+    );
+    await settle();
+    const heading = screen.getByRole('heading', { level: 2 });
+    expect(heading.getAttribute('data-slot')).toBe('disclosure-header');
+    expect(heading.contains(trigger('Advanced'))).toBe(true);
+  });
+
   it('a trigger opens and closes its panel, wired with aria-expanded and aria-controls', async () => {
     const onOpenChange = vi.fn();
     render(

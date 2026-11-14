@@ -3,7 +3,8 @@
    draw the frame from it) and the segues in and out; a segue says what was clicked, where it led and in which
    recordings. Either way the recording itself plays below, in ReplayPreview, from that moment. */
 import type { ReactNode } from 'react';
-import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { ReplayPreview, formatReplayTime } from '@/components/ui/replay-preview';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -47,7 +48,7 @@ function EvidenceList({ evidence, recordings, active, onPick }: { evidence: Evid
     <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
       {evidence.map((e, i) => (
         <li key={`${e.recording}@${e.time}`}>
-          <PlainButton
+          <SdkButton
             onClick={() => onPick(i)}
             className={cn(
               'flex w-full cursor-pointer items-center gap-2 rounded-ctl border-0 bg-transparent px-2 py-1 text-left text-footnote text-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring',
@@ -57,7 +58,7 @@ function EvidenceList({ evidence, recordings, active, onPick }: { evidence: Evid
             <Icon name="play-circle" size={14} sw={1.9} className="shrink-0" />
             <span className="truncate">{recordings.get(e.recording)?.name ?? e.recording}</span>
             <span className="ml-auto shrink-0 font-mono text-caption2 text-muted-foreground">{formatReplayTime(e.time)}</span>
-          </PlainButton>
+          </SdkButton>
         </li>
       ))}
     </ul>
@@ -67,7 +68,7 @@ function EvidenceList({ evidence, recordings, active, onPick }: { evidence: Evid
 function SegueRow({ map, segue, onSelect, dir }: { map: AppMap; segue: Segue; onSelect: InspectorProps['onSelect']; dir: 'in' | 'out' }) {
   const other = dir === 'out' ? segue.to : segue.from;
   return (
-    <PlainButton
+    <SdkButton
       onClick={() => onSelect({ kind: 'segue', id: segue.id })}
       className="flex w-full cursor-pointer items-center gap-2 rounded-ctl border-0 bg-transparent px-2 py-1 text-left text-footnote text-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
     >
@@ -75,7 +76,7 @@ function SegueRow({ map, segue, onSelect, dir }: { map: AppMap; segue: Segue; on
       <span className="truncate">
         {dir === 'out' ? `${actionVerb(segue.action)} “${segue.label}” → ${refLabel(map, other.node, other.state)}` : `${refLabel(map, other.node, other.state)} → ${actionVerb(segue.action)} “${segue.label}”`}
       </span>
-    </PlainButton>
+    </SdkButton>
   );
 }
 
@@ -110,12 +111,12 @@ export function Inspector({ map, recordings, selection, onSelect, shown, onShow,
               <Icon name={SEGUE_ICON[s.kind]} size={12} sw={2} /> {KIND_TEXT[s.kind]} · seen {s.evidence.length}× in {recs} recording{recs === 1 ? '' : 's'}
             </p>
             <div className="mt-3 flex flex-col gap-1 text-footnote">
-              <PlainButton onClick={() => onSelect({ kind: 'frame', key: frameKey(s.from) })} className="cursor-pointer truncate rounded-ctl border-0 bg-secondary px-2 py-1.5 text-left text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+              <SdkButton onClick={() => onSelect({ kind: 'frame', key: frameKey(s.from) })} className="cursor-pointer truncate rounded-ctl border-0 bg-secondary px-2 py-1.5 text-left text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
                 From · {refLabel(map, s.from.node, s.from.state)}
-              </PlainButton>
-              <PlainButton onClick={() => onSelect({ kind: 'frame', key: frameKey(s.to) })} className="cursor-pointer truncate rounded-ctl border-0 bg-secondary px-2 py-1.5 text-left text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+              </SdkButton>
+              <SdkButton onClick={() => onSelect({ kind: 'frame', key: frameKey(s.to) })} className="cursor-pointer truncate rounded-ctl border-0 bg-secondary px-2 py-1.5 text-left text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
                 To · {refLabel(map, s.to.node, s.to.state)}
-              </PlainButton>
+              </SdkButton>
             </div>
           </Section>
           <Section title="Seen at">
@@ -185,11 +186,11 @@ export function Inspector({ map, recordings, selection, onSelect, shown, onShow,
         <ul className="m-0 flex list-none flex-col gap-0.5 p-0 text-footnote">
           {journeys.filter((j) => map.recordings.some((r) => r.id === j.id)).map((j) => (
             <li key={j.id}>
-              <PlainToggleButton pressed={journey === j.id} onPressedChange={(on) => onJourney(on ? j.id : null)}
+              <SdkToggle pressed={journey === j.id} onPressedChange={(on) => onJourney(on ? j.id : null)}
                 className="flex w-full cursor-pointer items-center gap-2 rounded-ctl border-0 bg-transparent px-2 py-1 text-left text-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring data-pressed:bg-secondary">
                 <span className="size-2.5 shrink-0 rounded-full" style={{ background: j.color }} />
                 <span className="truncate">{j.name}</span>
-              </PlainToggleButton>
+              </SdkToggle>
             </li>
           ))}
         </ul>

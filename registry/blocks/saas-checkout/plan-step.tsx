@@ -4,8 +4,7 @@
 import { NumberInput, NumberInputControl, NumberInputDecrement, NumberInputGroup, NumberInputIncrement } from '@ui-sdk/react/number-input';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { Form } from '@/components/ui/form';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { inputVariants } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NumberMorph } from '@/components/ui/number-morph';
@@ -23,7 +22,7 @@ const WHOLE_DOLLARS: Intl.NumberFormatOptions = { style: 'currency', currency: '
 export function PlanStep() {
   const c = useCheckoutCtx();
   return (
-    <Form onSubmit={(e) => { e.preventDefault(); c.goTo('account'); }} className="gap-6">
+    <FieldGroup render={<form onSubmit={(e) => { e.preventDefault(); c.goTo('account'); }} />} className="gap-6">
       <StepHeading title="Choose your plan" description="Change plans or seats whenever you like — we prorate the difference." focus={c.moved} />
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <span aria-hidden="true" className="text-subhead font-medium text-foreground">Billing</span>
@@ -39,7 +38,7 @@ export function PlanStep() {
       <Button type="submit" size="lg" className="w-full">
         Continue <Icon name="arrow-right" size={18} sw={2.2} />
       </Button>
-    </Form>
+    </FieldGroup>
   );
 }
 
@@ -98,7 +97,7 @@ function SeatStepper() {
     : 'Add seats as your team grows; you pay for the days you use them.';
   return (
     <Field className="gap-1.5">
-      <FieldLabel>Seats</FieldLabel>
+      <FieldLabel variant="default">Seats</FieldLabel>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <NumberInput
           value={seats}

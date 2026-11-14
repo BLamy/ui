@@ -27,7 +27,7 @@ import { NumberMorph } from '@brett_lamy/ui'
 
 ## Usage
 
-Pass a `value` and optional `format` (any `Intl.NumberFormatOptions`) and `locales`. Every part of the formatted string keeps its identity by place: the units digit stays the units digit and the thousands comma stays the thousands comma, so `1,234` to `12,345` slides the comma one digit left rather than rewriting the text.
+Pass a `value` and optional `format` (any `Intl.NumberFormatOptions`) and `locale`. Every part of the formatted string keeps its identity by place: the units digit stays the units digit and the thousands comma stays the thousands comma, so `1,234` to `12,345` slides the comma one digit left rather than rewriting the text.
 
 {% demo src="number-morph/counter" %}
 
@@ -35,19 +35,19 @@ Pass a `value` and optional `format` (any `Intl.NumberFormatOptions`) and `local
 <NumberMorph value={balance} format={{ style: 'currency', currency: 'USD' }} />
 <NumberMorph value={0.42} format={{ style: 'percent' }} />
 <NumberMorph value={1_250_000} format={{ notation: 'compact' }} />
-<NumberMorph value={balance} locales="de-DE" format={{ style: 'currency', currency: 'EUR' }} />
+<NumberMorph value={balance} locale="de-DE" format={{ style: 'currency', currency: 'EUR' }} />
 ```
 
 ## How it moves
 
 - Digits are a 0 to 9 reel that rolls up when the value rises and down when it falls. A wrap from 9 to 0 keeps rolling in the same direction.
 - Parts that appear or disappear (a new leading digit, a minus sign) scale and blur in or out, and the rest spring to their new positions.
-- `format` and `locales` are compared by value, so passing a fresh object each render does not remount anything.
+- `format` and `locale` are compared by value, so passing a fresh object each render does not remount anything.
 - Under `prefers-reduced-motion` the digits step without rolling and the layout changes instantly.
 
 ## Accessibility
 
-The root is `role="img"` with `aria-label` set to the formatted number, so assistive technology reads "$11,249.50" rather than a column of digits. The rolling reels are `aria-hidden`. A live value that changes often should not be announced on every tick: update an `aria-live` region less often if it matters. Inherit the surrounding font for width-stable digits: the root sets `tabular-nums`.
+The formatted number is plain text in the root (a visually hidden span), so assistive technology reads "$11,249.50" as text rather than a column of digits or an image. The rolling layer is `aria-hidden`, and it is clipped to the line box so nothing mid-roll draws above or below the text. A live value that changes often should not be announced on every tick: update an `aria-live` region less often if it matters. Inherit the surrounding font for width-stable digits: the root sets `tabular-nums`.
 
 ## Props
 
@@ -55,8 +55,9 @@ The root is `role="img"` with `aria-label` set to the formatted number, so assis
 | --- | --- | --- |
 | `value` | — | The number to show. |
 | `format` | — | `Intl.NumberFormat` options (`style`, `currency`, `minimumFractionDigits`, `notation`, …). |
-| `locales` | runtime default | A locale string or list. |
+| `locale` | runtime default | A locale string or list. Progress and ProgressRing pass their own `locale` through. |
 | `className` / `style` | — | Merged onto the root `span` (`inline-flex`, `tabular-nums`, `whitespace-pre`). |
+| `ref`, DOM props | — | Passed to the root `span` (`id`, `data-*`, `aria-*`, events). |
 
 ## Styling
 

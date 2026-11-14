@@ -16,7 +16,7 @@ type Story = StoryObj<typeof ColorField>;
 export const Default: Story = {
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Accent</FieldLabel>
+      <FieldLabel>Accent</FieldLabel>
       <ColorField defaultValue="#7f5af0" {...args} />
       <FieldDescription>Any CSS color: a hex, a name, hsl() or oklch().</FieldDescription>
     </Field>
@@ -27,7 +27,7 @@ export const PlainInput: Story = {
   name: 'Without a swatch',
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Accent</FieldLabel>
+      <FieldLabel>Accent</FieldLabel>
       <ColorField defaultValue="#30d158" {...args}>
         <ColorFieldInput placeholder="#RRGGBB" />
       </ColorField>
@@ -48,7 +48,7 @@ export const Sizes: Story = {
 export const Channel: Story = {
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Hue</FieldLabel>
+      <FieldLabel>Hue</FieldLabel>
       <ColorField space="hsl" defaultValue="#7f5af0" {...args}>
         <ColorFieldSwatch />
         <ColorFieldChannelInput channel="hue" />
@@ -60,7 +60,7 @@ export const Channel: Story = {
 export const Invalid: Story = {
   render: (args) => (
     <Field invalid>
-      <FieldLabel variant="field">Accent</FieldLabel>
+      <FieldLabel>Accent</FieldLabel>
       <ColorField defaultValue="#7f5af0" {...args} />
       <FieldError match>Pick a darker color.</FieldError>
     </Field>
@@ -70,7 +70,7 @@ export const Invalid: Story = {
 export const Disabled: Story = {
   render: (args) => (
     <Field disabled>
-      <FieldLabel variant="field">Accent</FieldLabel>
+      <FieldLabel>Accent</FieldLabel>
       <ColorField defaultValue="#7f5af0" {...args} />
     </Field>
   ),
@@ -83,7 +83,7 @@ export const Controlled: Story = {
     return (
       <>
         <Field>
-          <FieldLabel variant="field">Accent</FieldLabel>
+          <FieldLabel>Accent</FieldLabel>
           <ColorField {...args} value={color} onValueChange={setColor} />
         </Field>
         <Caption>{parsed ? formatColor(parsed, 'hsl') : color}</Caption>
@@ -105,7 +105,7 @@ export const Dark: Story = {
   decorators: [(Story) => <Panel w={340} dark><Story /></Panel>],
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Accent</FieldLabel>
+      <FieldLabel>Accent</FieldLabel>
       <ColorField defaultValue="#7f5af0" {...args} />
     </Field>
   ),

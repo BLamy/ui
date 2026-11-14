@@ -21,7 +21,7 @@
 
    A tailnet alone reaches your devices. To browse the public internet, an exit node carries the traffic (and the DNS lookups
    for public names). Safari picks one for you: opening a public address with none set selects the best online exit node
-   (the one used last, else the first by name) and then loads the page. The shield menu (core TailscaleMenu) can change or
+   (the one used last, else the first by name) and then loads the page. The shield menu (the core Tailscale parts in a popover) can change or
    clear it; choosing "None: your devices only" is remembered, and then a public address shows why it fails, and Try Again
    turns an exit node back on. Try Again also swaps an offline or failing exit node for another online one. With no online
    exit node a public address fails with an explanation. */

@@ -3,7 +3,7 @@
    - NavigationStack: one page per scene, each page's bar from the scene's Screen root (its title, large title,
      grouped background and leading and trailing items) — the kit draws the bar, pushes with its own spring and
      edge swipe, and its back button pops. A push segue from any scene inside it pushes here.
-   - TabView: one tab per child (an embedded scene usually), the bar at the bottom; tabs keep their state.
+   - TabsScreen: one tab per child (an embedded scene usually), the bar at the bottom; tabs keep their state.
    - SplitView: sidebar, supplementary and detail columns that collapse into a stack on a narrow device; a Show
      Detail segue puts its scene in the detail column.
    - an embedded scene (SceneRef): another scene rendered as a component, its props from bindings and its callback
@@ -14,7 +14,7 @@ import {
   NavigationStackTitle, NavigationStackTrailing,
 } from '@/components/ui/navigation-stack';
 import { SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSupplementary, useSplitView } from '@/components/ui/split-view';
-import { TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab, type TabViewPlacement } from '@/components/ui/tab-view';
+import { Tabs, TabsBar, TabsList, TabsPanel, TabsPanels, TabsTab, type TabsSide } from '@/components/ui/tabs';
 import { useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { appearSchedule } from './appear';
@@ -332,39 +332,40 @@ function NavStack({ r }: { r: RenderArgs }) {
   );
 }
 
-/* ── TabView ── */
+/* ── TabsScreen ── */
 
 /** Wide enough for a side rail instead of a tab bar (an iPad's regular width, a desktop window). */
 const RAIL_AT = 700;
 
-export function TabViewHost({ r }: { r: RenderArgs }) {
+export function TabsScreenHost({ r }: { r: RenderArgs }) {
   const tabs = itemsOf(r.p.tabs);
   const selected = str(r.p.value, tabs[0]?.id);
   // auto: compact is a phone's width (a tab bar), anything wider gets a side rail.
   const [box, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: { medium: RAIL_AT }, initial: 'compact' });
-  const asked = (['bottom', 'start', 'top'] as const).find((p) => p === r.p.placement);
-  const placement: TabViewPlacement = asked ?? (sizeClass === 'compact' ? 'bottom' : 'start');
+  const asked = (['bottom', 'start', 'top'] as const).find((p) => p === r.p.side);
+  const side: TabsSide = asked ?? (sizeClass === 'compact' ? 'bottom' : 'start');
   return (
     <div ref={box} className="relative size-full">
-      <TabView
-        placement={placement}
+      <Tabs
+        variant={side === 'start' ? 'rail' : 'bar'}
+        side={side}
         value={selected}
         onValueChange={(k) => k != null && r.on.onValueChange?.(k)}
         className="relative size-full"
       >
-        <TabViewBar hideOnScroll={false}>
-          <TabViewList aria-label="Tabs">
-            {tabs.map((t) => <TabViewTab key={t.id} value={t.id} icon={t.icon ?? 'circle'} title={t.label} />)}
-          </TabViewList>
-        </TabViewBar>
-        <TabViewPanels>
+        <TabsBar hideOnScroll={false}>
+          <TabsList aria-label="Tabs">
+            {tabs.map((t) => <TabsTab key={t.id} value={t.id} icon={t.icon ?? 'circle'}>{t.label}</TabsTab>)}
+          </TabsList>
+        </TabsBar>
+        <TabsPanels>
           {tabs.map((t, i) => (
-            <TabViewPanel key={t.id} value={t.id} keepMounted className="overflow-hidden">
+            <TabsPanel key={t.id} value={t.id} keepMounted className="overflow-hidden">
               {r.childList[i] ?? <Placeholder icon="plus" text={`Drop a scene here for “${t.label}”`} />}
-            </TabViewPanel>
+            </TabsPanel>
           ))}
-        </TabViewPanels>
-      </TabView>
+        </TabsPanels>
+      </Tabs>
     </div>
   );
 }

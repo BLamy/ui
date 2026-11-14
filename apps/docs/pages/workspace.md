@@ -1,6 +1,8 @@
 # Workspace
 
-A dockable workspace for editors and tools. Tabs live in tabsets, tabsets sit in resizable splits, and a tab moves along its strip, to another tabset, or onto an edge of one to split it there, by pointer or from the keyboard. Any tabset can be maximized over the others. Each split is [UI SDK](https://ui-sdk.dev)'s Resizable and each tabset its Tabs, driven by one layout you can save.
+A dockable workspace for editors and tools. Tabs live in tabsets, tabsets sit in resizable splits, and a tab moves along its strip, to another tabset, or onto an edge of one to split it there, by pointer or from the keyboard. Any tabset can be maximized over the others. Each split is [UI SDK](https://ui-sdk.dev)'s Resizable and each tabset its Tabs, driven by one layout you can save. On a phone-sized box it becomes one strip of tabs along the bottom.
+
+Use it when people arrange the panes themselves. For a fixed set of views one at a time, use [Tabs](https://blamy.github.io/ui/#/tabs); for fixed columns that collapse into a stack on a phone (mail, notes, settings), use [SplitView](https://blamy.github.io/ui/#/split-view).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -98,19 +100,21 @@ renderTab={(tab) => (
 )}
 ```
 
-`renderTabsetToolbar(tabset, state)` draws what follows a tabset's tabs; `state` has `active`, `maximized`, `only`, `empty`, `selectedTabId` and `tabPlacement`. `WorkspaceToolbar` lays out your actions followed by `WorkspaceMaximize`, which maximizes and restores its tabset and renders nothing in the only one. `renderEmptyTabset(tabset)` fills a tabset without tabs: the root of an empty workspace, or one with `keepWhenEmpty`.
+`renderTabsetToolbar(tabset, state)` draws what follows a tabset's tabs; `state` has `active`, `maximized`, `only`, `empty`, `selectedTabId` and `tabSide`. `WorkspaceToolbar` lays out your actions followed by `WorkspaceMaximize`, which maximizes and restores its tabset and renders nothing in the only one. `renderEmptyTabset(tabset)` fills a tabset without tabs: the root of an empty workspace, or one with `keepWhenEmpty`.
 
 ## Moving tabs
 
 Drag a tab along its strip, into another strip, onto the middle of a tabset's content to join it, or near an edge to split there; a copy of the tab follows the pointer and the drop indicator shows the region. Escape cancels a drag. `accepts(tab, target)` decides whether a tab may go to a target, another tabset or an edge of any tabset (its own strip always takes it back), so `accepts={() => false}` keeps every tab in its strip; `disabled` locks the arrangement (nothing resizes, moves or closes by hand, though tabs still select and tabsets maximize). A tab with `disableDrag` stays put and one with `disableClose` has no close button.
 
-## Placement and sizes
+## Sides, sizes and the compact presentation
 
-`tabPlacement` (`top`, `bottom`, `left`, `right`) puts every tabset's strip on that side; a tabset's own `tabPlacement` overrides it. `tabsetMinWidth` and `tabsetMinHeight` (in `px` or `rem`) bound every tabset, and a tabset's `minWidth`/`minHeight` override them.
+`tabSide` (`top`, `bottom`, `start`, `end`) puts every tabset's strip on that side, and a tabset's own `tabSide` overrides it; `start` and `end` follow the reading direction, and their strips run down the pane (Up and Down move between tabs). `tabsetMinWidth` and `tabsetMinHeight` (in `px` or `rem`) bound every tabset, and a tabset's `minWidth`/`minHeight` override them.
+
+`presentation` decides how the layout is shown. `docked` lays the tabsets out in their splits. `tabs` shows every tab of every tabset in one strip along the bottom, one tab at a time, with nothing to drag or drop: picking a tab selects it in its tabset and makes that tabset the active one, and each tab keeps its state. `auto` (the default) is `tabs` while the workspace's own box is compact (narrower than 640px, measured on the workspace, not the viewport) and `docked` otherwise. The layout itself never changes, so a window that grows again gets its panes back. The root carries `data-presentation` (`docked` or `tabs`).
 
 ## Styling
 
-`className` styles the root. `classNames` adds classes to the parts the workspace renders from its layout: `split`, `handle`, `tabset`, `header`, `tabList`, `tab`, `tabTrigger`, `toolbar`, `tabPanels`, `tabContent` and `dropIndicator`. They carry UI SDK's state attributes: a handle has `data-hovering` and `data-dragging`; a tabset `data-active`, `data-maximized`, `data-empty` and `data-tab-placement`; a tab `data-selected`, `data-moving` (picked up) and `data-dragging`, and its copy in flight `data-drag-preview`; the drop indicator `data-region`.
+`className` styles the root, which draws no frame of its own: add `rounded-card border border-border` for a card. `classNames` adds classes to the parts the workspace renders from its layout: `split`, `handle`, `tabset`, `header`, `tabList`, `tab`, `tabTrigger`, `toolbar`, `tabPanels`, `tabContent` and `dropIndicator`. They carry UI SDK's state attributes: a handle has `data-hovering` and `data-dragging`; a tabset `data-active`, `data-maximized`, `data-empty` and `data-tab-side`; a tab `data-selected`, `data-moving` (picked up) and `data-dragging`, and its copy in flight `data-drag-preview`; the drop indicator `data-region`.
 
 ## Accessibility
 
@@ -145,7 +149,8 @@ A `<div>` with the `group` role.
 | `keepMounted` | `true` | Whether hidden tabs' content stays mounted; a function decides per tab. |
 | `disabled` | `false` | Locks the arrangement. |
 | `accepts` | yes | `(tab, target)`: whether a tab may go to `target`, another tabset or an edge. |
-| `tabPlacement` | `top` | Where strips sit around their content. |
+| `tabSide` | `top` | Where strips sit around their content: `top`, `bottom`, `start` or `end`. |
+| `presentation` | `auto` | `docked`, `tabs` (one strip along the bottom), or `auto`: `tabs` while the workspace is compact. |
 | `tabsetMinWidth` / `tabsetMinHeight` | — | Bounds for every tabset, in `px` or `rem`. |
 | `tabsetLabel` | `Pane N` | `(tabset, index)`: a tabset's name. |
 | `tabDescription` | how to move and close | What a screen reader hears after a tab's name. |

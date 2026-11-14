@@ -5,7 +5,7 @@
    ↻ repeat, if, ⚡ actions, ✦ motion. Resting on a scene, a segue or a context previews it in a hover card (previews.tsx):
    the scene as the canvas draws it, a segue's two ends and what it hands over, a context's fields. */
 import { useMemo, useState } from 'react';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Tree, type TreeNode } from '@/components/ui/tree';
 import { Icon, type IconName } from '@/lib/icon';
@@ -182,7 +182,7 @@ export function Outline({ onFocusScene }: { onFocusScene: (id: string) => void }
         className="min-h-0 flex-1 px-1.5 py-1"
       />
       <div className="flex shrink-0 items-center gap-1 border-t border-border p-1.5">
-        <PlainButton
+        <SdkButton
           onClick={() => {
             const last = b.doc.scenes.reduce((m, s) => (s.x > m.x ? s : m), b.doc.scenes[0]);
             const s = newScene(b.doc, (last?.x ?? 0) + 640, last?.y ?? 0);
@@ -192,8 +192,8 @@ export function Outline({ onFocusScene }: { onFocusScene: (id: string) => void }
           className="flex h-7 cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-2 text-footnote font-medium text-primary outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Icon name="plus" size={14} sw={2.4} /> Scene
-        </PlainButton>
-        <PlainButton
+        </SdkButton>
+        <SdkButton
           onClick={() => {
             const c = newContext(b.doc);
             b.commit((d) => ({ ...d, contexts: [...d.contexts, c] }), { kind: 'context', context: c.id });
@@ -201,7 +201,7 @@ export function Outline({ onFocusScene }: { onFocusScene: (id: string) => void }
           className="flex h-7 cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-2 text-footnote font-medium text-primary outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Icon name="plus" size={14} sw={2.4} /> Context
-        </PlainButton>
+        </SdkButton>
       </div>
     </div>
   );

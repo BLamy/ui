@@ -17,7 +17,7 @@ function TeamDirectory() {
   const compact = width < 600
   // Wide: the detail is a column beside the list. Compact: it covers the list
   // until you close it.
-  const mode: AdaptivePanePresentation = compact ? (sel ? 'cover' : 'hidden') : 'column'
+  const mode: AdaptivePanePresentation = compact ? 'cover' : 'column'
   return (
     <div
       ref={ref}
@@ -29,15 +29,15 @@ function TeamDirectory() {
       }}
     >
       <main style={{ flex: 1, minWidth: 0, paddingTop: 14 }}>
-        <List inset>
+        <List variant="inset">
           <ListSection title="Team">
             {team.map((p, i) => (
               <ListRow
                 key={p.l}
-                leading={<Avatar c={p} size={34} />}
+                icon={<Avatar name={`${p.f} ${p.l}`} size={34} />}
                 title={`${p.f} ${p.l}`}
                 accessory="chevron"
-                selected={!compact && sel === p}
+                current={!compact && sel === p}
                 divider={i < team.length - 1}
                 onClick={() => setSel(p)}
               />
@@ -48,9 +48,13 @@ function TeamDirectory() {
       <AdaptivePane
         presentation={mode}
         side="end"
+        // Wide, the detail always shows; compact, it covers the list while
+        // someone is selected.
+        open={!compact || sel !== null}
+        onOpenChange={(open) => !open && setSel(null)}
         columnWidth={260}
         zIndex={10}
-        columnStyle={{ borderInlineStart: '1px solid var(--border)' }}
+        className="border-s border-border"
       >
         <div
           style={{
@@ -72,7 +76,7 @@ function TeamDirectory() {
           )}
           {sel ? (
             <>
-              <Avatar c={sel} size={72} style={{ margin: '14px auto 10px' }} />
+              <Avatar name={`${sel.f} ${sel.l}`} size={72} style={{ margin: '14px auto 10px' }} />
               <div style={{ fontSize: 19, fontWeight: 700 }}>
                 {sel.f} {sel.l}
               </div>

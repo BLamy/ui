@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type HTMLAttributes, type Ref } from 'react';
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'framer-motion';
 import { springs } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -9,7 +9,8 @@ import { cn } from '@/lib/utils';
    rest blur out and in, and the box springs to the new width. At rest it is one plain text run (kerning,
    selection and screen readers see ordinary text); the per-letter layer exists only while a morph runs.
    Letters are matched by character and occurrence (the 2nd "o" pairs with the 2nd "o"), which is what reads
-   as "shared letters" for labels. */
+   as "shared letters" for labels. The root is an inline-block at rest and while morphing, so box utilities
+   (`truncate`, padding, a background) apply the same way throughout; only its width is pinned during a morph. */
 
 interface Glyph { key: string; ch: string }
 interface Layout { text: string; glyphs: Glyph[]; xs: number[]; w: number }
@@ -48,13 +49,14 @@ interface Morph { from: Layout; to: Layout }
 const LETTER_IN = { duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.05 } as const;
 const LETTER_OUT = { duration: 0.18, ease: [0.4, 0, 1, 1] } as const;
 
-export interface TextMorphProps {
+type MotionConflicts = 'onAnimationStart' | 'onAnimationEnd' | 'onAnimationIteration' | 'onDrag' | 'onDragStart' | 'onDragEnd';
+
+export interface TextMorphProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'children' | MotionConflicts> {
   children: string;
-  className?: string;
-  style?: CSSProperties;
+  ref?: Ref<HTMLSpanElement>;
 }
 
-export function TextMorph({ children, className, style }: TextMorphProps) {
+export function TextMorph({ children, className, style, ...props }: TextMorphProps) {
   const text = String(children ?? '');
   const reduced = useReducedMotion();
   const runRef = useRef<HTMLSpanElement | null>(null);
@@ -73,7 +75,6 @@ export function TextMorph({ children, className, style }: TextMorphProps) {
     setMorph({ from: prev, to: now });
     clearTimeout(done.current);
     done.current = setTimeout(() => { setMorph(null); width.set('auto'); }, 700);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
   // Web fonts can land after the first measure; keep the resting layout current.
   useEffect(() => {
@@ -87,9 +88,10 @@ export function TextMorph({ children, className, style }: TextMorphProps) {
   const toKeys = new Set(morph?.to.glyphs.map((g) => g.key) ?? []);
   return (
     <motion.span
+      {...props}
       data-slot="text-morph"
       data-morphing={morph ? '' : undefined}
-      className={cn(morph ? 'relative inline-block text-start whitespace-pre' : 'contents', className)}
+      className={cn('inline-block', morph && 'relative text-start whitespace-pre', className)}
       style={morph ? { ...style, width } : style}
     >
       <span ref={runRef} style={morph ? { visibility: 'hidden' } : undefined}>{text}</span>

@@ -8,7 +8,7 @@ const meta: Meta<typeof Progress> = {
   args: { value: 60, 'aria-label': 'Upload', size: 'default', tone: 'default' },
   argTypes: {
     size: { control: 'inline-radio', options: ['sm', 'default', 'lg'] },
-    tone: { control: 'inline-radio', options: ['default', 'success', 'destructive'] },
+    tone: { control: 'inline-radio', options: ['default', 'success', 'warning', 'destructive'] },
   },
   decorators: [(Story) => <Panel><Story /></Panel>],
 };
@@ -21,7 +21,8 @@ const all = (
   <div className="flex flex-col gap-6">
     <Progress label="Uploading 12 photos" showValue value={38} />
     <Progress label="Backup complete" showValue value={100} tone="success" size="sm" />
-    <Progress label="Storage almost full" showValue value={92} tone="destructive" size="lg" />
+    <Progress label="Syncing paused: low battery" showValue value={64} tone="warning" />
+    <Progress label="Upload failed" showValue value={72} tone="destructive" size="lg" />
     <Progress label="Preparing…" />
   </div>
 );

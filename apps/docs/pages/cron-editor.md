@@ -1,6 +1,8 @@
 # CronEditor
 
-Edit a 5-field cron expression with its meaning in view. Where the browser has WebGPU, the editor is a plain-English box ("every weekday at 9am") and the next runs: [gpu-cron](https://github.com/jlsajfj/gpu-cron), a tiny on-device model, turns the text into an expression on every keystroke, and that is the value. Everywhere else (and with `naturalLanguage={false}`) it is the raw expression: a plain text field with each of its five fields (minute, hour, day of month, month, day of week) labelled and checked on its own, an English description, preset chips and the next runs in any time zone, all computed locally.
+Edit a 5-field cron expression with its meaning in view. Where the browser has WebGPU, the editor leads with a plain-English box ("every weekday at 9am"): [gpu-cron](https://github.com/jlsajfj/gpu-cron), a tiny on-device model, turns the text into an expression on every keystroke, and that is the value. The expression it chose is always shown under the box, and **Edit expression** opens the raw editor to correct it by hand. Everywhere else (and with `naturalLanguage={false}`) it is the raw expression: a plain text field with each of its five fields (minute, hour, day of month, month, day of week) labelled and checked on its own, an English description, preset chips and the next runs in any time zone, all computed locally.
+
+Use it for a job schedule that a cron runner will execute. For a one-off date or a human recurrence ("every other tuesday", a reminder) use [NaturalTimeInput](https://blamy.github.io/ui/#/natural-time-input), which yields dates and RRULEs; for a date or time typed part by part, [DateField](https://blamy.github.io/ui/#/date-field). CronEditor is a composite — two text boxes, presets and a preview — so it labels its own boxes (`label`, `naturalLanguageLabel`) rather than going in a single [Field](https://blamy.github.io/ui/#/field); group it under a heading with a `FieldSet` and `FieldLegend`, and give it a `name` to submit the expression with a form.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -39,12 +41,13 @@ const [cron, setCron] = useState('0 9 * * 1-5')
 
 {% demo src="cron-editor/basic" %}
 
-Where WebGPU works there are two parts:
+Where WebGPU works there are three parts:
 
 1. **Describe the schedule.** Type English. Each answer the model gives for what the box says now becomes the value (`onValueChange`), as you type; an answer for older text never lands late.
-2. **Next runs**: the next five times the value runs, in a time zone, with the zone named under the list. They are how you check the model's reading. See the section below.
+2. **Expression**: the cron expression the model chose (or the controlled `value`), in monospace, with **Edit expression**, a disclosure that opens the raw editor below to fix a wrong reading by hand.
+3. **Next runs**: the next five times the value runs, in a time zone, with the zone named under the list. They are how you check the model's reading. See the section below.
 
-Without WebGPU the box is replaced by a note, and the editor is the raw expression, top to bottom:
+Without WebGPU the box is left out (the expression's description says why), and the editor is the raw expression, top to bottom:
 
 1. **The expression.** A monospace text field. Under it, the five fields are shown one per cell with their names, and the cell the caret is in is outlined. A field that is wrong is outlined in the error color, and the error text names it ("Minute: 60 is out of range (0–59)"). An empty field gets a prompt, not an error.
 2. **A description**, in English, from [cronstrue](https://github.com/bradymholt/cRonstrue) (loaded on first use): "At 09:00 AM, Monday through Friday".
@@ -61,13 +64,13 @@ Without WebGPU the box is replaced by a note, and the editor is the raw expressi
 
 The model (45,376 parameters, 89 KB, MIT) turns text into a cron expression by constrained decoding: the output is **always syntactically valid** cron. It is **not** always the schedule you meant, and it has **no way to say it did not understand**. Gibberish gets a confident, valid, meaningless expression back. gpu-cron's own tests put its semantic accuracy at 83 to 87 percent on held-out phrasings, and sub-minute requests ("every 30 seconds") and end-of-month requests ("the last day of the month") are known to come out wrong, because standard 5-field cron cannot say them.
 
-So the answer is never out of sight: CronEditor applies it as you type, and the next runs right under the box show what it actually means — "every tuesday at 10pm" reads *Tue, Oct 6, 2026, 10:00 PM*, a misreading reads wrong at a glance. Show the value as well when it matters (the demo prints it under the editor). If you build your own UI on `useCronParse`, do the same: always show what the decoded expression does next to what the person typed.
+So the answer is never out of sight: CronEditor applies it as you type, shows the expression under the box, and the next runs show what it actually means — "every tuesday at 10pm" reads *0 22 \* \* 2* and *Tue, Oct 6, 2026, 10:00 PM*, a misreading reads wrong at a glance, and **Edit expression** fixes it. If you build your own UI on `useCronParse`, do the same: always show what the decoded expression does next to what the person typed.
 
 Other facts about it:
 
 - **5 fields only.** No `@daily` macros, `L`, `W`, `#`, `?` or names in what the model writes; Sunday is 0. (The raw field and the local calculator also accept names and macros.)
 - **Its `next` times are in the machine's local zone** and the package has no option to change that. CronEditor ignores them and computes the runs itself with `nextCronRuns`, so the list follows `timeZone`.
-- **One call at a time.** The package serialises calls, so one call per keystroke is safe. CronEditor asks on every keystroke (`debounceMs` 0); the hook's own default is 150 ms.
+- **One call at a time.** The package serialises calls, so one call per keystroke is safe. CronEditor asks on every keystroke (`parse.debounceMs` 0); the hook's own default is 150 ms.
 - **Long text is refused** (the model has a fixed context); the box shows "That description is too long".
 
 ## WebGPU: when the box is there
@@ -77,9 +80,9 @@ gpu-cron runs only on WebGPU. There is no CPU fallback. CronEditor therefore ask
 | Environment | Plain-English box | Raw expression, description, presets, next runs |
 | --- | --- | --- |
 | Browser with WebGPU and an adapter | Offered. gpu-cron (89 KB) loads when the editor mounts. | Works. |
-| Browser without WebGPU (no `navigator.gpu`) | Hidden, with a note: "Describing a schedule in words needs WebGPU, which this browser does not offer." gpu-cron is never downloaded. | Works. |
-| WebGPU present, no adapter (some VMs and blocklisted GPUs) | Hidden, with the same note. | Works. |
-| Insecure origin (plain `http://` that is not localhost) | Hidden, with the same note: browsers do not expose WebGPU there. | Works. |
+| Browser without WebGPU (no `navigator.gpu`) | Hidden; the expression's description adds "Describing a schedule in words needs WebGPU, which this browser does not offer." gpu-cron is never downloaded. | Works. |
+| WebGPU present, no adapter (some VMs and blocklisted GPUs) | Hidden, with the same sentence. | Works. |
+| Insecure origin (plain `http://` that is not localhost) | Hidden, with the same sentence: browsers do not expose WebGPU there. | Works. |
 | Headless browser or CI | Offered if the browser can create an adapter (a software one is enough, though slower), else hidden. | Works. |
 | Server rendering | The box is not rendered on the server and is decided after mount; no gpu-cron code runs. | The fields and description are rendered; the next runs appear after mount (they depend on the clock). |
 | `naturalLanguage={false}` | Never offered; nothing is loaded. | Works. |
@@ -112,7 +115,7 @@ When **both** day of month and day of week are restricted a day matches if **eit
 
 {% demo src="cron-editor/daylight-saving" %}
 
-Without `timeZone` the device's zone is used and the list says so. The runs count from "now", read after mount so the server and client HTML match, and refreshed every 30 seconds; pass `from` to pin the moment (the demos on this page do, so they read the same for everyone). An unknown zone is reported in place of the list. Expressions that never match a real date (`0 0 30 2 *`) say so; the search looks about eight years ahead, enough to find the next 29 February.
+Without `timeZone` the device's zone is used and the list says so. The runs count from "now", read after mount so the server and client HTML match, and refreshed every 30 seconds; pass `reference` to pin the moment (the demos on this page do, so they read the same for everyone). An unknown zone is reported in place of the list. Expressions that never match a real date (`0 0 30 2 *`) say so; the search looks about eight years ahead, enough to find the next 29 February.
 
 ## SSR and Next.js
 
@@ -120,7 +123,7 @@ The module starts with `'use client'`. On the server it renders the labelled fie
 
 ## Accessibility
 
-The expression and the plain-English box are UI SDK fields (`Field` + `Input`) with linked labels, descriptions and errors; `aria-invalid` follows the validation, and the error text lists every problem. The five-field breakdown is a description list (name and value pairs). Presets are a toggle group named "Presets": toggle buttons that report their pressed state, with one Tab stop and the arrow keys between them. Next runs is a list of `<time>` elements. The model's answer is dimmed and marked busy while a newer one is pending. Colors are never the only signal: invalid fields also carry error text.
+The expression and the plain-English box are UI SDK fields (`Field` + `Input`) with linked labels, descriptions and errors; `aria-invalid` follows the validation, and each problem is its own error line, after an icon. **Edit expression** is a disclosure button (`aria-expanded`) that shows and hides the raw editor. The five-field breakdown is a description list (name and value pairs). Presets are a toggle group named "Presets": toggle buttons that report their pressed state, with one Tab stop and the arrow keys between them. Next runs is a list of `<time>` elements. The model's answer is dimmed and marked busy while a newer one is pending. Colors are never the only signal: invalid fields also carry error text.
 
 ## API
 
@@ -132,20 +135,20 @@ The expression and the plain-English box are UI SDK fields (`Field` + `Input`) w
 | `onValueChange` | — | `(expression, details) => void`, on every edit, preset press and every answer of the plain-English box. `details.reason` is `input-change` (typing, or the box's answer to it), `item-press` (a preset), `clear-press`, `reset` or `imperative`; `details.cancel()` keeps an uncontrolled editor's expression. |
 | `label` | "Cron expression" | Label of the expression field. |
 | `description` | "Five fields, separated by spaces." | Help text under it. |
-| `name` | — | Form field name of the expression. |
+| `name` | — | Form field name: the expression is submitted under it (a hidden input), whichever box is showing. |
 | `timeZone` | the device's | IANA zone for "Next runs". |
-| `from` | now | The moment the runs count from. A `Date`, epoch milliseconds or an ISO string. |
+| `reference` | now | The moment the runs count from. A `Date`, epoch milliseconds or an ISO string. NaturalTimeInput and FilterInput use the same name. |
 | `nextRunCount` | `5` | How many runs to list. |
 | `presets` | `CRON_PRESETS` | `{ label, value }[]`, or `false`. |
 | `naturalLanguage` | `true` | `false` never loads gpu-cron. |
 | `naturalLanguageLabel` | "Describe the schedule" | Label of the plain-English box. |
 | `locale` | the browser's | BCP 47 locale of the run times. |
-| `debounceMs` | `0` | Wait after typing before asking the model (0: every keystroke). |
-| `variant` | `card` | `card` puts the model's answer and the next runs on filled panels; `plain` has no surface. |
+| `parse` | — | `{ debounceMs }`: the wait after typing before asking the model (default 0, every keystroke). |
+| `variant` | `card` | `card` puts the next runs on a filled panel; `plain` has no surface. |
 | `disabled` | `false` | Disables the fields and chips. |
 | `className`, `style` | — | Merged onto the root (`data-slot="cron-editor"`). Other div props pass through. |
 
-Parts carry `data-slot`s for tests and styling: `cron-editor-natural`, `cron-editor-note`, `cron-editor-fields` (each cell has `data-field`, and `data-active` / `data-invalid`), `cron-editor-description`, `cron-editor-presets` and `cron-editor-next`.
+Parts carry `data-slot`s for tests and styling: `cron-editor-natural`, `cron-editor-expression` (the chosen expression and Edit expression), `cron-editor-fields` (each cell has `data-field`, and `data-active` / `data-invalid`), `cron-editor-description`, `cron-editor-presets` and `cron-editor-next`.
 
 ## Hooks and helpers
 
@@ -171,22 +174,3 @@ Checks for WebGPU, then parses as you type. It **debounces**, **ignores answers 
 | `splitCron(expression)` | The whitespace-separated parts, with a macro expanded. |
 | `CRON_FIELDS` | The five fields with their labels and ranges. |
 | `CRON_PRESETS` | The default preset chips. |
-
-## cva recipes
-
-Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
-
-### `cronEditorVariants`
-
-Defined in `@/components/ui/cron-editor`. Base classes:
-
-```text
-flex min-w-0 flex-col gap-3 text-footnote
-```
-
-**`variant`** — default `card`
-
-| Value | Adds |
-| --- | --- |
-| `card` (default) | `[&_[data-surface]]:rounded-panel [&_[data-surface]]:bg-secondary [&_[data-surface]]:p-3` |
-| `plain` | `[&_[data-surface]]:px-1` |

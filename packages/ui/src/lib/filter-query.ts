@@ -354,17 +354,20 @@ export interface FilterQueryResult extends FilterQueryState {
   refresh: () => void;
 }
 
+/** The longest phrase `useFilterQuery` reads by default, in characters. */
+export const FILTER_QUERY_MAX_LENGTH = 240;
+
 const IDLE: FilterQueryState = { status: 'idle', text: '', pending: false, filters: [], unresolved: [], notes: [] };
 
 export interface UseFilterQueryOptions {
   /** Wait this long (ms) after the last keystroke (default 160). */
-  debounce?: number;
+  debounceMs?: number;
   /** `false` keeps the hook idle and never loads the model. */
   enabled?: boolean;
   /** Longest phrase parsed, in characters (default 240). */
   maxLength?: number;
-  /** "Now" for relative dates (default: the current time). */
-  now?: number | Date;
+  /** The moment relative dates count from ("last week"): a Date or epoch milliseconds. Default: the current time. */
+  reference?: number | Date;
 }
 
 /** Fetches the model ahead of the first phrase (call it on focus). Resolves either way; errors surface in the hook. */
@@ -377,12 +380,12 @@ export function warmFilterQuery(): Promise<void> {
  * weights fetched on first use. Check `unresolved` and `notes` before applying anything.
  */
 export function useFilterQuery(text: string, fields: readonly FilterField[], options: UseFilterQueryOptions = {}): FilterQueryResult {
-  const { debounce = 160, enabled = true, maxLength = 240, now } = options;
+  const { debounceMs = 160, enabled = true, maxLength = FILTER_QUERY_MAX_LENGTH, reference } = options;
   const trimmed = text.trim().slice(0, maxLength);
-  const nowMs = now === undefined ? undefined : typeof now === 'number' ? now : now.getTime();
+  const nowMs = reference === undefined ? undefined : typeof reference === 'number' ? reference : reference.getTime();
   // `fields` is usually an inline array: key the schema on its content, so a re-render does not re-run the query.
   const signature = JSON.stringify(fields.map((f) => [f.id, f.label, f.kind, f.aliases, f.options?.map((o) => [o.value, o.label, o.keywords])]));
-  const query = useMemo(() => buildQuerySchema(fields), [signature]); // eslint-disable-line react-hooks/exhaustive-deps
+  const query = useMemo(() => buildQuerySchema(fields), [signature]);
   const [result, setResult] = useState<FilterQueryState>(IDLE);
   const run = useRef<() => void>(() => undefined);
 
@@ -405,7 +408,7 @@ export function useFilterQuery(text: string, fields: readonly FilterField[], opt
         },
       );
     };
-    const timer = setTimeout(execute, debounce);
+    const timer = setTimeout(execute, debounceMs);
     run.current = () => {
       clearTimeout(timer);
       execute();
@@ -414,7 +417,7 @@ export function useFilterQuery(text: string, fields: readonly FilterField[], opt
       stale = true;
       clearTimeout(timer);
     };
-  }, [trimmed, enabled, debounce, query, nowMs]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [trimmed, enabled, debounceMs, query, nowMs]);
 
   const refresh = useCallback(() => run.current(), []);
   if (!enabled || !trimmed) return { ...IDLE, refresh };

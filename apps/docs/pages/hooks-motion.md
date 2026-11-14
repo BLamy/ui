@@ -4,7 +4,7 @@ The hooks behind BL UI's motion: spring and direction helpers for your own anima
 
 `useSpringTransition`, `useDirection`, `useReducedMotion` and `useMorphTransition` are public. `createTitleFlight` is registry-only: it is not in `@brett_lamy/ui`, and arrives in your project with `NavigationStack` or as a registry item of its own.
 
-Tab panels no longer need a hook to slide in from the side of the selected tab: UI SDK's tab panel part sets `data-activation-direction` (`left`, `right`, `up`, `down` or `none`) and `data-starting-style` / `data-ending-style`, and the kit's `TabsPanel` and `TabViewPanel` style those attributes. 6.0 removed `useTabPanelDirection` and `TabDirection`.
+Tab panels no longer need a hook to slide in from the side of the selected tab: UI SDK's tab panel part sets `data-activation-direction` (`left`, `right`, `up`, `down` or `none`) and `data-starting-style` / `data-ending-style`, and the kit's `TabsPanel` styles those attributes. 6.0 removed `useTabPanelDirection` and `TabDirection`.
 
 ```tsx
 // npm
@@ -59,7 +59,7 @@ The value is stable between changes, which is the point: a panel that is leaving
 ```tsx
 function Steps({ step }: { step: number }) {
   const dir = useDirection(step)
-  return <ContentSwap id={step} direction={dir}>{renderStep(step)}</ContentSwap>
+  return <Swap value={step} direction={dir}>{renderStep(step)}</Swap>
 }
 ```
 
@@ -99,7 +99,7 @@ The 5.x gesture hooks are gone in 6.0. Each was hand-written pointer code; the c
 
 | 5.x hook | 6.0 |
 | --- | --- |
-| `useEdgeSwipe` (`@/lib/edge-swipe`) | `bindEdgeSwipe(el, options)`, from the same `@/lib/edge-swipe` (a framework-free behavior now, on UI SDK's `bindDrag`). `NavigationStack`, `SplitView`, `SideDrawer` and `AdaptivePane` use it. |
+| `useEdgeSwipe` (`@/lib/edge-swipe`) | `bindEdgeSwipe(el, options)`, from the same `@/lib/edge-swipe` (a framework-free behavior now, on UI SDK's `bindDrag`). `NavigationStack`, `SplitView` and `AdaptivePane` (its push and `swipeToOpen`) use it. |
 | `useSheetDrag` (`@/lib/sheet-drag`), `SHEET_TAP_SLOP`, `SHEET_MINIMIZE_TRAVEL` | A sheet that grows, snaps and folds is UI SDK's `Drawer` with `snapPoints` (`snapPoint` / `onSnapPointChange`), `DrawerHandle`, and `--drawer-progress` for whatever follows it, as `FloatingSheet` does. Any other drag: `bindDrag`, with `createVelocityTracker` and `rubberBand`, as the Composer's bump does. |
 | `usePullToRefresh` (`@/lib/pull-to-refresh`) | `bindPullToRefresh(scroller, options)` from the same `@/lib/pull-to-refresh`, or `<NavigationStackContent onRefresh>`. Touch only. |
 | `useTitleFlight` (`@/lib/title-flight`) | `createTitleFlight`, below. |

@@ -5,7 +5,7 @@
    that did. A function that has nothing to change returns the layout it was given. */
 
 export type WorkspaceOrientation = 'horizontal' | 'vertical';
-export type WorkspaceTabPlacement = 'top' | 'bottom' | 'left' | 'right';
+export type WorkspaceTabSide = 'top' | 'bottom' | 'start' | 'end';
 /** A lower bound for a tabset, in pixels or rems. */
 export type WorkspaceMinSize = `${number}px` | `${number}rem`;
 
@@ -36,8 +36,8 @@ export type TabsetNode<TabData = unknown, TabsetData = unknown> = {
   minWidth?: WorkspaceMinSize;
   /** The shortest it gets. Overrides the workspace's `tabsetMinHeight`. */
   minHeight?: WorkspaceMinSize;
-  /** Where its tabs sit around its content. Overrides the workspace's `tabPlacement`. */
-  tabPlacement?: WorkspaceTabPlacement;
+  /** Where its tabs sit around its content. Overrides the workspace's `tabSide`. */
+  tabSide?: WorkspaceTabSide;
   /** Stays when its last tab leaves, showing `renderEmptyTabset`, until `closeTabset` removes it. */
   keepWhenEmpty?: boolean;
   /** The tab on show. */
@@ -318,7 +318,7 @@ export function updateTab<TabData, TabsetData>(
 export function updateTabset<TabData, TabsetData>(
   layout: WorkspaceLayout<TabData, TabsetData>,
   tabsetId: string,
-  changes: Partial<Pick<TabsetNode<TabData, TabsetData>, 'data' | 'keepWhenEmpty' | 'minHeight' | 'minWidth' | 'tabPlacement'>>,
+  changes: Partial<Pick<TabsetNode<TabData, TabsetData>, 'data' | 'keepWhenEmpty' | 'minHeight' | 'minWidth' | 'tabSide'>>,
 ) {
   return findTabset(layout, tabsetId) ? mapTabset(layout, tabsetId, (node) => ({ ...node, ...changes })) : layout;
 }

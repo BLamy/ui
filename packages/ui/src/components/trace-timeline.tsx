@@ -1,9 +1,10 @@
 'use client';
 import {
-  useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore,
-  type CSSProperties, type FocusEvent, type HTMLAttributes, type PointerEvent as ReactPointerEvent, type ReactNode, type Ref,
+  Children, isValidElement, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore,
+  type CSSProperties, type FocusEvent, type HTMLAttributes, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode, type Ref,
 } from 'react';
 import { cva } from 'class-variance-authority';
+import { announce } from '@ui-sdk/core';
 import { usePart, usePrimitive } from '@ui-sdk/react/primitive';
 import { useAppearance } from '@/lib/theme';
 import {
@@ -12,8 +13,9 @@ import {
   type TraceTimelineOptions, type TraceValueChangeDetails, type TraceValueCommitDetails, type TraceViewChangeDetails, type TraceViewChangeReason,
 } from '@/lib/trace-timeline-primitive';
 import { cn } from '@/lib/utils';
+import { bindRowInset, waveCard, waveDash, waveDashLength, waveDashTone } from '@/lib/wave-rail';
 import {
-  TRACE_GUTTER, TRACE_MIN_SPAN, TRACE_RULER, TRACE_SCRUB_SPEEDS, TRACE_SNAP_REACH, TRACE_WAVE_PEAK, TRACE_WAVE_REST,
+  TRACE_GUTTER, TRACE_MIN_SPAN, TRACE_RULER, TRACE_SCRUB_SPEEDS, TRACE_SNAP_REACH,
   adjacentStop, chooseTicks, clampView, formatTraceTime, layoutRail, layoutStrip, linearAxis, moveScrub, nearestMark, panWindow, pinchWindow, pixelEdges, placeRailCard, placeStripCard,
   railDashInset, requestAt, rescaleScrub, resolutionAt, rowAt, sameLanes, scrubPosition, selectStops, startScrub, stopsByTime, stripHeight, traceSwell, viewWindow, windowView, zoomWindow,
   type TraceActivity, type TraceAxis, type TraceKey, type TraceLane, type TraceRange, type TraceRequest, type TraceRow, type TraceScrub, type TraceStop, type TraceStopMark, type TraceTone, type TraceWindow,
@@ -31,19 +33,23 @@ import {
    y), so a host swaps `orientation` when its width crosses a threshold and nothing is lost:
 
      <TraceTimeline range={range} lanes={lanes} stops={stops} value={t} onValueChange={setT}
-       orientation={narrow ? 'vertical' : 'horizontal'} side="right" top={8} bottom={8} />
+       orientation={narrow ? 'vertical' : 'horizontal'} side="right" className={narrow ? 'inset-y-2' : undefined} />
 
    Marks go on a canvas, at most one thing per device pixel per row, found by binary search over sorted arrays, so an hour
    with hundreds of thousands of marks costs what the pixels cost. Colours are the theme's tokens, read from its CSS
    variables and read again when the theme changes. Press or drag to seek; on a rail, pull away from it to slow the scrub,
    and press Escape to put the playhead back. Wheel and pinch zoom around the pointer. The root is a `slider` (the
-   trace-timeline primitive: its value, keys and the scrub, on UI SDK's `bindDrag`), with the keyboard that implies. ══ */
+   trace-timeline primitive: its value, keys and the scrub, on UI SDK's `bindDrag`), with the keyboard that implies,
+   plus keys that pick what a press picks: Alt+↑/↓ a lane, [ and ] a request, { and } a thread. A rail shares its wave,
+   card and row inset with IndexBar's `wave` variant (lib/wave-rail). ══ */
 
 export const traceTimelineVariants = cva('font-sans touch-none select-none', {
   variants: {
     orientation: {
-      horizontal: 'relative block h-(--tt-height) w-full cursor-crosshair bg-background -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline:2px_solid_var(--primary)]',
-      vertical: 'absolute top-(--tt-top) bottom-(--tt-bottom) z-80 w-(--tt-width) cursor-pointer rounded-lg -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline:2px_solid_var(--primary)]',
+      // The focus outline is drawn over the canvases, inset, and follows the host's corners (a strip in a card).
+      horizontal: 'relative block h-(--tt-height) w-full cursor-crosshair rounded-[inherit] bg-background -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline:2px_solid_var(--primary)]',
+      // A rail fills its positioned parent's height, 44px wide: move or size it with classes (`inset-y-2`, `w-14`).
+      vertical: 'absolute top-0 bottom-0 z-80 w-11 cursor-pointer rounded-lg -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline:2px_solid_var(--primary)]',
     },
     side: { right: '', left: '' },
   },
@@ -78,9 +84,32 @@ export interface TraceTimelineHandle {
   focus(): void;
 }
 
+export interface TraceTimelinePreviewProps<K extends TraceKey = TraceKey> {
+  /** Lines of a stop's `preview` the card shows. Default 2. */
+  lines?: number;
+  /** The card's widest, in px. Default 260. */
+  width?: number;
+  /** A slot at the top of the card, for a thumbnail of that moment; with it, a strip shows the card wherever you hover. */
+  children?: (time: number, stop: TraceStop<K> | null) => ReactNode;
+}
+
+/** Configures the preview card beside the pointer: put one inside a TraceTimeline. It renders nothing itself. */
+export function TraceTimelinePreview<K extends TraceKey = TraceKey>(props: TraceTimelinePreviewProps<K>): null {
+  void props;
+  return null;
+}
+
+/** The TraceTimelinePreview among a timeline's children, if any. */
+function previewOf<K extends TraceKey>(children: ReactNode): TraceTimelinePreviewProps<K> {
+  const found = Children.toArray(children).find((c): c is ReactElement<TraceTimelinePreviewProps<K>> => isValidElement(c) && c.type === TraceTimelinePreview);
+  return found?.props ?? {};
+}
+
 export type TraceFetchActivity = (laneKey: string, edges: Float64Array, signal: AbortSignal) => Promise<readonly TraceActivity[]> | readonly TraceActivity[];
 
 export interface TraceTimelineProps<K extends TraceKey = TraceKey> extends Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'defaultValue'> {
+  /** A `TraceTimelinePreview`, to configure the preview card. */
+  children?: ReactNode;
   /** The whole timeline, on the shared clock. */
   range: TraceRange;
   /** Turns times into positions. Default: `linearAxis(range)`. */
@@ -106,25 +135,24 @@ export interface TraceTimelineProps<K extends TraceKey = TraceKey> extends Omit<
   onViewChange?: (view: TraceRange, details: TraceViewChangeDetails) => void;
   /** `horizontal` is the strip, `vertical` the rail. */
   orientation?: 'horizontal' | 'vertical';
-  /** Rail: the edge it sits on. Its stops and card are on the inner side. */
+  /** Rail: the edge it sits on. Its stops and card are on the inner side. Place and size the rail itself with classes
+   *  (`inset-y-2`, `w-14`): it fills its positioned parent's height and is 44px wide. */
   side?: 'left' | 'right';
-  /** Rail: its insets from the top and bottom of its parent. */
-  top?: number | string;
-  bottom?: number | string;
-  /** Rail: its width in px. */
-  railWidth?: number;
   /** Rail: publish how far list rows run under it as `--bl-index-bar-inset` on its parent, as IndexBar does, so ListRows
    *  beside it keep their trailing accessories clear of it (right side only). Default true. */
   insetContent?: boolean;
-  /** The lane in focus (a single lane always is). A press on a lane's row focuses it (`item-press`). */
+  /** The lane in focus (a single lane always is). A press on a lane's row focuses it (`item-press`), and so does
+   *  Alt+↑ / Alt+↓ (`list-navigation`). */
   focusedLane?: string | null;
   defaultFocusedLane?: string | null;
   onFocusedLaneChange?: (lane: string, details: TraceFocusedLaneChangeDetails) => void;
-  /** The selected thread, in the focused lane. A press on a thread's row selects it; `details.lane` is its lane. */
+  /** The selected thread, in the focused lane. A press on a thread's row selects it, and `{` / `}` step through the
+   *  focused lane's threads; `details.lane` is its lane. */
   selectedThread?: TraceKey | null;
   defaultSelectedThread?: TraceKey | null;
   onSelectedThreadChange?: (thread: TraceKey | null, details: TraceSelectedThreadChangeDetails) => void;
-  /** The selected request. A press on one selects it. */
+  /** The selected request. A press on one selects it, and `[` / `]` select the one before or after it (or the
+   *  playhead) and move the playhead to it. */
   selectedRequest?: TraceKey | null;
   defaultSelectedRequest?: TraceKey | null;
   onSelectedRequestChange?: (request: TraceKey | null, details: TraceSelectedRequestChangeDetails) => void;
@@ -139,18 +167,13 @@ export interface TraceTimelineProps<K extends TraceKey = TraceKey> extends Omit<
   minSpan?: number;
   /** Prints a time, given how far apart the times worth telling apart are. Default: `formatTraceTime`. */
   formatTime?: (time: number, resolution: number) => string;
-  /** Preview card: a slot above its text, for a thumbnail of that moment. */
-  renderPreview?: (time: number, stop: TraceStop<K> | null) => ReactNode;
-  /** Preview card: lines of `preview` shown (default 2), and its width in px (default 260). */
-  previewLines?: number;
-  previewWidth?: number;
   /** Strip: the width of the label gutter, 0 for none. */
   gutter?: number;
   /** Strip: the gutter's label for the requests row and the stops row. */
   requestsLabel?: string;
   stopsLabel?: string;
-  /** The slider's accessible name. */
-  label?: string;
+  /** The slider's accessible name. Default "Timeline"; or name it with `aria-labelledby`. */
+  'aria-label'?: string;
   /** Called after each canvas redraw, with what it took. */
   onDraw?: (stats: TraceDrawStats) => void;
   ref?: Ref<TraceTimelineHandle>;
@@ -248,8 +271,6 @@ function useThemeColors(root: React.RefObject<HTMLElement | null>, holder: React
   return theme;
 }
 
-const len = (v: number | string | undefined) => (typeof v === 'number' ? v + 'px' : v);
-
 interface Spot<K extends TraceKey> {
   /** Px along the plot, where the card and the swell go. */
   along: number;
@@ -282,14 +303,15 @@ const ACTIVITY_PX = 2;
 export function TraceTimeline<K extends TraceKey = TraceKey>({
   range, axis: axisProp, lanes: lanesProp = NO_LANES, requests = NO_REQUESTS, stops = NO_STOPS as Array<TraceStop<K>>,
   value, defaultValue, onValueChange, onValueCommit, view: viewProp, defaultView, onViewChange,
-  orientation = 'horizontal', side = 'right', top, bottom, railWidth = 44, insetContent = true,
+  orientation = 'horizontal', side = 'right', insetContent = true, children,
   focusedLane, defaultFocusedLane, onFocusedLaneChange, selectedThread, defaultSelectedThread, onSelectedThreadChange,
   selectedRequest, defaultSelectedRequest, onSelectedRequestChange,
   fetchActivity, activityDebounce = 60, step, minSpan = TRACE_MIN_SPAN, formatTime = formatTraceTime,
-  renderPreview, previewLines = 2, previewWidth = 260, gutter = TRACE_GUTTER, requestsLabel = 'requests', stopsLabel = 'stops',
-  label = 'Timeline', onDraw, ref, className, style, onBlur, onPointerMove, onPointerLeave, ...rest
+  gutter = TRACE_GUTTER, requestsLabel = 'requests', stopsLabel = 'stops',
+  'aria-label': ariaLabel, onDraw, ref, className, style, onBlur, onPointerMove, onPointerLeave, ...rest
 }: TraceTimelineProps<K>) {
   const vertical = orientation === 'vertical';
+  const { children: renderPreview, lines: previewLines = 2, width: previewWidth = 260 } = previewOf<K>(children);
   const rootRef = useRef<HTMLDivElement>(null);
   const dataCanvas = useRef<HTMLCanvasElement>(null);
   const overlayCanvas = useRef<HTMLCanvasElement>(null);
@@ -342,6 +364,8 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
 
   const [size, setSize] = useState({ width: 0, height: 0, hostWidth: 0, hostHeight: 0, top: 0 });
   const start = vertical ? 0 : gutter;
+  // A rail's width is its own (44px, or what its classes make it), measured.
+  const railWidth = vertical && size.width ? size.width : 44;
   const length = Math.max(0, (vertical ? size.height : size.width) - start);
 
   const hasRequests = requests.length > 0;
@@ -351,6 +375,8 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     [vertical, lanes, hasRequests, hasStops, size.height],
   );
   const marks = useMemo(() => selectStops(stops, { axis, win, length }), [stops, axis, win, length]);
+  // For `[` and `]`: the requests in time order (a stable sort keeps equal times in the host's order).
+  const requestsByTime = useMemo(() => [...requests].sort((a, b) => a.time - b.time), [requests]);
   const sortedStops = useMemo(() => stopsByTime(stops), [stops]);
   const focusedKey = (focusedLane === undefined ? state.focusedLane : focusedLane) ?? (lanes.length === 1 ? lanes[0].key : null);
 
@@ -428,35 +454,19 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     return () => ro.disconnect();
   }, [vertical]);
 
-  /* ── Publish how far rows run under a right-hand rail: a row's right edge minus the rail's left edge, as IndexBar does.
-     Only changes outside the rail count, as its own dashes change as it's used. ── */
+  /* ── Publish how far rows run under a right-hand rail, as IndexBar does (lib/wave-rail). ── */
+  const insetOptions = useRef({ insetContent, side, railWidth });
+  insetOptions.current = { insetContent, side, railWidth };
   useLayoutEffect(() => {
     const el = rootRef.current;
-    const host = el?.parentElement;
-    if (!el || !host || !vertical || !insetContent || side !== 'right') return undefined;
-    let raf = 0;
-    const sync = () => {
-      raf = 0;
-      const row = host.querySelector<HTMLElement>('[data-slot="list-row-content"]');
-      const overlap = row ? Math.max(0, row.getBoundingClientRect().right - el.getBoundingClientRect().left) : railWidth;
-      const v = `${Math.round(overlap)}px`;
-      if (host.style.getPropertyValue('--bl-index-bar-inset') !== v) host.style.setProperty('--bl-index-bar-inset', v);
-    };
-    sync();
-    const later = () => { if (!raf) raf = requestAnimationFrame(sync); };
-    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(later);
-    ro?.observe(host);
-    const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver((records) => {
-      if (records.some((r) => !el.contains(r.target))) later();
+    if (!el || !vertical) return undefined;
+    const bound = bindRowInset(el, {
+      enabled: () => insetOptions.current.insetContent && insetOptions.current.side === 'right',
+      fallback: () => insetOptions.current.railWidth,
+      ignoreOwnChanges: true,
     });
-    mo?.observe(host, { childList: true, subtree: true });
-    return () => {
-      cancelAnimationFrame(raf);
-      ro?.disconnect();
-      mo?.disconnect();
-      host.style.removeProperty('--bl-index-bar-inset');
-    };
-  }, [vertical, insetContent, side, railWidth]);
+    return bound.cleanup;
+  }, [vertical, insetContent, side]);
 
   /* ── Activity: fetched for the view once it settles. Older answers are dropped, and until a new one comes the last one
      stays on screen, moved to where its times now are. ── */
@@ -581,7 +591,6 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
       applyWindow(panWindow({ from: f - half, to: f + half }, 0), { reason: 'playhead' });
     }
     // Only the playhead moving does this; applyWindow reads the rest from this render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [time]);
 
   // A new range starts over from the whole of it, when nobody's holding the view.
@@ -591,7 +600,6 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     seenRange.current = rangeMemo;
     activity.current.clear();
     if (viewProp === undefined) handle.api.setView(rangeMemo, { reason: 'range-change' });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangeMemo]);
 
   /* ── Gestures: what a press, a move, a pinch, the wheel and a key mean here (the primitive follows the pointer) ── */
@@ -781,8 +789,51 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
         applyWindow(zoomWindow(win, inView ? playheadAlong / length : 0.5, factor), { reason: 'zoom-key', event: e });
         return true as const;
       };
+      // Alt+↑/↓ steps through the lanes, as a press on a lane's row picks it.
+      if (e.altKey) {
+        if ((e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || lanes.length < 2) return null;
+        const i = lanes.findIndex((lane) => lane.key === focusedKey);
+        const next = lanes[i < 0 ? (e.key === 'ArrowDown' ? 0 : lanes.length - 1) : Math.max(0, Math.min(lanes.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))];
+        if (next.key !== focusedKey) {
+          handle.api.focusLane(next.key, { reason: 'list-navigation', event: e });
+          announce(`${next.title ?? next.key} lane`);
+        }
+        return true;
+      }
       // Time runs down a rail, so down is later there, as on IndexBar. On a strip up and right are later, as on any slider.
       switch (e.key) {
+        case '[':
+        case ']': {
+          // The request before or after the selected one (or the playhead): selected, with the playhead on it.
+          if (!requestsByTime.length) return null;
+          const dir = e.key === ']' ? 1 : -1;
+          const held = selectedRequestKey == null ? -1 : requestsByTime.findIndex((r) => r.id === selectedRequestKey);
+          let k: number;
+          if (held >= 0) k = held + dir;
+          else {
+            k = requestsByTime.findIndex((r) => r.time >= at);
+            if (k < 0) k = requestsByTime.length;
+            if (dir < 0) k -= 1;
+          }
+          const hit = requestsByTime[k];
+          if (!hit) return true;
+          handle.api.selectRequest(hit.id, { reason: 'list-navigation', event: e });
+          announce(`Request ${String(hit.id)}, ${formatTime(hit.time, resolutionAt(axis, win, length, Math.max(0, Math.min(length, playheadAlong))))}`);
+          return seekTo(hit.time, null);
+        }
+        case '{':
+        case '}': {
+          const lane = lanes.find((l) => l.key === focusedKey);
+          const threads = lane?.threads ?? [];
+          if (!lane || !threads.length) return null;
+          const i = threads.findIndex((t) => t.id === selectedThreadKey);
+          const next = threads[i < 0 ? (e.key === '}' ? 0 : threads.length - 1) : Math.max(0, Math.min(threads.length - 1, i + (e.key === '}' ? 1 : -1)))];
+          if (next.id !== selectedThreadKey) {
+            handle.api.selectThread(next.id, { reason: 'list-navigation', event: e, lane: lane.key });
+            announce(`${next.label ?? String(next.id)} thread`);
+          }
+          return true;
+        }
         case 'ArrowRight': return seekTo(KEY_SEEK(1, e.shiftKey), null);
         case 'ArrowLeft': return seekTo(KEY_SEEK(-1, e.shiftKey), null);
         case 'ArrowDown': return seekTo(KEY_SEEK(vertical ? 1 : -1, e.shiftKey), null);
@@ -814,7 +865,6 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     setPointerAt(null);
     setDrag(null);
     setPeek(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orientation]);
 
   /** Hover, for the card, the swell and the hover line: only a pointer that hovers, and only while nothing is pressed. */
@@ -902,8 +952,9 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
 
   const sideAttr = { 'data-side': vertical ? side : undefined };
   const root = usePart(handle, 'root', {}, {
-    'aria-label': label,
+    'aria-label': ariaLabel ?? (rest['aria-labelledby'] ? undefined : 'Timeline'),
     'aria-valuetext': atStop?.caption ? `${timeText}, ${atStop.caption}` : timeText,
+    'aria-keyshortcuts': [lanes.length > 1 && 'Alt+ArrowUp Alt+ArrowDown', hasRequests && '[ ]', lanes.some((l) => l.threads?.length) && '{ }'].filter(Boolean).join(' ') || undefined,
     ...rest,
     ...sideAttr,
     ref: rootRef,
@@ -918,8 +969,6 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     style: {
       '--tt-width': railWidth + 'px',
       '--tt-height': stripHeight(lanes, { requests: hasRequests, stops: hasStops }) + 'px',
-      '--tt-top': len(top ?? 0),
-      '--tt-bottom': len(bottom ?? 0),
       '--tt-dash': dashInset + 'px',
       '--tt-lines': previewLines,
       '--tt-card-w': Math.min(previewWidth, Math.max(160, size.hostWidth - railWidth - 16)) + 'px',
@@ -938,20 +987,17 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
         const hot = hotMark === mark;
         const current = currentMark === mark;
         const f = hot || current ? 1 : focal == null ? 0 : traceSwell(mark.along - focal);
-        const rest = (mark.stop.level ?? 1) > 1 ? TRACE_WAVE_REST - 3 : TRACE_WAVE_REST;
         return (
           <span
             key={String(mark.stop.key ?? mark.stop.time)}
             data-slot="trace-timeline-stop"
             data-tone={mark.tone}
             data-count={mark.count}
-            style={{ '--y': `${mark.along - 1}px`, '--len': `${rest + (TRACE_WAVE_PEAK - rest) * f}px`, '--f': f } as CSSProperties}
+            style={{ '--y': `${mark.along - 1}px`, '--len': `${waveDashLength(f, mark.stop.level ?? 1)}px`, '--f': f } as CSSProperties}
             className={cn(
-              'pointer-events-none absolute top-(--y) h-[2px] w-(--len) rounded-full transition-[width,background-color] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
+              'pointer-events-none absolute top-(--y)', waveDash,
               side === 'left' ? 'left-(--tt-dash)' : 'right-(--tt-dash)',
-              mark.tone !== 'default' ? TONE_DASH[mark.tone]
-                : hot ? 'bg-foreground' : current ? 'bg-primary'
-                : 'bg-[color:color-mix(in_oklab,var(--foreground)_calc(var(--f)*75%),var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent)))]',
+              mark.tone !== 'default' ? TONE_DASH[mark.tone] : waveDashTone({ hot, current }),
               mark.dim && !hot && 'opacity-55',
             )}
           />
@@ -979,9 +1025,8 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
           data-speed={speed ?? undefined}
           style={cardStyle}
           className={cn(
-            'pointer-events-none absolute top-(--tt-card-y) z-10 box-border w-max max-w-(--tt-card-w) min-w-[160px] rounded-card bg-card px-[13px] py-[9px]',
-            'shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)] motion-reduce:transition-none',
-            'animate-[blWaveCard_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:animate-none',
+            'pointer-events-none absolute top-(--tt-card-y) z-10 box-border w-max max-w-(--tt-card-w) min-w-[160px] px-[13px] py-[9px] motion-reduce:transition-none',
+            waveCard,
             vertical
               ? cn('transition-[top,left,right] duration-spring-snappy ease-spring-snappy', side === 'left' ? 'left-(--tt-card-x) origin-left' : 'right-(--tt-card-x) origin-right')
               : 'left-(--tt-card-x) origin-bottom',

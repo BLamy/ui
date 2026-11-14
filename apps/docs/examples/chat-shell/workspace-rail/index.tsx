@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewList, TabViewPill, TabViewSeparator, TabViewTab } from '@/components/ui/tab-view'
+import { Tabs, TabsAction, TabsBar, TabsFooter, TabsList, TabsPill, TabsSeparator, TabsTab } from '@/components/ui/tabs'
 import { Icon } from '@/lib/icon'
 import { ChatShell } from '@/components/blocks/discord-clone/components/chat-shell'
 
@@ -71,7 +71,7 @@ function Window({ width, children }: { width?: number; children: ReactNode }) {
   )
 }
 
-// The workspace rail is a vertical TabView with the `workspace` bar. Hover a
+// The workspace rail is a vertical Tabs with the `workspace` bar. Hover a
 // tile: it rounds from a circle to a squircle and the pill on its edge grows
 // from the unread nub. Select one: the pill runs full height on a springy
 // curve. Up / Down move between tiles.
@@ -79,37 +79,37 @@ export default function Rail() {
   return (
     <Window width={320}>
       <ChatShell style={{ height: 300 }}>
-        <TabView
-          orientation="vertical"
+        <Tabs
+          variant="workspace"
           defaultValue="blui"
           className="contents"
         >
-          <TabViewBar variant="workspace">
-            <TabViewList aria-label="Workspaces">
-              <TabViewTab value="home" aria-label="Direct Messages">
-                <TabViewPill attention />
+          <TabsBar>
+            <TabsList aria-label="Workspaces">
+              <TabsTab value="home" aria-label="Direct Messages">
+                <TabsPill attention />
                 <WorkspaceTile>
                   <Icon name="bubble-oval" size={17} sw={2} />
                 </WorkspaceTile>
-              </TabViewTab>
-              <TabViewSeparator />
+              </TabsTab>
+              <TabsSeparator />
               {workspaces.map((w) => (
-                <TabViewTab key={w.id} value={w.id} aria-label={w.title}>
-                  <TabViewPill attention={w.unread} />
+                <TabsTab key={w.id} value={w.id} aria-label={w.title}>
+                  <TabsPill attention={w.unread} />
                   <WorkspaceTile
                     color={WORKSPACE_COLORS[w.id]}
                     mentions={w.mentions}
                   >
                     {w.label}
                   </WorkspaceTile>
-                </TabViewTab>
+                </TabsTab>
               ))}
-            </TabViewList>
-            <TabViewFooter>
-              <TabViewAction aria-label="Add workspace" icon="plus" />
-            </TabViewFooter>
-          </TabViewBar>
-        </TabView>
+            </TabsList>
+            <TabsFooter>
+              <TabsAction aria-label="Add workspace" icon="plus" />
+            </TabsFooter>
+          </TabsBar>
+        </Tabs>
         <div className="flex-1 p-[18px] text-[13px] leading-normal text-muted-foreground">
           Hover and select the tiles: corners and the pill spring between
           states.

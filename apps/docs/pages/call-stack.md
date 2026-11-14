@@ -1,6 +1,6 @@
 # CallStack
 
-Frames as a debugger lists them: the frame the stack stopped in marked apart from the one you've selected, runs of framework and library frames folded into one row, async boundaries as labelled separators, and a location that shows short with the whole path a press away. It's virtualized, so a stack of thousands of frames from recursion stays quick to scroll and step through. It takes plain data and knows nothing about what produced it.
+Frames as a debugger lists them: the frame the stack stopped in marked apart from the one you've selected, runs of framework and library frames folded into one row, async boundaries as labelled separators, and a location that shows short with the whole path a press away. It's virtualized, so a stack of thousands of frames from recursion stays quick to scroll and step through. It takes plain data and knows nothing about what produced it. Its rows are drawn on the kit's [Tree](https://blamy.github.io/ui/#/tree) (`renderRow`), so it shares Tree's row look, densities, selection, empty state and virtualizer with Tree and [ObjectTree](https://blamy.github.io/ui/#/object-tree), the values beside it in a debugger. For a list of things that aren't frames, use Tree or [Listbox](https://blamy.github.io/ui/#/list-box).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -67,7 +67,7 @@ Only the rows on screen are in the DOM, so a thousand rounds of recursion scroll
 
 ## Accessibility
 
-It's [UI SDK](https://ui-sdk.dev)'s Tree over its virtualizer: a `tree` with one tab stop, a `treeitem` per frame, a branch per run (`aria-expanded`, with its frames at `aria-level` 2) and a disabled item per async boundary. Selection follows the arrow keys, so a debugger's source and scopes can follow along, and it's `aria-selected` on the row. Each row is named by its function, file and line, with `stopped here` on the top frame, and a run by its count.
+It's the kit's Tree ([UI SDK](https://ui-sdk.dev)'s Tree over its virtualizer): a `tree` with one tab stop, a `treeitem` per frame, a branch per run (`aria-expanded`, with its frames at `aria-level` 2) and a disabled item per async boundary. Selection follows the arrow keys, so a debugger's source and scopes can follow along, and it's `aria-selected` on the row. Each row is named by its function, file and line, with `stopped here` on the top frame, and a run by its count.
 
 ## Props
 
@@ -79,8 +79,8 @@ It's [UI SDK](https://ui-sdk.dev)'s Tree over its virtualizer: a `tree` with one
 | `onValueChange` | none | `(id, details) => void`, when a frame is pressed or the arrow keys reach it. `details` has `frame`, `index`, `reason` and `cancel()`. |
 | `collapseRuns` | `true` | Fold runs of framework and library frames. |
 | `defaultExpandedRuns` | none | Runs open when the list mounts, each named by its first frame's id. |
-| `rowHeight` | `26` | Row height in px. |
-| `emptyMessage` | `No frames` | Shown when there are no frames. |
+| `density` | `'compact'` | Tree's scale: `'compact'` (24px rows), `'default'` (30px) or `'comfortable'` (36px, for touch). |
+| `emptyState` | `No frames` | Shown when there are no frames: a string is [EmptyState](https://blamy.github.io/ui/#/empty-state)'s title, a node shows as it is, `null` shows nothing. |
 | `aria-label` | `Call stack` | Names the list. |
 | `className` / `style` | | On the root, merged last. |
 
@@ -96,31 +96,4 @@ It's [UI SDK](https://ui-sdk.dev)'s Tree over its virtualizer: a `tree` with one
 
 ## Styling
 
-The list is `data-slot="call-stack"`. Its rows are UI SDK's `tree-item`s, each with a `tree-label` inside, and an item's `data-row` says what it is: `frame` (with `data-kind`, and `data-top` on the top frame), `run` or `separator`. `callStackRowVariants` is the label's recipe; selection is `data-selected` and an open run is `data-expanded`. It sits with [Lists](https://blamy.github.io/ui/#/lists) at the density a debugger needs: selection is the same `accent` wash as a selected ListRow.
-
-## cva recipes
-
-Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
-
-### `callStackRowVariants`
-
-Defined in `@/components/ui/call-stack`. Base classes:
-
-```text
-[ 'flex h-full w-full cursor-default items-center gap-1.5 pr-2 text-caption leading-none text-foreground', 'hover:bg-accent/50 data-selected:bg-accent group-focus-visible/row:[box-shadow:inset_0_0_0_2px_var(--ring)]', ]
-```
-
-**`kind`**
-
-| Value | Adds |
-| --- | --- |
-| `app` | — |
-| `framework` | `text-muted-foreground data-selected:text-foreground` |
-| `run` | `font-sans text-muted-foreground` |
-
-**`inRun`** — default `false`
-
-| Value | Adds |
-| --- | --- |
-| `true` | `pl-5` |
-| `false` (default) | `pl-1` |
+The list is `data-slot="call-stack"`, around a Tree's `tree-view`. Its rows are UI SDK's `tree-item`s, each with a `tree-label` inside drawn with Tree's `treeRowVariants`, and a label's `data-row` says what it is: `frame` (with `data-kind`, and `data-top` on the top frame), `run` or `separator`. Selection (`data-selected`, Tree's `primary` wash), an open run (`data-expanded`) and keyboard focus look as they do in a Tree, and the indent of a run's frames is Tree's `--tree-indent`.

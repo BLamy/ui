@@ -50,7 +50,9 @@ export type ListRowOptions = {
   trailingActions?: ListRowAction[];
   fullSwipe?: ListRowFullSwipe;
   /** Edit mode: the row doesn't swipe. */
-  edit?: boolean;
+  editing?: boolean;
+  /** The row doesn't swipe, flip its switch or run its actions. */
+  disabled?: boolean;
   /** Without a press target, a press on the row flips the switch or checkbox inside it. */
   labelToggles?: boolean;
   /** Return true to ignore swipe starts near an edge (under a back-gesture zone). */
@@ -86,7 +88,7 @@ const synced = (options: ListRowOptions) => ({
 export const listRow = definePrimitive({
   name: 'list-row',
   options: {
-    leadingActions: 'value', trailingActions: 'value', fullSwipe: 'value', edit: 'boolean', labelToggles: 'boolean',
+    leadingActions: 'value', trailingActions: 'value', fullSwipe: 'value', editing: 'boolean', disabled: 'boolean', labelToggles: 'boolean',
     isEdge: 'value', group: 'boolean', controller: 'value',
   },
   state: (options: ListRowOptions): ListRowState => ({ open: null, swiping: null, removing: null, ...synced(options) }),
@@ -126,7 +128,7 @@ export const listRow = definePrimitive({
       fullSwipe: () => 0.55,
       disabled: () => {
         const o = context.options();
-        return !!o.edit || !!context.store.get().removing || (!o.leadingActions?.length && !o.trailingActions?.length);
+        return !!o.editing || !!o.disabled || !!context.store.get().removing || (!o.leadingActions?.length && !o.trailingActions?.length);
       },
       onFullSwipe: (_key, side, { event }) => {
         const first = actions(side)[0];
@@ -135,7 +137,7 @@ export const listRow = definePrimitive({
         return true;
       },
     });
-    context.onOptions((options) => { if (options.edit) swipe.close(); });
+    context.onOptions((options) => { if (options.editing || options.disabled) swipe.close(); });
 
     // A press that swiped, or that landed on an open row (which only closes it), doesn't click what it ends on.
     let swallow = false;
@@ -160,6 +162,7 @@ export const listRow = definePrimitive({
           event.stopPropagation();
         },
         keydown(event: KeyboardEvent, el: HTMLElement) {
+          if (context.options().disabled) return;
           const target = event.target as HTMLElement;
           const self = target === el.querySelector('[data-list-row-focus]');
           if (!self && !target.closest('[data-slot=list-row-actions]')) return;
@@ -177,7 +180,8 @@ export const listRow = definePrimitive({
         },
         // Pressing the row (its label) flips the switch it holds, like a <label>.
         labelClick(event: MouseEvent, el: HTMLElement) {
-          if (context.options().labelToggles === false || el.querySelector('[data-list-row-press]')) return;
+          const o = context.options();
+          if (o.disabled || o.labelToggles === false || el.querySelector('[data-list-row-press]')) return;
           if ((event.target as HTMLElement).closest(INTERACTIVE)) return;
           el.querySelector<HTMLElement>(TOGGLES)?.click();
         },

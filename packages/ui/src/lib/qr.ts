@@ -34,7 +34,7 @@ export interface QROptions {
   mask?: number;
 }
 
-export interface QRCode {
+export interface QRMatrix {
   /** Modules per side (17 + 4 * version). */
   size: number;
   version: number;
@@ -342,7 +342,7 @@ function penaltyScore(mod: boolean[][]): number {
  * Encode `text` (UTF-8, byte mode) as a QR Code, picking the smallest version that fits at the
  * requested error-correction level and the mask with the lowest penalty score.
  */
-export function encodeQR(text: string, opts: QROptions = {}): QRCode {
+export function encodeQR(text: string, opts: QROptions = {}): QRMatrix {
   const level = opts.level ?? 'M';
   const minVersion = Math.max(1, Math.min(40, Math.floor(opts.minVersion ?? 1)));
   const maxVersion = Math.max(minVersion, Math.min(40, Math.floor(opts.maxVersion ?? 40)));

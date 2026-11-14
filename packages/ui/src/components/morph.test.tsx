@@ -11,7 +11,7 @@ const frame = () => act(() => new Promise((r) => setTimeout(r, 32)));
 function setup(onDismiss = vi.fn()) {
   const { container } = render(
     <MorphGroup>
-      <Morph id="p" dragToDismiss onDismiss={onDismiss} aria-label="Player">full</Morph>
+      <Morph layoutId="p" dragToDismiss onDismiss={onDismiss} aria-label="Player">full</Morph>
     </MorphGroup>,
   );
   return { el: container.querySelector<HTMLElement>('[data-slot=morph]')!, onDismiss };
@@ -70,7 +70,7 @@ describe('Morph render', () => {
     const onClick = vi.fn();
     const { container } = render(
       <MorphGroup>
-        <Morph id="card" className="ours" render={<button type="button" className="theirs" aria-label="Open card" />} onClick={onClick}>
+        <Morph layoutId="card" className="ours" render={<button type="button" className="theirs" aria-label="Open card" />} onClick={onClick}>
           Card
         </Morph>
       </MorphGroup>,
@@ -90,9 +90,9 @@ describe('Morph render', () => {
   it('is a div by default and renders a list item from render={<li />}', () => {
     const { container } = render(
       <MorphGroup>
-        <Morph id="a">A</Morph>
+        <Morph layoutId="a">A</Morph>
         <ul>
-          <Morph id="b" render={<li />}>B</Morph>
+          <Morph layoutId="b" render={<li />}>B</Morph>
         </ul>
       </MorphGroup>,
     );

@@ -23,7 +23,7 @@ const VIOLET = '#7f5af0';
 
 const field = (props: ComponentProps<typeof ColorField> = {}, fieldProps: ComponentProps<typeof Field> = {}) => (
   <Field {...fieldProps}>
-    <FieldLabel variant="field">Accent</FieldLabel>
+    <FieldLabel>Accent</FieldLabel>
     <ColorField defaultValue={VIOLET} {...props} />
     <FieldDescription>Any CSS color.</FieldDescription>
     <FieldError>Pick a darker color.</FieldError>

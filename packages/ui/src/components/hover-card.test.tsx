@@ -30,7 +30,7 @@ function Profile(props: Parameters<typeof HoverCard>[0] & { onRowClick?: () => v
       <HoverCard {...root}>
         <HoverCardTrigger href="#ada">@ada</HoverCardTrigger>
         <HoverCardContent arrow>
-          <HoverCardHeader title="Ada Lovelace" subtitle="@ada" action={<button type="button">Follow</button>} />
+          <HoverCardHeader title="Ada Lovelace" description="@ada" trailing={<button type="button">Follow</button>} />
         </HoverCardContent>
       </HoverCard>
     </div>
@@ -145,5 +145,13 @@ describe('HoverCard', () => {
     act(() => { void people.open({ payload: 'A pin', anchor: { x: 40, y: 40 } }); });
     wait(10);
     expect(card()!.textContent).toBe("A pin's card");
+  });
+
+  it('has a header part: the title is a heading, and other props reach its element', async () => {
+    render(<HoverCardHeader id="who" aria-label="Author" icon={<span>A</span>} title="Ada Lovelace" description="@ada" />);
+    expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    const header = document.getElementById('who')!;
+    expect(header.getAttribute('aria-label')).toBe('Author');
+    expect(header.getAttribute('data-slot')).toBe('hover-card-header');
   });
 });

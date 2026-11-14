@@ -11,14 +11,17 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 // Variants set the colour, sizes set the height and radius. `pill` is the
-// full-width iOS action, `icon` a round 36px button for a lone glyph.
+// full-width iOS action; `icon-sm`, `icon` and `icon-lg` are for a lone glyph.
 export default function Variants() {
   return (
     <div className="mx-auto grid max-w-xl gap-5 p-2">
       <Row label="variant">
         <Button>Save changes</Button>
         <Button variant="secondary">Cancel</Button>
+        <Button variant="outline">Edit</Button>
+        <Button variant="contrast">Continue</Button>
         <Button variant="ghost">Skip</Button>
+        <Button variant="quiet">Hide</Button>
         <Button variant="destructive">Delete</Button>
         <Button variant="link">Learn more</Button>
       </Row>
@@ -26,8 +29,14 @@ export default function Variants() {
         <Button size="sm">Small</Button>
         <Button>Default</Button>
         <Button size="lg">Large</Button>
+        <Button variant="quiet" size="icon-sm" aria-label="Edit">
+          <Icon name="pencil" size={18} sw={1.7} />
+        </Button>
         <Button size="icon" aria-label="Add contact">
           <Icon name="plus" size={18} sw={2} />
+        </Button>
+        <Button variant="secondary" size="icon-lg" aria-label="More">
+          <Icon name="ellipsis" size={20} />
         </Button>
       </Row>
       <Row label="with an icon">

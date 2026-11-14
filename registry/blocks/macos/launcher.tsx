@@ -1,12 +1,11 @@
 /* The Alfred bar: an inline CommandMenu — a big input, the current page's results, a preview pane beside them
    on wide bars (clipboard, snippets, emoji, files), and a footer whose legend follows the page's keys. */
 import { useState, type CSSProperties, type ReactNode } from 'react';
-import { ContentSwap } from '@/components/ui/animated-height';
+import { Swap } from '@/components/ui/swap';
 import {
   CommandMenu, CommandMenuEmpty, CommandMenuFooter, CommandMenuInput, CommandMenuList, useCommandMenu, useCommandMenuValue,
   type CommandMenuController, type CommandMenuLegendItem,
 } from '@/components/ui/command-menu';
-import { IconSwap } from '@/components/ui/icon-swap';
 import { TextMorph } from '@/components/ui/text-morph';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -89,9 +88,9 @@ function InputTile() {
   const app = pageApp(page ?? 'root');
   return (
     <span className="grid size-9 shrink-0 place-items-center">
-      <IconSwap id={app?.page ?? 'alfred'}>
+      <Swap effect="pop" value={app?.page ?? 'alfred'}>
         {app ? appTile(app.tone, 'icon' in app ? app.icon : undefined, 32) : <span className="text-tertiary-foreground"><Hat size={30} /></span>}
-      </IconSwap>
+      </Swap>
     </span>
   );
 }
@@ -128,11 +127,11 @@ function Body({ wide, width, listHeight }: { wide: boolean; width: number; listH
 function Preview({ kind }: { kind: PreviewKind }) {
   const active = useCommandMenuValue();
   return (
-    <ContentSwap id={active ?? 'none'} className="h-full [&>*]:h-full">
+    <Swap value={active ?? 'none'} className="h-full [&>*]:h-full">
       <div className="flex h-full flex-col p-4">
         {!active ? <Blank /> : kind === 'clip' ? <ClipPreview text={active} /> : kind === 'snippet' ? <SnippetPreview keyword={active} /> : kind === 'emoji' ? <EmojiPreview name={active} /> : <FilePreview name={active} />}
       </div>
-    </ContentSwap>
+    </Swap>
   );
 }
 

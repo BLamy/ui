@@ -35,9 +35,8 @@ import {
 } from '@ui-sdk/react/collapsible';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Icon } from '@/lib/icon';
+import { Chevron, Icon } from '@/lib/icon';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Chevron } from '@/components/ui/icon-swap';
 import { cn, cx } from '@/lib/utils';
 import { SizeClassProvider } from '@/lib/container';
 import {
@@ -717,7 +716,7 @@ export function SplitViewSection({
             {(state) => (
               <>
                 <span className="flex-1">{title}</span>
-                <Chevron direction={state.open ? 'down' : 'right'} size={variant === 'prominent' ? 18 : 14} sw={2.6} className="text-primary" />
+                <Chevron direction={state.open ? 'down' : 'right'} size={variant === 'prominent' ? 18 : 14} strokeWidth={2.6} className="text-primary" />
               </>
             )}
           </SdkCollapsibleTrigger>

@@ -29,10 +29,10 @@ function SettingsList() {
   )
   return (
     <div style={{ padding: '18px 0' }}>
-      <List inset>
+      <List variant="inset">
         <ListSection>
           <ListRow
-            leading={<Tile icon="drop" color="#FF9500" />}
+            icon={<Tile icon="drop" color="#FF9500" />}
             title="Airplane Mode"
             trailing={
               <Switch
@@ -43,14 +43,14 @@ function SettingsList() {
             }
           />
           <ListRow
-            leading={<Tile icon="wifi" color="#0A84FF" />}
+            icon={<Tile icon="wifi" color="#0A84FF" />}
             title="Wi-Fi"
             trailing={value(airplane ? 'Off' : 'Home')}
             accessory="chevron"
             onClick={() => {}}
           />
           <ListRow
-            leading={<Tile icon="link" color="#0A84FF" />}
+            icon={<Tile icon="link" color="#0A84FF" />}
             title="Bluetooth"
             trailing={value('On')}
             accessory="chevron"
@@ -62,19 +62,19 @@ function SettingsList() {
           footer={'Silences calls and notifications while Focus ' + 'is on.'}
         >
           <ListRow
-            leading={<Tile icon="bell" color="#FF3B30" />}
+            icon={<Tile icon="bell" color="#FF3B30" />}
             title="Notifications"
             accessory="chevron"
             onClick={() => {}}
           />
           <ListRow
-            leading={<Tile icon="wave" color="#FF2D55" />}
+            icon={<Tile icon="wave" color="#FF2D55" />}
             title="Sounds"
             accessory="chevron"
             onClick={() => {}}
           />
           <ListRow
-            leading={<Tile icon="moon" color="#5E5CE6" />}
+            icon={<Tile icon="moon" color="#5E5CE6" />}
             title="Do Not Disturb"
             divider={false}
             trailing={

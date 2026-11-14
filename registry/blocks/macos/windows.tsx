@@ -3,7 +3,7 @@
    itself out, and presents its popups, as it would on a phone. It stays mounted while the window is minimized. On a phone-sized desktop the
    same window is a full-screen app that zooms out of its springboard icon — no chrome, same mounted app. */
 import { Suspense, memo, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Spinner } from '@/components/ui/spinner';
 import { bindDrag } from '@ui-sdk/core';
 import { Icon } from '@/lib/icon';
@@ -55,7 +55,7 @@ const AppBody = memo(function AppBody({ app, dark }: { app: DesktopApp; dark: bo
       {/* The window's own layer host and size-class scope: the app's dialogs, sheets and menus stay inside the window
           and follow its size (an app that has a BLProvider of its own becomes the nearer one). */}
       <BLProvider className="bg-background">
-        <Suspense fallback={<div className="grid h-full place-items-center bg-muted text-muted-foreground"><Spinner spin size={24} /></div>}>
+        <Suspense fallback={<div className="grid h-full place-items-center bg-muted text-muted-foreground"><Spinner size={24} /></div>}>
           <Component {...props} />
         </Suspense>
       </BLProvider>
@@ -231,7 +231,7 @@ const LIGHT = {
 
 function Light({ kind, label, active, onClick }: { kind: keyof typeof LIGHT; label: string; active: boolean; onClick: () => void }) {
   return (
-    <PlainButton
+    <SdkButton
       aria-label={label}
       onClick={onClick}
       className={cn(
@@ -240,6 +240,6 @@ function Light({ kind, label, active, onClick }: { kind: keyof typeof LIGHT; lab
       )}
     >
       <span className="opacity-0 transition-opacity group-hover/lights:opacity-100"><Icon name={LIGHT[kind].icon} size={8} sw={3.2} /></span>
-    </PlainButton>
+    </SdkButton>
   );
 }

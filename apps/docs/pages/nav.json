@@ -28,9 +28,7 @@
       "section": "Buttons and toggles",
       "pages": [
         { "id": "button", "title": "Button" },
-        { "id": "plain-button", "title": "PlainButton" },
-        { "id": "toggle", "title": "Toggle" },
-        { "id": "toggle-group", "title": "ToggleGroup" }
+        { "id": "toggle", "title": "Toggle" }
       ]
     },
     {
@@ -40,7 +38,7 @@
         { "id": "input", "title": "Input" },
         { "id": "textarea", "title": "Textarea" },
         { "id": "field", "title": "Field" },
-        { "id": "search-field", "title": "SearchField" },
+        { "id": "search-input", "title": "SearchInput" },
         { "id": "checkbox", "title": "Checkbox" },
         { "id": "radio-group", "title": "RadioGroup" },
         { "id": "switch", "title": "Switch" },
@@ -56,8 +54,8 @@
         { "id": "font-picker", "title": "FontPicker" },
         { "id": "list-box", "title": "Listbox" },
         { "id": "tree", "title": "Tree" },
-        { "id": "form", "title": "Form" },
-        { "id": "time-input", "title": "TimeInput" },
+        { "id": "form", "title": "Forms" },
+        { "id": "natural-time-input", "title": "NaturalTimeInput" },
         { "id": "cron-editor", "title": "CronEditor" },
         { "id": "file-upload", "title": "FileUpload" },
         { "id": "use-file-upload", "title": "useFileUpload" }
@@ -67,13 +65,11 @@
       "section": "Menus and overlays",
       "pages": [
         { "id": "dropdown-menu", "title": "DropdownMenu" },
-        { "id": "context-menu", "title": "ContextMenu" },
         { "id": "tooltip", "title": "Tooltip" },
         { "id": "hover-card", "title": "Hover Card" },
         { "id": "popover", "title": "Popover" },
         { "id": "dialog", "title": "Dialog" },
         { "id": "sheet", "title": "Sheet" },
-        { "id": "credenza", "title": "Credenza" },
         { "id": "floating-sheet", "title": "FloatingSheet" },
         { "id": "command-menu", "title": "CommandMenu" }
       ]
@@ -97,15 +93,15 @@
       "pages": [
         { "id": "lists", "title": "Lists" },
         { "id": "filter", "title": "Filter" },
-        { "id": "filter-input", "title": "FilterInput" },
         { "id": "index-bar", "title": "IndexBar" },
         { "id": "card", "title": "Card" },
+        { "id": "empty-state", "title": "EmptyState" },
         { "id": "avatar", "title": "Avatar" },
-        { "id": "disclosure", "title": "Disclosure" },
+        { "id": "disclosure", "title": "Disclosure (Accordion)" },
         { "id": "scroll-area", "title": "ScrollArea" },
         { "id": "separator", "title": "Separator" },
         { "id": "kbd", "title": "Kbd" },
-        { "id": "qr-svg", "title": "QrSvg" },
+        { "id": "qr-code", "title": "QRCode" },
         { "id": "spreadsheet", "title": "Spreadsheet" },
         { "id": "log-list", "title": "LogList" },
         { "id": "request-table", "title": "RequestTable" }
@@ -116,13 +112,10 @@
       "pages": [
         { "id": "navigation-stack", "title": "NavigationStack" },
         { "id": "breadcrumb", "title": "Breadcrumb" },
-        { "id": "tab-view", "title": "TabView" },
         { "id": "tabs", "title": "Tabs" },
-        { "id": "tab-bar", "title": "TabBar" },
         { "id": "edit-bar", "title": "EditBar" },
         { "id": "split-view", "title": "SplitView" },
         { "id": "sidebar", "title": "Sidebar" },
-        { "id": "side-drawer", "title": "SideDrawer" },
         { "id": "adaptive-pane", "title": "AdaptivePane" },
         { "id": "canvas", "title": "Canvas" }
       ]
@@ -133,7 +126,7 @@
         { "id": "morph", "title": "Morph" },
         { "id": "text-morph", "title": "TextMorph" },
         { "id": "number-morph", "title": "NumberMorph" },
-        { "id": "icon-swap", "title": "IconSwap" },
+        { "id": "swap", "title": "Swap" },
         { "id": "animated-height", "title": "AnimatedHeight" }
       ]
     },
@@ -164,6 +157,7 @@
         { "id": "replay-preview", "title": "ReplayPreview" },
         { "id": "trace-timeline", "title": "TraceTimeline" },
         { "id": "object-tree", "title": "ObjectTree" },
+        { "id": "object-value", "title": "ObjectValue" },
         { "id": "call-stack", "title": "CallStack" },
         { "id": "workbench-shell", "title": "WorkbenchShell" },
         { "id": "workbench-theme", "title": "WorkbenchTheme" }
@@ -201,7 +195,6 @@
         { "id": "pglite", "title": "PGlite" },
         { "id": "sql-console", "title": "SqlConsole" },
         { "id": "tailscale-login", "title": "Sign in with Tailscale" },
-        { "id": "tailscale-menu", "title": "Tailscale menu" },
         { "id": "tailscale-router", "title": "Tailscale request router" }
       ]
     },

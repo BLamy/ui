@@ -1,11 +1,11 @@
 /* The block's dialogs — Share, Project settings, Connect issue tracker and New project — are views of one
-   Credenza (a centred dialog, or a bottom tray on a phone): switching between them morphs the card's height and
+   A Dialog (a centred dialog, or a bottom tray on a phone): switching between them morphs the card's height and
    slides the views, and the tracker view is one step "into" settings, so it comes back the way it went. */
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  Credenza, CredenzaBack, CredenzaBackdrop, CredenzaClose, CredenzaContent, CredenzaHeader, CredenzaTitle, CredenzaView,
-} from '@/components/ui/credenza';
+  Dialog, DialogBack, DialogBackdrop, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogView,
+} from '@/components/ui/dialog';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { List, ListRow } from '@/components/ui/list';
@@ -22,7 +22,7 @@ const TITLES: Record<Exclude<DialogName, null>, string> = {
   share: 'Share project', settings: 'Project settings', tracker: 'Connect issue tracker', 'new-project': 'New project',
 };
 
-/** The views in a centred card, or in a bottom tray when the block is phone-sized (Credenza's `auto`, from the
+/** The views in a centred card, or in a bottom tray when the block is phone-sized (the Dialog's `"auto"`, from the
     block's size-class scope). */
 export function Dialogs() {
   const qa = useLoopQA();
@@ -30,21 +30,21 @@ export function Dialogs() {
   const view = qa.dialog ?? last;
   if (qa.dialog && qa.dialog !== last) setLast(qa.dialog);
   return (
-    <Credenza open={!!qa.dialog} onOpenChange={(o) => { if (!o) qa.setDialog(null); }} view={view}>
-      <CredenzaBackdrop />
-      <CredenzaContent>
-        <CredenzaHeader>
-          <CredenzaBack hidden={view !== 'tracker'} onClick={() => qa.setDialog('settings')} />
-          <CredenzaTitle>{TITLES[view]}</CredenzaTitle>
-          <CredenzaClose />
-        </CredenzaHeader>
-        <CredenzaView>
+    <Dialog open={!!qa.dialog} onOpenChange={(o) => { if (!o) qa.setDialog(null); }} view={view}>
+      <DialogBackdrop />
+      <DialogContent variant="tray">
+        <DialogHeader variant="bar">
+          <DialogBack hidden={view !== 'tracker'} onClick={() => qa.setDialog('settings')} />
+          <DialogTitle>{TITLES[view]}</DialogTitle>
+          <DialogClose />
+        </DialogHeader>
+        <DialogView>
           <div className="px-4 pt-1 pb-4">
             {view === 'share' ? <Share /> : view === 'settings' ? <Settings /> : view === 'tracker' ? <Trackers /> : <NewProject />}
           </div>
-        </CredenzaView>
-      </CredenzaContent>
-    </Credenza>
+        </DialogView>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -64,7 +64,7 @@ function Share() {
         <Button size="sm" className="h-8 rounded-lg" onClick={() => qa.copy(link, 'Copied project link')}>Copy</Button>
       </div>
       <List className="overflow-hidden rounded-xl border border-border">
-        <ListRow title="Public replays" subtitle="Anyone with a bug's link can watch its replay" divider={false}
+        <ListRow title="Public replays" description="Anyone with a bug's link can watch its replay" divider={false}
           className="[&_[data-slot=list-row-content]]:text-detail" trailing={<Switch checked={publicReplays} onCheckedChange={setPublic} />} />
       </List>
       <div>
@@ -95,10 +95,10 @@ function Settings() {
   const tracker = TRACKERS.find((t) => qa.trackers.includes(t.id));
   return (
     <form className="flex flex-col gap-3.5" onSubmit={(e) => { e.preventDefault(); qa.setDialog(null); qa.toast.success('Settings saved'); }}>
-      <Field><FieldLabel className={caption}>Name</FieldLabel><Input size="sm" defaultValue={p.name} className="text-detail" /></Field>
-      <Field><FieldLabel className={caption}>Target URL</FieldLabel><Input size="sm" defaultValue={p.url} className="font-mono text-footnote" /></Field>
+      <Field><FieldLabel variant="default" className={caption}>Name</FieldLabel><Input size="sm" defaultValue={p.name} className="text-detail" /></Field>
+      <Field><FieldLabel variant="default" className={caption}>Target URL</FieldLabel><Input size="sm" defaultValue={p.url} className="font-mono text-footnote" /></Field>
       <Field>
-        <FieldLabel className={caption}>Bug webhook</FieldLabel>
+        <FieldLabel variant="default" className={caption}>Bug webhook</FieldLabel>
         <Input size="sm" defaultValue={`https://hooks.${host(p.url).replace(/^[^.]+\./, '')}/loopqa`} className="font-mono text-footnote" />
       </Field>
       <div className="flex flex-col gap-1.5">
@@ -111,9 +111,9 @@ function Settings() {
         </Segmented>
       </div>
       <List className="overflow-hidden rounded-xl border border-border">
-        <ListRow title="Active" subtitle={active ? 'Runs on schedule and on deploys' : 'Paused — no runs'} className="[&_[data-slot=list-row-content]]:text-detail"
+        <ListRow title="Active" description={active ? 'Runs on schedule and on deploys' : 'Paused — no runs'} className="[&_[data-slot=list-row-content]]:text-detail"
           trailing={<Switch checked={active} onCheckedChange={setActive} />} />
-        <ListRow title="Issue tracker" subtitle={tracker ? `${tracker.name} · connected` : 'Not connected'} accessory="chevron" divider={false}
+        <ListRow title="Issue tracker" description={tracker ? `${tracker.name} · connected` : 'Not connected'} accessory="chevron" divider={false}
           className="[&_[data-slot=list-row-content]]:text-detail" onClick={() => qa.setDialog('tracker')} />
       </List>
       <Button type="submit" className="mt-1 h-10 rounded-[11px]">Save changes</Button>
@@ -159,10 +159,10 @@ function NewProject() {
     }}>
       <p className="m-0 text-footnote text-muted-foreground">Point Loop QA at a URL. It explores the app, maps its pages, and starts filing bugs — no test code needed.</p>
       <Field>
-        <FieldLabel className={caption}>App URL</FieldLabel>
+        <FieldLabel variant="default" className={caption}>App URL</FieldLabel>
         <Input size="sm" value={url} onValueChange={setUrl} autoFocus placeholder="https://app.example.com" className="font-mono text-footnote" />
       </Field>
-      <Field><FieldLabel className={caption}>Name (optional)</FieldLabel><Input size="sm" placeholder="Taken from the page title" className="text-detail" /></Field>
+      <Field><FieldLabel variant="default" className={caption}>Name (optional)</FieldLabel><Input size="sm" placeholder="Taken from the page title" className="text-detail" /></Field>
       <Button type="submit" className="mt-1 h-10 rounded-[11px]" disabled={!/^https?:\/\/\S+\.\S+/.test(url)}>Create and explore</Button>
     </form>
   );

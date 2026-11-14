@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ObjectValue } from '@/components/ui/object-value';
 import { STRING_PREVIEW_LENGTH, type ValuePreview } from '@/lib/object-tree-value';
@@ -56,7 +56,7 @@ describe('ObjectValue', () => {
   });
 
   it('stays one piece in a row of fixed height', () => {
-    const { container } = render(<ObjectValue value={{ type: 'string', value: LONG }} expandable={false} />);
+    const { container } = render(<ObjectValue value={{ type: 'string', value: LONG }} actions={false} />);
     expect(screen.queryByRole('button')).toBeNull();
     expect(root(container).textContent).toHaveLength(STRING_PREVIEW_LENGTH + 3);
   });
@@ -67,7 +67,19 @@ describe('ObjectValue', () => {
     render(<ObjectValue value={{ type: 'string', value: LONG }} />);
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Copy' })); });
     expect(writeText).toHaveBeenCalledWith(LONG);
-    expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
+    // The label morphs to its new text.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy());
+  });
+
+  it('hands the text to onValueCopy instead of the clipboard, and says it copied', async () => {
+    const writeText = vi.fn(async () => {});
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    const onValueCopy = vi.fn();
+    render(<ObjectValue value={{ type: 'string', value: LONG }} onValueCopy={onValueCopy} />);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Copy' })); });
+    expect(onValueCopy).toHaveBeenCalledWith(LONG);
+    expect(writeText).not.toHaveBeenCalled();
+    await waitFor(() => expect(document.querySelector('[data-ui-sdk-announcer=""]')?.textContent).toContain('Copied'));
   });
 
   it('opens an error into its stack', () => {

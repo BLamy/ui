@@ -6,7 +6,7 @@ import { Pad } from '../stories/frame';
 /* "Now" (Friday 2 October 2026, 10:00 UTC) and the zone are pinned so the next runs are the same on every run.
    The plain-English box needs WebGPU: where the browser has none (a headless test run, Safari today) the stories show
    the note that replaces it. The raw editor, description, presets and next runs are local and always shown. */
-const pinned = { from: '2026-10-02T10:00:00Z', timeZone: 'UTC', locale: 'en-US' } as const;
+const pinned = { reference: '2026-10-02T10:00:00Z', timeZone: 'UTC', locale: 'en-US' } as const;
 
 const meta: Meta<typeof CronEditor> = {
   title: 'Molecules/CronEditor',
@@ -59,7 +59,7 @@ export const DayOfMonthOrDayOfWeek: Story = {
 
 export const DaylightSaving: Story = {
   name: 'Daylight saving gap',
-  args: { naturalLanguage: false, defaultValue: '30 2 * * *', from: '2026-03-06T12:00:00Z', timeZone: 'America/New_York', nextRunCount: 4 },
+  args: { naturalLanguage: false, defaultValue: '30 2 * * *', reference: '2026-03-06T12:00:00Z', timeZone: 'America/New_York', nextRunCount: 4 },
 };
 
 export const CustomPresets: Story = {

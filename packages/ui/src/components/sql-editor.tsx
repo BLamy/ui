@@ -23,7 +23,7 @@ import type { SqlError } from '@/lib/pglite-core';
    everything when nothing is selected. ↑ on the first line and ↓ on the last step through `history` with UI SDK's
    `createInputHistory`, like a terminal: ↓ past the newest brings your draft back. Tab keeps its job of moving
    focus (indenting would trap keyboard users).
-   `ref` exposes `focus()` and `insert(text)` (at the cursor), which is how SchemaTree pastes a table name in. */
+   `ref` exposes `focus()` and `insert(text)` (at the cursor), which is how the SQL console's schema tree pastes a table name in. */
 
 export const sqlEditorVariants = cva(
   'flex min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground shadow-hairline transition-shadow duration-spring-snappy ease-spring-snappy focus-within:ring-2 focus-within:ring-primary focus-within:ring-inset',

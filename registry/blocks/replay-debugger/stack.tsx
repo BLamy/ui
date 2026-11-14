@@ -53,7 +53,7 @@ export function DebuggerStack({
       frames={frames}
       value={String(selected)}
       onValueChange={(_value, { index }) => void model.selectFrame(index)}
-      emptyMessage={idle ? 'No JS is on the stack at this point.' : 'No frames'}
+      emptyState={idle ? 'No JS is on the stack at this point.' : 'No frames'}
       className={cn(className)}
       style={style}
     />
@@ -271,7 +271,7 @@ export function DebuggerScopes({
         aria-label="Scopes"
         root={kept.current as never}
         loadChildren={loadChildren as never}
-        emptyMessage=""
+        emptyState={null}
         className="debugger-scopes-tree flex-1 min-h-0"
       />
     </div>

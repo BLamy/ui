@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { quoteIdent, toSqlError, type SqlError, type SqlRunner } from '@/lib/pglite-core';
 import { useDatabaseStatus } from '@/lib/pglite';
+import type { IconName } from '@/lib/icon';
 
 /* ══ Schema introspection ══
    What is in the database: schemas → tables / views → columns, with types, primary and foreign keys and row counts,
@@ -174,4 +175,61 @@ export function useSchema(options: LoadSchemaOptions = {}): UseSchemaState {
   }, [db, epoch, manual, system, internal, rowCounts, maxCounted]);
 
   return { schema: state.schema, isLoading: !db || state.loading, error: state.error, refetch: () => setManual((n) => n + 1) };
+}
+
+/* ── The schema as a Tree's items ── */
+
+/** A row of the schema as a Tree shows it: a schema, a table (or view), or a column, with what it stands for. */
+export type SchemaTreeNode = {
+  value: string;
+  label: string;
+  /** After the label: a schema's table count; a table's kind and row count; a column's type, reference and `not null`. */
+  detail?: string;
+  detailTitle?: string;
+  /** A primary key's column wears a key. */
+  icon?: IconName;
+  children?: SchemaTreeNode[];
+} & ({ kind: 'schema'; schema: SchemaNode } | { kind: 'table'; table: SchemaTable } | { kind: 'column'; table: SchemaTable; column: SchemaColumn });
+
+const RELATION_DETAIL: Partial<Record<RelationKind, string>> = { view: 'view', 'materialized view': 'matview', 'foreign table': 'foreign', 'partitioned table': 'partitioned' };
+
+const treeItemsOf = new WeakMap<SchemaInfo, SchemaTreeNode[]>();
+
+/** Schemas → tables → columns, as `Tree` items: `<Tree items={schemaTreeItems(schema)} icons={false} />`. A table's
+ *  value is `table:<schema>.<name>`, a column's `column:<schema>.<table>.<name>`, a schema's `schema:<name>`; the node
+ *  carries the `table` (and `column`), so `onAction`'s `details.node` says what was chosen. The same `schema` gives the
+ *  same array, so it can be called on every render. `null` (still loading) gives none. */
+export function schemaTreeItems(schema: SchemaInfo | null | undefined): SchemaTreeNode[] {
+  if (!schema) return [];
+  let items = treeItemsOf.get(schema);
+  if (!items) {
+    items = schema.schemas.map((s): SchemaTreeNode => ({
+      value: `schema:${s.name}`,
+      kind: 'schema',
+      schema: s,
+      label: s.name,
+      detail: String(s.tables.length),
+      detailTitle: `${s.tables.length} tables`,
+      children: s.tables.map((t): SchemaTreeNode => ({
+        value: `table:${t.schema}.${t.name}`,
+        kind: 'table',
+        table: t,
+        label: t.name,
+        detail: [RELATION_DETAIL[t.kind], t.rowCount !== null ? t.rowCount.toLocaleString('en-US') : ''].filter(Boolean).join(' · '),
+        ...(t.rowCount !== null ? { detailTitle: `${t.rowCount} rows` } : {}),
+        children: t.columns.map((c): SchemaTreeNode => ({
+          value: `column:${t.schema}.${t.name}.${c.name}`,
+          kind: 'column',
+          table: t,
+          column: c,
+          label: c.name,
+          ...(c.isPrimaryKey ? { icon: 'key' as const } : {}),
+          detail: [c.references ? `→ ${c.references.table}.${c.references.column}` : '', c.type, c.nullable ? '' : 'not null'].filter(Boolean).join(' '),
+          ...(c.references ? { detailTitle: `References ${c.references.schema}.${c.references.table}(${c.references.column})` } : {}),
+        })),
+      })),
+    }));
+    treeItemsOf.set(schema, items);
+  }
+  return items;
 }

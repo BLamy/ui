@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import type { DebuggerPartProps } from './styles';
 import { LogList } from '@/components/ui/log-list';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
-import { TabBar } from '@/components/ui/tab-bar';
+import { Tabs, TabsBar, TabsList, TabsTab } from '@/components/ui/tabs';
 import { Workspace, type WorkspaceLayoutInput } from '@/components/ui/workspace';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { type LogRow } from '@/lib/log-list-model';
@@ -24,13 +24,13 @@ import {
 import { DebuggerToolbar } from './toolbar';
 /* ══ All of it, in the room it's given ══
    The block's parts together, for a host that doesn't want to arrange them itself: the code with its console under it and
-   the stack beside it in a Workspace, and one at a time with a TabBar in a compact box (the kit's size class of its own
+   the stack beside it in a Workspace, and one at a time under a bottom tab bar in a compact box (the kit's size class of its own
    box). The width can change at any moment, and nothing's lost, as everything worth keeping is in the model. */
 type Tab = 'code' | 'console' | 'stack';
 type Section = 'stack' | 'scopes' | 'breakpoints';
 /** Compact below this width: one panel at a time. */
 const breakpoints = { medium: 720 };
-const Tabs: {
+const PANELS: {
   value: Tab;
   title: string;
   icon: string;
@@ -262,19 +262,18 @@ export function ReplayDebugger({
           <div className="replay-debugger-panel flex flex-col flex-1 min-h-0 h-full">
             {panel(tab)}
           </div>
-          <TabBar<Tab>
-            aria-label="Panels"
-            items={Tabs}
-            value={tab}
-            onValueChange={setTab}
-            hideOnScroll={false}
-            className="replay-debugger-tabs shrink-0 relative! inset-auto!"
-          />
+          <Tabs<Tab> variant="bar" value={tab} onValueChange={(next) => { if (next) setTab(next); }} className="contents">
+            <TabsBar hideOnScroll={false} className="replay-debugger-tabs shrink-0 relative! inset-auto!">
+              <TabsList aria-label="Panels">
+                {PANELS.map((p) => <TabsTab key={p.value} value={p.value} icon={p.icon}>{p.title}</TabsTab>)}
+              </TabsList>
+            </TabsBar>
+          </Tabs>
         </>
       ) : (
         <Workspace<Tab>
           aria-label="The debugger"
-          className="replay-debugger-workspace flex-1 min-h-0 border-0 rounded-none"
+          className="replay-debugger-workspace flex-1 min-h-0"
           defaultLayout={defaultLayout}
           renderTabContent={(t) => (
             <div className="replay-debugger-panel flex flex-col flex-1 min-h-0 h-full">

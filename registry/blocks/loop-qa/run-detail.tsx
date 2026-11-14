@@ -4,13 +4,12 @@ import { useState, type ReactNode } from 'react';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Button } from '@/components/ui/button';
-import { Chevron } from '@/components/ui/icon-swap';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import { ReplayPreview } from '@/components/ui/replay-preview';
 import { Spinner } from '@/components/ui/spinner';
 import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
-import { Icon } from '@/lib/icon';
+import { Chevron, Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { BugPreview } from './cards';
 import { LIVE_PLAN, dateTime, relativeTime, type Journey, type Run } from './data';
@@ -135,7 +134,7 @@ function JourneyRow({ journey: j }: { journey: Journey }) {
         {summary}
         <span className="flex shrink-0 items-center gap-1.5 text-caption font-semibold text-destructive">
           <Icon name="exclamation-circle" size={13} sw={2.2} />{bugs.length}
-          <Chevron direction={open ? 'down' : 'right'} size={12} sw={2.6} className="text-tertiary-foreground" />
+          <Chevron direction={open ? 'down' : 'right'} size={12} strokeWidth={2.6} className="text-tertiary-foreground" />
         </span>
       </CollapsibleTrigger>
       <CollapsiblePanel className="h-(--collapsible-panel-height) overflow-clip transition-[height] duration-spring-tray ease-spring-tray data-starting-style:h-0 data-ending-style:h-0 motion-reduce:transition-none">

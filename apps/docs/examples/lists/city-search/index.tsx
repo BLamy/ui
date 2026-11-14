@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
 import { List, ListRow, ListSection } from '@/components/ui/list'
-import { SearchField } from '@/components/ui/search-field'
+import { SearchInput } from '@/components/ui/search-input'
 import { Icon } from '@/lib/icon'
 
 const cities = [
@@ -26,11 +27,25 @@ function CitySearch() {
     >
       {/* `header` sticks to the top of the list; sections would stick below
           it */}
+      {/* With no rows, the list shows its `emptyState` instead of the section. */}
       <List
-        inset
+        variant="inset"
+        emptyState={
+          <EmptyState
+            icon={<Icon name="magnifyingglass" />}
+            title="No Results"
+            description={`Nothing matches “${q}”.`}
+            action={
+              <Button variant="secondary" size="sm" onClick={() => setQ('')}>
+                Clear search
+              </Button>
+            }
+            className="h-auto py-14"
+          />
+        }
         header={
           <div style={{ padding: '10px 0' }}>
-            <SearchField
+            <SearchInput
               value={q}
               onValueChange={setQ}
               placeholder="Search cities"
@@ -38,43 +53,17 @@ function CitySearch() {
           </div>
         }
       >
-        {hits.length ? (
-          <ListSection title={`${hits.length} cities`}>
-            {hits.map((c, i) => (
-              <ListRow
-                key={c}
-                title={c}
-                leading={<Icon name="pin" size={20} />}
-                divider={i < hits.length - 1}
-                onClick={() => {}}
-              />
-            ))}
-          </ListSection>
-        ) : (
-          <div style={{ padding: '56px 24px', textAlign: 'center' }}>
-            <Icon
-              name="search"
-              size={40}
-              style={{ margin: '0 auto', color: 'var(--tertiary-foreground)' }}
+        <ListSection title={`${hits.length} cities`}>
+          {hits.map((c, i) => (
+            <ListRow
+              key={c}
+              title={c}
+              icon={<Icon name="pin" size={20} />}
+              divider={i < hits.length - 1}
+              onClick={() => {}}
             />
-            <div style={{ fontSize: 19, fontWeight: 700, marginTop: 12 }}>
-              No Results
-            </div>
-            <div
-              style={{ fontSize: 14, color: 'var(--muted-foreground)', marginTop: 4 }}
-            >
-              Nothing matches “{q}”.
-            </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              style={{ marginTop: 14 }}
-              onClick={() => setQ('')}
-            >
-              Clear search
-            </Button>
-          </div>
-        )}
+          ))}
+        </ListSection>
       </List>
     </div>
   )

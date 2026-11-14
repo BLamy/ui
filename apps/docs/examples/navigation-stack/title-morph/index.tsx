@@ -31,7 +31,7 @@ function Stack() {
       </NavigationStackBar>
       <NavigationStackContent>
         {root ? <NavigationStackLargeTitle /> : null}
-        <List inset>
+        <List variant="inset">
           <ListSection
             footer={
               TREE[title].length

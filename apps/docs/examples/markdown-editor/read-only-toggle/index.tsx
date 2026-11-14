@@ -5,12 +5,12 @@ import { MarkdownView } from '@/components/ui/markdown-view'
 const spec = `## Release 2.4
 
 {% hint style="info" %}
-\`TabBar\` now hides with the scroll by default.
+The \`Tabs\` bar now hides with the scroll by default.
 {% endhint %}
 
 | Component | Change |
 | --- | --- |
-| TabView | New pill indicator |
+| Tabs | New pill part |
 | Credenza | \`compact\` tray is draggable |`
 
 export default function ReadOnlyToggle({

@@ -28,19 +28,19 @@ function Player({ initial = false, dark }: { initial?: boolean; dark?: boolean }
       <MorphGroup>
         <MorphPresence>
           {open ? (
-            <Morph key="full" id="player" radius={0} dragToDismiss onDismiss={() => setOpen(false)}
+            <Morph key="full" layoutId="player" radius={0} dragToDismiss onDismiss={() => setOpen(false)}
               className="absolute inset-0 z-10 flex flex-col overflow-hidden px-7 pt-3 pb-8 text-white"
               style={{ background: 'linear-gradient(180deg,#5a2748,#1e1030)' }} aria-label="Now Playing" role="dialog">
               <button type="button" aria-label="Close Now Playing" onClick={() => setOpen(false)}
                 className="bl-btn mx-auto mb-6 h-5 w-14 cursor-pointer border-0 bg-transparent p-0">
                 <span className="mx-auto block h-[5px] w-10 rounded-full bg-white/40" />
               </button>
-              <Morph id="art" radius={14} className="aspect-square w-full shadow-[0_18px_50px_rgba(0,0,0,.35)]" style={{ background: ART }} />
-              <Morph id="title" layout="position" className="mt-8">
+              <Morph layoutId="art" radius={14} className="aspect-square w-full shadow-[0_18px_50px_rgba(0,0,0,.35)]" style={{ background: ART }} />
+              <Morph layoutId="title" layout="position" className="mt-8">
                 <div className="text-[21px] font-semibold">Golden Hour</div>
                 <div className="text-[17px] text-white/60">The Weekend Ensemble</div>
               </Morph>
-              <Morph id="controls-full" fade className="mt-6 flex flex-col gap-6">
+              <Morph layoutId="controls-full" fade className="mt-6 flex flex-col gap-6">
                 <Slider aria-label="Position" data-no-drag tone="onDark" size="sm" defaultValue={32} />
                 <div className="flex items-center justify-center gap-12">
                   <Icon name="chevL" size={34} />
@@ -50,10 +50,10 @@ function Player({ initial = false, dark }: { initial?: boolean; dark?: boolean }
               </Morph>
             </Morph>
           ) : (
-            <Morph key="mini" id="player" radius={14} onClick={() => setOpen(true)} role="button" tabIndex={0} aria-label="Open Now Playing"
-              className="absolute right-3 bottom-3 left-3 z-10 flex h-16 cursor-pointer items-center gap-3 overflow-hidden bg-bar pr-4 pl-2 text-foreground shadow-[0_6px_24px_rgba(0,0,0,.16),0_0_0_.5px_var(--border)] backdrop-blur-xl">
-              <Morph id="art" radius={8} className="size-12 shrink-0" style={{ background: ART }} />
-              <Morph id="title" layout="position" className="min-w-0 flex-1">
+            <Morph key="mini" layoutId="player" radius={14} render={<button type="button" />} onClick={() => setOpen(true)} aria-label="Open Now Playing"
+              className="absolute right-3 bottom-3 left-3 z-10 flex h-16 cursor-pointer items-center gap-3 overflow-hidden border-0 text-start [font:inherit] bg-bar pr-4 pl-2 text-foreground shadow-[0_6px_24px_rgba(0,0,0,.16),0_0_0_.5px_var(--border)] backdrop-blur-xl">
+              <Morph layoutId="art" radius={8} className="size-12 shrink-0" style={{ background: ART }} />
+              <Morph layoutId="title" layout="position" className="min-w-0 flex-1">
                 <div className="truncate text-[15px] font-medium">Golden Hour</div>
                 <div className="truncate text-[13px] text-muted-foreground">The Weekend Ensemble</div>
               </Morph>
@@ -83,12 +83,12 @@ function Cards() {
       <MorphGroup spring="tray">
         <div className="absolute inset-0 grid grid-cols-2 content-start gap-3 bg-background p-5">
           {colors.map((c, i) => (sel === i ? <div key={i} className="aspect-square" /> : (
-            <Morph key={i} id={`card-${i}`} radius={18} render={<button type="button" />} onClick={() => setSel(i)} aria-label={`Open card ${i + 1}`}
+            <Morph key={i} layoutId={`card-${i}`} radius={18} render={<button type="button" />} onClick={() => setSel(i)} aria-label={`Open card ${i + 1}`}
               className="bl-btn aspect-square cursor-pointer border-0" style={{ background: c }} />
           )))}
         </div>
         {sel != null ? (
-          <Morph id={`card-${sel}`} radius={28} dragToDismiss onDismiss={() => setSel(null)}
+          <Morph layoutId={`card-${sel}`} radius={28} dragToDismiss onDismiss={() => setSel(null)}
             className="absolute inset-x-4 top-16 bottom-16 z-10 flex items-end p-6 text-[24px] font-bold text-white" style={{ background: colors[sel] }}>
             <button type="button" onClick={() => setSel(null)} className="bl-btn cursor-pointer border-0 bg-white/25 px-4 py-2 text-[15px] font-semibold text-white" style={{ borderRadius: 99 }}>
               Close

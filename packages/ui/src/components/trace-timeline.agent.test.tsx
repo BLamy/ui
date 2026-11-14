@@ -31,7 +31,7 @@ describe('TraceTimeline is agent-ready', () => {
       const [lane, setLane] = useState<string | null>('a');
       const [thread, setThread] = useState<TraceKey | null>(null);
       return (
-        <TraceTimeline range={RANGE} lanes={LANES} label="Session" orientation="horizontal"
+        <TraceTimeline range={RANGE} lanes={LANES} aria-label="Session" orientation="horizontal"
           onValueChange={onValueChange} onViewChange={onViewChange} onSelectedRequestChange={onSelectedRequestChange}
           focusedLane={lane} onFocusedLaneChange={(l, d) => { setLane(l); onFocusedLaneChange(l, d); }}
           selectedThread={thread} onSelectedThreadChange={(t, d) => { setThread(t); onSelectedThreadChange(t, d); }} />

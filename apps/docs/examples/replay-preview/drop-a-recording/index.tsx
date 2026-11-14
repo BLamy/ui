@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { FileDropZone, FileUploadButton } from '@/components/ui/file-upload'
+import { Field, FieldError } from '@/components/ui/field'
+import { FileUploadDropzone, FileUploadTrigger } from '@/components/ui/file-upload'
 import { ReplayPreview, getReplayMeta, replayDemoEvents, type ReplayEvent } from '@/components/ui/replay-preview'
 import { Icon } from '@/lib/icon'
 
@@ -53,7 +54,9 @@ export default function DropARecording() {
 
   return (
     <div style={{ width: '100%', maxWidth: 760, display: 'grid', gap: 8 }}>
-      <FileDropZone
+      {/* A Field carries the load error: it marks the zone invalid (a red border) and its FieldError says why. */}
+      <Field invalid={!recording && !!error}>
+      <FileUploadDropzone
         aria-label="Drop an rrweb recording"
         onFiles={load}
         multiple={false}
@@ -62,8 +65,6 @@ export default function DropARecording() {
         hint=".rrweb or .json, gzipped or not"
         icon="video"
         browseLabel="Choose a recording"
-        invalid={!recording && !!error}
-        error={error}
         className={recording ? 'block min-h-0 border-0 p-0' : 'min-h-72'}
       >
         {recording
@@ -79,7 +80,9 @@ export default function DropARecording() {
               </div>
             )
           : undefined}
-      </FileDropZone>
+      </FileUploadDropzone>
+      <FieldError>{error}</FieldError>
+      </Field>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="text-footnote text-foreground/70">
         {recording ? (
           <>
@@ -87,9 +90,9 @@ export default function DropARecording() {
             <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {error ?? `${recording.name} · drop another on the player to swap it`}
             </span>
-            <FileUploadButton variant="ghost" size="sm" accept={ACCEPT} multiple={false} onFiles={load}>
+            <FileUploadTrigger variant="ghost" size="sm" accept={ACCEPT} multiple={false} onFiles={load}>
               Choose another
-            </FileUploadButton>
+            </FileUploadTrigger>
             <Button variant="ghost" size="sm" onClick={() => { setRecording(null); setError(null) }}>
               Clear
             </Button>

@@ -2,7 +2,7 @@
    (one player that seeks from exploration to exploration while the caption slides the way you paged), the
    latest run's findings and the newest open bugs. */
 import { useRef, useState } from 'react';
-import { ContentSwap } from '@/components/ui/animated-height';
+import { Swap } from '@/components/ui/swap';
 import { Button } from '@/components/ui/button';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { ProgressRing } from '@/components/ui/progress-ring';
@@ -118,7 +118,7 @@ function Exploration() {
       bodyClassName="grid gap-4 p-4 @5xl:grid-cols-[1fr_240px]!"
     >
       <ReplayPreview events={EXPLORATION_EVENTS} initialTime={EXPLORATIONS[0]!.initialTime} playerRef={player} title="Exploration replay" />
-      <ContentSwap id={ex.id} direction={dir}>
+      <Swap value={ex.id} direction={dir}>
         <div className="flex flex-col gap-3">
           <div>
             <div className="text-[11.5px] font-semibold tracking-[.06em] text-muted-foreground uppercase">Exploration {index + 1}</div>
@@ -134,7 +134,7 @@ function Exploration() {
             ))}
           </dl>
         </div>
-      </ContentSwap>
+      </Swap>
     </Panel>
   );
 }

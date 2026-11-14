@@ -5,13 +5,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Button } from '@/components/ui/button';
-import { Disclosure, DisclosurePanel, DisclosureTrigger } from '@/components/ui/disclosure';
-import { Field } from '@/components/ui/field';
-import { Form } from '@/components/ui/form';
+import { Disclosure, DisclosureHeader, DisclosurePanel, DisclosureTrigger } from '@/components/ui/disclosure';
+import { Field, FieldGroup } from '@/components/ui/field';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -112,10 +111,10 @@ function PromoCode({ disabled }: { disabled: boolean }) {
           <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-secondary pr-1 pl-2.5 text-footnote font-semibold text-foreground">
             <Icon name="tag-fill" size={14} className="text-primary" />
             {q.promo.code}
-            <PlainButton aria-label={`Remove ${q.promo.code}`} disabled={disabled} onClick={() => { focusNext.current = 'add'; c.removePromo(); }}
+            <SdkButton aria-label={`Remove ${q.promo.code}`} disabled={disabled} onClick={() => { focusNext.current = 'add'; c.removePromo(); }}
               className="bl-btn grid size-5 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-foreground/70 outline-none data-disabled:cursor-default data-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-ring hover:not-data-disabled:bg-secondary-strong">
               <Icon name="xmark" size={11} sw={2.6} />
-            </PlainButton>
+            </SdkButton>
           </span>
           {!q.promoError ? <span className="text-subhead text-foreground tabular-nums">−{money(q.discount)}</span> : null}
         </div>
@@ -130,7 +129,7 @@ function PromoCode({ disabled }: { disabled: boolean }) {
     );
   } else {
     body = (
-      <Form noValidate onSubmit={(e) => { e.preventDefault(); apply(); }} className="flex-row items-start gap-2">
+      <FieldGroup render={<form noValidate onSubmit={(e) => { e.preventDefault(); apply(); }} />} className="flex-row items-start gap-2">
         <Field invalid={error ? true : undefined} disabled={disabled} className="min-w-0 flex-1">
           <Input aria-label="Promotion code" autoFocus value={code} onValueChange={(v) => { setCode(v); setError(null); }}
             onKeyDown={(e) => { if (e.key === 'Escape' && !code) { focusNext.current = 'add'; setOpen(false); } }}
@@ -138,9 +137,9 @@ function PromoCode({ disabled }: { disabled: boolean }) {
           <ErrorText>{error}</ErrorText>
         </Field>
         <Button type="submit" variant="secondary" disabled={disabled} className="w-[76px] shrink-0">
-          {checking ? <Spinner spin size={16} /> : 'Apply'}
+          {checking ? <Spinner size={16} /> : 'Apply'}
         </Button>
-      </Form>
+      </FieldGroup>
     );
   }
   return (
@@ -160,15 +159,15 @@ export function SummaryDisclosure() {
     // The bar runs edge to edge; its contents line up with the form column below it.
     <div className="border-b border-border bg-muted">
       <Disclosure open={open} onOpenChange={setOpen} className="mx-auto max-w-[520px] px-5">
-        <h2 className="m-0 flex">
-          <DisclosureTrigger className="w-full gap-2 py-3 text-subhead">
+        <DisclosureHeader render={<h2 />}>
+          <DisclosureTrigger className="gap-2 py-3 text-subhead">
             <span className="flex items-center gap-2 font-medium text-link">
               <Icon name="cart" size={18} />
               {open ? 'Hide' : 'Show'} order summary
             </span>
             <NumberMorph value={c.quote.total / 100} format={MONEY_FORMAT} className="mr-1 ml-auto text-callout font-semibold text-foreground" />
           </DisclosureTrigger>
-        </h2>
+        </DisclosureHeader>
         <DisclosurePanel>
           <div className="pt-2 pb-2">
             <OrderSummary />

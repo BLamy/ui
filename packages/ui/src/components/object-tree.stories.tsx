@@ -100,11 +100,11 @@ function Frame({ w = 760, h = 560, dark, children }: { w?: number; h?: number; d
   return <Phone w={w} h={h} dark={dark}><div className="absolute inset-0 bg-card py-2">{children}</div></Phone>;
 }
 
-function Scopes({ selectable }: { selectable?: boolean }) {
+function Scopes({ selectable, density }: { selectable?: boolean; density?: 'compact' | 'default' | 'comfortable' }) {
   const [selected, setSelected] = useState('');
   return (
     <div className="flex h-full flex-col">
-      <ObjectTree aria-label="Scopes" root={SCOPES} loadChildren={loadHeld} onInvokeGetter={answerGetter} mode={selectable ? 'single' : 'none'} onValueChange={(_key, { node }) => setSelected(node?.name ?? '')} />
+      <ObjectTree aria-label="Scopes" root={SCOPES} loadChildren={loadHeld} onInvokeGetter={answerGetter} mode={selectable ? 'single' : 'none'} density={density} onValueChange={(_key, { node }) => setSelected(node?.name ?? '')} />
       {selectable ? <div className="shrink-0 px-3 py-2 text-caption text-muted-foreground shadow-hairline-t">Selected: {selected || 'nothing'}</div> : null}
     </div>
   );
@@ -115,6 +115,10 @@ export const ScopesDark: Story = { render: () => <Frame dark><Scopes /></Frame> 
 export const ScopesPhone: Story = { name: 'Scopes, phone', render: () => <Frame w={390} h={720}><Scopes /></Frame> };
 export const ScopesPhoneDark: Story = { name: 'Scopes, phone dark', render: () => <Frame w={390} h={720} dark><Scopes /></Frame> };
 export const Selection: Story = { render: () => <Frame><Scopes selectable /></Frame> };
+export const SelectionDark: Story = { name: 'Selection, dark', render: () => <Frame dark><Scopes selectable /></Frame> };
+/** Touch: Tree's `comfortable` density, 36px rows. */
+export const ScopesPhoneComfortable: Story = { name: 'Scopes, phone comfortable', render: () => <Frame w={390} h={720}><Scopes density="comfortable" /></Frame> };
+export const Empty: Story = { render: () => <Frame h={200}><ObjectTree aria-label="Scopes" root={[]} emptyState="No scopes at this point" /></Frame> };
 
 /* ── Lazy children: one answers, one never does, one fails ── */
 

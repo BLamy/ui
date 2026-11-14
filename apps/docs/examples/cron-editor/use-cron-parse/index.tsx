@@ -26,7 +26,7 @@ export default function UseCronParse() {
   return (
     <div className="mx-auto grid max-w-md gap-3">
       <Field>
-        <FieldLabel variant="field" className="text-foreground/70">Describe the schedule</FieldLabel>
+        <FieldLabel className="text-foreground/70">Describe the schedule</FieldLabel>
         <Input value={text} onValueChange={setText} />
       </Field>
       <p className="m-0 min-h-[18px] px-1 text-footnote text-foreground/70" aria-live="polite">

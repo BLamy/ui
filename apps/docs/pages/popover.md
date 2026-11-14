@@ -29,11 +29,11 @@ import { Popover, PopoverTrigger, PopoverContent } from '@brett_lamy/ui'
 
 ## Usage
 
-`Popover` is the root and holds the open state. `PopoverTrigger` is the button that opens it; it has no look of its own, so give it ours with `className={buttonVariants({ … })}`. `PopoverContent` is the surface; name it with a `PopoverTitle` (wired through `aria-labelledby`; add `className="sr-only"` to name it without showing a heading), and describe it with a `PopoverDescription`. A `PopoverClose` closes it — `render` it as a Button for a Done.
+`Popover` is the root and holds the open state. `PopoverTrigger` is the button that opens it; it has no look of its own, so `render` one of ours into it, `render={<Button … />}` (every popup trigger in the kit is styled this way). `PopoverContent` is the surface; name it with a `PopoverTitle` (wired through `aria-labelledby`; add `className="sr-only"` to name it without showing a heading), and describe it with a `PopoverDescription`. A `PopoverClose` closes it — `render` it as a Button for a Done.
 
 ```tsx
 <Popover>
-  <PopoverTrigger className={buttonVariants({ variant: 'secondary' })}>Dimensions</PopoverTrigger>
+  <PopoverTrigger render={<Button variant="secondary" />}>Dimensions</PopoverTrigger>
   <PopoverContent align="start">
     <PopoverTitle>Dimensions</PopoverTitle>
     <PopoverDescription>Set the size of the layer.</PopoverDescription>
@@ -58,7 +58,7 @@ The default `variant="panel"` is 288px wide (`w-72`) with 16px padding; override
 </PopoverContent>
 ```
 
-`PopoverArrow`, placed first inside the content, draws a pointer toward the trigger on whichever side the popover landed.
+`arrow` on the content draws a pointer toward the trigger on whichever side the popover landed (leave the surface's overflow visible). It is off by default, as on a HoverCard; a Tooltip draws one unless `arrow={false}`. `PopoverArrow` is the part, for styling it yourself.
 
 ## Opening it
 
@@ -70,7 +70,7 @@ A trigger elsewhere on the page — one per table row, say — connects through 
 const share = createPopoverController<{ file: string }>()
 
 {files.map((file) => (
-  <PopoverTrigger key={file} controller={share} payload={{ file }} className={buttonVariants({ size: 'sm' })}>Share</PopoverTrigger>
+  <PopoverTrigger key={file} controller={share} payload={{ file }} render={<Button size="sm" />}>Share</PopoverTrigger>
 ))}
 <Popover controller={share}>
   <PopoverContent>{({ payload }) => <PopoverTitle>Share {payload?.file}</PopoverTitle>}</PopoverContent>
@@ -81,7 +81,7 @@ const share = createPopoverController<{ file: string }>()
 
 ## In a small container
 
-`presentation="auto"` on the `Popover` turns it into a bottom sheet when it opens in a compact container (a phone-sized frame or column), and `presentation="sheet"` always does. As a sheet it is shaped like the kit's bottom [Sheet](https://blamy.github.io/ui/#/sheet): the full width of its host, square at the bottom, and a swipe down closes it. Unlike the Sheet it has no scrim inside BLProvider (or any layer host): its dim is the page's top-layer backdrop, which a contained popup doesn't get.
+`presentation="auto"` on the `Popover` turns it into a bottom sheet when it opens in a compact container (a phone-sized frame or column), and `presentation="sheet"` always does. As a sheet it is shaped like the kit's bottom [Sheet](https://blamy.github.io/ui/#/sheet): the full width of its host, square at the bottom, with the Sheet's grabber at the top, and a swipe down closes it. Unlike the Sheet it has no scrim inside BLProvider (or any layer host): its dim is the page's top-layer backdrop, which a contained popup doesn't get.
 
 ## Popups wear their ThemeScope
 
@@ -89,7 +89,13 @@ A popover renders into its layer host — BLProvider's root, or the browser's to
 
 {% demo src="popover/scoped" %}
 
-The popover surface keeps a fixed 14px corner radius; the `--radius` scale does not reach it.
+The surface's corners follow the `--radius` scale (`rounded-card`, 14px at the default 10px radius) and its shadow is the `shadow-popover` token, the same on every popup.
+
+When the trigger sits on a surface that CSS paints rather than a ThemeScope (a host app's own `[data-theme-scope]` rule, a block's stylesheet, a shell that sets `.dark` and variables on a plain element), pass `palette="trigger"` to `PopoverContent`: each time it opens, it copies the theme variables resolved at its trigger, the trigger's appearance and its named scope. `DropdownMenuContent` takes the same prop, and `useTriggerPalette(enabled, ref)` is the hook behind it, for a popup part of your own.
+
+```tsx
+<PopoverContent variant="surface" palette="trigger" className="rounded-panel bg-card">…</PopoverContent>
+```
 
 ## Accessibility
 
@@ -112,7 +118,7 @@ The popover surface keeps a fixed 14px corner radius; the `--radius` scale does 
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `render` | a `<button>` | Another element to render as. For the kit's button look, style it instead: `className={buttonVariants({ variant: 'secondary' })}`. |
+| `render` | a `<button>` | Another element to render as: `render={<Button variant="secondary" />}` for the kit's button look. |
 | `disabled` / `focusableWhenDisabled` | `false` | Stop it opening the popover. |
 | `controller` / `payload` | — | Connect a trigger outside the root, with data for the content. |
 | `shortcut` | — | A key that presses it, like `"mod+i"`. |
@@ -122,13 +128,15 @@ The popover surface keeps a fixed 14px corner radius; the `--radius` scale does 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `variant` | `panel` | `panel` (padded, 288px) or `surface` (bare, as wide as the trigger). |
+| `arrow` | `false` | Draw a pointer toward the trigger. |
+| `palette` | `scope` | `trigger` copies the trigger's palette when it opens (see above). |
 | `side` / `align` | `bottom` / `center` | Where it opens relative to the trigger. |
 | `sideOffset` / `alignOffset` | `8` / `0` | Gap to the trigger and shift along it, px. |
 | `initialFocus` / `finalFocus` | `auto` / `trigger` | Where focus goes as it opens and closes. |
-| `className` / `style` | — | Merged onto the surface; either may be a function of its state. |
+| `className` / `style` / `ref` | — | Merged onto the surface; `className` and `style` may be functions of its state. |
 | `children` | — | Content, or a function of its state (`open`, `presentation`, `payload`). |
 
-`PopoverTitle`, `PopoverDescription`, `PopoverClose` (`render` it as a Button) and `PopoverArrow` take their element's props.
+`PopoverTitle` (a heading), `PopoverDescription`, `PopoverClose` (`render` it as a Button) and `PopoverArrow` take their element's props.
 
 ## Styling
 

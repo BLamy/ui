@@ -19,7 +19,7 @@ export default function Basic() {
   return (
     <ThemeScope className="mx-auto grid max-w-sm gap-5">
       <Field>
-        <FieldLabel variant="field">Date</FieldLabel>
+        <FieldLabel>Date</FieldLabel>
         <DatePicker locale="en-US" value={date} onValueChange={setDate}>
           <DatePickerField />
           <DatePickerContent />

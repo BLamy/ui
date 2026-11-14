@@ -1,6 +1,6 @@
 # Passkey vault
 
-Encrypted storage in the browser, unlocked by a passkey. Records are encrypted with AES-GCM and kept in IndexedDB; the key that encrypts them is never stored in the clear but wrapped by what the passkey's PRF extension computes, so the data can only be read after the person has touched their fingerprint sensor, face or security key. A recovery key, made at set-up and shown once, opens the same vault if the passkey is lost. It ships as plain functions (`createPasskey`, `createVault`), React hooks (`useVault`, `useEncryptedState`) and the screens around them (`PasskeyEnrollDialog`, `VaultGate`).
+Encrypted storage in the browser, unlocked by a passkey. Records are encrypted with AES-GCM and kept in IndexedDB; the key that encrypts them is never stored in the clear but wrapped by what the passkey's PRF extension computes, so the data can only be read after the person has touched their fingerprint sensor, face or security key. A recovery key, made at set-up and shown once, opens the same vault if the passkey is lost. It ships as plain functions (`createPasskey`, `createVault`), React hooks (`useVault`, `useEncryptedState`) and the screens around them (`VaultGate` with its screens, and `VaultEnrollDialog`), all in one module, `vault-gate`.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -61,7 +61,7 @@ export default function App() {
 }
 ```
 
-First run shows the set-up screen; `Set up passkey` opens `PasskeyEnrollDialog`, which explains what is protected, runs the passkey prompt, then shows the recovery key once and does not let the person close it until they confirm. Later visits show the locked screen with `Unlock with passkey` and `Use recovery key instead`. `BLProvider` matters: dialogs portal into it, so they sit inside your app's frame and wear its theme.
+First run shows the set-up screen; `Set up passkey` opens `VaultEnrollDialog`, which explains what is protected, runs the passkey prompt, then shows the recovery key once and does not let the person close it until they confirm. Later visits show the locked screen with `Unlock with passkey` and `Use recovery key instead`. `BLProvider` matters: dialogs portal into it, so they sit inside your app's frame and wear its theme.
 
 Without React, the same thing is plain objects:
 
@@ -108,7 +108,7 @@ The set-up order matters because a passkey prompt can fail: the passkey is creat
 
 **Synced passkeys.** A passkey kept by iCloud Keychain, Google Password Manager or a password manager is available on the person's other devices, and, as far as I know, so is its PRF secret (this is from memory, not verified here). The vault's *data* is not synced: the envelope and records live in this browser's storage. A new device with the same passkey has nothing to unlock until you sync the ciphertext yourself (a `VaultStorage` that mirrors to a server is safe, because everything it sees is ciphertext), and unlocking there depends on the synced passkey producing the same PRF output. Anyone who controls the sync account may be able to use the passkey, so a synced passkey is only as strong as that account.
 
-**Loss and recovery.** Clearing site data deletes the vault and the data. Deleting the passkey from the authenticator leaves the data readable only through the recovery key. Losing both means the data cannot be read by anyone, including you; `vault.reset()` (behind a confirmation on the locked screen) erases it so the person can start again. That is why the recovery key is not optional in the design: `enroll()` always creates it, `PasskeyEnrollDialog` cannot be dismissed while it is on screen, and `VaultGate` shows a notice (`recoveryNotice`) for as long as the person has not confirmed saving it.
+**Loss and recovery.** Clearing site data deletes the vault and the data. Deleting the passkey from the authenticator leaves the data readable only through the recovery key. Losing both means the data cannot be read by anyone, including you; `vault.reset()` (behind a confirmation on the locked screen) erases it so the person can start again. That is why the recovery key is not optional in the design: `enroll()` always creates it, `VaultEnrollDialog` cannot be dismissed while it is on screen, and `VaultGate` shows a notice (`recoveryNotice`) for as long as the person has not confirmed saving it.
 
 **Secure context.** WebAuthn exists only on HTTPS and `localhost`. On an insecure origin `status` is `unsupported` with `unsupportedReason: 'insecure-context'`.
 
@@ -292,27 +292,48 @@ A `VaultStorage` is an async string map: `get`, `set`, `delete`, `keys(prefix)`.
 
 ## Components
 
-### PasskeyEnrollDialog
+The screens around the vault, from `@/components/ui/vault-gate`. Use `VaultGate` for the whole flow; reach for the screens when you build your own shell. Plain `Dialog`s and an `AlertDialog` do the asking, so they adapt like every [Dialog](https://blamy.github.io/ui/#/dialog): a centered card in a wide container, a tray in a compact one.
+
+### VaultGate
+
+`<VaultGate appName protects requireVerification recoveryNotice loading unsupported empty locked>` renders its children only while `unlocked`, and otherwise `loading` (a spinner), `VaultSetup`, `VaultUnlock` or `VaultUnsupported`, centred in the gate's box. Each slot prop replaces a screen; `unsupported` may be a node or a function of the state, and may render the children to carry on without protection (an explicit choice you make visible to the person). The gate is a real box that fills its host (`flex` column: the recovery notice, then your app); `className` and `style` go on it. It owns the `VaultEnrollDialog`, above the status switch: enrolling makes the vault `unlocked` before the key has been shown, which unmounts anything rendered for `empty`.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `open` / `onOpenChange(open, details)` | required | Controlled open state; `details.reason` says why it wants to change. |
+| `vault` | the provider's | |
+| `appName` / `protects` | | Wording: "Unlock {appName}", "A passkey will lock {protects}". |
+| `requireVerification` | `false` | The enroll dialog asks for the recovery key typed back. |
+| `recoveryNotice` | `true` | While unlocked and the recovery key was never confirmed, a notice with **Get a new key**. |
+| `loading` / `unsupported` / `empty` / `locked` | the kit's screens | Replace one screen. |
+| `className` / `style` | | On the gate's box. |
+
+### VaultEnrollDialog
+
+Sets up the passkey, then shows the recovery key once. It is a [Dialog](https://blamy.github.io/ui/#/dialog) flow with two steps (`view`): explain what is protected and run the passkey prompt (with Cancel closing the prompt, not the dialog, while it is up), then show the key (`Copy`, `Save as file`, a checkbox, optionally a type-it-back field). The card springs between the steps and the title travels with them. On the recovery-key step Esc, an outside press and a swipe do nothing, and there is no ×.
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `open` / `defaultOpen` / `onOpenChange(open, details)` / `controller` | closed | Like any Dialog: control it, leave it uncontrolled with a `DialogTrigger` child, or open it with `createDialogController()`. Cancel reports `close-press`; Done reports `action` with `returnValue: "done"`. |
+| `children` | | A `DialogTrigger` that opens it. |
 | `vault` | the provider's | |
 | `mode` | `enroll` | `regenerate` replaces the recovery key of an existing vault. |
 | `appName` / `protects` | | Wording: "Protect {appName} with a passkey", "A passkey will lock {protects}". |
 | `requireVerification` | `false` | Make the person type the key back before finishing. |
-| `onDone` | | After the recovery key is confirmed. |
-| `className` / `style` | | Merged onto the dialog. |
+| `onDone` | | After the recovery key is confirmed, before it closes. Done stays open, showing the error, if confirming fails. |
+| `presentation` / `container` | `"auto"` / BLProvider's root | As on Dialog. |
+| `className` / `style` | | Merged onto the dialog's card. |
 
-Three steps: explain, run the prompt, show the recovery key (`Copy`, `Save as file`, a checkbox, optionally a type-it-back field). On the last step Esc and an outside press do nothing. `RecoveryKey` renders the key in groups of four and is exported for your own flow (for instance after `regenerateRecoveryKey()`). The dialog belongs **above** the status switch: enrolling makes the vault `unlocked` before the key has been shown, which unmounts anything that was rendered for `empty`. `VaultGate` does this for you.
+```tsx
+<VaultEnrollDialog appName="Notes" protects="your notes" onDone={() => toast('Protected')}>
+  <DialogTrigger render={<Button />}>Protect with a passkey…</DialogTrigger>
+</VaultEnrollDialog>
+```
 
-### VaultGate
+`RecoveryKey` renders a key in groups of four, read letter by letter by a screen reader, and is exported for your own flow (for instance after `regenerateRecoveryKey()`); `recoveryKeyVariants({ layout: 'grid' | 'row' })` sets two or four columns, packed to the centre.
 
-`<VaultGate appName protects requireVerification recoveryNotice loading unsupported empty locked>` renders its children only while `unlocked`, and otherwise `loading` (a spinner), `VaultSetup`, `VaultUnlock` or `VaultUnsupported`. Each slot prop replaces a screen; `unsupported` may be a node or a function of the state, and may render the children to carry on without protection (an explicit choice you make visible to the person).
+### VaultSetup, VaultUnlock, VaultUnsupported, VaultStatusBadge
 
-### VaultUnlock, VaultSetup, VaultUnsupported, VaultStatusBadge
-
-The parts of the gate, exported to build your own shell. `VaultUnlock` has `Unlock with passkey` and a recovery-key form (it opens on the form where passkeys cannot work, and says the recovery key still works), plus `Lost both? Erase this vault…` behind a confirmation. `VaultSetup` takes `onSetup` when a parent owns the dialog. `VaultUnsupported` says what is missing in plain words. `VaultStatusBadge` is a pill with an icon and a word, never colour alone.
+The screens of the gate, exported to build your own shell. Each is the kit's [EmptyState](https://blamy.github.io/ui/#/empty-state) at page size, with a heading, and fills and centres in its host. `VaultSetup` takes `onSetup` when a parent owns the dialog (without it, it renders its own). `VaultUnlock` has `Unlock with passkey` and a recovery-key form (it opens on the form where passkeys cannot work, and says the recovery key still works), plus `Lost both? Erase this vault…` behind an AlertDialog; `title`, `description`, `autoFocus` and `onUnlocked` adjust it. `VaultUnsupported` says what is missing in plain words (`unsupportedMessage(reason)` returns the same words for your own screen). `VaultStatusBadge` is a pill with an icon and a word, never colour alone.
 
 {% demo src="passkey-vault/unsupported" %}
 
@@ -322,7 +343,7 @@ The dialog and the confirmation are UI SDK dialogs (a [Dialog](https://blamy.git
 
 ## Styling
 
-Slots: `vault-gate` (display: contents), `vault-setup`, `vault-unlock`, `vault-unsupported`, `vault-status-badge` (with `data-status`), `passkey-enroll-dialog` and `recovery-key`. The panels are plain sections: pass `className` to size or place them. `recoveryKeyVariants` takes `layout` (`grid`, two columns, or `row`, four).
+Slots: `vault-gate` (with `data-status`), `vault-setup`, `vault-unlock` (with `data-mode`), `vault-unsupported`, `vault-status-badge` (with `data-status`) and `recovery-key`; the enroll dialog's card is a `dialog-content` with `data-vault-enroll-dialog`. The screens take `className` and `style`. The vault screens darken the theme's primary where it holds text (white on the iOS blue is 3.6:1, under WCAG AA for body text), so their buttons read a shade deeper than elsewhere in the kit.
 
 ## Testing
 

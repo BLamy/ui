@@ -15,7 +15,7 @@ export default function DaylightSaving() {
           { label: 'Every 30 min, 01:00–03:59', value: '*/30 1-3 * * *' },
         ]}
         defaultValue="30 2 * * *"
-        from="2026-03-06T12:00:00Z"
+        reference="2026-03-06T12:00:00Z"
         timeZone="America/New_York"
         locale="en-US"
         nextRunCount={4}

@@ -9,7 +9,7 @@ export { THEME_VARS, type ThemeVar };
 
 /* ══ Chrome coordination ══
    Nav bar and tab bar hide together on scroll-down and come back on scroll-up. The scrolling screen
-   publishes here so a <TabBar> anywhere in the tree follows without prop drilling. */
+   publishes here so a `Tabs` bar anywhere in the tree follows without prop drilling. */
 export const chromeStore = {
   hidden: false,
   subs: new Set<(v: boolean) => void>(),

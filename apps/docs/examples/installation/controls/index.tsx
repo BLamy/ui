@@ -25,7 +25,7 @@ export default function Controls() {
         </Segmented>
       </div>
       <div className="flex items-center gap-4.5">
-        <Avatar c={{ f: 'Ada', l: 'Lovelace' }} size={40} />
+        <Avatar name="Ada Lovelace" size={40} />
         <Switch aria-label="Demo switch" checked={on} onCheckedChange={setOn} />
         <Spinner />
       </div>

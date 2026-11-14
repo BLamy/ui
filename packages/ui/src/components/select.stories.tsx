@@ -16,7 +16,7 @@ const repeat = ['Never', 'Every Day', 'Every Week', 'Every 2 Weeks', 'Every Mont
 function Repeat({ open, presentation }: { open?: boolean; presentation?: 'popover' | 'auto' | 'sheet' }) {
   return (
     <Field>
-      <FieldLabel variant="field">Repeat</FieldLabel>
+      <FieldLabel>Repeat</FieldLabel>
       <Select defaultOpen={open} defaultValue="Every Week" placeholder="Choose…" presentation={presentation}>
         <SelectTrigger />
         <SelectContent>
@@ -35,7 +35,7 @@ export const Groups: Story = {
   render: () => (
     <Screen h={600}>
       <Field>
-        <FieldLabel variant="field">Time zone</FieldLabel>
+        <FieldLabel>Time zone</FieldLabel>
         <Select defaultOpen placeholder="Choose a timezone">
           <SelectTrigger />
           <SelectContent>
@@ -61,7 +61,7 @@ export const FromData: Story = {
   render: () => (
     <Screen h={560}>
       <Field>
-        <FieldLabel variant="field">Plan</FieldLabel>
+        <FieldLabel>Plan</FieldLabel>
         <Select
           defaultOpen
           defaultValue="pro"
@@ -103,7 +103,7 @@ export const Invalid: Story = {
   render: () => (
     <Screen h={300}>
       <Field invalid>
-        <FieldLabel variant="field">Priority</FieldLabel>
+        <FieldLabel>Priority</FieldLabel>
         <Select required placeholder="Choose…">
           <SelectTrigger />
           <SelectContent>

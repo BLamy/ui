@@ -18,11 +18,11 @@ With the npm package they are all exported from `@brett_lamy/ui`; with the regis
 
 | Behavior | Where the kit uses it |
 | --- | --- |
-| `bindSizeClass` + `SizeClassProvider` | `BLProvider`'s root, `SplitView` (which columns exist), `NavigationStack`, `SidebarProvider` (inline or a drawer), `SideDrawer` with `presentation="auto"`, `ArtifactChatContainer` (split or stacked). Each one measures its own box and is the size-class scope of what it renders. |
-| `usePresentation` | `Dialog` (and `Credenza`), `Popover`, `DropdownMenu`, `Select`, `Combobox`, `DatePicker`: `presentation="auto"` is a sheet in a compact scope. |
-| `createStack`, `bindEdgeSwipe`, `bindBack` | [NavigationStack](https://blamy.github.io/ui/#/navigation-stack), [SplitView](https://blamy.github.io/ui/#/split-view) (a stack only while compact), [SideDrawer](https://blamy.github.io/ui/#/side-drawer)'s push. `bindEdgeSwipe` alone: [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane)'s `swipeToOpen`. |
+| `bindSizeClass` + `SizeClassProvider` | `BLProvider`'s root, `SplitView` (which columns exist), `NavigationStack`, `SidebarProvider` (inline or a drawer), `ArtifactChatContainer` (split or stacked). Each one measures its own box and is the size-class scope of what it renders. |
+| `usePresentation` | `Dialog` (`"auto"` by default), `Popover`, `DropdownMenu`, `Select`, `Combobox`, `DatePicker`: `presentation="auto"` is a sheet in a compact scope. |
+| `createStack`, `bindEdgeSwipe`, `bindBack` | [NavigationStack](https://blamy.github.io/ui/#/navigation-stack), [SplitView](https://blamy.github.io/ui/#/split-view) (a stack only while compact), [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane)'s push. `bindEdgeSwipe` alone: AdaptivePane's `swipeToOpen`. |
 | `bindPullToRefresh` | `NavigationStackContent onRefresh`. |
-| `usePresence`, `usePresenceList`, `useEnterExit` | The Composer's stop button, strip, tiles and cards, `IconSwap`, `ContentSwap`, `ListSection animate`. |
+| `usePresence`, `usePresenceList`, `useEnterExit` | The Composer's stop button, strip, tiles and cards, `Swap`, `ListSection animate`. |
 
 ## Size classes
 
@@ -38,7 +38,7 @@ With the npm package they are all exported from `@brett_lamy/ui`; with the regis
 
 The attribute is for CSS (`group-data-[size-class=compact]/frame:`). What the kit's components read is the **size-class scope**, a React context: a container that measures its class wraps what it renders in `<SizeClassProvider value={sizeClass}>`, and `useSizeClassScope()` returns the nearest scope's class (`undefined` outside every one; a provider given `undefined`, not measured yet, passes the outer scope through). `useSizeClass({ breakpoints?, initial? })` returns `[ref, sizeClass]`: the class of the element you put `ref` on once it is measured, and before that `initial`, else the nearest scope's, else `regular`. It doesn't provide a scope by itself; wrap the element's children in a `SizeClassProvider` when popups inside should follow it.
 
-The kit's popup wrappers resolve `presentation="auto"` from the scope with `usePresentation(presentation, fallback)` before they hand it to UI SDK: `sheet` in a compact scope, their own presentation (`popover`, `dialog`…) in a medium or regular one, and outside every scope `"auto"` goes through to UI SDK's own rule (`(max-width: 640px) and (pointer: coarse)`). Context crosses portals, so a controlled Credenza with no trigger, written inside a compact SplitView column of a wide app, is a tray even though its content renders into BLProvider's root. The choice is made when the popup opens; resizing the frame while it is open doesn't switch it.
+The kit's popup wrappers resolve `presentation="auto"` from the scope with `usePresentation(presentation, fallback)` before they hand it to UI SDK: `sheet` in a compact scope, their own presentation (`popover`, `dialog`…) in a medium or regular one, and outside every scope `"auto"` goes through to UI SDK's own rule (`(max-width: 640px) and (pointer: coarse)`). Context crosses portals, so a controlled Dialog with no trigger, written inside a compact SplitView column of a wide app, is a tray even though its content renders into BLProvider's root. The choice is made when the popup opens; resizing the frame while it is open doesn't switch it.
 
 Drag the slider: the frame's layout follows its own width, and Share is a sheet inside the frame while it is compact and a popover from medium up.
 

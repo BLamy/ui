@@ -1,5 +1,5 @@
 import wasmURL from '@agent-wasm/tailscale-connect/main.wasm?url'
-import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button'
+import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-controls'
 import { webStorageTailscalePersistence } from '@/lib/tailscale'
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect'
 import { TailscaleProvider, useTailscaleStatus } from '@/lib/tailscale-react'

@@ -32,7 +32,7 @@ function City({ query, open }: { query?: string; open?: boolean }) {
   const ref = useTypeOnMount(query);
   return (
     <Field ref={ref}>
-      <FieldLabel variant="field">City</FieldLabel>
+      <FieldLabel>City</FieldLabel>
       <Combobox defaultOpen={open && !query}>
         <ComboboxInput placeholder="Search cities" />
         <ComboboxContent>
@@ -64,7 +64,7 @@ export const FromData: Story = {
   render: () => (
     <Screen h={480}>
       <Field>
-        <FieldLabel variant="field">Assignee</FieldLabel>
+        <FieldLabel>Assignee</FieldLabel>
         <Combobox defaultOpen defaultValue="kim" items={people}>
           <ComboboxInput placeholder="Search the team" />
           <ComboboxContent>

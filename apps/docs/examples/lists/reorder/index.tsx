@@ -58,7 +58,7 @@ function UpNext() {
           {editing ? 'Done' : 'Edit'}
         </Button>
       </div>
-      <List inset>
+      <List variant="inset">
         {/* `animate`: keyed rows grow in, collapse out, and slide to new
             places. `onOrderChange` (only while editing) adds a grip: drag it,
             or focus it and press Space, ↑ / ↓, Space. */}
@@ -74,9 +74,9 @@ function UpNext() {
           {songs.map((t, i) => (
             <ListRow
               key={t}
-              leading={<Artwork title={t} />}
+              icon={<Artwork title={t} />}
               title={t}
-              subtitle={`Track ${LIBRARY.indexOf(t) + 1}`}
+              description={`Track ${LIBRARY.indexOf(t) + 1}`}
               trailingActions={
                 editing
                   ? undefined

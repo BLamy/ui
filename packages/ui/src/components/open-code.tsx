@@ -11,7 +11,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useSizeClass } from '@/lib/container';
 import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle';
 import { createOpenCodeBrowser } from '@/lib/open-code-browser';
 import {
   connectOpenCodePreview,

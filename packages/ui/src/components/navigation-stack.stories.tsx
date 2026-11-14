@@ -1,12 +1,12 @@
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Avatar } from '@/components/ui/avatar';
-import { List } from '@/components/ui/list';
+import { List, ListRow, ListSection } from '@/components/ui/list';
 import {
   NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackPage,
   NavigationStackTitle,
 } from '@/components/ui/navigation-stack';
-import { TabBar } from '@/components/ui/tab-bar';
+import { Tabs, TabsBar, TabsList, TabsTab } from '@/components/ui/tabs';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof NavigationStack> = {
@@ -50,19 +50,19 @@ function Demo({ safeTop, withRefresh }: { safeTop?: boolean; withRefresh?: boole
       safeTop={safeTop ? 59 : undefined}>
       <Simple value="list" title="Contacts" large onRefresh={withRefresh ? () => undefined : undefined}>
         <List>
-          <List.Section sticky title="Team">
+          <ListSection sticky title="Team">
             {PEOPLE.map(([f, l, role], i) => (
-              <List.Row key={f} title={f + ' ' + l} subtitle={role} leading={<Avatar c={{ f, l }} />}
+              <ListRow key={f} title={f + ' ' + l} description={role} icon={<Avatar name={`${f} ${l}`} />}
                 accessory="chevron" onClick={() => setSel(i)} divider={i < PEOPLE.length - 1} />
             ))}
-          </List.Section>
+          </ListSection>
         </List>
       </Simple>
       {person ? (
         <Simple value="detail" title={person[0] + ' ' + person[1]} showOnScroll grouped>
           <div style={{ padding: '0 16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 0 18px' }}>
-              <Avatar c={{ f: person[0], l: person[1] }} size={92} />
+              <Avatar name={`${person[0]} ${person[1]}`} size={92} />
               <div style={{ fontSize: 26, fontWeight: 700, marginTop: 12, letterSpacing: '-.3px' }}>{person[0]} {person[1]}</div>
               <div style={{ fontSize: 14.5, color: 'var(--muted-foreground)', marginTop: 3 }}>{person[2]}</div>
             </div>
@@ -82,12 +82,12 @@ export const WithSafeTop: Story = { render: () => <Demo safeTop /> };
 
 const tallRows = (n = 40) => (
   <List>
-    <List.Section sticky title="Scroll me">
+    <ListSection sticky title="Scroll me">
       {Array.from({ length: n }, (_, i) => (
-        <List.Row key={i} title={'Row ' + (i + 1)} subtitle="Keep scrolling — the chrome rides away"
+        <ListRow key={i} title={'Row ' + (i + 1)} description="Keep scrolling — the chrome rides away"
           divider={i < n - 1} />
       ))}
-    </List.Section>
+    </ListSection>
   </List>
 );
 
@@ -101,7 +101,7 @@ export const TitleOnScroll: Story = {
   ),
 };
 
-/** Chrome hide-on-scroll: scroll down and the nav bar and TabBar ride away together (chromeStore);
+/** Chrome hide-on-scroll: scroll down and the nav bar and the tab bar ride away together (chromeStore);
  *  scroll up — or back near the top — and they return. Sticky headers follow the bar. */
 export const ChromeHideOnScroll: Story = {
   render: function ChromeHideStory() {
@@ -111,10 +111,14 @@ export const ChromeHideOnScroll: Story = {
         <NavigationStack defaultPages={['hide']}>
           <Simple value="hide" title="Contacts" large bottomInset={66}>{tallRows(60)}</Simple>
         </NavigationStack>
-        <TabBar value={tab} onValueChange={setTab} items={[
-          { value: 'contacts', title: 'Contacts', icon: 'person' },
-          { value: 'settings', title: 'Settings', icon: 'sliders' },
-        ]} />
+        <Tabs variant="bar" value={tab} onValueChange={(next) => { if (next) setTab(next); }} className="contents">
+          <TabsBar>
+            <TabsList aria-label="Tabs">
+              <TabsTab value="contacts" icon="person">Contacts</TabsTab>
+              <TabsTab value="settings" icon="sliders">Settings</TabsTab>
+            </TabsList>
+          </TabsBar>
+        </Tabs>
       </>
     );
   },
@@ -142,13 +146,13 @@ export const ChromeHideWithSafeTop: Story = {
 /* ── Back label and header title morph ── */
 
 const settingsRows = (items: string[], open?: (s: string) => void) => (
-  <List inset>
-    <List.Section>
+  <List variant="inset">
+    <ListSection>
       {items.map((t, i) => (
-        <List.Row key={t} title={t} accessory={open ? 'chevron' : undefined} onClick={open ? () => open(t) : undefined}
+        <ListRow key={t} title={t} accessory={open ? 'chevron' : undefined} onClick={open ? () => open(t) : undefined}
           divider={i < items.length - 1} />
       ))}
-    </List.Section>
+    </ListSection>
   </List>
 );
 

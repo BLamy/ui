@@ -10,6 +10,8 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn, cx } from '@/lib/utils';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
+import { closeButtonVariants } from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
 import { TextMorph } from '@/components/ui/text-morph';
 
 /* ══ Toast — banners and HUDs ══
@@ -131,8 +133,9 @@ export interface ToastRegionProps extends Omit<SdkToastRegionProps, 'children'>,
   offset?: number;
 }
 
-/** The toast region. Place one per queue: without a `toaster`, a banner region shows the page's `toast()` and a HUD
-    region the page's `hud()`. Without children it renders the kit's toast for its `variant`; a children function
+/** The toast region. Place one per queue: without a `toaster`, a banner region shows the queue of the nearest
+    `ToastProvider` (what `useToast()` sends to), else the page's `toast()`, and a HUD region the page's `hud()`.
+    Without children it renders the kit's toast for its `variant`; a children function
     renders each toast from `Toast` and its parts. */
 export function ToastRegion({
   variant, toaster, side = 'bottom', align = 'center', maxVisible, offset = 24, container, className, style, render, children, ...props
@@ -140,9 +143,10 @@ export function ToastRegion({
   const look = variant ?? 'banner';
   const host = useLayerHost();
   const scope = useThemeScopeProps();
+  const provided = use(ToasterContext);
   return (
     <SdkToastRegion
-      toaster={toaster ?? (look === 'hud' ? hud.toaster : undefined)}
+      toaster={toaster ?? (look === 'hud' ? hud.toaster : (provided ?? undefined))}
       side={side}
       align={align}
       maxVisible={maxVisible ?? (look === 'hud' ? 1 : 5)}
@@ -167,14 +171,14 @@ export function ToastRegion({
 /* ── Toast ── */
 
 /** A toast's surface: the banner card, placed in the pile from the variables UI SDK writes (`--toast-index`,
-    `--toast-offset`, `--toast-height`, the swipe offsets), or the dark HUD pill (a fixed material, the same in light
-    and dark, as on iOS). Moves ride the snappy spring, a card's height the smooth one; fades are short tweens,
+    `--toast-offset`, `--toast-height`, the swipe offsets), or the dark HUD pill (the `hud` material, the same in light
+    and dark, as on iOS; `--hud` / `--hud-foreground` retheme it). Moves ride the snappy spring, a card's height the smooth one; fades are short tweens,
     quicker on the way out. Under reduced motion only the fades are left. */
 export const toastVariants = cva('flex outline-none focus-visible:ring-2 focus-visible:ring-primary', {
   variants: {
     variant: {
       banner: [
-        'absolute inset-x-0 z-[calc(100_-_var(--toast-index))] box-border h-(--toast-height) items-start gap-3 overflow-hidden rounded-2xl bg-card px-3.5 py-3 text-foreground opacity-(--bl-toast-opacity) shadow-[0_10px_34px_--alpha(black/16%),0_0_0_.5px_var(--border)] select-none',
+        'absolute inset-x-0 z-[calc(100_-_var(--toast-index))] box-border h-(--toast-height) items-start gap-3 overflow-hidden rounded-card bg-card px-3.5 py-3 text-foreground opacity-(--bl-toast-opacity) shadow-popover select-none',
         'group-data-[side=bottom]/toasts:bottom-0 group-data-[side=bottom]/toasts:origin-top group-data-[side=top]/toasts:top-0 group-data-[side=top]/toasts:origin-bottom',
         /* Piled: each card behind sits 14px further in and 5% smaller, three deep (deeper ones hide behind the last). */
         '[--bl-toast-layer:min(var(--toast-index),2)] [--bl-toast-opacity:clamp(0,3_-_var(--toast-index),1)] [--bl-toast-scale:calc(1_-_var(--bl-toast-layer)_*_.05)] [--bl-toast-y:calc(var(--bl-toast-dir)_*_var(--bl-toast-layer)_*_14px)] motion-reduce:[--bl-toast-scale:1]',
@@ -191,7 +195,7 @@ export const toastVariants = cva('flex outline-none focus-visible:ring-2 focus-v
         'data-swiping:transition-none data-[swipe-direction=down]:[--bl-toast-shift:100%] data-[swipe-direction=left]:[--bl-toast-exit-x:-100%] data-[swipe-direction=right]:[--bl-toast-exit-x:100%] data-[swipe-direction=up]:[--bl-toast-shift:-100%]',
       ],
       hud: [
-        'w-fit items-center gap-2 rounded-full bg-[rgba(30,30,32,.86)] px-4 py-2.5 text-detail font-semibold text-white shadow-[0_8px_30px_black] shadow-black/25 backdrop-blur-xl backdrop-saturate-150',
+        'w-fit items-center gap-2 rounded-full bg-hud px-4 py-2.5 text-detail font-semibold text-hud-foreground shadow-hud backdrop-blur-xl backdrop-saturate-150',
         '[transition:translate_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),opacity_.22s_cubic-bezier(.22,1,.36,1),filter_.22s_cubic-bezier(.22,1,.36,1)] motion-reduce:[transition:opacity_.15s_linear]',
         'data-starting-style:opacity-0 data-starting-style:transition-none motion-safe:data-starting-style:scale-[.85] motion-safe:data-starting-style:blur-xs motion-safe:data-starting-style:[translate:0_calc(var(--bl-toast-dir)_*_-16px)]',
         'data-ending-style:opacity-0 data-ending-style:[transition:translate_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy),opacity_var(--duration-exit)_var(--ease-exit),filter_var(--duration-exit)_var(--ease-exit)] motion-safe:data-ending-style:scale-[.85] motion-safe:data-ending-style:blur-xs motion-safe:data-ending-style:[translate:0_calc(var(--bl-toast-dir)_*_-16px)]',
@@ -231,32 +235,24 @@ const TYPE_ICON: Record<ToastVariant, Partial<Record<ToastType, IconName>>> = {
   banner: { success: 'check-circle-fill', info: 'info-fill', warning: 'warning-fill', error: 'xmark-circle-fill' },
 };
 
-export interface ToastIconProps {
-  /** In place of the toast's own icon (its `data.icon`, else the one for its type). */
-  children?: ReactNode;
-  className?: string;
-}
+export type ToastIconProps = ComponentProps<'span'>;
 
-/** The toast's icon: a spinner while it is `loading`, else `data.icon`, else the glyph for its type (none for `default`). */
-export function ToastIcon({ children, className }: ToastIconProps) {
+/** The toast's icon: a spinner while it is `loading`, else `data.icon`, else the glyph for its type (none for `default`).
+    Children replace it. Other props go on its `span`. */
+export function ToastIcon({ children, className, ...props }: ToastIconProps) {
   const { toast: item, variant } = useToastScope('ToastIcon');
   const pill = variant === 'hud';
   if (item.type === 'loading' && children == null) {
     return (
-      <span
-        aria-hidden="true"
-        className={cn(
-          'inline-block shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent opacity-80 motion-reduce:animate-[spin_2s_linear_infinite]',
-          pill ? 'size-[14px]' : 'size-[18px]',
-          className,
-        )}
-      />
+      <span data-slot="toast-icon" aria-hidden="true" className={cn('grid shrink-0 place-items-center self-center opacity-80', className)} {...props}>
+        <Spinner size={pill ? 14 : 18} />
+      </span>
     );
   }
   const icon = (item.data as ToastExtras | undefined)?.icon ?? TYPE_ICON[variant][item.type];
   if (children == null && icon == null) return null;
   return (
-    <span aria-hidden="true" className={cn(toastIconVariants({ type: item.type }), className)}>
+    <span data-slot="toast-icon" aria-hidden="true" className={cn(toastIconVariants({ type: item.type }), className)} {...props}>
       {children ?? (typeof icon === 'string' ? <Icon name={icon} size={pill ? 16 : 20} sw={pill ? 2.6 : 2.2} /> : icon)}
     </span>
   );
@@ -276,11 +272,11 @@ export function ToastTitle({ className, children, ...props }: ComponentProps<typ
 
 /** The toast's second line (its `description` without children). */
 export function ToastDescription({ className, ...props }: ComponentProps<typeof SdkToastDescription>) {
-  return <SdkToastDescription className={cx('mt-0.5 text-[13.5px] leading-snug text-muted-foreground', className)} {...props} />;
+  return <SdkToastDescription className={cx('mt-0.5 text-footnote leading-snug text-muted-foreground', className)} {...props} />;
 }
 
 const toastButton =
-  'bl-btn shrink-0 cursor-pointer self-center rounded-full border-0 bg-secondary px-3 py-1.5 text-[13.5px] font-semibold outline-none transition-[background-color,scale,opacity] duration-spring-snappy ease-spring-snappy hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-primary active:scale-95 data-pending:cursor-progress data-pending:opacity-60';
+  'bl-btn shrink-0 cursor-pointer self-center rounded-full border-0 bg-secondary px-3 py-1.5 text-footnote font-semibold outline-none transition-[background-color,scale,opacity] duration-spring-snappy ease-spring-snappy hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-primary active:scale-95 data-pending:cursor-progress data-pending:opacity-60';
 
 /** The toast's action, like Undo (its `action` without children; a link when the action has an `href`). */
 export function ToastAction({ className, ...props }: ComponentProps<typeof SdkToastAction>) {
@@ -295,13 +291,14 @@ export function ToastClose({ className, children, 'aria-label': label, ...props 
       aria-label={label ?? (plain ? 'Close' : undefined)}
       className={cx(
         plain
-          ? 'bl-btn -mt-0.5 -mr-1 grid size-7 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary data-pending:cursor-progress'
+          // Every surface's round × (closeButtonVariants), with a 44px hit area: banners are swiped and closed on phones.
+          ? [closeButtonVariants(), 'relative -mt-1 -me-1.5 after:absolute after:-inset-2 data-pending:cursor-progress']
           : [toastButton, 'text-foreground'],
         className,
       )}
       {...props}
     >
-      {plain ? <Icon name="x" size={14} sw={2.2} /> : children}
+      {plain ? <Icon name="x" size={15} sw={2.6} /> : children}
     </SdkToastClose>
   );
 }

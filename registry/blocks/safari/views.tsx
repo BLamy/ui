@@ -228,9 +228,9 @@ export function PeerCard({ peer, exitNodeId }: { peer: TailscalePeer; exitNodeId
   return (
     <div className="flex flex-col gap-2.5">
       <HoverCardHeader
-        media={<span aria-hidden="true" className="grid size-10 place-items-center rounded-card bg-secondary text-headline font-semibold">{initialOf(host)}</span>}
+        icon={<span aria-hidden="true" className="grid size-10 place-items-center rounded-card bg-secondary text-headline font-semibold">{initialOf(host)}</span>}
         title={labelOf(host)}
-        subtitle={host}
+        description={host}
       />
       <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-footnote">
         <dt className="text-muted-foreground">Status</dt>

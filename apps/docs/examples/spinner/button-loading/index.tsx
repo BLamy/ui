@@ -25,7 +25,7 @@ export default function ButtonLoading() {
           setSaving(true)
         }}
       >
-        {saving ? <Spinner spin size={16} /> : null}
+        {saving ? <Spinner size={16} /> : null}
         {saving ? 'Saving…' : 'Save changes'}
       </Button>
       <p

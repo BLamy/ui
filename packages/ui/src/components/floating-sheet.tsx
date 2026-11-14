@@ -228,7 +228,7 @@ export interface FloatingSheetProps {
   fabPosition?: FloatingSheetFabPosition;
   /** Icon shown in the FAB; falls back to the `Fab` slot. */
   fabIcon?: ReactNode;
-  /** Follow NavigationStack/List scroll chrome, like TabBar. */
+  /** Follow NavigationStack/List scroll chrome, like the `Tabs` bar. */
   hideOnScroll?: boolean;
   /** A scroller whose direction also hides and restores the surface while it is resting. */
   scrollRef?: RefObject<HTMLElement | null>;

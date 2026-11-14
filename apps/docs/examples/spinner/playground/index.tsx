@@ -1,37 +1,34 @@
 import { useState } from 'react'
 import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Slider } from '@/components/ui/slider'
-import { Spinner, spinnerAnimations, type SpinnerAnimation, type SpinnerVariant } from '@/components/ui/spinner'
+import { Spinner, spinnerAnimations, type SpinnerAnimation, type SpinnerProps } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 
-// Pick an animation and a variant, then size, speed and pause. The code below the stage is what you would write.
+// Pick an animation and a pattern, then size, speed and pause. The code below the stage is what you would write.
 export default function Playground() {
   const [animation, setAnimation] = useState<SpinnerAnimation>('orbit')
-  const [variant, setVariant] = useState<string | undefined>(undefined)
+  const [pattern, setPattern] = useState<string | undefined>(undefined)
   const [size, setSize] = useState(48)
   const [speed, setSpeed] = useState(1)
   const [paused, setPaused] = useState(false)
 
   const info = spinnerAnimations.find((a) => a.id === animation) ?? spinnerAnimations[0]
   const isIos = animation === 'ios'
-  const active = info.variants.includes(variant ?? '') ? variant : info.variants[0]
+  const active = info.patterns.includes(pattern ?? '') ? pattern : info.patterns[0]
 
   const props = [
     animation !== 'ios' && `animation="${animation}"`,
-    active && active !== info.variants[0] && `variant="${active}"`,
-    isIos ? 'spin' : null,
+    active && active !== info.patterns[0] && `pattern="${active}"`,
     size !== (isIos ? 22 : 32) && `size={${size}}`,
     !isIos && speed !== 1 && `speed={${speed}}`,
-    !isIos && paused && 'paused',
+    paused && 'paused',
   ].filter(Boolean)
 
   return (
     <div className="mx-auto grid max-w-lg gap-5">
       <div className="grid h-40 place-items-center rounded-card bg-card text-foreground shadow-hairline">
         <Spinner
-          animation={animation}
-          variant={active as SpinnerVariant | undefined}
-          spin={isIos}
+          {...({ animation, pattern: active } as SpinnerProps)}
           size={size}
           speed={speed}
           paused={paused}
@@ -46,21 +43,21 @@ export default function Playground() {
             aria-label="Animation"
             className="flex-wrap"
             value={animation}
-            onValueChange={(id) => { if (id) { setAnimation(id as SpinnerAnimation); setVariant(undefined) } }}
+            onValueChange={(id) => { if (id) { setAnimation(id as SpinnerAnimation); setPattern(undefined) } }}
           >
             {spinnerAnimations.map((a) => <SegmentedItem key={a.id} value={a.id}>{a.label}</SegmentedItem>)}
           </Segmented>
         </div>
 
-        {info.variants.length ? (
+        {info.patterns.length ? (
           <div className="grid gap-1.5">
-            <span className="text-footnote font-semibold text-foreground">Variant</span>
+            <span className="text-footnote font-semibold text-foreground">Pattern</span>
             <Segmented
-              aria-label="Variant"
+              aria-label="Pattern"
               value={active ?? null}
-              onValueChange={(v) => v && setVariant(v)}
+              onValueChange={(v) => v && setPattern(v)}
             >
-              {info.variants.map((v) => <SegmentedItem key={v} value={v}>{v}</SegmentedItem>)}
+              {info.patterns.map((v) => <SegmentedItem key={v} value={v}>{v}</SegmentedItem>)}
             </Segmented>
           </div>
         ) : null}

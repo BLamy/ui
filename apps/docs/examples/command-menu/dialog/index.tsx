@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import {
-  CommandMenu, CommandMenuDialog, CommandMenuDialogContent, CommandMenuDialogTrigger, CommandMenuEmpty, CommandMenuFooter,
+  CommandMenu, CommandMenuDialog, CommandMenuDialogContent, CommandMenuEmpty, CommandMenuFooter,
   CommandMenuGroup, CommandMenuGroupLabel, CommandMenuInput, CommandMenuItem, CommandMenuList,
 } from '@/components/ui/command-menu'
+import { DialogTrigger } from '@/components/ui/dialog'
 import { Kbd, KbdGroup } from '@/components/ui/kbd'
 
 const pages = ['Introduction', 'Installation', 'Theming', 'Motion', 'Composer', 'Toast', 'NavigationStack', 'SplitView', 'CommandMenu']
@@ -17,13 +18,13 @@ export default function DialogPalette() {
       <CommandMenuDialog container={layer}>
         <div style={{ display: 'grid', gap: 10, justifyItems: 'center' }}>
           {/* `shortcut` opens the palette from anywhere on the page. */}
-          <CommandMenuDialogTrigger shortcut="mod+k" className={buttonVariants({ variant: 'secondary' })}>
+          <DialogTrigger shortcut="mod+k" render={<Button variant="secondary" />}>
             Search docs…
             <KbdGroup>
               <Kbd>⌘</Kbd>
               <Kbd>K</Kbd>
             </KbdGroup>
-          </CommandMenuDialogTrigger>
+          </DialogTrigger>
           <span style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>Viewing {page}</span>
         </div>
         <CommandMenuDialogContent aria-label="Search docs" style={{ maxWidth: 480 }}>

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  TRACE_SCRUB_SPEEDS, TRACE_WAVE_PEAK, TRACE_WAVE_REST,
+  TRACE_SCRUB_SPEEDS,
   adjacentStop, advanceAlong, chooseTicks, clampView, formatTraceTime, laneEnd, layoutRail, layoutStrip, linearAxis, lowerBound, moveScrub, mostSevere, nearestMark, panWindow,
   pinchWindow, pixelEdges, placeRailCard, placeStripCard, poolBuckets, poolDensity, poolPresence, railDashInset, requestAt, rescaleScrub, resolutionAt, rowAt, sameLanes, scrubPosition, seekForward,
   selectStops, sortedTimes, speedTier, startScrub, stopAxis, stopsByTime, stripHeight, tickStep, traceSwell, upperBound, viewWindow, windowView, zoomWindow,
   type TraceLane, type TraceRange, type TraceScrub, type TraceScrubContext, type TraceStop, type TraceTone, type TraceWindow,
 } from '@/lib/trace-timeline-model';
+import { WAVE_PEAK, WAVE_REST } from '@/lib/wave-rail';
 
 const HOUR = 3_600_000;
 const RANGE: TraceRange = { start: 0, end: HOUR };
@@ -717,8 +718,8 @@ describe('layout', () => {
       for (let i = 1; i < rows.length; i++) expect(rows[i].at).toBeGreaterThanOrEqual(rows[i - 1].at + rows[i - 1].size);
       const dash = railDashInset(rows);
       // A dash at rest stays on a 44 px rail, and at its peak it doesn't go more than a few px past it.
-      expect(dash + TRACE_WAVE_REST).toBeLessThanOrEqual(44);
-      expect(dash + TRACE_WAVE_PEAK).toBeLessThanOrEqual(44 + 6);
+      expect(dash + WAVE_REST).toBeLessThanOrEqual(44);
+      expect(dash + WAVE_PEAK).toBeLessThanOrEqual(44 + 6);
       expect(rows[0].size).toBeGreaterThanOrEqual(3);
     }
     expect(railDashInset([])).toBe(5);
@@ -792,9 +793,9 @@ describe('the wave', () => {
   // IndexBar's falloff, in stops: rest 9, peak 28, reach 3.2 stops, with a stop's room being 10 px.
   const indexBarSwell = (d: number) => (d >= 3.2 ? 0 : (1 + Math.cos((Math.PI * d) / 3.2)) / 2);
 
-  it('uses the same dash and falloff as IndexBar', () => {
-    expect(TRACE_WAVE_REST).toBe(9);
-    expect(TRACE_WAVE_PEAK).toBe(28);
+  it('uses the same dash and falloff as IndexBar (lib/wave-rail)', () => {
+    expect(WAVE_REST).toBe(9);
+    expect(WAVE_PEAK).toBe(28);
     for (const d of [0, 0.5, 1, 2, 3, 3.19, 3.2, 5]) {
       expect(traceSwell(d * 10)).toBeCloseTo(indexBarSwell(d), 12);
       expect(traceSwell(-d * 10)).toBeCloseTo(indexBarSwell(d), 12);

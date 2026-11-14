@@ -25,10 +25,20 @@ describe('Kbd', () => {
   it('shows a shortcut for the reader’s platform', () => {
     setPlatform('apple');
     const apple = render(<Kbd keys="mod+k" data-testid="keys" />);
-    expect(plain(screen.getByTestId('keys').textContent)).toBe('⌘K');
+    const glyphs = () => screen.getByTestId('keys').querySelector('[aria-hidden="true"]')!;
+    const words = () => screen.getByTestId('keys').querySelector('.sr-only')!;
+    expect(plain(glyphs().textContent)).toBe('⌘K');
+    expect(words().textContent).toBe('Command K');
     apple.unmount();
     setPlatform('other');
     render(<Kbd keys="mod+shift+p" data-testid="keys">ignored</Kbd>);
-    expect(plain(screen.getByTestId('keys').textContent)).toBe('Ctrl+Shift+P');
+    expect(plain(glyphs().textContent)).toBe('Ctrl+Shift+P');
+    expect(words().textContent).toBe('Control Shift P');
+  });
+
+  it('says Option for Alt on an Apple platform', () => {
+    setPlatform('apple');
+    render(<Kbd keys="alt+shift+arrowup" data-testid="keys" />);
+    expect(screen.getByTestId('keys').querySelector('.sr-only')!.textContent).toBe('Option Shift Up Arrow');
   });
 });

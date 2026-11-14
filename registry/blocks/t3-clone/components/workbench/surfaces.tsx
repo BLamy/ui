@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { MultiFileDiff } from '@pierre/diffs/react';
 import { FileTree, useFileTree } from '@pierre/trees/react';
-import { PlainButton as Button } from '@/components/ui/plain-button';
+import { Button } from '@ui-sdk/react/button';
 import { useWorkbenchAppearance } from '@/components/ui/workbench-theme';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn, pressable, brandTile } from '@/lib/utils';

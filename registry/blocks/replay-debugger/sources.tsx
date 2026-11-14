@@ -2,7 +2,8 @@
 import { useId, useMemo, useState } from 'react';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { Popover, PopoverContent, PopoverTitle } from '@/components/ui/popover';
-import { Tree, TreeFileIcon } from '@/components/ui/tree';
+import { Tree } from '@/components/ui/tree';
+import { FileBadgeIcon } from '@/lib/file-icons';
 import { cn } from '@/lib/utils';
 import type { DebuggerPartProps } from './styles';
 import type { DebuggerModel } from './model';
@@ -75,7 +76,7 @@ export function DebuggerSourceBreadcrumbs({ model }: { model: DebuggerModel }) {
           ...trail.filter((item) => item.id !== 'framework').map((item) => ({
             id: item.id,
             label: item.name,
-            icon: item.id.startsWith('source:') ? <TreeFileIcon name={item.name} size={14} /> : undefined,
+            icon: item.id.startsWith('source:') ? <FileBadgeIcon name={item.name} size={14} /> : undefined,
             onClick: () => open(item.id),
             ...popup,
           })),

@@ -2,6 +2,8 @@
 
 Brief, temporary feedback in two iOS looks: **banners**, cards with a title, a description and an action that pile up at an edge, and the dark **HUD** pill ("Password Copied") that appears for a moment. It is [UI SDK's Toast](https://ui-sdk.dev/docs/react/components/toast) with the kit's surfaces: UI SDK owns the queue, the timers, swiping, the stack's measurements and the announcements, so everything on its page applies here.
 
+A toast is for news the person may miss without harm: it disappears, takes no focus and can't hold a decision. Use the HUD for a one-word confirmation of what the person just did ("Copied"), a banner for an event with detail or an Undo. Feedback that belongs to a place on the page (a field's error, a form that failed to save) goes inline, next to that place, in a [Field](https://blamy.github.io/ui/#/field) error or a message in the page. Anything that must be read or answered before going on (a destructive confirmation, a lost connection that blocks work) is an [AlertDialog](https://blamy.github.io/ui/#/dialog), not a toast.
+
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/toast.json{% endcommand %}
@@ -69,7 +71,7 @@ A banner can have a `description`, a `type` (`success`, `info`, `warning`, `erro
 
 ## The HUD
 
-The pill is a region of its own with `variant="hud"`, and `hud()` shows it. There is only ever one pill: calling `hud()` again while it is up replaces what it says, and its label morphs (the letters the two labels share stay put). It lasts 1.6 seconds and can't be swiped or closed.
+The pill is a region of its own with `variant="hud"`, and `hud()` shows it. There is only ever one pill: calling `hud()` again while it is up replaces what it says, and its label morphs (the letters the two labels share stay put). It lasts 1.6 seconds and can't be swiped or closed. Its material is the `hud` color (`bg-hud` / `text-hud-foreground`), dark in both appearances as on iOS; set `--hud` and `--hud-foreground` to retheme it.
 
 ```tsx
 import { ToastRegion, hud } from '@brett_lamy/ui'
@@ -105,7 +107,7 @@ const [hud] = useState(() => createHud())
 </BLProvider>
 ```
 
-A region renders into its layer host, the nearest `BLProvider`'s root, so a framed app's toasts stay inside its frame and wear its theme; outside a `BLProvider` it sits at the edge of the page. `<ToastProvider toaster>` hands a queue to the parts below it, and `useToast()` reads the nearest one (the page's `toast` outside a provider): a part such as the [Composer](https://blamy.github.io/ui/#/composer) sends its own messages there.
+A region renders into its layer host, the nearest `BLProvider`'s root, so a framed app's toasts stay inside its frame and wear its theme; outside a `BLProvider` it sits at the edge of the page. `<ToastProvider toaster>` hands a queue to the parts below it, and `useToast()` reads the nearest one (the page's `toast` outside a provider): a part such as the [Composer](https://blamy.github.io/ui/#/composer) sends its own messages there. A banner `ToastRegion` inside the provider shows that same queue without being told, so `<ToastProvider toaster={t}><Composer /><ToastRegion /></ToastProvider>` keeps the pair together.
 
 If the app also mounts UI SDK's `OverlayHost` (for `confirm()`), a `ToastRegion` you place takes over the page's toasts from it.
 
@@ -168,7 +170,7 @@ Every prop of UI SDK's `ToastRegion` (`shortcut`, `pendingAnnouncement`, `contai
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `variant` | `banner` | `banner` (the pile of cards) or `hud` (the pill). |
-| `toaster` | `toast`, or `hud.toaster` for a HUD region | The queue it shows. |
+| `toaster` | the nearest `ToastProvider`'s queue, else `toast`; `hud.toaster` for a HUD region | The queue it shows. |
 | `side` | `bottom` | `top` or `bottom`. |
 | `align` | `center` | `start`, `center` or `end`. |
 | `offset` | `24` | Distance from the edges in px. |
@@ -179,7 +181,7 @@ Every prop of UI SDK's `ToastRegion` (`shortcut`, `pendingAnnouncement`, `contai
 
 ### Parts
 
-`Toast` (takes `variant`; inside a region it follows the region's), `ToastIcon` (a spinner while `loading`, else `data.icon`, else the glyph for the type; children replace it), `ToastTitle`, `ToastDescription`, `ToastAction` and `ToastClose` (the round ✕ without children, a labelled button with them) are UI SDK's parts with the kit's classes; each takes `className` and `render`.
+`Toast` (takes `variant`; inside a region it follows the region's), `ToastIcon` (the kit's Spinner while `loading`, else `data.icon`, else the glyph for the type; children replace it; a `span` that takes its element's props), `ToastTitle`, `ToastDescription`, `ToastAction` and `ToastClose` (the round ✕ without children, a labelled button with them) are UI SDK's parts with the kit's classes; each takes `className` and `render`.
 
 ### Data attributes
 

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
-import { PlainButton } from '@/components/ui/plain-button'
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon } from '@/lib/icon'
 import { ChatShell, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderIcon, ChatShellMain, ChatShellPanel, ChatShellTitle } from '@/components/blocks/discord-clone/components/chat-shell'
 
@@ -25,7 +25,7 @@ function Line({
 }) {
   return (
     <div className="flex gap-3 px-4 py-1.5">
-      <Avatar c={who} size={32} />
+      <Avatar name={`${who.f} ${who.l}`} size={32} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="text-[13.5px] font-semibold text-foreground">
@@ -102,14 +102,14 @@ export default function ThreadPanel() {
             >
               <Line who={team.bot} time="7:02 AM">
                 Deploy docs@4f21c9 → prod failed a smoke check.
-                <PlainButton
+                <SdkButton
                   onClick={() => setOpen(true)}
                   className="mt-1.5 flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-border bg-muted px-2.5 py-1.5 font-sans text-[12px] text-foreground"
                 >
                   <Icon name="text-bubble" size={13} sw={1.9} />
                   <span className="font-semibold">Smoke check: /chat-shell</span>
                   <span className="text-primary">2 replies</span>
-                </PlainButton>
+                </SdkButton>
               </Line>
             </div>
             <ChatShellFooter>

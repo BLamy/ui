@@ -5,7 +5,7 @@
 import type { CSSProperties } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { HoverCardHeader } from '@/components/ui/hover-card';
-import { SearchField } from '@/components/ui/search-field';
+import { SearchInput } from '@/components/ui/search-input';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { ACCOUNT, GROUPS, getPane, type Pane, type Row, type Values } from './data';
@@ -27,7 +27,7 @@ function PanePreview({ pane: p, value }: { pane: Pane; value?: string }) {
   const inside = [...new Set(p.sections.flatMap((sec) => sec.rows.map(rowName)).filter(Boolean))].slice(0, 4);
   return (
     <>
-      <HoverCardHeader media={p.glyph && p.color ? <Tile glyph={p.glyph} color={p.color} size={36} /> : undefined} title={p.title} subtitle={value || undefined} />
+      <HoverCardHeader icon={p.glyph && p.color ? <Tile glyph={p.glyph} color={p.color} size={36} /> : undefined} title={p.title} description={value || undefined} />
       {p.blurb ? <p className="m-0 mt-2.5 text-footnote leading-snug text-foreground">{p.blurb}</p> : null}
       {inside.length ? <div className="mt-2.5 text-caption text-muted-foreground">{inside.join(' · ')}</div> : null}
     </>
@@ -69,7 +69,7 @@ function MacItem({ row }: { row: Extract<Row, { t: 'link' }> }) {
 /** The account's contact card, on its avatar. */
 const ACCOUNT_CARD = (
   <>
-    <HoverCardHeader media={<Avatar c={{ f: ACCOUNT.first, l: ACCOUNT.last }} size={44} />} title={`${ACCOUNT.first} ${ACCOUNT.last}`} subtitle="Apple Account" />
+    <HoverCardHeader icon={<Avatar name={`${ACCOUNT.first} ${ACCOUNT.last}`} size={44} />} title={`${ACCOUNT.first} ${ACCOUNT.last}`} description="Apple Account" />
     <div className="mt-3 flex flex-col gap-1 text-footnote text-foreground">
       <span className="flex items-center gap-2"><Icon name="envelope" size={14} className="text-muted-foreground" />{ACCOUNT.email}</span>
       <span className="flex items-center gap-2"><Icon name="phone-fill" size={14} className="text-muted-foreground" />{ACCOUNT.phone}</span>
@@ -96,13 +96,13 @@ export function SettingsSidebar() {
           </div>
         ) : <div aria-hidden="true" className="h-3 shrink-0" />}
         <div className="px-3 pb-2">
-          <SearchField value={s.query} onValueChange={s.setQuery} aria-label="Search settings" className="gap-1.5 rounded-[7px] bg-secondary px-2 py-[5px] [&_input]:text-footnote [&_svg]:size-[14px]" />
+          <SearchInput value={s.query} onValueChange={s.setQuery} aria-label="Search settings" size="sm" className="h-7 rounded-[7px]" />
         </div>
         <SplitViewContent className="px-2.5 pb-4">
           {s.query ? <div className="pt-1">{results}</div> : (
             <>
               <SplitViewItem id="account" className="min-h-row gap-2.5 rounded-[7px] px-2 py-1.5" preview={ACCOUNT_CARD}>
-                <Avatar c={{ f: ACCOUNT.first, l: ACCOUNT.last }} size={32} />
+                <Avatar name={`${ACCOUNT.first} ${ACCOUNT.last}`} size={32} />
                 <span className="min-w-0 flex-1 leading-tight">
                   <span className="block truncate text-footnote font-semibold">{ACCOUNT.first} {ACCOUNT.last}</span>
                   <span className="block truncate text-caption2 text-muted-foreground group-data-selected/item:text-white/80">Apple Account</span>
@@ -122,12 +122,12 @@ export function SettingsSidebar() {
       <SplitViewHeader title="Settings" largeTitle />
       <SplitViewContent>
         <div className="px-4 pb-6">
-          <SearchField value={s.query} onValueChange={s.setQuery} aria-label="Search settings" className="mb-5" />
+          <SearchInput value={s.query} onValueChange={s.setQuery} aria-label="Search settings" className="mb-5" />
           {s.query ? results : (
             <>
               <div className="mb-5 overflow-hidden rounded-panel bg-card">
                 <SplitViewItem id="account" className="min-h-[76px] gap-3.5 rounded-panel px-3 py-2.5" preview={ACCOUNT_CARD}>
-                  <Avatar c={{ f: ACCOUNT.first, l: ACCOUNT.last }} size={56} />
+                  <Avatar name={`${ACCOUNT.first} ${ACCOUNT.last}`} size={56} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-title leading-tight font-semibold">{ACCOUNT.first} {ACCOUNT.last}</span>
                     <span className="mt-0.5 block truncate text-detail text-muted-foreground group-data-selected/item:text-white/80">Apple Account, iCloud, and more</span>

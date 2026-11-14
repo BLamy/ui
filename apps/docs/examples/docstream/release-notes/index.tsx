@@ -3,13 +3,13 @@ import { MarkdownView } from '@/components/ui/markdown-view'
 const notes = `## Release 2.4
 
 {% hint style="info" %}
-**Heads up:** \`TabBar\` now hides with the scroll by default.
+**Heads up:** The \`Tabs\` bar now hides with the scroll by default.
 Pass \`hideOnScroll={false}\` to pin it.
 {% endhint %}
 
 | Component | Change | Breaking |
 | --- | --- | --- |
-| TabView | New \`TabViewIndicator\` pill variant | No |
+| Tabs | New \`TabsPill\` part | No |
 | List | \`header\` measures itself | No |
 | Credenza | \`compact\` tray is draggable | Yes |
 

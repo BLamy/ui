@@ -1,7 +1,7 @@
 {
   "name": "interface-builder",
   "title": "Interface Builder",
-  "description": "Xcode's storyboard for React apps made of BL UI: scenes on a canvas composed from the kit's own components and containers (NavigationStack, TabView, SplitView, lists), edited in place; segues, delegates, outlets, the first responder and context in React's terms; Framer-style motion with spring and easing editors and a timeline; Google Fonts typography with live preview; a live preview, and the app as code.",
+  "description": "Xcode's storyboard for React apps made of BL UI: scenes on a canvas composed from the kit's own components and containers (NavigationStack, Tabs, SplitView, lists), edited in place; segues, delegates, outlets, the first responder and context in React's terms; Framer-style motion with spring and easing editors and a timeline; Google Fonts typography with live preview; a live preview, and the app as code.",
   "categories": [
     "design",
     "developer",

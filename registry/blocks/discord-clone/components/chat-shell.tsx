@@ -1,8 +1,10 @@
 import { useCallback, useLayoutEffect, useMemo, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { AdaptivePane } from '@/components/ui/adaptive-pane';
-import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
-import { SideDrawer, sideDrawerPageClass, type SideDrawerOpenChangeDetails } from '@/components/ui/side-drawer';
+import {
+  AdaptivePane, AdaptivePaneClose, AdaptivePaneHeader, AdaptivePaneTitle, adaptivePanePageClass, type AdaptivePaneOpenChangeDetails,
+} from '@/components/ui/adaptive-pane';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { changeDetails } from '@/lib/change-details';
 import { SizeClassProvider, useContainerWidth, useSizeClassScope } from '@/lib/container';
 import { sizeClassOf } from '@/lib/size-class';
@@ -16,8 +18,8 @@ export { useChatShell, useOptionalChatShell, type ChatShellContextValue, type Ch
 
 /* ══ ChatShell — the layout root of a team chat, and its regions ══
    <ChatShell>                     measures itself, provides { width, compact, navOpen } and a size-class scope, applies --ck-* tokens
-     <ChatShellNav>                rail + sidebar: a docked column when wide, one left EdgeDrawer when compact
-       <TabView orientation="vertical"><TabViewBar variant="workspace">…   an optional workspace rail
+     <ChatShellNav>                rail + sidebar: a docked column when wide, a left drawer when compact
+       <Tabs variant="workspace"><TabsBar>…   an optional workspace rail
        <ChatShellSidebar>…         the channel column (header · channel list · signed-in user)
      <ChatShellMain>               the conversation column
        <ChatShellHeader>…          NavTrigger · HeaderIcon · Title · Description · HeaderActions
@@ -26,7 +28,7 @@ export { useChatShell, useOptionalChatShell, type ChatShellContextValue, type Ch
      <ChatShellAside>              docked member list, shown from `minWidth` up
      <ChatShellPanel>              thread panel: docks as a column from `dockWidth`, overlays below it
    Every region is an ordinary element — leave out what you don't need (a DM view has no rail; a support
-   widget has no nav at all). Responsive behaviour comes from AdaptivePane and SideDrawer. The Discord-style
+   widget has no nav at all). Responsive behaviour comes from AdaptivePane. The Discord-style
    channel, message and member parts live in the discord-clone registry block. */
 
 export interface ChatShellProps extends Omit<ComponentProps<'div'>, 'ref'> {
@@ -73,7 +75,7 @@ export function ChatShell({
     setNavs((n) => n + 1);
     return () => setNavs((n) => n - 1);
   }, []);
-  // Compact below `breakpoint`; the shell is a size-class scope, so popups inside (Credenzas, menus with
+  // Compact below `breakpoint`; the shell is a size-class scope, so popups inside (dialogs, menus with
   // `presentation="auto"`) and its own navigation follow its box. Its pixel width answers the docking questions.
   const sizeClass = sizeClassOf(width, { medium: breakpoint, regular: Math.max(breakpoint, 1024) });
   const ctx: ChatShellContextValue = { width, compact: sizeClass === 'compact', navOpen, setNavOpen, hasNav: navs > 0, registerNav };
@@ -103,16 +105,13 @@ export function ChatShell({
 
 /* ── Navigation: rail + sidebar, docked or in a drawer ── */
 
-// AdaptivePane's docked column only takes a style object.
-const navColumnStyle: CSSProperties = { display: 'flex' };
-
 export interface ChatShellNavProps {
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
 
-/** Holds the rail and the sidebar. Wide: a docked column. Compact: a left EdgeDrawer over a scrim, opened by
+/** Holds the rail and the sidebar. Wide: a docked column. Compact: a left drawer over a scrim, opened by
  *  `ChatShellNavTrigger` and closed by the scrim or by anything that calls `useChatShell().setNavOpen(false)` (a close button, picking a
  *  channel). */
 export function ChatShellNav({ children, className, style }: ChatShellNavProps) {
@@ -124,18 +123,20 @@ export function ChatShellNav({ children, className, style }: ChatShellNavProps) 
       presentation={compact ? 'drawer' : 'column'}
       side="left"
       aria-label="Navigation"
-      open={navOpen}
+      // Docked, the navigation always shows; compact, it is the drawer's state.
+      open={!compact || navOpen}
       onOpenChange={(next, details) => { if (!setNavOpen(next, details)) details.cancel(); }}
-      scrim="var(--overlay, color-mix(in oklab, black 40%, transparent))"
-      columnStyle={{ ...navColumnStyle, ...style }}
-      className={cn('flex', className)}
+      // The rail and the sidebar sit side by side, as wide as they are.
+      drawerWidth="auto"
+      className={cn('flex-row', className)}
+      style={style}
     >
       {children}
     </AdaptivePane>
   );
 }
 
-export interface ChatShellNavTriggerProps extends Omit<ComponentProps<typeof PlainButton>, 'children'> {
+export interface ChatShellNavTriggerProps extends Omit<ComponentProps<typeof SdkButton>, 'children'> {
   children?: ReactNode;
 }
 
@@ -145,7 +146,7 @@ export function ChatShellNavTrigger({ className, children, onClick, ...props }: 
   const { compact, hasNav, navOpen, setNavOpen } = useChatShell();
   if (!compact || !hasNav) return null;
   return (
-    <PlainButton
+    <SdkButton
       aria-label="Channels"
       aria-expanded={navOpen}
       onClick={(e, details) => {
@@ -156,7 +157,7 @@ export function ChatShellNavTrigger({ className, children, onClick, ...props }: 
       {...props}
     >
       {children ?? <Icon name="line-3-horizontal" size={17} sw={2} />}
-    </PlainButton>
+    </SdkButton>
   );
 }
 
@@ -176,7 +177,7 @@ export function ChatShellSidebar({ className, ...props }: ComponentProps<'div'>)
 /** The conversation column: header, transcript, footer. Takes the remaining width. */
 export function ChatShellMain({ className, ...props }: ComponentProps<'div'>) {
   // The conversation is the page a ChatShellPanel pushes over on a phone: it parallaxes under the push.
-  return <div data-slot="chat-shell-main" className={cn('flex min-w-0 flex-1 flex-col', sideDrawerPageClass, className)} {...props} />;
+  return <div data-slot="chat-shell-main" className={cn('flex min-w-0 flex-1 flex-col', adaptivePanePageClass, className)} {...props} />;
 }
 
 export function ChatShellHeader({ className, ...props }: ComponentProps<'div'>) {
@@ -231,38 +232,38 @@ export const chatShellHeaderActionVariants = cva('shrink-0 cursor-pointer bg-tra
 });
 
 export interface ChatShellHeaderActionProps
-  extends ComponentProps<typeof PlainButton>,
+  extends ComponentProps<typeof SdkButton>,
     VariantProps<typeof chatShellHeaderActionVariants> {}
 
 /** A header action: an icon (`variant="icon"`) or a small outlined text button (`"outline"`). */
 export function ChatShellHeaderAction({ variant, className, ...props }: ChatShellHeaderActionProps) {
-  return <PlainButton className={cx(chatShellHeaderActionVariants({ variant }), className)} {...props} />;
+  return <SdkButton className={cx(chatShellHeaderActionVariants({ variant }), className)} {...props} />;
 }
 
 export interface ChatShellHeaderToggleProps
-  extends ComponentProps<typeof PlainToggleButton>,
+  extends ComponentProps<typeof SdkToggle>,
     VariantProps<typeof chatShellHeaderActionVariants> {}
 
 /** A header action that stays on (the member list, a thread panel): UI SDK's Toggle, `pressed` /
  *  `onPressedChange(pressed, details)`; the icon variant tints while pressed. */
 export function ChatShellHeaderToggle({ variant, className, ...props }: ChatShellHeaderToggleProps) {
-  return <PlainToggleButton className={cx(chatShellHeaderActionVariants({ variant }), className)} {...props} />;
+  return <SdkToggle className={cx(chatShellHeaderActionVariants({ variant }), className)} {...props} />;
 }
 
-export interface ChatShellBackProps extends Omit<ComponentProps<typeof PlainButton>, 'children'> {
+export interface ChatShellBackProps extends Omit<ComponentProps<typeof SdkButton>, 'children'> {
   children?: ReactNode;
 }
 
 /** A tinted "‹ #channel" back button, for a view (a full-width thread) that replaces the channel. */
 export function ChatShellBack({ className, children, ...props }: ChatShellBackProps) {
   return (
-    <PlainButton
+    <SdkButton
       className={cx('flex shrink-0 cursor-pointer items-center gap-1 border-0 bg-transparent py-1 pr-1.5 pl-0 font-sans text-footnote font-[650] text-primary', className)}
       {...props}
     >
       <Icon name="chevron-right-compact" size={13} sw={1.9} className="rotate-180" />
       {children}
-    </PlainButton>
+    </SdkButton>
   );
 }
 
@@ -296,8 +297,8 @@ export function ChatShellAside({ minWidth = 1320, open = true, className, ...pro
 
 export interface ChatShellPanelProps {
   open: boolean;
-  /** The SideDrawer's own change details (the close button, Escape, a swipe…); `details.cancel()` keeps it open. */
-  onOpenChange?: (open: boolean, details: SideDrawerOpenChangeDetails) => void;
+  /** The AdaptivePane's own change details (the close button, Escape, a swipe…); `details.cancel()` keeps it open. */
+  onOpenChange?: (open: boolean, details: AdaptivePaneOpenChangeDetails) => void;
   title?: ReactNode;
   /** from this shell width up the panel docks as a column; below it, it overlays the conversation */
   dockWidth?: number;
@@ -308,27 +309,34 @@ export interface ChatShellPanelProps {
   style?: CSSProperties;
 }
 
-/** A trailing panel for a thread (or details): a SideDrawer that docks beside the conversation on wide shells
- *  and slides over it on narrow ones. */
+/** A trailing panel for a thread (or details): an AdaptivePane that docks beside the conversation on wide shells,
+ *  slides over it below `dockWidth`, and is pushed over it like a page on a compact shell. */
 export function ChatShellPanel({ open, onOpenChange, title = 'Thread', dockWidth = 1180, width, children, className, style }: ChatShellPanelProps) {
-  const { width: w } = useChatShell();
+  const { width: w, compact } = useChatShell();
+  const size = width ?? Math.min(360, w - 60);
   return (
-    <SideDrawer
-      presentation={w >= dockWidth ? 'fixed' : 'auto'}
+    <AdaptivePane
+      side="end"
+      presentation={w >= dockWidth ? 'column' : compact ? 'push' : 'drawer'}
       open={open}
       onOpenChange={onOpenChange}
-      title={title}
-      width={width ?? Math.min(360, w - 60)}
-      // Inside the chat scope the drawer already paints with the chat palette; its close button takes the stronger fill.
-      className={cn(
+      columnWidth={size}
+      drawerWidth={`min(${size}px, 88%)`}
+      // Inside the chat scope the pane already paints with the chat palette; its close button takes the stronger fill.
+      className={({ presentation }) => cn(
         '[--secondary:var(--secondary-strong,var(--accent))]',
+        presentation === 'column' && 'border-s border-border bg-background',
         className,
       )}
       style={style}
     >
-      <div data-slot="chat-shell-panel" className="box-border h-full">
+      <AdaptivePaneHeader>
+        <AdaptivePaneTitle>{title}</AdaptivePaneTitle>
+        <AdaptivePaneClose />
+      </AdaptivePaneHeader>
+      <div data-slot="chat-shell-panel" className="bl-scroll box-border min-h-0 flex-1 overflow-y-auto">
         {children}
       </div>
-    </SideDrawer>
+    </AdaptivePane>
   );
 }

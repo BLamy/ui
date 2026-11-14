@@ -1,16 +1,20 @@
 'use client';
-import { useEffect, useRef, useState, type ComponentProps, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ComponentProps, type CSSProperties, type FormEvent, type ReactNode } from 'react';
 import { announce } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog, AlertDialogBackdrop, AlertDialogClose, AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  Dialog, DialogBackdrop, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogView,
+  surfaceDescriptionVariants, type DialogProps,
 } from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { PasskeyEnrollDialog, vaultActionClass, vaultErrorClass, vaultLinkClass, vaultMutedClass } from '@/components/ui/passkey-enroll-dialog';
+import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon, type IconName } from '@/lib/icon';
 import { passkeyUnsupportedReason } from '@/lib/passkey';
@@ -18,13 +22,23 @@ import { cn } from '@/lib/utils';
 import type { Vault, VaultState, VaultStatus, VaultUnsupportedReason } from '@/lib/vault';
 import { useVault, useVaultState, vaultErrorMessage } from '@/lib/vault-react';
 
-/* ══ VaultGate and friends — the screens around a passkey vault ══
+/* ══ Passkey vault screens — the gate, its screens and the enroll dialog around a passkey vault ══
    <VaultProvider options={…}>
      <VaultGate appName="Notes">      // loading → set-up → locked → your app; or an honest "unavailable" screen
        <Notes />
      </VaultGate>
    </VaultProvider>
-   The parts are exported on their own (VaultUnlock, VaultSetup, VaultUnsupported, VaultStatusBadge) to build a different shell. */
+   The screens are exported on their own (VaultSetup, VaultUnlock, VaultUnsupported, VaultStatusBadge) to build a
+   different shell, and so is the dialog that enrolls a passkey and shows the recovery key once (VaultEnrollDialog,
+   with RecoveryKey). */
+
+/* The theme's primary (white on the iOS blue, 3.6:1) and its muted text (3.3:1 on a grouped background) are under
+   WCAG AA for body-size text. These screens carry the text people must read to keep their data, so they darken the
+   primary where it holds text and use a stronger muted colour. */
+const vaultActionClass = 'bg-[color-mix(in_oklab,var(--primary)_78%,black)]';
+const vaultLinkClass = 'text-[color-mix(in_oklab,var(--primary)_78%,black)] dark:text-primary';
+const vaultErrorClass = 'text-[color-mix(in_oklab,var(--destructive)_72%,black)] dark:text-destructive';
+const vaultMutedClass = 'text-foreground/70';
 
 /** Why a passkey vault is unavailable, in plain words, with what the person can do about it. */
 export function unsupportedMessage(reason: VaultUnsupportedReason | null): { title: string; body: string } {
@@ -44,29 +58,32 @@ export function unsupportedMessage(reason: VaultUnsupportedReason | null): { tit
   }
 }
 
-const panelVariants = cva('mx-auto flex w-full flex-col items-center gap-4 text-center', {
-  variants: { size: { default: 'max-w-sm p-6', compact: 'max-w-xs p-4' } },
-  defaultVariants: { size: 'default' },
-});
+/* ── screens ── */
 
-interface PanelProps extends Omit<ComponentProps<'section'>, 'title'>, VariantProps<typeof panelVariants> {
+interface PanelProps extends Omit<ComponentProps<'section'>, 'title' | 'ref'> {
   icon: IconName;
   title: ReactNode;
   description?: ReactNode;
 }
 
-function Panel({ icon, title, description, size, className, children, ...props }: PanelProps) {
+/* A gate screen is the kit's EmptyState at page size, centred in the host it replaces, with a tinted badge, a heading
+   and the screen's controls as its action. */
+function Panel({ icon, title, description, className, children, ...props }: PanelProps) {
   return (
-    <section className={cn(panelVariants({ size }), className)} {...props}>
-      <span aria-hidden="true" className="grid size-14 place-items-center rounded-full bg-primary/10 text-primary">
-        <Icon name={icon} size={28} />
-      </span>
-      <div className="grid gap-1">
-        <h2 className="m-0 text-title leading-[25px] font-semibold text-foreground">{title}</h2>
-        {description ? <p className={cn('m-0 text-subhead leading-[20px]', vaultMutedClass)}>{description}</p> : null}
-      </div>
-      {children}
-    </section>
+    <EmptyState
+      size="lg"
+      render={<section />}
+      {...props}
+      icon={(
+        <span className="grid size-14 place-items-center rounded-full bg-primary/10 text-primary">
+          <Icon name={icon} size={28} className="size-7!" />
+        </span>
+      )}
+      title={<h2 className="m-0 [font:inherit]">{title}</h2>}
+      description={description ? <span className={vaultMutedClass}>{description}</span> : undefined}
+      action={children ? <div className="flex w-full flex-col items-center gap-4">{children}</div> : undefined}
+      className={cn('mx-auto w-full max-w-sm [&>[data-slot=empty-state-action]]:w-full', className)}
+    />
   );
 }
 
@@ -111,6 +128,278 @@ export function VaultUnsupported({ vault, className, ...props }: VaultUnsupporte
   );
 }
 
+/* ── recovery key ── */
+
+export const recoveryKeyVariants = cva(
+  'grid justify-center gap-x-6 gap-y-1 rounded-ctl bg-secondary px-3 py-3 font-mono text-callout font-semibold tracking-wide text-foreground tabular-nums select-text [-webkit-user-select:text]',
+  {
+    variants: { layout: { grid: 'grid-cols-[repeat(2,max-content)]', row: 'grid-cols-[repeat(4,max-content)]' } },
+    defaultVariants: { layout: 'grid' },
+  },
+);
+
+export interface RecoveryKeyProps extends Omit<ComponentProps<'div'>, 'children'>, VariantProps<typeof recoveryKeyVariants> {
+  /** `XXXX-XXXX-…`, as returned by `vault.enroll()`. */
+  value: string;
+}
+
+/** The recovery key in groups of four. A labelled group so a screen reader reads it as one thing; not a live region. */
+export function RecoveryKey({ value, layout, className, ...props }: RecoveryKeyProps) {
+  return (
+    <div data-slot="recovery-key" role="group" aria-label="Recovery key" className={cn(recoveryKeyVariants({ layout }), className)} {...props}>
+      {/* Read letter by letter by assistive tech; the visible groups are for the eye (and copying). */}
+      <span className="sr-only select-none">{value.split('-').map((group) => group.split('').join(' ')).join(', ')}</span>
+      {value.split('-').map((group, i) => (
+        <span key={i} aria-hidden="true">{group}</span>
+      ))}
+    </div>
+  );
+}
+
+function download(filename: string, text: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ── enroll dialog ── */
+
+export interface VaultEnrollDialogProps extends Omit<DialogProps, 'view' | 'dismissible' | 'children'> {
+  /** Defaults to the nearest `VaultProvider`'s vault. */
+  vault?: Vault;
+  /** `enroll` creates the passkey and the first recovery key; `regenerate` replaces the recovery key of an existing vault. */
+  mode?: 'enroll' | 'regenerate';
+  /** Used in the copy ("Protect Notes with a passkey"). */
+  appName?: string;
+  /** What the vault protects, as a sentence fragment. Default: "what this app saves in this browser". */
+  protects?: ReactNode;
+  /** Make the person type the recovery key back before finishing (proves they saved it). Default false. */
+  requireVerification?: boolean;
+  /** Called after the recovery key is confirmed, just before the dialog closes. */
+  onDone?: () => void;
+  /** Merged onto the dialog's card. */
+  className?: string;
+  style?: CSSProperties;
+  /** A `DialogTrigger` that opens it. Optional: control `open`, or open it with a `controller`. */
+  children?: ReactNode;
+}
+
+type Step = 'intro' | 'working' | 'recovery';
+
+/** Sets up a passkey vault, then shows the recovery key once. Two views of one Dialog: explain what is protected and
+    run the passkey prompt, then show the key with Copy and Save as file, and make the person confirm they kept it
+    (optionally by typing it back). The recovery-key view can't be dismissed by Esc, an outside press or a swipe: the
+    key is shown once, and closing by accident would lose it. A tray in a compact container, a card otherwise. Cancel
+    and Done are the dialog's Close parts, so `onOpenChange` hears `close-press` for Cancel and `action` (with
+    `returnValue: "done"`) for Done; Done stays open, showing the error, if confirming the key fails. */
+export function VaultEnrollDialog({
+  vault, mode = 'enroll', appName, protects, requireVerification = false, onDone, className, style, children,
+  open, onOpenChange, onOpenChangeComplete, ...props
+}: VaultEnrollDialogProps) {
+  const v = useVault(vault);
+  const primary = useRef<HTMLButtonElement>(null);
+  const [step, setStep] = useState<Step>('intro');
+  const [error, setError] = useState<string | null>(null);
+  const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [typed, setTyped] = useState('');
+  const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const abort = useRef<AbortController | null>(null);
+  const errorId = useId();
+  const descriptionId = useId();
+  const regenerate = mode === 'regenerate';
+  const name = appName ?? 'this app';
+
+  /** Leaving the dialog cancels an open prompt; once it has finished closing it forgets the key. */
+  const forget = () => {
+    abort.current?.abort();
+    setStep('intro'); setError(null); setRecoveryKey(null); setSaved(false); setTyped(''); setCopied('idle');
+  };
+  useEffect(() => { if (open === false) abort.current?.abort(); }, [open]);
+  useEffect(() => () => abort.current?.abort(), []);
+
+  const verified = !requireVerification || (recoveryKey !== null && typed.replace(/[\s-]/g, '').toUpperCase() === recoveryKey.replace(/-/g, ''));
+
+  async function start() {
+    const ac = new AbortController();
+    abort.current = ac;
+    setError(null);
+    setStep('working');
+    // UI SDK's polite live region says where the ceremony is (one region per page, so it outlives the dialog).
+    announce("Waiting for your passkey. Follow your browser's prompt.");
+    try {
+      const key = regenerate ? await v.regenerateRecoveryKey({ signal: ac.signal }) : (await v.enroll({ signal: ac.signal })).recoveryKey;
+      setRecoveryKey(key);
+      setStep('recovery');
+      announce('Your recovery key is ready. It is shown only once.');
+    } catch (e) {
+      if (ac.signal.aborted) return;
+      setError(vaultErrorMessage(e));
+      setStep('intro');
+    }
+  }
+
+  /** Closes the open passkey prompt and goes back to the explanation. */
+  function cancel() {
+    abort.current?.abort();
+    setStep('intro');
+  }
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(recoveryKey ?? '');
+      setCopied('copied');
+    } catch {
+      setCopied('failed');
+    }
+  }
+
+  /** Done's action: the dialog closes (reason `action`) once the key is confirmed; a failure keeps it open. */
+  async function finish() {
+    setError(null);
+    try {
+      await v.confirmRecoveryKey();
+    } catch (e) {
+      setError(vaultErrorMessage(e));
+      throw e;
+    }
+    onDone?.();
+  }
+
+  const recoveryStep = step === 'recovery';
+  const view = recoveryStep ? 'recovery' : 'intro';
+  const description = cn(surfaceDescriptionVariants(), vaultMutedClass);
+
+  return (
+    <Dialog
+      {...props}
+      open={open}
+      onOpenChange={(next, details) => {
+        onOpenChange?.(next, details);
+        if (!next && !details.canceled) abort.current?.abort();
+      }}
+      onOpenChangeComplete={(next) => {
+        onOpenChangeComplete?.(next);
+        if (!next) forget();
+      }}
+      dismissible={!recoveryStep}
+      view={view}
+    >
+      {children}
+      <DialogBackdrop />
+      <DialogContent
+        variant="tray"
+        data-vault-enroll-dialog=""
+        className={className}
+        style={style}
+        aria-describedby={`${descriptionId}-${view}`}
+        initialFocus={() => primary.current}
+      >
+        <DialogHeader variant="bar">
+          <DialogTitle>
+            {recoveryStep ? 'Save your recovery key' : regenerate ? 'Replace your recovery key' : `Protect ${name} with a passkey`}
+          </DialogTitle>
+        </DialogHeader>
+
+        <DialogView>
+          {!recoveryStep ? (
+            <>
+              <div className="grid gap-3 px-5 pt-1 pb-3 text-subhead">
+                <p id={`${descriptionId}-intro`} className={description}>
+                  {regenerate
+                    ? 'You will confirm with your passkey. The old recovery key stops working as soon as the new one exists.'
+                    : <>A passkey will lock {protects ?? 'what this app saves in this browser'}. Only you can unlock it, with your fingerprint, face or device PIN.</>}
+                </p>
+                {!regenerate ? (
+                  <ul className={cn('m-0 grid list-none gap-2 p-0 text-subhead', vaultMutedClass)}>
+                    <Point icon="shield-check">The data is encrypted on this device with a key your passkey unlocks.</Point>
+                    <Point icon="key">You also get a recovery key. If you lose the passkey and the key, the data cannot be recovered by anyone.</Point>
+                    <Point icon="info">It protects stored data from someone reading the browser&apos;s files. It does not protect against malicious scripts running on this page.</Point>
+                  </ul>
+                ) : null}
+                {step === 'working' ? (
+                  <div className={cn('flex items-center gap-2 text-subhead', vaultMutedClass)}>
+                    <Spinner size={18} />
+                    <span>Waiting for your passkey…</span>
+                  </div>
+                ) : null}
+                {error ? (
+                  <p id={errorId} role="alert" className={cn('m-0 rounded-ctl bg-destructive/10 px-3 py-2 text-footnote', vaultErrorClass)}>{error}</p>
+                ) : null}
+              </div>
+              <DialogFooter>
+                {step === 'working' ? (
+                  <Button variant="ghost" onClick={cancel}>Cancel</Button>
+                ) : (
+                  <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+                )}
+                {/* Pending for as long as the passkey prompt is up: the press returns its Promise. */}
+                <Button ref={primary} className={vaultActionClass} onClick={() => start()} aria-describedby={error ? errorId : undefined}>
+                  {regenerate ? 'Continue with passkey' : 'Create passkey'}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <div className="grid gap-3 px-5 pt-1 pb-3 text-subhead">
+                <p id={`${descriptionId}-recovery`} className={description}>
+                  This is the only way back in if you lose your passkey. It is shown once and not stored anywhere.
+                </p>
+                <RecoveryKey value={recoveryKey ?? ''} />
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" size="sm" autoFocus onClick={() => void copy()}>
+                    <Icon name={copied === 'copied' ? 'check' : 'copy'} size={15} />
+                    {copied === 'copied' ? 'Copied' : 'Copy'}
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => download(`${(appName ?? 'vault').toLowerCase().replace(/\s+/g, '-')}-recovery-key.txt`, `${name} recovery key\n\n${recoveryKey}\n\nAnyone with this key can read the data it protects. Keep it somewhere safe and private.\n`)}>
+                    <Icon name="download" size={15} />
+                    Save as file
+                  </Button>
+                </div>
+                <p className={cn('m-0 text-footnote', vaultMutedClass)}>
+                  Keep it in a password manager or print it. Anyone who has it can open your data, and nobody can reissue it.
+                </p>
+                {copied === 'failed' ? <p role="alert" className={cn('m-0 text-footnote', vaultErrorClass)}>Copying was blocked. Select the key and copy it by hand.</p> : null}
+                {requireVerification ? (
+                  <Field invalid={typed.length > 0 && !verified && typed.replace(/[\s-]/g, '').length >= 32}>
+                    <FieldLabel className={vaultMutedClass}>Type the key to confirm you saved it</FieldLabel>
+                    <Input value={typed} onValueChange={setTyped} autoComplete="off" className="font-mono" spellCheck={false} autoCapitalize="characters" autoCorrect="off" />
+                    <FieldError>That does not match the recovery key above.</FieldError>
+                  </Field>
+                ) : null}
+                <Label variant="control" className="text-subhead">
+                  <Checkbox checked={saved} onCheckedChange={(checked) => setSaved(checked === true)} shape="square" />
+                  I saved my recovery key somewhere safe
+                </Label>
+                {error ? <p role="alert" className={cn('m-0 text-footnote', vaultErrorClass)}>{error}</p> : null}
+              </div>
+              <DialogFooter>
+                <DialogClose value="done" action={finish} disabled={!saved || !verified} render={<Button className={vaultActionClass} />}>
+                  Done
+                </DialogClose>
+              </DialogFooter>
+            </>
+          )}
+        </DialogView>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Point({ icon, children }: { icon: IconName; children: ReactNode }) {
+  return (
+    <li className="flex items-start gap-2">
+      <Icon name={icon} size={18} className="mt-0.5 shrink-0 text-primary" />
+      <span>{children}</span>
+    </li>
+  );
+}
+
 /* ── set up ── */
 
 export interface VaultSetupProps extends Omit<ComponentProps<'section'>, 'title'> {
@@ -118,7 +407,7 @@ export interface VaultSetupProps extends Omit<ComponentProps<'section'>, 'title'
   appName?: string;
   protects?: ReactNode;
   requireVerification?: boolean;
-  /** Called when the button is pressed. Pass it when a parent owns the `PasskeyEnrollDialog` (as `VaultGate` does): the
+  /** Called when the button is pressed. Pass it when a parent owns the `VaultEnrollDialog` (as `VaultGate` does): the
    *  vault becomes `unlocked` the moment the passkey exists, which unmounts this screen, and a dialog rendered inside it
    *  would vanish before showing the recovery key. Without it, the screen renders its own dialog. */
   onSetup?: () => void;
@@ -141,7 +430,7 @@ export function VaultSetup({ vault, appName, protects, requireVerification, onSe
         <Icon name="passkey" size={18} />
         Set up passkey
       </Button>
-      {onSetup ? null : <PasskeyEnrollDialog open={open} onOpenChange={setOpen} vault={v} appName={appName} protects={protects} requireVerification={requireVerification} />}
+      {onSetup ? null : <VaultEnrollDialog open={open} onOpenChange={setOpen} vault={v} appName={appName} protects={protects} requireVerification={requireVerification} />}
     </Panel>
   );
 }
@@ -203,13 +492,13 @@ export function VaultUnlock({ vault, appName, title, description, autoFocus = tr
       {mode === 'passkey' ? (
         // Pending while the passkey prompt is up: the press returns its Promise.
         <Button size="lg" className={cn('w-full', vaultActionClass)} autoFocus={autoFocus} onClick={() => (unlocking ? undefined : run(() => v.unlock()))}>
-          {unlocking ? <Spinner spin size={18} /> : <Icon name="passkey" size={18} />}
+          {unlocking ? <Spinner size={18} /> : <Icon name="passkey" size={18} />}
           {unlocking ? 'Waiting for passkey' : 'Unlock with passkey'}
         </Button>
       ) : (
         <form className="grid w-full gap-3 text-left" onSubmit={submitRecovery} noValidate>
           <Field invalid={error !== null}>
-            <FieldLabel variant="field" className={vaultMutedClass}>Recovery key</FieldLabel>
+            <FieldLabel className={vaultMutedClass}>Recovery key</FieldLabel>
             <Input value={text} onValueChange={setText} autoComplete="off" autoFocus={autoFocus} className="font-mono uppercase" spellCheck={false} autoCapitalize="characters" autoCorrect="off" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" />
             <FieldDescription className={vaultMutedClass}>Eight groups of four letters and digits. Case and dashes don&apos;t matter.</FieldDescription>
           </Field>
@@ -262,15 +551,18 @@ export interface VaultGateProps {
   locked?: ReactNode;
   /** While unlocked and the recovery key was never confirmed, show a notice with a button to replace it (default true). */
   recoveryNotice?: boolean;
+  /** On the gate's box, which fills its host (a column: the notice, then your app). */
   className?: string;
+  style?: CSSProperties;
   children?: ReactNode;
 }
 
 const ANNOUNCE: Partial<Record<VaultStatus, string>> = { unlocked: 'Unlocked.', locked: 'Locked.' };
 
-/** Renders `children` only while the vault is unlocked; otherwise the screen the status calls for. */
+/** Renders `children` only while the vault is unlocked; otherwise the screen the status calls for, centred in the
+    gate's box. */
 export function VaultGate({
-  vault, appName, protects, requireVerification, loading, unsupported, empty, locked, recoveryNotice = true, className, children,
+  vault, appName, protects, requireVerification, loading, unsupported, empty, locked, recoveryNotice = true, className, style, children,
 }: VaultGateProps) {
   const v = useVault(vault);
   const state = v.getState();
@@ -291,8 +583,8 @@ export function VaultGate({
   switch (state.status) {
     case 'loading':
       body = loading ?? (
-        <div className={cn('grid place-items-center p-8', vaultMutedClass)}>
-          <Spinner spin size={24} label="Checking passkey support" />
+        <div className={cn('grid flex-1 place-items-center p-8', vaultMutedClass)}>
+          <Spinner size={24} label="Checking passkey support" />
         </div>
       );
       break;
@@ -309,7 +601,7 @@ export function VaultGate({
       body = (
         <>
           {recoveryNotice && !state.recoveryConfirmed ? (
-            <div role="region" aria-label="Recovery key" className="m-3 flex items-center gap-3 rounded-card bg-secondary p-3 text-subhead">
+            <div role="region" aria-label="Recovery key" className="m-3 flex shrink-0 items-center gap-3 rounded-card bg-secondary p-3 text-subhead">
               <Icon name="key" size={20} className="shrink-0 text-primary" />
               <span className="min-w-0 flex-1">You haven&apos;t confirmed saving your recovery key. Without it, losing your passkey means losing your data.</span>
               <Button size="sm" className={vaultActionClass} onClick={() => setDialog({ open: true, mode: 'regenerate' })}>Get a new key</Button>
@@ -321,9 +613,9 @@ export function VaultGate({
   }
 
   return (
-    <div ref={root} data-slot="vault-gate" data-status={state.status} className={cn('contents', className)}>
+    <div ref={root} data-slot="vault-gate" data-status={state.status} className={cn('flex h-full min-h-0 flex-col', className)} style={style}>
       {body}
-      <PasskeyEnrollDialog
+      <VaultEnrollDialog
         open={dialog.open}
         onOpenChange={(open) => setDialog((d) => ({ ...d, open }))}
         vault={v}

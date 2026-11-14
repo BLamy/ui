@@ -2,7 +2,7 @@ import { createContext, useContext, type ComponentProps, type CSSProperties, typ
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Avatar } from '@/components/ui/avatar';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { PlainToggleButton } from '@/components/ui/plain-button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { Toolbar, ToolbarButton } from '@ui-sdk/react/toolbar';
 import { chatUserAvatar, useChatUsers, type ChatUser } from './chat-users';
@@ -179,7 +179,7 @@ export const messageReactionVariants = cva(
   },
 );
 
-export interface MessageReactionProps extends Omit<ComponentProps<typeof PlainToggleButton>, 'children' | 'pressed' | 'defaultPressed'> {
+export interface MessageReactionProps extends Omit<ComponentProps<typeof SdkToggle>, 'children' | 'pressed' | 'defaultPressed'> {
   emoji: ReactNode;
   count: number;
   /** your own reaction: tinted outline, and the toggle is on */
@@ -190,10 +190,10 @@ export interface MessageReactionProps extends Omit<ComponentProps<typeof PlainTo
     `onPressedChange(pressed, details)`. */
 export function MessageReaction({ emoji, count, mine, className, ...props }: MessageReactionProps) {
   return (
-    <PlainToggleButton pressed={!!mine} className={cx(messageReactionVariants({ mine: !!mine }), className)} {...props}>
+    <SdkToggle pressed={!!mine} className={cx(messageReactionVariants({ mine: !!mine }), className)} {...props}>
       {emoji}
       <span className={cn('text-caption2', mine ? 'text-link' : 'text-muted-foreground')}>{count}</span>
-    </PlainToggleButton>
+    </SdkToggle>
   );
 }
 

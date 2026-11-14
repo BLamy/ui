@@ -1,6 +1,6 @@
 # Popups and layers
 
-Every floating thing in BL UI (Popover, Tooltip, HoverCard, DropdownMenu, ContextMenu, Select, Combobox, Dialog, Sheet, CommandMenu) is a UI SDK popup: one engine for opening and closing, placing beside a trigger, Escape and outside presses, focus moving in and back, modality, nesting, and presenting as a sheet. The same engine is in `@ui-sdk/core` for a popup of your own: `createPopup` with a **preset** and the popup slot helpers. Below it are the pieces it is made of, which you can use alone: `position` places an element beside an anchor, and `bindLayer` puts an element in the dismissal stack. The upstream reference is [Popups](https://ui-sdk.dev/docs/core/behaviors/popups).
+Every floating thing in BL UI (Popover, Tooltip, HoverCard, DropdownMenu (and its context menus), Select, Combobox, Dialog, Sheet, CommandMenu) is a UI SDK popup: one engine for opening and closing, placing beside a trigger, Escape and outside presses, focus moving in and back, modality, nesting, and presenting as a sheet. The same engine is in `@ui-sdk/core` for a popup of your own: `createPopup` with a **preset** and the popup slot helpers. Below it are the pieces it is made of, which you can use alone: `position` places an element beside an anchor, and `bindLayer` puts an element in the dismissal stack. The upstream reference is [Popups](https://ui-sdk.dev/docs/core/behaviors/popups).
 
 ```ts
 import {
@@ -19,7 +19,7 @@ Reach for these only when no kit component has the shape you need. A styled kit 
 | Interactive content beside a trigger | [Popover](https://blamy.github.io/ui/#/popover) |
 | A label on hover or focus | [Tooltip](https://blamy.github.io/ui/#/tooltip) |
 | A preview on hover | [Hover Card](https://blamy.github.io/ui/#/hover-card) |
-| A modal task | [Dialog](https://blamy.github.io/ui/#/dialog), [Sheet](https://blamy.github.io/ui/#/sheet), [Credenza](https://blamy.github.io/ui/#/credenza) |
+| A modal task | [Dialog](https://blamy.github.io/ui/#/dialog) (a sheet or tray in a compact container), [Sheet](https://blamy.github.io/ui/#/sheet) |
 | Open from code and wait for a result | The component's controller: `createPopoverController`, `createDialogController`… (`await controller.open({ anchor, payload })` resolves when it closes, with `reason` and an optional `returnValue`) |
 
 ## A popup of your own

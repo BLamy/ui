@@ -27,7 +27,7 @@ import { cn, cx } from '@/lib/utils';
    string ("2026-09-09"); `mode="range"` holds `[start, end]`, with an input for each end. The popup closes when a
    day (or a range's end) is chosen, Esc closes it and focus returns to the button.
    <Field>
-     <FieldLabel variant="field">Date</FieldLabel>
+     <FieldLabel>Date</FieldLabel>
      <DatePicker defaultValue="2026-09-09">
        <DatePickerField />
        <DatePickerContent />

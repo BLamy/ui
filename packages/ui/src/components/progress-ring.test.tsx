@@ -26,7 +26,7 @@ describe('ProgressRing', () => {
   it('shows the value in the middle, or content of your own', () => {
     const shown = render(<ProgressRing aria-label="Coverage" value={85} size="xl" showValue />);
     // The default percentage is a NumberMorph, whose rolling digits read as one number.
-    expect(screen.getByRole('progressbar').querySelector('[data-slot="progress-value"] [role="img"]')!.getAttribute('aria-label')).toBe('85%');
+    expect(screen.getByRole('progressbar').querySelector('[data-slot="progress-value"] [data-slot="number-morph"] .sr-only')!.textContent).toBe('85%');
     shown.unmount();
     const custom = render(<ProgressRing aria-label="Files" value={3} max={12} size="xl" showValue format={(value) => `${value}/12`} />);
     expect(screen.getByRole('progressbar').querySelector('[data-slot="progress-value"]')!.textContent).toBe('3/12');
@@ -53,20 +53,47 @@ describe('ProgressRing', () => {
   it('takes a tone, or colors of its own as variables', () => {
     render(<ProgressRing aria-label="Done" value={100} tone="success" color="teal" trackColor="gray" />);
     const ring = screen.getByRole('progressbar');
-    expect(ring.className).toContain('[--ring-color:var(--success');
+    expect(ring.className).toContain('[--ring-color:var(--color-success)]');
     expect(ring.style.getPropertyValue('--ring-color')).toBe('teal');
     expect(ring.style.getPropertyValue('--ring-track')).toBe('gray');
     expect(ring.hasAttribute('data-complete')).toBe(true);
   });
 });
 
+describe('ProgressRing sizes', () => {
+  it('keeps the value out of rings too small to hold it', () => {
+    const small = render(<ProgressRing aria-label="Small" value={55} showValue />);
+    expect(screen.getByRole('progressbar').style.getPropertyValue('--ring-px')).toBe('28px');
+    expect(screen.getByRole('progressbar').querySelector('[data-slot="progress-value"]')).toBeNull();
+    small.unmount();
+    render(<ProgressRing aria-label="Large" value={55} size="lg" showValue />);
+    expect(screen.getByRole('progressbar').querySelector('[data-slot="progress-value"]')).not.toBeNull();
+  });
+
+  it('draws a dim full ring instead of a still quarter arc under reduced motion', () => {
+    const { container } = render(<ProgressRing aria-label="Loading" />);
+    expect(arc(container).getAttribute('class')).toContain('motion-reduce:[stroke-dashoffset:0]');
+    expect(arc(container).getAttribute('class')).toContain('motion-reduce:opacity-35');
+  });
+});
+
 describe('CountdownRing', () => {
-  it('is a timer named by the seconds left, which warns near the end', () => {
+  it('is a timer named by the seconds left, which turns urgent near the end', () => {
     const { rerender } = render(<CountdownRing remaining={12} duration={30} />);
     const ring = screen.getByRole('timer', { name: '12 seconds left' });
-    expect(ring.hasAttribute('data-warning')).toBe(false);
+    expect(ring.hasAttribute('data-urgent')).toBe(false);
     rerender(<CountdownRing remaining={1} duration={30} />);
-    expect(screen.getByRole('timer', { name: '1 second left' }).hasAttribute('data-warning')).toBe(true);
+    expect(screen.getByRole('timer', { name: '1 second left' }).hasAttribute('data-urgent')).toBe(true);
+  });
+
+  it('takes urgentAt, urgentColor, a ref and DOM props', () => {
+    let node: HTMLSpanElement | null = null;
+    render(<CountdownRing remaining={12} urgentAt={15} urgentColor="purple" ref={(n) => { node = n; }} id="otp" />);
+    const ring = screen.getByRole('timer');
+    expect(node).toBe(ring);
+    expect(ring.id).toBe('otp');
+    expect(ring.hasAttribute('data-urgent')).toBe(true);
+    expect(ring.style.getPropertyValue('--ring-urgent')).toBe('purple');
   });
 });
 

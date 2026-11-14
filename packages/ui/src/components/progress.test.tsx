@@ -35,7 +35,7 @@ describe('Progress', () => {
   it('shows the percentage, or the value in a format of its own', () => {
     const percent = render(<Progress label="Export" showValue value={25} />);
     // The default percentage is a NumberMorph, whose rolling digits read as one number.
-    expect(percent.container.querySelector('[data-slot="progress-value"] [role="img"]')!.getAttribute('aria-label')).toBe('25%');
+    expect(percent.container.querySelector('[data-slot="progress-value"] [data-slot="number-morph"] .sr-only')!.textContent).toBe('25%');
     percent.unmount();
     const custom = render(<Progress label="Copying" showValue value={3} max={12} format={(value) => `${value} of 12 files`} />);
     expect(custom.container.querySelector('[data-slot="progress-value"]')!.textContent).toBe('3 of 12 files');
@@ -54,6 +54,20 @@ describe('Progress', () => {
     rerender(<Progress label="Preparing" showValue value={100} />);
     expect(bar.hasAttribute('data-complete')).toBe(true);
     expect(bar.getAttribute('aria-valuenow')).toBe('100');
+  });
+
+  it('has a warning tone, and a reduced-motion indeterminate look that is not a partial bar', () => {
+    const { container, rerender } = render(<Progress aria-label="Sync" value={40} tone="warning" />);
+    expect(container.querySelector('[data-slot="progress-indicator"]')!.className).toContain('bg-warning');
+    rerender(<Progress aria-label="Sync" />);
+    const cls = container.querySelector('[data-slot="progress-indicator"]')!.className;
+    expect(cls).toContain('motion-reduce:data-indeterminate:w-full');
+    expect(cls).toContain('motion-reduce:data-indeterminate:opacity-35');
+  });
+
+  it('formats the rolling percentage in its locale', () => {
+    const { container } = render(<Progress aria-label="Export" showValue value={25} locale="de-DE" />);
+    expect(container.querySelector('[data-slot="number-morph"] .sr-only')!.textContent).toBe(new Intl.NumberFormat('de-DE', { style: 'percent' }).format(0.25));
   });
 
   it('places a value between min and max', () => {

@@ -1,6 +1,6 @@
 # Behaviors
 
-BL UI 6.0 is built on [UI SDK](https://ui-sdk.dev). Its components are UI SDK parts with the kit's look, and the containers UI SDK does not ship (NavigationStack, SplitView, Credenza, Sidebar, list rows) are primitives the kit defines from UI SDK's **behaviors**: the framework-free helpers in `@ui-sdk/core` for focus, selection, drag and drop, popups, motion and the phone's quirks. Almost everything you build with the kit needs none of them: you use `Button`, `Listbox`, `Dialog` and friends, and the keyboard, focus and ARIA are already inside. This section is for the moment you drop below the component: a toolbar of your own, a sortable board, a disclosure that animates its height, a frame that adapts to its own width.
+BL UI 6.0 is built on [UI SDK](https://ui-sdk.dev). Its components are UI SDK parts with the kit's look, and the containers UI SDK does not ship (NavigationStack, SplitView, Sidebar, list rows) are primitives the kit defines from UI SDK's **behaviors**: the framework-free helpers in `@ui-sdk/core` for focus, selection, drag and drop, popups, motion and the phone's quirks. Almost everything you build with the kit needs none of them: you use `Button`, `Listbox`, `Dialog` and friends, and the keyboard, focus and ARIA are already inside. This section is for the moment you drop below the component: a toolbar of your own, a sortable board, a disclosure that animates its height, a frame that adapts to its own width.
 
 The pages show each behavior the way the kit itself uses it: inside a primitive defined once with `definePrimitive` and rendered with `createParts` (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk) for a walk-through), or called directly on an element where a primitive would be overkill, and styled with the kit's tokens. Every example on these pages is live.
 
@@ -33,7 +33,7 @@ Reach for a behavior when a component would be the wrong shape, not before.
 | A button, a toggle, a toolbar | `Button`, `Toggle`, `ToggleGroup`, `DebugToolbar` | `createRovingFocus` on your own buttons |
 | A list you pick from, or sort | `Listbox`, `Tree`, `Lists` | `createSelection` and `createReorder` by hand |
 | A file drop area | `FileUpload` | native drag events by hand |
-| A right-click menu | `ContextMenu` | a `contextmenu` handler and `bindLayer` |
+| A right-click menu | `DropdownMenu` with a `DropdownMenuContextTrigger` | a `contextmenu` handler and `bindLayer` |
 | A popover, dialog, menu or sheet | `Popover`, `Dialog`, `DropdownMenu`, `Sheet` | `createPopup` by hand |
 | Panes that resize | `SplitView` | `createResize` by hand |
 | Pages that push and pop | `NavigationStack` | `createStack` by hand |
@@ -52,7 +52,7 @@ Until 5.x these pages documented react-aria's interaction hooks. They are gone w
 | `useKeyboard` | A slot's `on: { keydown }`, `matchesShortcut`, and `useShortcut` from `@ui-sdk/react/shortcuts`. |
 | `useLongPress` | `bindHold`. |
 | `useMove` | `bindDrag`, `createMove`, `createResize`. |
-| `useContextMenu` | `ContextMenu` (UI SDK's `MenuContextTrigger`: a right click, or a long press on touch). |
+| `useContextMenu` | `DropdownMenuContextTrigger` (UI SDK's `MenuContextTrigger`: a right click, or a long press on touch). |
 | `useClipboard` | The platform's `copy` and `paste` events, `navigator.clipboard`, and `cellsToText`/`textToCells`. See [Selection](https://blamy.github.io/ui/#/behaviors-selection). |
 | `useDrag`, `useDrop`, `useDragAndDrop`, `DropZone` | `createReorder`, `createTransfer`, `bindDrag`; files from the computer through `FileUpload` (UI SDK's FileInput). UI SDK has no native (DataTransfer) drag source or drop target; see [Drag and drop](https://blamy.github.io/ui/#/behaviors-drag-drop). |
 | `useLandmark` (F6 between regions) | Native landmarks (`<main>`, `<nav>`, `<aside>`, `role="region"` with a name). UI SDK has no F6 landmark cycling. |

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewList, TabViewPill, TabViewTab } from '@/components/ui/tab-view';
+import { Tabs, TabsAction, TabsBar, TabsFooter, TabsList, TabsPill, TabsTab } from '@/components/ui/tabs';
 import { Icon } from '@/lib/icon';
 import { ChatShell, ChatShellAside, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderActions, ChatShellHeaderToggle, ChatShellHeaderIcon, ChatShellMain, ChatShellNav, ChatShellNavTrigger, ChatShellPanel, ChatShellSidebar, ChatShellTitle } from './components/chat-shell';
 import { useChatShell } from './components/chat-shell-context';
@@ -61,23 +61,23 @@ function ShellDemo({ width, height, defaultNavOpen }: FrameArgs) {
     <Frame width={width} height={height}>
       <ChatShell breakpoint={880} defaultNavOpen={defaultNavOpen}>
         <ChatShellNav>
-          <TabView orientation="vertical" defaultValue="blui" className="contents">
-            <TabViewBar variant="workspace">
-              <TabViewList aria-label="Workspaces">
-                <TabViewTab value="blui" aria-label="BL UI HQ">
-                  <TabViewPill />
+          <Tabs variant="workspace" defaultValue="blui" className="contents">
+            <TabsBar>
+              <TabsList aria-label="Workspaces">
+                <TabsTab value="blui" aria-label="BL UI HQ">
+                  <TabsPill />
                   <WorkspaceTile>T</WorkspaceTile>
-                </TabViewTab>
-                <TabViewTab value="creamery" aria-label="Creamery">
-                  <TabViewPill />
+                </TabsTab>
+                <TabsTab value="creamery" aria-label="Creamery">
+                  <TabsPill />
                   <WorkspaceTile color="#BF5AF2">C</WorkspaceTile>
-                </TabViewTab>
-              </TabViewList>
-              <TabViewFooter>
-                <TabViewAction aria-label="Add workspace" icon="plus" />
-              </TabViewFooter>
-            </TabViewBar>
-          </TabView>
+                </TabsTab>
+              </TabsList>
+              <TabsFooter>
+                <TabsAction aria-label="Add workspace" icon="plus" />
+              </TabsFooter>
+            </TabsBar>
+          </Tabs>
           <FixtureSidebar selected={cur} onSelect={setCur} />
         </ChatShellNav>
         <DemoMain />
@@ -115,7 +115,7 @@ export const CompactNavOpen: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Below the breakpoint ChatShellNav becomes a left EdgeDrawer (dimmed scrim). Shown here open via defaultNavOpen.',
+        story: 'Below the breakpoint ChatShellNav becomes a left drawer (an AdaptivePane, dimmed scrim). Shown here open via defaultNavOpen.',
       },
     },
   },

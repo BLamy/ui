@@ -1,6 +1,6 @@
 # Input
 
-The filled iOS text input: UI SDK's `Input`, a native `<input>` with a 44px default height, a soft filled background that turns into a primary ring on focus, and red and dimmed states for invalid and disabled. `Input` is only the control. To get a visible label, a description and validation messages, put it inside a [Field](https://blamy.github.io/ui/#/field); for several lines use [Textarea](https://blamy.github.io/ui/#/textarea); for a query with a clear button use [SearchField](https://blamy.github.io/ui/#/search-field).
+The filled iOS text input: UI SDK's `Input`, a native `<input>` with a 44px default height, a soft filled background that turns into a primary ring on focus, and red and dimmed states for invalid and disabled. `Input` is only the control. To get a visible label, a description and validation messages, put it inside a [Field](https://blamy.github.io/ui/#/field); for several lines use [Textarea](https://blamy.github.io/ui/#/textarea); for a query with a clear button use [SearchInput](https://blamy.github.io/ui/#/search-input).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -27,7 +27,7 @@ import { Input, createInputController } from '@brett_lamy/ui'
 
 ## Sizes
 
-`size` sets the height and type size: `sm` is 32px, `default` 44px and `lg` 50px with larger corners.
+`size` sets the height and type size: `sm` is 32px, `default` 44px and `lg` 50px with larger corners. Text fields are taller than buttons on purpose (buttons are 32 / 36 / 44): iOS gives a field the 44px touch height. To line a field up with a button in one row, pair `Input size="sm"` with `Button size="sm"` (both 32px), or a default Input with `Button size="lg"` (both 44px).
 
 {% demo src="input/sizes" %}
 
@@ -111,7 +111,20 @@ An input needs a name. Inside a `Field`, the `FieldLabel` provides it; on its ow
 
 ## Styling
 
-The root is `<input data-slot="input">`. It carries UI SDK's state attributes — `data-filled`, `data-disabled`, `data-readonly`, `data-required` — and, inside a `Field`, the field's `data-invalid`, `data-valid` and `data-focused`. The recipe styles focus from the native `:focus`, invalid from `aria-invalid` and disabled from `data-disabled`. Text is selectable (`select-text`), so it stays selectable inside gesture-driven surfaces. `inputVariants({ size })` returns the class list for borrowing the look.
+The root is `<input data-slot="input">`. It carries UI SDK's state attributes — `data-filled`, `data-disabled`, `data-readonly`, `data-required` — and, inside a `Field`, the field's `data-invalid`, `data-valid` and `data-focused`. The recipe styles focus from `:focus-within` (the input itself), invalid from `aria-invalid` and disabled from `data-disabled`. Text is selectable (`select-text`), so it stays selectable inside gesture-driven surfaces. `inputVariants({ size })` returns the class list for borrowing the look.
+
+### The field surface
+
+`fieldSurfaceVariants({ size })` is the filled box on its own: the `bg-input` fill, the control radius, the 32 / 44 / 50 heights, the inset primary ring while anything inside has focus, the destructive ring while invalid (`aria-invalid` on a control, `data-invalid` on a group), and the disabled dim. Every text-shaped control in the kit draws it — Input, [Textarea](https://blamy.github.io/ui/#/textarea) (with a minimum height in place of a fixed one), the [Filter](https://blamy.github.io/ui/#/filter) value editors, the date and color inputs and the select and combobox triggers — so a theme change to one reaches all of them. Put it on a group that holds a control to build your own field:
+
+```tsx
+import { fieldSurfaceVariants } from '@/components/ui/input'
+
+<div className={fieldSurfaceVariants({ size: 'sm' })}>
+  <Icon name="link" size={14} />
+  <input aria-label="URL" className="min-w-0 flex-1 bg-transparent outline-none" />
+</div>
+```
 
 ## cva recipes
 

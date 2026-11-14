@@ -1,15 +1,18 @@
 /* Shared pieces of the Issues and Pull requests lists: search toolbar, Open/Closed toggle, filter menus, rows. A row's
    title previews the issue or pull request in a hover card, and its assignees' avatars preview each person. */
 import { type ReactNode } from 'react';
+import { Avatar } from '@/components/ui/avatar';
+import { AvatarGroup } from '@/components/ui/avatar-group';
 import { Button } from '@/components/ui/button';
-import { SearchField } from '@/components/ui/search-field';
+import { SearchInput } from '@/components/ui/search-input';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
-import { ToggleGroup } from '@/components/ui/toggle-group';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { ToggleGroup } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 import { UserCard } from './cards';
 import type { Label, User } from './data';
-import { AvatarStack, Counter, LabelChip, Oct, StateIcon, ghButton, type OctName, type StateKind, type Layout, type Nav } from './parts';
+import { Counter, LabelChip, Oct, StateIcon, ghButton, type OctName, type StateKind, type Layout, type Nav } from './parts';
 import { useLoad, useRepo } from './repo-context';
 
 export function ListToolbar({ ui, nav, q, setQ, placeholder, newLabel }: { ui: Layout; nav: Nav; q: string; setQ: (q: string) => void; placeholder: string; newLabel: string }) {
@@ -17,7 +20,7 @@ export function ListToolbar({ ui, nav, q, setQ, placeholder, newLabel }: { ui: L
   const labels = useLoad(source.id + ':labels', source.labels).data;
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
-      <SearchField value={q} onValueChange={(next) => setQ(next)} placeholder={placeholder} aria-label="Search"
+      <SearchInput value={q} onValueChange={(next) => setQ(next)} placeholder={placeholder} aria-label="Search"
         className="h-8 min-w-[200px] flex-1 rounded-md border border-border bg-muted px-2 py-0 text-detail [&_input]:text-detail [&_svg]:size-4" />
       <div className="flex">
         <Button className={cn(ghButton(), 'rounded-r-none')} onClick={nav.labels}><Oct name="tag" className="text-muted-foreground" />Labels{!ui.phone && labels ? <Counter>{labels.length}</Counter> : null}</Button>
@@ -33,10 +36,10 @@ export function StateToggle({ value, onChange, open, closed, closedIcon }: {
 }) {
   /** Counts arrive separately from the rows (live: a search total); until then just the label. */
   const item = (v: 'open' | 'closed', icon: OctName, n: number | undefined, label: string) => (
-    <PlainToggleButton value={v}
+    <SdkToggle value={v}
       className="flex cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2 py-1 text-detail text-muted-foreground hover:bg-secondary data-pressed:font-semibold data-pressed:text-foreground">
       <Oct name={icon} />{n != null ? n.toLocaleString('en-US') + ' ' : ''}{label}
-    </PlainToggleButton>
+    </SdkToggle>
   );
   // One of two, always one: a ToggleGroup that can't be emptied (arrow keys move between the two).
   return (
@@ -53,10 +56,10 @@ export function FilterMenus({ ui, names, onLabel }: { ui: Layout; names: string[
   return (
     <div className="ml-auto flex items-center text-muted-foreground">
       {shown.map((n) => (
-        <PlainButton key={n} onClick={n === 'Labels' ? onLabel : undefined}
+        <SdkButton key={n} onClick={n === 'Labels' ? onLabel : undefined}
           className="flex cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-2 py-1 text-detail text-muted-foreground hover:bg-secondary hover:text-foreground">
           {n}<Oct name="chevDown" size={12} />
-        </PlainButton>
+        </SdkButton>
       ))}
     </div>
   );
@@ -70,7 +73,7 @@ export function ItemRow({ ui, state, title, labels, meta, assignees, comments, s
   onOpen?: () => void;
 }) {
   const openClass = 'cursor-pointer border-0 bg-transparent p-0 text-left text-callout leading-6 font-semibold text-foreground hover:text-primary';
-  const open = <PlainButton onClick={onOpen} className={openClass}>{title}</PlainButton>;
+  const open = <SdkButton onClick={onOpen} className={openClass}>{title}</SdkButton>;
   return (
     <div className="flex gap-2 border-t border-border px-4 py-2 first:border-t-0 hover:bg-muted">
       <StateIcon state={state} className="mt-[3px]" />
@@ -78,7 +81,7 @@ export function ItemRow({ ui, state, title, labels, meta, assignees, comments, s
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
           {preview ? (
             <HoverCard>
-              <HoverCardTrigger render={<PlainButton onClick={onOpen} className={openClass} />}>{title}</HoverCardTrigger>
+              <HoverCardTrigger render={<SdkButton onClick={onOpen} className={openClass} />}>{title}</HoverCardTrigger>
               <HoverCardContent side="bottom" align="start" className="w-80">{preview}</HoverCardContent>
             </HoverCard>
           ) : open}
@@ -89,7 +92,11 @@ export function ItemRow({ ui, state, title, labels, meta, assignees, comments, s
       </div>
       {!ui.phone ? (
         <div className="flex w-[120px] shrink-0 items-start justify-end gap-4 pt-1">
-          {assignees.length ? <AvatarStack users={assignees} card={(u) => <UserCard user={u} />} /> : null}
+          {assignees.length ? (
+            <AvatarGroup size={20} label="Assignees">
+              {assignees.map((u) => <Avatar key={u.login} name={`${u.f} ${u.l}`} src={u.avatar} card={<UserCard user={u} />} />)}
+            </AvatarGroup>
+          ) : null}
           {comments ? <span className="flex items-center gap-1 text-caption text-muted-foreground hover:text-primary"><Oct name="comment" />{comments}</span> : null}
         </div>
       ) : comments ? (

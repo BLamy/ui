@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { PlainButton as Button } from '@/components/ui/plain-button';
+import { Button } from '@ui-sdk/react/button';
 import { FloatingSheet } from '@/components/ui/floating-sheet';
 import { WorkbenchTheme } from '@/components/ui/workbench-theme';
 import { ThemeScope } from '@/lib/theme';

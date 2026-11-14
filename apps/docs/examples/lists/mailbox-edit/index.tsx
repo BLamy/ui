@@ -58,11 +58,11 @@ function MailboxEdit() {
           {mail.map((m, i) => (
             <ListRow
               key={m.id}
-              edit={editing}
+              editing={editing}
               checked={picked.has(m.id)}
-              leading={<Avatar c={m} size={36} />}
+              icon={<Avatar name={`${m.f} ${m.l}`} size={36} />}
               title={m.subject}
-              subtitle={`${m.f} ${m.l}`}
+              description={`${m.f} ${m.l}`}
               trailing={
                 <span style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
                   {m.time}
@@ -70,7 +70,7 @@ function MailboxEdit() {
               }
               divider={i < mail.length - 1}
               onClick={() => editing && toggle(m.id)}
-              onDelete={() => remove([m.id])}
+              trailingActions={[{ label: 'Delete', destructive: true, onAction: () => remove([m.id]) }]}
             />
           ))}
         </ListSection>

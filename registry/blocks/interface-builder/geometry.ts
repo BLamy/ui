@@ -55,7 +55,7 @@ export function measure(root: HTMLElement, view: Viewport): Measured {
     const k = seen.get(key) ?? 0;
     seen.set(key, k + 1);
     let r = el.getBoundingClientRect();
-    // A box that takes no space (a TabBar placing itself): measure what it draws.
+    // A box that takes no space (a tab bar placing itself): measure what it draws.
     if (!r.width && !r.height && el.firstElementChild) r = el.firstElementChild.getBoundingClientRect();
     if (!r.width && !r.height) return;
     const rect = toBoardRect(r, base, view);

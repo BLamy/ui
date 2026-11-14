@@ -5,16 +5,17 @@
    on the page. Merging isn't done here: live, the merge button opens the pull request on GitHub. */
 import { useState, type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
+import { AvatarGroup } from '@/components/ui/avatar-group';
 import { Button } from '@/components/ui/button';
 import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer';
 import { MarkdownView } from '@/components/ui/markdown-view';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Progress } from '@/components/ui/progress';
-import { TabView, TabViewBar, TabViewFooter, TabViewList, TabViewPanels } from '@/components/ui/tab-view';
+import { Tabs, TabsBar, TabsFooter, TabsList } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { CommitMessage, UserAvatar, UserCard, UserName } from './cards';
 import type { Check, FileNode, PullDetail, TimelineItem, User } from './data';
-import { AvatarStack, Box, DiffStat, DiffView, FileTree, FlowPanel, LabelChip, Oct, StatePill, UnderlineIndicator, UnderlineTab, ghButton, githubMarkdown, Branch, PR_STATE, type OctName, type Layout, type Nav } from './parts';
+import { Box, DiffStat, DiffView, FileTree, FlowPanel, LabelChip, Oct, StatePill, UnderlineIndicator, UnderlineTab, ghButton, githubMarkdown, Branch, PR_STATE, type OctName, type Layout, type Nav } from './parts';
 import { Loaded, useLoad, useRepo } from './repo-context';
 
 export type PullRequestTab = 'conversation' | 'commits' | 'checks' | 'files';
@@ -29,9 +30,9 @@ export function PullRequestView({ ui, number, nav, initialTab = 'conversation' }
   return (
     <div className={cn(ui.phone && 'px-4 py-4')}>
       {!ui.phone ? (
-        <PlainButton onClick={() => nav.openPr(null)} className="mb-3 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-detail text-primary hover:underline">
+        <SdkButton onClick={() => nav.openPr(null)} className="mb-3 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-detail text-primary hover:underline">
           <Oct name="chevLeft" size={14} />Pull requests
-        </PlainButton>
+        </SdkButton>
       ) : null}
       <Loaded load={pull}>
         {(p) => (
@@ -53,24 +54,24 @@ export function PullRequestView({ ui, number, nav, initialTab = 'conversation' }
                 <UserName user={p.author} /> {p.state === 'merged' ? 'merged' : 'wants to merge'} {p.commits} commit{p.commits === 1 ? '' : 's'} into <Branch>{p.base}</Branch> from <Branch>{p.head}</Branch>
               </span>
             </div>
-            <TabView placement="top" value={sub} onValueChange={(k) => { if (k) setSub(k); }} className="mt-2">
-              <TabViewBar variant="plain" className="overflow-x-auto border-b border-border [scrollbar-width:none]">
-                <TabViewList aria-label="Pull request" className="flex gap-1">
+            <Tabs variant="plain" value={sub} onValueChange={(k) => { if (k) setSub(k); }} className="mt-2">
+              <TabsBar className="overflow-x-auto border-b border-border [scrollbar-width:none]">
+                <TabsList aria-label="Pull request" className="flex gap-1">
                   <UnderlineTab value="conversation" icon="comment" label="Conversation" count={p.comments} />
                   <UnderlineTab value="commits" icon="commit" label="Commits" count={p.commits} />
                   <UnderlineTab value="checks" icon="checkFill" label="Checks" count={checks.data?.length} />
                   <UnderlineTab value="files" icon="file" label="Files changed" count={p.changedFiles} />
                   <UnderlineIndicator />
-                </TabViewList>
-                {!ui.phone ? <TabViewFooter className="pl-4"><DiffStat add={p.additions} del={p.deletions} /></TabViewFooter> : null}
-              </TabViewBar>
-              <TabViewPanels className="pt-6">
+                </TabsList>
+                {!ui.phone ? <TabsFooter className="pl-4"><DiffStat add={p.additions} del={p.deletions} /></TabsFooter> : null}
+              </TabsBar>
+              <div className="pt-6">
                 <FlowPanel value="conversation"><Conversation ui={ui} pr={p} checks={checks.data ?? []} /></FlowPanel>
                 <FlowPanel value="commits"><CommitList ui={ui} number={p.number} /></FlowPanel>
                 <FlowPanel value="checks"><Loaded load={checks}>{(c) => <Checks checks={c} />}</Loaded></FlowPanel>
                 <FlowPanel value="files"><FilesChanged ui={ui} number={p.number} /></FlowPanel>
-              </TabViewPanels>
-            </TabView>
+              </div>
+            </Tabs>
           </>
         )}
       </Loaded>
@@ -134,7 +135,9 @@ export function Conversation({ ui, pr, checks }: { ui: Layout; pr: PullDetail; c
           {participants.length ? (
             <div className={side}>
               <div className={sideTitle}>Participants</div>
-              <AvatarStack users={participants} size={26} card={(u) => <UserCard user={u} />} />
+              <AvatarGroup size={26} label="Participants">
+                {participants.map((u) => <Avatar key={u.login} name={`${u.f} ${u.l}`} src={u.avatar} card={<UserCard user={u} />} />)}
+              </AvatarGroup>
             </div>
           ) : null}
         </aside>
@@ -188,7 +191,7 @@ export function Thread({ ui, number, authorLogin, footer, closeLabel }: {
       </Loaded>
       {footer}
       <div className="mt-6 flex gap-4 border-t-2 border-border pt-6">
-        {!ui.phone && viewer ? <Avatar c={viewer} src={viewer.avatar} size={40} /> : null}
+        {!ui.phone && viewer ? <Avatar name={`${viewer.f} ${viewer.l}`} src={viewer.avatar} size={40} /> : null}
         <div className="min-w-0 flex-1">
           <h3 className="mt-0 mb-2 text-detail font-semibold">Add a comment</h3>
           <Composer onSubmit={send} value={draft} onValueChange={setDraft}>

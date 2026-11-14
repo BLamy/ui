@@ -1,19 +1,21 @@
 'use client';
 import {
-  createContext, memo, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore,
+  createContext, memo, useContext, useMemo, useSyncExternalStore,
   type KeyboardEventHandler, type ReactNode,
 } from 'react';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { createParts, usePart, usePrimitive, type PartProps, type PrimitiveHandle } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Icon, type IconShape } from '@/lib/icon';
 import { formatLogTime, normalizeLogLevel, type LogLevel, type LogRow, type RowId } from '@/lib/log-list-model';
 import {
   logList, type LogListActionDetails, type LogListController, type LogListExpandedChangeReason, type LogListFollowingChangeReason,
   type LogListOptions, type LogListValueChangeReason,
 } from '@/lib/log-list-primitive';
-import { selectableText } from '@/lib/primitives';
+import { dataRowLayers, selectableText } from '@/lib/primitives';
+import { useCopy } from '@/lib/use-copy';
 import { cn, cx } from '@/lib/utils';
 
 /* ══ LogList — a console for a recording: 100,000 rows, and a marker that moves through them ══
@@ -39,9 +41,11 @@ export const logListVariants = cva(
   "@container relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground after:pointer-events-none after:absolute after:inset-0 after:z-3 after:rounded-[inherit] after:shadow-hairline after:content-['']",
   {
     variants: {
-      /** Row height: `compact` (default, 24 px a line) packs the most in; `comfortable` (32 px) suits touch. */
+      /** Row height for one line: `compact` (the default, 24px) packs the most in; `default` is 28px; `comfortable`
+       *  (32px) suits touch. */
       density: {
         compact: '[--log-pad:3px]',
+        default: '[--log-pad:5px]',
         comfortable: '[--log-pad:7px]',
       },
     },
@@ -49,7 +53,7 @@ export const logListVariants = cva(
   },
 );
 
-const ROW_ESTIMATE = { compact: 24, comfortable: 32 } as const;
+const ROW_ESTIMATE = { compact: 24, default: 28, comfortable: 32 } as const;
 
 /** A plain log's mark: quiet, so warnings and errors stand out, and not a chevron, which would read as "opens". */
 const LOG_ICON: readonly IconShape[] = [{ c: [12, 12, 3.4], f: 1 }];
@@ -71,17 +75,13 @@ const LEVEL_ICONS: Record<LogLevel, ReactNode> = {
 
 const CHEVRON = <Icon name="chevron-right" size={10} sw={2.6} className="transition-transform duration-spring-snappy ease-spring-snappy group-data-expanded/row:rotate-90 motion-reduce:transition-none" />;
 
-/** A row's look. Its tint is its own background, and hover, press, current and selected share a layer over that, so
- *  a selected warning still reads as a warning. The line under a row is lighter than a list's hairline: at this density
- *  a full one rules the whole list like paper. */
+/** A row's look: the shared data-row layers (`dataRowLayers`), with its level's tint as its own background. */
 const ROW_CLASS = [
-  'group/row absolute inset-x-0 top-0 isolate flex min-w-0 cursor-default items-start gap-1.5 ps-2 pe-(--log-end) py-(--log-pad) text-caption leading-[18px] outline-none',
-  "before:absolute before:inset-0 before:-z-1 before:content-[''] hover:before:bg-foreground/4 active:before:bg-foreground/8",
-  "after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60 after:content-['']",
+  'group/row absolute inset-x-0 top-0 flex min-w-0 cursor-default items-start gap-1.5 ps-2 pe-(--log-end) py-(--log-pad) text-caption leading-[18px]',
+  dataRowLayers,
   'data-[level=warn]:bg-warning/10 data-[level=error]:bg-destructive/8 data-[level=debug]:text-muted-foreground',
   'data-current:before:bg-primary/10 data-selected:before:bg-primary/16',
   'data-future:opacity-45',
-  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
 ].join(' ');
 
 const CELL_CLASS = 'flex min-w-0 flex-1 items-start';
@@ -191,7 +191,8 @@ export interface LogListProps<T extends LogRow = LogRow>
   formatTime?: (ms: number) => string;
   /** A row's height until it's measured. Default: one line at the list's density. */
   estimatedRowHeight?: number;
-  /** Shown when there are no rows. */
+  /** Shown when there are no rows: a string is the title of a small `EmptyState` (default "No messages"), any other
+   *  node is drawn as is, and `null` shows nothing. */
   emptyState?: ReactNode;
   /** Shown after the last row, like "12 more later in the recording". */
   footer?: ReactNode;
@@ -218,9 +219,13 @@ function useLogList(): LogListHandle {
  *  keys reach it. It shows while the pointer's on that row or focus is in the list. */
 function LogListCopy({ index }: { index: number }) {
   const { api } = useLogList();
-  const [done, setDone] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => () => clearTimeout(timer.current), []);
+  // The primitive writes the row (its text, `onRowCopy`, the clipboard) and announces it, as ⌘C does; useCopy keeps the
+  // check showing for a moment.
+  const { copy, copied } = useCopy({
+    write: () => api.internal.copy(index).then((ok) => { if (!ok) throw new Error('not copied'); }),
+    announcement: '',
+  });
+  const done = copied !== null;
   return (
     <parts.Actions className="invisible absolute end-1 bottom-[calc(var(--log-pad)-2px)] z-1 group-focus-within/grid:visible group-hover/row:visible @[480px]:top-[calc(var(--log-pad)-2px)] @[480px]:bottom-auto">
       <Button
@@ -228,14 +233,7 @@ function LogListCopy({ index }: { index: number }) {
         size="icon-sm"
         aria-label={done ? 'Copied' : 'Copy this row'}
         title={done ? 'Copied' : 'Copy'}
-        onClick={() => {
-          void api.internal.copy(index).then((ok) => {
-            if (!ok) return;
-            setDone(true);
-            clearTimeout(timer.current);
-            timer.current = setTimeout(() => setDone(false), 1200);
-          });
-        }}
+        onClick={() => void copy('')}
         className="bg-card shadow-hairline hover:not-data-disabled:bg-card active:not-data-disabled:bg-secondary"
       >
         <Icon name={done ? 'check' : 'copy'} size={12} sw={2.2} className={done ? 'text-success' : undefined} />
@@ -353,7 +351,9 @@ const LogListBody = memo(function LogListBody({
               ) : null}
             </parts.Marker>
           </parts.Rows>
-          <parts.Empty className="px-3 py-6 text-center text-footnote text-muted-foreground">{emptyState ?? 'No messages'}</parts.Empty>
+          <parts.Empty>{emptyState === undefined || typeof emptyState === 'string'
+            ? <EmptyState size="sm" title={emptyState ?? 'No messages'} />
+            : emptyState}</parts.Empty>
           {footer != null ? <parts.Footer className="px-3 py-2 text-center text-caption text-muted-foreground">{footer}</parts.Footer> : null}
         </parts.Grid>
         <parts.Jump className="pointer-events-none absolute inset-x-0 z-4 flex justify-center data-[side=above]:top-2 data-[side=below]:bottom-2">

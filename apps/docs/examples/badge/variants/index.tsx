@@ -1,10 +1,11 @@
 import { Badge } from '@/components/ui/badge'
 import { Icon } from '@/lib/icon'
 
-const VARIANTS = ['default', 'secondary', 'tinted', 'outline', 'destructive', 'success'] as const
+const VARIANTS = ['default', 'secondary', 'tinted', 'outline', 'destructive', 'success', 'warning'] as const
 
 // Every variant, then the two shapes of content a badge usually carries: a
-// word and a count. An svg child is sized to 12px by the recipe.
+// word and a count, then the small size for counts in rows and tabs. An svg
+// child is sized by the recipe (12px, 10px at `sm`).
 export default function Variants() {
   return (
     <div className="mx-auto grid max-w-lg gap-5 p-2">
@@ -30,6 +31,12 @@ export default function Variants() {
         </Badge>
         <Badge>12</Badge>
         <Badge variant="secondary">99+</Badge>
+      </div>
+      <div className="flex flex-wrap items-center gap-2.5">
+        <Badge size="sm">3</Badge>
+        <Badge size="sm" variant="tinted">12</Badge>
+        <Badge size="sm" variant="secondary">128</Badge>
+        <Badge size="sm" variant="warning">Expiring</Badge>
       </div>
     </div>
   )

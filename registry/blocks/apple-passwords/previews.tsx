@@ -19,8 +19,8 @@ export function AccountPreview({ account: a }: { account: Account }) {
   const group = GROUPS.find((g) => g.id === a.group);
   return (
     <>
-      <HoverCardHeader media={<SiteTile title={a.title} color={a.color} size={40} className={cn(a.deleted && 'opacity-60 grayscale')} />}
-        title={a.title} subtitle={a.username} />
+      <HoverCardHeader icon={<SiteTile title={a.title} color={a.color} size={40} className={cn(a.deleted && 'opacity-60 grayscale')} />}
+        title={a.title} description={a.username} />
       <div className="mt-3 flex flex-col gap-0.5 text-footnote">
         {a.websites.map((w) => <span key={w} className="flex items-center gap-1.5 truncate text-foreground"><Icon name="globe" size={13} className="shrink-0 text-muted-foreground" />{w}</span>)}
       </div>
@@ -40,12 +40,12 @@ export function GroupPreview({ group: g, vault }: { group: SharedGroup; vault: V
   const n = vault.accounts.filter((a) => a.group === g.id && !a.deleted).length;
   return (
     <>
-      <HoverCardHeader media={<span className="grid size-10 place-items-center rounded-full bg-primary text-primary-foreground"><Icon name="people" size={21} /></span>}
-        title={g.name} subtitle={`${g.members.length + 1} people · ${n} ${n === 1 ? 'password' : 'passwords'}`} />
+      <HoverCardHeader icon={<span className="grid size-10 place-items-center rounded-full bg-primary text-primary-foreground"><Icon name="people" size={21} /></span>}
+        title={g.name} description={`${g.members.length + 1} people · ${n} ${n === 1 ? 'password' : 'passwords'}`} />
       <ul className="m-0 mt-3 flex list-none flex-col gap-1.5 p-0">
         <li className="flex items-center gap-2 text-footnote"><Avatar name="You" size={24} />You<span className="ml-auto text-caption text-muted-foreground">Owner</span></li>
         {g.members.map((m) => (
-          <li key={m.f + m.l} className="flex items-center gap-2 text-footnote"><Avatar c={m} size={24} />{m.f} {m.l}</li>
+          <li key={m.f + m.l} className="flex items-center gap-2 text-footnote"><Avatar name={`${m.f} ${m.l}`} size={24} />{m.f} {m.l}</li>
         ))}
       </ul>
     </>

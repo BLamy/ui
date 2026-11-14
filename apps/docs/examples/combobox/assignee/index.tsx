@@ -35,7 +35,7 @@ export default function Assignee() {
   return (
     <ThemeScope className="mx-auto grid max-w-sm gap-4">
       <Field>
-        <FieldLabel variant="field">Assignee</FieldLabel>
+        <FieldLabel>Assignee</FieldLabel>
         <Combobox
           items={people}
           value={value}
@@ -67,7 +67,7 @@ export default function Assignee() {
       </Field>
 
       <Field disabled>
-        <FieldLabel variant="field">Reviewer (locked)</FieldLabel>
+        <FieldLabel>Reviewer (locked)</FieldLabel>
         <Combobox items={[{ value: 'ana', label: 'Ana Torres' }]} defaultValue="ana">
           <ComboboxInput />
           <ComboboxContent />

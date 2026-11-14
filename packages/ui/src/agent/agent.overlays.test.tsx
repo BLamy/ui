@@ -45,7 +45,7 @@ describe('Dialog is agent-ready', () => {
             <DialogHeader><DialogTitle>Rename project</DialogTitle></DialogHeader>
             <DialogBody>
               <Field>
-                <FieldLabel variant="field">New name</FieldLabel>
+                <FieldLabel>New name</FieldLabel>
                 <Input value={draft} onValueChange={setDraft} />
               </Field>
             </DialogBody>

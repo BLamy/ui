@@ -12,7 +12,7 @@ export default function TeamList() {
   const [dnd, setDnd] = useState(true)
   return (
     <div style={{ maxWidth: 430, margin: '0 auto' }}>
-      <List inset>
+      <List variant="inset">
         <ListSection
           title="Team"
           footer="Rows are real buttons — arrow keys work too."
@@ -20,9 +20,9 @@ export default function TeamList() {
           {people.map((p) => (
             <ListRow
               key={p.l}
-              leading={<Avatar c={p} size={36} />}
+              icon={<Avatar name={`${p.f} ${p.l}`} size={36} />}
               title={`${p.f} ${p.l}`}
-              subtitle={p.role}
+              description={p.role}
               accessory="chevron"
               onClick={() => {}}
             />

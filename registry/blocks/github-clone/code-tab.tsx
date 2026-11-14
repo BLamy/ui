@@ -5,7 +5,7 @@ import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MarkdownView } from '@/components/ui/markdown-view';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { CodeEditorCopyButton } from '@/components/ui/code-editor';
 import { cn } from '@/lib/utils';
@@ -143,10 +143,10 @@ export function FileRow({ ui, icon, name, commit, when, onOpen }: { ui: Layout; 
   return (
     <div className="flex h-10 items-center gap-3 border-t border-border px-4 first:border-t-0 hover:bg-muted">
       {icon}
-      <PlainButton onClick={onOpen}
+      <SdkButton onClick={onOpen}
         className={cn('min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-detail text-foreground hover:text-primary hover:underline', ui.phone ? 'flex-1' : 'w-[34%] shrink-0')}>
         {name}
-      </PlainButton>
+      </SdkButton>
       {!ui.phone ? <span className="min-w-0 flex-1 truncate text-muted-foreground">{commit}</span> : null}
       <span className="shrink-0 text-right text-muted-foreground">{when}</span>
     </div>
@@ -220,13 +220,13 @@ export function PathView({ ui, path, nav }: { ui: Layout; path: string; nav: Nav
   const parts = path.split('/');
   const crumbs = (
     <div className="flex min-w-0 flex-wrap items-center gap-1 text-callout">
-      <PlainButton onClick={() => nav.openPath('')} className="cursor-pointer border-0 bg-transparent p-0 text-callout font-semibold text-primary hover:underline">{repo.name}</PlainButton>
+      <SdkButton onClick={() => nav.openPath('')} className="cursor-pointer border-0 bg-transparent p-0 text-callout font-semibold text-primary hover:underline">{repo.name}</SdkButton>
       {parts.map((p, i) => (
         <span key={i} className="flex items-center gap-1">
           <span className="text-tertiary-foreground">/</span>
           {i === parts.length - 1
             ? <b className="font-semibold">{p}</b>
-            : <PlainButton onClick={() => nav.openPath(parts.slice(0, i + 1).join('/'))} className="cursor-pointer border-0 bg-transparent p-0 text-callout text-primary hover:underline">{p}</PlainButton>}
+            : <SdkButton onClick={() => nav.openPath(parts.slice(0, i + 1).join('/'))} className="cursor-pointer border-0 bg-transparent p-0 text-callout text-primary hover:underline">{p}</SdkButton>}
         </span>
       ))}
       <Oct name="copy" size={14} className="ml-1 text-muted-foreground" />

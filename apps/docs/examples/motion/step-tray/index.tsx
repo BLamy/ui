@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { AnimatedHeight, ContentSwap } from '@/components/ui/animated-height'
+import { AnimatedHeight } from '@/components/ui/animated-height'
+import { Swap } from '@/components/ui/swap'
 import { Button } from '@/components/ui/button'
 import { Icon } from '@/lib/icon'
 import { useDirection } from '@/lib/motion'
@@ -63,7 +64,7 @@ function Step({ step }: { step: number }) {
   )
 }
 
-// AnimatedHeight springs the tray to fit each step; ContentSwap moves the step
+// AnimatedHeight springs the tray to fit each step; Swap moves the step
 // in the direction of travel; the button's label morphs (Continue → Confirm).
 export default function SendTray() {
   const [step, setStep] = useState(0)
@@ -95,9 +96,9 @@ export default function SendTray() {
         }
       >
         <AnimatedHeight>
-          <ContentSwap id={step} direction={dir}>
+          <Swap value={step} direction={dir}>
             <Step step={step} />
-          </ContentSwap>
+          </Swap>
         </AnimatedHeight>
         <div style={{ display: 'flex', gap: 8, padding: 16 }}>
           <Button

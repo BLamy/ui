@@ -41,7 +41,7 @@ A `DatePicker` holds the field and, anywhere inside it, the popup. Put it in a [
 
 ```tsx
 <Field>
-  <FieldLabel variant="field">Date</FieldLabel>
+  <FieldLabel>Date</FieldLabel>
   <DatePicker defaultValue="2026-09-09">
     <DatePickerField />
     <DatePickerContent />

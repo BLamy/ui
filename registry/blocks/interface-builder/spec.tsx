@@ -111,7 +111,7 @@ export interface ComponentSpec {
   events: EventSpec[];
   /** It can become the first responder (focus). */
   focusable?: boolean;
-  /** Positions itself against the scene (a TabBar sits at the bottom): its box takes no space. */
+  /** Positions itself against the scene (a tab bar sits at the bottom): its box takes no space. */
   float?: boolean;
   /** Fills the whole screen, under the status bar (a NavigationStack). */
   screen?: boolean;

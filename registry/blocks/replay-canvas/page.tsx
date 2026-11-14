@@ -13,7 +13,7 @@ import { getReplayMeta, type ReplayEvent } from '@/components/ui/replay-preview'
 import { createCanvasController } from '@/components/ui/canvas';
 import { unionRect, type Rect, type Viewport } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { BLProvider, useAppearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -205,12 +205,12 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
           </p>
           <div className="flex-1" />
           {following && (
-            <PlainButton aria-label={`Stop following ${following.name}`} onClick={() => setJourney(null)}
+            <SdkButton aria-label={`Stop following ${following.name}`} onClick={() => setJourney(null)}
               className="mr-1 flex max-w-64 cursor-pointer items-center gap-1.5 rounded-full border-0 bg-secondary py-1 pr-1.5 pl-2.5 text-footnote text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
               <span className="size-2.5 shrink-0 rounded-full" style={{ background: following.color }} />
               <span className="truncate">Following {following.name}</span>
               <Icon name="xmark" size={11} sw={2.2} className="shrink-0 text-muted-foreground" />
-            </PlainButton>
+            </SdkButton>
           )}
           <ToolToggle icon="arrow-up-right" label={showArrows ? 'Hide arrows (dots stay; select one to see its arrow)' : 'Show arrows'} pressed={showArrows} onPressedChange={setShowArrows} />
           <ToolToggle icon="xmark-circle" label={showDismiss ? 'Hide dismissals' : 'Show dismissals'} pressed={showDismiss} onPressedChange={setShowDismiss} />

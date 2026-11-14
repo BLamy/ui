@@ -6,13 +6,13 @@
    Sign-ins go through the tailnet when this tab is on Tailscale with an exit node, else the CORS proxy (tailnet.ts).
    Nothing here prompts by itself: a locked vault stays locked until `unlock()` runs from a press. */
 import { useMemo, useState, type ReactNode } from 'react';
-import { PasskeyEnrollDialog } from '@/components/ui/passkey-enroll-dialog';
+import { VaultEnrollDialog } from '@/components/ui/vault-gate';
 import type { Tailscale } from '@/lib/tailscale';
 import { TailscaleProvider, useOptionalTailscale } from '@/lib/tailscale-react';
 import type { Vault as PasskeyVault } from '@/lib/vault';
 import { VaultProvider } from '@/lib/vault-react';
 import { createDeviceAuth, type DeviceAuth, type DeviceGrant, type ServiceId } from './device-auth';
-import { SignInCredenza } from './sign-in';
+import { SignInDialog } from './sign-in';
 import { SignInsProvider, useOptionalSignIns, useSignInStore, type SignInCheck } from './sign-ins';
 import { passwordsTailnetOptions, tailnetOrProxy } from './tailnet';
 
@@ -56,9 +56,9 @@ function Keychain({ children, auth: authProp, protects = 'the developer sign-in 
   return (
     <SignInsProvider value={{ ...store, signIn: setSignIn, savePasskey }}>
       {children}
-      <SignInCredenza service={signIn} auth={auth} live onClose={() => setSignIn(null)}
+      <SignInDialog service={signIn} auth={auth} live onClose={() => setSignIn(null)}
         onSaved={(id: ServiceId, grant: DeviceGrant) => store.store(id, grant)} onSavePasskey={savePasskey} />
-      <PasskeyEnrollDialog open={enrolling} onOpenChange={setEnrolling} appName="Passwords" protects={protects} />
+      <VaultEnrollDialog open={enrolling} onOpenChange={setEnrolling} appName="Passwords" protects={protects} />
     </SignInsProvider>
   );
 }

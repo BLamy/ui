@@ -44,7 +44,7 @@ import {
     </NavigationStackBar>
     <NavigationStackContent>
       <NavigationStackLargeTitle />
-      <NavigationStackSubheader><SearchField /></NavigationStackSubheader>
+      <NavigationStackSubheader><SearchInput /></NavigationStackSubheader>
       <ContactList />
     </NavigationStackContent>
   </NavigationStackPage>
@@ -91,14 +91,14 @@ Titles travel between pages. On push the previous page's title — its large tit
 
 ## Chrome that gets out of the way
 
-Scrolling down slides the nav bar (and any `<TabBar>` in the tree) away; scrolling up — or reaching the top — brings both back. Sticky section headers ride along, because they read their offset from the same source.
+Scrolling down slides the nav bar (and any `Tabs` bar in the tree) away; scrolling up — or reaching the top — brings both back. Sticky section headers ride along, because they read their offset from the same source.
 
 ```jsx
 <NavigationStackBar hideOnScroll={false}>   {/* opt out per page; default is true */}
   <NavigationStackTitle>Contacts</NavigationStackTitle>
 </NavigationStackBar>
 
-<TabBar items={tabs} hideOnScroll={false}/>   // or keep the tab bar pinned
+<TabsBar hideOnScroll={false}>…</TabsBar>   // or keep the tab bar pinned
 ```
 
 The two are coordinated through the kit's chrome state, so a tab bar mounted three containers away still follows the page on top of the stack. Read it yourself with `useChromeHidden()`, or listen with the stack's `onBarHiddenChange`.

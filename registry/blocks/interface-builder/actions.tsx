@@ -2,7 +2,7 @@
    Interface Builder way and shows the line of React it becomes; press it to edit it. Add one from the menu. */
 import { useState } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuGroupLabel, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { ChoiceInput, ExprInput, Field, IconAction, TextInput } from './fields';
@@ -139,7 +139,7 @@ export function ActionList({ actions, onChange, c, empty = 'No actions' }: { act
           {actions.map((a, i) => (
             <li key={a.id} className={cn('rounded-lg bg-secondary/70', open === a.id && 'bg-secondary')}>
               <div className="flex items-center gap-1 pr-1">
-                <PlainButton
+                <SdkButton
                   aria-expanded={open === a.id}
                   aria-label={`${summary(a, c)}. Edit`}
                   onClick={() => setOpen(open === a.id ? null : a.id)}
@@ -151,7 +151,7 @@ export function ActionList({ actions, onChange, c, empty = 'No actions' }: { act
                     {a.if ? <span className="truncate font-mono text-caption2 text-warning">if {a.if}</span> : null}
                     <span className="truncate font-mono text-caption2 text-muted-foreground">{actionCode(a, c)}</span>
                   </span>
-                </PlainButton>
+                </SdkButton>
                 {actions.length > 1 ? (
                   <>
                     <IconAction icon="chevron-up" label="Move up" onClick={() => move(i, -1)} />

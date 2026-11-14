@@ -15,8 +15,9 @@ export const labelVariants = cva('inline-flex items-center group-data-disabled:o
   variants: {
     variant: {
       default: 'gap-1.5 text-subhead font-medium text-foreground',
-      /** iOS grouped-form header: small, secondary, sits above a field. */
-      field: 'gap-1.5 px-1 text-footnote font-medium text-muted-foreground',
+      /** iOS grouped-form header: small, secondary, sits above a field. FieldLabel's default. The secondary color is
+          the foreground at 70%: `text-muted-foreground` is below WCAG AA (4.5:1) on the grouped grey surfaces. */
+      field: 'gap-1.5 px-1 text-footnote font-medium text-foreground/70',
       /** A checkbox, radio or switch and its text, wrapped together: the whole line presses the control, and
           dims with it when it is disabled. */
       control: 'cursor-pointer gap-3 text-body text-foreground has-data-disabled:cursor-default has-data-disabled:text-foreground/40',

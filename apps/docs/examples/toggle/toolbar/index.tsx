@@ -3,7 +3,8 @@ import { Toggle, ToggleIcon } from '@/components/ui/toggle'
 import { Icon } from '@/lib/icon'
 
 // Toggle is a two-state button (aria-pressed). Icon-only toggles need an
-// aria-label; `variant` sets the resting look, `size` the height.
+// aria-label; `variant` sets the resting look, `size` the height. `quiet` with
+// `size="icon-sm"` is the toolbar tool, filled while it is on.
 export default function Toolbar() {
   const [pinned, setPinned] = useState(false)
   return (
@@ -20,6 +21,14 @@ export default function Toolbar() {
         </Toggle>
         <Toggle variant="outline" disabled aria-label="Locked">
           <Icon name="lock" size={16} />
+        </Toggle>
+      </div>
+      <div className="flex items-center gap-1">
+        <Toggle variant="quiet" size="icon-sm" aria-label="Bookmark" defaultPressed>
+          <Icon name="bookmark" size={18} sw={1.7} />
+        </Toggle>
+        <Toggle variant="quiet" size="icon-sm" aria-label="Show sidebar">
+          <Icon name="sidebar-left" size={18} sw={1.7} />
         </Toggle>
       </div>
       <div className="flex items-center gap-2">

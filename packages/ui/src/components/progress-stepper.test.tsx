@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { ProgressStepper } from '@/components/ui/progress-stepper';
+import { ProgressStep, ProgressStepDescription, ProgressStepIcon, ProgressStepLabel, ProgressStepper, ProgressStepTrack } from '@/components/ui/progress-stepper';
 
 (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
 afterEach(cleanup);
@@ -17,7 +17,7 @@ describe('ProgressStepper', () => {
     render(<ProgressStepper steps={steps} current={1} />);
     const list = screen.getByRole('list', { name: 'Progress' });
     const items = Array.from(list.querySelectorAll('li'));
-    expect(items.map((li) => li.getAttribute('data-state'))).toEqual(['done', 'active', 'todo']);
+    expect(items.map((li) => li.getAttribute('data-state'))).toEqual(['complete', 'current', 'upcoming']);
     expect(items[1].getAttribute('aria-current')).toBe('step');
   });
 
@@ -33,5 +33,55 @@ describe('ProgressStepper', () => {
     const deploy = screen.getByRole('list', { name: 'Deploy' });
     expect(deploy.hasAttribute('aria-label')).toBe(false);
     expect(deploy.getAttribute('data-testid')).toBe('deploy');
+  });
+
+  it('says which steps are completed, and marks them with a check', () => {
+    render(<ProgressStepper steps={steps.map((s) => ({ ...s, icon: <i /> }))} current={2} />);
+    const items = screen.getAllByRole('listitem');
+    expect(items[0].textContent).toBe('Ordered, completed');
+    expect(items[2].textContent).toBe('Delivered');
+    expect(items[0].querySelector('[data-slot="progress-step-check"]')).not.toBeNull();
+    expect(items[2].querySelector('[data-slot="progress-step-check"]')).toBeNull();
+  });
+
+  it('marks every step complete when current is the step count', () => {
+    render(<ProgressStepper steps={steps} current={3} />);
+    const items = screen.getAllByRole('listitem');
+    expect(items.map((li) => li.getAttribute('data-state'))).toEqual(['complete', 'complete', 'complete']);
+    expect(items.some((li) => li.hasAttribute('aria-current'))).toBe(false);
+  });
+
+  it('builds each segment on the Progress rail', () => {
+    const { container } = render(<ProgressStepper steps={steps} current={1} />);
+    const track = container.querySelector('[data-slot="progress-step-track"]')!;
+    expect(track.className).toContain('rounded-full');
+    expect(track.className).toContain('h-1');
+  });
+
+  it('takes parts: a description, a class and a marker of its own per step', () => {
+    render(
+      <ProgressStepper current={1} labels aria-label="Order">
+        <ProgressStep label="Placed" description="12:04" className="placed" />
+        <ProgressStep data-testid="custom">
+          <ProgressStepIcon><b data-testid="marker" /></ProgressStepIcon>
+          <ProgressStepTrack />
+          <ProgressStepLabel>Preparing</ProgressStepLabel>
+          <ProgressStepDescription>About 8 min</ProgressStepDescription>
+        </ProgressStep>
+        <ProgressStep label="Ready" />
+      </ProgressStepper>,
+    );
+    const items = screen.getAllByRole('listitem');
+    expect(items.map((li) => li.getAttribute('data-state'))).toEqual(['complete', 'current', 'upcoming']);
+    expect(items[0].className).toContain('placed');
+    expect(items[0].querySelector('[data-slot="progress-step-description"]')!.textContent).toBe('12:04');
+    expect(screen.getByTestId('custom').getAttribute('aria-current')).toBe('step');
+    expect(screen.getByTestId('marker')).toBeTruthy();
+    expect(items[1].querySelector('[data-slot="progress-step-label"]')!.className).not.toContain('sr-only');
+  });
+
+  it('keeps labels for screen readers only unless asked to show them', () => {
+    const { container } = render(<ProgressStepper steps={steps} current={0} />);
+    expect(container.querySelector('[data-slot="progress-step-label"]')!.className).toContain('sr-only');
   });
 });

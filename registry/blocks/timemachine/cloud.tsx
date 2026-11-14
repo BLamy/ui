@@ -2,7 +2,7 @@
    (Rivet), which syncs them live and lets another device watch them. */
 import { useState, type ReactNode } from 'react';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
 import { useSessionCloud } from '@/lib/session-recorder';
@@ -14,7 +14,7 @@ import { timeLabel } from './format';
 function Setting({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
     <Field className="gap-1">
-      <FieldLabel className="text-footnote">{label}</FieldLabel>
+      <FieldLabel variant="default" className="text-footnote">{label}</FieldLabel>
       {children}
       {hint ? <FieldDescription className="px-0 text-caption leading-normal">{hint}</FieldDescription> : null}
     </Field>
@@ -60,13 +60,13 @@ export function CloudPanel() {
           <Setting label="Stream prefix" hint="Keeps this computer’s streams apart from others on the same server.">
             <Input className={input} value={prefix} onValueChange={setPrefix} placeholder="my-mac" spellCheck={false} autoCapitalize="off" />
           </Setting>
-          <PlainButton
+          <SdkButton
             onClick={() => save(!on)}
             disabled={!on && !url.trim()}
             className={cn('h-9 cursor-pointer rounded-ctl border-0 px-3 text-detail font-semibold data-disabled:opacity-40', on ? 'bg-secondary text-foreground hover:bg-secondary-strong' : 'bg-primary text-primary-foreground')}
           >
             {on ? 'Stop syncing' : 'Turn on Cloud sync'}
-          </PlainButton>
+          </SdkButton>
           {on ? (
             <div role="status" className="flex items-start gap-2 rounded-ctl bg-secondary px-3 py-2 text-footnote">
               <span aria-hidden="true" className={cn('mt-1 size-2 shrink-0 rounded-full', status.state === 'error' ? 'bg-destructive' : status.state === 'offline' ? 'bg-warning' : 'bg-success')} />

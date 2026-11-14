@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Textarea } from '@ui-sdk/react/textarea';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { PlainToggleButton } from '@/components/ui/plain-button';
+import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
 import { IndexBar } from '@/components/ui/index-bar';
 import { SplitViewHeader, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
@@ -321,15 +321,16 @@ export function ThreadContent({ codex }: { codex: CodexState }) {
             >
               <Icon name="ellipsis" size={17} sw={1.7} />
             </Button>
-            <PlainToggleButton
+            <Toggle
               pressed={panel}
               onPressedChange={setPanel}
               aria-label="Thread panel"
               title="Thread panel"
-              className={buttonVariants({ variant: 'quiet', size: 'icon-sm' })}
+              variant="quiet"
+              size="icon-sm"
             >
               <Icon name="sidebar-right" size={17} sw={1.7} />
-            </PlainToggleButton>
+            </Toggle>
           </>
         }
       />

@@ -343,7 +343,7 @@ export interface PullRequest {
 }
 export const PULL_REQUESTS: PullRequest[] = [
   { number: 412, title: 'Spring the composer between centre and dock', branch: 'composer-fly', author: 'blamy' },
-  { number: 409, title: 'Haptics: probe the TabView rail', branch: 'haptics-probe', author: 'blamy' },
+  { number: 409, title: 'Haptics: probe the Tabs rail', branch: 'haptics-probe', author: 'blamy' },
   { number: 405, title: 'Credenza height morph without layout thrash', branch: 'credenza-morph', author: 'nat' },
   { number: 398, title: 'Detached dev servers survive tool timeouts', branch: 'detached-servers', author: 'blamy' },
 ];

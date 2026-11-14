@@ -81,7 +81,7 @@ export interface FloatingChatProps {
   composing?: boolean;
   /** The composer showing or hiding while `working`. Call `details.cancel()` to keep it as it is. */
   onComposingChange?: (composing: boolean, details: FloatingChatComposingChangeDetails) => void;
-  /** Follow NavigationStack/List scroll chrome, like TabBar. */
+  /** Follow NavigationStack/List scroll chrome, like the `Tabs` bar. */
   hideOnScroll?: boolean;
   /** A scroller whose direction also hides and restores the floating composer. */
   scrollRef?: RefObject<HTMLElement | null>;

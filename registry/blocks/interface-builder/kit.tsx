@@ -6,7 +6,8 @@
 import { cloneElement, createContext, use, type ComponentType, type ReactElement, type ReactNode } from 'react';
 import { mergeProps } from '@ui-sdk/react/primitive';
 import { AnimatedHeight } from '@/components/ui/animated-height';
-import { Avatar, AvatarGroup, type AvatarStatus } from '@/components/ui/avatar';
+import { Avatar, type AvatarStatus } from '@/components/ui/avatar';
+import { AvatarGroup } from '@/components/ui/avatar-group';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
@@ -30,9 +31,9 @@ import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/compone
 import { Progress } from '@/components/ui/progress';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import { ProgressStepper } from '@/components/ui/progress-stepper';
-import { QRSvg } from '@/components/ui/qr-svg';
+import { QRCode } from '@/components/ui/qr-code';
 import { Radio, RadioGroup } from '@/components/ui/radio-group';
-import { SearchField } from '@/components/ui/search-field';
+import { SearchInput } from '@/components/ui/search-input';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Select, SelectContent, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -41,18 +42,16 @@ import { Slider } from '@/components/ui/slider';
 import { Spinner, spinnerAnimations, type SpinnerAnimation } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { CodeEditor } from '@/components/ui/code-editor';
-import { TabBar } from '@/components/ui/tab-bar';
-import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs';
+import { Tabs, TabsBar, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { TextMorph } from '@/components/ui/text-morph';
-import { Toggle } from '@/components/ui/toggle';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Toggle, ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Icon } from '@/lib/icon';
 import { springs, type SpringName } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { cssColor, newId, type Node } from './model';
-import { NavStackHost, SceneRefHost, SplitViewHost, TabViewHost } from './hosts';
+import { NavStackHost, SceneRefHost, SplitViewHost, TabsScreenHost } from './hosts';
 import { itemsOf, num, q, str, textClass, textStyleOptions, values, type CodeArgs, type ComponentSpec, type ItemEntry } from './spec';
 
 const pick = <T extends string>(v: unknown, options: readonly T[], d: T): T => (options.includes(v as T) ? (v as T) : d);
@@ -105,7 +104,7 @@ function Labelled({ label, children }: { label: unknown; children: ReactNode }) 
   if (!label) return <>{children}</>;
   return (
     <Field className="min-w-0">
-      <FieldLabel variant="field">{str(label)}</FieldLabel>
+      <FieldLabel>{str(label)}</FieldLabel>
       {children}
     </Field>
   );
@@ -137,7 +136,7 @@ const fieldCode = (g: CodeArgs, control: string, attrs = '', extra: string[] = [
   const t = g.text('label');
   if (!t && !attrs && !extra.length) return control;
   parts(g, '@/components/ui/field', 'Field', ...(t ? ['FieldLabel'] : []));
-  return `<Field${attrs}>${t ? `\n  <FieldLabel variant="field">${t}</FieldLabel>` : ''}\n  ${nest(control)}${extra.map((x) => `\n  ${x}`).join('')}\n</Field>`;
+  return `<Field${attrs}>${t ? `\n  <FieldLabel>${t}</FieldLabel>` : ''}\n  ${nest(control)}${extra.map((x) => `\n  ${x}`).join('')}\n</Field>`;
 };
 
 const text = (name = 'children', d = '', label?: string) => ({ name, label, control: { kind: 'text' as const }, default: d });
@@ -201,7 +200,7 @@ export const KIT: Record<string, ComponentSpec> = {
   ToggleGroup: {
     type: 'ToggleGroup', title: 'ToggleGroup', section: 'Buttons and toggles', source: 'kit', icon: 'rectangle-split',
     description: "UI SDK's ToggleGroup with single or multiple selection, roving arrow-key focus, and filled, outline and default looks.",
-    module: '@/components/ui/toggle-group', tag: 'ToggleGroup', uses: ['@/components/ui/toggle-group|ToggleGroupItem'], focusable: true,
+    module: '@/components/ui/toggle', tag: 'ToggleGroup', uses: ['@/components/ui/toggle|ToggleGroupItem'], focusable: true,
     props: [
       { name: 'items', control: { kind: 'items' }, default: 'List, Grid, Board', part: '<ToggleGroupItem>s' },
       { name: 'value', label: 'pressed', control: { kind: 'text' }, default: 'Grid', twoWay: 'onValueChange', help: 'An item, or several separated by commas' },
@@ -230,7 +229,7 @@ export const KIT: Record<string, ComponentSpec> = {
       );
     },
     code: (g) => {
-      parts(g, '@/components/ui/toggle-group', 'ToggleGroup', 'ToggleGroupItem');
+      parts(g, '@/components/ui/toggle', 'ToggleGroup', 'ToggleGroupItem');
       const multiple = g.expr('multiple') === 'true';
       const items = listCode(g, 'items', (it, v) => `<ToggleGroupItem key=${it ? q(it.id) : `{${field(it, v, 'id')}}`} value={${field(it, v, 'id')}}>{${field(it, v, 'label')}}</ToggleGroupItem>`, '\n  ');
       return `<ToggleGroup aria-label={${g.expr('aria-label')}}${multiple ? ' multiple' : ' deselectable={false}'}${g.attr('variant')} value={String(${g.expr('value')}).split(', ')}${g.on('onValueChange', (v) => `${v}.join(', ')`)}>\n  ${items}\n</ToggleGroup>`;
@@ -244,7 +243,7 @@ export const KIT: Record<string, ComponentSpec> = {
     module: '@/components/ui/field', tag: 'Field', focusable: true,
     uses: ['@/components/ui/field|FieldLabel', '@/components/ui/input|Input', '@/components/ui/field|FieldDescription'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Label', part: '<FieldLabel variant="field">' },
+      { name: 'label', control: { kind: 'text' }, default: 'Label', part: '<FieldLabel>' },
       { name: 'placeholder', control: { kind: 'text' }, default: '', part: '<Input placeholder>' },
       { name: 'value', control: { kind: 'text' }, default: '', twoWay: 'onValueChange', part: '<Input value>' },
       { name: 'type', control: { kind: 'enum', options: values('text', 'email', 'password', 'tel', 'url', 'search') }, default: 'text', part: '<Input type>' },
@@ -261,7 +260,7 @@ export const KIT: Record<string, ComponentSpec> = {
       const name = p.label ? undefined : str(p.placeholder, 'Text field');
       return (
         <Field invalid={p.invalid ? true : undefined} disabled={!!p.disabled} className="min-w-0">
-          {p.label ? <FieldLabel variant="field">{str(p.label)}</FieldLabel> : null}
+          {p.label ? <FieldLabel>{str(p.label)}</FieldLabel> : null}
           {p.multiline
             ? <Textarea value={str(p.value)} onValueChange={(v) => on.onValueChange?.(v)} required={!!p.required} placeholder={str(p.placeholder)} aria-label={name} submitShortcut="mod+enter" onSubmit={(v) => on.onSubmit?.(v)} />
             : <Input type={str(p.type, 'text')} value={str(p.value)} onValueChange={(v) => on.onValueChange?.(v)} required={!!p.required} placeholder={str(p.placeholder)} aria-label={name} onKeyDown={(e) => { if (e.key === 'Enter') on.onSubmit?.(str(p.value)); }} />}
@@ -284,20 +283,20 @@ export const KIT: Record<string, ComponentSpec> = {
       if (label) g.use('@/components/ui/field', 'FieldLabel');
       const invalid = g.attr('invalid');
       const control = `<${input}${multiline ? '' : g.attr('type')} value={${g.expr('value')}}${g.on('onValueChange')}${g.attr('required')}${g.attr('placeholder')}${keys} />`;
-      return `<Field${invalid ? ` invalid={${g.expr('invalid')} || undefined}` : ''}${g.attr('disabled')}>${label ? `\n  <FieldLabel variant="field">${label}</FieldLabel>` : ''}\n  ${control}${extra.map((x) => `\n  ${x}`).join('')}\n</Field>`;
+      return `<Field${invalid ? ` invalid={${g.expr('invalid')} || undefined}` : ''}${g.attr('disabled')}>${label ? `\n  <FieldLabel>${label}</FieldLabel>` : ''}\n  ${control}${extra.map((x) => `\n  ${x}`).join('')}\n</Field>`;
     },
   },
-  SearchField: {
-    type: 'SearchField', title: 'SearchField', section: 'Forms and inputs', source: 'kit', icon: 'magnifyingglass',
+  SearchInput: {
+    type: 'SearchInput', title: 'SearchInput', section: 'Forms and inputs', source: 'kit', icon: 'magnifyingglass',
     description: "iOS search field on UI SDK's Input: magnifier, clear button, Esc to clear, controlled or uncontrolled.",
-    module: '@/components/ui/search-field', tag: 'SearchField', focusable: true,
+    module: '@/components/ui/search-input', tag: 'SearchInput', focusable: true,
     props: [
       { name: 'value', control: { kind: 'text' }, default: '', twoWay: 'onValueChange' },
       { name: 'placeholder', control: { kind: 'text' }, default: 'Search' },
     ],
     events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the query' }, { name: 'onSubmit', label: 'onSubmit', value: 'the query' }],
     layout: { width: 'fill' },
-    render: ({ p, on }) => <SearchField value={str(p.value)} onValueChange={(v) => on.onValueChange?.(v)} onSubmit={(v) => on.onSubmit?.(v)} placeholder={str(p.placeholder, 'Search')} aria-label={str(p.placeholder, 'Search')} />,
+    render: ({ p, on }) => <SearchInput value={str(p.value)} onValueChange={(v) => on.onValueChange?.(v)} onSubmit={(v) => on.onSubmit?.(v)} placeholder={str(p.placeholder, 'Search')} aria-label={str(p.placeholder, 'Search')} />,
   },
   Checkbox: {
     type: 'Checkbox', title: 'Checkbox', section: 'Forms and inputs', source: 'kit', icon: 'checkmark-circle',
@@ -330,7 +329,7 @@ export const KIT: Record<string, ComponentSpec> = {
     description: "UI SDK's RadioGroup and Radio: round radios with arrow-key selection, vertical or horizontal, each in a Label with its text.",
     module: '@/components/ui/radio-group', tag: 'RadioGroup', focusable: true, uses: ['@/components/ui/radio-group|Radio', '@/components/ui/label|Label', '@/components/ui/field|FieldLabel'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Plan', part: '<FieldLabel variant="field">' },
+      { name: 'label', control: { kind: 'text' }, default: 'Plan', part: '<FieldLabel>' },
       { name: 'items', control: { kind: 'items' }, default: 'Free, Pro, Team', part: '<Radio>s' },
       { name: 'value', control: { kind: 'text' }, default: 'Pro', twoWay: 'onValueChange' },
       { name: 'orientation', control: { kind: 'enum', options: values('vertical', 'horizontal') }, default: 'vertical' },
@@ -428,7 +427,7 @@ export const KIT: Record<string, ComponentSpec> = {
     module: '@/components/ui/select', tag: 'Select', focusable: true,
     uses: ['@/components/ui/field|FieldLabel', '@/components/ui/select|SelectTrigger', '@/components/ui/select|SelectContent'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Repeat', part: '<FieldLabel variant="field">' },
+      { name: 'label', control: { kind: 'text' }, default: 'Repeat', part: '<FieldLabel>' },
       { name: 'items', control: { kind: 'items' }, default: 'Never, Every day, Every week, Every month', part: 'items' },
       { name: 'value', control: { kind: 'text' }, default: 'Every week', twoWay: 'onValueChange' },
       { name: 'placeholder', control: { kind: 'text' }, default: 'Choose…' },
@@ -457,7 +456,7 @@ export const KIT: Record<string, ComponentSpec> = {
     module: '@/components/ui/combobox', tag: 'Combobox', focusable: true,
     uses: ['@/components/ui/field|FieldLabel', '@/components/ui/combobox|ComboboxInput', '@/components/ui/combobox|ComboboxContent', '@/components/ui/combobox|ComboboxList'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Assignee', part: '<FieldLabel variant="field">' },
+      { name: 'label', control: { kind: 'text' }, default: 'Assignee', part: '<FieldLabel>' },
       { name: 'items', control: { kind: 'items' }, default: 'Ana Torres, Kim Park, Lee Chen, Maya Okafor', part: 'items' },
       { name: 'value', control: { kind: 'text' }, default: '', twoWay: 'onValueChange' },
       { name: 'placeholder', control: { kind: 'text' }, default: 'Search the team', part: '<ComboboxInput placeholder>' },
@@ -485,7 +484,7 @@ export const KIT: Record<string, ComponentSpec> = {
     description: "Segmented date and time fields: UI SDK's Date Input and Time Input, each part of the value its own spin button, in the filled iOS field. Values are ISO strings; a Field gives it a label, description and error.",
     module: '@/components/ui/date-field', tag: 'DateField', focusable: true, uses: ['@/components/ui/field|FieldLabel'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Birthday', part: '<FieldLabel variant="field">' },
+      { name: 'label', control: { kind: 'text' }, default: 'Birthday', part: '<FieldLabel>' },
       { name: 'value', control: { kind: 'date' }, default: '2026-10-04', twoWay: 'onValueChange', help: 'An ISO date' },
       { name: 'size', control: { kind: 'enum', options: values('default', 'sm', 'lg') }, default: 'default' },
       { name: 'disabled', control: { kind: 'boolean' }, default: false },
@@ -508,7 +507,7 @@ export const KIT: Record<string, ComponentSpec> = {
     module: '@/components/ui/date-picker', tag: 'DatePicker', focusable: true,
     uses: ['@/components/ui/field|FieldLabel', '@/components/ui/date-picker|DatePickerField', '@/components/ui/date-picker|DatePickerContent'],
     props: [
-      { name: 'label', control: { kind: 'text' }, default: 'Date', part: '<FieldLabel variant="field">' },
+      { name: 'label', control: { kind: 'text' }, default: 'Date', part: '<FieldLabel>' },
       { name: 'value', control: { kind: 'date' }, default: '2026-10-04', twoWay: 'onValueChange' },
       { name: 'size', control: { kind: 'enum', options: values('default', 'sm', 'lg') }, default: 'default', part: '<DatePickerField size>' },
       { name: 'disabled', control: { kind: 'boolean' }, default: false },
@@ -722,7 +721,7 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   ProgressStepper: {
     type: 'ProgressStepper', title: 'ProgressStepper', section: 'Feedback and status', source: 'kit', icon: 'checklist',
-    description: 'A row of milestones for a multi-step process, as filling bars or a joined line, with done, active and to-do states.',
+    description: 'A row of milestones for a multi-step process, as filling bars or a joined line, with complete, current and upcoming states.',
     module: '@/components/ui/progress-stepper', tag: 'ProgressStepper',
     props: [
       { name: 'steps', control: { kind: 'items', icons: true }, default: 'Cart:cart, Address:house, Payment:wallet, Done:checkmark' },
@@ -754,18 +753,18 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   Spinner: {
     type: 'Spinner', title: 'Spinner', section: 'Feedback and status', source: 'kit', icon: 'arrow-clockwise',
-    description: 'Loading indicators: the iOS activity indicator (eight fading spokes in discrete steps, the default) and twenty-two CSS loaders with three variants each. They draw in currentColor, scale to any size, take a speed, pause themselves off screen, and hold still under reduced motion.',
+    description: 'Loading indicators: the iOS activity indicator (eight fading spokes in discrete steps, the default) and twenty-two CSS loaders with three patterns each. They draw in currentColor, scale to any size, take a speed, animate unless paused, pause themselves off screen, and hold still under reduced motion.',
     module: '@/components/ui/spinner', tag: 'Spinner',
     props: [
       { name: 'animation', control: { kind: 'enum', options: values(...SPINNERS) }, default: 'ios' },
       { name: 'size', control: { kind: 'number', min: 12, max: 160, step: 1, unit: 'px' }, default: 28 },
       { name: 'speed', control: { kind: 'number', min: 0.25, max: 3, step: 0.05 }, default: 1 },
-      { name: 'spin', control: { kind: 'boolean' }, default: true },
+      { name: 'paused', control: { kind: 'boolean' }, default: false },
       { name: 'label', control: { kind: 'text' }, default: 'Loading' },
     ],
     events: [],
     layout: { width: 'fit' },
-    render: ({ p }) => <Spinner animation={pick(p.animation, SPINNERS, 'ios') as SpinnerAnimation} size={num(p.size, 28)} speed={num(p.speed, 1)} spin={!!p.spin} label={p.label ? str(p.label) : undefined} />,
+    render: ({ p }) => <Spinner animation={pick(p.animation, SPINNERS, 'ios') as SpinnerAnimation} size={num(p.size, 28)} speed={num(p.speed, 1)} paused={!!p.paused} label={p.label ? str(p.label) : undefined} />,
   },
   Skeleton: {
     type: 'Skeleton', title: 'Skeleton', section: 'Feedback and status', source: 'kit', icon: 'rectangle-split',
@@ -807,11 +806,11 @@ export const KIT: Record<string, ComponentSpec> = {
     type: 'List', title: 'List', section: 'Lists and content', source: 'kit', icon: 'list',
     description: 'Inset-grouped and plain lists with rows, sections, swipe actions and an A-Z IndexBar.',
     module: '@/components/ui/list', tag: 'List', container: 'component',
-    props: [{ name: 'inset', control: { kind: 'boolean' }, default: false }],
+    props: [{ name: 'variant', control: { kind: 'enum', options: values('plain', 'inset') }, default: 'plain' }],
     events: [],
     layout: { axis: 'vertical', width: 'fill' },
     make: () => ({ children: [listSection('Section', ['First', 'Second', 'Third'])] }),
-    render: ({ p, children }) => <List inset={!!p.inset}>{children}</List>,
+    render: ({ p, children }) => <List variant={pick(p.variant, ['plain', 'inset'] as const, 'plain')}>{children}</List>,
   },
   ListSection: {
     type: 'ListSection', title: 'ListSection', section: 'Lists and content', source: 'kit', icon: 'list',
@@ -828,16 +827,16 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   ListRow: {
     type: 'ListRow', title: 'ListRow', section: 'Lists and content', source: 'kit', icon: 'line-3-horizontal', focusable: true,
-    description: 'A row: a title, a subtitle, a trailing value and an accessory (chevron or check), with a leading view; swipe actions; pressable when it has an onClick.',
+    description: 'A row: an icon, a title, a description, a trailing value and an accessory (chevron or check); swipe actions; pressable when it has an onClick.',
     module: '@/components/ui/list', tag: 'ListRow',
-    slots: [{ name: 'leading', label: 'leading' }, { name: 'accessory', label: 'accessory (a control)' }],
+    slots: [{ name: 'icon', label: 'icon' }, { name: 'accessory', label: 'accessory (a control)' }],
     props: [
       { name: 'title', control: { kind: 'text' }, default: 'Title' },
-      { name: 'subtitle', control: { kind: 'text' }, default: '' },
+      { name: 'description', control: { kind: 'text' }, default: '' },
       { name: 'trailing', control: { kind: 'text' }, default: '' },
       { name: 'accessory', control: { kind: 'enum', options: values('none', 'chevron', 'check') }, default: 'chevron' },
       { name: 'checked', control: { kind: 'boolean' }, default: false },
-      { name: 'destructive', control: { kind: 'boolean' }, default: false },
+      { name: 'tone', control: { kind: 'enum', options: values('default', 'destructive') }, default: 'default' },
     ],
     events: [{ name: 'onClick', label: 'onClick' }],
     layout: { width: 'fill' },
@@ -845,12 +844,12 @@ export const KIT: Record<string, ComponentSpec> = {
     render: ({ p, on, wired, slots }) => (
       <ListRow
         title={str(p.title)}
-        subtitle={p.subtitle ? str(p.subtitle) : undefined}
+        description={p.description ? str(p.description) : undefined}
         trailing={p.trailing ? str(p.trailing) : undefined}
         accessory={slots.accessory ?? (p.accessory === 'chevron' || p.accessory === 'check' ? p.accessory : undefined)}
         checked={!!p.checked}
-        destructive={!!p.destructive}
-        leading={slots.leading}
+        tone={p.tone === 'destructive' ? 'destructive' : undefined}
+        icon={slots.icon}
         onClick={wired('onClick') ? () => on.onClick?.() : undefined}
       />
     ),
@@ -908,30 +907,30 @@ export const KIT: Record<string, ComponentSpec> = {
       { name: 'name', control: { kind: 'text' }, default: 'Ada Lovelace' },
       { name: 'size', control: { kind: 'number', min: 16, max: 160, step: 1, unit: 'px' }, default: 40 },
       { name: 'status', control: { kind: 'enum', options: values('none', 'online', 'idle', 'dnd', 'offline') }, default: 'none' },
-      { name: 'color', control: { kind: 'color' }, default: null },
+      { name: 'tint', control: { kind: 'color' }, default: null },
       { name: 'src', control: { kind: 'text', placeholder: 'https://…' }, default: '' },
     ],
     events: [],
     layout: { width: 'fit' },
     render: ({ p }) => (
-      <Avatar name={str(p.name)} size={num(p.size, 40)} status={p.status && p.status !== 'none' ? (p.status as AvatarStatus) : undefined} color={cssColor(p.color as string | null)} src={p.src ? str(p.src) : undefined} />
+      <Avatar name={str(p.name)} size={num(p.size, 40)} status={p.status && p.status !== 'none' ? (p.status as AvatarStatus) : undefined} tint={cssColor(p.tint as string | null)} src={p.src ? str(p.src) : undefined} />
     ),
   },
   AvatarGroup: {
     type: 'AvatarGroup', title: 'AvatarGroup', section: 'Lists and content', source: 'kit', icon: 'people',
-    description: 'Overlapping avatars; past max the rest fold into a +N bubble, and pressing the group opens a menu of everyone.',
-    module: '@/components/ui/avatar', tag: 'AvatarGroup', container: 'component',
+    description: 'Overlapping avatars; past max the rest fold into a +N bubble, and with menu on, pressing the group opens a menu of everyone.',
+    module: '@/components/ui/avatar-group', tag: 'AvatarGroup', container: 'component',
     props: [
       { name: 'size', control: { kind: 'number', min: 16, max: 96, step: 1, unit: 'px' }, default: 32 },
       { name: 'max', control: { kind: 'number', min: 1, max: 12, step: 1 }, default: 4 },
-      { name: 'menu', control: { kind: 'boolean' }, default: true },
+      { name: 'menu', control: { kind: 'boolean' }, default: false },
       { name: 'label', control: { kind: 'text' }, default: 'People' },
     ],
-    events: [{ name: 'onSelect', label: 'onSelect', value: 'the index pressed' }],
+    events: [{ name: 'onAction', label: 'onAction', value: 'the chosen avatar' }],
     layout: { axis: 'horizontal', width: 'fit' },
-    make: () => ({ children: ['Ada', 'Miles', 'Noor', 'Theo', 'Hana', 'June'].map((name) => leaf('Avatar', { name, size: 32, status: 'none', color: null, src: '' }, { layout: { width: 'fit' } })) }),
+    make: () => ({ children: ['Ada', 'Miles', 'Noor', 'Theo', 'Hana', 'June'].map((name) => leaf('Avatar', { name, size: 32, status: 'none', tint: null, src: '' }, { layout: { width: 'fit' } })) }),
     render: ({ p, on, childList }) => (
-      <AvatarGroup size={num(p.size, 32)} max={num(p.max, 4)} menu={!!p.menu} label={str(p.label)} onSelect={(i) => on.onSelect?.(i)}>
+      <AvatarGroup size={num(p.size, 32)} max={num(p.max, 4)} menu={!!p.menu} label={str(p.label)} onAction={(value) => on.onAction?.(value)}>
         {childList}
       </AvatarGroup>
     ),
@@ -974,10 +973,10 @@ export const KIT: Record<string, ComponentSpec> = {
     props: [text('children', '⌘K')], events: [], layout: { width: 'fit' },
     render: ({ p }) => <Kbd>{str(p.children)}</Kbd>,
   },
-  QRSvg: {
-    type: 'QRSvg', title: 'QRSvg', section: 'Lists and content', source: 'kit', icon: 'qrcode',
+  QRCode: {
+    type: 'QRCode', title: 'QRCode', section: 'Lists and content', source: 'kit', icon: 'qrcode',
     description: 'A real, scannable QR code rendered as SVG paths, with rounded or square modules, four error-correction levels and any colors.',
-    module: '@/components/ui/qr-svg', tag: 'QRSvg',
+    module: '@/components/ui/qr-code', tag: 'QRCode',
     props: [
       { name: 'value', control: { kind: 'text' }, default: 'https://blamy.github.io/ui/' },
       { name: 'size', control: { kind: 'number', min: 48, max: 400, step: 1, unit: 'px' }, default: 140 },
@@ -986,7 +985,7 @@ export const KIT: Record<string, ComponentSpec> = {
     ],
     events: [],
     layout: { width: 'fit' },
-    render: ({ p }) => <QRSvg value={str(p.value)} size={num(p.size, 140)} level={pick(p.level, ['L', 'M', 'Q', 'H'] as const, 'M')} margin={num(p.margin, 1)} />,
+    render: ({ p }) => <QRCode value={str(p.value)} size={num(p.size, 140)} level={pick(p.level, ['L', 'M', 'Q', 'H'] as const, 'M')} margin={num(p.margin, 1)} />,
   },
 
   /* ── Navigation and layout ── */
@@ -1019,19 +1018,19 @@ export const KIT: Record<string, ComponentSpec> = {
     layout: { axis: 'vertical', gap: 16, padding: [8, 16, 24, 16], align: 'start', width: 'fill', height: 'fill' },
     render: (r) => <NavStackHost r={r} />,
   },
-  TabView: {
-    type: 'TabView', title: 'TabView', section: 'Navigation and layout', source: 'kit', icon: 'square-on-square',
-    description: 'A compositional tab container on UI SDK’s Tabs: the iOS tab bar at the bottom on a compact screen and a side rail on a wider one, one panel per child (an embedded scene, usually a NavigationStack). Each tab keeps its state while another shows.',
-    module: '@/components/ui/tab-view', tag: 'TabView', container: 'component', screen: true,
-    uses: ['@/components/ui/tab-view|TabViewBar', '@/components/ui/tab-view|TabViewList', '@/components/ui/tab-view|TabViewTab', '@/components/ui/tab-view|TabViewPanels', '@/components/ui/tab-view|TabViewPanel'],
+  TabsScreen: {
+    type: 'TabsScreen', title: 'TabsScreen', section: 'Navigation and layout', source: 'kit', icon: 'square-on-square',
+    description: 'A screen of tabs, on the kit’s Tabs: the iOS tab bar at the bottom on a compact screen and a side rail on a wider one, one panel per child (an embedded scene, usually a NavigationStack). Each tab keeps its state while another shows.',
+    module: '@/components/ui/tabs', tag: 'Tabs', container: 'component', screen: true,
+    uses: ['@/components/ui/tabs|TabsBar', '@/components/ui/tabs|TabsList', '@/components/ui/tabs|TabsTab', '@/components/ui/tabs|TabsPanels', '@/components/ui/tabs|TabsPanel'],
     props: [
-      { name: 'tabs', control: { kind: 'items', icons: true }, default: 'First:star, Second:circle', part: '<TabViewTab>s', help: 'One per child, in order: Title:icon' },
+      { name: 'tabs', control: { kind: 'items', icons: true }, default: 'First:star, Second:circle', part: '<TabsTab>s', help: 'One per child, in order: Title:icon' },
       { name: 'value', label: 'selected', control: { kind: 'text' }, default: 'First', twoWay: 'onValueChange' },
-      { name: 'placement', control: { kind: 'enum', options: values('auto', 'bottom', 'start', 'top') }, default: 'auto', help: 'auto: a tab bar along the bottom when compact, a side rail from 700px, from its own size class' },
+      { name: 'side', control: { kind: 'enum', options: values('auto', 'bottom', 'start', 'top') }, default: 'auto', help: 'auto: a tab bar along the bottom when compact, a side rail from 700px, from its own size class' },
     ],
     events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the tab' }],
     layout: { axis: 'vertical', width: 'fill', height: 'fill' },
-    render: (r) => <TabViewHost r={r} />,
+    render: (r) => <TabsScreenHost r={r} />,
   },
   SplitView: {
     type: 'SplitView', title: 'SplitView', section: 'Navigation and layout', source: 'kit', icon: 'sidebar-left',
@@ -1100,23 +1099,28 @@ export const KIT: Record<string, ComponentSpec> = {
       return `<Tabs${g.attr('variant')} value={${g.expr('value')}}${g.on('onValueChange')}>\n  <TabsList aria-label="Tabs">\n${tabs.map((t) => `    <TabsTab value=${JSON.stringify(t.id)}>${t.label}</TabsTab>`).join('\n')}\n  </TabsList>\n${tabs.map((t, i) => `  <TabsPanel value=${JSON.stringify(t.id)}>\n${(g.children[i] ?? '').split('\n').map((l) => `    ${l}`).join('\n')}\n  </TabsPanel>`).join('\n')}\n</Tabs>`;
     },
   },
-  TabBar: {
-    type: 'TabBar', title: 'TabBar', section: 'Navigation and layout', source: 'kit', icon: 'square-on-square', float: true,
-    description: 'The iOS bottom tab bar in one component: icons over labels, a sliding indicator, hiding on scroll. It sits at the bottom of the scene.',
-    module: '@/components/ui/tab-bar', tag: 'TabBar',
+  TabsBar: {
+    type: 'TabsBar', title: 'Tabs bar', section: 'Navigation and layout', source: 'kit', icon: 'square-on-square', float: true,
+    description: 'The iOS bottom tab bar: Tabs with variant="bar" and no panels, icons over labels, hiding on scroll. It sits at the bottom of the scene.',
+    module: '@/components/ui/tabs', tag: 'Tabs', uses: ['@/components/ui/tabs|TabsBar', '@/components/ui/tabs|TabsList', '@/components/ui/tabs|TabsTab'],
     props: [
-      { name: 'items', control: { kind: 'items', icons: true }, default: 'Garden:flower, Calendar:calendar, Settings:gear' },
+      { name: 'items', control: { kind: 'items', icons: true }, default: 'Garden:flower, Calendar:calendar, Settings:gear', part: '<TabsTab>s' },
       { name: 'value', label: 'selected', control: { kind: 'text' }, default: 'Garden', twoWay: 'onValueChange' },
     ],
     events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the tab' }],
     render: ({ p, on }) => (
-      <TabBar items={itemsOf(p.items).map((it) => ({ value: it.id, title: it.label, icon: it.icon ?? 'circle' }))} value={str(p.value)} onValueChange={(v) => on.onValueChange?.(v)} hideOnScroll={false} />
+      <Tabs variant="bar" value={str(p.value)} onValueChange={(v) => v != null && on.onValueChange?.(v)} className="contents">
+        <TabsBar hideOnScroll={false}>
+          <TabsList aria-label="Tabs">
+            {itemsOf(p.items).map((it) => <TabsTab key={it.id} value={it.id} icon={it.icon ?? 'circle'}>{it.label}</TabsTab>)}
+          </TabsList>
+        </TabsBar>
+      </Tabs>
     ),
     code: (g) => {
-      g.use('@/components/ui/tab-bar', 'TabBar');
-      const items = g.list('items');
-      const list = items ? `[${items.map((it) => `{ value: ${q(it.id)}, title: ${q(it.label)}, icon: ${q(it.icon ?? 'circle')} }`).join(', ')}]` : g.expr('items');
-      return `<TabBar items={${list}} value={${g.expr('value')}}${g.on('onValueChange')} />`;
+      parts(g, '@/components/ui/tabs', 'Tabs', 'TabsBar', 'TabsList', 'TabsTab');
+      const items = g.list('items') ?? [];
+      return `<Tabs variant="bar" value={${g.expr('value')}}${g.on('onValueChange')}>\n  <TabsBar>\n    <TabsList aria-label="Tabs">\n${items.map((it) => `      <TabsTab value=${JSON.stringify(it.id)} icon=${JSON.stringify(it.icon ?? 'circle')}>${it.label}</TabsTab>`).join('\n')}\n    </TabsList>\n  </TabsBar>\n</Tabs>`;
     },
   },
 
@@ -1174,7 +1178,7 @@ export const KIT: Record<string, ComponentSpec> = {
   /* ── React ── */
   SceneRef: {
     type: 'SceneRef', title: 'Scene Component', section: 'React', source: 'react', icon: 'iphone',
-    description: 'Another scene, rendered as a component (<Garden />): its props from bindings, its callback props from actions here, and everything in it selectable and editable in place. Xcode’s container view, and how a TabView or a NavigationStack holds a scene.',
+    description: 'Another scene, rendered as a component (<Garden />): its props from bindings, its callback props from actions here, and everything in it selectable and editable in place. Xcode’s container view, and how a TabsScreen or a NavigationStack holds a scene.',
     module: '', tag: 'Scene',
     props: [{ name: 'scene', control: { kind: 'scene' }, default: null }],
     events: [],
@@ -1206,6 +1210,6 @@ export const KIT: Record<string, ComponentSpec> = {
 function listSection(title: string, rows: string[]): Node {
   return leaf('ListSection', { title, footer: '' }, {
     layout: { axis: 'vertical', width: 'fill' },
-    children: rows.map((t) => leaf('ListRow', { title: t, subtitle: '', trailing: '', accessory: 'chevron', checked: false, destructive: false }, { layout: { width: 'fill' }, slots: { leading: [], accessory: [] } })),
+    children: rows.map((t) => leaf('ListRow', { title: t, description: '', trailing: '', accessory: 'chevron', checked: false, tone: 'default' }, { layout: { width: 'fill' }, slots: { icon: [], accessory: [] } })),
   });
 }

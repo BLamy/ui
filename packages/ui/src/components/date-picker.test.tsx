@@ -136,7 +136,7 @@ describe('DatePicker', () => {
     const { container } = render(
       <form onSubmit={(event) => event.preventDefault()}>
         <Field name="due">
-          <FieldLabel variant="field">Due date</FieldLabel>
+          <FieldLabel>Due date</FieldLabel>
           <DatePicker locale="en-US" required>
             <DatePickerField size="lg" />
             <DatePickerHint />

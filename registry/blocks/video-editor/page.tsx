@@ -230,9 +230,8 @@ function Shell({ samples }: { samples: boolean }) {
 
       {/* Library, viewer, inspector */}
       <div className="relative flex min-h-0 flex-1">
-        <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="left" aria-label="Media" open={panel === 'media'}
-          onOpenChange={(open) => setPanel(open ? 'media' : null)} columnWidth={256} columnClassName={cn(side, 'border-r border-border')}
-          drawerWidth="20rem" drawerMaxWidth="85%" className="bg-background">
+        <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="left" aria-label="Media" open={wide || panel === 'media'}
+          onOpenChange={(open) => setPanel(open ? 'media' : null)} columnWidth={256} className={cn(side, 'border-r border-border')}>
           {media}
         </AdaptivePane>
         <div className="flex min-w-0 flex-1 flex-col bg-muted">
@@ -248,9 +247,8 @@ function Shell({ samples }: { samples: boolean }) {
             <PlaybackControls clock={clock} fps={fps} />
           </div>
         </div>
-        <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="right" aria-label="Inspector" open={panel === 'inspector'}
-          onOpenChange={(open) => setPanel(open ? 'inspector' : null)} columnWidth={288} columnClassName={cn(side, 'border-l border-border')}
-          drawerWidth="20rem" drawerMaxWidth="85%" className="bg-background">
+        <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="right" aria-label="Inspector" open={wide || panel === 'inspector'}
+          onOpenChange={(open) => setPanel(open ? 'inspector' : null)} columnWidth={288} className={cn(side, 'border-l border-border')}>
           {inspector}
         </AdaptivePane>
       </div>

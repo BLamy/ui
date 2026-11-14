@@ -6,8 +6,8 @@ import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Button } from '@/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
-import { PlainButton } from '@/components/ui/plain-button';
-import { QRSvg } from '@/components/ui/qr-svg';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { QRCode } from '@/components/ui/qr-code';
 import { SplitViewContent, SplitViewEmpty, SplitViewHeader } from '@/components/ui/split-view';
 import { Textarea } from '@/components/ui/textarea';
 import { Icon } from '@/lib/icon';
@@ -139,7 +139,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
             </Field>
           ) : edit ? (
             <Field label="Verification Code" last>
-              <PlainButton className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">Set Up Verification Code…</PlainButton>
+              <SdkButton className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">Set Up Verification Code…</SdkButton>
             </Field>
           ) : null}
         </Card>
@@ -150,11 +150,11 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
               <Field key={i} label={i === 0 ? 'Website' : ''} last={i === list.length - 1 && !edit}>
                 {edit ? (
                   <span className="flex items-center gap-2">
-                    <PlainButton aria-label={`Remove ${w || 'website'}`}
+                    <SdkButton aria-label={`Remove ${w || 'website'}`}
                       onClick={() => setDraft({ ...draft, websites: draft.websites.filter((_, j) => j !== i) })}
                       className="bl-btn grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-destructive p-0 text-white">
                       <span className="h-[2px] w-2.5 rounded-full bg-white" />
-                    </PlainButton>
+                    </SdkButton>
                     <InlineInput label="Website" value={w} onChange={(v) => setDraft({ ...draft, websites: draft.websites.map((x, j) => (j === i ? v : x)) })} />
                   </span>
                 ) : (
@@ -164,11 +164,11 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
             ))}
             {edit ? (
               <Field label="" last>
-                <PlainButton onClick={() => setDraft({ ...draft, websites: [...draft.websites, ''] })}
+                <SdkButton onClick={() => setDraft({ ...draft, websites: [...draft.websites, ''] })}
                   className="bl-btn inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">
                   <span className="grid size-5 place-items-center rounded-full bg-success text-white"><Icon name="plus" size={13} sw={3} /></span>
                   Add Website
-                </PlainButton>
+                </SdkButton>
               </Field>
             ) : null}
           </Card>
@@ -278,7 +278,7 @@ function WifiDetail({ network: n }: { network: WifiNetwork }) {
             <CollapsiblePanel className="h-(--collapsible-panel-height) overflow-clip transition-[height] duration-spring-smooth ease-spring-smooth data-starting-style:h-0 data-ending-style:h-0 motion-reduce:transition-none">
               <div className="flex flex-col items-center gap-3 px-4 pt-1 pb-5 text-center">
                 <div className="rounded-sheet bg-white p-4 text-black shadow-[0_0_0_.5px_black] shadow-black/12">
-                  <QRSvg value={`WIFI:S:${n.ssid};T:WPA;P:${n.password};;`} size={184} />
+                  <QRCode value={`WIFI:S:${n.ssid};T:WPA;P:${n.password};;`} size={184} />
                 </div>
                 <div className="max-w-[300px] text-footnote text-muted-foreground">
                   Point another device’s camera at this code to join “{n.ssid}”.

@@ -1,4 +1,4 @@
-import { FileDropZone, FileList, FileUpload, FileUploadButton } from '@/components/ui/file-upload'
+import { FileUploadDropzone, FileUploadList, FileUpload, FileUploadTrigger } from '@/components/ui/file-upload'
 import type { UploadContext } from '@/lib/file-upload-model'
 
 // A stand-in for your server (see the basic example).
@@ -35,8 +35,8 @@ export default function Images() {
       >
         {(up) => (
           <>
-            <FileDropZone title="Drop photos here" icon="photo" />
-            <FileUploadButton
+            <FileUploadDropzone title="Drop photos here" icon="photo" />
+            <FileUploadTrigger
               variant="ghost"
               size="sm"
               accept={['image/*']}
@@ -45,8 +45,8 @@ export default function Images() {
               className="self-start"
             >
               Take a photo
-            </FileUploadButton>
-            <FileList aria-label="Photos" />
+            </FileUploadTrigger>
+            <FileUploadList aria-label="Photos" />
           </>
         )}
       </FileUpload>

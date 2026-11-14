@@ -1,5 +1,5 @@
 import {
-  createChange, createController, createStickToBottom, css, definePrimitive, dispatch, isRTL, live, selects,
+  announce, createChange, createController, createStickToBottom, css, definePrimitive, dispatch, isRTL, live, selects,
   type ChangeDetails, type GridCell,
 } from '@ui-sdk/core';
 import { createVirtualRows, isRowPress, tabbablesIn, type RowAlign } from '@/lib/grid-behaviors';
@@ -324,7 +324,8 @@ export const logList = definePrimitive({
       dispatch(context, 'onAction', row.id, { reason: 'item-press', event, row, index });
     };
 
-    /** Puts a row's text on the clipboard, and tells the host either way, as a host may have a clipboard of its own. */
+    /** Puts a row's text on the clipboard (and says "Copied" to screen readers), and tells the host either way, as a host
+     *  may have a clipboard of its own. */
     const copy = (index: number): Promise<boolean> => {
       const row = rows.all[index];
       if (!row) return Promise.resolve(false);
@@ -333,7 +334,7 @@ export const logList = definePrimitive({
       onRowCopy?.(row, text);
       const clipboard = globalThis.navigator?.clipboard;
       if (!clipboard) return Promise.resolve(false);
-      return clipboard.writeText(text).then(() => true, () => false);
+      return clipboard.writeText(text).then(() => { announce('Copied'); return true; }, () => false);
     };
 
     /* ── Cut messages ── */

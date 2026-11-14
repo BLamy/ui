@@ -2,7 +2,7 @@
    pointer rests on it (Xcode's library shows one per component; a storyboard's outline is names until you go and
    look, so its scenes and segues get one too). Each is drawn by the canvas's own renderer, at design time and inert:
    the card shows the component or the scene itself, not a picture of it.
-   - A library item: the component as it's inserted (a screen container, a Screen or a TabBar on the document's
+   - A library item: the component as it's inserted (a screen container, a Screen or a tab bar on the document's
      device, scaled to fit; anything else at its own size on a small stage), where it comes from, and its props,
      events and slots.
    - A scene: its thumbnail as the canvas draws it (in its NavigationStack's bars), its props and state, and its
@@ -105,9 +105,9 @@ export function LibraryCard({ item, doc }: { item: LibraryItem; doc: Doc }) {
         </div>
       )}
       <HoverCardHeader
-        media={<Tile icon={item.icon} />}
+        icon={<Tile icon={item.icon} />}
         title={<span className="font-mono">{item.source === 'kit' ? `<${item.title}>` : item.title}</span>}
-        subtitle={<span className="font-mono">{from}</span>}
+        description={<span className="font-mono">{from}</span>}
       />
       <p className="m-0 text-footnote text-muted-foreground">{item.description}</p>
       <Facts rows={[
@@ -134,7 +134,7 @@ export function SceneCard({ scene, doc }: { scene: Scene; doc: Doc }) {
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <HoverCardHeader
           title={<span className="font-mono">{`<${scene.name} />`}</span>}
-          subtitle={doc.entry === scene.id ? `Entry point · ${device.name}` : device.name}
+          description={doc.entry === scene.id ? `Entry point · ${device.name}` : device.name}
         />
         <Facts rows={[
           ...(scene.props.length ? [['props', scene.props.map((p) => p.name).join(', ')] as [string, ReactNode]] : []),
@@ -165,7 +165,7 @@ export function SegueCard({ segue, doc }: { segue: Segue; doc: Doc }) {
         <Icon name={SEGUE_GLYPH[segue.kind] as IconName} size={18} sw={2.2} className="shrink-0 text-primary" />
         {to ? <Thumb scene={to} doc={doc} width={wide ? 100 : 64} /> : null}
       </div>
-      <HoverCardHeader title={<span className="font-mono">{segue.identifier}</span>} subtitle={`${kind?.label ?? segue.kind}: ${from?.name ?? '?'} → ${to?.name ?? '?'}`} />
+      <HoverCardHeader title={<span className="font-mono">{segue.identifier}</span>} description={`${kind?.label ?? segue.kind}: ${from?.name ?? '?'} → ${to?.name ?? '?'}`} />
       {kind ? <p className="m-0 text-footnote text-muted-foreground">{kind.help}</p> : null}
       <Facts rows={[
         ['transition', describe(segue.transition)],
@@ -181,9 +181,9 @@ export function ContextCard({ ctx }: { ctx: ContextDef }) {
   return (
     <div className="flex flex-col gap-3">
       <HoverCardHeader
-        media={<Tile icon="circle-fill" />}
+        icon={<Tile icon="circle-fill" />}
         title={<span className="font-mono">{ctx.name}</span>}
-        subtitle={<span className="font-mono">{`const ${ctx.alias} = useContext(${ctx.name})`}</span>}
+        description={<span className="font-mono">{`const ${ctx.alias} = useContext(${ctx.name})`}</span>}
       />
       {ctx.fields.length
         ? <Facts rows={ctx.fields.map((f) => [f.name, `${f.type} = ${f.initial || '—'}`] as [string, ReactNode])} />

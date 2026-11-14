@@ -15,11 +15,11 @@ export default function Sets() {
         <FieldLegend>Shipping address</FieldLegend>
         <FieldGroup>
           <Field name="street">
-            <FieldLabel variant="field">Street</FieldLabel>
+            <FieldLabel>Street</FieldLabel>
             <Input autoComplete="shipping street-address" defaultValue="1 Infinite Loop" />
           </Field>
           <Field name="city">
-            <FieldLabel variant="field">City</FieldLabel>
+            <FieldLabel>City</FieldLabel>
             <Input autoComplete="shipping address-level2" defaultValue="Cupertino" />
           </Field>
         </FieldGroup>
@@ -33,11 +33,11 @@ export default function Sets() {
         <FieldLegend>Billing address</FieldLegend>
         <FieldGroup>
           <Field name="billing-street">
-            <FieldLabel variant="field">Street</FieldLabel>
+            <FieldLabel>Street</FieldLabel>
             <Input autoComplete="billing street-address" />
           </Field>
           <Field name="billing-city">
-            <FieldLabel variant="field">City</FieldLabel>
+            <FieldLabel>City</FieldLabel>
             <Input autoComplete="billing address-level2" />
           </Field>
         </FieldGroup>

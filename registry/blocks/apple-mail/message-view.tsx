@@ -5,12 +5,11 @@
 import { Fragment, useState, type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Chevron } from '@/components/ui/icon-swap';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
-import { Icon } from '@/lib/icon';
+import { Chevron, Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { MESSAGES, ME, VIPS, initials, longTime, relativeTime, type Attachment, type Message, type Person, type ThreadEntry } from './data';
+import { MESSAGES, ME, VIPS, longTime, relativeTime, type Attachment, type Message, type Person, type ThreadEntry } from './data';
 
 const nameOf = (x: Person) => (x.email === ME.email ? 'Me' : x.name);
 
@@ -21,8 +20,8 @@ function ContactCard({ who }: { who: Person }) {
   const me = who.email === ME.email;
   return (
     <>
-      <HoverCardHeader media={<Avatar c={initials(who)} size={44} />} title={who.name} subtitle={who.email}
-        action={VIPS.has(who.email) ? <Icon name="star-fill" size={16} aria-label="VIP" className="text-warning" /> : null} />
+      <HoverCardHeader icon={<Avatar name={who.name} size={44} />} title={who.name} description={who.email}
+        trailing={VIPS.has(who.email) ? <Icon name="star-fill" size={16} aria-label="VIP" className="text-warning" /> : null} />
       {last && !me ? (
         <div className="mt-3 border-t border-border pt-2.5">
           <div className="text-caption font-semibold text-muted-foreground">Last Message · {relativeTime(last.date)}</div>
@@ -76,7 +75,7 @@ const ATTACHMENT_TONE: Record<Attachment['kind'], string> = { pdf: '#FF3B30', im
 
 function AttachmentTile({ a }: { a: Attachment }) {
   return (
-    <PlainButton
+    <SdkButton
       className="bl-btn flex min-w-0 cursor-pointer items-center gap-2.5 rounded-panel border-0 bg-secondary px-3 py-2.5 text-left [font-family:inherit] text-foreground transition-colors hover:bg-secondary-strong">
       <span className="grid size-9 shrink-0 place-items-center rounded-lg text-white" style={{ background: ATTACHMENT_TONE[a.kind] }}>
         <Icon name={a.kind === 'image' ? 'photo' : a.kind === 'zip' ? 'archivebox' : 'doc'} size={20} sw={1.9} />
@@ -85,14 +84,14 @@ function AttachmentTile({ a }: { a: Attachment }) {
         <span className="block truncate text-detail font-medium">{a.name}</span>
         <span className="block text-[12.5px] text-muted-foreground">{a.size}</span>
       </span>
-    </PlainButton>
+    </SdkButton>
   );
 }
 
 function Header({ from, to, cc, date, trailing }: { from: Person; to: Person[]; cc?: Person[]; date: Date; trailing?: ReactNode }) {
   return (
     <div className="flex items-start gap-3">
-      <Avatar c={initials(from)} size={40} card={<ContactCard who={from} />} />
+      <Avatar name={from.name} size={40} card={<ContactCard who={from} />} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="flex min-w-0 flex-1 text-callout font-semibold">
@@ -115,7 +114,7 @@ function EarlierMessage({ e }: { e: ThreadEntry }) {
     <Collapsible open={open} onOpenChange={setOpen} className="rounded-card bg-card shadow-[0_0_0_1px_var(--border)]">
       <CollapsibleTrigger
         className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-3 text-left [font-family:inherit] text-foreground">
-        <Avatar c={initials(e.from)} size={30} />
+        <Avatar name={e.from.name} size={30} />
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline gap-2">
             <span className="min-w-0 flex-1 truncate text-subhead font-semibold">{nameOf(e.from)}</span>

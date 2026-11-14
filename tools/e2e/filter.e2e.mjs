@@ -222,7 +222,7 @@ test.describe('natural language', () => {
     await openDemo(page, 'filter/natural-language', '[data-slot=filter-input]');
   });
 
-  const box = (page) => page.getByRole('textbox', { name: 'Describe the filters you want' });
+  const box = (page) => page.getByRole('searchbox', { name: 'Describe the filters you want' });
   const count = (page) => page.getByText(/^\d+ of \d+ issues$/);
 
   test('a sentence previews its chips; Enter applies them as editable filters', async ({ page }) => {

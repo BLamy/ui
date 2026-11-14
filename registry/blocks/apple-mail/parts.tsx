@@ -3,7 +3,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconSwap } from '@/components/ui/icon-swap';
+import { Swap } from '@/components/ui/swap';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { MOVE_TARGETS, type Message } from './data';
@@ -24,7 +24,7 @@ export function BarButton({ label, children, className, ...props }: Omit<ButtonP
 export function FlagButton({ mail, m }: { mail: MailState; m: Message }) {
   return (
     <BarButton label={m.flagged ? 'Unflag' : 'Flag'} onClick={() => mail.toggleFlag(m.id)} className={m.flagged ? 'text-warning' : undefined}>
-      <IconSwap id={m.flagged ? 'on' : 'off'}><Icon name={m.flagged ? 'flag-fill' : 'flag'} /></IconSwap>
+      <Swap effect="pop" value={m.flagged ? 'on' : 'off'}><Icon name={m.flagged ? 'flag-fill' : 'flag'} /></Swap>
     </BarButton>
   );
 }
@@ -94,7 +94,7 @@ export function ListBar({ mail }: { mail: MailState }) {
   return (
     <BottomBar>
       <BarButton label={mail.unreadOnly ? 'Show all mail' : 'Filter by unread'} onClick={mail.toggleUnreadFilter}>
-        <IconSwap id={mail.unreadOnly ? 'on' : 'off'}><Icon name={mail.unreadOnly ? 'filter-circle-fill' : 'filter-circle'} size={24} /></IconSwap>
+        <Swap effect="pop" value={mail.unreadOnly ? 'on' : 'off'}><Icon name={mail.unreadOnly ? 'filter-circle-fill' : 'filter-circle'} size={24} /></Swap>
       </BarButton>
       <div className="min-w-0 flex-1 text-center leading-[1.25]" aria-live="polite">
         {mail.unreadOnly ? (

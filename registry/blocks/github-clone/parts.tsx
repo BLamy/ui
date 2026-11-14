@@ -3,14 +3,14 @@
    library's CodeEditor (gpu-lexer on WebGPU), recolored with Primer's syntax palette below. */
 import { useMemo, type CSSProperties, type ReactNode } from 'react';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
-import { Avatar } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { CodeEditor, SyntaxTokens, useSyntaxTokens } from '@/components/ui/code-editor';
-import { TabViewIndicator, TabViewPanel, TabViewTab } from '@/components/ui/tab-view';
+import { TabsIndicator, TabsPanel, TabsTab } from '@/components/ui/tabs';
 import { Tree, type TreeNode } from '@/components/ui/tree';
 import { Icon, type IconName } from '@/lib/icon';
 import { languageFromPath } from '@/lib/syntax';
 import { cn } from '@/lib/utils';
-import type { FileNode, Label, PullRequest, User } from './data';
+import type { FileNode, Label, PullRequest } from './data';
 
 /* ── Palette ──
    GitHub's Primer colors. The block is an app with its own palette: `GITHUB_THEME` overrides the theme's shadcn
@@ -182,47 +182,36 @@ export function StatePill({ state }: { state: StateKind }) {
 /** A small gray count bubble (tab counts, button counts). */
 export function Counter({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <span className={cn('inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-secondary-strong px-1.5 text-caption leading-none font-medium text-foreground', className)}>
+    <Badge size="sm" variant="secondary" className={cn('bg-secondary-strong font-medium text-foreground', className)}>
       {children}
-    </span>
+    </Badge>
   );
 }
 
-/** Overlapping avatars (assignees, contributors); `card` gives each its hover card (cards.tsx's UserCard). */
-export function AvatarStack({ users, size = 20, card }: { users: User[]; size?: number; card?: (user: User) => ReactNode }) {
-  return (
-    <span className="flex">
-      {users.map((u, i) => (
-        <Avatar key={u.login} c={u} src={u.avatar} size={size} card={card?.(u)} className="ring-2 ring-background" style={{ marginLeft: i ? -size / 3 : 0 }} />
-      ))}
-    </span>
-  );
-}
-
-/* ── Underline tabs ── a TabViewTab styled as GitHub's UnderlineNav: icon, label, count, and one coral underline
-   (UnderlineIndicator, last in the TabViewList) that slides to the selected tab. */
+/* ── Underline tabs ── a TabsTab styled as GitHub's UnderlineNav: icon, label, count, and one coral underline
+   (UnderlineIndicator, last in the TabsList) that slides to the selected tab. */
 export function UnderlineTab({ value, icon, label, count }: { value: string; icon?: OctName; label: string; count?: ReactNode }) {
   return (
-    <TabViewTab value={value} className="group relative flex shrink-0 items-center py-2 outline-none data-selected:font-semibold">
+    <TabsTab value={value} className="group relative flex shrink-0 items-center py-2 outline-none data-selected:font-semibold">
       <span className="flex items-center gap-2 rounded-md px-2 py-1.5 text-detail leading-5 text-foreground group-hover:bg-secondary group-focus-visible:ring-2 group-focus-visible:ring-primary">
         {icon ? <Oct name={icon} className="text-muted-foreground" /> : null}
         <span className="whitespace-nowrap">{label}</span>
         {count != null ? <Counter>{count}</Counter> : null}
       </span>
-    </TabViewTab>
+    </TabsTab>
   );
 }
 
 export function UnderlineIndicator() {
-  return <TabViewIndicator className="inset-x-1 -bottom-px z-1 h-0.5 rounded-full bg-[var(--gh-tab)]" />;
+  return <TabsIndicator className="inset-x-1 -bottom-px z-1 h-0.5 rounded-full bg-[var(--gh-tab)]" />;
 }
 
-/** A tab panel that flows with the page (TabViewPanel is absolutely positioned by default). */
+/** A tab panel that flows with the page. */
 export function FlowPanel({ value, className, children }: { value: string; className?: string; children: ReactNode }) {
   return (
-    <TabViewPanel value={value} className={cn('relative inset-auto overflow-visible data-ending-style:hidden', className)}>
+    <TabsPanel value={value} className={cn('relative', className)}>
       {children}
-    </TabViewPanel>
+    </TabsPanel>
   );
 }
 

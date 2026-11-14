@@ -27,7 +27,7 @@ function MessageRow({ mail, m, selected, chevron, isEdge, onOpen }: {
 }) {
   const on = selected && !mail.editing;
   return (
-    <ListRow edit={mail.editing} checked={mail.checked.has(m.id)} divider={false} isEdge={isEdge}
+    <ListRow editing={mail.editing} checked={mail.checked.has(m.id)} divider={false} isEdge={isEdge}
       className={cn(ROW, mail.editing ? '[&>[data-slot=list-row-content]]:pl-2' : '[&>[data-slot=list-row-content]]:pl-8')}
       onClick={() => { if (mail.editing) mail.toggleChecked(m.id); else onOpen(m.id); }}
       // Index 0 is the outermost action: the one a long swipe fires.

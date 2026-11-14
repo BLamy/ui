@@ -29,13 +29,13 @@ export default function RowLayouts() {
         boxShadow: '0 0 0 1px var(--border)',
       }}
     >
-      <List inset>
+      <List variant="inset">
         {/* align="top": the circle sits on the first line of a wrapping title. */}
         <ListSection title="Top-aligned leading">
           <ListRow
             align="top"
             onClick={() => setDone((d) => !d)}
-            leading={
+            icon={
               <span
                 style={{
                   width: 22,
@@ -55,7 +55,7 @@ export default function RowLayouts() {
                 dogs ride free
               </span>
             }
-            subtitle="Friday, 9:00"
+            description="Friday, 9:00"
             divider={false}
           />
         </ListSection>
@@ -88,7 +88,7 @@ export default function RowLayouts() {
             <ListRow
               key={m}
               title={m}
-              selected={mailbox === m.toLowerCase()}
+              current={mailbox === m.toLowerCase()}
               onClick={() => setMailbox(m.toLowerCase())}
               divider={i === 0}
             />

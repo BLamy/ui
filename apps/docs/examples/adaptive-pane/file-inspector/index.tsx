@@ -1,0 +1,171 @@
+import { useState, type ReactNode } from 'react'
+import { Button } from '@/components/ui/button'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import {
+  AdaptivePane,
+  AdaptivePaneClose,
+  AdaptivePaneHeader,
+  AdaptivePaneTitle,
+} from '@/components/ui/adaptive-pane'
+import { Icon } from '@/lib/icon'
+
+const files = [
+  {
+    name: 'Brand guidelines.pdf',
+    icon: 'doc',
+    size: '4.2 MB',
+    kind: 'PDF document',
+    modified: 'Today, 9:12',
+  },
+  {
+    name: 'Launch photos',
+    icon: 'folder',
+    size: '318 MB',
+    kind: 'Folder',
+    modified: 'Yesterday',
+  },
+  {
+    name: 'Hero.png',
+    icon: 'photo',
+    size: '1.9 MB',
+    kind: 'PNG image',
+    modified: 'Mon, 16:40',
+  },
+]
+
+function FileInspector() {
+  const [open, setOpen] = useState(true)
+  const [sel, setSel] = useState(files[0])
+  return (
+    <div style={{ display: 'flex', height: 360, background: 'var(--background)' }}>
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <header
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '10px 14px',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
+          <strong style={{ flex: 1 }}>Documents</strong>
+          <Button
+            variant={open ? 'secondary' : 'ghost'}
+            size="sm"
+            aria-pressed={open}
+            onClick={() => setOpen(!open)}
+          >
+            <Icon name="info" size={17} /> Info
+          </Button>
+        </header>
+        <List>
+          <ListSection>
+            {files.map((f) => (
+              <ListRow
+                key={f.name}
+                icon={
+                  <Icon
+                    name={f.icon}
+                    size={22}
+                    style={{ color: 'var(--primary)' }}
+                  />
+                }
+                title={f.name}
+                description={f.modified}
+                current={f === sel}
+                onClick={() => setSel(f)}
+              />
+            ))}
+          </ListSection>
+        </List>
+      </div>
+      {/* a docked column beside the list; its × closes it */}
+      <AdaptivePane
+        presentation="column"
+        side="end"
+        open={open}
+        onOpenChange={setOpen}
+        columnWidth={250}
+        className="border-s border-border"
+      >
+        <AdaptivePaneHeader>
+          <AdaptivePaneTitle>Info</AdaptivePaneTitle>
+          <AdaptivePaneClose />
+        </AdaptivePaneHeader>
+        <div style={{ padding: '6px 14px', fontSize: 13.5 }}>
+          <div
+            style={{
+              display: 'grid',
+              placeItems: 'center',
+              height: 96,
+              borderRadius: 12,
+              background: 'var(--secondary)',
+              color: 'var(--primary)',
+            }}
+          >
+            <Icon name={sel.icon} size={40} />
+          </div>
+          <div style={{ fontWeight: 650, margin: '12px 0 8px' }}>
+            {sel.name}
+          </div>
+          {[
+            ['Kind', sel.kind],
+            ['Size', sel.size],
+            ['Modified', sel.modified],
+          ].map(([k, v]) => (
+            <div
+              key={k}
+              style={{
+                display: 'flex',
+                padding: '7px 0',
+                borderTop: '1px solid var(--border)',
+              }}
+            >
+              <span style={{ flex: 1, color: 'var(--muted-foreground)' }}>{k}</span>
+              {v}
+            </div>
+          ))}
+        </div>
+      </AdaptivePane>
+    </div>
+  )
+}
+
+export default function DockedInspector() {
+  return (
+    <Window>
+      <FileInspector />
+    </Window>
+  )
+}
+
+/**
+ * A rounded window with the page background; `width` caps it (phone-sized
+ * examples), centered.
+ */
+function Window({ width, children }: { width?: number; children?: ReactNode }) {
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: width,
+        margin: '0 auto',
+        borderRadius: 14,
+        overflow: 'hidden',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
+        isolation: 'isolate',
+      }}
+    >
+      {children}
+    </div>
+  )
+}

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { FileDropZone } from '@/components/ui/file-upload';
+import { FileUploadDropzone } from '@/components/ui/file-upload';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger, createHoverCardController, type HoverCardController } from '@/components/ui/hover-card';
 import { Spinner } from '@/components/ui/spinner';
 import { timelineMediaType } from '@/components/ui/video-timeline';
@@ -47,7 +47,7 @@ export function MediaPanel({ items, onFiles, onAdd, onRemove, samples, onSamples
         </Button>
       </header>
       <div className="bl-scroll min-h-0 flex-1 overflow-y-auto px-3 pb-3">
-        <FileDropZone size="compact" title="Import media" hint=""
+        <FileUploadDropzone orientation="horizontal" title="Import media" hint=""
           rules={{ accept: ['video/*', 'audio/*', 'image/*'] }} icon="video" browseLabel="Browse"
           onFiles={onFiles} />
         {samples.status === 'error' ? <p className="mt-2 mb-0 text-caption text-destructive">{samples.error}</p> : null}
@@ -92,7 +92,7 @@ export function MediaPreview({ item: m }: { item: MediaItem }) {
   return (
     <div className="flex flex-col gap-2.5">
       <div className="relative aspect-video overflow-hidden rounded-ctl bg-black"><Thumb item={m} /></div>
-      <HoverCardHeader title={m.name} subtitle={KIND_WORD[m.kind] + (m.file.type ? ` · ${m.file.type}` : '')} />
+      <HoverCardHeader title={m.name} description={KIND_WORD[m.kind] + (m.file.type ? ` · ${m.file.type}` : '')} />
       {facts.length ? <p className="m-0 font-mono text-caption text-muted-foreground tabular-nums">{facts.join(' · ')}</p> : null}
       <p className="m-0 text-footnote text-muted-foreground">
         {m.status === 'error' ? m.error ?? 'Couldn’t read this file.'

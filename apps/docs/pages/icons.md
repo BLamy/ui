@@ -58,6 +58,25 @@ Names are kebab-case and follow SF Symbols where they can: `magnifyingglass`, `x
 
 Match the weight to the text beside the icon: `regular` next to body text, `semibold` in toolbars and tab bars, `bold` for small glyphs inside filled circles.
 
+## Chevron
+
+`Chevron`, from the same module, is one chevron that turns to face a new direction instead of swapping glyphs: forward to down when a row expands, forward to back when a flow reverses. It points `right` by default and turns to `down`, `left` or `up` on the snappy spring, always the short way round (`up` to `right` is a quarter turn forward, not three quarters back). It is `aria-hidden`: put `aria-expanded` or the label on the control around it. Under reduced motion it turns at once. To swap one glyph for another, use [Swap](https://blamy.github.io/ui/#/swap) `effect="pop"`.
+
+{% demo src="icons/chevron" %}
+
+```tsx
+import { Chevron } from '@/lib/icon'
+
+<Chevron direction={open ? 'down' : 'right'} size={14} strokeWidth={2.6} />
+```
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `direction` | `right` | `right`, `down`, `left` or `up`. |
+| `size` | `17` | Glyph size in px. |
+| `strokeWidth` | `2.4` | Stroke width on the 24px grid. |
+| `className` / `style`, `ref`, DOM props | — | On the rotating `span` (`data-slot="chevron"`, with `data-direction`). |
+
 ## Gallery
 
 Search by name or keyword (try "mute", "lyrics" or "settings"), narrow by category, pick a weight, and click an icon to copy its JSX.

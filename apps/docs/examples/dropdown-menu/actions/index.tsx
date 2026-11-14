@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +25,7 @@ export default function Actions() {
   return (
     <ThemeScope className="mx-auto grid max-w-sm justify-items-start gap-4">
       <DropdownMenu onAction={act}>
-        <DropdownMenuTrigger className={buttonVariants({ variant: 'secondary', size: 'icon' })} aria-label="Photo actions">
+        <DropdownMenuTrigger render={<Button variant="secondary" size="icon" />} aria-label="Photo actions">
           <Icon name="ellipsis" size={20} />
         </DropdownMenuTrigger>
         <DropdownMenuContent>

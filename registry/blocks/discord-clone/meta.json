@@ -1,7 +1,7 @@
 {
   "name": "discord-clone",
   "title": "Discord clone",
-  "description": "A team chat in Discord's shape: server rail, channel sidebar with threads, a transcript with reactions and thread previews, a member list, and a thread panel that docks on wide screens and slides over on narrow ones. Composed from ChatShell, TabView, Avatar and the Composer, with its own channel, message and member parts; messages are rendered by Docstream.",
+  "description": "A team chat in Discord's shape: server rail, channel sidebar with threads, a transcript with reactions and thread previews, a member list, and a thread panel that docks on wide screens and slides over on narrow ones. Composed from ChatShell, Tabs, Avatar and the Composer, with its own channel, message and member parts; messages are rendered by Docstream.",
   "categories": [
     "chat",
     "application"

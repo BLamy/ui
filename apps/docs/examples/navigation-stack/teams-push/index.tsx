@@ -48,12 +48,12 @@ export default function TeamsPush() {
             <NavigationStackTitle>Teams</NavigationStackTitle>
           </NavigationStackBar>
           <NavigationStackContent>
-            <List inset>
+            <List variant="inset">
               <ListSection>
                 {teams.map((t, i) => (
                   <ListRow
                     key={t}
-                    leading={<Icon name="person" size={20} />}
+                    icon={<Icon name="person" size={20} />}
                     title={t}
                     accessory="chevron"
                     divider={i < teams.length - 1}

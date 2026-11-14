@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { ToggleGroup } from '@ui-sdk/react/toggle';
-import { buttonVariants } from '@/components/ui/button';
-import { PlainToggleButton } from '@/components/ui/plain-button';
+import { Toggle } from '@/components/ui/toggle';
 import { Icon } from '@/lib/icon';
-import { cn } from '@/lib/utils';
 
 const ITEMS = [
   { id: 'home', icon: 'house', label: 'Home' },
@@ -30,13 +28,13 @@ export function Rail() {
         className="flex flex-col items-center gap-1.5"
       >
         {ITEMS.map((i) => (
-          <PlainToggleButton key={i.id} value={i.id} aria-label={i.label} title={i.label} className={cn(buttonVariants({ variant: 'quiet', size: 'icon-sm' }), 'size-9')}>
+          <Toggle key={i.id} value={i.id} aria-label={i.label} title={i.label} variant="quiet" size="icon" className="rounded-lg">
             <Icon name={i.icon} size={19} sw={1.7} />
-          </PlainToggleButton>
+          </Toggle>
         ))}
       </ToggleGroup>
       <span className="flex-1" />
-      <Avatar c={{ f: 'B', l: 'L' }} size={26} />
+      <Avatar name="B L" size={26} />
     </div>
   );
 }

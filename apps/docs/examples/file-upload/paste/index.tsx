@@ -1,4 +1,4 @@
-import { FileDropZone, FileList, FileUpload } from '@/components/ui/file-upload'
+import { FileUploadDropzone, FileUploadList, FileUpload } from '@/components/ui/file-upload'
 import type { UploadContext } from '@/lib/file-upload-model'
 
 // A stand-in for your server (see the basic example).
@@ -27,13 +27,13 @@ export default function Paste() {
   return (
     <div className="mx-auto w-full max-w-md">
       <FileUpload accept={['image/*']} upload={mockUpload}>
-        <FileDropZone
-          size="compact"
+        <FileUploadDropzone
+          orientation="horizontal"
           icon="photo"
           title="Paste a screenshot"
           hint="Focus the button, then press ⌘V or Ctrl+V."
         />
-        <FileList />
+        <FileUploadList />
       </FileUpload>
     </div>
   )

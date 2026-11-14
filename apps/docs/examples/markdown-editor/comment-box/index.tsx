@@ -52,7 +52,7 @@ export default function CommentBox() {
     <div style={{ display: 'grid', gap: 12, maxWidth: 560, margin: '0 auto' }}>
       {comments.map((c) => (
         <div key={c.id} style={{ display: 'flex', gap: 10 }}>
-          <Avatar c={c.author} size={30} />
+          <Avatar name={`${c.author.f} ${c.author.l}`} size={30} />
           <MarkdownView
             markdown={c.markdown}
             style={{ flex: 1, minWidth: 0, marginTop: -6 }}
@@ -60,7 +60,7 @@ export default function CommentBox() {
         </div>
       ))}
       <div style={{ display: 'flex', gap: 10 }}>
-        <Avatar c={me} size={30} />
+        <Avatar name={`${me.f} ${me.l}`} size={30} />
         <div style={{ flex: 1, minWidth: 0, display: 'grid', gap: 8 }}>
           <MarkdownEditor
             aria-label="Comment"

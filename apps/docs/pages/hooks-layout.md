@@ -1,13 +1,13 @@
 # Layout hooks
 
-Hooks for sizing from a container instead of the viewport (a size class first, pixels when you really need them), the size-class scope that `presentation="auto"` popups follow, and for reading the state of the layout containers: `SplitView`, `SidebarProvider`, `TabView`, `FloatingSheet`, `FloatingChat` and `ArtifactChatContainer`. They are all listed with their siblings in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
+Hooks for sizing from a container instead of the viewport (a size class first, pixels when you really need them), the size-class scope that `presentation="auto"` popups follow, and for reading the state of the layout containers: `SplitView`, `SidebarProvider`, `Tabs`, `FloatingSheet`, `FloatingChat` and `ArtifactChatContainer`. They are all listed with their siblings in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
 Each hook below is public: import it from the package root, or from the alias path a registry copy creates.
 
 ```tsx
 // npm: import '@brett_lamy/ui/styles.css' once, then
 import {
-  useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation, useContainerWidth, useContainerSize, useSplitView, useSidebar, useTabView, useFloatingSheet,
+  useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation, useContainerWidth, useContainerSize, useSplitView, useSidebar, useTabs, useFloatingSheet,
   useHideOnScroll, useArtifactChatContainer,
 } from '@brett_lamy/ui'
 
@@ -15,7 +15,7 @@ import {
 import { useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation, useContainerWidth, useContainerSize } from '@/lib/container' // npx shadcn@latest add https://blamy.github.io/ui/r/container.json
 import { useSplitView } from '@/components/ui/split-view'                    // …/r/split-view.json
 import { useSidebar } from '@/components/ui/sidebar'                         // …/r/sidebar.json
-import { useTabView, useTabViewTab } from '@/components/ui/tab-view'         // …/r/tab-view.json
+import { useTabs, useTabsTab } from '@/components/ui/tabs'                 // …/r/tabs.json
 import { useFloatingSheet, useHideOnScroll } from '@/components/ui/floating-sheet' // …/r/floating-sheet.json
 import { useFloatingChat } from '@/components/ui/floating-chat'              // …/r/floating-chat.json
 import { useArtifactChatContainer } from '@/components/ui/artifact-chat-container' // …/r/artifact-chat-container.json
@@ -23,7 +23,7 @@ import { useArtifactChatContainer } from '@/components/ui/artifact-chat-containe
 
 ## `useSizeClass`
 
-The size class of an element's own box: `compact`, `medium` or `regular`. This is the hook to reach for when a component only needs to know whether it is small, middling or wide; the containers (`BLProvider`, `SplitView`, `SidebarProvider`, `NavigationStack`, `SideDrawer`, `ArtifactChatContainer`) use the same classes. It is the kit's `bindSizeClass` (`@/lib/size-class`), which also writes `data-size-class` on the element, so CSS can style from it. It does not make the element a size-class scope: wrap what it renders in [`SizeClassProvider`](#sizeclassprovider-and-usesizeclassscope) when popups inside with `presentation="auto"` should follow it.
+The size class of an element's own box: `compact`, `medium` or `regular`. This is the hook to reach for when a component only needs to know whether it is small, middling or wide; the containers (`BLProvider`, `SplitView`, `SidebarProvider`, `NavigationStack`, `ArtifactChatContainer`) use the same classes. It is the kit's `bindSizeClass` (`@/lib/size-class`), which also writes `data-size-class` on the element, so CSS can style from it. It does not make the element a size-class scope: wrap what it renders in [`SizeClassProvider`](#sizeclassprovider-and-usesizeclassscope) when popups inside with `presentation="auto"` should follow it.
 
 - **Export:** public, with the `UseSizeClassOptions` type. Registry item `container` (`@/lib/container`).
 - **Needs:** nothing.
@@ -65,7 +65,7 @@ Gotchas:
 
 ## `SizeClassProvider` and `useSizeClassScope`
 
-The size-class scope: a React context that says what size class everything rendered inside lives in, popups included. Every kit container that measures its size class provides it (`BLProvider`'s root, `SplitView`, `NavigationStack`, `SidebarProvider`, `SideDrawer` with `presentation="auto"`, `ArtifactChatContainer`); `AdaptivePane` and `FloatingSheet` don't measure one, so they pass the outer scope through. React context crosses portals, so a popup whose content renders into `BLProvider`'s root still sees the scope it was written in, such as a compact SplitView column.
+The size-class scope: a React context that says what size class everything rendered inside lives in, popups included. Every kit container that measures its size class provides it (`BLProvider`'s root, `SplitView`, `NavigationStack`, `SidebarProvider`, `ArtifactChatContainer`); `AdaptivePane` and `FloatingSheet` don't measure one, so they pass the outer scope through (and `AdaptivePane`'s `presentation="auto"` reads it). React context crosses portals, so a popup whose content renders into `BLProvider`'s root still sees the scope it was written in, such as a compact SplitView column.
 
 - **Export:** public. Registry item `container` (`@/lib/container`).
 - **Needs:** nothing. **Outside every scope:** `useSizeClassScope()` returns `undefined`.
@@ -94,7 +94,7 @@ Gotchas:
 
 ## `usePresentation`
 
-What a popup wrapper passes to UI SDK for `presentation`. `"auto"` becomes `"sheet"` inside a compact scope and `fallback` (the component's own presentation) inside a medium or regular one; with no scope at all `"auto"` goes through, and UI SDK's own rule decides (`(max-width: 640px) and (pointer: coarse)`). Any other value is returned as it is. The kit's `Dialog` (so `Credenza`), `Popover`, `DropdownMenu`, `Select`, `Combobox` and `DatePicker` call it; call it in a wrapper of your own around a UI SDK popup.
+What a popup wrapper passes to UI SDK for `presentation`. `"auto"` becomes `"sheet"` inside a compact scope and `fallback` (the component's own presentation) inside a medium or regular one; with no scope at all `"auto"` goes through, and UI SDK's own rule decides (`(max-width: 640px) and (pointer: coarse)`). Any other value is returned as it is. The kit's `Dialog` (whose default is `"auto"`), `Popover`, `DropdownMenu`, `Select`, `Combobox` and `DatePicker` call it; call it in a wrapper of your own around a UI SDK popup.
 
 - **Export:** public. Registry item `container` (`@/lib/container`).
 - **Needs:** nothing.
@@ -327,47 +327,47 @@ Gotchas:
 - `setOpen` and `toggle` go through `onOpenChange` like the user's own changes and return `false` when nothing changed or the change was canceled. For code outside the provider, pass a `createSidebarController()` as its `controller`.
 - `useSidebarCollapsed()` says whether the sidebar around is a collapsed rail, for custom items that hide their labels.
 
-## `useTabView`
+## `useTabs`
 
-The enclosing `TabView`'s orientation, placement and bar variant.
+The enclosing `Tabs`' look, side and orientation.
 
-- **Export:** public. Registry item `tab-view`.
-- **Needs:** nothing, but only means something inside a `TabView`. **Outside it:** no error: you get the defaults `{ orientation: 'horizontal', placement: 'bottom', variant: 'bar' }`.
+- **Export:** public. Registry item `tabs`.
+- **Needs:** to be called inside a `Tabs`. **Outside it:** returns `null`.
 
 ```ts
-function useTabView(): { orientation: 'horizontal' | 'vertical'; placement: 'top' | 'bottom' | 'start' | 'end'; variant: 'bar' | 'rail' | 'workspace' | 'plain' }
+function useTabs(): { variant: TabsVariant; side: 'top' | 'bottom' | 'start' | 'end'; orientation: 'horizontal' | 'vertical' } | null
 ```
 
 ```tsx
-function TabBadge() {
-  const { orientation } = useTabView()
-  return <span className={orientation === 'vertical' ? 'ms-auto' : 'absolute -top-1 -end-1'}>3</span>
+function RailBadge() {
+  const tabs = useTabs()
+  return tabs?.orientation === 'vertical' ? <Dot /> : <Count />
 }
 ```
 
-`variant` depends on where you call it. In `TabView` itself it is `rail` for a vertical view and `bar` for a horizontal one; inside a `TabViewBar` it is that bar's `variant` prop.
+`side` is the root's, or the default for its `variant` (`bottom` for `bar`, `start` for `rail` and `workspace`, `top` otherwise); `orientation` follows from it.
 
-## `useTabViewTab`
+## `useTabsTab`
 
-Inside a `TabViewTab`: its UI SDK tab state, for custom tab content.
+Inside a `TabsTab`: its UI SDK tab state, for custom tab content.
 
-- **Export:** public. Registry item `tab-view`.
-- **Needs:** to be called from the content of a `TabViewTab` (its `children`). **Outside it:** returns `null`.
+- **Export:** public. Registry item `tabs`.
+- **Needs:** to be called from the content of a `TabsTab` (its `children`). **Outside it:** returns `null`.
 
 ```ts
-function useTabViewTab(): TabsTabState | null   // { selected: boolean; disabled: boolean }
+function useTabsTab(): TabsTabState | null   // { selected: boolean; disabled: boolean }
 ```
 
 ```tsx
 function InboxLabel() {
-  const tab = useTabViewTab()
+  const tab = useTabsTab()
   return <span className={tab?.selected ? 'font-semibold' : undefined}>Inbox</span>
 }
 
-<TabViewTab value="inbox"><InboxLabel /></TabViewTab>
+<TabsTab value="inbox"><InboxLabel /></TabsTab>
 ```
 
-`TabViewTab` also passes the same state to a render-function child: `<TabViewTab value="inbox">{({ selected }) => …}</TabViewTab>`. The hook is for a nested component that cannot take it as a parameter.
+`TabsTab` also passes the same state to a render-function child: `<TabsTab value="inbox">{({ selected }) => …}</TabsTab>`. The hook is for a nested component that cannot take it as a parameter.
 
 Hover, press and keyboard focus are not part of the state: style them with the pseudo-classes. Every tab is a `group/tab`, so content inside it uses `group-hover/tab:`, `group-active/tab:` and `group-focus-visible/tab:`.
 

@@ -12,7 +12,8 @@ import { Button as SdkButton } from '@ui-sdk/react/button';
 import { createParts, usePart, usePrimitive, type PartProps } from '@ui-sdk/react/primitive';
 import type { ChangeOptions } from '@ui-sdk/core';
 import type { SizeClass } from '@/lib/size-class';
-import { EdgeDrawer, useKeptChildren } from '@/components/ui/edge-drawer';
+import { Sheet, SheetBackdrop, SheetContent } from '@/components/ui/sheet';
+import { useKeptChildren } from '@/lib/kept-children';
 import { sidebar, type SidebarApi, type SidebarOpenChangeReason, type SidebarOptions } from '@/lib/sidebar-primitive';
 import { brandTile, cn, cx } from '@/lib/utils';
 import { SizeClassProvider } from '@/lib/container';
@@ -126,17 +127,13 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, 'aria
     <>
       {kept.portal}
       {overlay ? (
-        <EdgeDrawer
-          side="start"
-          open={c.open}
-          onOpenChange={(next, details) => { if (!c.setOpen(next, details)) details.cancel(); }}
-          aria-label={label}
-          width={width}
-          zIndex={20}
-          className="border-e border-border bg-sidebar shadow-black/40"
-        >
-          <SidebarPanel ref={kept.dock} className="h-full">{kept.inline}</SidebarPanel>
-        </EdgeDrawer>
+        <Sheet contained side="start" open={c.open} onOpenChange={(next, details) => { if (!c.setOpen(next, details)) details.cancel(); }}>
+          <SheetBackdrop />
+          <SheetContent variant="panel" keepMounted initialFocus="content" aria-label={label}
+            className="w-(--sidebar-drawer-w) bg-sidebar" style={{ '--sidebar-drawer-w': width + 'px' } as CSSProperties}>
+            <SidebarPanel ref={kept.dock} className="h-full">{kept.inline}</SidebarPanel>
+          </SheetContent>
+        </Sheet>
       ) : (
         // Closing slides the panel out toward the start: the box narrows while the panel, at full width, moves by its
         // own width on the same spring, so its inner edge stays on the content's edge and the content closes the gap

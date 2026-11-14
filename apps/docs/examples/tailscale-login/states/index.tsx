@@ -1,4 +1,4 @@
-import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button'
+import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-controls'
 import type { TailscaleStatus } from '@/lib/tailscale'
 
 // Every state, driven by props (no provider): what each looks like and says.

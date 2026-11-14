@@ -1,8 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
-import { PasskeyEnrollDialog } from '@/components/ui/passkey-enroll-dialog';
-import { VaultGate, VaultSetup, VaultStatusBadge, VaultUnlock, VaultUnsupported } from '@/components/ui/vault-gate';
+import { VaultEnrollDialog, VaultGate, VaultSetup, VaultStatusBadge, VaultUnlock, VaultUnsupported } from '@/components/ui/vault-gate';
 import { PasskeyError } from '@/lib/passkey';
 import type { Vault, VaultState, VaultUnsupportedReason } from '@/lib/vault';
 import { Pad, Phone } from '../stories/frame';
@@ -113,10 +112,11 @@ function PressOnMount({ label, children }: { label: string; children: ReactNode 
   return <div ref={ref} className="contents">{children}</div>;
 }
 
-const dialog = (vault: Vault) => (
-  <PasskeyEnrollDialog open onOpenChange={() => undefined} vault={vault} appName="Notes" protects="your notes" />
+const dialog = (vault: Vault, mode?: 'enroll' | 'regenerate') => (
+  <VaultEnrollDialog open onOpenChange={() => undefined} vault={vault} mode={mode} appName="Notes" protects="your notes" />
 );
 
+/** In a compact container the enroll dialog is a tray; this phone-sized frame shows that. */
 export const EnrollDialog: Story = {
   render: () => <Phone h={640}><Demo><div className="p-4"><Button>Set up</Button></div>{dialog(stubVault({}))}</Demo></Phone>,
 };
@@ -136,6 +136,22 @@ export const EnrollDialogRecoveryKeyDark: Story = {
       <PressOnMount label="Create passkey"><Demo>{dialog(stubVault({}))}</Demo></PressOnMount>
     </Phone>
   ),
+};
+/** In a regular container it is a centered card. */
+export const EnrollDialogRegular: Story = {
+  render: () => <Phone w={760} h={600}><Demo><div className="p-4"><Button>Set up</Button></div>{dialog(stubVault({}))}</Demo></Phone>,
+};
+/** The passkey prompt is up (its promise never settles here): a spinner, and Cancel closes the prompt, not the dialog. */
+export const EnrollDialogWorking: Story = {
+  render: () => (
+    <Phone h={640}>
+      <PressOnMount label="Create passkey"><Demo>{dialog(stubVault({}, () => new Promise(() => undefined)))}</Demo></PressOnMount>
+    </Phone>
+  ),
+};
+/** `mode="regenerate"`: replace the recovery key of an unlocked vault. */
+export const EnrollDialogRegenerate: Story = {
+  render: () => <Phone h={560}><Demo>{dialog(stubVault({ ...enrolled, status: 'unlocked' }), 'regenerate')}</Demo></Phone>,
 };
 /** The authenticator has no PRF: the dialog says why and nothing was saved. */
 export const EnrollDialogNoPrf: Story = {

@@ -65,7 +65,7 @@ function Mail() {
           return (
             <ListRow
               key={m.id}
-              leading={
+              icon={
                 <span
                   aria-hidden
                   style={{
@@ -83,7 +83,7 @@ function Mail() {
                   {m.from}
                 </span>
               }
-              subtitle={m.subject}
+              description={m.subject}
               trailing={
                 <span
                   style={{

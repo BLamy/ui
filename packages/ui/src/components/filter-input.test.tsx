@@ -20,19 +20,19 @@ const fields: FilterField[] = [
   { id: 'points', label: 'Points', kind: 'number' },
 ];
 const NOW = new Date(2026, 0, 14, 15, 30);
-const query = { debounce: 0, now: NOW };
+const parse = { debounceMs: 0, reference: NOW };
 
 function Harness({ onChange }: { onChange?: (f: Filter[]) => void }) {
   const [filters, setFilters] = useState<Filter[]>([]);
   return (
     <FilterBar fields={fields} value={filters} onValueChange={(f) => { setFilters(f); onChange?.(f); }}>
-      <FilterInput query={query} />
+      <FilterInput parse={parse} />
       <FilterToolbar />
     </FilterBar>
   );
 }
 
-const box = () => screen.getByRole('textbox', { name: 'Describe the filters you want' });
+const box = () => screen.getByRole('searchbox', { name: 'Describe the filters you want' });
 const type = (text: string) => fireEvent.input(box(), { target: { value: text } });
 const preview = () => document.querySelector('[data-slot=filter-input-preview]');
 // What a screen reader hears: UI SDK's one polite live region, written by announce().
@@ -90,7 +90,7 @@ describe('FilterInput', () => {
 
   it('applies the first Enter only once the preview has caught up with the typing', async () => {
     const onChange = vi.fn();
-    render(<FilterBar fields={fields} onValueChange={onChange}><FilterInput query={{ debounce: 5000, now: NOW }} /></FilterBar>);
+    render(<FilterBar fields={fields} onValueChange={onChange}><FilterInput parse={{ debounceMs: 5000, reference: NOW }} /></FilterBar>);
     type('status open');
     fireEvent.keyDown(box(), { key: 'Enter' }); // debounce has not fired: this only brings the preview up
     await waitFor(() => expect(spoken()).toContain('Status is Open'));
@@ -134,7 +134,7 @@ describe('FilterInput', () => {
 
   it('works without a FilterBar: onApply gets the filters and the fields come from props', async () => {
     const onApply = vi.fn();
-    render(<FilterInput fields={fields} onApply={onApply} query={query} />);
+    render(<FilterInput fields={fields} onApply={onApply} parse={parse} />);
     type('priority high');
     await waitFor(() => expect(spoken()).toContain('Priority is High'));
     fireEvent.keyDown(box(), { key: 'Enter' });
@@ -147,7 +147,7 @@ describe('FilterInput', () => {
     const outer = vi.fn((event: KeyboardEvent) => event.defaultPrevented);
     document.addEventListener('keydown', outer);
     try {
-      render(<FilterInput fields={fields} onApply={onApply} onValueChange={onValueChange} query={query} />);
+      render(<FilterInput fields={fields} onApply={onApply} onValueChange={onValueChange} parse={parse} />);
       type('priority high');
       expect(onValueChange).toHaveBeenLastCalledWith('priority high', expect.objectContaining({ reason: 'input-change' }));
       fireEvent.keyDown(box(), { key: 'Escape' });
@@ -174,7 +174,7 @@ describe('FilterInput', () => {
   it('is controlled with value, and a canceled change keeps the phrase', () => {
     function Controlled() {
       const [text, setText] = useState('status');
-      return <FilterInput fields={fields} onApply={() => undefined} value={text} onValueChange={(next, details) => { if (next.length > 12) details.cancel(); else setText(next); }} query={query} />;
+      return <FilterInput fields={fields} onApply={() => undefined} value={text} onValueChange={(next, details) => { if (next.length > 12) details.cancel(); else setText(next); }} parse={parse} />;
     }
     render(<Controlled />);
     expect((box() as HTMLInputElement).value).toBe('status');

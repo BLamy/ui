@@ -5,7 +5,7 @@
    action plays on an outlet; Layout animates its own layout changes, and a Magic Motion id (layoutId) makes it a shared
    element that flies between scenes; Children staggers what appears inside it. Each has its own transition. */
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
 import { TransitionButton } from './curves';
@@ -152,9 +152,9 @@ export function MotionPanel({ ctx, onPlay }: { ctx: NodeCtx; onPlay: () => void 
             <TargetEditor target={m.appear.target} onBegin={ctx.begin} onChange={(t, live) => setM({ appear: { ...m.appear!, target: t } }, live)} help="From these values to the node’s own. A list is keyframes on the way." />
             <TransitionButton spec={m.appear.transition} onBegin={ctx.begin} onChange={(s, live) => setM({ appear: { ...m.appear!, transition: s } }, live)} />
             <div className="flex items-center gap-2">
-              <PlainButton onClick={onPlay} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-primary px-2.5 text-caption font-semibold text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <SdkButton onClick={onPlay} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-primary px-2.5 text-caption font-semibold text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <Icon name="play" size={11} sw={2.4} /> Preview on canvas
-              </PlainButton>
+              </SdkButton>
             </div>
             <CodeLine>{`initial={${targetCode(m.appear.target)}}`}</CodeLine>
           </>

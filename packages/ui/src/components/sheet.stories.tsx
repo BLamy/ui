@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   Sheet, SheetBackdrop, SheetBody, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger,
@@ -6,6 +7,9 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Listbox, ListboxItem } from '@/components/ui/list-box';
 import { Switch } from '@/components/ui/switch';
+import { focusRing } from '@/lib/primitives';
+import { cn } from '@/lib/utils';
+import { Phone } from '../stories/frame';
 import { Screen } from '../stories/primitive-frame';
 
 type Side = 'bottom' | 'top' | 'left' | 'right';
@@ -55,8 +59,90 @@ function Demo({ side, dark, open = true, snapPoints }: { side: Side; dark?: bool
 export const Bottom: Story = { render: (args) => <Demo side={(args.side as Side) ?? 'bottom'} /> };
 export const BottomDark: Story = { render: () => <Demo side="bottom" dark /> };
 export const Right: Story = { render: () => <Demo side="right" /> };
+export const RightDark: Story = { render: () => <Demo side="right" dark /> };
 export const Left: Story = { render: () => <Demo side="left" dark /> };
 export const Top: Story = { render: () => <Demo side="top" /> };
 /** Two places to rest: the grabber becomes a handle (press it, or use the arrow keys), and a drag settles on one. */
 export const SnapPoints: Story = { render: () => <Demo side="bottom" snapPoints={[0.5, 1]} /> };
 export const Closed: Story = { render: () => <Demo side="bottom" open={false} /> };
+
+/** `animateHeight`: a short tray that springs to its content's height as the flow steps forward. */
+function Flow({ dark }: { dark?: boolean }) {
+  const [step, setStep] = useState<'pick' | 'confirm'>('pick');
+  return (
+    <Screen dark={dark}>
+      <div>
+        <Sheet defaultOpen onOpenChange={(open) => open && setStep('pick')}>
+          <SheetTrigger className={buttonVariants()}>Upgrade plan</SheetTrigger>
+          <SheetBackdrop />
+          <SheetContent animateHeight>
+            <SheetClose />
+            {step === 'pick' ? (
+              <>
+                <SheetHeader>
+                  <SheetTitle>Choose a plan</SheetTitle>
+                  <SheetDescription>You can change it any time.</SheetDescription>
+                </SheetHeader>
+                <SheetBody className="flex flex-col gap-2">
+                  <Button variant="secondary" size="lg" className="justify-between">Starter <span>$0</span></Button>
+                  <Button size="lg" className="justify-between">Team <span>$12</span></Button>
+                </SheetBody>
+                <SheetFooter>
+                  <Button size="pill" onClick={() => setStep('confirm')}>Continue</Button>
+                </SheetFooter>
+              </>
+            ) : (
+              <>
+                <SheetHeader>
+                  <SheetTitle>Confirm Team</SheetTitle>
+                  <SheetDescription>$12 per seat each month, billed today.</SheetDescription>
+                </SheetHeader>
+                <SheetFooter>
+                  <SheetClose render={<Button size="pill" />}>Confirm and pay</SheetClose>
+                  <Button size="pill" variant="secondary" onClick={() => setStep('pick')}>Back</Button>
+                </SheetFooter>
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
+      </div>
+    </Screen>
+  );
+}
+export const FlowInTray: Story = { render: () => <Flow /> };
+
+/** `contained`: the sheet stays inside its positioned parent (the framed box under the toolbar), with
+ *  `SheetContent variant="panel"`, a full-height edge panel without chrome. The toolbar stays usable. */
+function Contained({ dark, modal = true }: { dark?: boolean; modal?: boolean }) {
+  const [folder, setFolder] = useState('Inbox');
+  return (
+    <Phone w={390} h={844} dark={dark}>
+      <div className="absolute inset-0 flex flex-col">
+        <header className="flex h-toolbar shrink-0 items-center gap-2 border-b border-border px-4 text-body">
+          <strong className="flex-1">Mail</strong>
+          <span className="text-muted-foreground">{folder}</span>
+        </header>
+        <div className="relative m-3 min-h-0 flex-1 overflow-hidden rounded-card bg-muted shadow-hairline">
+          <Sheet contained side="left" defaultOpen modal={modal}>
+            <div className="p-4">
+              <SheetTrigger className={buttonVariants({ variant: 'secondary' })}>Folders</SheetTrigger>
+            </div>
+            {modal ? <SheetBackdrop /> : null}
+            <SheetContent variant="panel" aria-label="Folders" className="w-60 p-2">
+              {['Inbox', 'Drafts', 'Sent', 'Archive'].map((f) => (
+                <button key={f} type="button" onClick={() => setFolder(f)} aria-current={f === folder || undefined}
+                  className={cn('block w-full cursor-pointer rounded-ctl border-0 bg-transparent px-3 py-2 text-start text-body text-foreground hover:bg-secondary aria-[current]:bg-secondary-strong', focusRing)}>
+                  {f}
+                </button>
+              ))}
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    </Phone>
+  );
+}
+export const ContainedPanel: Story = { render: () => <Contained /> };
+export const ContainedPanelDark: Story = { render: () => <Contained dark /> };
+/** `modal={false}`: no scrim, and the box behind the panel stays usable. */
+export const ContainedBeside: Story = { render: () => <Contained modal={false} /> };

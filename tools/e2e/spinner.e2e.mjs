@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { openDemo } from './helpers.mjs';
 
-/* Spinner, through its docs demos: the gallery of every animation and variant, and the playground. */
+/* Spinner, through its docs demos: the gallery of every animation and pattern, and the playground. */
 const spinners = (page) => page.locator('[data-slot=spinner]');
 /** The first animated part of a spinner and what the browser says it is doing. */
 const animation = (el) => el.evaluate((root) => {
@@ -14,9 +14,9 @@ const animation = (el) => el.evaluate((root) => {
 test.describe('gallery', () => {
   test.beforeEach(async ({ page }) => { await openDemo(page, 'spinner/gallery', '[data-slot=spinner]'); });
 
-  test('shows the iOS spinner and all 66 loader variants', async ({ page }) => {
+  test('shows the iOS spinner and all 66 loader patterns', async ({ page }) => {
     await expect(spinners(page)).toHaveCount(67);
-    for (const a of ['orbit', 'beacon', 'matrix', 'cells', 'register', 'bands', 'lift', 'steps', 'cradle', 'hourglass', 'balance', 'fanout', 'battery', 'bloom', 'sonar', 'gyro', 'coalesce', 'crystal', 'loop', 'relay', 'robot', 'kettle']) {
+    for (const a of ['orbit', 'bars', 'matrix', 'merge', 'encode', 'scan', 'lift', 'steps', 'cradle', 'hourglass', 'balance', 'fanout', 'battery', 'bloom', 'sonar', 'gyro', 'coalesce', 'crystal', 'loop', 'relay', 'robot', 'kettle']) {
       await expect(page.locator(`[data-slot=spinner][data-animation=${a}]`)).toHaveCount(3);
     }
   });
@@ -35,7 +35,7 @@ test.describe('gallery', () => {
       expect(a.state).toBe('running');
       names.add(a.name);
     }
-    // Twenty-two animations, several of which switch keyframes by variant.
+    // Twenty-two animations, several of which switch keyframes by pattern.
     expect(names.size).toBeGreaterThanOrEqual(22);
   });
 
@@ -56,17 +56,17 @@ test.describe('playground', () => {
   const choose = (page, name) => page.getByText(name, { exact: true }).click();
   const pause = (page) => page.locator('[data-slot=switch]').click();
 
-  test('picking an animation and a variant changes the preview and the code', async ({ page }) => {
+  test('picking an animation and a pattern changes the preview and the code', async ({ page }) => {
     await expect(preview(page)).toHaveAttribute('data-animation', 'orbit');
     await choose(page, 'Matrix');
     await expect(preview(page)).toHaveAttribute('data-animation', 'matrix');
     await expect(code(page)).toContainText('animation="matrix"');
     await choose(page, 'ripple');
     await expect(preview(page).locator('[data-variant]')).toHaveAttribute('data-variant', 'ripple');
-    await expect(code(page)).toContainText('variant="ripple"');
+    await expect(code(page)).toContainText('pattern="ripple"');
   });
 
-  test('the variant list follows the animation, and ios has none', async ({ page }) => {
+  test('the pattern list follows the animation, and ios has none', async ({ page }) => {
     await choose(page, 'Lift');
     await expect(page.getByRole('radio', { name: 'breathe' })).toBeVisible();
     await choose(page, 'iOS');
@@ -104,6 +104,7 @@ test.describe('playground', () => {
   test('the preview announces itself as status', async ({ page }) => {
     await expect(preview(page)).toHaveAttribute('role', 'status');
     await expect(preview(page)).toHaveAttribute('aria-label', 'Preview');
+    await expect(preview(page)).toHaveText('Preview');
   });
 });
 
@@ -116,5 +117,12 @@ test('reduced motion holds a still frame', async ({ browser }) => {
     const still = await loaders.nth(i).evaluate((root) => [...root.querySelectorAll('*')].every((e) => getComputedStyle(e).animationName === 'none'));
     expect(still, `loader ${i} is still`).toBe(true);
   }
+  // The iOS indicator keeps turning (as UIActivityIndicatorView does with Reduce Motion on).
   await context.close();
+});
+
+test('the iOS indicator turns by default', async ({ page }) => {
+  await openDemo(page, 'spinner/gallery', '[data-slot=spinner]');
+  const ios = page.locator('[data-slot=spinner][data-animation=ios]').first();
+  expect(await ios.evaluate((el) => getComputedStyle(el).animationName)).toBe('blSpin');
 });

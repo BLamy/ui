@@ -9,7 +9,7 @@ import { Box, LabelChip, Oct, StatePill, type Layout, type Nav } from './parts';
 import { FilterMenus, ItemRow, ListToolbar, StateToggle } from './lists';
 import { Thread } from './pull-request';
 import { Loaded, useLoad, useRepo } from './repo-context';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 
 export function IssueList({ ui, nav, labelFilter }: { ui: Layout; nav: Nav; labelFilter: string[] }) {
   const { source } = useRepo();
@@ -65,9 +65,9 @@ export function IssueView({ ui, number, nav }: { ui: Layout; number: number; nav
   return (
     <div className={cn(ui.phone && 'px-4 py-4')}>
       {!ui.phone ? (
-        <PlainButton onClick={() => nav.openIssue(null)} className="mb-3 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-detail text-primary hover:underline">
+        <SdkButton onClick={() => nav.openIssue(null)} className="mb-3 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-detail text-primary hover:underline">
           <Oct name="chevLeft" size={14} />Issues
-        </PlainButton>
+        </SdkButton>
       ) : null}
       <Loaded load={issue}>
         {(i) => (

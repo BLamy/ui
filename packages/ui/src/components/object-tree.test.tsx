@@ -45,8 +45,8 @@ describe('ObjectTree', () => {
   it('marks its parts, so a host can find them', () => {
     render(<ObjectTree aria-label="T" root={[{ id: 's', name: 'Local', section: true, children: [leaf('a')] }]} />);
     expect(row('Local').getAttribute('data-slot')).toBe('tree-item');
-    expect(row('Local').getAttribute('data-kind')).toBe('section');
-    expect(row('a').getAttribute('data-kind')).toBe('node');
+    expect(label('Local').getAttribute('data-kind')).toBe('section');
+    expect(label('a').getAttribute('data-kind')).toBe('node');
     expect(row('a').querySelector('[data-slot="object-value"]')?.getAttribute('data-type')).toBe('number');
   });
 
@@ -71,8 +71,15 @@ describe('ObjectTree', () => {
     const { unmount } = render(<ObjectTree aria-label="T" root={leaf('solo')} />);
     expect(rowText()).toEqual(['solo:1']);
     unmount();
-    render(<ObjectTree aria-label="T" root={[]} emptyMessage="No JS here" />);
+    render(<ObjectTree aria-label="T" root={[]} emptyState="No JS here" />);
     expect(screen.getByText('No JS here')).toBeTruthy();
+  });
+
+  it('is named "Values" by default, and takes Tree\'s densities', () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(240);
+    render(<ObjectTree root={Array.from({ length: 90 }, (_, i) => leaf(`n${i}`, i))} density="comfortable" />);
+    expect(screen.getByRole('tree', { name: 'Values' })).toBeTruthy();
+    expect(screen.getByRole('tree').style.height).toBe(`${90 * 36}px`);
   });
 
   it('loads children when a row opens, showing Loading until they come', async () => {
@@ -168,11 +175,11 @@ describe('ObjectTree', () => {
     const { rerender } = render(<ObjectTree aria-label="T" root={[branch('a', { defaultExpanded: true })]} loadChildren={loadChildren} />);
     await waitFor(() => expect(row('kid')).toBeTruthy());
     rerender(<ObjectTree aria-label="T" root={[branch('a', { defaultExpanded: true })]} loadChildren={loadChildren} />);
-    expect(label('kid').className).toContain('opacity-60');
+    expect(label('kid').hasAttribute('data-stale')).toBe(true);
     expect(screen.queryByText('Loading…')).toBeNull();
     await act(async () => { second.resolve([leaf('kid', 2)]); });
     expect(row('kid').textContent).toBe('kid:2');
-    expect(label('kid').className).not.toContain('opacity-60');
+    expect(label('kid').hasAttribute('data-stale')).toBe(false);
   });
 
   it('calls a getter on press and shows what comes back', async () => {
@@ -318,11 +325,11 @@ describe('ObjectTree', () => {
   it('reaches a row that is not in the DOM with the keyboard', async () => {
     vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(240);
     const many = Array.from({ length: 90 }, (_, i) => leaf(`n${i}`, i));
-    const { container } = render(<ObjectTree aria-label="T" root={many} />);
+    render(<ObjectTree aria-label="T" root={many} />);
     expect(row('n89')).toBeUndefined();
     row('n0').focus();
     fireEvent.keyDown(row('n0'), { key: 'End' });
-    const scroller = container.querySelector('[data-slot="object-tree-scroller"]') as HTMLElement;
+    const scroller = screen.getByRole('tree').parentElement as HTMLElement;
     expect(scroller.scrollTop).toBe(90 * 24 - 240);
     await act(async () => { fireEvent.scroll(scroller); });
     expect(focused()).toBe('n89:89');

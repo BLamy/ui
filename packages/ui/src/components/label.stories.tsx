@@ -35,3 +35,26 @@ export const WrappingAControl: Story = {
   ),
   args: { variant: 'control', children: undefined },
 };
+
+/** The three looks: a body-sized label, the grouped-form caption (FieldLabel's default) and a control's line. */
+export const Variants: Story = {
+  render: () => (
+    <div className="flex flex-col gap-3">
+      <Label>Display name</Label>
+      <Label variant="field">Email</Label>
+      <Label variant="control"><Checkbox defaultChecked />Remember me</Label>
+      <Label variant="control"><Checkbox disabled />Unavailable option</Label>
+    </div>
+  ),
+};
+
+export const Dark: Story = {
+  decorators: [(Story) => <Panel dark><Story /></Panel>],
+  render: () => (
+    <div className="flex flex-col gap-3">
+      <Label>Display name</Label>
+      <Label variant="field">Email</Label>
+      <Label variant="control"><Checkbox defaultChecked />Remember me</Label>
+    </div>
+  ),
+};

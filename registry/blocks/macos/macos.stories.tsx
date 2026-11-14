@@ -130,12 +130,12 @@ export const TailscaleSignedOut: Story = {
 };
 
 /** Signed in: the Tailscale menu with the tailnet, this device and the exit nodes drawn like Wi-Fi networks. */
-export const TailscaleMenu: Story = {
+export const TailscaleStatusItem: Story = {
   args: { defaultOpen: false, initialMenu: 'tailscale' },
   render: (args) => <Full><Connected {...args} /></Full>,
 };
 
-export const TailscaleMenuDark: Story = {
+export const TailscaleStatusItemDark: Story = {
   args: { defaultOpen: false, initialMenu: 'tailscale' },
   render: (args) => dark(<Full><Connected {...args} /></Full>),
 };

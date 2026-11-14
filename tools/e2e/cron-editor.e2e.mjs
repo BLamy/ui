@@ -29,11 +29,11 @@ test.describe('without WebGPU', () => {
     await hideWebGPU(page);
   });
 
-  test('hides the plain-English box behind a note and never downloads gpu-cron', async ({ page }) => {
+  test('leaves the plain-English box out, says why under the expression, and never downloads gpu-cron', async ({ page }) => {
     const urls = [];
     page.on('request', (r) => urls.push(r.url()));
     await openDemo(page, 'cron-editor/basic', ROOT);
-    const note = page.locator('[data-slot=cron-editor-note]');
+    const note = page.locator('[data-slot=cron-editor] [data-slot=field-description]');
     await expect(note).toBeVisible();
     await expect(note).toContainText('needs WebGPU');
     await expect(page.getByRole('textbox', { name: 'Describe the schedule' })).toHaveCount(0);
@@ -62,7 +62,8 @@ test.describe('without WebGPU', () => {
     await expect(expression(page)).toHaveAttribute('aria-invalid', 'true');
     for (const name of ['minute', 'hour', 'month', 'dayOfWeek']) await expect(cell(page, name)).toHaveAttribute('data-invalid', '');
     await expect(cell(page, 'dayOfMonth')).not.toHaveAttribute('data-invalid', '');
-    const errors = page.locator('[data-slot=field-error]');
+    // One FieldError per bad field: read them together.
+    const errors = page.locator('[data-slot=cron-editor] [data-slot=field]').filter({ has: expression(page) });
     await expect(errors).toContainText('Minute: 61 is out of range (0–59)');
     await expect(errors).toContainText('Hour: 25 is out of range (0–23)');
     await expect(errors).toContainText('Month: 13 is out of range (1–12)');
@@ -144,7 +145,7 @@ test.describe('without WebGPU', () => {
 
   test('raw-only demo: custom presets, names, and no note or box at all', async ({ page }) => {
     await openDemo(page, 'cron-editor/raw-only', ROOT);
-    await expect(page.locator('[data-slot=cron-editor-note]')).toHaveCount(0);
+    await expect(page.locator('[data-slot=cron-editor] [data-slot=field-description]')).not.toContainText('WebGPU');
     await expect(page.locator('[data-slot=cron-editor-natural]')).toHaveCount(0);
     // This demo labels the field "Schedule" and the plain variant drops the filled panels.
     await expect(page.getByRole('textbox', { name: 'Schedule' })).toHaveValue('*/15 9-17 * * mon-fri');

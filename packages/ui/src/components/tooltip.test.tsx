@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { setPlatform } from '@ui-sdk/core/testing';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Tooltip, TooltipContent, TooltipShortcut, TooltipTrigger } from '@/components/ui/tooltip';
 import { BLProvider } from '@/lib/theme';
@@ -114,5 +115,18 @@ describe('Tooltip', () => {
     expect(content.parentElement).toBe(document.querySelector('[data-slot=bl-provider]'));
     expect(content.querySelector('[data-slot=tooltip-shortcut]')?.textContent).toMatch(/(⌘|Ctrl\+)S/);
     expect(screen.getByRole('button', { name: 'Save' }).getAttribute('aria-keyshortcuts')).toBeTruthy();
+  });
+
+  it("puts a shortcut's modifiers in Apple's order", async () => {
+    setPlatform('apple');
+    await mount(
+      <Tooltip shortcut="mod+shift+s" defaultOpen>
+        <TooltipTrigger>Save As</TooltipTrigger>
+        <TooltipContent>Save a copy<TooltipShortcut /></TooltipContent>
+      </Tooltip>,
+      'real',
+    );
+    setPlatform('other');
+    expect(document.querySelector('[data-slot=tooltip-shortcut]')?.textContent).toBe('⇧⌘S');
   });
 });

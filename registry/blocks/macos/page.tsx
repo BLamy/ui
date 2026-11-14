@@ -9,7 +9,7 @@
    clears, then hides. All sample data is invented; the clock is fixed at 9:41.
    The menu bar's Tailscale and Wi-Fi items open menus. The desktop owns one Tailscale controller (the real Tailscale by
    default; the WebAssembly client loads only when someone signs in), shared by the Tailscale menu, Safari and VS Code:
-   sign in from either, and an exit node chosen in either shows in both. The Tailscale menu is the core TailscaleMenu
+   sign in from either, and an exit node chosen in either shows in both. The Tailscale menu composes the core Tailscale parts
    with exit nodes drawn like Wi-Fi networks; the Wi-Fi menu is invented sample data.
    Under 640px wide the desktop becomes an iPhone: a status bar, a springboard of the same apps (Search opens Alfred),
    and full-screen apps that zoom out of their icons; the home bar sends one back, and double-tapping it opens the app
@@ -17,7 +17,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePersistentState } from '@/lib/persistent-state';
 import { createCommandMenuController, type CommandMenuController } from '@/components/ui/command-menu';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { ToastRegion, createHud, type Hud } from '@/components/ui/toast';
 import { useShortcut } from '@ui-sdk/react/shortcuts';
 import { useContainerSize } from '@/lib/container';
@@ -261,7 +261,7 @@ function Screen({ dark, open, show, close, boot, menu, hud, initialDock, persist
             </div>
           ) : !desktop.windows.length && !phone ? (
             <div className="absolute left-1/2 -translate-x-1/2" style={{ top: top + 12 }}>
-              <PlainButton
+              <SdkButton
                 onClick={show}
                 className={cn(
                   'inline-flex animate-bl-fade-in cursor-pointer items-center gap-2.5 rounded-full border-0 px-4 py-2 text-[13.5px] font-medium whitespace-nowrap backdrop-blur-xl backdrop-saturate-150 transition-transform duration-spring-snappy ease-spring-snappy active:scale-[.97]',
@@ -275,7 +275,7 @@ function Screen({ dark, open, show, close, boot, menu, hud, initialDock, persist
                   <kbd className={cn('rounded-md px-1.5 py-0.5 font-[inherit] text-caption', dark ? 'bg-white/15' : 'bg-black/8')}>Space</kbd>
                 </span>
                 or click to show Alfred
-              </PlainButton>
+              </SdkButton>
             </div>
           ) : null}
         </div>

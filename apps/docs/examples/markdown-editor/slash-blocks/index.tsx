@@ -13,7 +13,7 @@ const blocks: { label: string; markdown: string }[] = [
     markdown:
       '| Step | Owner |\n| --- | --- |\n| Design | Maya |\n| Build | Jonas |',
   },
-  { label: 'Code', markdown: '```tsx\n<Credenza compact open={open} />\n```' },
+  { label: 'Code', markdown: '```tsx\n<Dialog open={open} />\n```' },
   { label: 'Tasks', markdown: '- [ ] Write the docs\n- [ ] Record the demo' },
 ]
 

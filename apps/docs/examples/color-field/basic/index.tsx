@@ -13,7 +13,7 @@ export default function Basic() {
   return (
     <div className="mx-auto grid max-w-sm gap-5">
       <Field>
-        <FieldLabel variant="field">Accent</FieldLabel>
+        <FieldLabel>Accent</FieldLabel>
         <ColorField value={color} onValueChange={setColor} />
         <FieldDescription>
           Any CSS color. Held as {parsed ? formatColor(parsed, 'hsl', { precision: 3 }) : color}.
@@ -21,7 +21,7 @@ export default function Basic() {
       </Field>
 
       <Field invalid>
-        <FieldLabel variant="field">Brand</FieldLabel>
+        <FieldLabel>Brand</FieldLabel>
         <ColorField size="sm" defaultValue="#ff453a" />
         <FieldError match>Pick a darker color.</FieldError>
       </Field>

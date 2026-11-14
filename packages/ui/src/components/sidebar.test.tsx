@@ -83,7 +83,7 @@ describe('Sidebar', () => {
     render(<Shell variant="overlay" onOpenChange={onOpenChange} />);
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'Toggle sidebar' })); });
     const dialog = screen.getByRole('dialog', { name: 'Sidebar' });
-    expect(dialog.hasAttribute('data-edge-drawer')).toBe(true);
+    expect(dialog.getAttribute('data-variant')).toBe('panel');
     act(() => { fireEvent.keyDown(dialog, { key: 'Escape' }); });
     expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'escape-key' }));
   });
@@ -133,7 +133,7 @@ describe('Sidebar', () => {
       const dialog = screen.getByRole('dialog', { name: 'Sidebar' });
       expect(dialog.getAttribute('data-side')).toBe('right');
       expect(dialog.className).toContain('ml-auto');
-      expect(dialog.className).toContain('border-e');
+      expect(dialog.className).toContain('border-l');
       unmount();
       width = 900;
       render(<Shell />);

@@ -9,7 +9,7 @@
    the open bug. */
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { useShortcut } from '@ui-sdk/react/shortcuts';
-import { ContentSwap } from '@/components/ui/animated-height';
+import { Swap } from '@/components/ui/swap';
 import {
   CommandMenu, CommandMenuDialog, CommandMenuDialogContent, CommandMenuEmpty, CommandMenuFooter, CommandMenuGroup, CommandMenuGroupLabel,
   CommandMenuInput, CommandMenuItem, CommandMenuList, CommandMenuPage, CommandMenuShortcut, useCommandMenu, useCommandMenuValue,
@@ -224,7 +224,7 @@ function BugPreview({ wide }: { wide: boolean }) {
   return (
     <aside className="relative w-[44%] shrink-0 animate-bl-fade-in border-l border-border">
       <div className="absolute inset-0 overflow-hidden">
-        <ContentSwap id={b?.id ?? 'none'} className="h-full [&>*]:h-full">
+        <Swap value={b?.id ?? 'none'} className="h-full [&>*]:h-full">
           {b ? (
             <div className="flex h-full flex-col gap-2.5 p-4">
               <div className="flex flex-wrap items-center gap-1.5"><SeverityBadge severity={b.severity} /><StatusBadge status={b.status} /><EnvBadge env={b.environment} /></div>
@@ -237,7 +237,7 @@ function BugPreview({ wide }: { wide: boolean }) {
               </dl>
             </div>
           ) : <div className="grid h-full place-items-center text-footnote text-tertiary-foreground">No bug selected</div>}
-        </ContentSwap>
+        </Swap>
       </div>
     </aside>
   );

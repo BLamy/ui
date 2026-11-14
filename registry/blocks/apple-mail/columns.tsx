@@ -1,7 +1,7 @@
 /* The list and message columns (the mailboxes column lives in mailboxes.tsx). The same columns serve every
    width: on the phone SplitView stacks them, the headers trade their leading items for a back button, and the
    message's actions move to a bottom bar. */
-import { SearchField } from '@/components/ui/search-field';
+import { SearchInput } from '@/components/ui/search-input';
 import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { MessageList } from './message-list';
@@ -19,7 +19,7 @@ export function ListColumn({ mail }: { mail: MailState }) {
         trailing={<BarButton label={mail.editing ? 'Done' : 'Edit'} className={mail.editing ? 'font-semibold' : undefined}
           onClick={() => mail.setEditing(!mail.editing)} />} />
       <SplitViewContent>
-        <div className="px-4 pb-2"><SearchField value={mail.query} onValueChange={mail.setQuery} aria-label={`Search ${mail.box.title}`} /></div>
+        <div className="px-4 pb-2"><SearchInput value={mail.query} onValueChange={mail.setQuery} aria-label={`Search ${mail.box.title}`} /></div>
         <MessageList mail={mail} onOpen={(id) => { mail.open(id); s.select('supplementary', id); }} />
       </SplitViewContent>
       <ListBar mail={mail} />

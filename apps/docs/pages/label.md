@@ -27,7 +27,7 @@ import { Label } from '@brett_lamy/ui'
 
 ## Naming a control
 
-Give the control an `id` and the label its `htmlFor`, or put the control inside the label. `variant="field"` is the iOS grouped-form header; with no `variant`, the label is 15px foreground; `variant="control"` lays a checkbox, radio or switch and its text in one pressable line.
+Give the control an `id` and the label its `htmlFor`, or put the control inside the label. `variant="field"` is the iOS grouped-form header (the look `FieldLabel` has by default); with no `variant`, the label is 15px foreground; `variant="control"` lays a checkbox, radio or switch and its text in one pressable line.
 
 {% demo src="label/fields" %}
 
@@ -42,7 +42,7 @@ In a [Field](https://blamy.github.io/ui/#/field), the `FieldLabel` is linked to 
 
 ```tsx
 <Field>
-  <FieldLabel variant="field">Email</FieldLabel>
+  <FieldLabel>Email</FieldLabel>
   <Input type="email" required />
   <FieldDescription>Receipts and sign-in links go here.</FieldDescription>
   <FieldError />
@@ -61,7 +61,7 @@ UI SDK's `Label` props (`htmlFor`, `id`, `render`, and any `<label>` attribute),
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `default` | `default` (15px, foreground, medium), `field` (13px, muted, 4px side padding) or `control` (17px, a 12px gap, pressable). |
+| `variant` | `default` | `default` (15px, foreground, medium), `field` (13px, the foreground at 70% for AA contrast on grey, 4px side padding; `FieldLabel`'s default) or `control` (17px, a 12px gap, pressable). |
 | `className` | — | Merged after the recipe; may be a function of the state. |
 
 ## Styling

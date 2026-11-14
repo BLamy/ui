@@ -7,6 +7,7 @@ import {
 } from '@ui-sdk/react/hover-card';
 import { popoverArrow, popoverArrowGlyph, popoverMotion, popoverSurface } from '@/lib/primitives';
 import { cn, cx } from '@/lib/utils';
+import { surfaceDescriptionVariants, surfaceTitleVariants } from '@/components/ui/dialog';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
 
 /* ══ HoverCard — UI SDK's Hover Card on the kit's floating surface ══
@@ -88,27 +89,28 @@ export function HoverCardArrow({ className, ...props }: ComponentProps<typeof Sd
   );
 }
 
-export interface HoverCardHeaderProps {
-  /** An Avatar, icon or thumbnail. */
-  media?: ReactNode;
+export interface HoverCardHeaderProps extends Omit<ComponentProps<'div'>, 'title'> {
+  /** The leading thing: an Avatar, an icon or a thumbnail. */
+  icon?: ReactNode;
+  /** What the card previews. It is the card's heading. */
   title: ReactNode;
   /** A handle, path or kind under the title. */
-  subtitle?: ReactNode;
-  /** Trailing control (a Follow button, a status Badge). */
-  action?: ReactNode;
-  className?: string;
+  description?: ReactNode;
+  /** A trailing control or status (a Follow button, a Badge). */
+  trailing?: ReactNode;
 }
 
-/** The usual top of a card: media, a title and subtitle, and an optional action. */
-export function HoverCardHeader({ media, title, subtitle, action, className }: HoverCardHeaderProps) {
+/** The usual top of a card, in the kit's row anatomy: `icon`, `title` (a heading), `description` and `trailing`.
+    Other props go on its `div`. */
+export function HoverCardHeader({ icon, title, description, trailing, className, ...props }: HoverCardHeaderProps) {
   return (
-    <div data-slot="hover-card-header" className={cn('flex min-w-0 items-center gap-3', className)}>
-      {media ? <div className="shrink-0">{media}</div> : null}
+    <div data-slot="hover-card-header" className={cn('flex min-w-0 items-center gap-3', className)} {...props}>
+      {icon ? <div className="shrink-0">{icon}</div> : null}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-headline font-semibold text-foreground">{title}</div>
-        {subtitle ? <div className="truncate text-footnote text-muted-foreground">{subtitle}</div> : null}
+        <h3 className={cn(surfaceTitleVariants({ size: 'sm' }), 'truncate')}>{title}</h3>
+        {description ? <p className={cn(surfaceDescriptionVariants({ size: 'sm' }), 'truncate')}>{description}</p> : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {trailing ? <div className="shrink-0">{trailing}</div> : null}
     </div>
   );
 }

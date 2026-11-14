@@ -15,7 +15,7 @@ export default function CustomValue() {
   return (
     <ThemeScope className="mx-auto max-w-sm">
       <Field>
-        <FieldLabel variant="field">Label</FieldLabel>
+        <FieldLabel>Label</FieldLabel>
         <Combobox items={labels} allowCustomValue value={label} onValueChange={setLabel}>
           <ComboboxInput placeholder="Pick one or type your own" />
           <ComboboxContent />

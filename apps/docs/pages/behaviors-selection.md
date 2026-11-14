@@ -14,7 +14,7 @@ import { createSelection, createLasso, createCellRange, byCellRange, cellsToText
 | --- | --- |
 | A list to pick one or many from | [`Listbox`](https://blamy.github.io/ui/#/list-box) (`multiple`, `value`, `onValueChange`), on UI SDK's Listbox. |
 | A tree with selectable rows | [`Tree`](https://blamy.github.io/ui/#/tree), on UI SDK's Tree. |
-| Toggle buttons, radio, segmented | [`ToggleGroup`](https://blamy.github.io/ui/#/toggle-group), [`RadioGroup`](https://blamy.github.io/ui/#/radio-group), [`Segmented`](https://blamy.github.io/ui/#/segmented). |
+| Toggle buttons, radio, segmented | [`ToggleGroup`](https://blamy.github.io/ui/#/toggle), [`RadioGroup`](https://blamy.github.io/ui/#/radio-group), [`Segmented`](https://blamy.github.io/ui/#/segmented). |
 | A sheet of cells | [`Spreadsheet`](https://blamy.github.io/ui/#/spreadsheet). |
 
 Reach for the behaviors when you build a primitive of your own: a file grid, a canvas, a calendar of slots.

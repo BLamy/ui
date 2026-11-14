@@ -25,7 +25,7 @@ const ROW = 'min-h-9 py-1 text-detail data-[selected]:bg-secondary data-[selecte
 
 /** What a thread is doing, at the end of its row: still working, or a branch / pull request open. */
 function Status({ status }: { status: Chat['status'] }) {
-  if (status === 'running') return <Spinner spin size={14} className="text-muted-foreground" />;
+  if (status === 'running') return <Spinner size={14} className="text-muted-foreground" />;
   if (status) return <Icon name="branch" size={14} className={status === 'pr' ? 'text-destructive' : 'text-link'} />;
   return null;
 }
@@ -40,9 +40,9 @@ function ChatCard({ chat }: { chat: Chat }) {
   return (
     <>
       <HoverCardHeader
-        media={chat.kind === 'dot' ? <DotOrb size={28} /> : <Icon name="folder" size={22} className="text-muted-foreground" />}
+        icon={chat.kind === 'dot' ? <DotOrb size={28} /> : <Icon name="folder" size={22} className="text-muted-foreground" />}
         title={chat.title}
-        subtitle={chat.kind === 'dot' ? 'Chat with dot' : chat.project}
+        description={chat.kind === 'dot' ? 'Chat with dot' : chat.project}
       />
       {(chat.status || chat.changes) && (
         <div className="mt-3 flex items-center gap-2 text-footnote text-muted-foreground">

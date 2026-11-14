@@ -4,7 +4,7 @@ Every animation in BL UI follows one vocabulary, borrowed from Benji Taylor's [F
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/motion.json https://blamy.github.io/ui/r/text-morph.json https://blamy.github.io/ui/r/number-morph.json https://blamy.github.io/ui/r/icon-swap.json{% endcommand %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/motion.json https://blamy.github.io/ui/r/text-morph.json https://blamy.github.io/ui/r/number-morph.json https://blamy.github.io/ui/r/swap.json{% endcommand %}
 
 Copies the source into your project's `lib/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
@@ -12,7 +12,7 @@ Copies the source into your project's `lib/` (with the parts it is built from) a
 import { springs } from '@/lib/motion'
 import { TextMorph } from '@/components/ui/text-morph'
 import { NumberMorph } from '@/components/ui/number-morph'
-import { IconSwap } from '@/components/ui/icon-swap'
+import { Swap } from '@/components/ui/swap'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -24,7 +24,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  springs, TextMorph, NumberMorph, IconSwap,
+  springs, TextMorph, NumberMorph, Swap,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
@@ -95,19 +95,19 @@ Exits are quicker than entrances: what leaves gets out of the way, what arrives 
 
 ## Direction follows the index
 
-`Tabs`, `Segmented`, `ToggleGroup` and `TabView` draw their selection as one element that slides and resizes to the new item. `TabPanel` and `TabViewPanel` arrive from the side of the tab you picked and the old panel leaves the other way (vertically for a vertical `TabView`). `NavigationStack` pushes from the right, pops to the right, and its edge-swipe hands off to the tray spring from wherever your finger let go.
+`Tabs`, `Segmented` and `ToggleGroup` draw their selection as one element that slides and resizes to the new item. `TabsPanel` arrives from the side of the tab you picked and the old panel leaves the other way (vertically when the tabs sit at the start or end). `NavigationStack` pushes from the right, pops to the right, and its edge-swipe hands off to the tray spring from wherever your finger let go.
 
 {% demo src="motion/directional-tabs" %}
 
 ## Trays that change height
 
-`AnimatedHeight` measures its content and springs its height to match; `ContentSwap` replaces content by key, moving it in the direction you pass (`useDirection(step)`). Together they are Family's tray step. `Credenza` does both internally — it infers direction from the view history — and `SheetContent` takes `animateHeight` for short, content-sized sheets.
+`AnimatedHeight` measures its content and springs its height to match; [Swap](https://blamy.github.io/ui/#/swap) replaces content by `value`, moving it in the direction you pass (`useDirection(step)`). Together they are Family's tray step. `DialogView` does both inside a [Dialog](https://blamy.github.io/ui/#/dialog) flow (it infers direction from the root's `view` history), and `SheetContent` takes `animateHeight` for short, content-sized sheets.
 
 {% demo src="motion/step-tray" %}
 
 ## Icons turn, they don't swap
 
-`Chevron` is one glyph that rotates to face `right`, `down`, `left` or `up`, always the short way round — the forward arrow becomes a back arrow by turning. `IconSwap` changes a glyph in place (copy → check, idle → spinner → done) by shrinking and blurring the old one out as the new one grows in, stacked in the same cell so nothing around it moves. `Disclosure` turns its chevron as its panel grows.
+`Chevron` is one glyph that rotates to face `right`, `down`, `left` or `up`, always the short way round — the forward arrow becomes a back arrow by turning. `Swap effect="pop"` changes a glyph in place (copy → check, idle → spinner → done) by shrinking and blurring the old one out as the new one grows in, stacked in the same cell so nothing around it moves. `Chevron` lives with the icons in `@/lib/icon`. `Disclosure` turns its chevron as its panel grows.
 
 ## Coming and going
 
@@ -122,7 +122,7 @@ return toast.mounted ? (
 
 ## A rare moment
 
-`Celebrate` bursts confetti and a ring out of its parent's centre whenever `fire` changes. Save it for moments that happen rarely and mean something — a completed backup, a first payment.
+`Celebrate` bursts confetti and a ring out from behind the element it wraps whenever `fire` changes. Save it for moments that happen rarely and mean something — a completed backup, a first payment.
 
 {% demo src="motion/celebrate" %}
 
@@ -140,17 +140,17 @@ The kit's motion comes from two engines and the panel slows both: framer-motion 
 | --- | --- |
 | `Button` | sinks on press (snappy); a string label morphs |
 | `Toggle`, `ToggleGroup` | press sink; a single-select `filled` group slides its card |
-| `Segmented`, `Tabs`, `TabView` | the selection indicator slides and resizes (smooth) |
-| `TabPanel`, `TabViewPanel` | directional enter / exit |
+| `Segmented`, `Tabs` | the selection indicator slides and resizes (smooth) |
+| `TabsPanel` | directional enter / exit |
 | `Switch` | thumb springs across and stretches while pressed |
 | `Checkbox` | the tick draws itself on; press sink |
 | `Radio`, `Slider` | press sink / thumb grows while dragging |
 | `Disclosure` | panel height (tray) + content fades down + chevron turns |
 | `Dialog`, `Popover`, `Tooltip`, `DropdownMenu`, `Select`, `ComboBox` | grow out of the trigger's anchor point (snappy), leave quicker |
-| `Sheet`, `SideDrawer`, `AdaptivePane` drawers | slide on the tray spring; `animateHeight` for stepping sheets |
-| `Credenza` | height morph, directional views and titles, back chevron grows in |
+| `Sheet`, `AdaptivePane` drawers and pushes | slide on the tray spring; `animateHeight` for stepping sheets |
+| `Dialog` with `view` (`DialogView`, `DialogBack`) | height morph, directional views and titles, back chevron grows in |
 | `NavigationStack` | push / pop on the smooth spring, interruptible; swipe release continues on the tray spring |
-| `List.Row` | swipe settles on snappy; delete collapses its height on the tray spring |
+| `ListRow` | swipe settles on snappy; delete collapses its height on the tray spring |
 | `Progress` | fill springs to value; percentage rolls |
 | `Skeleton` | a highlight sweeps across instead of pulsing |
 | `Spinner` | grows in when it appears |

@@ -5,7 +5,7 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import { Button } from '@/components/ui/button';
 import { Morph, MorphGroup, MorphPresence } from '@/components/ui/morph';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { SearchField } from '@/components/ui/search-field';
+import { SearchInput } from '@/components/ui/search-input';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
@@ -50,7 +50,7 @@ export function ProjectsHome() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <SearchField aria-label="Filter projects" placeholder="Filter projects" value={query} onValueChange={setQuery} className="max-w-[340px] min-w-[200px] flex-1" />
+            <SearchInput aria-label="Filter projects" placeholder="Filter projects" value={query} onValueChange={setQuery} className="max-w-[340px] min-w-[200px] flex-1" />
             <Segmented<typeof filter> aria-label="Status" value={filter} onValueChange={(v) => { if (v) setFilter(v); }} className="w-[220px]">
               <SegmentedItem value="all">All</SegmentedItem>
               <SegmentedItem value="active">Active</SegmentedItem>
@@ -67,7 +67,7 @@ export function ProjectsHome() {
               <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(248px,1fr))] gap-4 p-0">
                 <MorphPresence>
                   {shown.map((p) => (
-                    <Morph key={p.id} id={p.id} render={<li />} layout="position" fade>
+                    <Morph key={p.id} layoutId={p.id} render={<li />} layout="position" fade>
                       <ProjectCard project={p} />
                     </Morph>
                   ))}

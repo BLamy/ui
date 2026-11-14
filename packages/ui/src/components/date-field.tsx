@@ -12,7 +12,7 @@ import { cx } from '@/lib/utils';
    `granularity` "2026-09-09T09:30", and "09:30" for a TimeField; `null` until every part is filled. Put one in a
    Field for its label, description and error:
    <Field>
-     <FieldLabel variant="field">Birthday</FieldLabel>
+     <FieldLabel>Birthday</FieldLabel>
      <DateField defaultValue="2026-09-09" />
      <FieldError />
    </Field> ══ */
@@ -90,8 +90,8 @@ export function DateField({ className, variant, size, children, render = groupEl
 export type TimeFieldProps = ComponentProps<typeof SdkTimeInput> & VariantProps<typeof dateFieldVariants>;
 
 /** A time of day typed part by part: hours and minutes, with seconds and AM/PM when shown. The value is 24-hour
-    ("14:30") whatever clock the field shows. This is UI SDK's `TimeInput`; the kit's own `TimeInput`
-    (`@/components/ui/time-input`) is a different thing, a natural-language text field ("tomorrow at 3pm"). */
+    ("14:30") whatever clock the field shows. This is UI SDK's `TimeInput`; the kit's `NaturalTimeInput`
+    (`@/components/ui/natural-time-input`) is a different thing, a natural-language text field ("tomorrow at 3pm"). */
 export function TimeField({ className, variant, size, children, render = groupElement, ...props }: TimeFieldProps) {
   return (
     <SdkTimeInput className={cx(dateFieldVariants({ variant, size }), className)} render={render} {...props}>

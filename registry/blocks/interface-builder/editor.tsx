@@ -117,17 +117,15 @@ export function Editor({ appearance, initialRunning }: { appearance: 'light' | '
           />
           <div className="relative flex min-h-0 flex-1">
             <AdaptivePane
-              presentation={narrow ? 'drawer' : navOpen ? 'column' : 'hidden'}
+              presentation={narrow ? 'drawer' : 'column'}
               side="left"
               aria-label="Navigator"
-              open={narrow && navOpen}
+              open={navOpen}
               onOpenChange={(open) => { touched.current = true; setNavOpen(open); }}
               modal={false}
               columnWidth={264}
               drawerWidth={264}
-              drawerMaxWidth="84%"
-              columnClassName="flex flex-col border-r border-border bg-card"
-              className="flex flex-col border-r border-border bg-card"
+              className="border-r border-border bg-card"
               zIndex={20}
             >
               <aside aria-label="Navigator" className="flex min-h-0 flex-1 flex-col">
@@ -151,17 +149,15 @@ export function Editor({ appearance, initialRunning }: { appearance: 'light' | '
             </main>
 
             <AdaptivePane
-              presentation={narrow ? 'drawer' : inspectorOpen ? 'column' : 'hidden'}
+              presentation={narrow ? 'drawer' : 'column'}
               side="right"
               aria-label="Inspector"
-              open={narrow && inspectorOpen}
+              open={inspectorOpen}
               onOpenChange={(open) => { touched.current = true; setInspectorOpen(open); }}
               modal={false}
               columnWidth={316}
               drawerWidth={316}
-              drawerMaxWidth="84%"
-              columnClassName="flex flex-col border-l border-border bg-card"
-              className="flex flex-col border-l border-border bg-card"
+              className="border-l border-border bg-card"
               zIndex={20}
             >
               <aside aria-label="Inspector" className="flex min-h-0 flex-1 flex-col">

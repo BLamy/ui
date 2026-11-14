@@ -22,7 +22,7 @@ describe('DatePicker is agent-ready', () => {
     const onValueChange = spy();
     await mount(
       <Field>
-        <FieldLabel variant="field">Due date</FieldLabel>
+        <FieldLabel>Due date</FieldLabel>
         <DatePicker locale="en-US" defaultMonth="2026-09" onValueChange={onValueChange}>
           <DatePickerField />
           <DatePickerContent />
@@ -44,7 +44,7 @@ describe('DatePicker is agent-ready', () => {
   it.fails('applies or refuses a date written in words', async () => {
     await mount(
       <Field>
-        <FieldLabel variant="field">Start date</FieldLabel>
+        <FieldLabel>Start date</FieldLabel>
         <DatePicker locale="en-US" defaultMonth="2026-09">
           <DatePickerField />
           <DatePickerContent />
@@ -61,7 +61,7 @@ describe('ColorPicker is agent-ready', () => {
     const onValueChange = spy();
     await mount(
       <Field>
-        <FieldLabel variant="field">Accent</FieldLabel>
+        <FieldLabel>Accent</FieldLabel>
         <ColorPicker defaultValue="#7f5af0" onValueChange={onValueChange}>
           <Popover>
             <ColorPickerTrigger />
@@ -82,7 +82,7 @@ describe('ColorPicker is agent-ready', () => {
   it('names its popover trigger after the field', async () => {
     await mount(
       <Field>
-        <FieldLabel variant="field">Accent</FieldLabel>
+        <FieldLabel>Accent</FieldLabel>
         <ColorPicker defaultValue="#7f5af0">
           <Popover>
             <ColorPickerTrigger />
@@ -124,7 +124,7 @@ describe('FileUpload is agent-ready', () => {
     const onValueChange = vi.fn();
     await mount(
       <Field>
-        <FieldLabel variant="field">Attachments</FieldLabel>
+        <FieldLabel>Attachments</FieldLabel>
         <FileUpload upload={upload} onValueChange={onValueChange} />
       </Field>,
     );

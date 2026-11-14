@@ -5,14 +5,14 @@ import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@
 import { MenuContent } from '@ui-sdk/react/menu';
 import type { PopoverOpenChangeReason } from '@ui-sdk/react/popover';
 import { registerShortcut } from '@ui-sdk/react/shortcuts';
-import { ToggleGroup } from '@ui-sdk/react/toggle';
+import { Toggle as SdkToggle, ToggleGroup } from '@ui-sdk/react/toggle';
 import { cva } from 'class-variance-authority';
 import { motion } from 'framer-motion';
 import { useSurfacePalette, WbPopoverContent, wbPopoverSurface } from '@/components/ui/composer/composer-popover';
 import { ComposerButton, ComposerPillLabel } from '@/components/ui/composer/composer';
 import { DropdownMenu, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
-import { PlainButton as Button, PlainToggleButton } from '@/components/ui/plain-button';
+import { Button } from '@ui-sdk/react/button';
 import { changeDetails } from '@/lib/change-details';
 import { useControllableChange } from '@/lib/controllable-state';
 import { Icon } from '@/lib/icon';
@@ -284,19 +284,19 @@ export function ModelPicker({
                 }}
                 className="flex w-12 shrink-0 flex-col items-center gap-1 border-r border-border py-2"
               >
-                <PlainToggleButton
+                <SdkToggle
                   value={FAVORITES}
                   aria-label="Favorites"
                   className={cn(railTab, 'isolate mb-1.5 after:absolute after:-bottom-[5px] after:h-px after:w-6 after:bg-border after:content-[""]')}
                 >
                   <RailIndicator group={group} selected={tab === FAVORITES} />
                   <Icon name="star-sharp" size={15} sw={2} />
-                </PlainToggleButton>
+                </SdkToggle>
                 {providers.map((p) => (
-                  <PlainToggleButton key={p.id} value={p.id} aria-label={p.name} className={cn(railTab, 'isolate')}>
+                  <SdkToggle key={p.id} value={p.id} aria-label={p.name} className={cn(railTab, 'isolate')}>
                     <RailIndicator group={group} selected={tab === p.id} />
                     {p.icon}
-                  </PlainToggleButton>
+                  </SdkToggle>
                 ))}
               </ToggleGroup>
               <div className="wb-scroll relative min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-1.5">

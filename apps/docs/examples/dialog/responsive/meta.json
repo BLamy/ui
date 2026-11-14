@@ -1,0 +1,9 @@
+{
+  "title": "Dialog · one dialog, a card or a sheet",
+  "status": "Live",
+  "variants": [
+    { "id": "regular", "label": "Wide" },
+    { "id": "compact", "label": "Phone" }
+  ],
+  "variantsWidth": 160
+}

@@ -11,8 +11,8 @@ import {
   NavigationStackSubheader,
   NavigationStackTitle,
 } from '@/components/ui/navigation-stack'
-import { SearchField } from '@/components/ui/search-field'
-import { TabBar } from '@/components/ui/tab-bar'
+import { SearchInput } from '@/components/ui/search-input'
+import { Tabs, TabsBar, TabsList, TabsTab } from '@/components/ui/tabs'
 import { BLProvider } from '@/lib/theme'
 
 type Person = { f: string; l: string; role: string }
@@ -75,7 +75,7 @@ export default function Contacts() {
                     <NavigationStackLargeTitle />
                     <NavigationStackSubheader>
                       <div style={{ padding: '0 14px 8px' }}>
-                        <SearchField
+                        <SearchInput
                           value={q}
                           onValueChange={setQ}
                           placeholder="Search"
@@ -94,9 +94,9 @@ export default function Contacts() {
                             {byLetter[L].map((p, i) => (
                               <ListRow
                                 key={p.f + p.l}
-                                leading={<Avatar c={p} size={36} />}
+                                icon={<Avatar name={`${p.f} ${p.l}`} size={36} />}
                                 title={p.f + ' ' + p.l}
-                                subtitle={p.role}
+                                description={p.role}
                                 accessory="chevron"
                                 divider={i < byLetter[L].length - 1}
                                 onClick={() => setSel(p)}
@@ -125,7 +125,7 @@ export default function Contacts() {
                     </NavigationStackBar>
                     <NavigationStackContent>
                       <div style={{ padding: '26px 18px', textAlign: 'center' }}>
-                        <Avatar c={sel} size={76} style={{ margin: '0 auto' }} />
+                        <Avatar name={`${sel.f} ${sel.l}`} size={76} style={{ margin: '0 auto' }} />
                         <div style={{ fontSize: 21, fontWeight: 700, marginTop: 12 }}>
                           {sel.f} {sel.l}
                         </div>
@@ -181,15 +181,22 @@ export default function Contacts() {
                 </div>
               </div>
             )}
-            <TabBar
+            <Tabs
+              variant="bar"
               value={tab}
-              onValueChange={setTab}
-              items={[
-                { value: 'contacts', icon: 'person', title: 'Contacts' },
-                { value: 'recents', icon: 'clock', title: 'Recents' },
-                { value: 'settings', icon: 'sliders', title: 'Settings' },
-              ]}
-            />
+              onValueChange={(next) => {
+                if (next) setTab(next)
+              }}
+              className="contents"
+            >
+              <TabsBar>
+                <TabsList aria-label="Tabs">
+                  <TabsTab value="contacts" icon="person">Contacts</TabsTab>
+                  <TabsTab value="recents" icon="clock">Recents</TabsTab>
+                  <TabsTab value="settings" icon="sliders">Settings</TabsTab>
+                </TabsList>
+              </TabsBar>
+            </Tabs>
           </div>
         </BLProvider>
       </div>

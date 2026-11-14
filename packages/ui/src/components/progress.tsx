@@ -5,7 +5,7 @@ import {
   ProgressTrack as SdkProgressTrack, ProgressValue as SdkProgressValue,
 } from '@ui-sdk/react/progress';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cx } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 import { NumberMorph } from '@/components/ui/number-morph';
 
 /* ══ Progress — UI SDK's Progress (role=progressbar, aria-valuenow / valuetext), iOS progress view look ══
@@ -22,7 +22,9 @@ import { NumberMorph } from '@/components/ui/number-morph';
      <ProgressTrack><ProgressIndicator /></ProgressTrack>
    </Progress>
 
-   The fill springs to each new value and the default percentage rolls its digits (NumberMorph). */
+   The fill springs to each new value and the default percentage rolls its digits (NumberMorph). Under reduced
+   motion the indeterminate bar is a dim full-width fill rather than a still 40% bar, which would read as "40% done".
+   For a level in a range (storage, battery) use UI SDK's Meter: `progressVariants` styles it the same way. */
 export const progressVariants = cva('relative w-full overflow-hidden rounded-full bg-secondary-strong', {
   variants: {
     size: {
@@ -35,12 +37,17 @@ export const progressVariants = cva('relative w-full overflow-hidden rounded-ful
 });
 
 export const progressIndicatorVariants = cva(
-  'absolute inset-y-0 left-0 rounded-full transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none data-indeterminate:w-2/5 data-indeterminate:animate-bl-progress data-indeterminate:transition-none motion-reduce:data-indeterminate:animate-none',
+  cn(
+    'absolute inset-y-0 left-0 rounded-full transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+    'data-indeterminate:w-2/5 data-indeterminate:animate-bl-progress data-indeterminate:transition-none',
+    'motion-reduce:data-indeterminate:w-full motion-reduce:data-indeterminate:animate-none motion-reduce:data-indeterminate:opacity-35',
+  ),
   {
     variants: {
       tone: {
         default: 'bg-primary',
         success: 'bg-success',
+        warning: 'bg-warning',
         destructive: 'bg-destructive',
       },
     },
@@ -65,7 +72,7 @@ export function Progress({ className, size, tone, label, showValue, children, ..
           {label ? <ProgressLabel>{label}</ProgressLabel> : null}
           {showValue ? (
             <ProgressValue className="col-start-2">
-              {plainPercent ? (state) => <NumberMorph value={(state.percent ?? 0) / 100} format={{ style: 'percent' }} /> : undefined}
+              {plainPercent ? (state) => <NumberMorph value={(state.percent ?? 0) / 100} format={{ style: 'percent' }} locale={props.locale} /> : undefined}
             </ProgressValue>
           ) : null}
           <ProgressTrack size={size} className="col-span-2">

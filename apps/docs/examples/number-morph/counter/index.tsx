@@ -49,7 +49,7 @@ export default function Counter() {
           <div className="text-title font-semibold">
             <NumberMorph
               value={balance}
-              locales="de-DE"
+              locale="de-DE"
               format={{ style: 'currency', currency: 'EUR' }}
             />
           </div>

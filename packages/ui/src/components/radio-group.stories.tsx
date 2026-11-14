@@ -15,7 +15,7 @@ type Story = StoryObj<typeof RadioGroup>;
 /* In a Field, its label names the group and its description is read with it. */
 const plan = (
   <Field className="gap-3">
-    <FieldLabel variant="field">Billing</FieldLabel>
+    <FieldLabel>Billing</FieldLabel>
     <RadioGroup defaultValue="monthly">
       <Label variant="control"><Radio value="monthly" />Monthly</Label>
       <Label variant="control"><Radio value="yearly" />Yearly · save 20%</Label>
@@ -43,7 +43,7 @@ export const Horizontal: Story = {
 export const Invalid: Story = {
   render: () => (
     <Field invalid className="gap-3">
-      <FieldLabel variant="field">Delivery</FieldLabel>
+      <FieldLabel>Delivery</FieldLabel>
       <RadioGroup>
         <Label variant="control"><Radio value="standard" />Standard</Label>
         <Label variant="control"><Radio value="express" />Express</Label>

@@ -14,7 +14,7 @@ export default function Counter() {
   return (
     <div className="mx-auto max-w-sm">
       <Field name="bio" invalid={over ? true : undefined}>
-        <FieldLabel variant="field">Bio</FieldLabel>
+        <FieldLabel>Bio</FieldLabel>
         <Textarea size="sm" value={bio} onValueChange={setBio} placeholder="Tell people what you work on" />
         <div className="flex justify-between gap-3">
           <FieldDescription>Shown on your public profile.</FieldDescription>

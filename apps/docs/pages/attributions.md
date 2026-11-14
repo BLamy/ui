@@ -50,7 +50,7 @@ UI SDK is licensed under the [Apache License 2.0](https://www.apache.org/license
 | Library | Used for | License |
 | --- | --- | --- |
 | [gpu-lexer](https://github.com/shuding/gpu-lexer) by Shu Ding | Syntax highlighting on the GPU | MIT |
-| [gpu-time](https://www.npmjs.com/package/gpu-time) by Arik Chakma | Natural-language times in TimeInput | MIT |
+| [gpu-time](https://www.npmjs.com/package/gpu-time) by Arik Chakma | Natural-language times in NaturalTimeInput | MIT |
 | [gpu-cron](https://github.com/jlsajfj/gpu-cron) | Natural language to cron in CronEditor | MIT |
 | [gpu-query](https://github.com/safzanpirani/gpu-query) by Safzan Pirani | Natural-language filters. It isn't on npm, so its runtime is vendored with its license in `lib/gpu-query`. | MIT |
 

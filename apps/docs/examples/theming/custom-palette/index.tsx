@@ -38,12 +38,12 @@ export default function SepiaReader() {
         }}
       >
         <div style={{ padding: '16px 0 0' }}>
-          <List inset>
+          <List variant="inset">
             <ListSection title="Reading">
               <ListRow
-                leading={<Avatar c={{ f: 'Jane', l: 'Austen' }} size={34} />}
+                icon={<Avatar name="Jane Austen" size={34} />}
                 title="Pride and Prejudice"
-                subtitle="Chapter 3 · 42% read"
+                description="Chapter 3 · 42% read"
                 accessory="chevron"
                 onClick={() => {}}
               />

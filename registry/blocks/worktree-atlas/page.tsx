@@ -1,5 +1,5 @@
 /* Worktree Atlas — every Git worktree under the folders you open, grouped by repository. The sidebar folds each
-   project open to its worktrees (right-click one to delete it, always through a confirmation Credenza), with a
+   project open to its worktrees (right-click one to delete it, always through a confirmation dialog), with a
    rail that switches between Files and Changes. The master column is the open worktree's file tree: every file
    (Files) or what it changes against main (Changes); the detail shows the picked file, or the diff in a
    @pierre/diffs view. One SplitView at every size: three columns on desktop, a floating sidebar on an iPad, a
@@ -14,7 +14,7 @@ import { Icon } from '@/lib/icon';
 import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { browserFoldersSupported, createBrowserSource } from './browser-source';
 import { createDemoSource } from './data';
-import { DeleteCredenza } from './delete-credenza';
+import { DeleteDialog } from './delete-dialog';
 import { DetailColumn } from './detail-column';
 import { FileColumn } from './file-column';
 import { ProjectsSidebar } from './sidebar';
@@ -86,7 +86,7 @@ function Atlas({ source, initialWorktree, initialView, onSample, onLeaveSample }
         <ProjectsSidebar atlas={atlas} footer={onLeaveSample ? <Button size="sm" variant="secondary" onClick={onLeaveSample}>Open My Folders</Button> : null} />
         <FileColumn atlas={atlas} />
         <DetailColumn atlas={atlas} />
-        <DeleteCredenza atlas={atlas} />
+        <DeleteDialog atlas={atlas} />
       </SplitView>
       {welcome ? <Welcome onAdd={() => void atlas.addLocation()} onSample={onSample} /> : null}
     </>

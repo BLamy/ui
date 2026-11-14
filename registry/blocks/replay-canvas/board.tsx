@@ -293,9 +293,9 @@ function Peek({ target, map, byKey, recordings }: {
     return (
       <>
         <HoverCardHeader
-          media={<span className={cn('grid size-9 place-items-center rounded-full', SEGUE_PILL[s.kind])}><Icon name={SEGUE_ICON[s.kind]} size={16} sw={2} /></span>}
+          icon={<span className={cn('grid size-9 place-items-center rounded-full', SEGUE_PILL[s.kind])}><Icon name={SEGUE_ICON[s.kind]} size={16} sw={2} /></span>}
           title={`${actionVerb(s.action)} “${s.label}”`}
-          subtitle={KIND_TEXT[s.kind]}
+          description={KIND_TEXT[s.kind]}
         />
         <div className="mt-3 grid gap-1 text-footnote">
           <div className="truncate"><span className="text-muted-foreground">From </span>{nameOf(frameKey(s.from))}</div>
@@ -312,9 +312,9 @@ function Peek({ target, map, byKey, recordings }: {
   return (
     <>
       <HoverCardHeader
-        media={<span className="grid size-9 place-items-center rounded-ctl bg-secondary text-muted-foreground"><Icon name={nodeIcon(node)} size={17} sw={1.9} /></span>}
+        icon={<span className="grid size-9 place-items-center rounded-ctl bg-secondary text-muted-foreground"><Icon name={nodeIcon(node)} size={17} sw={1.9} /></span>}
         title={nameOf(box.key)}
-        subtitle={node.kind === 'page' ? node.route ?? 'Page'
+        description={node.kind === 'page' ? node.route ?? 'Page'
           : node.kind === 'chrome' ? `Shared by ${node.pages.length} pages`
             : `${node.type} over ${nameOf(`${node.hosts[0]}/base`)}`}
       />

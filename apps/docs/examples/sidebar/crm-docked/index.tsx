@@ -42,7 +42,7 @@ function CrmSidebar() {
           </Sidebar.Content>
           <Sidebar.Footer>
             <Sidebar.Item
-              icon={<Avatar c={{ f: 'Ada', l: 'Lovelace' }} size={20} />}
+              icon={<Avatar name="Ada Lovelace" size={20} />}
               label="Ada Lovelace"
             />
           </Sidebar.Footer>

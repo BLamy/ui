@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { PlainToggleButton } from '@/components/ui/plain-button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { SidebarInset, SidebarNav, SidebarProvider, SidebarTrigger, type SidebarVariant } from '@/components/ui/sidebar';
-import { ToggleGroup } from '@/components/ui/toggle-group';
+import { ToggleGroup } from '@/components/ui/toggle';
 import { themeScopeProps } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
@@ -21,9 +21,9 @@ export function SidebarDemo({ variant: initial = 'docked' }: { variant?: Sidebar
     <div {...scope} className={cn(scope.className, 'grid justify-items-center gap-3 bg-background p-4 font-sans')}>
       <div className="flex flex-wrap justify-center gap-1.5">
         <ToggleGroup<SidebarVariant> aria-label="Variant" value={[variant]} deselectable={false} onValueChange={([next]) => next && setVariant(next)} className="gap-1.5">
-          {VARIANTS.map((v) => <PlainToggleButton key={v} value={v} className={chip}>{v}</PlainToggleButton>)}
+          {VARIANTS.map((v) => <SdkToggle key={v} value={v} className={chip}>{v}</SdkToggle>)}
         </ToggleGroup>
-        <PlainToggleButton pressed={narrow} onPressedChange={setNarrow} className={chip}>narrow container</PlainToggleButton>
+        <SdkToggle pressed={narrow} onPressedChange={setNarrow} className={chip}>narrow container</SdkToggle>
       </div>
       <div className={cn(
         'h-[330px] max-w-[640px] overflow-hidden rounded-card border border-border transition-[width] duration-spring-smooth ease-spring-smooth',

@@ -4,8 +4,8 @@
    its target and bugs; on a test run, its journeys and how each one ended (each list shares one hover card). */
 import { useEffect, useMemo, useState } from 'react';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger, createHoverCardController } from '@/components/ui/hover-card';
-import { PlainButton } from '@/components/ui/plain-button';
-import { SearchField } from '@/components/ui/search-field';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { SearchInput } from '@/components/ui/search-input';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -62,11 +62,11 @@ export function QaPanel({ client, load, onOpen }: QaPanelProps) {
   if (project) return <TestRuns client={client} project={project} load={load} onBack={() => setProject(null)} onOpen={(run) => onOpen(project, run)} />;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <SearchField value={query} onValueChange={setQuery} placeholder="Find a project" aria-label="Find a QA project" className="mx-2 mb-1 py-[5px] [&_input]:text-footnote" />
+      <SearchInput value={query} onValueChange={setQuery} placeholder="Find a project" aria-label="Find a QA project" size="sm" className="mx-2 mb-1" />
       <ul aria-label="Replay QA projects" className="m-0 min-h-0 flex-1 list-none overflow-y-auto px-2 pb-2">
         {shown.map((p) => (
           <li key={p.id}>
-            <HoverCardTrigger controller={peek} payload={p} render={<PlainButton className={rowClass()} onClick={() => setProject(p)} />}>
+            <HoverCardTrigger controller={peek} payload={p} render={<SdkButton className={rowClass()} onClick={() => setProject(p)} />}>
               <span className="flex w-full items-center gap-1.5">
                 <span className="truncate font-medium">{p.name}</span>
                 <Icon name="chevron-right" size={11} sw={2.2} className="ml-auto shrink-0 text-muted-foreground" />
@@ -85,7 +85,7 @@ export function QaPanel({ client, load, onOpen }: QaPanelProps) {
         <HoverCardContent<QaProject> side="end" align="start">
           {({ payload: p }) => p ? (
             <>
-              <HoverCardHeader title={p.name} subtitle={p.target_url ?? p.id} />
+              <HoverCardHeader title={p.name} description={p.target_url ?? p.id} />
               <div className="mt-3 grid gap-1 text-footnote">
                 <div>{p.bug_count} bug{p.bug_count === 1 ? '' : 's'} found · {p.status}</div>
                 <div className="text-muted-foreground">Updated {when(p.updated_at)}</div>
@@ -120,9 +120,9 @@ function TestRuns({ client, project, load, onBack, onOpen }: {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <PlainButton onClick={onBack} className="mx-2 mb-1 flex cursor-pointer items-center gap-1 self-start rounded-ctl border-0 bg-transparent px-1 py-0.5 text-footnote text-primary outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
+      <SdkButton onClick={onBack} className="mx-2 mb-1 flex cursor-pointer items-center gap-1 self-start rounded-ctl border-0 bg-transparent px-1 py-0.5 text-footnote text-primary outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
         <Icon name="chevron-left" size={12} sw={2.2} />Projects
-      </PlainButton>
+      </SdkButton>
       <div className="truncate px-3 pb-1 text-footnote font-semibold" title={project.target_url ?? undefined}>{project.name}</div>
       <ul aria-label="Test runs" className="m-0 min-h-0 flex-1 list-none overflow-y-auto px-2 pb-2">
         {testRuns.map((t) => {
@@ -130,7 +130,7 @@ function TestRuns({ client, project, load, onBack, onOpen }: {
           return (
             <li key={t.id}>
               <HoverCardTrigger controller={peek} payload={t}
-                render={<PlainButton className={rowClass(!!active)} onClick={() => onOpen(t)} aria-label={`Load test run of ${when(t.startedAt)}`} />}>
+                render={<SdkButton className={rowClass(!!active)} onClick={() => onOpen(t)} aria-label={`Load test run of ${when(t.startedAt)}`} />}>
                 <span className="flex w-full items-center gap-1.5">
                   <span className="truncate font-medium">{when(t.startedAt)}</span>
                   {t.environment && <span className="truncate text-caption2 text-muted-foreground">{t.environment}</span>}
@@ -174,7 +174,7 @@ function TestRunPeek({ run }: { run: QaTestRun }) {
   const rest = run.runs.length - PEEK_JOURNEYS;
   return (
     <>
-      <HoverCardHeader title={when(run.startedAt)} subtitle={`${run.environment ?? 'Test run'} · ${run.runs.length} journey${run.runs.length === 1 ? '' : 's'}`} />
+      <HoverCardHeader title={when(run.startedAt)} description={`${run.environment ?? 'Test run'} · ${run.runs.length} journey${run.runs.length === 1 ? '' : 's'}`} />
       <ul className="m-0 mt-3 grid list-none gap-1 p-0 text-footnote">
         {run.runs.slice(0, PEEK_JOURNEYS).map((r) => (
           <li key={r.id} className="flex min-w-0 items-center gap-2">

@@ -18,7 +18,7 @@ import { cn, cx } from '@/lib/utils';
    a number, ColorFieldSwatch shows the color. With no children it renders a swatch and an input. Put it in a Field
    for its label, description and error:
    <Field>
-     <FieldLabel variant="field">Accent</FieldLabel>
+     <FieldLabel>Accent</FieldLabel>
      <ColorField defaultValue="hsl(262 83% 66%)" />
      <FieldDescription>Any CSS color.</FieldDescription>
    </Field>

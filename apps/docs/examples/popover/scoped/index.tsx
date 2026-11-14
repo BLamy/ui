@@ -1,4 +1,4 @@
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,11 +27,11 @@ export default function Scoped() {
       </p>
       <div className="flex flex-wrap gap-3">
         <Tooltip>
-          <TooltipTrigger className={buttonVariants()}>Hover me</TooltipTrigger>
+          <TooltipTrigger render={<Button />}>Hover me</TooltipTrigger>
           <TooltipContent>Inverted: the scope's foreground on its background</TooltipContent>
         </Tooltip>
         <Popover>
-          <PopoverTrigger className={buttonVariants({ variant: 'secondary' })}>Popover</PopoverTrigger>
+          <PopoverTrigger render={<Button variant="secondary" />}>Popover</PopoverTrigger>
           <PopoverContent align="start">
             <PopoverTitle className="sr-only">Export options</PopoverTitle>
             <p className="m-0 text-detail text-muted-foreground">
@@ -41,7 +41,7 @@ export default function Scoped() {
           </PopoverContent>
         </Popover>
         <DropdownMenu>
-          <DropdownMenuTrigger className={buttonVariants({ variant: 'secondary' })}>Menu</DropdownMenuTrigger>
+          <DropdownMenuTrigger render={<Button variant="secondary" />}>Menu</DropdownMenuTrigger>
           <DropdownMenuContent aria-label="Actions">
             <DropdownMenuItem value="duplicate">Duplicate</DropdownMenuItem>
             <DropdownMenuItem value="archive">Archive</DropdownMenuItem>

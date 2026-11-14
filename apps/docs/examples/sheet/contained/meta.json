@@ -1,0 +1,9 @@
+{
+  "title": "Sheet contained · a panel inside one box of the page",
+  "status": "Live",
+  "variants": [
+    { "id": "modal", "label": "Modal" },
+    { "id": "beside", "label": "Beside the page" }
+  ],
+  "variantsWidth": 260
+}

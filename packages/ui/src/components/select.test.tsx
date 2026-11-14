@@ -130,7 +130,7 @@ describe('Select', () => {
   it('takes its name, its error and its invalid state from a Field', async () => {
     render(
       <Field invalid name="priority">
-        <FieldLabel variant="field">Priority</FieldLabel>
+        <FieldLabel>Priority</FieldLabel>
         <Select placeholder="Choose…">
           <SelectTrigger />
           <SelectContent><SelectItem value="low">Low</SelectItem></SelectContent>

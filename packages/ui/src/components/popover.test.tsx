@@ -128,4 +128,15 @@ describe('Popover', () => {
     await settle();
     expect(content()).toBeNull();
   });
+
+  it('draws its arrow with arrow, like its siblings', async () => {
+    render(
+      <Popover defaultOpen>
+        <PopoverTrigger>Share</PopoverTrigger>
+        <PopoverContent arrow><PopoverTitle>Share</PopoverTitle></PopoverContent>
+      </Popover>,
+    );
+    await settle();
+    expect(content()?.firstElementChild?.getAttribute('data-slot')).toBe('popover-arrow');
+  });
 });

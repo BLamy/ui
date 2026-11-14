@@ -7,7 +7,8 @@ export default function Variants() {
     <div className="mx-auto grid w-full max-w-md gap-6">
       <Progress label="Uploading 12 photos" showValue value={38} />
       <Progress label="Backup complete" showValue value={100} tone="success" size="sm" />
-      <Progress label="Storage almost full" showValue value={92} tone="destructive" size="lg" />
+      <Progress label="Syncing paused: low battery" showValue value={64} tone="warning" />
+      <Progress label="Upload failed" showValue value={72} tone="destructive" size="lg" />
       <Progress
         label="Songs synced"
         showValue

@@ -12,9 +12,11 @@ import {
   CollapsiblePanel as SdkCollapsiblePanel,
   CollapsibleTrigger as SdkCollapsibleTrigger,
 } from '@ui-sdk/react/collapsible';
+import { renderElement, type PartProps } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { cardVariants } from '@/components/ui/card';
 import { Icon } from '@/lib/icon';
-import { cx } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 
 /* ══ Disclosure / DisclosureGroup — UI SDK's Collapsible and Accordion in the kit's look ══
    One section that shows and hides is a Disclosure (Collapsible); a set that shares its open items is a
@@ -23,7 +25,10 @@ import { cx } from '@/lib/utils';
    `onValueChange(value, details)`. The panel springs its height open from the size UI SDK measures while its
    content fades down into place, the chevron turns rather than swapping, and closed panels stay findable
    (`hiddenUntilFound`), so the browser's find in page opens the section that holds a match.
-   <Disclosure><DisclosureTrigger>Title</DisclosureTrigger><DisclosurePanel>…</DisclosurePanel></Disclosure>
+   <Disclosure>
+     <DisclosureHeader><DisclosureTrigger>Title</DisclosureTrigger></DisclosureHeader>
+     <DisclosurePanel>…</DisclosurePanel>
+   </Disclosure>
    <DisclosureGroup>
      <DisclosureGroupItem value="a">
        <DisclosureGroupHeader><DisclosureGroupTrigger>Title</DisclosureGroupTrigger></DisclosureGroupHeader>
@@ -38,8 +43,8 @@ export const disclosureGroupVariants = cva('flex flex-col', {
     variant: {
       /** Rows separated by hairlines, no container. */
       default: '',
-      /** iOS inset-grouped card. */
-      inset: 'overflow-hidden rounded-panel bg-card px-4',
+      /** iOS inset-grouped card: Card's surface, with the rows inset 16px. */
+      inset: cn(cardVariants(), 'px-4'),
     },
   },
   defaultVariants: { variant: 'default' },
@@ -48,7 +53,7 @@ export const disclosureGroupVariants = cva('flex flex-col', {
 /* The look both families share: a row, its trigger, and a panel that animates open and closed. */
 const item = 'group/disclosure relative text-foreground not-last:shadow-hairline-b';
 const trigger =
-  'bl-btn box-border flex min-h-11 flex-1 cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-0 py-[11px] text-left [font-family:inherit] text-body leading-[22px] font-normal text-foreground outline-none rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/45 active:not-data-disabled:opacity-60 data-disabled:cursor-default data-disabled:opacity-40';
+  'bl-btn box-border -mx-2 flex min-h-11 flex-1 cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-2 py-[11px] text-left [font-family:inherit] text-body leading-[22px] font-normal text-foreground outline-none rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/45 focus-visible:ring-inset active:not-data-disabled:opacity-60 data-disabled:cursor-default data-disabled:opacity-40';
 const panel =
   'group/disclosure-panel overflow-clip text-subhead leading-[20px] text-muted-foreground transition-[height] duration-spring-tray ease-spring-tray data-starting-style:h-0 data-ending-style:h-0 motion-reduce:transition-none';
 
@@ -88,11 +93,18 @@ export function Disclosure({ className, ...props }: DisclosureProps) {
 
 export type DisclosureTriggerProps = ComponentProps<typeof SdkCollapsibleTrigger>;
 
-/** The row that opens and closes the panel, as wide as the disclosure. Wrap it in a heading where the section
-    belongs in the page's outline. */
+/** The heading around a single disclosure's trigger, as DisclosureGroupHeader is for a group's: an `h3`, or the
+    level you `render` (`render={<h4 />}`). Leave it out where the section is not part of the page's outline. */
+export type DisclosureHeaderProps = PartProps<'h3'>;
+
+export function DisclosureHeader({ className, render, ...props }: DisclosureHeaderProps) {
+  return renderElement('h3', { 'data-slot': 'disclosure-header', ...props, className: cx('m-0 flex', className) }, render);
+}
+
+/** The row that opens and closes the panel, as wide as the disclosure. */
 export function DisclosureTrigger({ className, children, ...props }: DisclosureTriggerProps) {
   return (
-    <SdkCollapsibleTrigger className={cx([trigger, 'w-full'], className)} {...props}>
+    <SdkCollapsibleTrigger className={cx([trigger, 'w-[calc(100%+1rem)]'], className)} {...props}>
       {label(children)}
     </SdkCollapsibleTrigger>
   );

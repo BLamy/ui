@@ -4,10 +4,11 @@
    opened over them, to select and fly to. Resting on a recording previews what it contributed to the map. */
 import type { ReactNode } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FileUploadButton } from '@/components/ui/file-upload';
+import { FileUploadTrigger } from '@/components/ui/file-upload';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Label } from '@/components/ui/label';
-import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { formatReplayTime } from '@/components/ui/replay-preview';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -39,7 +40,7 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
   const colorOf = new Map(journeys.map((j) => [j.id, j.color]));
   const selected = selection?.kind === 'frame' ? selection.key : null;
   const row = (key: string, icon: string, label: string, depth: number, extra?: string) => (
-    <PlainButton
+    <SdkButton
       key={key}
       onClick={() => onSelect(key)}
       className={cn(
@@ -52,7 +53,7 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
       <Icon name={icon} size={13} sw={1.9} className="shrink-0 text-muted-foreground" />
       <span className="truncate">{label}</span>
       {extra && <span className="ml-auto shrink-0 font-mono text-caption2 text-muted-foreground">{extra}</span>}
-    </PlainButton>
+    </SdkButton>
   );
 
   return (
@@ -65,24 +66,24 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
       )}
       <div className="flex items-center justify-between px-3 pt-3 pb-1">
         <h2 className="m-0 [font-size:inherit] font-semibold uppercase tracking-wide text-muted-foreground">Recordings</h2>
-        <FileUploadButton
+        <FileUploadTrigger
           accept={['application/json', '.json']} onFiles={(files) => onAdd(files)}
           variant="quiet" size="icon-sm" aria-label="Add recordings" title="Add rrweb recordings (.json)"
           className="size-6 rounded-ctl p-0 hover:text-foreground focus-visible:ring-offset-0"
         >
           <Icon name="plus" size={15} sw={2} />
-        </FileUploadButton>
+        </FileUploadTrigger>
       </div>
       <ul className="m-0 flex max-h-64 shrink-0 list-none flex-col gap-0.5 overflow-y-auto px-2 pb-2">
         {recordings.map((r) => {
           const s = summary.get(r.id);
           return (
             <li key={r.id} className="group flex items-start gap-1 rounded-ctl px-1 py-1 hover:bg-secondary">
-              <PlainToggleButton aria-label={journey === r.id ? `Stop following ${r.name}` : `Follow ${r.name}`} pressed={journey === r.id} disabled={!r.enabled}
+              <SdkToggle aria-label={journey === r.id ? `Stop following ${r.name}` : `Follow ${r.name}`} pressed={journey === r.id} disabled={!r.enabled}
                 onPressedChange={(on) => onJourney(on ? r.id : null)}
                 className="group/follow mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent outline-none data-disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-ring">
                 <span className="size-2.5 rounded-full group-data-pressed/follow:size-3.5 group-data-pressed/follow:ring-2 group-data-pressed/follow:ring-background" style={{ background: colorOf.get(r.id) }} />
-              </PlainToggleButton>
+              </SdkToggle>
               {/* The checkbox is the card's trigger (focusable and named), so focus opens the card as resting does. */}
               <HoverCard>
                 <Label variant="control" className="min-w-0 flex-1 items-start gap-2 text-footnote">
@@ -98,9 +99,9 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
                   <RecordingPeek recording={r} map={map} />
                 </HoverCardContent>
               </HoverCard>
-              <PlainButton aria-label={`Remove ${r.name}`} onClick={() => onRemove(r.id)} className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent text-muted-foreground opacity-0 outline-none group-hover:opacity-100 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring">
+              <SdkButton aria-label={`Remove ${r.name}`} onClick={() => onRemove(r.id)} className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent text-muted-foreground opacity-0 outline-none group-hover:opacity-100 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring">
                 <Icon name="xmark" size={12} sw={2} />
-              </PlainButton>
+              </SdkButton>
             </li>
           );
         })}
@@ -135,9 +136,9 @@ function RecordingPeek({ recording, map }: { recording: SourceRecording; map: Ap
   return (
     <>
       <HoverCardHeader
-        media={<span className="grid size-9 place-items-center rounded-ctl bg-secondary text-muted-foreground"><Icon name="play-circle" size={18} sw={1.9} /></span>}
+        icon={<span className="grid size-9 place-items-center rounded-ctl bg-secondary text-muted-foreground"><Icon name="play-circle" size={18} sw={1.9} /></span>}
         title={<span className="line-clamp-2 whitespace-normal">{recording.name}</span>}
-        subtitle={summary ? `${formatReplayTime(summary.duration)} · ${summary.interactions} interactions` : `${recording.events.length} events`}
+        description={summary ? `${formatReplayTime(summary.duration)} · ${summary.interactions} interactions` : `${recording.events.length} events`}
       />
       {recording.enabled ? (
         <div className="mt-3 grid gap-1 text-footnote">

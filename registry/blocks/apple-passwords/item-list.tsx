@@ -1,7 +1,7 @@
 /* The middle column: the selected category's items with search. Rows are SplitViewItems, so they select the
    detail beside them — or push it on a phone. Resting on a sign-in previews it (AccountPreview). */
-import { PlainButton } from '@/components/ui/plain-button';
-import { SearchField } from '@/components/ui/search-field';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { SearchInput } from '@/components/ui/search-input';
 import { SplitViewContent, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewToggle } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -19,13 +19,13 @@ export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
     <>
       <SplitViewHeader title={categoryTitle(category)} leading={<SplitViewToggle />}
         trailing={canAdd ? (
-          <PlainButton aria-label="New password" onClick={() => onAdd()}
+          <SdkButton aria-label="New password" onClick={() => onAdd()}
             className="bl-btn grid size-9 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent text-primary transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90">
             <Icon name="plus" size={21} weight="semibold" />
-          </PlainButton>
+          </SdkButton>
         ) : null} />
       <div className="px-3 pt-2.5 pb-2">
-        <SearchField value={query} onValueChange={onQuery} placeholder={`Search ${categoryTitle(category)}`} className="py-[6px] [&_input]:text-subhead" />
+        <SearchInput value={query} onValueChange={onQuery} placeholder={`Search ${categoryTitle(category)}`} className="h-[34px] [&_input]:text-subhead" />
       </div>
       <SplitViewContent>
         {total === 0 ? (

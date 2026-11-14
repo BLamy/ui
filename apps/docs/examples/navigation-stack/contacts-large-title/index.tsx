@@ -12,7 +12,7 @@ import {
   NavigationStackTitle,
   NavigationStackTrailing,
 } from '@/components/ui/navigation-stack'
-import { SearchField } from '@/components/ui/search-field'
+import { SearchInput } from '@/components/ui/search-input'
 import { Icon } from '@/lib/icon'
 
 const contacts = [
@@ -76,14 +76,14 @@ function ContactsLargeTitle() {
             {/* collapses into the bar as you scroll */}
             <NavigationStackLargeTitle />
             <NavigationStackSubheader>
-              <SearchField value={q} onValueChange={setQ} />
+              <SearchInput value={q} onValueChange={setQ} />
             </NavigationStackSubheader>
             <List>
               <ListSection>
                 {hits.map((c, i) => (
                   <ListRow
                     key={c.l}
-                    leading={<Avatar c={c} size={36} />}
+                    icon={<Avatar name={`${c.f} ${c.l}`} size={36} />}
                     title={`${c.f} ${c.l}`}
                     divider={i < hits.length - 1}
                     onClick={() => setOpen(c)}
@@ -108,16 +108,16 @@ function ContactsLargeTitle() {
             </NavigationStackBar>
             <NavigationStackContent>
               <div style={{ textAlign: 'center', padding: '8px 0 18px' }}>
-                <Avatar c={open} size={84} style={{ margin: '0 auto' }} />
+                <Avatar name={`${open.f} ${open.l}`} size={84} style={{ margin: '0 auto' }} />
                 <div style={{ fontSize: 26, fontWeight: 700, marginTop: 10 }}>
                   {open.f} {open.l}
                 </div>
               </div>
-              <List inset>
+              <List variant="inset">
                 <ListSection>
                   <ListRow
                     title="Phone"
-                    subtitle={open.phone}
+                    description={open.phone}
                     trailing={
                       <Icon
                         name="phone"
@@ -128,7 +128,7 @@ function ContactsLargeTitle() {
                   />
                   <ListRow
                     title="Email"
-                    subtitle={open.email}
+                    description={open.email}
                     divider={false}
                     trailing={
                       <Icon

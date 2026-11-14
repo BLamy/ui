@@ -2,7 +2,7 @@
    the direction you went. Tablet and phone: an iOS navigation stack — drill-downs push inside the column; on a
    phone its first page goes back to the Settings list (the stack's root back, from the collapsed SplitView). */
 import { useLayoutEffect, useRef } from 'react';
-import { ContentSwap } from '@/components/ui/animated-height';
+import { Swap } from '@/components/ui/swap';
 import { Button } from '@/components/ui/button';
 import {
   NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackPage, NavigationStackTitle,
@@ -53,7 +53,7 @@ export function SettingsDetail() {
           <div className="ml-2 min-w-0 truncate text-subhead font-semibold"><TextMorph>{title}</TextMorph></div>
         </div>
         <div ref={scroller} className="bl-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-          <ContentSwap id={key} direction={s.dir}><PaneView id={id} /></ContentSwap>
+          <Swap value={key} direction={s.dir}><PaneView id={id} /></Swap>
         </div>
       </SplitViewDetail>
     );

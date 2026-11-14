@@ -4,7 +4,7 @@
    (a ref), the first responder (autoFocus, and the commands it handles), and the events it sends (its actions). */
 import type { ReactNode } from 'react';
 import { FontPicker } from '@/components/ui/font-picker';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
 import { ActionList, type ActionContext } from './actions';
@@ -211,7 +211,7 @@ export function AttributesPanel({ ctx }: { ctx: NodeCtx }) {
 function EmbeddedProps({ ctx }: { ctx: NodeCtx }) {
   const { node, doc } = ctx;
   const target = doc.scenes.find((s) => s.id === node.props.scene);
-  if (!target) return <Section title="Embedded scene"><Help>Pick the scene it shows. Or drag a TabView’s, a NavigationStack’s or a SplitView’s round handle to a scene.</Help></Section>;
+  if (!target) return <Section title="Embedded scene"><Help>Pick the scene it shows. Or drag a TabsScreen’s, a NavigationStack’s or a SplitView’s round handle to a scene.</Help></Section>;
   const values = target.props.filter((p) => !p.callback);
   const callbacks = target.props.filter((p) => p.callback);
   return (
@@ -325,10 +325,10 @@ export function LayoutPanel({ ctx }: { ctx: NodeCtx }) {
             <NumberInput label="Padding" value={pad as number} min={0} max={400} step={1} unit="px" onBegin={ctx.begin} onChange={(v, live) => setL({ padding: v }, live)} />
           )}
           <Field label="">
-            <PlainButton onClick={() => setL({ padding: sides ? (pad as number[])[0] : [pad as number, pad as number, pad as number, pad as number] })}
+            <SdkButton onClick={() => setL({ padding: sides ? (pad as number[])[0] : [pad as number, pad as number, pad as number, pad as number] })}
               className="h-6 cursor-pointer rounded-md border-0 bg-transparent px-1 text-caption text-primary outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring">
               {sides ? 'Same on every side' : 'Each side separately'}
-            </PlainButton>
+            </SdkButton>
           </Field>
           {axis === 'horizontal' ? <Field label="Wrap"><SwitchInput label="Wrap" value={!!L.wrap} onChange={(v) => setL({ wrap: v })} /></Field> : null}
           <Field label="Overflow">
@@ -389,7 +389,7 @@ export function ConnectionsPanel({ ctx, onSelectSegue }: { ctx: NodeCtx; onSelec
               onCommit={(v) => b.commit((d) => renameOutlet(d, scene.id, node.id, v || undefined))} />
           </div>
           {node.ref ? <IconAction icon="xmark" label="Remove outlet" onClick={() => b.commit((d) => renameOutlet(d, scene.id, node.id, undefined))} />
-            : <PlainButton onClick={() => b.commit((d) => renameOutlet(d, scene.id, node.id, camelName(suggested, outlets)))} className="h-7 shrink-0 cursor-pointer rounded-md border-0 bg-primary/10 px-2 text-caption font-medium text-primary outline-none hover:bg-primary/20 focus-visible:ring-2 focus-visible:ring-ring">Connect</PlainButton>}
+            : <SdkButton onClick={() => b.commit((d) => renameOutlet(d, scene.id, node.id, camelName(suggested, outlets)))} className="h-7 shrink-0 cursor-pointer rounded-md border-0 bg-primary/10 px-2 text-caption font-medium text-primary outline-none hover:bg-primary/20 focus-visible:ring-2 focus-visible:ring-ring">Connect</SdkButton>}
         </div>
         {node.ref ? <CodeLine>{`const ${node.ref} = useRef<HTMLDivElement>(null)`}</CodeLine> : null}
         <Help>Actions focus an outlet (make it first responder), animate it to a variant, or keep a drag inside it.</Help>
@@ -424,11 +424,11 @@ export function ConnectionsPanel({ ctx, onSelectSegue }: { ctx: NodeCtx; onSelec
       {segues.length ? (
         <Section title="Triggered Segues">
           {segues.map((g) => (
-            <PlainButton key={g.id} onClick={() => onSelectSegue(g.id)} className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-2 text-left text-footnote text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+            <SdkButton key={g.id} onClick={() => onSelectSegue(g.id)} className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-secondary px-2 text-left text-footnote text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
               <Icon name="arrow-right" size={13} sw={2.2} className="text-primary" />
               <span className="truncate">{g.identifier}</span>
               <span className="ml-auto truncate text-caption text-muted-foreground">{SEGUE_KINDS.find((k) => k.id === g.kind)?.label} → {doc.scenes.find((s) => s.id === g.to)?.name}</span>
-            </PlainButton>
+            </SdkButton>
           ))}
         </Section>
       ) : null}

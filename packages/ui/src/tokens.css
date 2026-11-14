@@ -27,6 +27,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground, var(--primary-foreground));
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -58,6 +59,16 @@
   --color-link: var(--link, var(--primary));
   --color-code: var(--code, var(--muted));
   --color-code-foreground: var(--code-foreground, var(--foreground));
+  /* Git status inks (a Tree's `gitStatus`): each hue leaned toward the text color, so it keeps text contrast in
+     light and dark. */
+  --color-git-added: var(--git-added, color-mix(in oklab, oklch(0.660 0.117 179.4) 60%, var(--foreground)));
+  --color-git-modified: var(--git-modified, color-mix(in oklab, oklch(0.660 0.118 223.6) 60%, var(--foreground)));
+  --color-git-renamed: var(--git-renamed, color-mix(in oklab, oklch(0.754 0.151 89.4) 55%, var(--foreground)));
+  --color-git-deleted: var(--git-deleted, color-mix(in oklab, oklch(0.647 0.239 23.8) 70%, var(--foreground)));
+  --color-git-ignored: var(--git-ignored, oklch(0.749 0.006 286.3));
+  /* The HUD pill ("Copied"): a dark translucent material, the same in light and dark, as on iOS. */
+  --color-hud: var(--hud, rgb(30 30 32 / .86));
+  --color-hud-foreground: var(--hud-foreground, white);
 
   /* ── Radius ── multiples of the app's `--radius` (the bl-theme sets .625rem = 10px), so a shadcn preset's radius
      reshapes every part. Tailwind's own rounded-sm/md/lg follow the host's scale. */
@@ -80,6 +91,13 @@
   --shadow-hairline: inset 0 0 0 1px var(--border);
   --shadow-hairline-t: inset 0 1px 0 var(--border);
   --shadow-hairline-b: inset 0 -1px 0 var(--border);
+  /* Floating surfaces: popovers, menus, list popups and toast banners (with their .5px edge), the tooltip label,
+     the HUD pill. */
+  --shadow-popover: 0 12px 40px color-mix(in oklab, black 20%, transparent), 0 0 0 .5px var(--border);
+  --shadow-tooltip: 0 4px 14px color-mix(in oklab, black 18%, transparent);
+  --shadow-hud: 0 8px 30px color-mix(in oklab, black 25%, transparent);
+  /* A surface raised off the page but not floating over it: Card `elevated`. */
+  --shadow-raised: 0 1px 3px color-mix(in oklab, black 6%, transparent), 0 6px 24px color-mix(in oklab, black 12%, transparent), 0 0 0 .5px var(--border);
 
   /* ── Sizes ── every app toolbar (SplitView and NavigationStack bars, shell headers, chat bars) is one height:
      `h-toolbar`; a list row is at least `min-h-row`. */
@@ -101,6 +119,9 @@
   --duration-spring-bouncy: 597ms;
   --ease-spring-tray: linear(0.0014, 0.0348, 0.0976, 0.1763, 0.2617, 0.3476, 0.4434, 0.5192, 0.5879, 0.6493, 0.7032, 0.7574, 0.7969, 0.8307, 0.8594, 0.8836, 0.907, 0.9236, 0.9374, 0.9488, 0.9582, 0.9672, 0.9733, 0.9784, 0.9826, 0.9859, 0.9891, 0.9912, 0.993, 0.9944, 0.9955, 0.9966, 0.9973, 0.9978, 0.9983, 0.9986, 0.999, 0.9992, 0.9994, 0.9995, 1);
   --duration-spring-tray: 413ms;
+  /* Entries that fade (opacity, blur) rather than spring: matches `fades.in` in lib/motion.ts. */
+  --ease-enter: cubic-bezier(.22, 1, .36, 1);
+  --duration-enter: 220ms;
   /* Exits: quicker than entries, a plain ease-in (matches `fades.out` in lib/motion.ts). */
   --ease-exit: cubic-bezier(.4, 0, 1, 1);
   --duration-exit: 140ms;

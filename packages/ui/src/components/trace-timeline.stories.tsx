@@ -6,7 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { ThemeScope } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import {
-  TraceTimeline,
+  TraceTimeline, TraceTimelinePreview,
   type TraceDrawStats, type TraceFetchActivity, type TraceTimelineHandle, type TraceTimelineProps, type TraceValueChangeDetails,
 } from '@/components/ui/trace-timeline';
 import {
@@ -110,7 +110,7 @@ function hourSession() {
     key,
     title,
     offset,
-    diamonds: { label: 'checkpts', times: Float64Array.from({ length: 48 }, (_, i) => (i + 0.5) * (HOUR / 48)) },
+    diamonds: { label: 'Checkpoints', times: Float64Array.from({ length: 48 }, (_, i) => (i + 0.5) * (HOUR / 48)) },
     density: { label: 'JS', ...data },
     marks: [
       { key: 'breakpoints', label: 'Breakpoints', times: pick(seed + 1, data.times, marks.breakpoints), shape: 'bar', tone: 'warning' },
@@ -227,6 +227,7 @@ function HourTimeline({ axisKind = 'time', startAt = 1_512_000, startView, ...pr
   return (
     <TraceTimeline
       range={RANGE}
+      gutter={84}
       axis={axisKind === 'stops' ? session.stopAxis : js}
       lanes={session.lanes}
       stops={session.stops}
@@ -245,10 +246,11 @@ function HourTimeline({ axisKind = 'time', startAt = 1_512_000, startView, ...pr
       onSelectedThreadChange={setThread}
       selectedRequest={request}
       onSelectedRequestChange={setRequest}
-      renderPreview={(t) => <Thumbnail time={t} />}
       onDraw={reportDraw}
       {...props}
-    />
+    >
+      <TraceTimelinePreview>{(t) => <Thumbnail time={t} />}</TraceTimelinePreview>
+    </TraceTimeline>
   );
 }
 
@@ -279,7 +281,7 @@ function FakePanel({ title = 'Console', clearLeft }: { title?: string; clearLeft
         <List>
           <ListSection>
             {CONSOLE_ROWS.map((row, i) => (
-              <ListRow key={i} title={row.title} subtitle={row.subtitle} trailing={<span className="text-footnote text-muted-foreground tabular-nums">{row.time}</span>} accessory="chevron" onClick={() => {}} />
+              <ListRow key={i} title={row.title} description={row.subtitle} trailing={<span className="text-footnote text-muted-foreground tabular-nums">{row.time}</span>} accessory="chevron" onClick={() => {}} />
             ))}
           </ListSection>
         </List>
@@ -348,25 +350,25 @@ export const StripJsAxis: Story = {
 /** The rail, over a panel, in a phone-size window. Its dashes are `stops`, and its columns the lanes. Rows keep clear of it
  *  through `--bl-index-bar-inset`. */
 export const Rail: Story = {
-  render: () => <PhoneRail><HourTimeline orientation="vertical" top={60} bottom={16} /></PhoneRail>,
+  render: () => <PhoneRail><HourTimeline orientation="vertical" className="top-15 bottom-4" /></PhoneRail>,
 };
 
 export const RailDark: Story = {
-  render: () => <PhoneRail dark><HourTimeline orientation="vertical" top={60} bottom={16} /></PhoneRail>,
+  render: () => <PhoneRail dark><HourTimeline orientation="vertical" className="top-15 bottom-4" /></PhoneRail>,
 };
 
 export const RailLeft: Story = {
-  render: () => <PhoneRail clearLeft><HourTimeline orientation="vertical" side="left" top={60} bottom={16} /></PhoneRail>,
+  render: () => <PhoneRail clearLeft><HourTimeline orientation="vertical" side="left" className="top-15 bottom-4" /></PhoneRail>,
 };
 
 /** `stopAxis`: an axis by what happened. Stops sit evenly, bursts open out and idle time closes up. */
 export const RailByWhatHappened: Story = {
-  render: () => <PhoneRail><HourTimeline orientation="vertical" axisKind="stops" top={60} bottom={16} /></PhoneRail>,
+  render: () => <PhoneRail><HourTimeline orientation="vertical" axisKind="stops" className="top-15 bottom-4" /></PhoneRail>,
 };
 
 /** Zoomed in, where more stops fit. The thin bar on the outer edge is where the view sits on the whole hour. */
 export const RailZoomed: Story = {
-  render: () => <PhoneRail><HourTimeline orientation="vertical" top={60} bottom={16} startView={{ start: 1_400_000, end: 1_640_000 }} /></PhoneRail>,
+  render: () => <PhoneRail><HourTimeline orientation="vertical" className="top-15 bottom-4" startView={{ start: 1_400_000, end: 1_640_000 }} /></PhoneRail>,
 };
 
 const pressRail = async (canvasElement: HTMLElement, steps: Array<{ x: number; y: number }>) => {
@@ -383,13 +385,13 @@ const pressRail = async (canvasElement: HTMLElement, steps: Array<{ x: number; y
 
 /** Mid-drag at full speed, with the card beside the pointer. */
 export const RailScrubbing: Story = {
-  render: () => <PhoneRail><HourTimeline orientation="vertical" top={60} bottom={16} /></PhoneRail>,
+  render: () => <PhoneRail><HourTimeline orientation="vertical" className="top-15 bottom-4" /></PhoneRail>,
   play: async ({ canvasElement }) => pressRail(canvasElement, [{ x: 20, y: 300 }, { x: 20, y: 340 }, { x: 22, y: 380 }]),
 };
 
 /** Pulled away to a slower speed: the playhead stays where it was as the speed changes, and the card says the speed. */
 export const RailPulledOut: Story = {
-  render: () => <PhoneRail><HourTimeline orientation="vertical" top={60} bottom={16} /></PhoneRail>,
+  render: () => <PhoneRail><HourTimeline orientation="vertical" className="top-15 bottom-4" /></PhoneRail>,
   play: async ({ canvasElement }) => pressRail(canvasElement, [{ x: 20, y: 300 }, { x: 20, y: 380 }, { x: 110, y: 380 }, { x: 200, y: 392 }, { x: 240, y: 410 }]),
 };
 
@@ -408,7 +410,7 @@ let cachedThousands: Array<TraceStop<string>> | null = null;
 /** 5,000 stops on a rail: the lowest level first, then neighbours merged into a cluster with a count and the most severe
  *  tone. Hover one to see its count; zoom in and more fit. */
 export const RailThousandsOfStops: Story = {
-  render: () => <PhoneRail><HourTimeline orientation="vertical" stops={(cachedThousands ??= thousandStops())} top={60} bottom={16} /></PhoneRail>,
+  render: () => <PhoneRail><HourTimeline orientation="vertical" stops={(cachedThousands ??= thousandStops())} className="top-15 bottom-4" /></PhoneRail>,
 };
 
 /** The same timeline either side of a threshold: drag the width across 600 px, or press a button. The zoom and the playhead
@@ -450,9 +452,7 @@ function AcrossTheThreshold() {
             }}
             focusedLane="browser"
             orientation={narrow ? 'vertical' : 'horizontal'}
-            top={60}
-            bottom={16}
-            className={narrow ? undefined : 'shrink-0'}
+            className={narrow ? 'top-15 bottom-4' : 'shrink-0'}
             onDraw={reportDraw}
           />
           <div className="relative min-h-0 flex-1"><FakePanel /></div>

@@ -7,7 +7,7 @@
    card (detail.tsx's SessionPeek): its last frame, its page and what happened, before you open it. */
 import { useEffect, useMemo, useState } from 'react';
 import { AlertDialog, AlertDialogBackdrop, AlertDialogClose, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/dialog';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { SplitView, SplitViewDetail, SplitViewItem, SplitViewSidebar, useSplitViewBack, type SplitViewColumn } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
@@ -64,9 +64,9 @@ function BackRow() {
   const back = useSplitViewBack();
   if (!back) return null;
   return (
-    <PlainButton onClick={back.back} aria-label={`Back to ${back.title}`} className="flex h-10 shrink-0 cursor-pointer items-center gap-0.5 border-0 border-b border-border bg-card pr-3 pl-2 text-detail font-medium text-primary">
+    <SdkButton onClick={back.back} aria-label={`Back to ${back.title}`} className="flex h-10 shrink-0 cursor-pointer items-center gap-0.5 border-0 border-b border-border bg-card pr-3 pl-2 text-detail font-medium text-primary">
       <Icon name="chevron-left" size={20} sw={2.2} />{back.title}
-    </PlainButton>
+    </SdkButton>
   );
 }
 
@@ -110,7 +110,7 @@ function Sidebar({ sessions }: { sessions: SessionInfo[] }) {
         <Popover>
           <PopoverTrigger
             aria-label="Where sessions are stored" title={settings.enabled ? `Cloud sync: ${status.state}` : 'Private: this browser only'}
-            render={<PlainButton className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 text-footnote font-medium text-muted-foreground hover:bg-secondary" />}
+            render={<SdkButton className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 text-footnote font-medium text-muted-foreground hover:bg-secondary" />}
           >
             <Icon name={settings.enabled ? 'cloud' : 'lock'} size={16} sw={1.8} />
             {settings.enabled ? (status.state === 'syncing' ? 'Syncing' : status.state === 'error' ? 'Error' : status.state === 'offline' ? 'Offline' : 'Synced') : 'Private'}
@@ -138,7 +138,7 @@ function Sidebar({ sessions }: { sessions: SessionInfo[] }) {
           <span>{bytes(usage.used)} in this browser</span>
           {sessions.some((s) => !s.live) ? (
             <AlertDialog>
-              <AlertDialogTrigger render={<PlainButton className="cursor-pointer border-0 bg-transparent p-0 text-caption font-medium text-primary" />}>Clear All…</AlertDialogTrigger>
+              <AlertDialogTrigger render={<SdkButton className="cursor-pointer border-0 bg-transparent p-0 text-caption font-medium text-primary" />}>Clear All…</AlertDialogTrigger>
               <AlertDialogBackdrop />
               <AlertDialogContent>
                 <AlertDialogHeader>

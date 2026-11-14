@@ -34,14 +34,14 @@ describe('Select and Combobox are agent-ready', () => {
     return (
       <div className="grid gap-4">
         <Field>
-          <FieldLabel variant="field">Repeat</FieldLabel>
+          <FieldLabel>Repeat</FieldLabel>
           <Select items={repeats} defaultValue="never" onValueChange={onRepeat}>
             <SelectTrigger />
             <SelectContent />
           </Select>
         </Field>
         <Field>
-          <FieldLabel variant="field">Assignee</FieldLabel>
+          <FieldLabel>Assignee</FieldLabel>
           <Combobox items={people} onValueChange={onAssignee}>
             <ComboboxInput placeholder="Search the team" />
             <ComboboxContent />

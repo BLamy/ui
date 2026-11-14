@@ -68,7 +68,7 @@ function InboxWithActions() {
                   <ListRow
                     key={m.id}
                     title={m.from}
-                    subtitle={m.subject}
+                    description={m.subject}
                     divider={i < mail.length - 1}
                     onClick={() => {}}
                   />

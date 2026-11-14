@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ArtifactChatContainer, type ArtifactChatContainerProps } from '@/components/ui/artifact-chat-container';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
-import { PlainButton as Button } from '@/components/ui/plain-button';
+import { Button } from '@ui-sdk/react/button';
 import { Composer, ComposerAddon, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer';
 import { MarkdownView, type ReferenceNode } from '@/components/ui/markdown-view';
 import { useAppearance, type Appearance } from '@/lib/theme';
@@ -151,13 +151,13 @@ function PlaceCard({ place, stop }: { place: Place; stop?: number }) {
   return (
     <div className="flex flex-col gap-2">
       <HoverCardHeader
-        media={(
+        icon={(
           <span className="grid size-9 place-items-center rounded-[50%] text-white" style={{ background: meta.color }}>
             <Icon name={meta.icon} size={18} />
           </span>
         )}
         title={place.name}
-        subtitle={`${meta.label[0].toUpperCase()}${meta.label.slice(1)} · ${AREAS[place.area]?.label ?? place.area}`}
+        description={`${meta.label[0].toUpperCase()}${meta.label.slice(1)} · ${AREAS[place.area]?.label ?? place.area}`}
       />
       <p className="m-0 text-footnote leading-[1.4] text-foreground">{place.blurb}</p>
       {place.tags?.length ? (

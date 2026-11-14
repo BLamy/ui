@@ -4,7 +4,7 @@
 import { useState, type ReactNode } from 'react';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ListRow, ListSection, type ListRowProps } from '@/components/ui/list';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
@@ -48,7 +48,7 @@ function WifiBars({ bars }: { bars: 1 | 2 | 3 }) {
 }
 
 /* ── Row chrome ── */
-type ShellProps = Pick<ListRowProps, 'title' | 'subtitle' | 'leading' | 'trailing' | 'accessory' | 'checked' | 'onClick' | 'center' | 'preview'> & { last?: boolean };
+type ShellProps = Pick<ListRowProps, 'title' | 'description' | 'icon' | 'trailing' | 'accessory' | 'checked' | 'onClick' | 'justify' | 'preview'> & { last?: boolean };
 
 /** macOS group rows get a hairline above every row but the first, inset like the system's. */
 const macSep = 'before:absolute before:inset-x-3 before:top-0 before:h-px before:bg-border first:before:hidden';
@@ -61,10 +61,10 @@ function Shell({ last, preview, ...p }: ShellProps) {
   const { accessory: a } = p;
   const body = (
     <>
-      {p.leading}
+      {p.icon}
       <span className="min-w-0 flex-1">
         <span className="block truncate">{p.title}</span>
-        {p.subtitle ? <span className="block truncate text-[11.5px] text-muted-foreground">{p.subtitle}</span> : null}
+        {p.description ? <span className="block truncate text-[11.5px] text-muted-foreground">{p.description}</span> : null}
       </span>
       {p.trailing}
       {a === 'check' ? (p.checked ? <Icon name="check" size={15} weight="bold" className="text-primary" /> : null)
@@ -74,8 +74,8 @@ function Shell({ last, preview, ...p }: ShellProps) {
   );
   const cls = cn('relative flex min-h-[38px] w-full items-center gap-2.5 px-3 py-[7px] text-left text-footnote text-foreground', !preview && macSep);
   const row = p.onClick ? (
-    <PlainButton onClick={p.onClick}
-      className={cn(cls, 'bl-btn cursor-pointer border-0 bg-transparent [font-family:inherit] transition-colors duration-150 hover:bg-secondary/60 active:bg-accent')}>{body}</PlainButton>
+    <SdkButton onClick={p.onClick}
+      className={cn(cls, 'bl-btn cursor-pointer border-0 bg-transparent [font-family:inherit] transition-colors duration-150 hover:bg-secondary/60 active:bg-accent')}>{body}</SdkButton>
   ) : <div className={cls}>{body}</div>;
   return preview ? (
     <HoverCard>
@@ -133,21 +133,21 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
     glyph && color ? <Tile glyph={glyph} color={color} size={s.layout === 'desktop' ? 22 : 29} /> : undefined;
   switch (row.t) {
     case 'toggle':
-      return <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} subtitle={row.subtitle} 
+      return <Shell last={last} icon={tile(row.glyph, row.color)} title={row.title} description={row.subtitle} 
         accessory={<Switch checked={!!v[row.id]} onCheckedChange={(x) => s.set(row.id, x)} aria-label={mac ? row.title : undefined} className={mac ? MAC_SWITCH : undefined} />} />;
     case 'link': {
       const p = getPane(row.to);
       const value = typeof row.value === 'function' ? row.value(v) : row.value;
       const subtitle = row.subtitle ?? (row.to.startsWith('notif-') ? notifSummary(v, row.to) : undefined);
-      return <Shell last={last} leading={row.icon ? tile(p?.glyph, p?.color) : undefined} title={row.title ?? p?.title} subtitle={subtitle}
+      return <Shell last={last} icon={row.icon ? tile(p?.glyph, p?.color) : undefined} title={row.title ?? p?.title} description={subtitle}
         trailing={<Detail>{value}</Detail>} accessory="chevron" onClick={() => s.open(row.to)} />;
     }
     case 'value':
       return <Shell last={last} title={row.title} trailing={<Detail>{row.value}</Detail>} />;
     case 'select':
       return s.layout === 'desktop'
-        ? <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} trailing={<Popup id={row.id} title={row.title} options={row.options} />} />
-        : <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} trailing={<Detail>{String(v[row.id])}</Detail>} accessory="chevron" onClick={() => s.open('choose:' + row.id)} />;
+        ? <Shell last={last} icon={tile(row.glyph, row.color)} title={row.title} trailing={<Popup id={row.id} title={row.title} options={row.options} />} />
+        : <Shell last={last} icon={tile(row.glyph, row.color)} title={row.title} trailing={<Detail>{String(v[row.id])}</Detail>} accessory="chevron" onClick={() => s.open('choose:' + row.id)} />;
     case 'option': {
       const on = v[row.id] === row.option;
       return <Shell last={last} title={row.option} accessory="check" checked={on} onClick={() => { if (!on) s.set(row.id, row.option); }} />;
@@ -163,19 +163,19 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
         </Plain>
       );
     case 'network':
-      return <Shell last={last} leading={<span className="w-[18px] shrink-0" />} title={row.name} trailing={<NetIcons secure={row.secure} bars={row.bars} />}
+      return <Shell last={last} icon={<span className="w-[18px] shrink-0" />} title={row.name} trailing={<NetIcons secure={row.secure} bars={row.bars} />}
         onClick={() => s.set('wifi.network', row.name)} />;
     case 'connected':
-      return <Shell last={last} leading={<Icon name="check" size={18} weight="bold" className="text-primary" />} title={String(v['wifi.network'])}
+      return <Shell last={last} icon={<Icon name="check" size={18} weight="bold" className="text-primary" />} title={String(v['wifi.network'])}
         trailing={<NetIcons secure bars={3} />} />;
     case 'device': {
       const on = !!v['bt.' + row.name];
-      return <Shell last={last} leading={s.layout === 'desktop' ? <SettingsIcon glyph={row.glyph} size={18} className="text-muted-foreground" /> : undefined} title={row.name}
+      return <Shell last={last} icon={s.layout === 'desktop' ? <SettingsIcon glyph={row.glyph} size={18} className="text-muted-foreground" /> : undefined} title={row.name}
         trailing={<><Detail>{on ? 'Connected' : 'Not Connected'}</Detail><Icon name="info" size={21} weight="light" className="text-primary" /></>}
         onClick={() => s.set('bt.' + row.name, !on)} />;
     }
     case 'action':
-      return <Shell last={last} center={row.destructive && s.layout !== 'desktop'}
+      return <Shell last={last} justify={row.destructive && s.layout !== 'desktop' ? 'center' : undefined}
         title={<span className={row.destructive ? 'text-destructive' : 'text-primary'}>{row.title}</span>} />;
     case 'appearance':
       return <Plain last={last}><AppearancePicker /></Plain>;
@@ -184,7 +184,7 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
     case 'meter':
       return <Plain last={last}><Meter row={row} /></Plain>;
     case 'login':
-      return <Shell last={last} leading={<LetterTile site={row.site} color={row.color} size={s.layout === 'desktop' ? 22 : 32} />} title={row.site} subtitle={row.user}
+      return <Shell last={last} icon={<LetterTile site={row.site} color={row.color} size={s.layout === 'desktop' ? 22 : 32} />} title={row.site} description={row.user}
         accessory="chevron" onClick={() => s.open(row.to)} preview={<LoginPreview row={row} />} />;
     case 'secret':
       return <SecretRow title={row.title} value={row.value} last={last} />;
@@ -298,7 +298,7 @@ function LoginPreview({ row }: { row: Extract<Row, { t: 'login' }> }) {
   const login = LOGINS.find((l) => l.site === row.site);
   return (
     <>
-      <HoverCardHeader media={<LetterTile site={row.site} color={row.color} size={40} />} title={row.site} subtitle={row.user} />
+      <HoverCardHeader icon={<LetterTile site={row.site} color={row.color} size={40} />} title={row.site} description={row.user} />
       <div className="mt-3 flex items-center gap-1.5 text-footnote text-muted-foreground">
         <Icon name="key" size={14} />Password{login ? ` · Updated ${login.updated}` : ''}
       </div>
@@ -396,8 +396,8 @@ export function SearchResults({ onOpen }: { onOpen?: () => void }) {
       {hits.map((h, i) => {
         const icon = iconFor(h.pane);
         return (
-          <Shell key={h.pane + h.title} last={i === hits.length - 1} title={h.title} subtitle={h.trail || undefined}
-            leading={icon?.glyph && icon.color ? <Tile glyph={icon.glyph} color={icon.color} size={s.layout === 'desktop' ? 22 : 29} /> : undefined}
+          <Shell key={h.pane + h.title} last={i === hits.length - 1} title={h.title} description={h.trail || undefined}
+            icon={icon?.glyph && icon.color ? <Tile glyph={icon.glyph} color={icon.color} size={s.layout === 'desktop' ? 22 : 29} /> : undefined}
             accessory={s.layout !== 'desktop' ? 'chevron' : undefined} onClick={() => { s.openPath(pathTo(h.pane)); onOpen?.(); }} />
         );
       })}

@@ -1,13 +1,35 @@
 {
-  "title": "AdaptivePane · column, drawer, cover, hidden",
+  "title": "AdaptivePane · column, drawer, push, cover, hidden",
   "status": "Live",
   "variants": [
-    { "id": "column", "label": "column" },
-    { "id": "drawer", "label": "drawer" },
-    { "id": "cover", "label": "cover" },
-    { "id": "hidden", "label": "hidden" },
-    { "id": "resizable", "label": "column ↔" },
-    { "id": "drawer-resizable", "label": "drawer ↔" }
+    {
+      "id": "column",
+      "label": "column"
+    },
+    {
+      "id": "drawer",
+      "label": "drawer"
+    },
+    {
+      "id": "push",
+      "label": "push"
+    },
+    {
+      "id": "cover",
+      "label": "cover"
+    },
+    {
+      "id": "hidden",
+      "label": "hidden"
+    },
+    {
+      "id": "resizable",
+      "label": "column ↔"
+    },
+    {
+      "id": "drawer-resizable",
+      "label": "drawer ↔"
+    }
   ],
   "variantsWidth": 300
 }

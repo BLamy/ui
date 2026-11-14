@@ -1,53 +1,31 @@
 'use client';
 import { useEffect, useId, useMemo, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import type { ChangeDetails, ChangeSource } from '@ui-sdk/core';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { Input } from '@/components/ui/input';
+import type { VariantProps } from 'class-variance-authority';
+import { Disclosure, DisclosurePanel, DisclosureTrigger } from '@/components/ui/disclosure';
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
-import { Toggle } from '@/components/ui/toggle';
-import { ToggleGroup } from '@/components/ui/toggle-group';
+import { Input } from '@/components/ui/input';
+import { Toggle, ToggleGroup } from '@/components/ui/toggle';
 import { CRON_FIELDS, cronProblems, describeCron, isValidTimeZone, localTimeZone, nextCronRuns, validateCron } from '@/lib/cron';
 import { describeCronError, useCronParse } from '@/lib/gpu-cron';
-import { Icon } from '@/lib/icon';
+import { OccurrenceList, ZoneNote, previewPanelVariants, previewSubtle } from '@/lib/schedule-preview';
 import { cn } from '@/lib/utils';
 
 /* ══ CronEditor — edit a 5-field cron expression with its meaning in view.
-   The raw expression is always there: one text field, with each of its five fields (minute, hour, day of month,
-   month, day of week) labelled and checked on its own, an English description, preset chips and the next runs in
-   any IANA time zone. All of that is local and works everywhere.
-   Where the browser has WebGPU, the editor is just a plain-English box ("every weekday at 9am") and the next runs:
-   gpu-cron turns the text into an expression on every keystroke and that becomes the value, so the runs (and your
-   `onValueChange`) follow what you type. The model always answers, even to nonsense, which is why the next runs stay
-   in view: they are how you check it. gpu-cron is WebGPU-only, so without WebGPU (or with `naturalLanguage={false}`)
-   the editor is the raw expression instead, with its fields, description and presets.
+   Without WebGPU (or with `naturalLanguage={false}`) the editor is the raw expression: one text field, with each of
+   its five fields (minute, hour, day of month, month, day of week) labelled and checked on its own, an English
+   description, preset chips and the next runs in any IANA time zone. All of that is local and works everywhere.
+   Where the browser has WebGPU, the editor leads with a plain-English box ("every weekday at 9am"): gpu-cron turns
+   the text into an expression on every keystroke and that becomes the value, so the runs (and your `onValueChange`)
+   follow what you type. The expression it chose is always shown under the box, and "Edit expression" opens the raw
+   editor to correct it by hand. The model always answers, even to nonsense, which is why the expression and the next
+   runs stay in view: they are how you check it. Whichever box is showing, `name` submits the expression.
+
+   CronEditor is a composite (two text boxes, presets, a preview), not one control, so it labels its own boxes
+   (`label`, `naturalLanguageLabel`) instead of going in a Field; put it under a heading with a FieldSet and a
+   FieldLegend.
 
    <CronEditor value={cron} onValueChange={setCron} timeZone="Europe/Paris" /> ══ */
-
-/** Secondary text: `text-muted-foreground` is below WCAG AA (4.5:1) on the bl-theme's grey surfaces, so the captions
-    and notes here use the foreground at 70%. */
-const subtleText = 'text-foreground/70';
-
-/** A field error: the message in the foreground color (red text is below AA on grey) with a red icon, so it is
-    never color alone. */
-function ErrorLine({ children }: { children: ReactNode }) {
-  return (
-    <span className="flex items-start gap-1.5">
-      <Icon name="exclamation-circle" size={14} className="mt-[3px] shrink-0 text-destructive" />
-      <span>{children}</span>
-    </span>
-  );
-}
-
-export const cronEditorVariants = cva('flex min-w-0 flex-col gap-3 text-footnote', {
-  variants: {
-    /** `card`: the "understood" row and the next runs sit on filled panels. `plain`: no surface. */
-    variant: {
-      card: '[&_[data-surface]]:rounded-panel [&_[data-surface]]:bg-secondary [&_[data-surface]]:p-3',
-      plain: '[&_[data-surface]]:px-1',
-    },
-  },
-  defaultVariants: { variant: 'card' },
-});
 
 export interface CronPreset {
   label: string;
@@ -70,7 +48,7 @@ export const CRON_PRESETS: readonly CronPreset[] = [
 export type CronEditorChangeReason = 'input-change' | 'clear-press' | 'item-press' | 'reset' | 'imperative';
 export type CronEditorChangeDetails = ChangeDetails<CronEditorChangeReason>;
 
-export interface CronEditorProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'onChange'>, VariantProps<typeof cronEditorVariants> {
+export interface CronEditorProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'onChange'>, VariantProps<typeof previewPanelVariants> {
   /** The expression (controlled). */
   value?: string;
   /** The initial expression when uncontrolled. */
@@ -82,13 +60,13 @@ export interface CronEditorProps extends Omit<ComponentProps<'div'>, 'defaultVal
   label?: ReactNode;
   /** Help text under the expression field. */
   description?: ReactNode;
-  /** Form field name for the expression. */
+  /** Form field name: the expression is submitted under it (a hidden input), whichever box is showing. */
   name?: string;
   /** IANA zone the expression is read in for "Next runs". Default: this device's zone. */
   timeZone?: string;
   /** The moment "Next runs" counts from: a Date, epoch milliseconds or an ISO string. Default: now (read after
       mount, so the server and client render the same HTML, and refreshed every 30 seconds). */
-  from?: Date | number | string;
+  reference?: Date | number | string;
   /** How many upcoming runs to list. Default: 5. */
   nextRunCount?: number;
   /** Preset chips; `false` hides them. Default: `CRON_PRESETS`. */
@@ -100,8 +78,9 @@ export interface CronEditorProps extends Omit<ComponentProps<'div'>, 'defaultVal
   naturalLanguageLabel?: ReactNode;
   /** BCP 47 locale for the dates in "Next runs". Default: the browser's. */
   locale?: string;
-  /** Milliseconds the plain-English box waits after typing before asking the model. Default: 0 (every keystroke). */
-  debounceMs?: number;
+  /** How the plain-English box is read: `debounceMs`, the wait after typing before asking the model (default 0,
+      every keystroke). */
+  parse?: { debounceMs?: number };
   disabled?: boolean;
 }
 
@@ -153,13 +132,13 @@ export function CronEditor({
   description,
   name,
   timeZone,
-  from,
+  reference,
   nextRunCount = 5,
   presets = CRON_PRESETS,
   naturalLanguage = true,
   naturalLanguageLabel = 'Describe the schedule',
   locale,
-  debounceMs,
+  parse,
   disabled,
   variant,
   className,
@@ -180,7 +159,7 @@ export function CronEditor({
   const [caretField, setCaretField] = useState<number | null>(null);
 
   const zone = useMemo(() => timeZone ?? localTimeZone(), [timeZone]);
-  const now = useNow(from);
+  const now = useNow(reference);
   const runs = useMemo(() => {
     if (now === null || !validation.valid) return null;
     try {
@@ -198,96 +177,109 @@ export function CronEditor({
   }, [locale, zone]);
   const nextId = useId();
   const zoneKnown = isValidTimeZone(zone);
-  // While the plain-English box can run (or is still checking), it is the only input; without WebGPU, the raw one.
+  // While the plain-English box can run (or is still checking), it leads; without WebGPU, the raw editor does.
   const [support, setSupport] = useState<boolean | null>(null);
   // Disabled, the editor shows the expression itself (read-only).
   const plainEnglish = naturalLanguage && !disabled && support !== false;
+  const unsupported = naturalLanguage && support === false;
+  const [editing, setEditing] = useState(false);
+
+  const raw = (
+    <>
+      <Field disabled={disabled} invalid={!empty && !validation.valid ? true : undefined}>
+        <FieldLabel>{label}</FieldLabel>
+        <Input
+          value={expression}
+          onValueChange={set}
+          className="[font-family:var(--font-mono)]"
+          placeholder="0 9 * * 1-5"
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          onSelectCapture={(e) => setCaretField(fieldAtCaret(e.currentTarget.value, e.currentTarget.selectionStart ?? e.currentTarget.value.length))}
+          onBlur={() => setCaretField(null)}
+        />
+        <FieldDescription>
+          {description ?? 'Five fields, separated by spaces.'}
+          {unsupported ? ' Describing a schedule in words needs WebGPU, which this browser does not offer.' : null}
+        </FieldDescription>
+        {problems.map((p) => (
+          <FieldError key={`${p.field}-${p.message}`}>{p.message}</FieldError>
+        ))}
+      </Field>
+
+      <dl data-slot="cron-editor-fields" className="m-0 grid grid-cols-5 gap-1.5">
+        {CRON_FIELDS.map((f, i) => {
+          const bad = validation.fields[f.name];
+          const part = validation.parts[i];
+          return (
+            <div
+              key={f.name}
+              data-field={f.name}
+              data-active={caretField === i ? '' : undefined}
+              data-invalid={bad ? '' : undefined}
+              className="flex min-w-0 flex-col-reverse items-center justify-end gap-0.5 rounded-ctl bg-secondary px-1 py-1.5 text-center ring-primary data-active:ring-2 data-invalid:ring-2 data-invalid:ring-destructive"
+            >
+              <dt className={cn('text-caption2 leading-tight', previewSubtle)}>{f.label}</dt>
+              <dd className={cn('m-0 max-w-full truncate font-mono text-subhead leading-tight text-foreground', part === undefined && previewSubtle)}>
+                {part ?? '–'}
+              </dd>
+            </div>
+          );
+        })}
+      </dl>
+
+      <p data-slot="cron-editor-description" className="m-0 min-h-[18px] px-1 text-detail text-foreground">
+        {validation.valid ? words : null}
+      </p>
+
+      {presets && presets.length ? (
+        <div data-slot="cron-editor-presets">
+          {/* One of N: the preset the expression matches is pressed, and pressing it again keeps it. */}
+          <ToggleGroup aria-label="Presets" deselectable={false} disabled={disabled} className="w-auto flex-wrap gap-1.5"
+            value={presets.some((p) => p.value === expression.trim()) ? [expression.trim()] : []}
+            onValueChange={(next, details) => { if (next[0] !== undefined) set(next[0], details); }}>
+            {presets.map((p) => (
+              <Toggle key={p.value} value={p.value} variant="filled" size="sm" className="data-pressed:text-foreground">
+                {p.label}
+              </Toggle>
+            ))}
+          </ToggleGroup>
+        </div>
+      ) : null}
+    </>
+  );
 
   return (
-    <div data-slot="cron-editor" className={cn(cronEditorVariants({ variant }), className)} {...rest}>
-      {naturalLanguage ? (
-        <NaturalLanguage label={naturalLanguageLabel} current={expression} onUse={set} onSupport={setSupport} debounceMs={debounceMs} disabled={disabled} />
+    <div data-slot="cron-editor" className={cn('flex min-w-0 flex-col gap-3 text-footnote', className)} {...rest}>
+      {name !== undefined ? <input type="hidden" name={name} value={expression} disabled={disabled} /> : null}
+      {naturalLanguage && support !== false ? (
+        <NaturalLanguage label={naturalLanguageLabel} current={expression} onUse={set} onSupport={setSupport} debounceMs={parse?.debounceMs} disabled={disabled} />
       ) : null}
 
-      {plainEnglish ? null : (
-        <>
-          <Field name={name} disabled={disabled} invalid={!empty && !validation.valid ? true : undefined}>
-            <FieldLabel variant="field" className={subtleText}>{label}</FieldLabel>
-            <Input
-              value={expression}
-              onValueChange={set}
-              className="[font-family:var(--font-mono)]"
-              placeholder="0 9 * * 1-5"
-              autoComplete="off"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              onSelectCapture={(e) => setCaretField(fieldAtCaret(e.currentTarget.value, e.currentTarget.selectionStart ?? e.currentTarget.value.length))}
-              onBlur={() => setCaretField(null)}
-            />
-            <FieldDescription className={subtleText}>{description ?? 'Five fields, separated by spaces.'}</FieldDescription>
-            <FieldError className="text-foreground">
-              {problems.map((p) => (
-                <ErrorLine key={`${p.field}-${p.message}`}>{p.message}</ErrorLine>
-              ))}
-            </FieldError>
-          </Field>
-
-          <dl data-slot="cron-editor-fields" className="m-0 grid grid-cols-5 gap-1.5">
-            {CRON_FIELDS.map((f, i) => {
-              const bad = validation.fields[f.name];
-              const part = validation.parts[i];
-              return (
-                <div
-                  key={f.name}
-                  data-field={f.name}
-                  data-active={caretField === i ? '' : undefined}
-                  data-invalid={bad ? '' : undefined}
-                  className="flex min-w-0 flex-col-reverse items-center justify-end gap-0.5 rounded-ctl bg-secondary px-1 py-1.5 text-center ring-primary data-active:ring-2 data-invalid:ring-2 data-invalid:ring-destructive"
-                >
-                  <dt className="text-caption2 leading-tight text-foreground/70">{f.label}</dt>
-                  <dd className={cn('m-0 max-w-full truncate font-mono text-subhead leading-tight text-foreground', part === undefined && 'text-foreground/70')}>
-                    {part ?? '–'}
-                  </dd>
-                </div>
-              );
-            })}
-          </dl>
-
-          <p data-slot="cron-editor-description" className="m-0 min-h-[18px] px-1 text-detail text-foreground">
-            {validation.valid ? words : null}
-          </p>
-
-          {presets && presets.length ? (
-            <div data-slot="cron-editor-presets">
-              {/* One of N: the preset the expression matches is pressed, and pressing it again keeps it. */}
-              <ToggleGroup aria-label="Presets" deselectable={false} disabled={disabled} className="w-auto flex-wrap gap-1.5"
-                value={presets.some((p) => p.value === expression.trim()) ? [expression.trim()] : []}
-                onValueChange={(next, details) => { if (next[0] !== undefined) set(next[0], details); }}>
-                {presets.map((p) => (
-                  <Toggle key={p.value} value={p.value} variant="filled" size="sm" className="data-pressed:text-foreground">
-                    {p.label}
-                  </Toggle>
-                ))}
-              </ToggleGroup>
-            </div>
-          ) : null}
-        </>
+      {plainEnglish ? (
+        // The expression the model chose, always in view, and the raw editor a press away to correct it.
+        <Disclosure open={editing} onOpenChange={setEditing} className="shadow-none">
+          <div data-slot="cron-editor-expression" className="flex min-w-0 items-center gap-2 px-1">
+            <span className={previewSubtle}>Expression</span>
+            <code className="min-w-0 truncate font-mono text-subhead text-foreground">{empty ? '–' : expression}</code>
+            <DisclosureTrigger className="ms-auto w-auto flex-none gap-1 text-footnote font-semibold text-primary">Edit expression</DisclosureTrigger>
+          </div>
+          <DisclosurePanel hiddenUntilFound={false} className="text-footnote text-foreground">
+            <div className="flex flex-col gap-3 pt-1">{raw}</div>
+          </DisclosurePanel>
+        </Disclosure>
+      ) : (
+        raw
       )}
 
-      <section data-slot="cron-editor-next" data-surface="" aria-labelledby={nextId} className="flex flex-col gap-1.5">
-        <p id={nextId} className="m-0 text-caption font-semibold text-foreground/70">Next runs</p>
+      <section data-slot="cron-editor-next" aria-labelledby={nextId} className={cn(previewPanelVariants({ variant }), 'gap-1.5')}>
+        <p id={nextId} className={cn('m-0 text-caption font-semibold', previewSubtle)}>Next runs</p>
         {runs && runs.length && runFormat ? (
-          <ol className="m-0 flex list-none flex-col gap-1 p-0 text-foreground tabular-nums">
-            {runs.map((r) => (
-              <li key={r.getTime()} className="flex items-center gap-2">
-                <Icon name="clock" size={14} className="text-foreground/70" />
-                <time dateTime={r.toISOString()}>{runFormat.format(r)}</time>
-              </li>
-            ))}
-          </ol>
+          <OccurrenceList ordered icon="clock" items={runs.map((r) => ({ key: r.getTime(), label: runFormat.format(r), dateTime: r.toISOString() }))} />
         ) : (
-          <p className="m-0 text-foreground/70">
+          <p className={cn('m-0', previewSubtle)}>
             {!zoneKnown
               ? `“${zone}” is not a time zone this browser knows.`
               : empty
@@ -299,9 +291,9 @@ export function CronEditor({
                     : 'This expression never matches a real date (31 February, say).'}
           </p>
         )}
-        <p className="m-0 text-caption text-foreground/70">
-          Times in {zone}{timeZone === undefined ? ' (this device’s time zone)' : ''}. Weekdays and dates follow that zone.
-        </p>
+        <ZoneNote zone={zone}>
+          {timeZone === undefined ? ' (this device’s time zone)' : ''}. Weekdays and dates follow that zone.
+        </ZoneNote>
       </section>
     </div>
   );
@@ -331,7 +323,7 @@ function answerDetails({ event, source }: { event?: Event; source: ChangeSource 
 }
 
 /** The plain-English box: each answer gpu-cron gives for the text becomes the value. Rendered only while gpu-cron may
-    run (and as a note when it cannot). */
+    run; where it cannot, the raw field's description says why. */
 function NaturalLanguage({ label, current, onUse, onSupport, debounceMs = 0, disabled }: NaturalLanguageProps) {
   const [text, setText] = useState('');
   // How the text being answered was typed: an answer reports it as its own change.
@@ -345,21 +337,14 @@ function NaturalLanguage({ label, current, onUse, onSupport, debounceMs = 0, dis
     if (answer !== null && answer !== current.trim()) onUse(answer, answerDetails(typed.current));
   }, [answer]);
 
-  if (supported === false) {
-    return (
-      <p data-slot="cron-editor-note" className="m-0 flex items-start gap-1.5 text-foreground/70">
-        <Icon name="info" size={14} className="mt-[3px]" />
-        <span>Describing a schedule in words needs WebGPU, which this browser does not offer. Type the expression below instead.</span>
-      </p>
-    );
-  }
+  if (supported === false) return null;
 
   return (
     <div data-slot="cron-editor-natural" data-supported={supported ?? undefined} className="flex flex-col gap-2">
       <Field disabled={disabled || supported === null} invalid={error !== null ? true : undefined}>
-        <FieldLabel variant="field" className={subtleText}>{label}</FieldLabel>
+        <FieldLabel>{label}</FieldLabel>
         <Input value={text} onValueChange={(next, d) => { typed.current = { event: d.event, source: d.source }; setText(next); }} placeholder={supported === null && !disabled ? 'Checking for WebGPU…' : 'e.g. every weekday at 9am'} autoComplete="off" spellCheck={false} />
-        <FieldError className="text-foreground">{error ? <ErrorLine>{describeCronError(error)}</ErrorLine> : null}</FieldError>
+        <FieldError>{error ? describeCronError(error) : undefined}</FieldError>
       </Field>
     </div>
   );

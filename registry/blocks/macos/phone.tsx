@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { APPS, type DesktopApp } from './apps';
 import type { Area } from './desktop';
 import { AppTile, Hat } from './parts';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 
 /** Status bar and home bar heights. */
 export const STATUS_H = 44;
@@ -101,7 +101,7 @@ export function HomeBar({ dark, inApp, onHome, onSwitcher }: { dark: boolean; in
   };
   return (
     <div className={cn('grid shrink-0 place-items-center transition-colors duration-spring-smooth ease-spring-smooth', inApp ? 'bg-background' : 'bg-transparent')} style={{ height: HOME_H }}>
-      <PlainButton
+      <SdkButton
         ref={button}
         aria-label="Home"
         aria-description="Double-tap or hold for the app switcher"
@@ -112,7 +112,7 @@ export function HomeBar({ dark, inApp, onHome, onSwitcher }: { dark: boolean; in
         className="grid size-full cursor-pointer touch-none place-items-center border-0 bg-transparent p-0 select-none"
       >
         <span aria-hidden="true" className={cn('block h-1 w-34 rounded-full', inApp ? 'bg-foreground/85' : dark ? 'bg-white/70' : 'bg-black/55')} />
-      </PlainButton>
+      </SdkButton>
     </div>
   );
 }
@@ -145,10 +145,10 @@ export function Springboard({ dark, away, onLaunch, onSearch }: SpringboardProps
     onLaunch(app.id, box ? { x: Math.round(r.left + r.width / 2 - box.left), y: Math.round(r.top + r.height / 2 - box.top) } : { x: r.left, y: r.top });
   };
   const icon = (app: DesktopApp, label: boolean) => (
-    <PlainButton key={app.id} aria-label={app.name} onClick={launch(app)} className="group/icon flex cursor-pointer flex-col items-center gap-1.5 border-0 bg-transparent p-0 transition-transform duration-spring-snappy ease-spring-snappy active:scale-90 motion-reduce:transition-none">
+    <SdkButton key={app.id} aria-label={app.name} onClick={launch(app)} className="group/icon flex cursor-pointer flex-col items-center gap-1.5 border-0 bg-transparent p-0 transition-transform duration-spring-snappy ease-spring-snappy active:scale-90 motion-reduce:transition-none">
       <AppTile app={app} size={tile} />
       {label ? <span aria-hidden="true" className={cn('max-w-full truncate text-[11.5px] leading-none font-medium', dark ? 'text-white [text-shadow:0_1px_3px_rgba(0,0,0,.45)]' : 'text-black/85')}>{app.name}</span> : null}
-    </PlainButton>
+    </SdkButton>
   );
 
   return (
@@ -174,7 +174,7 @@ export function Springboard({ dark, away, onLaunch, onSearch }: SpringboardProps
           {pages.map((_, i) => <span key={i} className={cn('size-1.5 rounded-full transition-colors', i === page ? (dark ? 'bg-white' : 'bg-black/70') : dark ? 'bg-white/35' : 'bg-black/25')} />)}
         </div>
       ) : null}
-      <PlainButton
+      <SdkButton
         onClick={onSearch}
         className={cn(
           'mx-auto mb-3 inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border-0 px-4 py-1.5 text-footnote font-medium backdrop-blur-xl backdrop-saturate-150 transition-transform duration-spring-snappy ease-spring-snappy active:scale-95 motion-reduce:transition-none',
@@ -183,7 +183,7 @@ export function Springboard({ dark, away, onLaunch, onSearch }: SpringboardProps
       >
         <Hat size={15} />
         Search
-      </PlainButton>
+      </SdkButton>
       <div
         data-slot="macos-phone-dock"
         className={cn(
@@ -321,11 +321,11 @@ function SwitcherCard({ app, dark, switcher, style, top, height, onPick, onQuit 
       <div data-card="" className={cn('absolute inset-x-0 flex items-center gap-2 px-1', ink)} style={{ top: top - 34, opacity: Math.max(0, 1 + (switcher.drag[app.id] ?? 0) / 120) }}>
         <AppTile app={app} size={22} />
         <span className="min-w-0 flex-1 truncate text-footnote font-semibold [text-shadow:0_1px_3px_rgba(0,0,0,.25)]">{app.name}</span>
-        <PlainButton aria-label={`Close ${app.name}`} onClick={onQuit} className={cn('grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 p-0 backdrop-blur-xl', dark ? 'bg-white/20 text-white' : 'bg-black/12 text-black/70')}>
+        <SdkButton aria-label={`Close ${app.name}`} onClick={onQuit} className={cn('grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 p-0 backdrop-blur-xl', dark ? 'bg-white/20 text-white' : 'bg-black/12 text-black/70')}>
           <Icon name="xmark" size={11} sw={3} />
-        </PlainButton>
+        </SdkButton>
       </div>
-      <PlainButton
+      <SdkButton
         data-card=""
         aria-label={`Open ${app.name}`}
         onClick={() => { if (!flicked.current) onPick(); }}

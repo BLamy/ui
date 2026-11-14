@@ -1,14 +1,13 @@
 'use client';
-import { Children, cloneElement, isValidElement, type ComponentProps, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import type { ComponentProps, CSSProperties, ReactNode } from 'react';
 import { Avatar as SdkAvatar, AvatarFallback as SdkAvatarFallback, AvatarImage as SdkAvatarImage } from '@ui-sdk/react/avatar';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { cn, cx } from '@/lib/utils';
+import { cx } from '@/lib/utils';
 
 /* ══ Avatar — a person, a bot or a workspace, as initials, an image or a glyph, on UI SDK's Avatar ══
-   <Avatar c={{ f: 'Wei', l: 'Chen' }} />                                  // a contact: initials on a gradient hashed from the name
-   <Avatar name="Ada Lovelace" color="royalblue" status="online" />          // a name, an accent, a presence dot
+   <Avatar name="Wei Chen" />                                              // initials on a gradient hashed from the name
+   <Avatar name="Ada Lovelace" tint="royalblue" status="online" />           // an accent, a presence dot
    <Avatar name="Stitch" shape="square" icon={<Icon name="sparkle" />} />  // a bot: rounded square, a glyph for initials
    <Avatar name="Ada" src="/ada.png" />                                    // an image (initials while it loads or if it fails)
    <Avatar name="Ada" card={<HoverCardHeader … />} />                       // a hover card about them
@@ -21,11 +20,20 @@ import { cn, cx } from '@/lib/utils';
      <AvatarFallback delay={300}>AL</AvatarFallback>
    </Avatar>
 
-   <AvatarGroup max={5}>                                                  // overlapped; press for everyone's names
-     <Avatar name="Ada" /> <Avatar name="Miles" /> …
-   </AvatarGroup> */
+   A named avatar is an image called after the person (and their status): beside the name in a row, pass
+   `aria-hidden` so the name is not read twice. Overlapping stacks are `AvatarGroup` (avatar-group.tsx). */
 
-const hue = (s: string) => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
+/** A stable hue per name (whitespace ignored, so "Wei Chen" and "WeiChen" match). */
+const hue = (s: string) => { let h = 0; for (const ch of s.replace(/\s+/g, '')) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
+
+/** The hashed gradient. OKLCH at a fixed perceptual lightness, so white initials keep at least 3.5:1 at the top
+    stop and 4.5:1 in the middle whatever the hue (avatar.test.tsx checks). The olive band (hues 55–125), which
+    turns muddy at that lightness, is skipped: the hash's 360 steps spread over the other 290°. */
+const avatarGradient = (name: string) => {
+  let h = Math.round((hue(name) * 290) / 360);
+  if (h >= 55) h += 70;
+  return `linear-gradient(180deg, oklch(0.59 0.13 ${h}), oklch(0.48 0.14 ${h}))`;
+};
 
 /** Up to two initials: the first letters of the first and last word. */
 function initialsOf(name: string) {
@@ -45,7 +53,8 @@ export const avatarVariants = cva(
   },
 );
 
-/** The presence dot, ringed in the surface the avatar sits on (`--avatar-ring`, the page background by default). */
+/** The presence dot, ringed in the surface the avatar sits on: `--avatar-ring`, which Card sets to `--card`, and
+    the page background elsewhere. Set it on any other surface: `[--avatar-ring:var(--sidebar)]`. */
 export const avatarStatusVariants = cva(
   'absolute -right-[2px] -bottom-[2px] box-border size-[max(10px,calc(var(--avatar-size)*.36))] rounded-full border-[2.5px] border-(--avatar-ring,var(--background))',
   {
@@ -67,14 +76,13 @@ const cardTriggerClass = 'cursor-default border-0 bg-transparent p-0 [font-famil
 export interface AvatarProps extends Omit<ComponentProps<typeof SdkAvatar>, 'children'>, VariantProps<typeof avatarVariants> {
   /** An AvatarImage and AvatarFallback of your own, in place of the ones made from `src`, `icon` and the name. */
   children?: ReactNode;
-  /** Contact-like record: `f` first name, `l` last name. The initials are `f[0]` + `l[0]`. */
-  c?: { f: string; l: string };
-  /** A display name: the initials come from it (and its hash colors the avatar when there is no `color`). */
+  /** Who it is: the initials come from it (first and last word), its hash colors the avatar when there is no
+   *  `tint`, and it names the avatar for screen readers. */
   name?: string;
   /** Replaces the computed initials. */
   initials?: string;
   /** Accent: the gradient runs from it to a fainter copy of itself. Any CSS color. */
-  color?: string;
+  tint?: string;
   /** An image; the initials show until it loads, and instead of it if it fails. */
   src?: string;
   /** A glyph in place of the initials (a bot's spark). */
@@ -84,25 +92,25 @@ export interface AvatarProps extends Omit<ComponentProps<typeof SdkAvatar>, 'chi
   /** Width and height in px (default 40). */
   size?: number;
   /** A HoverCard's content about them (HoverCardHeader and a line or two), shown while the pointer rests on the
-   *  avatar or keyboard focus stays on it. With a card the avatar is a button, in the Tab order, named after them. */
+   *  avatar or keyboard focus stays on it. With a card the avatar is a button, in the Tab order, named after them.
+   *  It is shorthand for `<HoverCard><HoverCardTrigger render={<Avatar … />} /><HoverCardContent>…`. */
   card?: ReactNode;
 }
 
-export function Avatar({ c, name, initials, color, src, icon, status, size = 40, shape, card, className, style, children, ...props }: AvatarProps) {
-  // A contact's two initials stay two text nodes, as they always were: one node would kern the pair differently.
-  const label = initials ?? (c ? <>{c.f[0]}{c.l[0]}</> : initialsOf(name ?? ''));
-  const h = hue(c ? c.f + c.l : (name ?? ''));
+export function Avatar({ name, initials, tint, src, icon, status, size = 40, shape, card, className, style, children, ...props }: AvatarProps) {
+  const label = initials ?? initialsOf(name ?? '');
   // Size and the gradient are computed per render and handed to the classes as variables.
   const vars = {
     '--avatar-size': `${size}px`,
     '--avatar-font': `${size * 0.38}px`,
     '--avatar-radius': `${size * 0.3}px`,
-    '--avatar-bg': color
-      ? `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 53%, transparent))`
-      : `linear-gradient(180deg, hsl(${h} 62% 64%), hsl(${h} 55% 47%))`,
+    '--avatar-bg': tint
+      ? `linear-gradient(135deg, ${tint}, color-mix(in srgb, ${tint} 53%, transparent))`
+      : avatarGradient(name ?? ''),
   } as CSSProperties;
-  // A card's trigger needs a name, so with a card the avatar is named after the person unless it is told otherwise.
-  const ariaLabel = props['aria-label'] ?? (card ? name ?? (c ? `${c.f} ${c.l}` : undefined) : undefined);
+  // The person, then their presence: one name for the whole avatar, so the dot and the initials stay silent.
+  const who = props['aria-label'] ?? name;
+  const ariaLabel = who && status ? `${who}, ${avatarStatusLabels[status]}` : who;
   const el = (
     <SdkAvatar
       // UI SDK's "Interactive Avatar": an avatar that does something is a button. Alone, a named one is an image.
@@ -116,11 +124,17 @@ export function Avatar({ c, name, initials, color, src, icon, status, size = 40,
       {children ?? (
         <>
           {src ? <AvatarImage src={src} /> : null}
-          <AvatarFallback>{icon ?? label}</AvatarFallback>
+          <AvatarFallback aria-hidden>{icon ?? label}</AvatarFallback>
         </>
       )}
       {status && (
-        <span data-slot="avatar-status" data-status={status} role="img" aria-label={avatarStatusLabels[status]} className={avatarStatusVariants({ status })} />
+        <span
+          data-slot="avatar-status"
+          data-status={status}
+          // Named on its own only when the avatar has no name to carry it.
+          {...(ariaLabel ? { 'aria-hidden': true } : { role: 'img', 'aria-label': avatarStatusLabels[status] })}
+          className={avatarStatusVariants({ status })}
+        />
       )}
     </SdkAvatar>
   );
@@ -143,90 +157,4 @@ export function AvatarImage({ className, alt = '', draggable = false, ...props }
     fast image never flashes it. */
 export function AvatarFallback({ className, ...props }: ComponentProps<typeof SdkAvatarFallback>) {
   return <SdkAvatarFallback className={cx('contents', className)} {...props} />;
-}
-
-/* ══ AvatarGroup ══ */
-
-type AvatarElement = ReactElement<AvatarProps>;
-
-const nameOf = (a: AvatarProps) => a['aria-label'] ?? a.name ?? (a.c ? `${a.c.f} ${a.c.l}` : a.initials ?? '');
-
-const compact = new Intl.NumberFormat('en', { notation: 'compact' });
-
-export const avatarGroupVariants = cva(
-  // Each avatar after the first tucks under its neighbour, ringed in the surface so the overlap reads as a cut.
-  'inline-flex items-center rounded-full outline-none [&>*]:ring-2 [&>*]:ring-(--avatar-ring,var(--background)) [&>*+*]:-ml-(--avatar-overlap)',
-);
-
-export interface AvatarGroupProps {
-  /** The people: `<Avatar>`s. Each one's `name` (or `c`) labels it in the menu. */
-  children?: ReactNode;
-  className?: string;
-  style?: CSSProperties;
-  /** How many avatars show before the rest fold into a `+N` bubble (default 5). */
-  max?: number;
-  /** Size of every avatar, in px (default 32); an avatar's own `size` wins. */
-  size?: number;
-  /** How far each avatar tucks under the one before it, in px (default 28% of the size). */
-  overlap?: number;
-  /** Press the group to list everyone with their names (default true). `false` leaves a plain, non-interactive stack. */
-  menu?: boolean;
-  /** The group's accessible name (default "N people"). */
-  label?: string;
-  /** A person was chosen from the menu, by their position in `children`. */
-  onSelect?: (index: number) => void;
-}
-
-/** Avatars overlapped on one another. Past `max` the rest become a `+N` bubble, and pressing the group opens a menu
- *  of everyone — avatar and name. */
-export function AvatarGroup({ children, max = 5, size = 32, overlap, menu = true, label, onSelect, className, style }: AvatarGroupProps) {
-  const people = Children.toArray(children).filter((child): child is AvatarElement => isValidElement(child));
-  const shown = people.slice(0, Math.max(0, max));
-  const extra = people.length - shown.length;
-  const groupStyle = { '--avatar-overlap': `${overlap ?? Math.round(size * 0.28)}px`, ...style } as CSSProperties;
-  const stack = (
-    <>
-      {/* Inside the menu's trigger a card avatar would be a button in a button: the menu lists everyone instead. */}
-      {shown.map((person) => cloneElement(person, { size: person.props.size ?? size, card: menu ? undefined : person.props.card }))}
-      {extra > 0 && (
-        <Avatar
-          data-overflow=""
-          initials={`+${compact.format(extra)}`}
-          size={size}
-          className="bg-secondary-strong text-secondary-foreground"
-          style={{ '--avatar-bg': 'none' } as CSSProperties}
-        />
-      )}
-    </>
-  );
-  const name = label ?? `${people.length} ${people.length === 1 ? 'person' : 'people'}`;
-
-  if (!menu) {
-    return (
-      <div data-slot="avatar-group" role="group" aria-label={name} className={cn(avatarGroupVariants(), className)} style={groupStyle}>
-        {stack}
-      </div>
-    );
-  }
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={name}
-        className={cn(avatarGroupVariants(), 'cursor-pointer border-0 bg-transparent p-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2', className)}
-        style={groupStyle}
-      >
-        {stack}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent aria-label={name} side="bottom" align="start">
-        {people.map((person, i) => (
-          <DropdownMenuItem key={person.key ?? i} value={String(i)} label={nameOf(person.props)} onSelect={() => onSelect?.(i)}>
-            <span className="flex items-center gap-3">
-              {cloneElement(person, { size: 28, className: undefined, style: undefined, card: undefined })}
-              <span className="truncate">{nameOf(person.props)}</span>
-            </span>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
 }

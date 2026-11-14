@@ -121,7 +121,7 @@ function Rename() {
           <DialogHeader><DialogTitle>Rename project</DialogTitle></DialogHeader>
           <DialogBody>
             <Field>
-              <FieldLabel variant="field">New name</FieldLabel>
+              <FieldLabel>New name</FieldLabel>
               <Input value={draft} onValueChange={setDraft} />
             </Field>
           </DialogBody>
@@ -148,7 +148,7 @@ function Repeat() {
     <>
       <h1 className="text-title">Team sync · Tuesday 10:00</h1>
       <Field>
-        <FieldLabel variant="field">Repeat</FieldLabel>
+        <FieldLabel>Repeat</FieldLabel>
         <Select items={repeats} value={repeat} onValueChange={setRepeat}>
           <SelectTrigger />
           <SelectContent />
@@ -171,7 +171,7 @@ function Assignee() {
     <>
       <h1 className="text-title">Fix the login redirect</h1>
       <Field>
-        <FieldLabel variant="field">Assignee</FieldLabel>
+        <FieldLabel>Assignee</FieldLabel>
         <Combobox items={people} value={assignee} onValueChange={setAssignee}>
           <ComboboxInput placeholder="Search the team" />
           <ComboboxContent />
@@ -195,13 +195,13 @@ function BillingTab() {
         </TabsList>
         <TabsPanel value="profile" className="grid gap-3 pt-4">
           <Field>
-            <FieldLabel variant="field">Display name</FieldLabel>
+            <FieldLabel>Display name</FieldLabel>
             <Input defaultValue="Brett" />
           </Field>
         </TabsPanel>
         <TabsPanel value="billing" className="grid gap-3 pt-4">
           <Field>
-            <FieldLabel variant="field">Company name</FieldLabel>
+            <FieldLabel>Company name</FieldLabel>
             <Input value={company} onValueChange={setCompany} />
           </Field>
           <Button className="justify-self-start" onClick={() => setSaved(company)}>Save billing details</Button>
@@ -217,7 +217,7 @@ function DueDate() {
     <>
       <h1 className="text-title">Quarterly report</h1>
       <Field>
-        <FieldLabel variant="field">Due date</FieldLabel>
+        <FieldLabel>Due date</FieldLabel>
         <DatePicker locale="en-US" defaultMonth="2026-09" value={date} onValueChange={setDate}>
           <DatePickerField />
           <DatePickerContent />

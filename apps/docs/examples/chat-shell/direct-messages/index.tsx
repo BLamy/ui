@@ -36,7 +36,7 @@ function Line({
 }) {
   return (
     <div className="flex gap-3 px-4 py-1.5">
-      <Avatar c={who} size={32} />
+      <Avatar name={`${who.f} ${who.l}`} size={32} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="text-[13.5px] font-semibold text-foreground">
@@ -73,7 +73,7 @@ function Conversations({
           {['maya', 'jonas', 'priya'].map((id) => (
             <SidebarItem
               key={id}
-              icon={<Avatar c={people[id]} size={18} />}
+              icon={<Avatar name={`${people[id].f} ${people[id].l}`} size={18} />}
               label={people[id].f}
               active={who === id}
               badge={id === 'jonas' ? 1 : undefined}
@@ -124,7 +124,7 @@ export default function DirectMessages() {
           <ChatShellMain>
             <ChatShellHeader>
               <ChatShellNavTrigger />
-              <Avatar c={people[who]} size={22} />
+              <Avatar name={`${people[who].f} ${people[who].l}`} size={22} />
               <ChatShellTitle>{people[who].f}</ChatShellTitle>
             </ChatShellHeader>
             <div

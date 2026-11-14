@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { chatUserAvatar, type ChatUser } from './chat-users';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { cn, cx } from '@/lib/utils';
 
 /* ══ ThreadPreview — the card under a message that opens its thread ══
@@ -9,7 +9,7 @@ import { cn, cx } from '@/lib/utils';
      <ThreadPreviewReply user={ada}>Testing and Network are getting results too.</ThreadPreviewReply>
    </ThreadPreview> */
 
-export interface ThreadPreviewProps extends Omit<ComponentProps<typeof PlainButton>, 'children' | 'title'> {
+export interface ThreadPreviewProps extends Omit<ComponentProps<typeof SdkButton>, 'children' | 'title'> {
   title: ReactNode;
   /** number of replies */
   count: number;
@@ -19,7 +19,7 @@ export interface ThreadPreviewProps extends Omit<ComponentProps<typeof PlainButt
 
 export function ThreadPreview({ title, count, className, children, ...props }: ThreadPreviewProps) {
   return (
-    <PlainButton
+    <SdkButton
       className={cx(
         'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-ctl border border-border bg-card px-[11px] py-[8px] text-left font-sans [transition:border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] hover:border-secondary-strong motion-reduce:transition-none',
         className,
@@ -33,7 +33,7 @@ export function ThreadPreview({ title, count, className, children, ...props }: T
         </span>
       </span>
       {children}
-    </PlainButton>
+    </SdkButton>
   );
 }
 

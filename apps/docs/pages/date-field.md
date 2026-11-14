@@ -1,6 +1,6 @@
 # DateField
 
-A date, or a time, typed into segments: month, day and year (or hour, minute and AM/PM) are each their own small input in one field. `DateField` and `TimeField` are UI SDK's Date Input and Time Input in the iOS filled-field style. Use them when people know the value and typing is faster than hunting through a grid (a birthday, an alarm, a start time); add a calendar button with [DatePicker](https://blamy.github.io/ui/#/date-picker), or show the month on its own with [Calendar](https://blamy.github.io/ui/#/calendar). To read a date out of free text ("every weekday at 9am"), see [TimeInput](https://blamy.github.io/ui/#/time-input).
+A date, or a time, typed into segments: month, day and year (or hour, minute and AM/PM) are each their own small input in one field. `DateField` and `TimeField` are UI SDK's Date Input and Time Input in the iOS filled-field style. Use them when people know the value and typing is faster than hunting through a grid (a birthday, an alarm, a start time); add a calendar button with [DatePicker](https://blamy.github.io/ui/#/date-picker), or show the month on its own with [Calendar](https://blamy.github.io/ui/#/calendar). To read a date out of free text ("every weekday at 9am"), see [NaturalTimeInput](https://blamy.github.io/ui/#/natural-time-input).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -37,7 +37,7 @@ A `DateField` is the row of segments. Put it in a [Field](https://blamy.github.i
 
 ```tsx
 <Field>
-  <FieldLabel variant="field">Birthday</FieldLabel>
+  <FieldLabel>Birthday</FieldLabel>
   <DateField defaultValue="2026-09-09" />
   <FieldDescription>Month, day, then year.</FieldDescription>
   <FieldError />

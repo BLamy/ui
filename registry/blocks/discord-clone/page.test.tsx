@@ -72,7 +72,7 @@ describe('ChatShell change details', () => {
     expect(drawerOpen()).toBe(false);
   });
 
-  it("the panel hands on its SideDrawer's details", async () => {
+  it("the panel hands on its AdaptivePane's details", async () => {
     const onOpenChange = vi.fn();
     await show(<ChatShell><ChatShellPanel open onOpenChange={onOpenChange}>thread</ChatShellPanel></ChatShell>, 1400);
     const close = [...document.querySelectorAll<HTMLElement>('button')].find((b) => /close/i.test(b.getAttribute('aria-label') ?? ''));

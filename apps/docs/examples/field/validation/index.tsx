@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
-import { Form } from '@/components/ui/form'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 
 const taken = ['brett', 'admin', 'replay']
@@ -21,21 +20,21 @@ export default function Validation() {
   const [sent, setSent] = useState(false)
   const problem = problemWith(username)
   return (
-    <Form className="mx-auto max-w-sm" onSubmit={(e) => { e.preventDefault(); setSent(true) }} onInput={() => setSent(false)}>
+    <FieldGroup render={<form onSubmit={(e) => { e.preventDefault(); setSent(true) }} onInput={() => setSent(false)} />} className="gap-5 mx-auto max-w-sm">
       <Field name="username" invalid={problem ? true : undefined}>
-        <FieldLabel variant="field">Username</FieldLabel>
+        <FieldLabel>Username</FieldLabel>
         <Input value={username} onValueChange={setUsername} />
         <FieldDescription>Try “brett”, or something short.</FieldDescription>
         <FieldError>{problem}</FieldError>
       </Field>
       <Field name="email">
-        <FieldLabel variant="field">Email</FieldLabel>
+        <FieldLabel>Email</FieldLabel>
         <Input type="email" required placeholder="you@example.com" />
         <FieldError match="valueMissing">Enter your email address.</FieldError>
         <FieldError match="typeMismatch">Enter a full address like jane@example.com.</FieldError>
       </Field>
       <Button type="submit" disabled={!!problem}>Subscribe</Button>
       {sent ? <p className="m-0 px-1 text-footnote text-success">Subscribed.</p> : null}
-    </Form>
+    </FieldGroup>
   )
 }

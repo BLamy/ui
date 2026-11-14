@@ -17,7 +17,7 @@ export default function NaturalLanguage() {
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-3">
       <FilterBar fields={fields} value={filters} onValueChange={setFilters}>
-        <FilterInput query={{ now: NOW }} />
+        <FilterInput parse={{ reference: NOW }} />
         <FilterToolbar />
       </FilterBar>
       <ul aria-label="Issues" className="m-0 grid list-none gap-px overflow-hidden rounded-card bg-border p-0">

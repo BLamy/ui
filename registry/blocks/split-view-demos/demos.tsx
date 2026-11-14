@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ListRow, ListSection } from '@/components/ui/list';
-import { SearchField } from '@/components/ui/search-field';
+import { SearchInput } from '@/components/ui/search-input';
 import { SIDEBAR_ICONS } from '@/components/ui/sidebar';
 import { SplitView, SplitViewContent, SplitViewDetail, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, SplitViewStack, SplitViewSupplementary, SplitViewToggle, useSplitView, useSplitViewStack, type SplitViewProps } from '@/components/ui/split-view';
 import { Switch } from '@/components/ui/switch';
@@ -133,7 +133,7 @@ function MailList() {
       <SplitViewHeader title={box.title} leading={<SplitViewToggle />}
         trailing={<BarButton label="New message"><DemoGlyph name="compose" size={21} /></BarButton>} />
       <SplitViewContent>
-        <div className="px-4 pt-2.5 pb-2"><SearchField value={q} onValueChange={setQ} /></div>
+        <div className="px-4 pt-2.5 pb-2"><SearchInput value={q} onValueChange={setQ} /></div>
         {msgs.length === 0 ? <SplitViewEmpty className="h-48" title="No Mail" description={q ? `Nothing matches “${q}”` : undefined} /> : null}
         {msgs.map((m) => (
           <SplitViewItem key={m.id} id={m.id} className="items-start py-3 pl-7">
@@ -159,8 +159,8 @@ function SenderCard({ from }: { from: [string, string] }) {
   const theirs = [...new Map(Object.values(MAIL).flat().filter((m) => m.from.join() === from.join()).map((m) => [m.subject, m])).values()];
   return (
     <div className="flex flex-col gap-3">
-      <HoverCardHeader media={<Avatar c={{ f: from[0], l: from[1] }} size={44} />} title={from.join(' ')}
-        subtitle={`${from[0].toLowerCase()}.${from[1].toLowerCase()}@icloud.com`} />
+      <HoverCardHeader icon={<Avatar name={`${from[0]} ${from[1]}`} size={44} />} title={from.join(' ')}
+        description={`${from[0].toLowerCase()}.${from[1].toLowerCase()}@icloud.com`} />
       <div className="flex flex-col gap-1">
         <div className="text-footnote font-semibold text-muted-foreground">{theirs.length} {theirs.length === 1 ? 'message' : 'messages'}</div>
         {theirs.slice(0, 3).map((m) => (
@@ -190,7 +190,7 @@ function MailMessage() {
         <SplitViewContent>
           <article className="mx-auto max-w-[680px] px-6 pt-5 pb-10">
             <div className="flex items-center gap-3">
-              <Avatar c={{ f: m.from[0], l: m.from[1] }} size={44} card={<SenderCard from={m.from} />} />
+              <Avatar name={`${m.from[0]} ${m.from[1]}`} size={44} card={<SenderCard from={m.from} />} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
                   <span className="min-w-0 flex-1 truncate text-body font-semibold">{m.from.join(' ')}</span>
@@ -327,7 +327,7 @@ export function SplitViewSettingsDemo({ defaultValue, ...props }: DemoProps) {
         <SplitViewHeader title="Settings" />
         <SplitViewContent className="px-2.5 pb-4">
           <div className="my-3 flex items-center gap-3 rounded-panel bg-card px-3 py-2.5">
-            <Avatar c={{ f: 'Brett', l: 'Lamy' }} size={44} />
+            <Avatar name="Brett Lamy" size={44} />
             <div className="min-w-0"><div className="truncate text-callout font-semibold">Brett Lamy</div><div className="truncate text-footnote text-muted-foreground">Account, iCloud, Media</div></div>
           </div>
           <div className="flex flex-col gap-px">
@@ -404,8 +404,8 @@ function RListCard({ l }: { l: RList }) {
   return (
     <div className="flex flex-col gap-3">
       <HoverCardHeader
-        media={<span className="grid size-9 place-items-center rounded-full bg-(--c) text-white" style={{ '--c': l.color } as CSSProperties}><DemoGlyph name={l.icon} size={19} sw={2.4} /></span>}
-        title={l.title} subtitle={`${l.items.length} reminders`} />
+        icon={<span className="grid size-9 place-items-center rounded-full bg-(--c) text-white" style={{ '--c': l.color } as CSSProperties}><DemoGlyph name={l.icon} size={19} sw={2.4} /></span>}
+        title={l.title} description={`${l.items.length} reminders`} />
       <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
         {l.items.slice(0, 5).map((t) => (
           <li key={t} className="flex items-center gap-2.5 text-footnote">
@@ -511,7 +511,7 @@ const Cover = ({ a, className }: { a: Album; className?: string }) => (
 function AlbumCard({ a }: { a: Album }) {
   return (
     <div className="flex flex-col gap-3">
-      <HoverCardHeader media={<Cover a={a} className="size-12" />} title={a.title} subtitle={`${a.artist} · ${a.year} · ${a.tracks.length} songs`} />
+      <HoverCardHeader icon={<Cover a={a} className="size-12" />} title={a.title} description={`${a.artist} · ${a.year} · ${a.tracks.length} songs`} />
       <ol className="m-0 flex list-none flex-col gap-1 p-0">
         {a.tracks.slice(0, 4).map((t, i) => (
           <li key={t} className="flex items-baseline gap-2.5 text-footnote">

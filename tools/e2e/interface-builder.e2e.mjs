@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { center, openDemo } from './helpers.mjs';
 
-/* The Interface Builder block: picking on the storyboard. MainTabs shows the Garden scene in place (a TabView's tab,
+/* The Interface Builder block: picking on the storyboard. MainTabs shows the Garden scene in place (a TabsScreen's tab,
    through GardenNav's NavigationStack), so its rows are Garden's and are selected, moved and edited right there. */
 test.use({ viewport: { width: 1400, height: 900 } });
 
@@ -56,13 +56,13 @@ test('⌘-click replaces the selection; ⇧-click adds to it', async ({ page }) 
   expect(await page.locator('[data-slot=canvas-frame]').count()).toBeGreaterThan(2);
 });
 
-test('the tab bar picks its TabView, not the row drawn behind it', async ({ page }) => {
+test('the tab bar picks its TabsScreen, not the row drawn behind it', async ({ page }) => {
   const tab = page.locator('[data-ib-scene-frame=main] [role=tab]').first();
   await page.mouse.click(...Object.values(center(await tab.boundingBox())));
-  await expect(nameTag(page)).toContainText('TabView');
+  await expect(nameTag(page)).toContainText('TabsScreen');
 });
 
-test('Esc walks out to what shows the scene: the stack, the tab’s scene, the TabView', async ({ page }) => {
+test('Esc walks out to what shows the scene: the stack, the tab’s scene, the TabsScreen', async ({ page }) => {
   await page.mouse.click(...Object.values(center(await inMain(page, 'plant-row').boundingBox())));
   const seen = [];
   for (let i = 0; i < 5; i++) {
@@ -71,14 +71,14 @@ test('Esc walks out to what shows the scene: the stack, the tab’s scene, the T
   }
   expect(seen.some((t) => t?.includes('NavigationStack'))).toBe(true);
   expect(seen.some((t) => t?.includes('<GardenNav />'))).toBe(true);
-  expect(seen.at(-1)).toContain('TabView');
+  expect(seen.at(-1)).toContain('TabsScreen');
 });
 
 test('right-click lists everything under the pointer; choosing one selects it', async ({ page }) => {
   await page.mouse.click(...Object.values(center(await inMain(page, 'plant-row').boundingBox())), { button: 'right' });
   const items = page.locator('[data-slot=menu-item]');
   await expect(items.first()).toContainText('Plant Cell');
-  await expect(items.filter({ hasText: 'TabView' })).toHaveCount(1);
+  await expect(items.filter({ hasText: 'TabsScreen' })).toHaveCount(1);
   await items.filter({ hasText: 'ListSection' }).click();
   await expect(nameTag(page)).toContainText('ListSection');
 });

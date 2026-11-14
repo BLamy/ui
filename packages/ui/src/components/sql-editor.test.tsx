@@ -114,7 +114,12 @@ describe('SqlEditor', () => {
   });
 
   it('the footer spells the run and history keys for the reader’s platform', () => {
-    const hint = () => (document.querySelector('[data-slot=sql-editor-footer]')?.textContent ?? '').replace(/[\u2066-\u2069]/g, '');
+    // What is on screen: a keycap's spelled-out words for screen readers (`.sr-only`) are left out.
+    const hint = () => {
+      const footer = document.querySelector('[data-slot=sql-editor-footer]')?.cloneNode(true) as HTMLElement | undefined;
+      footer?.querySelectorAll('.sr-only').forEach((n) => n.remove());
+      return (footer?.textContent ?? '').replace(/[\u2066-\u2069]/g, '');
+    };
     setPlatform('other');
     const other = render(<SqlEditor history={HISTORY} />);
     expect(hint()).toMatch(/^Ctrl\+Enterruns the selection, or everythingUphistory/);

@@ -4,10 +4,9 @@
    test cards fill the form in one press; resting on one shows its whole number and what the processor will answer. */
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { Form } from '@/components/ui/form';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger, createHoverCardController } from '@/components/ui/hover-card';
-import { IconSwap } from '@/components/ui/icon-swap';
+import { Swap } from '@/components/ui/swap';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectTrigger } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
@@ -65,27 +64,31 @@ export function PaymentStep() {
 
   return (
     <div ref={box}>
-      <Form noValidate className="gap-5" onSubmit={(e) => {
-        e.preventDefault();
-        if (!v.check(e.currentTarget)) return;
-        // Keep focus on the Pay button while the fields lock (Enter may have come from one of them).
-        e.currentTarget.querySelector<HTMLElement>('button[type="submit"]')?.focus();
-        c.pay();
-      }}>
+      <FieldGroup
+        className="gap-5"
+        render={<form noValidate onSubmit={(e) => {
+          e.preventDefault();
+          if (!v.check(e.currentTarget)) return;
+          // Keep focus on the Pay button while the fields lock (Enter may have come from one of them).
+          e.currentTarget.querySelector<HTMLElement>('button[type="submit"]')?.focus();
+          c.pay();
+        }}
+        />}
+      >
         <StepHeading title="Payment" description="Billed in US dollars. Cancel any time from Settings&nbsp;›&nbsp;Billing." focus={c.moved} />
         <TestCards disabled={busy} onPick={fillTestCard} />
 
         <Field name="cardNumber" disabled={busy} invalid={v.invalid('cardNumber') || undefined}>
-          <FieldLabel>Card number</FieldLabel>
+          <FieldLabel variant="default">Card number</FieldLabel>
           <div className="relative">
             <Input required value={card.number} onValueChange={onNumber} inputMode="numeric" autoComplete="cc-number" placeholder="1234 1234 1234 1234"
               className={cn('tabular-nums', card.number ? 'pr-14' : 'pr-[136px]')} />
             <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-              <IconSwap id={card.number ? brand : 'accepted'}>
+              <Swap effect="pop" value={card.number ? brand : 'accepted'}>
                 {card.number ? <BrandMark brand={brand} className="text-tertiary-foreground" /> : (
                   <span className="flex gap-1">{ACCEPTED.map((b) => <BrandMark key={b} brand={b} className="h-4 w-[26px]" />)}</span>
                 )}
-              </IconSwap>
+              </Swap>
             </span>
           </div>
           <ErrorText>{v.error('cardNumber')}</ErrorText>
@@ -93,26 +96,26 @@ export function PaymentStep() {
 
         <div className="grid grid-cols-2 gap-3">
           <Field name="expiry" disabled={busy} invalid={v.invalid('expiry') || undefined}>
-            <FieldLabel>Expiration</FieldLabel>
+            <FieldLabel variant="default">Expiration</FieldLabel>
             <Input required value={card.expiry} onValueChange={onExpiry} inputMode="numeric" autoComplete="cc-exp" placeholder="MM / YY" className="tabular-nums" />
             <ErrorText>{v.error('expiry')}</ErrorText>
           </Field>
           <Field name="cvc" disabled={busy} invalid={v.invalid('cvc') || undefined}>
-            <FieldLabel>Security code</FieldLabel>
+            <FieldLabel variant="default">Security code</FieldLabel>
             <Input required value={card.cvc} onValueChange={onCvc} inputMode="numeric" autoComplete="cc-csc" placeholder={brand === 'amex' ? '4 digits' : '3 digits'} className="tabular-nums" />
             <ErrorText>{v.error('cvc')}</ErrorText>
           </Field>
         </div>
 
         <Field name="cardName" disabled={busy} invalid={v.invalid('cardName') || undefined}>
-          <FieldLabel>Name on card</FieldLabel>
+          <FieldLabel variant="default">Name on card</FieldLabel>
           <Input required value={card.name} onValueChange={(name) => c.setCard({ name })} autoComplete="cc-name" placeholder="Jane Appleseed" />
           <ErrorText>{v.error('cardName')}</ErrorText>
         </Field>
 
         <div className="grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] gap-3">
           <Field name="country" disabled={busy}>
-            <FieldLabel>Country or region</FieldLabel>
+            <FieldLabel variant="default">Country or region</FieldLabel>
             <Select<CountryId> items={COUNTRY_ITEMS} value={billing.country}
               onValueChange={(id) => { if (id) c.setBilling({ country: id, postal: '' }); }}>
               <SelectTrigger />
@@ -120,7 +123,7 @@ export function PaymentStep() {
             </Select>
           </Field>
           <Field name="postal" disabled={busy} invalid={v.invalid('postal') || undefined}>
-            <FieldLabel>{country.postal.label}</FieldLabel>
+            <FieldLabel variant="default">{country.postal.label}</FieldLabel>
             <Input required value={billing.postal} onValueChange={onPostal} autoComplete="postal-code" inputMode={billing.country === 'US' ? 'numeric' : 'text'} placeholder={country.postal.placeholder} />
             <ErrorText>{v.error('postal')}</ErrorText>
           </Field>
@@ -128,7 +131,7 @@ export function PaymentStep() {
 
         <StepActions onBack={() => c.goTo('account')} backDisabled={busy}>
           <Button type="submit" size="lg" className="w-full @md:w-auto @md:min-w-[220px]">
-            {c.status === 'processing' ? <><Spinner spin size={18} /> Processing…</>
+            {c.status === 'processing' ? <><Spinner size={18} /> Processing…</>
               : c.status === 'paid' ? <><Icon name="check" size={18} sw={2.8} /> Paid</>
               : `Pay ${money(q.total)}`}
           </Button>
@@ -140,7 +143,7 @@ export function PaymentStep() {
         {/* Announces the payment's progress, and why it failed the moment it does (the message also stays under the field). */}
         <p role="status" className="sr-only">{c.status === 'processing' ? 'Processing your payment…' : c.status === 'paid' ? 'Payment complete.' : ''}</p>
         <p role="alert" className="sr-only">{c.decline ? `Payment failed. ${c.decline.message}` : ''}</p>
-      </Form>
+      </FieldGroup>
     </div>
   );
 }
@@ -150,7 +153,7 @@ function TestCardPreview({ test }: { test: TestCard }) {
   const brand = cardBrand(test.number);
   return (
     <div className="flex flex-col gap-2">
-      <HoverCardHeader media={<BrandMark brand={brand} />} title={test.label} subtitle={`${BRAND_NAMES[brand]} test card`} />
+      <HoverCardHeader icon={<BrandMark brand={brand} />} title={test.label} description={`${BRAND_NAMES[brand]} test card`} />
       <code className="block rounded-ctl bg-secondary px-2 py-1 text-footnote tabular-nums text-foreground select-text">{formatCardNumber(test.number)}</code>
       <p className={cn('m-0 text-footnote leading-[18px]', SOFT_INK)}>
         {test.outcome === 'success' ? 'The payment goes through.' : `Declined: “${DECLINES[test.outcome].message}”`} Any future expiry and any CVC.

@@ -3,7 +3,7 @@ import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from '@/compon
 import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 
 const guides = ['Introduction', 'Installation', 'Theming']
-const components = ['Button', 'List', 'NavigationStack', 'Sidebar', 'TabView']
+const components = ['Button', 'List', 'NavigationStack', 'Sidebar', 'Tabs']
 
 function DocsSidebar() {
   const [page, setPage] = useState('Sidebar')

@@ -33,8 +33,9 @@ export type TraceValueCommitDetails<K extends TraceKey = TraceKey> = CommitDetai
 export type TraceViewChangeReason = 'wheel' | 'pinch' | 'zoom-key' | 'double-press' | 'drag' | 'playhead' | 'range-change' | 'imperative';
 export type TraceViewChangeDetails = ChangeDetails<TraceViewChangeReason>;
 
-/** Why a lane, a thread or a request was picked: a press on its row (`item-press`) or a controller (`imperative`). */
-export type TracePickReason = 'item-press' | 'imperative';
+/** Why a lane, a thread or a request was picked: a press on its row (`item-press`), a key that steps through them
+ *  (`list-navigation`: Alt+↑/↓ for lanes, `[` `]` for requests, `{` `}` for threads) or a controller (`imperative`). */
+export type TracePickReason = 'item-press' | 'list-navigation' | 'imperative';
 export type TraceFocusedLaneChangeDetails = ChangeDetails<TracePickReason>;
 /** `onSelectedThreadChange`'s details: the lane the thread is in. */
 export type TraceSelectedThreadChangeDetails = ChangeDetails<TracePickReason> & { lane: string | null };
@@ -103,7 +104,7 @@ type TraceTimelineState = {
 
 type Scrub = { pointerId: number; before: number; moved: boolean; stop: TraceStop | null; release: () => void };
 
-const KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', '+', '=', '-', '_', '0'] as const;
+const KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', '+', '=', '-', '_', '0', '[', ']', '{', '}'] as const;
 
 export const traceTimeline = definePrimitive({
   name: 'trace-timeline',
@@ -279,8 +280,9 @@ export const traceTimeline = definePrimitive({
           }
         },
         keydown(event: KeyboardEvent) {
-          // Cmd and the like with these keys belong to the browser (zoom, history) or the host.
-          if (event.metaKey || event.ctrlKey || event.altKey) return;
+          // Cmd and Ctrl with these keys belong to the browser (zoom, history) or the host; Alt is the component's to
+          // take (Alt+↑/↓ steps through lanes) or leave (Alt+←/→ is history).
+          if (event.metaKey || event.ctrlKey) return;
           const at = gestures().key(event, value());
           if (!at) return;
           event.preventDefault();

@@ -51,13 +51,13 @@ function KeychainCard({ status }: { status?: string }) {
   return (
     <>
       <HoverCardHeader
-        media={
+        icon={
           <span className="grid size-9 place-items-center rounded-lg bg-secondary">
             <Icon name="key" size={18} />
           </span>
         }
         title="Passwords keychain"
-        subtitle={
+        description={
           (status && VAULT_STATUS[status]) ?? 'Shared with the Passwords block'
         }
       />

@@ -67,7 +67,7 @@ function Room() {
           Today
         </div>
         <div className="flex gap-3 px-4 py-1.5">
-          <Avatar c={miles} size={32} />
+          <Avatar name={`${miles.f} ${miles.l}`} size={32} />
           <div className="min-w-0 flex-1 text-[13.5px] leading-normal text-foreground">
             <div className="flex items-baseline gap-2">
               <span className="font-semibold">{miles.f}</span>

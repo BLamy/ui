@@ -11,7 +11,7 @@ export default function Rings() {
     <div style={{ display: 'grid', justifyItems: 'center', gap: 22 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
         <ProgressRing aria-label="Small" size="sm" value={value} />
-        <ProgressRing aria-label="Medium" size="md" value={value} showValue />
+        <ProgressRing aria-label="Default" size="default" value={value} />
         <ProgressRing aria-label="Large" size="lg" value={value} showValue />
         <ProgressRing
           aria-label="Upload"

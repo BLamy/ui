@@ -10,7 +10,7 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  FileUpload, FileDropZone, FileList,
+  FileUpload, FileUploadDropzone, FileUploadList,
 } from '@/components/ui/file-upload'
 ```
 {% endtab %}
@@ -22,17 +22,17 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { FileUpload, FileDropZone, FileList } from '@brett_lamy/ui'
+import { FileUpload, FileUploadDropzone, FileUploadList } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
 
 ## Usage
 
-Three levels, from least to most:
+The parts take UI SDK's FileInput part names after the kit's root: `FileUploadDropzone`, `FileUploadTrigger`, `FileUploadList`, `FileUploadItem`. Three levels, from least to most:
 
-- **`FileUploadButton`** when all you need is "choose a file": FileInput's trigger with the [Button](https://blamy.github.io/ui/#/button) look. Give it `onFiles` and it gets a FileInput of its own; you receive plain `File`s and do what you like with them.
-- **`FileDropZone`** when people should be able to drag files in too. Same `onFiles`, plus the drag-over, disabled and error states, an accepted-types hint and paste.
+- **`FileUploadTrigger`** when all you need is "choose a file": FileInput's trigger with the [Button](https://blamy.github.io/ui/#/button) look. Give it `onFiles` and it gets a FileInput of its own; you receive plain `File`s and do what you like with them.
+- **`FileUploadDropzone`** when people should be able to drag files in too. Same `onFiles`, plus the drag-over, disabled and invalid states, an accepted-types hint and paste.
 - **`FileUpload`** when you want the whole thing: it owns a `useFileUpload`, runs the rules and the queue, and renders the zone and the list. Pass children to arrange it yourself.
 
 ```tsx
@@ -50,13 +50,13 @@ import { FileUpload, xhrUpload } from '@brett_lamy/ui'
 
 In that demo, drop or choose a few files. A file with "fail" in its name loses its connection once, so you can see the error row and press **Retry**.
 
-The default children are a `FileDropZone` and a `FileList`. Compose your own order, add a `FileUploadButton`, or use a function child to read the state:
+The default children are a `FileUploadDropzone` and a `FileUploadList`. Compose your own order, add a `FileUploadTrigger`, or use a function child to read the state:
 
 ```tsx
 <FileUpload accept={['image/*']} upload={send}>
-  <FileDropZone title="Drop photos here" icon="photo" />
-  <FileUploadButton variant="ghost">Or browse</FileUploadButton>
-  <FileList />
+  <FileUploadDropzone title="Drop photos here" icon="photo" />
+  <FileUploadTrigger variant="ghost">Or browse</FileUploadTrigger>
+  <FileUploadList />
 </FileUpload>
 
 <FileUpload upload={send}>
@@ -152,13 +152,13 @@ Every change to the list comes with `details`: `reason` (FileInput's own `picker
 
 ## Images with previews
 
-Image files get a thumbnail made from an object URL, created when the row mounts and revoked when it unmounts, so removing a file frees its preview. Files that were rejected are not decoded. Other kinds get an icon (document, video, audio, archive). `FileThumbnail` and `useFilePreview(file)` are exported for your own rows.
+Image files get a thumbnail made from an object URL, created when the row mounts and revoked when it unmounts, so removing a file frees its preview. Files that were rejected are not decoded. Other kinds get an icon (document, video, audio, archive). `FileUploadThumbnail` and `useFilePreview(file)` are exported for your own rows.
 
 {% demo src="file-upload/images" %}
 
 ## Paste
 
-The zone takes files and images pasted from the clipboard (⌘V / Ctrl+V) while focus is inside it: copy a screenshot, focus **Browse files**, paste. Text pastes are left alone. `pasteTarget` on `FileDropZone` takes pastes from somewhere else too: `"document"`, an element, a CSS selector or a function returning one (a message box, say).
+The zone takes files and images pasted from the clipboard (⌘V / Ctrl+V) while focus is inside it: copy a screenshot, focus **Browse files**, paste. Text pastes are left alone. `pasteTarget` on `FileUploadDropzone` takes pastes from somewhere else too: `"document"`, an element, a CSS selector or a function returning one (a message box, say).
 
 {% demo src="file-upload/paste" %}
 
@@ -172,15 +172,33 @@ Dropped folders are read through the browser's entry API (`webkitGetAsEntry`); t
 
 ## Mobile camera
 
-`capture="environment"` (rear) or `"user"` (front) sets the input's `capture` attribute, and phones open the camera instead of the chooser. It does nothing on desktop. Since it replaces the chooser, give it its own button next to the zone, as in the images demo: a `FileUploadButton` with `capture`, `accept={['image/*']}` and `onFiles={(files) => up.add(files)}` has a FileInput of its own and hands the photos to the upload's list, where they are checked like the rest.
+`capture="environment"` (rear) or `"user"` (front) sets the input's `capture` attribute, and phones open the camera instead of the chooser. It does nothing on desktop. Since it replaces the chooser, give it its own button next to the zone, as in the images demo: a `FileUploadTrigger` with `capture`, `accept={['image/*']}` and `onFiles={(files) => up.add(files)}` has a FileInput of its own and hands the photos to the upload's list, where they are checked like the rest.
 
 ## Server rendering and Next.js
 
 Everything here is a client module (`'use client'`) and is safe to import from a server component's tree. Nothing touches `window`, `File` or `URL` at module scope; previews appear after mount, so the server renders the icon and the browser swaps in the thumbnail. The hidden input is FileInput's; with `name` it submits the files with a native form, even before hydration. The upload itself runs only in the browser: your route handler receives an ordinary multipart request.
 
+## In a form
+
+`FileUpload` is a [Field](https://blamy.github.io/ui/#/field) control, like UI SDK's FileInput: inside a `Field`, the `FieldLabel` names the trigger, `required` blocks an empty submit, `name` (on the Field or the FileUpload) submits the files, and the Field's invalid state draws the zone's border in red while its `FieldError` says why. A message of your own — "Add at least one document", a server's answer — is `invalid` on the Field and a `FieldError`, never a prop of the zone.
+
+```tsx
+<FieldGroup className="gap-5" render={<form onSubmit={send} />}>
+  <Field name="docs">
+    <FieldLabel>Documents</FieldLabel>
+    <FileUpload required accept={['application/pdf']} maxSize={10_000_000} />
+    <FieldDescription>We review them within a working day.</FieldDescription>
+    <FieldError match="valueMissing">Add at least one document.</FieldError>
+  </Field>
+  <Button type="submit">Submit</Button>
+</FieldGroup>
+```
+
+A `FileUploadDropzone` with `onFiles` (its own FileInput) works the same way inside a Field.
+
 ## Accessibility
 
-- **Browse files** is FileInput's trigger, a real button in the Tab order; `Enter` or `Space` opens the chooser. It is described by the zone's hint and error. The drop zone itself is not a control, so keep a trigger in it.
+- **Browse files** is FileInput's trigger, a real button in the Tab order; `Enter` or `Space` opens the chooser. It is described by the zone's hint and, in a Field, by its description and error. The drop zone itself is not a control, so keep a trigger in it.
 - The listed files are FileInput's list: one Tab stop, arrow keys, `Home` and `End` move between files, `Delete` or `Backspace` removes the focused one and focus moves to its neighbor. Each Remove button is named for its file ("Remove a.png", "Cancel upload of a.png") and stays out of the Tab order. Retry is a button in the row ("Retry a.png").
 - Files that were turned away follow in their own list, "Not added", each a labelled group with its reason and a "Dismiss name" button; dismissing one returns focus to Browse files.
 - FileInput announces what changed in a polite live region: files added, rejected (with the reason for a single file) and removed. Uploads that finish or fail are announced too, batched into one sentence; progress ticks never are.
@@ -205,8 +223,9 @@ UI SDK's `FileInput` root, fed by a `useFileUpload`. Takes every option of `useF
 | `name`, `form`, `required` | — | Submit the files with a form. |
 | `children` | zone + list | Nodes, or `(api) => node` with the context. |
 | `className`, `style` | — | Merged onto the root (`data-slot="file-upload"`, `data-busy` while anything is queued or sending): one element that is both FileInput's root and the `fileUpload` primitive's. |
+| `id`, `ref`, `aria-*`, `data-*`, `announcement` | — | FileInput's other props, on the same element. |
 
-### `<FileDropZone>`
+### `<FileUploadDropzone>`
 
 UI SDK's `FileInputDropzone` with a title, a hint, an icon and a Browse button (`FileInputTrigger`). Inside a `FileUpload` it reads its rules and its files join the list; with `onFiles` it has a FileInput of its own. Also takes the drop zone's `target` (`"document"` takes drops anywhere on the page) and `pasteTarget`.
 
@@ -217,20 +236,19 @@ UI SDK's `FileInputDropzone` with a title, a hint, an icon and a Browse button (
 | `rules` | context's rules | `{ accept, maxSize, minSize, maxFiles }`: the hint, and with `onFiles` the checks. |
 | `hint` | built from `rules` | The line under the title ("Images · up to 5 MB each"). |
 | `title`, `icon`, `browseLabel` | "Drag files here", `arrow-up`, "Browse files" | Copy and glyph. |
-| `size` | `default` | `compact` lays it out in a row. |
+| `orientation` | `vertical` | `vertical` stacks the icon, title and button in a tall target; `horizontal` lays them in one row, for a form or a panel. |
 | `multiple`, `directory`, `capture`, `disabled` | — | With `onFiles`, as on `FileUpload`. |
-| `invalid`, `error` | — | Red outline and the message, with an icon. |
 | `children` | the default layout | Nodes or `(state) => node` with `dragging`, `dragAccept`, `dragReject`, `disabled`. |
 
-Styled by the drop zone's data attributes: `data-dragging`, `data-drag-accept`, `data-drag-reject`, `data-disabled`, plus `data-invalid`.
+Styled by the drop zone's data attributes: `data-dragging`, `data-drag-accept`, `data-drag-reject`, `data-disabled`; the red border follows the Field's `data-invalid` (on the Field around it, or on the trigger inside it).
 
-### `<FileUploadButton>`
+### `<FileUploadTrigger>`
 
 FileInput's trigger with the `Button` look (`variant`, `size`). Inside a `FileUpload` it opens that upload's chooser; with `onFiles` (and `onReject`, `accept`, `multiple`, `directory`, `capture`, `disabled`) it has a FileInput of its own.
 
-### `<FileList>` and `<FileItem>`
+### `<FileUploadList>` and `<FileUploadItem>`
 
-`FileList` renders the context's files (or `files`) as `FileItem`s, and nothing while empty; `children={(item) => <FileItem item={item} … />}` renders your own row. Inside a `FileUpload`, listed files are `FileInputItem`s (`data-slot="file-input-item"`) of FileInput's list, and rejected files follow in a list of their own (`data-slot="file-list-rejected"`) as groups (`data-slot="file-item"`). `FileItem` takes an `item` and optional `onRemove` / `onRetry` (defaults come from the context); its children replace the row's contents. `FileThumbnail` is the leading tile. Rows carry `data-status` and `data-file-id`.
+`FileUploadList` renders the context's files (or `files`) as `FileUploadItem`s, and nothing while empty; `children={(item) => <FileUploadItem item={item} … />}` renders your own row. Inside a `FileUpload`, listed files are `FileInputItem`s (`data-slot="file-input-item"`) of FileInput's list, and rejected files follow in a list of their own (`data-slot="file-upload-list-rejected"`) as groups (`data-slot="file-upload-item"`). `FileUploadItem` takes an `item` and optional `onRemove` / `onRetry` (defaults come from the context); its children replace the row's contents. `FileUploadThumbnail` is the leading tile. Rows carry `data-status` and `data-file-id`.
 
 ### `useFileUpload(options)` and the `fileUpload` primitive
 
@@ -266,13 +284,13 @@ It returns `{ files, add, remove, retry, clear, uploadAll, busy, counts, rules, 
 - Uploading state is in memory: reload the page and the queue is gone.
 - Only the browser's own limits on file size and memory apply; the file is not read into memory by this code (previews are object URLs).
 - A drop of folders needs the browser's entry API, and pasted files come from the clipboard as the browser provides them (screenshots arrive as PNGs named `image.png`).
-- In `files`, a batch lists what it queued, then what it turned away (the `FileList` shows them apart anyway).
+- In `files`, a batch lists what it queued, then what it turned away (the `FileUploadList` shows them apart anyway).
 
 ## cva recipes
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
 
-### `fileDropZoneVariants`
+### `fileUploadDropzoneVariants`
 
 Defined in `@/components/ui/file-upload`. Base classes:
 
@@ -287,7 +305,7 @@ group/zone relative box-border flex border-2 border-dashed border-border text-ce
 | `default` (default) | `min-h-40 flex-col items-center justify-center gap-2 rounded-card p-6` |
 | `compact` | `flex-row items-center justify-start gap-3 rounded-panel p-3 text-left` |
 
-### `fileItemVariants`
+### `fileUploadItemVariants`
 
 Defined in `@/components/ui/file-upload`. Base classes:
 

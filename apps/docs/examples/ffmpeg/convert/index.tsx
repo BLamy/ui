@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { FileUploadButton } from '@/components/ui/file-upload'
+import { FileUploadTrigger } from '@/components/ui/file-upload'
 import { Progress } from '@/components/ui/progress'
 import { FfmpegError, mediaFileName } from '@/lib/ffmpeg'
 import { FfmpegProvider, useFfmpeg, useFfmpegSupport, useMediaInfo } from '@/lib/ffmpeg/react'
@@ -86,10 +86,10 @@ function Converter() {
   return (
     <div className="flex w-full max-w-xl flex-col gap-3 p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <FileUploadButton variant="secondary" size="sm" multiple={false} accept={['video/*', 'audio/*']}
+        <FileUploadTrigger variant="secondary" size="sm" multiple={false} accept={['video/*', 'audio/*']}
           onFiles={(files) => setFile(files[0] ?? null)}>
           Choose a file…
-        </FileUploadButton>
+        </FileUploadTrigger>
         <Button variant="secondary" size="sm" disabled={!ffmpeg || !!busy} onClick={makeTestClip}>Use a test clip</Button>
       </div>
       {file ? (

@@ -1,16 +1,13 @@
 'use client';
-import { useEffect, useId, useState, type ComponentProps } from 'react';
+import { useEffect, useId, useState, type ComponentProps, type ReactNode } from 'react';
 import { announce } from '@ui-sdk/core';
-import { Input, InputGroup, createInputController, type InputOptions } from '@ui-sdk/react/input';
-import { createParts } from '@ui-sdk/react/primitive';
-import { cva } from 'class-variance-authority';
+import { createInputController, type InputOptions } from '@ui-sdk/react/input';
 import { Button } from '@/components/ui/button';
 import { FilterChip, useOptionalFilterBar } from '@/components/ui/filter';
+import { SearchInput } from '@/components/ui/search-input';
 import { describeFilter, type Filter, type FilterField } from '@/lib/filter-model';
-import { useFilterQuery, warmFilterQuery, type UseFilterQueryOptions } from '@/lib/filter-query';
+import { FILTER_QUERY_MAX_LENGTH, useFilterQuery, warmFilterQuery, type UseFilterQueryOptions } from '@/lib/filter-query';
 import { Icon, type IconShape } from '@/lib/icon';
-import { selectableText } from '@/lib/primitives';
-import { searchField } from '@/lib/search-field-primitive';
 import { cn } from '@/lib/utils';
 
 /* ══ FilterInput — describe the filters in a sentence ══
@@ -27,19 +24,16 @@ import { cn } from '@/lib/utils';
    browser, on the CPU, and downloads ~40 KB the first time the box is focused. It is a feasibility-spike model: it
    reads simple "and" filters and misses plenty of ordinary phrasing, so the preview is the point — read it.
 
-   The box is UI SDK's Input in an InputGroup, inside the search-field keys (lib/search-field-primitive): Enter
-   submits the phrase and Escape clears it, claiming the key only when there is text to clear. What was understood
-   is read out with UI SDK's `announce()` once the debounced result settles. ══ */
-
-// The search-field keys around the phrase box: its `input` part renders the Input.
-const { Root: PhraseField, Input: PhraseInput } = createParts(searchField, { root: 'div', input: 'input' });
+   The box is a small SearchInput with a sparkle for its glyph and no Clear button: Enter submits the phrase and
+   Escape clears it, claiming the key only when there is text to clear. It sits beside a small Apply button, at the
+   same 32px. What was understood is read out with UI SDK's `announce()` once the debounced result settles. ══ */
 
 const SPARKLE: readonly IconShape[] = [
   { d: 'M10.5 4.2l1.5 4.2 4.2 1.5-4.2 1.5-1.5 4.2-1.5-4.2-4.2-1.5 4.2-1.5z', f: 2 },
   { d: 'M18 14.6l.8 2.1 2.1.8-2.1.8-.8 2.1-.8-2.1-2.1-.8 2.1-.8z', f: 2 },
 ];
 
-export const filterInputVariants = cva('flex min-w-0 flex-col gap-1.5');
+const DESCRIPTION = 'Experimental: a small model that runs in your browser and reads simple filters joined by “and”. It misses plenty. Check the preview, then press Enter.';
 
 export interface FilterInputProps extends Omit<ComponentProps<'div'>, 'onChange' | 'defaultValue' | 'children'> {
   /** What can be filtered. Default: the enclosing FilterBar's fields. */
@@ -55,15 +49,19 @@ export interface FilterInputProps extends Omit<ComponentProps<'div'>, 'onChange'
       the box emptying after an apply `imperative`. */
   onValueChange?: InputOptions['onValueChange'];
   placeholder?: string;
-  /** Debounce, "now" for relative dates, … — see `useFilterQuery`. */
-  query?: UseFilterQueryOptions;
+  /** The line under the box, which also describes it to a screen reader. Default: a note that the model is
+      experimental and the preview is to be checked. `false` hides it. */
+  description?: ReactNode | false;
+  /** How the phrase is read: `debounceMs`, `reference` (the moment relative dates count from), `maxLength`,
+      `enabled`. See `useFilterQuery`. */
+  parse?: UseFilterQueryOptions;
   'aria-label'?: string;
 }
 
 const EXAMPLE = 'urgent bugs assigned to bob';
 
 export function FilterInput({
-  fields: fieldsProp, onApply, mode = 'merge', value, defaultValue = '', onValueChange, placeholder = 'Describe what you want…', query: queryOptions,
+  fields: fieldsProp, onApply, mode = 'merge', value, defaultValue = '', onValueChange, placeholder = 'Describe what you want…', description = DESCRIPTION, parse,
   'aria-label': ariaLabel = 'Describe the filters you want', className, ...props
 }: FilterInputProps) {
   const bar = useOptionalFilterBar();
@@ -73,7 +71,7 @@ export function FilterInput({
   const [input] = useState(createInputController);
   const [note, setNote] = useState('');
   const hintId = useId();
-  const result = useFilterQuery(text, fields, queryOptions);
+  const result = useFilterQuery(text, fields, parse);
   const { filters, unresolved, notes, status, pending } = result;
   const trimmed = text.trim();
   const settled = trimmed !== '' && !pending && status === 'ready';
@@ -112,31 +110,30 @@ export function FilterInput({
   }, [summary]);
 
   return (
-    <div data-slot="filter-input" className={cn(filterInputVariants(), className)} {...props}>
+    <div data-slot="filter-input" className={cn('flex min-w-0 flex-col gap-1.5', className)} {...props}>
       <div className="flex items-center gap-2">
-        <PhraseField input={input} onSubmit={submit} className="flex min-w-0 flex-1 items-center">
-          <InputGroup className="box-border flex h-9 w-full min-w-0 items-center gap-2 rounded-ctl bg-secondary px-2.5 focus-within:ring-2 focus-within:ring-ring/45">
-            <Icon shapes={SPARKLE} size={16} sw={1.6} className="shrink-0 text-foreground/70" />
-            <PhraseInput render={<Input
-              controller={input}
-              value={text}
-              onValueChange={(next, details) => {
-                onValueChange?.(next, details);
-                if (details.canceled) return;
-                if (value === undefined) setInner(next);
-                if (note) setNote('');
-              }}
-              aria-label={ariaLabel}
-              placeholder={placeholder}
-              aria-describedby={hintId}
-              autoComplete="off"
-              spellCheck={false}
-              maxLength={400}
-              onFocus={() => { void warmFilterQuery(); }}
-              className={cn('min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 [font-family:inherit] text-body text-foreground outline-none placeholder:text-tertiary-foreground', selectableText)}
-            />} />
-          </InputGroup>
-        </PhraseField>
+        <SearchInput
+          size="sm"
+          icon={<Icon shapes={SPARKLE} size={15} sw={1.6} className="shrink-0 text-foreground/70" />}
+          clearable={false}
+          controller={input}
+          onSubmit={submit}
+          value={text}
+          onValueChange={(next, details) => {
+            onValueChange?.(next, details);
+            if (details.canceled) return;
+            if (value === undefined) setInner(next);
+            if (note) setNote('');
+          }}
+          aria-label={ariaLabel}
+          placeholder={placeholder}
+          aria-describedby={description === false ? undefined : hintId}
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={parse?.maxLength ?? FILTER_QUERY_MAX_LENGTH}
+          onFocus={() => { void warmFilterQuery(); }}
+          className="flex-1"
+        />
         <Button variant="secondary" size="sm" disabled={!canApply} onClick={apply}>Apply</Button>
       </div>
 
@@ -147,13 +144,16 @@ export function FilterInput({
           className={cn('flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 text-caption text-foreground/70 transition-opacity duration-spring-snappy motion-reduce:transition-none', pending && 'opacity-60')}
         >
           {status === 'error' ? (
-            <span className="text-destructive">The language model could not be loaded (offline?). The Filter menu still works.</span>
+            <span className="flex items-center gap-1.5 text-foreground">
+              <Icon name="exclamation-circle" size={14} className="shrink-0 text-destructive" />
+              The language model could not be loaded (offline?). The Filter menu still works.
+            </span>
           ) : status === 'loading' && !filters.length ? (
             <span>Loading the language model…</span>
           ) : filters.length ? (
             <>
               <span className="font-semibold">Will apply</span>
-              {filters.map((f) => <FilterChip key={f.id} filter={f} field={fields.find((x) => x.id === f.field)} readOnly size="sm" tone="preview" locale={bar?.locale} />)}
+              {filters.map((f) => <FilterChip key={f.id} filter={f} field={fields.find((x) => x.id === f.field)} readOnly size="sm" variant="preview" locale={bar?.locale} />)}
             </>
           ) : (
             <span>Nothing understood yet. Try “{EXAMPLE}”.</span>
@@ -167,9 +167,7 @@ export function FilterInput({
         </div>
       ) : null}
 
-      <p id={hintId} className="m-0 text-caption text-foreground/70">
-        Experimental: a small model that runs in your browser and reads simple filters joined by “and”. It misses plenty. Check the preview, then press Enter.
-      </p>
+      {description === false ? null : <p id={hintId} className="m-0 text-caption text-foreground/70">{description}</p>}
     </div>
   );
 }

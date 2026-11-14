@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { cn, cx } from '@/lib/utils';
 import { cva } from 'class-variance-authority';
 
@@ -64,9 +64,9 @@ export function UserPanelStatus({ status = 'online', className, children, ...pro
 }
 
 /** An icon button in the panel (mute, deafen, settings…). */
-export function UserPanelAction({ className, ...props }: ComponentProps<typeof PlainButton>) {
+export function UserPanelAction({ className, ...props }: ComponentProps<typeof SdkButton>) {
   return (
-    <PlainButton
+    <SdkButton
       className={cx('grid cursor-pointer border-0 bg-transparent p-0 text-tertiary-foreground hover:text-muted-foreground', className)}
       {...props}
     />

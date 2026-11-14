@@ -6,7 +6,8 @@ import { Panel } from '../stories/primitive-frame';
 const meta: Meta<typeof Skeleton> = {
   title: 'Atoms/Skeleton',
   component: Skeleton,
-  decorators: [(Story) => <Panel><Story /></Panel>],
+  // `parameters.dark` switches the frame; a Dark story's own frame would nest inside this one.
+  decorators: [(Story, { parameters }) => <Panel dark={parameters.dark}><Story /></Panel>],
 };
 export default meta;
 type Story = StoryObj<typeof Skeleton>;
@@ -28,7 +29,7 @@ const rows = (
 );
 
 export const ListRows: Story = { render: () => rows };
-export const Dark: Story = { decorators: [(Story) => <Panel dark><Story /></Panel>], render: () => rows };
+export const Dark: Story = { parameters: { dark: true }, render: () => rows };
 
 /** Every shape, plus a SkeletonText paragraph. */
 export const Shapes: Story = {
@@ -37,11 +38,11 @@ export const Shapes: Story = {
       <div className="flex items-center gap-3">
         <Skeleton shape="circle" width={44} height={44} />
         <Skeleton shape="rect" width={72} height={44} />
-        <Skeleton shape="rounded" width={112} height={34} />
+        <Skeleton width={112} height={34} />
         <Skeleton shape="text" width={120} />
       </div>
       <SkeletonText lines={3} />
-      <SkeletonText lines={2} lastLineWidth="40%" lineHeight={11} gap={6} />
+      <SkeletonText lines={2} lastLineWidth="40%" lineClassName="h-[11px]" className="gap-1.5" />
     </div>
   ),
 };

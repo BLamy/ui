@@ -1,7 +1,7 @@
 /* The preview (Run, ⌘R): the storyboard as a live app in a device. The app's layers are its root scene and what's
    presented over it — a sheet you can swipe down, a cross-fade, Magic Motion (shared layoutIds fly between them), a
    replaced root, or a push for a scene with no NavigationStack to push in. Inside a layer the kit's containers do
-   the navigating: a NavigationStack pushes and pops its pages, a TabView keeps every tab alive, a SplitView shows
+   the navigating: a NavigationStack pushes and pops its pages, a TabsScreen keeps every tab alive, a SplitView shows
    details. Every scene on screen is an Instance (runtime.ts) with its own state; contexts live at the root. The
    debug area shows the active scene's variables, the scenes on screen and every event and action, Xcode's way.
    Slow Animations slows the transitions the storyboard sets. Edits made while it runs show up live. */
@@ -11,7 +11,8 @@ import { DialogContent as SdkDialogContent, DialogTitle as SdkDialogTitle, type 
 import { useShortcut } from '@ui-sdk/react/shortcuts';
 import { Dialog, DialogClose, type DialogController } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { createHud, ToastRegion } from '@/components/ui/toast';
 import { SizeClassProvider, useContainerSize, useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
@@ -54,7 +55,7 @@ export interface PlayerProps {
     the navigator and inspector stay live). Escape, Stop and ⌘. close it; focus goes back to where it was. */
 export function Player({ open, onOpenChange, controller, container, appearance }: PlayerProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} controller={controller} container={container}>
+    <Dialog open={open} onOpenChange={onOpenChange} controller={controller} container={container} presentation="dialog">
       <SdkDialogContent
         data-ib-player=""
         className="group/player absolute inset-0 z-30 flex flex-col bg-muted/92 outline-none backdrop-blur-md transition-opacity duration-200 data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
@@ -113,12 +114,12 @@ function PlayerWindow({ appearance, onStop }: { appearance: 'light' | 'dark'; on
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
-          <PlainButton aria-label="Restart" title="Restart (⌘R)" onClick={restart} className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+          <SdkButton aria-label="Restart" title="Restart (⌘R)" onClick={restart} className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
             <Icon name="arrow-clockwise" size={15} sw={2.1} />
-          </PlainButton>
-          <PlainToggleButton aria-label="Debug area" title="Debug area" pressed={debug} onPressedChange={setDebug} className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring data-pressed:bg-secondary data-pressed:text-primary">
+          </SdkButton>
+          <SdkToggle aria-label="Debug area" title="Debug area" pressed={debug} onPressedChange={setDebug} className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring data-pressed:bg-secondary data-pressed:text-primary">
             <Icon name="panel-bottom" size={15} sw={2.1} />
-          </PlainToggleButton>
+          </SdkToggle>
           <DialogClose title="Stop (⌘.)" className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-secondary px-2.5 text-caption font-semibold outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
             <Icon name="stop" size={11} sw={2.4} /> Stop
           </DialogClose>
@@ -366,9 +367,9 @@ function DebugArea({ log, active, tick, onClear }: { log: LogEntry[]; active: In
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex h-8 shrink-0 items-center justify-between border-b border-border px-3">
           <span className="text-caption font-semibold">Console</span>
-          <PlainButton onClick={onClear} aria-label="Clear console" className="grid size-6 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
+          <SdkButton onClick={onClear} aria-label="Clear console" className="grid size-6 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
             <Icon name="trash" size={12} sw={2.2} />
-          </PlainButton>
+          </SdkButton>
         </div>
         <ol aria-live="polite" className="bl-scroll m-0 min-h-0 flex-1 list-none overflow-y-auto p-2">
           {log.map((e) => (

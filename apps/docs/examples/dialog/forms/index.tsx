@@ -24,7 +24,7 @@ export default function Forms() {
   const [draft, setDraft] = useState(name)
   const empty = draft.trim() === ''
   return (
-    <div className="mx-auto h-96 max-w-lg overflow-hidden rounded-card shadow-hairline">
+    <div className="mx-auto h-96 max-w-2xl overflow-hidden rounded-card shadow-hairline">
       <BLProvider>
         <div className="grid h-full content-start gap-3 p-5">
           <div className="text-body">
@@ -44,7 +44,7 @@ export default function Forms() {
                 </DialogHeader>
                 <DialogBody>
                   <Field invalid={empty ? true : undefined}>
-                    <FieldLabel variant="field">Name</FieldLabel>
+                    <FieldLabel>Name</FieldLabel>
                     <Input value={draft} onValueChange={setDraft} />
                     <FieldError match>A project needs a name.</FieldError>
                   </Field>

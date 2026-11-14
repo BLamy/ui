@@ -31,8 +31,7 @@ export default function Backup() {
   const done = value === 100
   return (
     <div className="mx-auto grid w-full max-w-sm justify-items-center gap-12 py-8">
-      <div className="relative isolate">
-        <Celebrate fire={fired} />
+      <Celebrate fire={fired} render={<div />}>
         <div
           className={
             'grid size-16 place-items-center rounded-full transition-colors duration-spring-smooth ' +
@@ -41,7 +40,7 @@ export default function Backup() {
         >
           <Icon name={done ? 'check' : 'cloud'} size={30} sw={2.4} />
         </div>
-      </div>
+      </Celebrate>
       <Progress
         aria-label="Backup progress"
         value={value}

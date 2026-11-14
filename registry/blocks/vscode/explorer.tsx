@@ -1,8 +1,8 @@
 'use client';
 import { useState, useSyncExternalStore } from 'react';
 import { Button } from '@/components/ui/button';
-import { ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
-import { Credenza, CredenzaBackdrop, CredenzaClose, CredenzaContent, CredenzaHeader, CredenzaTitle } from '@/components/ui/credenza';
+import { DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogBackdrop, DialogBody, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Tree, type TreeNode } from '@/components/ui/tree';
@@ -33,21 +33,23 @@ function FolderName({ store }: { store: VSCodeStore }) {
   const [problem, setProblem] = useState<string | null>(null);
   return (
     <form
-      className="flex flex-col gap-3 px-3.5 pt-1 pb-3.5"
+      className="contents"
       onSubmit={(event) => {
         event.preventDefault();
         setProblem(store.commitFolderName(value));
       }}
     >
-      <Field invalid={problem ? true : undefined}>
-        <FieldLabel variant="field">Name</FieldLabel>
-        <Input size="sm" autoFocus value={value} onValueChange={(next) => { setValue(next); setProblem(null); }} />
-        <FieldError>{problem}</FieldError>
-      </Field>
-      <div className="flex justify-end gap-2">
-        <CredenzaClose render={<Button variant="quiet" />}>Cancel</CredenzaClose>
+      <DialogBody>
+        <Field invalid={problem ? true : undefined}>
+          <FieldLabel>Name</FieldLabel>
+          <Input size="sm" autoFocus value={value} onValueChange={(next) => { setValue(next); setProblem(null); }} />
+          <FieldError>{problem}</FieldError>
+        </Field>
+      </DialogBody>
+      <DialogFooter>
+        <DialogClose render={<Button variant="quiet" />}>Cancel</DialogClose>
         <Button type="submit">Create</Button>
-      </div>
+      </DialogFooter>
     </form>
   );
 }
@@ -61,13 +63,13 @@ export function Explorer({ store }: { store: VSCodeStore }) {
   const menu = (node: TreeNode) => {
     const isFolder = !!node.children;
     return (
-      <ContextMenuContent aria-label={`Actions for ${node.label}`}>
-        {isFolder ? <ContextMenuItem onSelect={() => store.beginNewFile(node.value)}>New File</ContextMenuItem> : <ContextMenuItem onSelect={() => store.openFile(node.value)}>Open</ContextMenuItem>}
-        {isFolder ? <ContextMenuItem onSelect={() => store.beginNewFolder(node.value)}>New Folder</ContextMenuItem> : null}
-        <ContextMenuSeparator />
-        <ContextMenuItem onSelect={() => store.beginRename(node.value)}>Rename</ContextMenuItem>
-        <ContextMenuItem onSelect={() => store.confirmDelete(node.value)}>Delete</ContextMenuItem>
-      </ContextMenuContent>
+      <DropdownMenuContent aria-label={`Actions for ${node.label}`}>
+        {isFolder ? <DropdownMenuItem onSelect={() => store.beginNewFile(node.value)}>New File</DropdownMenuItem> : <DropdownMenuItem onSelect={() => store.openFile(node.value)}>Open</DropdownMenuItem>}
+        {isFolder ? <DropdownMenuItem onSelect={() => store.beginNewFolder(node.value)}>New Folder</DropdownMenuItem> : null}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => store.beginRename(node.value)}>Rename</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => store.confirmDelete(node.value)}>Delete</DropdownMenuItem>
+      </DropdownMenuContent>
     );
   };
 
@@ -104,45 +106,45 @@ export function Explorer({ store }: { store: VSCodeStore }) {
 export function ExplorerDialogs({ store }: { store: VSCodeStore }) {
   useSyncExternalStore(store.subscribe, store.getVersion);
   const deleting = store.deleting;
-  // A tray in a narrow window, a card otherwise: Credenza's `auto`, from the window's size-class scope.
+  // A tray in a narrow window, a card otherwise: the Dialog's `"auto"`, from the window's size-class scope.
   return (
     <>
-    <Credenza open={!!store.naming} onOpenChange={(open) => { if (!open) store.endFolderName(); }}>
-      <CredenzaBackdrop />
-      <CredenzaContent>
-        <CredenzaHeader>
-          <CredenzaTitle>New folder</CredenzaTitle>
-          <CredenzaClose />
-        </CredenzaHeader>
+    <Dialog open={!!store.naming} onOpenChange={(open) => { if (!open) store.endFolderName(); }}>
+      <DialogBackdrop />
+      <DialogContent variant="tray">
+        <DialogHeader variant="bar">
+          <DialogTitle>New folder</DialogTitle>
+          <DialogClose />
+        </DialogHeader>
         {store.naming ? <FolderName store={store} /> : null}
-      </CredenzaContent>
-    </Credenza>
-    <Credenza open={!!deleting} onOpenChange={(open) => { if (!open) store.confirmDelete(null); }}>
-      <CredenzaBackdrop />
-      <CredenzaContent>
-        <CredenzaHeader>
-          <CredenzaTitle>{deleting ? `Delete ${basename(deleting)}?` : null}</CredenzaTitle>
-          <CredenzaClose />
-        </CredenzaHeader>
-        <div className="flex flex-col gap-3 px-3.5 pt-1 pb-3.5">
-          <p className="m-0 text-footnote text-muted-foreground">
+      </DialogContent>
+    </Dialog>
+    <Dialog open={!!deleting} onOpenChange={(open) => { if (!open) store.confirmDelete(null); }}>
+      <DialogBackdrop />
+      <DialogContent variant="tray">
+        <DialogHeader variant="bar">
+          <DialogTitle>{deleting ? `Delete ${basename(deleting)}?` : null}</DialogTitle>
+          <DialogClose />
+        </DialogHeader>
+        <DialogBody>
+          <DialogDescription>
             {deleting && store.isFolder(deleting) ? 'This folder and everything in it will be deleted.' : 'This file will be deleted.'} It can't be restored.
-          </p>
-          <div className="flex justify-end gap-2">
-            <CredenzaClose render={<Button variant="quiet" />}>Cancel</CredenzaClose>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (deleting) store.deletePath(deleting);
-                store.confirmDelete(null);
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        </div>
-      </CredenzaContent>
-    </Credenza>
+          </DialogDescription>
+        </DialogBody>
+        <DialogFooter>
+          <DialogClose render={<Button variant="quiet" />}>Cancel</DialogClose>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              if (deleting) store.deletePath(deleting);
+              store.confirmDelete(null);
+            }}
+          >
+            Delete
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }

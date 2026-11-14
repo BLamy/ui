@@ -1,8 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { DatePicker, DatePickerContent, DatePickerField } from '@/components/ui/date-picker'
-import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
-import { Form } from '@/components/ui/form'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { ThemeScope } from '@/lib/theme'
 
 // A `name` (the Field's, or the picker's own) makes the picker submit its value
@@ -20,9 +19,9 @@ export default function FormDemo() {
   // appearance; in an app, BLProvider or your root class does it.
   return (
     <ThemeScope className="mx-auto max-w-sm">
-      <Form onSubmit={onSubmit}>
+      <FieldGroup render={<form onSubmit={onSubmit} />} className="gap-5">
         <Field name="due">
-          <FieldLabel variant="field">Due date</FieldLabel>
+          <FieldLabel>Due date</FieldLabel>
           <DatePicker locale="en-US" required min="2026-09-01" defaultMonth="2026-09">
             <DatePickerField />
             <DatePickerContent />
@@ -32,7 +31,7 @@ export default function FormDemo() {
         </Field>
 
         <Field>
-          <FieldLabel variant="field">Stay</FieldLabel>
+          <FieldLabel>Stay</FieldLabel>
           <DatePicker
             mode="range"
             locale="en-US"
@@ -48,7 +47,7 @@ export default function FormDemo() {
         <Button type="submit" size="pill">
           Save
         </Button>
-      </Form>
+      </FieldGroup>
       {sent ? <pre className="mt-4 mb-0 rounded-ctl bg-secondary p-3 text-footnote">{sent}</pre> : null}
     </ThemeScope>
   )

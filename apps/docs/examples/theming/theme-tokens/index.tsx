@@ -51,10 +51,10 @@ export default function Appearance() {
               />
             ))}
           </div>
-          <List inset>
+          <List variant="inset">
             <ListSection title="Appearance">
               <ListRow
-                leading={<Icon name="bell" size={20} />}
+                icon={<Icon name="bell" size={20} />}
                 title="Dark Mode"
                 divider={false}
                 trailing={

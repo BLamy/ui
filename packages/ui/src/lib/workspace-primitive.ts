@@ -38,7 +38,7 @@ import {
   type TabDropRegion,
   type TabDropTarget,
   type TabNode,
-  type WorkspaceTabPlacement,
+  type WorkspaceTabSide,
   type TabsetNode,
   type WorkspaceLayout,
   type WorkspaceLayoutInput,
@@ -123,7 +123,7 @@ export type WorkspaceController<TabData = unknown, TabsetData = unknown> = {
   updateTab: (tabId: string, changes: Partial<Omit<TabNode<TabData>, 'id'>>, options?: WorkspaceChangeOptions) => boolean;
   updateTabset: (
     tabsetId: string,
-    changes: Partial<Pick<TabsetNode<TabData, TabsetData>, 'data' | 'keepWhenEmpty' | 'minHeight' | 'minWidth' | 'tabPlacement'>>,
+    changes: Partial<Pick<TabsetNode<TabData, TabsetData>, 'data' | 'keepWhenEmpty' | 'minHeight' | 'minWidth' | 'tabSide'>>,
     options?: WorkspaceChangeOptions,
   ) => boolean;
   /** Lets a tabset cover the others. */
@@ -154,7 +154,7 @@ export type WorkspaceOptions<TabData = unknown, TabsetData = unknown> = {
   /** What a tabset is called, for screen readers and agents. Defaults to `Pane 1`, `Pane 2`… in reading order. */
   tabsetLabel?: (tabset: TabsetNode<TabData, TabsetData>, index: number) => string;
   /** Where tabs sit around their content, for tabsets that don't say. Defaults to `top`. */
-  tabPlacement?: WorkspaceTabPlacement;
+  tabSide?: WorkspaceTabSide;
   /** Drives the workspace from anywhere. Create one with `createWorkspaceController()`. */
   controller?: WorkspaceController<TabData, TabsetData>;
 } & PrimitiveOptions;
@@ -173,7 +173,7 @@ type WorkspaceStore = {
   // The tabset last used, by pointer or focus.
   active: string | null;
   disabled: boolean;
-  tabPlacement: WorkspaceTabPlacement;
+  tabSide: WorkspaceTabSide;
 };
 
 /** What the workspace's root hands a `children` function. */
@@ -198,7 +198,7 @@ export type WorkspaceTabsetState = {
   only: boolean;
   empty: boolean;
   selectedTabId: string | null;
-  tabPlacement: WorkspaceTabPlacement;
+  tabSide: WorkspaceTabSide;
 };
 
 /** What a tab's parts hand `render` functions and state-based class names. */
@@ -250,8 +250,8 @@ const visibleTabsets = (layout: Layout) => {
   const tabsets = workspaceTabsets(layout);
   return layout.maximizedTabsetId ? tabsets.filter((tabset) => tabset.id === layout.maximizedTabsetId) : tabsets;
 };
-const placementOf = (state: WorkspaceStore, tabset: Tabset | undefined) => tabset?.tabPlacement ?? state.tabPlacement;
-const sideways = (placement: WorkspaceTabPlacement) => placement === 'top' || placement === 'bottom';
+const sideOf = (state: WorkspaceStore, tabset: Tabset | undefined) => tabset?.tabSide ?? state.tabSide;
+const sideways = (placement: WorkspaceTabSide) => placement === 'top' || placement === 'bottom';
 const activeIn = (state: WorkspaceStore) => {
   const tabsets = visibleTabsets(state.layout);
   return (tabsets.find((tabset) => tabset.id === state.active) ?? tabsets[0])?.id ?? null;
@@ -266,7 +266,7 @@ function tabsetState(state: WorkspaceStore, key: string): WorkspaceTabsetState {
     only: state.layout.root.type === 'tabset',
     empty: !tabset?.tabs.length,
     selectedTabId: tabset?.selectedId ?? null,
-    tabPlacement: placementOf(state, tabset),
+    tabSide: sideOf(state, tabset),
   };
 }
 
@@ -297,7 +297,7 @@ export const workspace = definePrimitive({
     disabled: 'boolean',
     accepts: 'action',
     tabsetLabel: 'action',
-    tabPlacement: 'string',
+    tabSide: 'string',
     controller: 'value',
   },
   controlled: ['layout'],
@@ -312,14 +312,14 @@ export const workspace = definePrimitive({
       target: null,
       active: null,
       disabled: !!options.disabled,
-      tabPlacement: options.tabPlacement ?? 'top',
+      tabSide: options.tabSide ?? 'top',
     };
   },
   sync: (options) => {
     const layout = options.layout === undefined ? undefined : normalizeLayout(options.layout);
     return {
       disabled: !!options.disabled,
-      tabPlacement: options.tabPlacement ?? 'top',
+      tabSide: options.tabSide ?? 'top',
       ...(layout ? { layout, lists: listsOf(layout) } : {}),
     };
   },
@@ -416,7 +416,7 @@ export const workspace = definePrimitive({
     /** How many of a strip's other tabs the pointer has passed, which is where the tab would drop among them. */
     function indexAt(tabset: Tabset, key: string, x: number, y: number) {
       const state = store.get();
-      const along = sideways(placementOf(state, tabset));
+      const along = sideways(sideOf(state, tabset));
       let index = 0;
       for (const id of transfer.lists(state)[tabset.id] ?? []) {
         const el = id === key ? undefined : context.element('tab', id);
@@ -553,7 +553,7 @@ export const workspace = definePrimitive({
       const modified = event.altKey || event.ctrlKey || event.metaKey;
       const moving = state.moving;
       const list = moving && listWith(moving.lists, moving.key);
-      if (moving && list && !modified && ARROWS.has(event.key) && sideways(placementOf(state, findTabset(state.layout, list)))) {
+      if (moving && list && !modified && ARROWS.has(event.key) && sideways(sideOf(state, findTabset(state.layout, list)))) {
         // A strip that runs sideways: Left and Right move the tab along it and on into the tabset beside it, Up and
         // Down straight to the previous or next tabset.
         event.preventDefault();
@@ -604,7 +604,7 @@ export const workspace = definePrimitive({
         apply(updateTab(store.get().layout, tabId, changes), { ...imperative(o), action: 'update', tab: tabId }),
       updateTabset: (
         tabsetId: string,
-        changes: Partial<Pick<Tabset, 'data' | 'keepWhenEmpty' | 'minHeight' | 'minWidth' | 'tabPlacement'>>,
+        changes: Partial<Pick<Tabset, 'data' | 'keepWhenEmpty' | 'minHeight' | 'minWidth' | 'tabSide'>>,
         o?: WorkspaceChangeOptions,
       ) => apply(updateTabset(store.get().layout, tabsetId, changes), { ...imperative(o), action: 'update', tabset: tabsetId }),
       maximizeTabset: (tabsetId: string, o?: WorkspaceChangeOptions) =>
@@ -681,12 +681,12 @@ export const workspace = definePrimitive({
       props: { value: 'string' },
       state: (state, { key }) => tabsetState(state, key),
       attrs(state, { key }) {
-        const { active, maximized, empty, tabPlacement } = tabsetState(state, key);
+        const { active, maximized, empty, tabSide } = tabsetState(state, key);
         return {
           'data-active': flag(active),
           'data-maximized': flag(maximized),
           'data-empty': flag(empty),
-          'data-tab-placement': tabPlacement,
+          'data-tab-side': tabSide,
         };
       },
       // On the element, not through the framework: a tab's content is rendered elsewhere and shown here.
@@ -704,7 +704,7 @@ export const workspace = definePrimitive({
     header: slot<{ value?: string }, WorkspaceTabsetState>({
       props: { value: { kind: 'string', from: 'tabset', required: true } },
       state: (state, { key }) => tabsetState(state, key),
-      attrs: (state, { key }) => ({ 'data-tab-placement': tabsetState(state, key).tabPlacement }),
+      attrs: (state, { key }) => ({ 'data-tab-side': tabsetState(state, key).tabSide }),
     }),
 
     tab: slot<{ value: string }, WorkspaceTabState>({
@@ -720,7 +720,7 @@ export const workspace = definePrimitive({
           'data-moving': flag(moving),
           'data-dragging': flag(dragging),
           'data-draggable': flag(draggable),
-          'data-tab-placement': placementOf(state, tabset),
+          'data-tab-side': sideOf(state, tabset),
         };
       },
       on: {
@@ -765,7 +765,7 @@ export const workspace = definePrimitive({
     panels: slot<{ value?: string }, WorkspaceTabsetState>({
       props: { value: { kind: 'string', from: 'tabset', required: true } },
       state: (state, { key }) => tabsetState(state, key),
-      attrs: (state, { key }) => ({ 'data-tab-placement': tabsetState(state, key).tabPlacement }),
+      attrs: (state, { key }) => ({ 'data-tab-side': tabsetState(state, key).tabSide }),
     }),
 
     empty: slot<{ value?: string }>({

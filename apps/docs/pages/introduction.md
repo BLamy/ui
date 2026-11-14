@@ -8,7 +8,7 @@ BL UI is a generic component library in the shadcn style, with an iOS accent, pl
 
 | Layer | What is in it |
 | --- | --- |
-| Library | Primitives (Button, Dialog, Select, Tabs, …), iOS containers (NavigationStack, SplitView, TabView, Credenza, SideDrawer, Sidebar, List, CommandMenu, Toast, Morph), Icon, motion, the theme, the Composer, PencilKit, MarkdownEditor, MessageScroller and more |
+| Library | Primitives (Button, Dialog, Select, Tabs, …), iOS containers (NavigationStack, SplitView, Tabs, Dialog trays, AdaptivePane, Sidebar, List, CommandMenu, Toast, Morph), Icon, motion, the theme, the Composer, PencilKit, MarkdownEditor, MessageScroller and more |
 | Blocks | Whole apps composed from the library, with the product-specific parts (a chat shell, a workbench, a tile map, sample data) kept in the block: Mail, Notes, Reminders, Discord, GitHub, T3 Code, … |
 
 Take it one of two ways, from the same source: **copy the source you need** with the shadcn registry (recommended, and the tree-shaking mechanism: you own only what you add), or **install everything** as `@brett_lamy/ui`. [Installation](https://blamy.github.io/ui/#/installation) has both, and [How the registry works](https://blamy.github.io/ui/#/registry) explains the first.
@@ -19,7 +19,7 @@ The full Contacts composition is interactive here:
 
 ## A first app
 
-Twenty-odd lines of composition: a `TabView` with a bar, a `NavigationStack` inside the first tab, inset `List`s, and a `Credenza` tray. The app owns only its data; every container brings its own gestures and transitions.
+Twenty-odd lines of composition: a `Tabs` bar, a `NavigationStack` inside the first tab, inset `List`s, and a `Dialog` that becomes a tray on a phone. The app owns only its data; every container brings its own gestures and transitions.
 
 {% demo src="introduction/first-app" %}
 
@@ -29,11 +29,11 @@ Twenty-odd lines of composition: a `TabView` with a bar, a `NavigationStack` ins
 | --- | --- |
 | Navigation controller | `NavigationStack` — controlled push/pop and edge-swipe back |
 | Split view controller | `SplitView` — adaptive sidebar, master, and detail |
-| Tab bar controller | `TabBar` — composable tab navigation |
-| Table view | `List`, `List.Section`, `List.Row` |
+| Tab bar controller | `Tabs` with `variant="bar"`: composable tab navigation |
+| Table view | `List`, `ListSection`, `ListRow` |
 | Section index titles | `IndexBar` — A-Z fallback or application-defined keyed stops |
-| Sheets and trays | `Credenza` |
-| Inspector column | `SideDrawer` |
+| Sheets and trays | `Dialog` (`variant="tray"`), `Sheet` |
+| Inspector column | `AdaptivePane` |
 | Sidebar | `Sidebar` — docked, rail, float, or overlay navigation |
 | Canvas view | `PencilCanvas` |
 

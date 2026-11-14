@@ -96,7 +96,7 @@ The breakpoint measures the container, not the viewport. A tap on the bump's han
 
 When `working` is true, the composer card becomes a translucent, tappable **Working…** bar (the outlet wraps the card; the bump stays). Tapping it reveals the real Composer so the user can add another request without leaving the artifact. Use `onAdd` to clear the working state, then set `working` again when the new request begins.
 
-`hideOnScroll` defaults to true. The floating control follows both its own content scroller and the shared BL UI chrome state used by `TabBar` and `NavigationStack`: scrolling down hides it, scrolling up restores it. The artifact no longer reserves a white dock spacer; content continues behind the fixed glass. Expanded chat stays visible while scrolling.
+`hideOnScroll` defaults to true. The floating control follows both its own content scroller and the shared BL UI chrome state used by the `Tabs` bar and `NavigationStack`: scrolling down hides it, scrolling up restores it. The artifact no longer reserves a white dock spacer; content continues behind the fixed glass. Expanded chat stays visible while scrolling.
 
 The demo composes a trimmed Composer — editor, expand, attach, and send — without the model, effort, access, or checkout parts.
 
@@ -208,7 +208,7 @@ import {
 | --- | --- | --- |
 | `appearance`, `tone`, `gutter`, `radius` | `FloatingSheet` | Opaque card docked to the edges here; `glass` with a `gutter` turns the same tracker into a floating card over the map. |
 | `peek`, `bodyAlign`, `minimizable` | `FloatingSheet` | How much rests over the map, which end of the body the window anchors to, and whether it can fold away. |
-| `variant`, `animated`, `labels` | `ProgressStepper` | Segment bars or a joined line, an active shimmer, optional labels. Every step exposes `data-state="done|active|todo"`. |
+| `variant`, `animated`, `labels` | `ProgressStepper` | Segment bars or a joined line, a shimmer on the current step, optional labels. Every step exposes `data-state="complete|current|upcoming"`. |
 | `scheme`, `tileUrl`, pin `callout` | `TileMap` | Light chrome over grey Esri tiles, and the ETA bubble on the car. |
 | `stage`, `autoAdvance`, `stageMs`, `accent` | `DeliveryTrackingDemo` (block) | Drive the order stage yourself or let it advance; recolour the stepper, pins, and primary button. |
 

@@ -1,16 +1,18 @@
 'use client';
-import { useMemo, useRef, useState, type HTMLAttributes } from 'react';
-import { PlainButton } from '@/components/ui/plain-button';
+import { useMemo, useState, type HTMLAttributes } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   STRING_PREVIEW_LENGTH, copyTextOf, formatLength, fullLength, hiddenLength, nextShownLength, previewTokens,
   type ValuePreview, type ValueTint,
 } from '@/lib/object-tree-value';
 import { selectableText } from '@/lib/primitives';
+import { useCopy } from '@/lib/use-copy';
 import { cn } from '@/lib/utils';
 
 /* ══ ObjectValue — a value's one-line preview, tinted by type as DevTools does.
    The value is plain data (`ValuePreview`), so it can come from another process; `previewFromValue` makes one from a
-   live value. Long strings and error stacks are truncated, with Show more and Copy beside them.
+   live value. Long strings and error stacks are truncated at `maxLength`, with Show more and Copy beside them.
+   For a whole tree of values, ObjectTree draws its rows with this.
    <ObjectValue value={{ type: 'string', value: 'hello' }} />
    <ObjectValue value={previewFromValue({ a: 1, b: [2, 3] })} /> ══ */
 
@@ -33,8 +35,12 @@ const TINTS: Record<ValueTint, string> = {
   plain: '',
 };
 
-const linkButton =
-  'ml-1.5 cursor-default border-0 bg-transparent p-0 font-sans text-caption2 font-medium whitespace-nowrap text-primary outline-none hover:underline focus-visible:underline';
+/** The kit's link button, at the size of the text around it; its hit area reaches past the text (24px tall) without
+ *  moving the lines. */
+const linkButton = cn(
+  'relative ms-1.5 h-auto rounded-sm px-0 align-baseline font-sans text-caption2 font-medium hover:underline active:not-aria-expanded:not-data-disabled:scale-100',
+  'after:absolute after:-inset-x-1 after:-inset-y-1.5 after:content-[""]',
+);
 
 export interface ObjectValueProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
   value: ValuePreview;
@@ -42,29 +48,24 @@ export interface ObjectValueProps extends Omit<HTMLAttributes<HTMLSpanElement>, 
   maxLength?: number;
   /** Quote strings. `false` for the bare text a console shows for a top-level string. Default `true`. */
   quote?: boolean;
-  /** Show more and Copy beside a long string or an error's stack. Off in a row of fixed height, as a tree's. Default `true`. */
-  expandable?: boolean;
+  /** Show more and Copy beside a long string or an error's stack. Off in a row of fixed height, as a tree's: the value
+   *  is still cut at `maxLength`. Default `true`. */
+  actions?: boolean;
+  /** Writes the text Copy gives yourself, instead of `navigator.clipboard`: a host with a clipboard of its own. */
+  onValueCopy?: (text: string) => void | Promise<void>;
 }
 
-export function ObjectValue({ value, maxLength = STRING_PREVIEW_LENGTH, quote, expandable = true, className, style, ...props }: ObjectValueProps) {
+export function ObjectValue({ value, maxLength = STRING_PREVIEW_LENGTH, quote, actions = true, onValueCopy, className, style, ...props }: ObjectValueProps) {
   const [shown, setShown] = useState(maxLength);
   const [expanded, setExpanded] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const options = useMemo(() => ({ maxString: expandable ? shown : maxLength, quote, expanded }), [expandable, shown, maxLength, quote, expanded]);
+  const { copy, copied } = useCopy({ write: onValueCopy });
+  const options = useMemo(() => ({ maxString: actions ? shown : maxLength, quote, expanded }), [actions, shown, maxLength, quote, expanded]);
   const tokens = useMemo(() => previewTokens(value, options), [value, options]);
-  const hidden = expandable ? hiddenLength(value, shown, expanded) : 0;
+  const hidden = actions ? hiddenLength(value, shown, expanded) : 0;
 
   const showMore = () => {
     setExpanded(true);
     setShown((s) => nextShownLength(fullLength(value), s));
-  };
-  const copy = () => {
-    void navigator.clipboard?.writeText(copyTextOf(value)).then(() => {
-      setCopied(true);
-      clearTimeout(timer.current);
-      timer.current = setTimeout(() => setCopied(false), 1200);
-    }, () => {});
   };
 
   return (
@@ -80,8 +81,8 @@ export function ObjectValue({ value, maxLength = STRING_PREVIEW_LENGTH, quote, e
       ))}
       {hidden > 0 ? (
         <>
-          <PlainButton className={linkButton} onClick={showMore}>Show more ({formatLength(hidden)})</PlainButton>
-          <PlainButton className={linkButton} onClick={copy}>{copied ? 'Copied' : 'Copy'}</PlainButton>
+          <Button variant="link" size="sm" className={linkButton} onClick={showMore}>Show more ({formatLength(hidden)})</Button>
+          <Button variant="link" size="sm" className={linkButton} onClick={() => void copy(copyTextOf(value))}>{copied ? 'Copied' : 'Copy'}</Button>
         </>
       ) : null}
     </span>

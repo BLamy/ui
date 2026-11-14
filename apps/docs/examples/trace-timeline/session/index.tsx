@@ -60,15 +60,13 @@ export default function Session({ variant = 'time' }: { variant?: string }) {
         selectedRequest={request}
         onSelectedRequestChange={setRequest}
         orientation={narrow ? 'vertical' : 'horizontal'}
-        top={8}
-        bottom={8}
-        className={narrow ? undefined : 'shrink-0'}
+        className={narrow ? 'inset-y-2' : 'shrink-0'}
       />
       <div className="relative min-h-0 flex-1 overflow-y-auto">
         <List>
           <ListSection>
             {ROWS.map(([title, subtitle]) => (
-              <ListRow key={title} title={title} subtitle={subtitle} accessory="chevron" onClick={() => {}} />
+              <ListRow key={title} title={title} description={subtitle} accessory="chevron" onClick={() => {}} />
             ))}
           </ListSection>
         </List>

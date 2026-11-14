@@ -4,7 +4,7 @@
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { cn } from '@/lib/utils';
 import { Counter, Mark, Oct, ghButton, type OctName, type Layout } from './parts';
 import { useRepo } from './repo-context';
@@ -14,15 +14,15 @@ export function GlobalHeader({ ui }: { ui: Layout }) {
   const [owner, name] = source.full.split('/');
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-[var(--gh-inset)] px-4">
-      <PlainButton aria-label="Open menu" className={cn(ghButton(), 'w-8 bg-transparent px-0')}><Oct name="menu" /></PlainButton>
+      <SdkButton aria-label="Open menu" className={cn(ghButton(), 'w-8 bg-transparent px-0')}><Oct name="menu" /></SdkButton>
       <Mark />
-      <PlainButton onClick={openPicker} aria-label={`Repository ${source.full}: choose another`}
+      <SdkButton onClick={openPicker} aria-label={`Repository ${source.full}: choose another`}
         className="flex min-w-0 cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent p-0 text-detail text-foreground">
         <span className="rounded-md px-1.5 py-1 hover:bg-secondary">{repo?.owner ?? owner}</span>
         <span className="text-tertiary-foreground">/</span>
         <span className="truncate rounded-md px-1.5 py-1 font-semibold hover:bg-secondary">{repo?.name ?? name}</span>
         <Oct name="chevDown" size={12} className="text-muted-foreground" />
-      </PlainButton>
+      </SdkButton>
       <span className="flex-1" />
       {/* The search box from 900px of the block's width (its `gh` container). */}
       <div className="hidden h-8 w-[300px] items-center gap-2 rounded-md border border-border bg-background px-2 text-muted-foreground @min-[900px]/gh:flex">
@@ -30,11 +30,11 @@ export function GlobalHeader({ ui }: { ui: Layout }) {
         <span className="flex-1">Type <kbd className="rounded border border-border px-1 font-mono text-caption2">/</kbd> to search</span>
       </div>
       {ui.wide ? <span className="h-5 w-px bg-border" /> : null}
-      <PlainButton aria-label="Create new" className={cn(ghButton(), 'gap-1 bg-transparent px-2 text-muted-foreground')}>
+      <SdkButton aria-label="Create new" className={cn(ghButton(), 'gap-1 bg-transparent px-2 text-muted-foreground')}>
         <Oct name="plus" /><Oct name="chevDown" size={12} />
-      </PlainButton>
+      </SdkButton>
       {(['issue', 'pr', 'inbox'] as OctName[]).map((n) => (
-        <PlainButton key={n} aria-label={n} className={cn(ghButton(), 'w-8 bg-transparent px-0 text-muted-foreground')}><Oct name={n} /></PlainButton>
+        <SdkButton key={n} aria-label={n} className={cn(ghButton(), 'w-8 bg-transparent px-0 text-muted-foreground')}><Oct name={n} /></SdkButton>
       ))}
       <Account />
     </header>
@@ -58,9 +58,9 @@ export function Account() {
   }
   if (!viewer) return <span className="size-8 shrink-0 rounded-full bg-secondary" />;
   return (
-    <PlainButton onClick={openPicker} aria-label={`Signed in as ${viewer.login}`} className="cursor-pointer rounded-full border-0 bg-transparent p-0">
-      <Avatar c={viewer} src={viewer.avatar} size={32} />
-    </PlainButton>
+    <SdkButton onClick={openPicker} aria-label={`Signed in as ${viewer.login}`} className="cursor-pointer rounded-full border-0 bg-transparent p-0">
+      <Avatar name={`${viewer.f} ${viewer.l}`} src={viewer.avatar} size={32} />
+    </SdkButton>
   );
 }
 

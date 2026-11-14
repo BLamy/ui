@@ -13,7 +13,7 @@ const you: Person = { f: 'You', l: '' }
 function Line({ who, children }: { who: Person; children: ReactNode }) {
   return (
     <div className="flex gap-2.5 px-4 py-1.5">
-      <Avatar c={who} size={28} />
+      <Avatar name={`${who.f} ${who.l}`} size={28} />
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-semibold text-foreground">
           {who.f}
@@ -74,7 +74,7 @@ export default function SupportChat() {
         <ChatShell tint="#30B06E">
           <ChatShellMain>
             <ChatShellHeader>
-              <Avatar c={agent} size={24} />
+              <Avatar name={`${agent.f} ${agent.l}`} size={24} />
               <ChatShellTitle>Support</ChatShellTitle>
               <ChatShellDescription>
                 Replies in a few minutes

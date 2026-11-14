@@ -57,7 +57,7 @@ describe('Sheet', () => {
     expect(dialog).toBe(sheet());
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(dialog.getAttribute('data-side')).toBe('bottom');
-    expect(dialog.className).toContain('rounded-t-card');
+    expect(dialog.className).toContain('rounded-t-sheet');
     expect(dialog.contains(document.activeElement)).toBe(true);
     expect(dialog.querySelector('[data-slot=sheet-grabber]')?.getAttribute('aria-hidden')).toBe('true');
     expect(dialog.querySelector('[data-slot=drawer-handle]')).toBeNull();
@@ -73,7 +73,7 @@ describe('Sheet', () => {
     render(<Filters side="right" defaultOpen />);
     await settle();
     expect(sheet()!.getAttribute('data-side')).toBe('right');
-    expect(sheet()!.className).toContain('rounded-l-card');
+    expect(sheet()!.className).toContain('rounded-l-sheet');
     expect(sheet()!.querySelector('[data-slot=sheet-grabber]')).toBeNull();
   });
 
@@ -125,5 +125,59 @@ describe('Sheet', () => {
     expect(root.contains(sheet())).toBe(true);
     expect(document.querySelector('[data-slot=drawer-backdrop]')!.parentElement).toBe(root);
     expect(document.querySelector('[data-slot=drawer-viewport]')!.parentElement).toBe(root);
+  });
+
+  it('puts the handle after the content in the tab order, while it shows first', async () => {
+    render(<Filters snapPoints={[0.5, 1]} defaultOpen />);
+    await settle();
+    const handle = screen.getByRole('button', { name: 'Resize' });
+    const sender = screen.getByRole('textbox', { name: 'Sender' });
+    expect(handle.compareDocumentPosition(sender) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(handle.className).toContain('order-first');
+  });
+
+  it('contained: renders in place, in a layer host of its own, and leaves the page outside it alone', async () => {
+    render(
+      <BLProvider>
+        <button type="button">Outside</button>
+        <div style={{ position: 'relative' }} data-testid="box">
+          <Sheet contained side="left" defaultOpen>
+            <SheetBackdrop />
+            <SheetContent variant="panel" aria-label="Menu" swipe={false}><button type="button">Inside</button></SheetContent>
+          </Sheet>
+        </div>
+      </BLProvider>,
+    );
+    await settle();
+    const host = document.querySelector<HTMLElement>('[data-slot=sheet-host]')!;
+    expect(host.hasAttribute('data-layer-host')).toBe(true);
+    expect(host.className).toContain('[contain:layout]');
+    expect(screen.getByTestId('box').contains(host)).toBe(true);
+    const panel = screen.getByRole('dialog', { name: 'Menu' });
+    // A panel: no grabber, flush with its edge, divided by a hairline, and opted out of the drag.
+    expect(panel.getAttribute('data-variant')).toBe('panel');
+    expect(panel.className).toContain('border-r');
+    expect(panel.className).not.toContain('rounded-r-sheet');
+    expect(panel.querySelector('[data-slot=sheet-grabber]')).toBeNull();
+    expect(panel.hasAttribute('data-drawer-no-drag')).toBe(true);
+  });
+
+  it('contained and not modal: no scrim, and Escape still closes it', async () => {
+    const onOpenChange = vi.fn();
+    render(
+      <div style={{ position: 'relative' }}>
+        <button type="button">Outside</button>
+        <Sheet contained side="left" defaultOpen modal={false} onOpenChange={onOpenChange}>
+          <SheetContent variant="panel" aria-label="Menu"><button type="button">Inside</button></SheetContent>
+        </Sheet>
+      </div>,
+    );
+    await settle();
+    expect(screen.getByRole('dialog', { name: 'Menu' }).getAttribute('aria-modal')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Outside' }).closest('[inert]')).toBeNull();
+    const inside = screen.getByRole('button', { name: 'Inside' });
+    act(() => inside.focus());
+    act(() => { fireEvent.keyDown(inside, { key: 'Escape' }); });
+    expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'escape-key' }));
   });
 });

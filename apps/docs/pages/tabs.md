@@ -1,6 +1,16 @@
 # Tabs
 
-Tabs with panels, on UI SDK's `Tabs`: a list of tabs, one selected, and the panel that belongs to it. A selection indicator slides between tabs, and a panel enters from the side of the newly selected tab. Two looks share the parts — `segmented`, the iOS control (a tinted track with a card under the selected tab), and `underline`, a bar under the labels with a tinted line.
+Switch between views, one at a time, on UI SDK's `Tabs`: a list of tabs, one selected, and the panel that belongs to it. One root covers every place tabs live, from a segmented control at the top of a settings card to the iOS tab bar at the bottom of an app, a side rail on a tablet and a Discord-style workspace switcher. `variant` picks the look and `side` says where the tabs sit around the panels.
+
+Choose by what changes:
+
+| You need | Use |
+| --- | --- |
+| Panels of content, one visible at a time (a settings page, a detail view) | `Tabs` with `variant="segmented"` or `"underline"` |
+| The app's bottom tab bar, a side rail, a workspace switcher | `Tabs` with `variant="bar"`, `"rail"` or `"workspace"` (see "Bottom tab bar" below) |
+| A value or a view mode with no panels (a filter, a time range) | [Segmented](https://blamy.github.io/ui/#/segmented): a radio group, not a tablist |
+| Push and pop screens inside a tab | [NavigationStack](https://blamy.github.io/ui/#/navigation-stack) inside a `TabsPanel` |
+| Tabs the user can drag between dockable panes (an editor) | [Workspace](https://blamy.github.io/ui/#/workspace) |
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -27,25 +37,16 @@ import { Tabs, TabsList, TabsTab, TabsPanel } from '@brett_lamy/ui'
 {% endtab %}
 {% endtabs %}
 
-Four components cover "pick one of several", so choose by what changes:
+## In-page tabs
 
-| You need | Use |
-| --- | --- |
-| Panels of content, one visible at a time (a settings page, a detail view) | `Tabs` (this page) |
-| A value or a view mode with no panels — a filter, a time range | [Segmented](https://blamy.github.io/ui/#/segmented) |
-| The app's bottom navigation bar, in one line | [TabBar](https://blamy.github.io/ui/#/tab-bar) |
-| Bottom bar, vertical rail or custom tabs with panels | [TabView](https://blamy.github.io/ui/#/tab-view) |
-
-## Variants
-
-Put a `TabsTab` and a matching `TabsPanel` under the same `value`. `variant` goes on `Tabs` and is shared with its `TabsList` and `TabsTab`s. A tab with `disabled` is dimmed and can't be selected; arrow keys still reach it, so it can be found.
+Put a `TabsTab` and a matching `TabsPanel` under the same `value`. `segmented` (the default) is the iOS control: a tinted track with a card under the selected tab, its label semibold. `underline` puts a tinted line under the selected label. Both draw their sliding indicator for you. A tab with `disabled` is dimmed and can't be selected; arrow keys still reach it, so it can be found. `icon` adds a glyph before the label.
 
 {% demo src="tabs/variants" %}
 
 ```tsx
 <Tabs variant="underline" defaultValue="members">
   <TabsList aria-label="Workspace">
-    <TabsTab value="members">Members</TabsTab>
+    <TabsTab value="members" icon="person2">Members</TabsTab>
     <TabsTab value="billing">Billing</TabsTab>
     <TabsTab value="audit" disabled>Audit log</TabsTab>
   </TabsList>
@@ -54,9 +55,11 @@ Put a `TabsTab` and a matching `TabsPanel` under the same `value`. `variant` goe
 </Tabs>
 ```
 
+`side="start"` (or `"end"`) stands the list up beside the panels; Up and Down then move between tabs.
+
 ## Controlled, with directional panels
 
-`value` and `onValueChange` control the selection, so anything — a Next button, a route — can move it. `onValueChange` gets the new value and the details of the change: `details.reason` is `item-press`, `list-navigation` (arrow keys), `find-in-page`, `item-removed` or `imperative`, and `details.cancel()` refuses it. The value is `null` when nothing is selected. `TabsPanel` knows which way the selection moved on screen (UI SDK's `data-activation-direction`) and slides in from that side: forward comes from the right, back from the left. Under reduced motion it cross-fades instead.
+`value` and `onValueChange` control the selection, so anything (a Next button, a route) can move it. `onValueChange` gets the new value and the details of the change: `details.reason` is `item-press`, `list-navigation` (arrow keys), `find-in-page`, `item-removed` or `imperative`, and `details.cancel()` refuses it. The value is `null` when nothing is selected. A panel knows which way the selection moved on screen (UI SDK's `data-activation-direction`) and slides in from that side: forward comes from the right, back from the left. Under reduced motion it cross-fades instead.
 
 {% demo src="tabs/controlled" %}
 
@@ -68,9 +71,161 @@ const [step, setStep] = useState<string | null>('plan')
 
 To select a tab from outside the tree (a shortcut, the URL), pass a controller: `const tabs = createTabsController()`, `<Tabs controller={tabs}>`, then `tabs.select('billing')`.
 
+## Bars
+
+The other four looks put the list on a `TabsBar`, a surface that can also hold parts that aren't tabs: a `TabsHeader` (a logo), a `TabsAction` (a button such as Compose), a `TabsFooter` (the account) and `TabsSeparator`s between groups of tabs. In `bar` and `rail` a tab's `icon` sits over its label.
+
+| `variant` | Default `side` | What it is |
+| --- | --- | --- |
+| `bar` | `bottom` | The iOS tab bar: 62px, translucent, pinned over the bottom of the host (its top with `side="top"`), hiding with the scroll. |
+| `rail` | `start` | A side rail of icons over labels, with a tinted fill under the selected tab. |
+| `workspace` | `start` | A 52px column of tiles (Discord, Slack); its list scrolls when the tiles outgrow it. |
+| `plain` | `top` | No chrome: you style the bar and the tabs. |
+
+Panels inside `TabsPanels` stack in the space the bar leaves and each scrolls on its own: the old one slides out while the new one slides in. A bare `TabsPanel` (as in the in-page looks) sits in the flow instead.
+
+{% demo src="tabs/sections-and-rail" %}
+
+```tsx
+<Tabs variant={compact ? 'bar' : 'rail'} defaultValue="contacts">
+  <TabsBar>
+    <TabsList aria-label="Sections">
+      <TabsTab value="contacts" icon="person">Contacts</TabsTab>
+      <TabsTab value="recents" icon="clock">Recents</TabsTab>
+    </TabsList>
+  </TabsBar>
+  <TabsPanels>
+    <TabsPanel value="contacts"><ContactList /></TabsPanel>
+    <TabsPanel value="recents"><Recents /></TabsPanel>
+  </TabsPanels>
+</Tabs>
+```
+
+## Bottom tab bar
+
+The iOS tab bar is `Tabs variant="bar"`: icons over short labels on a blurred bar pinned to the bottom edge of the nearest positioned ancestor, floating over the screen. Give the host `relative` and leave 62px under the content (a `NavigationStackContent` takes `bottomInset`).
+
+{% demo src="tabs/phone" %}
+
+```tsx
+<Tabs variant="bar" defaultValue="recents" className="absolute inset-0">
+  <TabsBar>
+    <TabsList aria-label="Phone">
+      <TabsTab value="favorites" icon="star">Favorites</TabsTab>
+      <TabsTab value="recents" icon="clock">Recents</TabsTab>
+      <TabsTab value="contacts" icon="person">Contacts</TabsTab>
+    </TabsList>
+  </TabsBar>
+  <TabsPanels>
+    <TabsPanel value="favorites" keepMounted>…</TabsPanel>
+    …
+  </TabsPanels>
+</Tabs>
+```
+
+When your router shows the screen, leave the panels out: the bar is then only the bar, and its tabs carry no `aria-controls`. `className="contents"` on `Tabs` keeps the root out of the layout, so the bar places itself against your host:
+
+{% demo src="tabs/hide-on-scroll" %}
+
+```tsx
+<div className="relative h-dvh">
+  <Screen tab={tab} />
+  <Tabs variant="bar" value={tab} onValueChange={(next) => next && setTab(next)} className="contents">
+    <TabsBar>
+      <TabsList aria-label="Tabs">
+        {items.map((it) => <TabsTab key={it.value} value={it.value} icon={it.icon}>{it.title}</TabsTab>)}
+      </TabsList>
+    </TabsBar>
+  </Tabs>
+</div>
+```
+
+### Hiding with the scroll
+
+`TabsBar` in the `bar` look follows the kit's chrome state: scrolling down hides it, scrolling up (or reaching the top) brings it back, in step with a [NavigationStack](https://blamy.github.io/ui/#/navigation-stack)'s bar above. It needs no wiring: a NavigationStack page publishes the state as it scrolls. In a scroller of your own, call `chromeStore.set(true)` on a scroll down and `chromeStore.set(false)` on a scroll up, as the demo above does (import it from `@/lib/theme`, or `@brett_lamy/ui`). `hideOnScroll={false}` pins the bar. Anything else that should duck out of the way reads the same flag with `useChromeHidden()`.
+
+### Tabs and navigation stacks
+
+Where you nest them decides how pushes interact with the bar; there is no mode flag.
+
+**Bar persists.** Each tab's panel holds a `NavigationStack` (`keepMounted` keeps its state while another tab shows), so pushes slide under the bar and the bar stays put: UIKit's `tabBarController(navController)` shape.
+
+**Bar rides the root.** Put the tabs inside the stack's root screen and a push covers the bar and the root together: `navController(tabBarController)`.
+
+## Rail
+
+A mail client's leading rail: a logo in `TabsHeader`, the mailboxes as tabs, Compose as a `TabsAction` (a button, not a tab), and the account pinned to the far end in `TabsFooter`.
+
+{% demo src="tabs/mail-rail" %}
+
+`side="end"` puts the rail on the trailing edge, here an icon-only inspector beside an editor. `TabsSeparator` splits the groups and the arrow keys pass over it. A tab with no text needs an `aria-label`.
+
+{% demo src="tabs/editor-inspector" %}
+
+## Workspace switcher
+
+`variant="workspace"` is the rail for a [ChatShell](https://blamy.github.io/ui/#/chat-shell): a 52px muted column. The footer follows the last tile, `TabsSeparator` is the short rule under Home, `TabsAction` the dashed "Add" tile, and the `TabsPill` on each tab's leading edge (a nub for `attention`, taller on hover, full when selected) rides the bouncy spring. On touch, the tiles' and the action's hit areas grow to 44px. Custom tiles are the tabs' content, and the rail gets tab semantics for free: one tab stop, Up and Down between servers, Home and End to jump.
+
+{% demo src="tabs/chat-workspaces" %}
+
+```tsx
+<Tabs variant="workspace" value={server} onValueChange={setServer}>
+  <TabsBar>
+    <TabsList aria-label="Workspaces">
+      <TabsTab value="home" aria-label="Direct Messages">
+        <TabsPill />
+        <Tile><Icon name="bubble-oval" size={17} sw={2} /></Tile>
+      </TabsTab>
+      <TabsSeparator />
+      {servers.map((s) => (
+        <TabsTab key={s.id} value={s.id} aria-label={s.name}>
+          <TabsPill attention={s.unread} />
+          <Tile color={s.color} mentions={s.mentions}>{s.label}</Tile>
+        </TabsTab>
+      ))}
+    </TabsList>
+    <TabsFooter>
+      <TabsAction aria-label="Add a server" icon="plus" onClick={addServer} />
+    </TabsFooter>
+  </TabsBar>
+</Tabs>
+```
+
+`Tile` is yours: a circle that reads `group-hover:` and `group-data-selected:` to morph into a rounded square in its color (the discord-clone block ships one as `WorkspaceTile`). Put the rail in a `chat` theme scope (`ChatShell` opens one) and it follows light and dark.
+
+## Custom tabs
+
+A function as a tab's children gets the tab's state (`selected`, `disabled`) and draws the whole tab. Put one `TabsIndicator` in the list and it slides to the selected tab; in `segmented` and `underline` your `TabsIndicator` replaces the one they draw. Its `className` styles the mark, which sits in a frame the size of the selected tab, so `inset-x-2.5` or `-start-1.5` place it against that tab.
+
+{% demo src="tabs/inbox-badges" %}
+
+```tsx
+<Tabs variant="plain" defaultValue="unread">
+  <TabsBar>
+    <TabsList aria-label="Inbox">
+      <TabsTab value="unread">
+        {({ selected }) => <>Unread <Badge variant={selected ? 'default' : 'secondary'}>7</Badge></>}
+      </TabsTab>
+      …
+      <TabsIndicator className="inset-x-2.5" />
+    </TabsList>
+    <TabsFooter><TabsAction aria-label="Filter settings" icon="sliders" /></TabsFooter>
+  </TabsBar>
+  …
+</Tabs>
+```
+
+Or style off the tab itself with `group-data-selected/tab:`, `group-hover/tab:` and `group-focus-visible/tab:` on what's inside it (every tab is a `group/tab`), or read its state in a nested component with `useTabsTab()`. A tab is UI SDK's `button` with the tab role (reset to take the host's font); `render={<a href="/inbox" />}` makes it a link and `render={<div />}` a tab that holds controls of its own.
+
+## Order
+
+The bar and the panels may be written either way round: tabs and panels find each other by `value` wherever they sit. A `TabsBar` (or a bare `TabsList`) that is a direct child of `Tabs` and comes after the panels is still laid out ahead of them, so `side` keeps meaning what it says. When the bar is nested deeper, lay the wrapper out yourself:
+
+{% demo src="tabs/panels-first" %}
+
 ## Accessibility
 
-UI SDK gives the list `role="tablist"`, each tab `role="tab"` with `aria-selected`, and each panel `role="tabpanel"` labelled by its tab; a tab points at its panel with `aria-controls` only while that panel is in the page. Tab moves focus into the list (onto the selected tab) and then on to the panel; Left and Right move between tabs and select them as they go (`activation="manual"` on `Tabs` changes that to Enter or Space), wrapping at the ends unless `loop={false}`; Home and End jump to the ends. In right-to-left text the arrows follow the reading direction. Give the `TabsList` an `aria-label` or `aria-labelledby`. A panel with nothing focusable inside is a tab stop itself, and shows a focus ring.
+UI SDK gives the list `role="tablist"` (with `aria-orientation` when vertical), each tab `role="tab"` with `aria-selected`, and each panel `role="tabpanel"` labelled by its tab; a tab points at its panel with `aria-controls` only while that panel is in the page, so a bar with no panels stays valid. The list is one tab stop. The arrow keys follow the orientation (Left and Right when the tabs sit at the top or bottom, Up and Down at the start or end) and select as they move (`activation="manual"` waits for Enter or Space), wrapping at the ends unless `loop={false}`; Home and End jump to the ends. In right-to-left text the arrows follow the reading direction. Name the `TabsList` with `aria-label` or `aria-labelledby`, and give a tab with no text (an icon, a tile) an `aria-label`: `icon` is decorative and left out of the name. A panel with nothing focusable inside is a tab stop itself and shows a focus ring. The separator, the indicator and the pill are hidden from assistive technology; `TabsAction` is an ordinary button outside the tablist and needs its own name.
 
 ## Props
 
@@ -78,74 +233,43 @@ UI SDK gives the list `role="tablist"`, each tab `role="tab"` with `aria-selecte
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `segmented` | `segmented` or `underline`; read by `TabsList` and every `TabsTab`. |
+| `variant` | `segmented` | `segmented`, `underline`, `bar`, `rail`, `workspace` or `plain`; read by every part. |
+| `side` | by `variant` | `top`, `bottom`, `start` or `end`: where the tabs sit around the panels. It sets the orientation (`top`/`bottom` horizontal, `start`/`end` vertical). Defaults to `bottom` for `bar`, `start` for `rail` and `workspace`, `top` otherwise. |
 | `value` / `defaultValue` / `onValueChange` | first enabled tab | Controlled / initial selection, by tab `value`. `onValueChange(value, details)`. |
 | `activation` | `automatic` | `manual` selects on Enter or Space instead of on focus. |
-| `orientation` | `horizontal` | `vertical` moves with Up and Down and lays the root out as a row. |
 | `loop` | `true` | Whether arrow keys wrap from the last tab to the first. |
 | `hiddenUntilFound` | `false` | Keeps hidden panels in the page so the browser's find in page can match their text and select their tab. |
 | `controller` | — | From `createTabsController()`: `select(value)`, `getValue()`, `focus()`. |
 
-### TabsList, TabsTab, TabsTabIcon, TabsPanel
+### Parts
 
 | Part | Notes |
 | --- | --- |
-| `TabsList` | Needs an accessible name (`aria-label`). `segmented` fills its width and gives tabs equal share; `underline` sizes tabs to their labels with a 20px gap. It draws the sliding indicator, after its children. |
-| `TabsTab` | `value` (matches its panel) and `disabled`. It is UI SDK's `button` with the tab role (`type="button"`, so it never submits a form), reset to take the host's font and line height; `render={<a href="…" />}` makes it a link, `render={<div />}` a tab that holds controls of its own. |
-| `TabsTabIcon` | Wraps a decorative icon so it stays out of the tab's name; `mirror` flips it in right-to-left text. An icon-only tab needs an `aria-label`. |
-| `TabsPanel` | `value`; only the selected panel is mounted unless you pass `keepMounted` (or `hiddenUntilFound`). |
+| `TabsList` | The tablist; needs a name (`aria-label`). `segmented` fills its width with equal tabs; `underline` sizes tabs to their labels with a 20px gap. `segmented` and `underline` draw the sliding indicator after the children, unless one of them is a `TabsIndicator`. |
+| `TabsTab` | `value` (matches its panel), `disabled`, and `icon`: a glyph name from [Icons](https://blamy.github.io/ui/#/icons) or a node, over the label in `bar` and `rail`, before it elsewhere. Children are the label; a function child gets the tab's state and draws the whole tab. |
+| `TabsTabIcon` | Wraps a decorative icon in a custom tab so it stays out of the tab's name; `mirror` flips it in right-to-left text. |
+| `TabsIndicator` | One mark that slides to the selected tab, as a direct child of `TabsList`: the card in `segmented`, a line along the bottom (or the end edge, vertically) in `underline`, a short underline or a leading bar elsewhere. `className` and `style` go to the mark. |
+| `TabsPanel` | `value`; only the selected panel is mounted unless you pass `keepMounted` (or `hiddenUntilFound`). Flows on its own; stacks inside `TabsPanels`. |
+| `TabsPanels` | The box the panels share: they stack in it, scroll on their own, and cross-slide. It fills the space the bar leaves. |
+| `TabsBar` | The surface around the list, in the root's look. `hideOnScroll` (default `true`) applies to `bar`. |
+| `TabsHeader` / `TabsFooter` | Content before the list, and at the far end of the bar (in `workspace`, right after the list). |
+| `TabsAction` | A button in the bar that isn't a tab ("Add server", "Compose"): `icon`, children as its label, `onClick`, `disabled`. |
+| `TabsSeparator` | A decorative divider inside the list; arrow keys pass over it. |
+| `TabsPill` | Inside a tab: the Discord pill on its leading edge. `attention` shows the unread nub while the tab is neither hovered nor selected. |
 
-All parts accept `className` (merged last; a string, or a function of the part's state such as `({ selected }) => …`), `style` and `render`. `Tabs` is a flex column with a 16px gap; the list and panel are siblings in it. For a vertical rail, use [TabView](https://blamy.github.io/ui/#/tab-view).
+Every part takes `className` (merged last; on UI SDK's parts a string or a function of the part's state, such as `({ selected }) => …`), `style`, and `ref`; UI SDK's parts also take `render`.
+
+### Hooks
+
+| Hook | Returns |
+| --- | --- |
+| `useTabs()` | `{ variant, side, orientation }` of the enclosing `Tabs`, or `null` outside one. |
+| `useTabsTab()` | Inside a `TabsTab`: its UI SDK state, `{ selected, disabled }`; `null` outside one. |
 
 ## Styling
 
-Slots are UI SDK's: `data-slot="tabs"`, `tabs-list`, `tabs-tab`, `tabs-tab-icon`, `tabs-indicator`, `tabs-panel`. Tabs carry `data-selected` and `data-disabled`, every part `data-orientation` and `data-activation-direction` (`left`, `right`, `up`, `down` or `none`); hover, press and keyboard focus are the native `hover:`, `active:` and `focus-visible:`. A panel gets `data-starting-style` for the first frame it shows, which is what its entrance transitions from. The indicator is one `TabsIndicator` behind the labels (the list is `isolate`), placed from the `--active-tab-left`, `-top`, `-width` and `-height` variables UI SDK measures, so it slides and resizes between unequal tabs on the smooth spring. `tabsListVariants`, `tabsTabVariants` and `tabsIndicatorVariants` give the classes for each look.
+Slots are UI SDK's: `data-slot="tabs"`, `tabs-list`, `tabs-tab`, `tabs-tab-icon`, `tabs-indicator`, `tabs-panel`, and the kit's own `tabs-bar`, `tabs-panels`, `tabs-header`, `tabs-footer`, `tabs-pill`. The root and the bar carry `data-variant` and `data-side`; the bar `data-orientation`, and `data-hidden` while it is hidden by the scroll. Tabs carry `data-selected` and `data-disabled`, every tab part `data-orientation` and `data-activation-direction` (`left`, `right`, `up`, `down` or `none`); hover, press and keyboard focus are the native `hover:`, `active:` and `focus-visible:`. A panel gets `data-starting-style` for its first frame and, stacked, `data-ending-style` until it has left, each offset toward the side `data-activation-direction` names. The indicator's frame is placed from the `--active-tab-left`, `-top`, `-width` and `-height` variables UI SDK measures, so it slides and resizes between unequal tabs on the smooth spring. `tabsVariants`, `tabsBarVariants`, `tabsListVariants`, `tabsTabVariants`, `tabsIndicatorVariants`, `tabsPillVariants` and `tabsActionVariants` give the classes for each look.
 
 ## cva recipes
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
-
-### `tabsListVariants`
-
-Defined in `@/components/ui/tabs`. Base classes:
-
-```text
-relative isolate flex
-```
-
-**`variant`** — default `segmented`
-
-| Value | Adds |
-| --- | --- |
-| `segmented` (default) | `gap-0.5 rounded-[9px] bg-secondary p-0.5` |
-| `underline` | `gap-5 shadow-hairline-b` |
-
-### `tabsTabVariants`
-
-Defined in `@/components/ui/tabs`. Base classes:
-
-```text
-bl-btn relative box-border flex cursor-pointer items-center justify-center gap-1.5 border-0 bg-transparent [font-family:inherit] leading-[inherit] font-semibold whitespace-nowrap outline-none transition-[color] duration-spring-snappy ease-spring-snappy data-disabled:cursor-default data-disabled:opacity-40
-```
-
-**`variant`** — default `segmented`
-
-| Value | Adds |
-| --- | --- |
-| `segmented` (default) | `flex-1 rounded-[7px] px-3 py-[5px] text-footnote text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/45` |
-| `underline` | `-mb-px h-10 px-0.5 py-0 text-subhead text-muted-foreground hover:not-data-selected:not-data-disabled:text-foreground data-selected:text-primary focus-visible:r…` |
-
-### `tabsIndicatorVariants`
-
-Defined in `@/components/ui/tabs`. Base classes:
-
-```text
-absolute top-0 left-0 -z-1 w-(--active-tab-width) translate-x-(--active-tab-left) transition-[translate,width,height] duration-spring-smooth ease-spring-smooth data-[activation-direction=none]:transition-none motion-reduce:transition-none
-```
-
-**`variant`** — default `segmented`
-
-| Value | Adds |
-| --- | --- |
-| `segmented` (default) | `h-(--active-tab-height) translate-y-(--active-tab-top) rounded-[7px] bg-segment shadow-[0_1px_4px_black] shadow-black/14` |
-| `underline` | `h-[2px] translate-y-[calc(var(--active-tab-top)+var(--active-tab-height)-100%)] bg-primary` |

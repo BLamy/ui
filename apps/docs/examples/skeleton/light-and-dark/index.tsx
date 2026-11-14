@@ -24,7 +24,7 @@ function Sample() {
         </div>
       </div>
       <Skeleton shape="rect" height={96} />
-      <SkeletonText lines={2} lineHeight={12} />
+      <SkeletonText lines={2} lineClassName="h-3" />
     </div>
   )
 }

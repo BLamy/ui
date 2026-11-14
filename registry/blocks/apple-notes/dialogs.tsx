@@ -1,8 +1,8 @@
-/* New note, new folder, delete confirmations and Move or Copy: a Credenza over the whole app — a centered dialog on wide
+/* New note, new folder, delete confirmations and Move or Copy: a Dialog over the whole app — a centered dialog on wide
    layouts, a bottom tray you can drag away on the phone. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { Credenza, CredenzaBackdrop, CredenzaClose, CredenzaContent, CredenzaHeader, CredenzaTitle, CredenzaView } from '@/components/ui/credenza';
+import { Dialog, DialogBackdrop, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogView } from '@/components/ui/dialog';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useSplitView } from '@/components/ui/split-view';
@@ -17,21 +17,21 @@ function useLast<T>(value: T | null) {
   return last.current;
 }
 
-/** Notes' sheet: a dialog beside the columns, a tray when they have collapsed to one (Credenza's `"auto"` follows the
+/** Notes' sheet: a dialog beside the columns, a tray when they have collapsed to one (the Dialog's `"auto"` follows the
     split view's size class). Closing it (×, Escape, the scrim, a drag down or a Cancel) runs `onClose`. */
-export function NotesCredenza({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode }) {
-  return <Credenza open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-    <CredenzaBackdrop />
-    <CredenzaContent>
-      <CredenzaHeader><CredenzaTitle>{title}</CredenzaTitle><CredenzaClose /></CredenzaHeader>
-      <CredenzaView>{children}</CredenzaView>
-    </CredenzaContent>
-  </Credenza>;
+export function NotesDialog({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode }) {
+  return <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+    <DialogBackdrop />
+    <DialogContent variant="tray">
+      <DialogHeader variant="bar"><DialogTitle>{title}</DialogTitle><DialogClose /></DialogHeader>
+      <DialogView>{children}</DialogView>
+    </DialogContent>
+  </Dialog>;
 }
 
 /** A sheet's Cancel: closes it, like the ×. */
 function Cancel() {
-  return <CredenzaClose render={<Button variant="secondary" className="flex-1" />}>Cancel</CredenzaClose>;
+  return <DialogClose render={<Button variant="secondary" className="flex-1" />}>Cancel</DialogClose>;
 }
 
 function CreateForm({ notes, kind }: { notes: NotesState; kind: 'file' | 'folder' }) {
@@ -57,7 +57,7 @@ function CreateForm({ notes, kind }: { notes: NotesState; kind: 'file' | 'folder
       .catch((err: unknown) => { setError(message(err)); setBusy(false); });
   }}>
     <Field invalid={error ? true : undefined} className="mb-1">
-      <FieldLabel className="text-footnote text-muted-foreground">{folder ? 'Folder name' : 'File name'} in {notes.folder.path ? notes.folder.title : 'Notes'}</FieldLabel>
+      <FieldLabel variant="default" className="text-footnote text-muted-foreground">{folder ? 'Folder name' : 'File name'} in {notes.folder.path ? notes.folder.title : 'Notes'}</FieldLabel>
       <Input value={name} onValueChange={(v) => { setName(v); setError(null); }} data-autofocus="" spellCheck={false} autoCapitalize="off" autoCorrect="off" />
     </Field>
     <p role={error ? 'alert' : undefined} className="m-0 min-h-5 text-footnote text-destructive">{error}</p>
@@ -121,17 +121,17 @@ export function NotesDialogs({ notes }: { notes: NotesState }) {
   const transfer = useLast(notes.transfer);
   const name = deleting ? notes.notes.find((n) => n.id === deleting)?.file.name ?? notes.folders.find((f) => f.id === deleting)?.title : '';
   return <>
-    <NotesCredenza open={!!notes.creating} onClose={() => notes.setCreating(null)}
+    <NotesDialog open={!!notes.creating} onClose={() => notes.setCreating(null)}
       title={creating === 'folder' ? 'New Folder' : 'New Note'}>
       {/* Keyed so each opening starts from a fresh name. */}
       {creating ? <CreateForm key={`${creating}:${notes.creating ? 'open' : 'closed'}`} notes={notes} kind={creating} /> : null}
-    </NotesCredenza>
-    <NotesCredenza open={!!notes.transfer} onClose={() => notes.setTransfer(null)}
+    </NotesDialog>
+    <NotesDialog open={!!notes.transfer} onClose={() => notes.setTransfer(null)}
       title={transfer ? `Move or Copy to ${transfer.to.title}?` : ''}>
       {transfer ? <TransferConfirm key={transfer.paths.join('\n')} notes={notes} paths={transfer.paths} to={transfer.to.title} /> : null}
-    </NotesCredenza>
-    <NotesCredenza open={!!notes.deleting} onClose={() => notes.setDeleting(null)} title={`Delete “${name}”?`}>
+    </NotesDialog>
+    <NotesDialog open={!!notes.deleting} onClose={() => notes.setDeleting(null)} title={`Delete “${name}”?`}>
       {deleting ? <DeleteConfirm key={deleting} notes={notes} id={deleting} /> : null}
-    </NotesCredenza>
+    </NotesDialog>
   </>;
 }

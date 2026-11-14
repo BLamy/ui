@@ -1,6 +1,13 @@
-# List · Section · Row
+# List
 
-UITableView's vocabulary: plain or inset-grouped lists, sticky section headers, swipe actions, edit mode with multi-select.
+iOS's table view: rows grouped into sections, plain (edge to edge, with sticky letter headers) or inset-grouped (each section a rounded card, as in Settings). A row is a press target, a holder for a control, or both, and can carry swipe actions, an edit-mode check, a reorder grip and a hover preview. Use it for navigation and settings screens: rows you *press* or *toggle*.
+
+Reach for a sibling instead when:
+
+- the rows are **chosen** (a picker, a multi-select, an option list): [Listbox](https://blamy.github.io/ui/#/list-box) (`listbox` / `option`, selection state, typeahead);
+- the data is a **hierarchy**: [Tree](https://blamy.github.io/ui/#/tree);
+- it is a **log or a grid of data** with columns, virtualized rows and a moving marker: [LogList](https://blamy.github.io/ui/#/log-list);
+- it is an app's **sidebar** navigation: [Sidebar](https://blamy.github.io/ui/#/sidebar) or a SplitView column.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -25,57 +32,99 @@ import { List, ListSection, ListRow } from '@brett_lamy/ui'
 {% endtab %}
 {% endtabs %}
 
-```jsx
-<BLList inset>
-  <BLSection title="A" sticky footer="42 contacts">
-    <BLRow
-      leading={<Avatar c={c}/>}
-      title={c.name} subtitle={c.role}
-      accessory="chevron"          // or "check", or a control: <Switch/>, <Slider/>, <Button/>
-      onClick={open} onDelete={del}
-      leadingActions={[{ label: 'Pin', icon: 'pin', onAction: pin }]}
-      trailingActions={[{ label: 'Delete', icon: 'trash', destructive: true, onAction: del }]}
-      edit={editing} checked={picked}
+{% demo src="lists/team-list" %}
+
+```tsx
+<List variant="inset">
+  <ListSection title="Team" footer="Rows are real buttons.">
+    <ListRow
+      key="maya"
+      icon={<Avatar name="Maya Lindqvist" />}
+      title="Maya Lindqvist"
+      description="Industrial design"
+      accessory="chevron"
+      onClick={openMaya}
     />
-  </BLSection>
-</BLList>
+    <ListRow key="dnd" title="Do Not Disturb" accessory={<Switch />} divider={false} />
+  </ListSection>
+</List>
 ```
 
-## Headers: the list works out its own offset
+## Anatomy
 
-A sticky section header has to stop below whatever chrome is above it. `BLList` figures that out instead of you passing pixels:
+- **`List`**: the scroller's content. It picks the style (`variant`), the row height (`density`), an optional sticky `header`, and what to show when there are no rows (`emptyState`).
+- **`ListSection`**: a `list` of rows with an optional `title` above (it names the list for screen readers) and a `footer` below. `sticky` makes the title a letter header that sticks under the chrome; `animate` and `onOrderChange` animate and reorder its rows.
+- **`ListRow`**: one row, read left to right: `icon`, `title` over `description`, `trailing`, then the `accessory` (`"chevron"`, `"check"`, or a control). The same four names (`icon`, `title`, `description`, `trailing`) are used by every row in the kit.
 
-```jsx
-// In a NavigationStack screen: sections stick below the nav bar — and follow
-// it up when it hides
-<BLList><BLSection title="A" sticky>…</BLSection></BLList>
+## Styles
 
-// In a bare scroller: no chrome above, so sections stick at the very top
-<BLList><BLSection title="A" sticky>…</BLSection></BLList>
+`variant="plain"` (the default) runs rows edge to edge, for Contacts- and Mail-like screens; pair it with `sticky` section titles. `variant="inset"` floats each section as a rounded card with a margin, for Settings-like screens; its section titles are the small uppercase grouped label.
+
+{% demo src="lists/settings" %}
+
+`density` sets the row height for the whole list: `compact` 36px, `default` 46px (iOS's 44pt plus the hairline's room), `comfortable` 56px.
+
+## Empty state
+
+When no section has a row (no children, or only `ListSection`s without rows), the list shows `emptyState` instead. It defaults to a small [EmptyState](https://blamy.github.io/ui/#/empty-state) titled "No items". A string becomes that EmptyState's title (`emptyState="No contacts"`); pass your own node for more (a search's "No Results" with a Clear button), or `null` to show nothing.
+
+```tsx
+<List
+  header={<SearchInput value={q} onValueChange={setQ} />}
+  emptyState={<EmptyState size="sm" icon={<Icon name="magnifyingglass" />} title="No Results" description={`Nothing matches “${q}”.`} />}
+>
+  <ListSection title="Cities">{hits.map((c) => <ListRow key={c} title={c} />)}</ListSection>
+</List>
+```
+
+{% demo src="lists/city-search" %}
+
+## Sticky headers: the list works out its own offset
+
+A sticky section title has to stop below whatever chrome is above it. `List` works that out instead of you passing pixels:
+
+```tsx
+// In a NavigationStack screen: sections stick below the nav bar, and follow it up when it hides
+<List><ListSection title="A" sticky>…</ListSection></List>
 
 // The list has its own header: sections stick below it, whatever its height
-<BLList header={<SearchField/>}>
-  <BLSection title="A" sticky>…</BLSection>
-</BLList>
+<List header={<SearchInput />}>
+  <ListSection title="A" sticky>…</ListSection>
+</List>
 
-// Or state it yourself
-// (also per section: <BLSection stickyTop={…}>)
-<BLList stickyTop={72}>…</BLList>
+// Or state it yourself (also per section: <ListSection stickyTop={…}>)
+<List stickyTop={72}>…</List>
 ```
 
-A `header` passed to `BLList` sticks to the top of the list itself and is measured with a ResizeObserver, so a header that grows (a search field turning into a scope bar) keeps the section offsets honest. Nothing needs to know the value of `BARH`.
+A `header` sticks to the top of the list and is measured with a ResizeObserver, so a header that grows (a search field turning into a scope bar) keeps the section offsets right.
 
-## Row behaviors
+{% demo src="lists/contacts" %}
 
-- **Swipe actions**: `leadingActions` are revealed by swiping right, `trailingActions` by swiping left (UI SDK's `createSwipeActions`). A release past half the actions keeps them open and a flick decides sooner; a press anywhere else closes an open row. Only one row on the page is open at a time: opening another (by swipe, key or controller) closes it.
-- **Full swipe**: past about half the row the outermost action (index 0) takes the whole strip. Turn it off with `fullSwipe={false}` (or limit it to `'leading'` / `'trailing'`).
-- **Edit mode** slides in radio checks.
-- **Pressable rows** (`onClick`) are real `<button>`s (UI SDK's Button) with visible focus rings. The button sits beneath the row's content, so a control in the row is its sibling — never nested inside it.
-- **Roles**: a section is a `list` of `listitem`s. A list whose rows are *chosen* (a picker, a multi-select) is a [Listbox](https://blamy.github.io/ui/#/list-box), not rows with checks.
-- **Rows without `onClick`** are plain containers. A `Switch` or `Slider` in `accessory` (or `trailing`) is named by the row title, and pressing the row's label flips its switch (`labelToggles={false}` opts out).
-- **Previews**: `preview` is a [HoverCard](https://blamy.github.io/ui/#/hover-card)'s content about what the row stands for, opened beside the row while the pointer rests on it or keyboard focus is in it (never by touch).
+## Rows
+
+- **Pressable rows** (`onClick`) are real `<button>`s (UI SDK's Button) with visible focus rings, named by the title and description. The button sits beneath the row's content, so a control in the row is its sibling, never nested inside it.
+- **Rows without `onClick`** are plain containers. A `Switch` or `Slider` in `accessory` (or `trailing`, or anywhere in the row) is named by the row's title, and pressing the row flips its switch (`labelToggles={false}` opts out).
+- **`children`** replace the title with a control that spans the row (a brightness slider between two suns).
+- **`current`** marks the row that stands for what is open now (the message in the reading pane): a grey wash and `aria-current`.
+- **`disabled`** dims the row's content and makes its button disabled; swipes, actions and label toggles stop. Disable the controls inside it yourself.
+- **`tone`** colors the text: `destructive` for "Delete Account", `success` / `warning` for status rows. With `justify="center"` and no icon, a row is iOS's button row ("Sign Out").
+- **`align="top"`** pins the icon to the first line of a multi-line row (a checkbox beside a wrapping title).
+- **`preview`** is a [HoverCard](https://blamy.github.io/ui/#/hover-card)'s content about what the row stands for, opened beside the row while the pointer rests on it or keyboard focus is in it (never by touch).
+- **Roles**: a section is a `list` of `listitem`s. A list whose rows are *chosen* is a Listbox, not rows with checks.
+
+{% demo src="lists/control-rows" %}
+
+{% demo src="lists/row-layouts" %}
+
+### Single choice and a button row
+
+`accessory="check"` with `checked` makes a short picker inside a settings screen (for a real choice list, use Listbox). A lone `justify="center"` row with `tone="destructive"` is the iOS Sign Out button.
+
+{% demo src="lists/ringtone-picker" %}
 
 ## Swipe actions
+
+`leadingActions` are revealed by swiping right, `trailingActions` by swiping left (UI SDK's `createSwipeActions`). A release past half the actions keeps them open and a flick decides sooner; a press anywhere else closes the row. Only one row on the page is open at a time: opening another (by swipe, key or controller) closes it. Past about half the row, the outermost action (index 0) takes the whole strip and runs: turn that off with `fullSwipe={false}` (or limit it to `'leading'` / `'trailing'`).
 
 ```tsx
 <ListRow
@@ -83,7 +132,7 @@ A `header` passed to `BLList` sticks to the top of the list itself and is measur
   leadingActions={[{ label: 'Unread', icon: 'mail', onAction: markUnread }]}
   trailingActions={[
     { label: 'Trash', icon: 'trash', destructive: true, onAction: trash }, // outermost: a full swipe runs it
-    { label: 'Flag', icon: 'starF', tint: '#FF9F0A', onAction: flag },
+    { label: 'Flag', icon: 'starF', tint: 'var(--warning)', onAction: flag },
   ]}
 />
 ```
@@ -92,17 +141,23 @@ A `header` passed to `BLList` sticks to the top of the list itself and is measur
 | --- | --- | --- |
 | `label` | `string` | Button text and accessible name |
 | `icon` | `string \| ReactNode` | A kit icon name, or any node; drawn above the label |
-| `tint` | `string` | Background; defaults to red when `destructive`, else the tint |
-| `destructive` | `boolean` | The row slides away and collapses (its exit: `data-removing` with `data-ending-style`) before `onAction` runs |
+| `tint` | `string` | Background; defaults to `--destructive` when `destructive`, else `--primary` |
+| `destructive` | `boolean` | The row slides away and collapses (its exit: `data-removing` with `data-ending-style`) before `onAction` runs; Delete runs it from the keyboard |
 | `onAction` | `(details) => void` | Called on tap, full swipe or Delete; `details.reason` is `action-press`, `full-swipe` or `delete-key` |
 
-`onDelete` is still there: it adds a destructive **Delete** as the outermost trailing action.
+**Keyboard and assistive tech.** Focus a row and press ← to reveal the trailing actions (→ for the leading ones), the way a swipe would move the row; focus moves to the first button, the arrows walk them, and heading back toward the row or Esc closes them. Delete runs the destructive trailing action. Drive a row from outside with `controller={createListRowController()}` (`show('trailing')`, `close()`). The row describes its actions to screen readers and lists its shortcuts in `aria-keyshortcuts`. With reduced motion, rows move without springing.
 
-**Keyboard and assistive tech.** Focus a row and press ← to reveal the trailing actions (→ for the leading ones), the way a swipe would move the row; focus moves to the first button, the arrows walk them, heading back toward the row or Esc closes them. Delete runs the destructive action. Drive a row from outside with `controller={createListRowController()}` (`show('trailing')`, `close()`). The row describes its actions to screen readers and lists the shortcuts in `aria-keyshortcuts`. With reduced motion, rows move without springing.
+{% demo src="lists/swipe-actions" %}
 
-## Animated sections
+## Edit mode
 
-`animate` on a section grows keyed rows in on insert and collapses them on remove (UI SDK's `data-starting-style` / `data-ending-style`), and slides them when the order changes. `onOrderChange(order, details)` adds a grip to every row, on UI SDK's `createReorder`: drag it, or focus it, press Space, move it with ↑ / ↓ (Home / End) and press Space to drop (Esc puts it back); screen readers hear each step. It is called once per drop with the rows' keys in their new order, and `details.from` / `details.to`; reorder your array to match. Pass it only while reordering is allowed — the grips come and go with it.
+`editing` slides in the selection check (filled by `checked`) and turns swipes off; the row's button reports the check as `aria-pressed`. Toggle it on every row together, and pair it with a bottom bar for the bulk actions.
+
+{% demo src="lists/mailbox-edit" %}
+
+## Insert, remove and reorder
+
+`animate` on a section grows keyed rows in on insert and collapses them on remove (UI SDK's `data-starting-style` / `data-ending-style`), and slides them when the order changes. `onOrderChange(order, details)` adds a grip to every row, on UI SDK's `createReorder`: drag it, or focus it, press Space, move it with ↑ / ↓ (Home / End) and press Space to drop (Esc puts it back); screen readers hear each step. It is called once per drop with the rows' keys in their new order, and `details.from` / `details.to`; reorder your array to match. Pass it only while reordering is allowed: the grips come and go with it.
 
 ```tsx
 <ListSection animate onOrderChange={editing ? (_, { from, to }) => setSongs(move(songs, from, to)) : undefined}>
@@ -110,195 +165,98 @@ A `header` passed to `BLList` sticks to the top of the list itself and is measur
 </ListSection>
 ```
 
-## Styles
-
-`plain` keeps edge-to-edge rows and sticky letter headers; `grouped` floats each section as an inset card. The Contacts demo toggles the two live in **Settings → Contacts table view**.
-
-## Live example
-
-{% demo src="lists/team-list" %}
-
-## Examples
-
-### Settings
-
-Inset-grouped sections with coloured icon tiles in `leading`, a `Switch` or a value in `trailing`, and `accessory="chevron"` for rows that drill in. A section `footer` explains the group.
-
-{% demo src="lists/settings" %}
-
-### Contacts with an index
-
-A plain list with `sticky` letter headers in a bare scroller, so they stick at the very top. The A–Z `IndexBar` jumps to each section's `ref`.
-
-{% demo src="lists/contacts" %}
-
-### Leading and trailing swipe actions
-
-Swipe right to mark read, left for Trash, Flag and More. A long swipe runs the outermost action; Trash collapses the row and the section closes the gap on a spring. Focus a row and press → or ← to do it from the keyboard.
-
-{% demo src="lists/swipe-actions" %}
-
-### Rows with controls
-
-A `Switch`, `Slider` or `Button` as the `accessory`. Rows without `onClick` are containers, so tapping a label flips its switch; the Field Guide row is pressable *and* holds a button, as siblings.
-
-{% demo src="lists/control-rows" %}
-
-### Row layouts
-
-`align="top"` pins the leading slot to the first line of a multi-line row and `contentClassName` styles the row surface. Pass `children` for a control that spans the whole row; a `Switch` or `Slider` anywhere in a titled row is labelled by the title; `selected` marks the current row with `aria-current`.
-
-{% demo src="lists/row-layouts" %}
-
-### Insert, remove and reorder
-
-`ListSection animate` with `onOrderChange` while editing. Add grows a song in at the top, swiping one away collapses it, and the grips drag (or Space, ↑ / ↓, Space).
-
 {% demo src="lists/reorder" %}
 
-### Swipe to delete and edit mode
+## Props
 
-Give rows `onDelete` and they swipe left to reveal Delete. Pass `edit` to every row to slide in the selection checks, and pair it with `EditBar` for bulk actions.
+All three take `className`, `style`, `ref` and any DOM attribute (`id`, `aria-*`, `data-*`), passed to their root.
 
-{% demo src="lists/mailbox-edit" %}
+### List
 
-### Single choice and a destructive row
-
-`accessory="check"` with `checked` makes a picker. A lone `center` row with `destructive` is the iOS Sign Out button.
-
-{% demo src="lists/ringtone-picker" %}
-
-### Search header and empty state
-
-`header` pins a search field to the top of the list and keeps section offsets below it. When nothing matches, render an empty state in place of the section.
-
-{% demo src="lists/city-search" %}
-
-## SearchField
-
-The iOS search field: a magnifier, a clear button once there is a query, and Esc to clear. Control it with `value` + `onChange`, or leave it uncontrolled with `defaultValue`.
-
-```tsx
-const [query, setQuery] = useState('')
-
-<SearchField value={query} onChange={setQuery} placeholder="Search cities" />
-<SearchField defaultValue="Lisbon" onSubmit={(q) => search(q)} aria-label="Search cities" />
-```
-
-| Prop | Type | Notes |
+| Prop | Default | Effect |
 | --- | --- | --- |
-| `value` / `defaultValue` | `string` | Controlled / initial query |
-| `onChange` | `(value: string) => void` | Every keystroke; `''` when cleared |
-| `onSubmit` | `(value: string) => void` | Enter |
-| `placeholder` | `string` | Defaults to "Search" |
-| `aria-label` | `string` | Defaults to "Search" |
+| `variant` | `"plain"` | `"plain"`: rows edge to edge. `"inset"`: each section a rounded card with a 16px margin. |
+| `density` | `"default"` | Row height: `"compact"` 36px · `"default"` 46px · `"comfortable"` 56px. |
+| `header` | — | Sticks to the top of the list; sticky section titles stop below it. |
+| `stickyTop` | the chrome above + `header` | Where sticky section titles stop, in px. |
+| `emptyState` | `<EmptyState size="sm" title="No items" />` | Shown instead of the children when no section has a row. A string is the EmptyState's title; `null` shows nothing. |
 
-Migrating: the old `q` / `setQ` props are now `value` / `onChange`.
+### ListSection
 
-## IndexBar
-
-The full reference, with more examples, is on the [IndexBar](https://blamy.github.io/ui/#/index-bar) page.
-
-A reusable jump rail. Give it application-defined string or numeric keys and optional React previews; omit `items` to keep the familiar A-Z fallback.
-
-```tsx
-import { IndexBar, type IndexBarItem } from '@brett_lamy/ui'
-
-const stops: IndexBarItem<number>[] = turns.map((turn, index) => ({
-  key: turn.sequence,       // retained as a number in onJump
-  label: index % 5 === 0 ? String(index + 1) : undefined,
-  preview: <strong>{turn.text}</strong>,
-  caption: turn.author,
-}))
-
-<IndexBar
-  items={stops}
-  label="Jump to conversation turn"
-  onJump={(sequence, stop, index) => scrollTo(sequence)}
-  top={10}
-  bottom={10}
-/>
-```
-
-### Alphabet fallback
-
-Pass no `items` (or an empty array) and the same component renders A-Z. Place it beside the scroller, inside the same positioned parent — rows under that parent keep their chevrons clear of the rail without any extra padding:
-
-```tsx
-<IndexBar
-  avail={new Set(['A', 'B', 'C', 'K', 'M'])}
-  onLetter={(letter) => scrollToSection(letter)}
-/>
-```
-
-### Wave variant
-
-`variant="wave"` draws one short dash per stop. Dashes near the pointer swell like the macOS Dock and a card beside the rail shows the stop's `caption` as a title with its `preview` underneath. `value` marks the current stop (say, the turn in view) at full length in the tint.
-
-```tsx
-<IndexBar
-  variant="wave"
-  side="left"
-  items={turns.map((t) => ({ key: t.id, caption: t.title, preview: t.text }))}
-  value={turnInView}
-  onJump={(id) => scrollTo(id)}
-/>
-```
-
-Two ways to read a wave rail. With `preview`s, hovering a dash opens a card for that stop — a turn's title, its `preview` (`previewLines`, `previewWidth`) and a `trailing` glyph at the end of the title line. With `panel`, hovering the rail opens one card listing every stop as an outline (`panelTitle` on top, `level` nesting the stops, `value` marked); picking a row jumps like a dash does.
-
-```tsx
-<IndexBar
-  variant="wave"
-  side="left"
-  panel
-  panelTitle="Your Personal Scratchpad"
-  items={headings.map((h) => ({ key: h.id, caption: h.text, level: h.depth }))}
-  value={sectionInView}
-  onJump={(id) => scrollTo(id)}
-/>
-```
-
-### Props
-
-| Prop | Type | Notes |
+| Prop | Default | Effect |
 | --- | --- | --- |
-| `items` | `(K \| {key?: K, label?, preview?, caption?, dim?, level?, trailing?})[]` | `K` is `string \| number`; primitive items are shorthand stops |
-| `onJump` | `(key: K, item, index, details) => void` | Fired on pointer or keyboard commit without coercing the key; `details.reason` is `drag`, `list-navigation`, `item-press` or `imperative` |
-| `avail` / `onLetter` | `Set<string>` / `(letter, details) => void` | Used only by the alphabet fallback |
-| `top` / `bottom` / `width` | `number \| string` / `number` | Rail sizing inside its positioned parent |
-| `label` | `string` | Accessible name for the listbox |
-| `variant` | `'default' \| 'wave'` | `wave` renders dashes that swell around the pointer, with a title + preview card |
-| `side` | `'left' \| 'right'` | Edge the rail sits on (default `right`); previews open on the inner side |
-| `value` | `K` | Current stop; the wave draws it full length in the tint |
-| `panel` / `panelTitle` | `boolean` / `ReactNode` | `wave` only: hover opens a card listing every stop (an outline) instead of one stop's preview; the rail's listbox stays the accessible path |
-| `previewLines` / `previewWidth` | `number` / `number` | `wave` preview card: lines of `preview` (default 2) and its maximum width in px (default 260) |
-| `insetContent` | `boolean` | Default `true`: a right-side rail publishes how far list rows run under it as `--bl-index-bar-inset` on its parent (its width for an edge-to-edge list, little or nothing for inset-grouped cards), and `ListRow`s under that parent widen their trailing inset by it so chevrons and accessories stay clear of the rail |
+| `title` | — | The label above the rows (the grouped uppercase label, or with `sticky` a bold letter header); names the section's list. |
+| `footer` | — | Explanatory text under the rows. |
+| `sticky` | `false` | The title sticks below the chrome while the section scrolls; the rows lose their rounded corners. |
+| `stickyTop` | the list's | Where this section's sticky title stops, in px. |
+| `animate` | `false` | Keyed rows grow in, collapse out and slide on reorder. Implied by `onOrderChange`. |
+| `onOrderChange(order, details)` | — | Adds a grip to every row; called once per drop with the new key order and `details.from` / `details.to` / `details.reason`. |
 
-### Interaction and accessibility
+### ListRow
 
-- Hover previews without navigating; pressing and dragging commits each crossed stop.
-- Arrow Up/Down moves through stops; Home/End commits the first or last stop.
-- The rail exposes a vertical listbox with an active option and visible focus styling from the shared stylesheet.
-- Labelless stops render as dots. `preview` accepts any React node; `caption` is its short accessible label.
-- `dim` changes presentation only; dim stops remain reachable so data and UI indices never diverge.
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `title` | — | The row's label, and the name of its button and of a control in it. |
+| `description` | — | A second line under the title. |
+| `icon` | — | Before the title: an icon tile, an avatar, a status glyph. |
+| `trailing` | — | After the title: a value, a badge, or a control. |
+| `accessory` | — | `"chevron"`, `"check"` (shown when `checked`), or a control (Switch, Slider, Button). |
+| `checked` | `false` | The checkmark with `accessory="check"`; the filled check while `editing`. |
+| `onClick` | — | Makes the row a button. |
+| `current` | `false` | A wash and `aria-current`: the row for what is open now. |
+| `disabled` | `false` | Dims the content; the button is disabled and the row doesn't swipe, run actions or flip its switch. |
+| `editing` | `false` | Slides in the edit-mode check and turns swipes off. |
+| `leadingActions` / `trailingActions` | — | Swipe actions (see above). |
+| `fullSwipe` | `true` | A long swipe runs the outermost action: `true`, `false`, `"leading"` or `"trailing"`. |
+| `controller` | — | `createListRowController()`: `show(side)` / `close()` from outside. |
+| `tone` | `"default"` | Text color: `"default"` · `"success"` · `"warning"` · `"destructive"`. |
+| `justify` | `"start"` | `"center"` centers the title (a button row). |
+| `align` | `"center"` | `"top"` pins the icon to the first line of a multi-line row. |
+| `divider` | `true` | The hairline under the row; turn it off on a section's last row. |
+| `labelToggles` | `true` | Without `onClick`, pressing the row flips the switch in it. |
+| `children` | — | A control that spans the row instead of the title. |
+| `preview` | — | HoverCard content shown beside the row on hover or focus. |
+| `isEdge(clientX)` | — | Return `true` to ignore a swipe that starts there (under a back-gesture zone). |
+| `contentClassName` | — | Classes for the row surface (`data-slot="list-row-content"`); `className` goes on the outer row, which also holds the actions. |
 
-#### Live example
+### Data attributes
 
-Scrub the rail or focus it and use the arrow keys. Switch modes to see the alphabet fallback and the wave variant:
+| Element | Attributes |
+| --- | --- |
+| `list` | `data-variant`, `data-density`, `data-empty` |
+| `list-row` | `data-swipe` (`start` / `end`), `data-swiping`, `data-full`, `data-removing`, `data-disabled`, `data-ending-style` |
+| `list-section-item` | `data-grabbed`, `data-dragging`, `data-starting-style`, `data-ending-style` |
 
-{% demo src="lists/index-bar" %}
+## Related
+
+- [SearchInput](https://blamy.github.io/ui/#/search-input): the field for a list's `header`.
+- [IndexBar](https://blamy.github.io/ui/#/index-bar): the A–Z jump rail beside a plain list (its rows widen their trailing inset to clear it).
 
 ## cva recipes
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `listVariants`
+
+Defined in `@/components/ui/list`. Base classes:
+
+```text
+(none)
+```
+
+**`variant`** — default `plain`
+
+| Value | Adds |
+| --- | --- |
+| `plain` (default) | `p-0` |
+| `inset` | `px-4 py-0` |
 
 ### `listRowVariants`
 
 Defined in `@/components/ui/list`. Base classes:
 
 ```text
-[ // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row. 'relative z-1 box-border flex min-h-row w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-body leading-[normal] tracking-[normal] outline-none', 'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]', // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent). 'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]', // The swipe offset (`--swipe-x`, from UI SDK) moves the surface; it springs back unless a finger holds it. 'translate-x-(--swipe-x) transition-[translate] duration-spring-snappy ease-spring-snappy group-data-swiping/row:transition-none motion-reduce:transition-none', ]
+[ // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row. 'relative z-1 box-border flex w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-body leading-[normal] tracking-[normal] outline-none', 'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]', // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent). 'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]', // The swipe offset (`--swipe-x`, from UI SDK) moves the surface; it springs back unless a finger holds it. 'translate-x-(--swipe-x) transition-[translate] duration-spring-snappy ease-spring-snappy group-data-swiping/row:transition-none motion-reduce:transition-none', ]
 ```
 
 **`align`** — default `center`
@@ -308,19 +266,36 @@ Defined in `@/components/ui/list`. Base classes:
 | `center` (default) | — |
 | `top` | `[&>[data-slot=list-row-leading]]:self-start [&>[data-slot=list-row-leading]]:pt-[7px]` |
 
-**`selected`** — default `false`
+**`justify`** — default `start`
 
 | Value | Adds |
 | --- | --- |
-| `true` | `bg-accent` |
+| `start` (default) | — |
+| `center` | — |
+
+**`density`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `compact` | `min-h-9` |
+| `default` (default) | `min-h-row` |
+| `comfortable` | `min-h-14` |
+
+**`current`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `bg-card bg-linear-to-r from-secondary-strong to-secondary-strong` |
 | `false` (default) | `bg-card` |
 
-**`destructive`** — default `false`
+**`tone`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `true` | `text-destructive` |
-| `false` (default) | `text-foreground` |
+| `default` (default) | `text-foreground` |
+| `success` | `text-success` |
+| `warning` | `text-warning` |
+| `destructive` | `text-destructive` |
 
 **`interactive`** — default `false`
 
@@ -328,3 +303,10 @@ Defined in `@/components/ui/list`. Base classes:
 | --- | --- |
 | `true` | `cursor-pointer` |
 | `false` (default) | `cursor-default` |
+
+**`disabled`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `cursor-default *:opacity-45` |
+| `false` (default) | — |

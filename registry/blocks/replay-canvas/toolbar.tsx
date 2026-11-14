@@ -2,7 +2,8 @@
 /* The toolbar's icon buttons (Interface Builder's): a plain button that shows its label as a tooltip, and the same
    button as a UI SDK Toggle (`aria-pressed`) that tints while pressed, for the panes and layers it shows or hides. */
 import type { ReactNode } from 'react';
-import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 
@@ -15,9 +16,9 @@ export function ToolButton({ icon, label, onClick, disabled, children, className
   icon?: string; label: string; onClick?: () => void; disabled?: boolean; children?: ReactNode; className?: string;
 }) {
   return (
-    <PlainButton aria-label={label} title={label} onClick={onClick} disabled={disabled} className={cn(tool, className)}>
+    <SdkButton aria-label={label} title={label} onClick={onClick} disabled={disabled} className={cn(tool, className)}>
       {children ?? <Icon name={icon} size={18} sw={1.9} />}
-    </PlainButton>
+    </SdkButton>
   );
 }
 
@@ -25,11 +26,11 @@ export function ToolToggle({ icon, label, pressed, onPressedChange, disabled, ch
   icon?: string; label: string; pressed: boolean; onPressedChange: (pressed: boolean) => void; disabled?: boolean; children?: ReactNode; className?: string;
 }) {
   return (
-    <PlainToggleButton
+    <SdkToggle
       aria-label={label} title={label} pressed={pressed} onPressedChange={onPressedChange} disabled={disabled}
       className={cn(tool, 'data-pressed:bg-secondary data-pressed:text-primary', className)}
     >
       {children ?? <Icon name={icon} size={18} sw={1.9} />}
-    </PlainToggleButton>
+    </SdkToggle>
   );
 }

@@ -2,7 +2,7 @@
    while minimized; closing the window unmounts OpenCode, which disposes both the terminal and its container. */
 import { useMemo, useRef, useState } from 'react';
 import { OpenCode } from '@/components/ui/open-code';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { createAgentWasmOpenCodeHost, type OpenCodeHostBridge } from '@/lib/open-code-host';
 import { createVaultOpenCodeCredentialStore } from '@/lib/open-code-keychain';
 import { useOptionalTailscale } from '@/lib/tailscale-react';
@@ -94,20 +94,20 @@ function OpenCodeWorkspace() {
     <ThemeScope scope="terminal" className="flex h-full min-h-0 flex-col overflow-auto bg-background text-foreground">
       <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-separator px-3 py-2 text-xs">
         {keychain && <>
-          <PlainButton className="rounded-md border border-separator px-3 py-1.5 disabled:opacity-50"
+          <SdkButton className="rounded-md border border-separator px-3 py-1.5 disabled:opacity-50"
             disabled={vault?.status === 'loading' || vault?.status === 'unsupported'}
             onClick={() => vault?.status === 'unlocked' ? vault.lock() : keychain.requestUnlock()}>
             {vault?.status === 'unlocked' ? 'Lock Passwords keychain' : vault?.status === 'empty' ? 'Set up Passwords keychain' : 'Unlock Passwords keychain'}
-          </PlainButton>
+          </SdkButton>
           <span className="text-secondary-label">{vault?.status === 'unlocked' ? 'Encrypted saving enabled · Start OpenCode to load saved sign-ins' : vault?.status === 'unsupported' ? 'Encrypted keychain unavailable in this browser' : 'Unlock Passwords to save provider sign-ins'}</span>
         </>}
-        <PlainButton
+        <SdkButton
           className="rounded-md border border-separator px-3 py-1.5 focus-visible:outline-2 focus-visible:outline-tint disabled:opacity-50"
           disabled={!host || running}
           onClick={runStarter}
         >
           Run starter app
-        </PlainButton>
+        </SdkButton>
         <span role="status" className="text-secondary-label">
           {status || 'Start OpenCode to edit files and preview an app. No provider needed for the starter.'}
         </span>

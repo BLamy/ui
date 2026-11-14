@@ -29,7 +29,7 @@ export default function Fields() {
   return (
     <ThemeScope className="mx-auto grid max-w-sm gap-5">
       <Field>
-        <FieldLabel variant="field">Repeat</FieldLabel>
+        <FieldLabel>Repeat</FieldLabel>
         <Select items={repeats} value={repeat} onValueChange={setRepeat} placeholder="Choose…">
           <SelectTrigger />
           <SelectContent />
@@ -38,7 +38,7 @@ export default function Fields() {
       </Field>
 
       <Field invalid={submitted && !zone ? true : undefined}>
-        <FieldLabel variant="field">Time zone</FieldLabel>
+        <FieldLabel>Time zone</FieldLabel>
         <Select value={zone} onValueChange={setZone} required placeholder="Choose a time zone">
           <SelectTrigger />
           <SelectContent>
@@ -66,7 +66,7 @@ export default function Fields() {
       </Button>
 
       <Field disabled>
-        <FieldLabel variant="field">Locked by an admin</FieldLabel>
+        <FieldLabel>Locked by an admin</FieldLabel>
         <Select items={repeats} defaultValue="never">
           <SelectTrigger size="sm" />
           <SelectContent />

@@ -67,7 +67,7 @@ The sheet is [UI SDK's Drawer](https://ui-sdk.dev/docs/react/components/drawer) 
 - **The cap is a handle.** A press steps to the next stop; the arrow keys, Home and End move through them. `Escape` and the scrim bring a grown sheet back to rest.
 - **The page stays usable at rest.** Up to the peek the sheet is not modal (`modalAbove`): no dim, nothing inert, focus left alone. Above it the scrim dims the host and Tab stays in the sheet.
 - **Drag below rest to minimize.** With `minimizable` (the default), dragging below the resting height puts the surface away and a round FAB pops in at `fabPosition`. Pressing the FAB brings the resting sheet back.
-- **Scroll hides it.** While it rests on its cap and foot alone, `hideOnScroll` slides it away when the shared BL UI chrome hides (the same signal `TabBar` follows) or when `scrollRef`'s scroller moves down.
+- **Scroll hides it.** While it rests on its cap and foot alone, `hideOnScroll` slides it away when the shared BL UI chrome hides (the same signal the `Tabs` bar follows) or when `scrollRef`'s scroller moves down.
 
 `useFloatingSheet()` reads the sheet's state from inside it — this example drives the same sheet from its own foot and prints the context as it settles:
 

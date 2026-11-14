@@ -1,6 +1,6 @@
 # Field
 
-The wrapper that makes a control a proper form field. `Field` is UI SDK's `Field`: it links a `FieldLabel`, a control, a `FieldDescription` and a `FieldError` by id, gives the control its `name`, and shows validation. The control is one of ours — an [Input](https://blamy.github.io/ui/#/input), a [Textarea](https://blamy.github.io/ui/#/textarea), a [Select](https://blamy.github.io/ui/#/select), a [Checkbox](https://blamy.github.io/ui/#/checkbox), a [Switch](https://blamy.github.io/ui/#/switch) or a [RadioGroup](https://blamy.github.io/ui/#/radio-group) — and it keeps its own value and attributes. `FieldSet` groups fields under an iOS-style section header. Reach for a `Field` whenever a control has a visible label, help text or an error message, or sits in a [Form](https://blamy.github.io/ui/#/form).
+The wrapper that makes a control a proper form field. `Field` is UI SDK's `Field`: it links a `FieldLabel`, a control, a `FieldDescription` and a `FieldError` by id, gives the control its `name`, and shows validation. The control is one of ours — an [Input](https://blamy.github.io/ui/#/input), a [Textarea](https://blamy.github.io/ui/#/textarea), a [Select](https://blamy.github.io/ui/#/select), a [Checkbox](https://blamy.github.io/ui/#/checkbox), a [Switch](https://blamy.github.io/ui/#/switch) or a [RadioGroup](https://blamy.github.io/ui/#/radio-group) — and it keeps its own value and attributes. `FieldSet` groups fields under an iOS-style section header. Reach for a `Field` whenever a control has a visible label, help text or an error message, or sits in a form; a form itself is `FieldGroup render={<form />}` (see [Forms](https://blamy.github.io/ui/#/form)). For a label on a control outside any field (a checkbox's line, a slider), use [Label](https://blamy.github.io/ui/#/label).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -35,14 +35,14 @@ import {
 
 ```tsx
 <Field name="email">
-  <FieldLabel variant="field">Email</FieldLabel>
+  <FieldLabel>Email</FieldLabel>
   <Input type="email" required />
   <FieldDescription>We never share it.</FieldDescription>
   <FieldError />
 </Field>
 ```
 
-Stack the pieces in that order. The field takes `name`, `disabled` and `invalid`; everything about the value (`value`, `defaultValue`, `onValueChange`, `type`, `required`, `readOnly`, `autoComplete`, `maxLength`…) goes on the control. `FieldLabel variant="field"` is the small grouped-form caption; the default variant is a larger `subhead` label. `FieldError` renders nothing until the field is invalid; with no children it shows the browser's message, and you can pass your own.
+Stack the pieces in that order. The field takes `name`, `disabled` and `invalid`; everything about the value (`value`, `defaultValue`, `onValueChange`, `type`, `required`, `readOnly`, `autoComplete`, `maxLength`…) goes on the control. `FieldLabel` is the small grouped-form caption by default (`variant="field"`); `variant="default"` is a larger `subhead` label. `FieldError` renders nothing until the field is invalid; with no children it shows the browser's message, and you can pass your own. It always leads with a red `exclamation-circle`, so an error never rests on color alone.
 
 {% demo src="field/anatomy" %}
 
@@ -60,7 +60,7 @@ For a rule the browser can't check (a taken username, a server's answer, a chara
 
 ```tsx
 <Field name="email" invalid={taken ? true : undefined}>
-  <FieldLabel variant="field">Email</FieldLabel>
+  <FieldLabel>Email</FieldLabel>
   <Input type="email" required onValueChange={() => setTaken(false)} />
   <FieldError match="valueMissing">Enter your email address.</FieldError>
   {taken ? <FieldError match>That address is already registered.</FieldError> : null}
@@ -80,7 +80,7 @@ Go back to `undefined`, not `false`, when your error clears, so the browser's va
   <FieldLegend>Billing address</FieldLegend>
   <FieldGroup>
     <Field name="billing-street">
-      <FieldLabel variant="field">Street</FieldLabel>
+      <FieldLabel>Street</FieldLabel>
       <Input autoComplete="billing street-address" />
     </Field>
   </FieldGroup>
@@ -90,9 +90,22 @@ Go back to `undefined`, not `false`, when your error clears, so the browser's va
 
 {% demo src="field/field-set" %}
 
+## A form
+
+There is no `Form` component: render a `FieldGroup` as the `<form>`. It stacks the fields; the form's props go on the element in `render`.
+
+```tsx
+<FieldGroup className="gap-5" render={<form onSubmit={save} />}>
+  <Field name="email">…</Field>
+  <Button type="submit">Save</Button>
+</FieldGroup>
+```
+
+The [Forms](https://blamy.github.io/ui/#/form) guide covers submitting, server errors and validation timing.
+
 ## Other controls
 
-A `Select`, `Checkbox`, `Switch` or `RadioGroup` inside a `Field` takes the field's label, description and name the same way; pressing the label toggles a checkbox or a switch. For a native control the library doesn't ship, like a `<select>`, use `FieldControl render={<select />}`. Text always goes in an `Input` or a `Textarea`, never a `FieldControl`: an agent sees only the library's controls. To make a control of your own join the field around it, call `useFieldControl()` and spread `field.props(yourProps)` on its element.
+A `Select`, `Checkbox`, `Switch`, `RadioGroup`, `NaturalTimeInput` or `FileUpload` inside a `Field` takes the field's label, description and name the same way; pressing the label toggles a checkbox or a switch. For a native control the library doesn't ship, like a `<select>`, use `FieldControl render={<select />}`. Text always goes in an `Input` or a `Textarea`, never a `FieldControl`: an agent sees only the library's controls. To make a control of your own join the field around it, call `useFieldControl()` and spread `field.props(yourProps)` on its element.
 
 ## Accessibility
 
@@ -116,12 +129,12 @@ A `<div>`. Every UI SDK `Field` prop applies:
 
 | Part | Element | Effect |
 | --- | --- | --- |
-| `FieldLabel` | `<label>` | The control's name. `variant` takes [Label](https://blamy.github.io/ui/#/label)'s variants: `default`, or `field` for the grouped-form caption. |
-| `FieldDescription` | `<p>` | Help text: 13px, muted, announced with the control (or with the set, right inside a `FieldSet`). |
-| `FieldError` | `<div>` | The validation message, in the destructive color. `match`: `true`, `false` or a validity flag. Children may be a function of the state (`state.message` is the browser's message). |
+| `FieldLabel` | `<label>` | The control's name. `variant` takes [Label](https://blamy.github.io/ui/#/label)'s variants: `field` (default) for the grouped-form caption, or `default` for a body-sized label. |
+| `FieldDescription` | `<p>` | Help text: 13px in the foreground at 70% (AA on grey surfaces), announced with the control (or with the set, right inside a `FieldSet`). |
+| `FieldError` | `<div>` | The validation message: a red `exclamation-circle`, then the text in the foreground color. `match`: `true`, `false` or a validity flag. Children may be a function of the state (`state.message` is the browser's message). `[&>svg]:hidden` drops the icon. |
 | `FieldSet` | `<fieldset>` | Groups fields; `disabled` disables them together. |
-| `FieldLegend` | `<legend>` | The set's name: 13px, uppercase, muted. |
-| `FieldGroup` | `<div>` | A `gap-3` stack of fields, with no role. |
+| `FieldLegend` | `<legend>` | The set's name: 13px, uppercase, the foreground at 70%. |
+| `FieldGroup` | `<div>` | A `gap-3` stack of fields, with no role. `render={<form />}` makes it the form. |
 | `FieldControl` | `<input>` | A native control through `render`, for one the library doesn't ship. |
 
 ## Styling

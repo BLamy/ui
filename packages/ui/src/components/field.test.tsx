@@ -5,7 +5,6 @@ import { createAgent } from '@ui-sdk/react/agent';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field';
-import { Form } from '@/components/ui/form';
 import { Input, createInputController } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -29,7 +28,7 @@ describe('Field', () => {
   it('names the control with its label, describes it, and gives it the field name', async () => {
     render(
       <Field name="email" className="mt-2">
-        <FieldLabel variant="field">Email</FieldLabel>
+        <FieldLabel>Email</FieldLabel>
         <Input type="email" />
         <FieldDescription>We never share it.</FieldDescription>
         <FieldError />
@@ -52,14 +51,14 @@ describe('Field', () => {
   it('shows the browser\'s validation after a submit attempt, and clears it once the value is valid', async () => {
     const onSubmit = vi.fn((event: React.FormEvent) => event.preventDefault());
     render(
-      <Form onSubmit={onSubmit}>
+      <FieldGroup render={<form onSubmit={onSubmit} />}>
         <Field name="email">
           <FieldLabel>Email</FieldLabel>
           <Input type="email" required />
           <FieldError match="valueMissing">Enter your email address.</FieldError>
         </Field>
         <Button type="submit">Save</Button>
-      </Form>,
+      </FieldGroup>,
     );
     await settle();
     const input = screen.getByRole('textbox', { name: 'Email' }) as HTMLInputElement;
@@ -213,10 +212,10 @@ describe('Textarea', () => {
   });
 });
 
-describe('Form', () => {
+describe('a form: FieldGroup rendered as a <form>', () => {
   function Signup({ onSave }: { onSave: (data: Record<string, FormDataEntryValue>) => void }) {
     return (
-      <Form aria-label="Sign up" className="gap-3" onSubmit={(event) => { event.preventDefault(); onSave(Object.fromEntries(new FormData(event.currentTarget))); }}>
+      <FieldGroup className="gap-5" render={<form aria-label="Sign up" onSubmit={(event) => { event.preventDefault(); onSave(Object.fromEntries(new FormData(event.currentTarget))); }} />}>
         <Field name="name">
           <FieldLabel>Full name</FieldLabel>
           <Input defaultValue="Jane Appleseed" />
@@ -227,7 +226,7 @@ describe('Form', () => {
         </Field>
         <Button type="submit">Create account</Button>
         <Button type="reset" variant="secondary">Reset</Button>
-      </Form>
+      </FieldGroup>
     );
   }
 
@@ -238,7 +237,8 @@ describe('Form', () => {
     const form = screen.getByRole('form', { name: 'Sign up' });
     expect(form.tagName).toBe('FORM');
     expect(form.className).toContain('flex-col');
-    expect(form.className).toContain('gap-3');
+    expect(form.className).toContain('gap-5');
+    expect(form.className).not.toContain('gap-3');
     type(screen.getByRole('textbox', { name: 'About you' }), 'Designer');
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
     expect(onSave).toHaveBeenCalledWith({ name: 'Jane Appleseed', about: 'Designer' });

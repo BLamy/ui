@@ -4,7 +4,7 @@ import type { KeyboardEvent, ReactNode } from 'react';
 import {
   CommandMenuGroup, CommandMenuGroupLabel, CommandMenuItem, CommandMenuPage, CommandMenuShortcut, useCommandMenu, useCommandMenuValue,
 } from '@/components/ui/command-menu';
-import { IconSwap } from '@/components/ui/icon-swap';
+import { Swap } from '@/components/ui/swap';
 import { Kbd } from '@/components/ui/kbd';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { Icon } from '@/lib/icon';
@@ -335,7 +335,7 @@ function SystemItems() {
       <CommandMenuItem
         value="Toggle Dark Mode" keywords={['appearance', 'light mode', 'theme']} title={a.dark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         description="Appearance"
-        icon={<IconSwap id={a.dark ? 'light' : 'dark'}>{a.dark ? <Tile tone="light" icon="sun-fill" size={28} /> : <Tile tone="dark" icon="moon-fill" size={28} />}</IconSwap>}
+        icon={<Swap effect="pop" value={a.dark ? 'light' : 'dark'}>{a.dark ? <Tile tone="light" icon="sun-fill" size={28} /> : <Tile tone="dark" icon="moon-fill" size={28} />}</Swap>}
         onSelect={() => { a.toggleDark(); a.hud(a.dark ? 'Light Mode' : 'Dark Mode', a.dark ? 'sun-fill' : 'moon-fill'); }}
       />
       <CommandMenuItem value="Lock Screen" keywords={['lock']} title="Lock Screen" icon={<Tile tone="lock" icon="lock-fill" size={28} />} trailing={<CommandMenuShortcut shortcut="ctrl+mod+q" />} onSelect={() => { a.close(); a.setPower('lock'); }} />

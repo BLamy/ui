@@ -31,11 +31,13 @@ function Reader() {
     >
       <AdaptivePane
         presentation={mode}
-        open={open}
+        // Docked, the outline shows; as a drawer it waits for the button.
+        open={mode === 'column' || open}
         onOpenChange={setOpen}
         columnWidth={190}
         drawerWidth={230}
-        columnStyle={{ borderRight: '1px solid var(--border)' }}
+        aria-label="Outline"
+        className="border-r border-border"
       >
         <aside
           style={{

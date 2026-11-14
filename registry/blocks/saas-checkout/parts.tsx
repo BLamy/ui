@@ -43,7 +43,7 @@ export function PlanCard({ plan, cycle }: { plan: Plan; cycle: Cycle }) {
   const yearly = cycle === 'annual';
   return (
     <div className="flex flex-col gap-2.5">
-      <HoverCardHeader media={<Logo size={36} />} title={`${PRODUCT.name} ${plan.name}`} subtitle={plan.blurb} />
+      <HoverCardHeader icon={<Logo size={36} />} title={`${PRODUCT.name} ${plan.name}`} description={plan.blurb} />
       <p className={cn('m-0 text-footnote leading-[18px]', SOFT_INK)}>
         <span className="font-semibold text-foreground">{money(plan.price[cycle] * 100, true)}</span> per seat / month
         {yearly ? `, billed yearly (${money(plan.price.monthly * 100, true)} monthly)` : ` (${money(plan.price.annual * 100, true)} billed yearly)`}
@@ -107,7 +107,7 @@ export function BrandMark({ brand, className }: { brand: CardBrand; className?: 
    A step's errors appear when it is submitted (focus goes to the first invalid field, whose message is its
    description) and from then on follow each value as it is typed, appearing and clearing live. Nothing validates on
    blur: an error that appeared or cleared as you left a field would move the button you were pressing. `server`
-   errors (a decline) show regardless. Use with `<Form noValidate>` (the step checks itself, so the browser's own
+   errors (a decline) show regardless. Use with a `<form noValidate>` (the step checks itself, so the browser's own
    bubbles never show) and give each `Field` `invalid={v.invalid(k) || undefined}`; fields are found by `name`. */
 export function useStepErrors<K extends string>(errors: Record<K, string | null>, server?: Partial<Record<K, string>>) {
   const [submitted, setSubmitted] = useState(false);

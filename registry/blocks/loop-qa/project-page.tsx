@@ -2,10 +2,10 @@
    Test runs · Playwright tests). The underline is one element that slides to the chosen tab, and panels move in
    the direction of travel. Rows push the bug, run or test page onto the column's stack. */
 import type { ReactNode } from 'react';
-import { ContentSwap } from '@/components/ui/animated-height';
+import { Swap } from '@/components/ui/swap';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
-import { TabView, TabViewBar, TabViewIndicator, TabViewList, TabViewTab } from '@/components/ui/tab-view';
+import { Tabs, TabsBar, TabsIndicator, TabsList, TabsTab } from '@/components/ui/tabs';
 import { Icon } from '@/lib/icon';
 import { useDirection } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -50,24 +50,24 @@ export function ProjectPage({ project: p }: { project: Project }) {
           <span>Last run {relativeTime(p.lastRun)}</span>
         </div>
 
-        <TabView<ProjectTab> placement="top" value={qa.tab} onValueChange={(t) => { if (t) qa.setTab(t); }}>
+        <Tabs<ProjectTab> variant="plain" value={qa.tab} onValueChange={(t) => { if (t) qa.setTab(t); }}>
           <div className="sticky top-0 z-20 border-b border-border bg-bar backdrop-blur-xl backdrop-saturate-150">
-            <TabViewBar variant="plain" className={cn(wrap, 'overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden')}>
-              <TabViewList aria-label="Project" className="flex gap-1">
+            <TabsBar className={cn(wrap, 'overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden')}>
+              <TabsList aria-label="Project" className="flex gap-1">
                 {TABS.map((t) => (
                   <UnderlineTab key={t.id} id={t.id} label={t.label} icon={t.icon}
                     count={t.id === 'bugs' ? open : t.id === 'runs' ? runs : undefined}
                     alert={t.id === 'bugs' && open > 0} />
                 ))}
-                <TabViewIndicator className="inset-x-2 -bottom-px z-1 h-[2px] rounded-full bg-primary" />
-              </TabViewList>
-            </TabViewBar>
+                <TabsIndicator className="inset-x-2 -bottom-px z-1 h-[2px] rounded-full bg-primary" />
+              </TabsList>
+            </TabsBar>
           </div>
-        </TabView>
+        </Tabs>
         <div className={cn(wrap, 'pt-5 pb-14')}>
-          <ContentSwap id={qa.tab} direction={dir} distance={28}>
+          <Swap value={qa.tab} direction={dir} distance={28}>
             <Panel tab={qa.tab} project={p} />
-          </ContentSwap>
+          </Swap>
         </div>
       </SplitViewContent>
     </>
@@ -86,13 +86,13 @@ function Panel({ tab, project }: { tab: ProjectTab; project: Project }) {
 
 function UnderlineTab({ id, label, icon, count, alert }: { id: string; label: string; icon: string; count?: number; alert?: boolean }) {
   return (
-    <TabViewTab value={id} className="group relative flex shrink-0 cursor-pointer items-center py-1.5 outline-none">
+    <TabsTab value={id} className="group relative flex shrink-0 cursor-pointer items-center py-1.5 outline-none">
       <span className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13.5px] font-medium text-muted-foreground transition-[color,background-color] group-hover:bg-secondary! group-hover:text-foreground group-data-selected:text-foreground group-focus-visible:ring-2 group-focus-visible:ring-ring">
         <Icon name={icon} size={15} sw={2} />
         <span className="whitespace-nowrap">{label}</span>
         {count != null ? <Count n={count} alert={alert} /> : null}
       </span>
-    </TabViewTab>
+    </TabsTab>
   );
 }
 

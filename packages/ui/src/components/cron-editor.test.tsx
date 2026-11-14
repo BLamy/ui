@@ -17,7 +17,7 @@ vi.mock('gpu-cron', () => {
 (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
 
 const FROM = '2026-10-02T10:00:00Z'; // a Friday
-const base = { from: FROM, timeZone: 'UTC', locale: 'en-US', debounceMs: 5 } as const;
+const base = { reference: FROM, timeZone: 'UTC', locale: 'en-US', parse: { debounceMs: 5 } } as const;
 
 const setWebGPU = (on: boolean) => {
   if (on) Object.defineProperty(navigator, 'gpu', { value: {}, configurable: true });
@@ -38,6 +38,7 @@ afterEach(() => {
 const expressionField = () => screen.getByRole('textbox', { name: 'Cron expression' }) as HTMLInputElement;
 const type = (value: string) => fireEvent.input(expressionField(), { target: { value } });
 const cell = (name: string) => document.querySelector(`[data-field=${name}]`) as HTMLElement;
+const described = (el: HTMLElement) => (el.getAttribute('aria-describedby') ?? '').split(' ').filter(Boolean).map((id) => document.getElementById(id)?.textContent ?? '');
 const runs = () => [...document.querySelectorAll('[data-slot=cron-editor-next] li')].map((li) => li.textContent);
 const description = () => document.querySelector('[data-slot=cron-editor-description]')?.textContent;
 
@@ -71,7 +72,7 @@ describe('CronEditor (raw expression)', () => {
     // 09:00 in Dhaka (UTC+6) is 03:00Z; 2026-10-02T10:00Z is past today's, so the next is Saturday.
     expect(runs()[0]?.replace(/\u202f/g, ' ')).toBe('Sat, Oct 3, 2026, 9:00 AM');
     unmount();
-    render(<CronEditor from={FROM} locale="en-US" defaultValue="0 9 * * *" naturalLanguage={false} />);
+    render(<CronEditor reference={FROM} locale="en-US" defaultValue="0 9 * * *" naturalLanguage={false} />);
     expect(document.querySelector('[data-slot=cron-editor-next]')?.textContent).toContain('this device’s time zone');
   });
 
@@ -83,7 +84,9 @@ describe('CronEditor (raw expression)', () => {
   it('says what is wrong with each bad field, and marks it', () => {
     render(<CronEditor {...base} defaultValue="60 24 * 13 funday" naturalLanguage={false} />);
     expect(expressionField().getAttribute('aria-invalid')).toBe('true');
-    const error = document.querySelector('[data-slot=field-error]') as HTMLElement;
+    // One error per bad field, each after its icon.
+    const error = { textContent: [...document.querySelectorAll('[data-slot=field-error]')].map((e) => e.textContent).join('\n') };
+    expect(document.querySelectorAll('[data-slot=field-error] svg')).toHaveLength(4);
     expect(error.textContent).toContain('Minute: 60 is out of range (0–59)');
     expect(error.textContent).toContain('Hour: 24 is out of range (0–23)');
     expect(error.textContent).toContain('Month: 13 is out of range (1–12)');
@@ -200,7 +203,8 @@ describe('CronEditor (raw expression)', () => {
     const root = document.querySelector('[data-slot=cron-editor]') as HTMLElement;
     expect(root.className).toContain('custom');
     expect(root.id).toBe('the-editor');
-    expect(expressionField().name).toBe('schedule');
+    // The expression is submitted by a hidden input, so it reaches the form whichever box is showing.
+    expect((document.querySelector('input[type=hidden][name=schedule]') as HTMLInputElement).value).toBe('');
   });
 
   it('uses the monospace font on the expression, not the inherited one', () => {
@@ -225,16 +229,11 @@ describe('CronEditor (raw expression)', () => {
 });
 
 describe('CronEditor (natural language)', () => {
-  it('leaves the box out, with a note, when the browser has no WebGPU — and never loads gpu-cron', async () => {
+  it('leaves the box out, saying why under the expression, when the browser has no WebGPU — and never loads gpu-cron', async () => {
     const loads = mocks.loads;
     render(<CronEditor {...base} />);
-    // The note comes from the box as soon as it knows; the editor hears it from the box one render later and then
-    // brings the raw expression back. Wait for both, not just the first.
-    await waitFor(() => {
-      expect(document.querySelector('[data-slot=cron-editor-note]')).not.toBeNull();
-      expect(screen.queryByRole('textbox', { name: 'Cron expression' })).not.toBeNull();
-    });
-    expect(document.querySelector('[data-slot=cron-editor-note]')?.textContent).toContain('needs WebGPU');
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Cron expression' })).not.toBeNull());
+    expect(described(expressionField()).join(' ')).toContain('needs WebGPU');
     expect(screen.queryByRole('textbox', { name: 'Describe the schedule' })).toBeNull();
     expect(mocks.isAvailable).not.toHaveBeenCalled();
     expect(mocks.loads).toBe(loads);
@@ -245,7 +244,8 @@ describe('CronEditor (natural language)', () => {
     setWebGPU(true);
     mocks.isAvailable.mockResolvedValue(false);
     render(<CronEditor {...base} />);
-    await waitFor(() => expect(document.querySelector('[data-slot=cron-editor-note]')).not.toBeNull());
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Cron expression' })).not.toBeNull());
+    expect(described(expressionField()).join(' ')).toContain('needs WebGPU');
     expect(screen.queryByRole('textbox', { name: 'Describe the schedule' })).toBeNull();
   });
 
@@ -254,7 +254,7 @@ describe('CronEditor (natural language)', () => {
     render(<CronEditor {...base} naturalLanguage={false} />);
     await new Promise((r) => setTimeout(r, 30));
     expect(document.querySelector('[data-slot=cron-editor-natural]')).toBeNull();
-    expect(document.querySelector('[data-slot=cron-editor-note]')).toBeNull();
+    expect(described(expressionField()).join(' ')).not.toContain('WebGPU');
     expect(mocks.isAvailable).not.toHaveBeenCalled();
   });
 
@@ -268,16 +268,33 @@ describe('CronEditor (natural language)', () => {
     expect(box.placeholder).toMatch(/every weekday/);
   });
 
-  it('is the only input where WebGPU works: no expression field, fields, description or presets', async () => {
+  it('leads with the box where WebGPU works, shows the expression, and opens the raw editor on "Edit expression"', async () => {
     setWebGPU(true);
-    render(<CronEditor {...base} />);
+    render(<CronEditor {...base} defaultValue="0 9 * * 1-5" />);
     const box = screen.getByRole('textbox', { name: 'Describe the schedule' }) as HTMLInputElement;
     await waitFor(() => expect(box.disabled).toBe(false));
+    expect(document.querySelector('[data-slot=cron-editor-expression] code')?.textContent).toBe('0 9 * * 1-5');
     expect(screen.queryByRole('textbox', { name: 'Cron expression' })).toBeNull();
-    expect(document.querySelector('[data-slot=cron-editor-fields]')).toBeNull();
-    expect(document.querySelector('[data-slot=cron-editor-description]')).toBeNull();
     expect(document.querySelector('[data-slot=cron-editor-presets]')).toBeNull();
     expect(document.querySelector('[data-slot=cron-editor-next]')).not.toBeNull();
+    const edit = screen.getByRole('button', { name: 'Edit expression' });
+    expect(edit.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(edit);
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Cron expression' })).not.toBeNull());
+    expect(edit.getAttribute('aria-expanded')).toBe('true');
+    expect(expressionField().value).toBe('0 9 * * 1-5');
+    expect(document.querySelector('[data-slot=cron-editor-fields]')).not.toBeNull();
+  });
+
+  it('submits the expression the model chose under `name`', async () => {
+    setWebGPU(true);
+    mocks.parse.mockImplementation(async () => ({ expression: '0 9 * * 1-5', next: [] }));
+    render(<form aria-label="Job"><CronEditor {...base} name="schedule" /></form>);
+    const box = screen.getByRole('textbox', { name: 'Describe the schedule' }) as HTMLInputElement;
+    await waitFor(() => expect(box.disabled).toBe(false));
+    fireEvent.input(box, { target: { value: 'every weekday at 9am' } });
+    const form = screen.getByRole('form', { name: 'Job' }) as HTMLFormElement;
+    await waitFor(() => expect(new FormData(form).get('schedule')).toBe('0 9 * * 1-5'));
   });
 
   it('applies each answer as the value while you type, and the next runs follow', async () => {

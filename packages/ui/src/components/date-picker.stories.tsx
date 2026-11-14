@@ -27,7 +27,7 @@ type Story = StoryObj<typeof DatePicker>;
 export const Default: Story = {
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Date</FieldLabel>
+      <FieldLabel>Date</FieldLabel>
       <DatePicker {...args} defaultValue="2026-09-09">
         <DatePickerField />
         <DatePickerContent />
@@ -40,7 +40,7 @@ export const Default: Story = {
 export const Open: Story = {
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Date</FieldLabel>
+      <FieldLabel>Date</FieldLabel>
       <DatePicker {...args} defaultOpen defaultValue="2026-09-09">
         <DatePickerField />
         <DatePickerContent />
@@ -52,7 +52,7 @@ export const Open: Story = {
 export const Empty: Story = {
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Due</FieldLabel>
+      <FieldLabel>Due</FieldLabel>
       <DatePicker {...args} defaultOpen>
         <DatePickerField />
         <DatePickerHint />
@@ -67,7 +67,7 @@ export const WithTime: Story = {
   render: (args) => (
     <div className="flex items-end gap-3">
       <Field className="min-w-0 flex-1">
-        <FieldLabel variant="field">Starts</FieldLabel>
+        <FieldLabel>Starts</FieldLabel>
         <DatePicker {...args} defaultValue="2026-09-09">
           <DatePickerField />
           <DatePickerContent />
@@ -97,7 +97,7 @@ export const Sizes: Story = {
 export const Invalid: Story = {
   render: (args) => (
     <Field invalid>
-      <FieldLabel variant="field">Due</FieldLabel>
+      <FieldLabel>Due</FieldLabel>
       <DatePicker {...args} defaultValue="2026-09-09">
         <DatePickerField />
         <DatePickerContent />
@@ -110,7 +110,7 @@ export const Invalid: Story = {
 export const Disabled: Story = {
   render: (args) => (
     <Field disabled>
-      <FieldLabel variant="field">Due</FieldLabel>
+      <FieldLabel>Due</FieldLabel>
       <DatePicker {...args} defaultValue="2026-09-09">
         <DatePickerField />
         <DatePickerContent />
@@ -122,7 +122,7 @@ export const Disabled: Story = {
 export const Clearable: Story = {
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Due</FieldLabel>
+      <FieldLabel>Due</FieldLabel>
       <DatePicker {...args} defaultValue="2026-09-09">
         <DatePickerField>
           <DatePickerInput />
@@ -139,7 +139,7 @@ export const Presets: Story = {
   decorators: [(Story) => <Panel w={380}><div className="h-[470px]"><Story /></div></Panel>],
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Due</FieldLabel>
+      <FieldLabel>Due</FieldLabel>
       <DatePicker {...args} defaultOpen defaultValue="2026-09-09">
         <DatePickerField />
         <DatePickerContent>
@@ -160,7 +160,7 @@ export const Range: Story = {
   args: { mode: 'range', defaultValue: ['2026-09-08', '2026-09-13'] },
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Stay</FieldLabel>
+      <FieldLabel>Stay</FieldLabel>
       <DatePicker {...args}>
         <DatePickerField />
         <DatePickerContent />
@@ -175,7 +175,7 @@ export const RangeOpen: Story = {
   args: { mode: 'range', defaultValue: ['2026-09-08', '2026-09-13'] },
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Stay</FieldLabel>
+      <FieldLabel>Stay</FieldLabel>
       <DatePicker {...args} defaultOpen>
         <DatePickerField />
         <DatePickerContent />
@@ -188,7 +188,7 @@ export const Dark: Story = {
   decorators: [(Story) => <Panel w={380} dark><div className="h-[420px]"><Story /></div></Panel>],
   render: (args) => (
     <Field>
-      <FieldLabel variant="field">Date</FieldLabel>
+      <FieldLabel>Date</FieldLabel>
       <DatePicker {...args} defaultOpen defaultValue="2026-09-09">
         <DatePickerField />
         <DatePickerContent />

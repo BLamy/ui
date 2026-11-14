@@ -20,7 +20,7 @@ describe('DateField', () => {
   it('splits the date into named spin buttons in the locale order, wired to its Field', async () => {
     const { container } = render(
       <Field>
-        <FieldLabel variant="field">Birthday</FieldLabel>
+        <FieldLabel>Birthday</FieldLabel>
         <DateField locale="en-US" defaultValue="2026-09-09" />
         <FieldDescription>Type it.</FieldDescription>
       </Field>,

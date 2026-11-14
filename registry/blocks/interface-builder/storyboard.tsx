@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { dragThreshold } from '@ui-sdk/core';
 import { Canvas, CanvasFrame, CanvasGuides, CanvasMiniMap, useCanvas, type CanvasController, type CanvasPointerInfo, type CanvasViewportChangeDetails } from '@/components/ui/canvas';
-import { ContextMenu, ContextMenuContent, ContextMenuGroup, ContextMenuGroupLabel, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuGroupLabel, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuContextTrigger } from '@/components/ui/dropdown-menu';
 import { snapMove, toBoard, type Guide, type Pt, type Rect, type Viewport } from '@/lib/canvas-math';
 import { Icon } from '@/lib/icon';
 import type { Appearance } from '@/lib/theme';
@@ -42,7 +42,7 @@ const HANDLE_PX = 9;
 const dragged = (sp: Pt, sstart: Pt) => Math.abs(sp.x - sstart.x) >= dragThreshold || Math.abs(sp.y - sstart.y) >= dragThreshold;
 
 /** Containers whose handle embeds the scene it's dropped on (a tab, a stack's root, a column), even as a root. */
-const EMBEDS = new Set(['TabView', 'NavigationStack', 'SplitView', 'SceneRef']);
+const EMBEDS = new Set(['TabsScreen', 'NavigationStack', 'SplitView', 'SceneRef']);
 
 export const SEGUE_GLYPH: Record<SegueKind, string> = {
   push: 'arrow-right',
@@ -179,7 +179,7 @@ export function Storyboard({ viewport, onViewportChange, controller, appearance,
     return out;
   }, [doc, m, device]);
 
-  /** Relationships: an embedded scene (a TabView's tab, a NavigationStack's root, a SplitView column) to its scene. */
+  /** Relationships: an embedded scene (a TabsScreen's tab, a NavigationStack's root, a SplitView column) to its scene. */
   const relGeo = useMemo(() => {
     const out = new Map<string, { geo: SegueGeometry; scene: string; node: string }>();
     for (const s of doc.scenes) {
@@ -630,8 +630,8 @@ export function Storyboard({ viewport, onViewportChange, controller, appearance,
 
   return (
     <div ref={wrap} data-slot="ib-storyboard" className="absolute inset-0">
-      <ContextMenu onOpenChange={onMenuOpenChange}>
-        <ContextMenuTrigger
+      <DropdownMenu onOpenChange={onMenuOpenChange}>
+        <DropdownMenuContextTrigger
           className="absolute inset-0"
           onContextMenu={onContextMenu}
           onPointerDown={(e) => { lastPointer.current = { x: e.clientX, y: e.clientY }; }}
@@ -696,17 +696,17 @@ export function Storyboard({ viewport, onViewportChange, controller, appearance,
             {ui.carry ? <Carry rect={ui.carry.rect} label={ui.carry.label} /> : null}
             <CanvasGuides guides={ui.guides} />
           </Canvas>
-        </ContextMenuTrigger>
-        <ContextMenuContent className="max-w-[320px]">
-          <ContextMenuGroup>
-            <ContextMenuGroupLabel>Select</ContextMenuGroupLabel>
+        </DropdownMenuContextTrigger>
+        <DropdownMenuContent className="max-w-[320px]">
+          <DropdownMenuGroup>
+            <DropdownMenuGroupLabel>Select</DropdownMenuGroupLabel>
             {(menu?.stack ?? []).map((at) => {
               const e = index.get(at.id);
               if (!e) return null;
               const spec = specOf(e.node.type);
               const owner = e.scene !== menu?.frame ? doc.scenes.find((s) => s.id === e.scene)?.name : null;
               return (
-                <ContextMenuItem
+                <DropdownMenuItem
                   key={`${at.id}:${at.k}`}
                   value={`${at.id}:${at.k}`}
                   label={nodeLabel(e.node, doc)}
@@ -715,24 +715,24 @@ export function Storyboard({ viewport, onViewportChange, controller, appearance,
                   onSelect={() => pick(at)}
                 >
                   {nodeLabel(e.node, doc)}
-                </ContextMenuItem>
+                </DropdownMenuItem>
               );
             })}
             {menu ? (
-              <ContextMenuItem value="scene" label="Scene" icon={<span style={{ color: DOCK_COLORS.component }}><Icon name="circle-fill" size={16} /></span>} onSelect={() => b.select({ kind: 'scene', scene: menu.frame })}>
+              <DropdownMenuItem value="scene" label="Scene" icon={<span style={{ color: DOCK_COLORS.component }}><Icon name="circle-fill" size={16} /></span>} onSelect={() => b.select({ kind: 'scene', scene: menu.frame })}>
                 {`Scene “${doc.scenes.find((s) => s.id === menu.frame)?.name ?? ''}”`}
-              </ContextMenuItem>
+              </DropdownMenuItem>
             ) : null}
-          </ContextMenuGroup>
-          <ContextMenuSeparator />
-          <ContextMenuGroup>
-            <ContextMenuItem value="copy" disabled={!selectedIds.length} onSelect={() => b.copy(selectedIds)} shortcut="mod+c">Copy</ContextMenuItem>
-            <ContextMenuItem value="paste" disabled={!b.canPaste} onSelect={() => b.paste()} shortcut="mod+v">Paste</ContextMenuItem>
-            <ContextMenuItem value="duplicate" disabled={!selectedIds.length} onSelect={() => b.duplicate(selectedIds)} shortcut="mod+d">Duplicate</ContextMenuItem>
-            <ContextMenuItem value="delete" destructive disabled={!selectedIds.length || selectedIds.every(isRoot)} onSelect={() => b.remove(selectedIds)} shortcut="Backspace">Delete</ContextMenuItem>
-          </ContextMenuGroup>
-        </ContextMenuContent>
-      </ContextMenu>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem value="copy" disabled={!selectedIds.length} onSelect={() => b.copy(selectedIds)} shortcut="mod+c">Copy</DropdownMenuItem>
+            <DropdownMenuItem value="paste" disabled={!b.canPaste} onSelect={() => b.paste()} shortcut="mod+v">Paste</DropdownMenuItem>
+            <DropdownMenuItem value="duplicate" disabled={!selectedIds.length} onSelect={() => b.duplicate(selectedIds)} shortcut="mod+d">Duplicate</DropdownMenuItem>
+            <DropdownMenuItem value="delete" destructive disabled={!selectedIds.length || selectedIds.every(isRoot)} onSelect={() => b.remove(selectedIds)} shortcut="Backspace">Delete</DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 
@@ -870,7 +870,7 @@ function RelationLayer({ rels, selected }: { rels: { geo: SegueGeometry; node: s
 }
 
 /**
- * Dragging a container's handle to a scene embeds the scene (a relationship, not a segue): a TabView gets a tab, a
+ * Dragging a container's handle to a scene embeds the scene (a relationship, not a segue): a TabsScreen gets a tab, a
  * NavigationStack its root screen, a SplitView its next empty column; an embedded scene points at the new one.
  */
 function embedInto(doc: Doc, sceneId: string, src: Node, target: string): { doc: Doc; node: string } | null {
@@ -879,7 +879,7 @@ function embedInto(doc: Doc, sceneId: string, src: Node, target: string): { doc:
   const ref = (): Node => ({ id: newId(), type: 'SceneRef', props: { scene: target }, layout: { width: 'fill', height: 'fill' } });
   const edit = (fn: (n: Node) => Node, node: string) => ({ doc: { ...doc, scenes: doc.scenes.map((s) => (s.id === sceneId ? { ...s, root: mapNode(s.root, src.id, fn) } : s)) }, node });
   if (src.type === 'SceneRef') return edit((n) => ({ ...n, props: { ...n.props, scene: target } }), src.id);
-  if (src.type === 'TabView') {
+  if (src.type === 'TabsScreen') {
     const r = ref();
     const tabs = [String(src.props.tabs ?? '').trim(), `${dest.name}:circle`].filter(Boolean).join(', ');
     return edit((n) => ({ ...n, props: { ...n.props, tabs }, children: [...(n.children ?? []), r] }), r.id);

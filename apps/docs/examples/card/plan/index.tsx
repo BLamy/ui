@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -29,6 +31,9 @@ export default function Plan() {
           <CardDescription>
             {plan === 'Team' ? '$24 per seat, billed monthly' : '$48 per seat, billed yearly'}
           </CardDescription>
+          <CardAction>
+            <Badge variant="tinted">Current</Badge>
+          </CardAction>
         </CardHeader>
         <CardContent className="grid gap-3">
           {usage.map((u) => {

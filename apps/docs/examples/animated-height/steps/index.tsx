@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { AnimatedHeight, ContentSwap } from '@/components/ui/animated-height'
+import { AnimatedHeight } from '@/components/ui/animated-height'
+import { Swap } from '@/components/ui/swap'
 import { Button } from '@/components/ui/button'
 import { useDirection } from '@/lib/motion'
 
@@ -19,7 +20,7 @@ const steps = [
 ]
 
 // The tray grows and shrinks to each step (AnimatedHeight) while the content
-// slides in the direction of travel (ContentSwap + useDirection).
+// slides in the direction of travel (Swap + useDirection).
 export default function Steps() {
   const [index, setIndex] = useState(0)
   const dir = useDirection(index)
@@ -27,7 +28,7 @@ export default function Steps() {
   return (
     <div className="mx-auto grid w-full max-w-sm gap-4">
       <AnimatedHeight className="rounded-card bg-card shadow-hairline">
-        <ContentSwap id={index} direction={dir}>
+        <Swap value={index} direction={dir}>
           <div className="grid gap-2 p-5">
             <div className="text-caption2 text-muted-foreground tabular-nums">
               Step {index + 1} of {steps.length}
@@ -35,7 +36,7 @@ export default function Steps() {
             <div className="text-body font-semibold">{step.title}</div>
             <p className="text-subhead text-muted-foreground">{step.body}</p>
           </div>
-        </ContentSwap>
+        </Swap>
       </AnimatedHeight>
       <div className="flex justify-between">
         <Button

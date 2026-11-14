@@ -80,4 +80,18 @@ function Long() {
 }
 
 export const LongStrings: Story = { render: () => <Phone w={760} h={360}><Long /></Phone> };
+export const LongStringsDark: Story = { name: 'Long strings, dark', render: () => <Phone w={760} h={360} dark><Long /></Phone> };
+
+/** In a row of fixed height, as ObjectTree's: one line, cut at `maxLength`, with no Show more or Copy. */
+export const InARow: Story = {
+  name: 'In a row (actions off)',
+  render: () => (
+    <Phone w={390} h={120}>
+      <div className="absolute inset-0 flex flex-col gap-2 bg-card p-3">
+        <div className="flex h-6 items-center gap-1 font-mono text-caption"><span className="shrink-0 text-muted-foreground">note:</span><ObjectValue value={{ type: 'string', value: LONG_TEXT }} actions={false} className="min-w-0 flex-1 truncate whitespace-pre" /></div>
+        <div className="flex h-6 items-center gap-1 font-mono text-caption"><span className="shrink-0 text-muted-foreground">cart:</span><ObjectValue value={previewFromValue({ items: [1, 2, 3], total: 42.5 })} actions={false} className="min-w-0 flex-1 truncate whitespace-pre" /></div>
+      </div>
+    </Phone>
+  ),
+};
 export const LongStringsPhone: Story = { name: 'Long strings, phone', render: () => <Phone w={390} h={420}><Long /></Phone> };

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { AdaptivePane } from '@/components/ui/adaptive-pane';
-import { TabView, TabViewBar, TabViewIndicator, TabViewList, TabViewSeparator, TabViewTab } from '@/components/ui/tab-view';
+import { Tabs, TabsBar, TabsIndicator, TabsList, TabsSeparator, TabsTab } from '@/components/ui/tabs';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -48,7 +48,7 @@ function RailTab({ store, id, icon, label }: { store: VSCodeStore; id: ViewId; i
   const wasOpen = useRef(false);
   const note = () => { wasOpen.current = store.view === id && store.sidebarOpen; };
   return (
-    <TabViewTab
+    <TabsTab
       value={id}
       aria-label={label}
       className="relative grid size-11 cursor-pointer place-items-center text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-inset hover:text-foreground data-selected:text-foreground"
@@ -62,7 +62,7 @@ function RailTab({ store, id, icon, label }: { store: VSCodeStore; id: ViewId; i
       <span title={label} className="grid size-full place-items-center">
         <Icon name={icon} size={21} sw={1.6} />
       </span>
-    </TabViewTab>
+    </TabsTab>
   );
 }
 
@@ -107,13 +107,14 @@ function VSCodeWindow({ runtime, initialFile, initialView, className, style }: V
       className={cn('@container/vscode relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-background font-sans text-foreground', className)}
       style={style}
     >
-      {/* The window is a size-class scope: its popups (the Explorer's Credenzas) are trays when it is compact. */}
+      {/* The window is a size-class scope: its popups (the Explorer's dialogs) are trays when it is compact. */}
       <SizeClassProvider value={sizeClass}>
         <div className="flex min-h-0 min-w-0 flex-1">
           {/* The rail, on its own: what it selects isn't a tab panel. The side panels stay mounted beside the
               editors, and the editors and terminals are panes of one Workspace. */}
-          <TabView<ViewId>
-            placement="start"
+          <Tabs<ViewId>
+            variant="plain"
+            side="start"
             value={sidebarView ?? (narrow ? view : store.lastSideView)}
             onValueChange={(value) => {
               if (!value) return;
@@ -122,20 +123,20 @@ function VSCodeWindow({ runtime, initialFile, initialView, className, style }: V
             }}
             className="shrink-0"
           >
-            <TabViewBar variant="plain" className="w-11 shrink-0 items-center gap-0.5 border-e border-border bg-muted py-0.5">
-              <TabViewList aria-label="Views" className="flex flex-col items-center gap-0.5">
+            <TabsBar className="w-11 shrink-0 items-center gap-0.5 border-e border-border bg-muted py-0.5">
+              <TabsList aria-label="Views" className="flex flex-col items-center gap-0.5">
                 {SIDE_VIEWS.map((item) => <RailTab key={item.id} store={store} {...item} />)}
-                {narrow ? <TabViewSeparator className="my-1 h-px w-6" /> : null}
+                {narrow ? <TabsSeparator className="my-1 h-px w-6" /> : null}
                 {narrow ? PANE_VIEWS.map((item) => <RailTab key={item.id} store={store} {...item} />) : null}
-                <TabViewIndicator />
-              </TabViewList>
-            </TabViewBar>
-          </TabView>
+                <TabsIndicator />
+              </TabsList>
+            </TabsBar>
+          </Tabs>
           <div className="relative flex min-h-0 min-w-0 flex-1">
             <AdaptivePane
               presentation="column"
+              open={showSidebar}
               columnWidth={narrow ? '100%' : 240}
-              columnClassName={showSidebar ? undefined : 'hidden'}
               resizable={!narrow}
               minWidth={160}
             >

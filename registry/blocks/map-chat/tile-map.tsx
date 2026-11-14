@@ -10,7 +10,7 @@ import {
 import type { Viewport } from '@ui-sdk/core';
 import { usePart, usePrimitive } from '@ui-sdk/react/primitive';
 import { HoverCard, HoverCardContent, HoverCardTrigger, createHoverCardController } from '@/components/ui/hover-card';
-import { PlainButton as Button } from '@/components/ui/plain-button';
+import { Button } from '@ui-sdk/react/button';
 import { changeDetails } from '@/lib/change-details';
 import { useContainerSize } from '@/lib/container';
 import { prefersReducedMotion } from '@/lib/reduced-motion';

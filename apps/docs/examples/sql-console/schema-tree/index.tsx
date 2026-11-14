@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { SchemaTree } from '@/components/ui/schema-tree'
-import type { SchemaColumn, SchemaInfo, SchemaTable } from '@/lib/pglite-schema'
+import { Tree } from '@/components/ui/tree'
+import { schemaTreeItems, type SchemaColumn, type SchemaInfo, type SchemaTable, type SchemaTreeNode } from '@/lib/pglite-schema'
 
 const col = (name: string, type: string, o: Partial<SchemaColumn> = {}): SchemaColumn => ({
   name, type, typeOid: 0, nullable: true, default: null, isPrimaryKey: false, references: null, ...o,
 })
 
-// SchemaTree takes the result of useSchema() / loadSchema(); a literal works
-// for a static picture. Enter (or a click) on a table or column calls onAction.
+// schemaTreeItems takes the result of useSchema() / loadSchema(); a literal works
+// for a static picture. Enter (or a click) on a row calls onAction with its node.
 const authors = {
   schema: 'public', name: 'authors', kind: 'table' as const, comment: null, rowCount: 4,
   columns: [col('id', 'integer', { nullable: false, isPrimaryKey: true }), col('name', 'text', { nullable: false }), col('born', 'date')],
@@ -28,11 +28,16 @@ const cheap = {
 }
 const schema: SchemaInfo = { schemas: [{ name: 'public', tables: [authors, books, cheap] }] }
 
-export default function Tree() {
+export default function DatabaseSchema() {
   const [picked, setPicked] = useState<SchemaTable | null>(null)
   return (
     <div className="mx-auto grid w-full max-w-sm gap-3">
-      <SchemaTree schema={schema} variant="card" defaultExpandAll onAction={(_id, { table, column }) => { if (!column) setPicked(table) }} />
+      <Tree aria-label="Database schema" items={schemaTreeItems(schema)} icons={false} density="compact" defaultExpanded="all"
+        onAction={(_value, { node }) => {
+          const n = node as SchemaTreeNode
+          if (n.kind === 'table') setPicked(n.table)
+        }}
+        className="h-80 rounded-panel bg-card p-1 shadow-hairline" />
       <p role="status" className="text-caption text-foreground/65">
         {picked ? `select * from ${picked.name} limit 100;` : 'Press Enter on a table.'}
       </p>

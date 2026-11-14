@@ -18,6 +18,7 @@ export const COLOR_TOKENS = [
   'accent',
   'accent-foreground',
   'destructive',
+  'destructive-foreground',
   'border',
   'input',
   'ring',
@@ -46,6 +47,13 @@ export const COLOR_TOKENS = [
   'link',
   'code',
   'code-foreground',
+  'git-added',
+  'git-modified',
+  'git-renamed',
+  'git-deleted',
+  'git-ignored',
+  'hud',
+  'hud-foreground',
 ] as const;
 
 /** Font-size utilities (text-*): `--text-<name>`. Size only — no line-height. */
@@ -73,6 +81,10 @@ export const SHADOW_TOKENS = [
   'hairline',
   'hairline-t',
   'hairline-b',
+  'popover',
+  'tooltip',
+  'hud',
+  'raised',
 ] as const;
 
 /** Spacing utilities (h-*, min-h-*, size-*…) added by BL UI: `--spacing-<name>`. */
@@ -104,6 +116,7 @@ export const THEME_VARS = [
   'accent',
   'accent-foreground',
   'destructive',
+  'destructive-foreground',
   'border',
   'input',
   'ring',
@@ -132,6 +145,13 @@ export const THEME_VARS = [
   'link',
   'code',
   'code-foreground',
+  'git-added',
+  'git-modified',
+  'git-renamed',
+  'git-deleted',
+  'git-ignored',
+  'hud',
+  'hud-foreground',
   'radius',
   'font-sans',
   'font-mono',

@@ -2,7 +2,7 @@
    shield menu uses: arrow keys and Tab move, Esc closes and focus returns to the item).
 
    - Tailscale: the Tailscale mark (dim until connected, a green dot while an exit node carries the traffic). Connected, it
-     opens the core TailscaleMenu in its `networks` variant, so exit nodes read like Wi-Fi networks; otherwise the sign-in.
+     opens the core Tailscale parts (TailscaleSummary, TailscaleExitNodes, TailscaleLoginButton), so exit nodes read like Wi-Fi networks; otherwise the sign-in.
      It reads the desktop's one Tailscale controller (see page.tsx), the same one the Safari window is given, so signing in
      or choosing an exit node in either shows in both.
    - Wi-Fi: a macOS-style menu (a switch, the network you are on, nearby ones with a lock and signal bars, Network Settings…).
@@ -13,8 +13,9 @@ import { Listbox, ListboxGroup, ListboxGroupLabel, ListboxItem } from '@/compone
 import { Popover, PopoverClose, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import { TailscaleLoginButton, TailscaleMark, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button';
-import { TailscaleMenu, type TailscaleExitNodesProps } from '@/components/ui/tailscale-menu';
+import {
+  TailscaleExitNodes, TailscaleLoginButton, TailscaleMark, TailscaleStatusBadge, TailscaleSummary, type TailscaleExitNodesProps,
+} from '@/components/ui/tailscale-controls';
 import { Icon } from '@/lib/icon';
 import { tailscaleErrorMessage } from '@/lib/tailscale';
 import { exitNodeName } from '@/lib/tailscale-exit';
@@ -44,7 +45,7 @@ export function WifiBars({ level, size = 14, className }: { level: 0 | 1 | 2 | 3
 /* ── a network as a row ── */
 
 /** One row of a network list: a leading check when it is the one in use (from the list's selection), the name, and a trailing glyph.
-    The same list-box row the Tailscale menu's exit nodes use in its `networks` variant (TailscaleExitNodes, core). */
+    The same list-box row the core TailscaleExitNodes uses. */
 export function NetworkRow({ id, name, detail, glyph }: { id: string; name: string; detail?: ReactNode; glyph?: ReactNode }) {
   return (
     <ListboxItem value={id} label={name} description={detail}>
@@ -60,7 +61,7 @@ export function NetworkRow({ id, name, detail, glyph }: { id: string; name: stri
 
 /** What an exit node's row ends with: the same signal glyph a Wi-Fi network has, a spinner while it is switched to, a warning when it is offline. */
 const exitNodeGlyph: NonNullable<TailscaleExitNodesProps['glyph']> = (_peer, state) =>
-  state.connecting ? <Spinner spin size={14} />
+  state.connecting ? <Spinner size={14} />
   : state.online ? <WifiBars level={3} className="text-foreground/70" />
   : <Icon name="exclamation-circle" size={14} className="text-foreground/70" />;
 
@@ -89,7 +90,13 @@ export function TailscaleStatusItem({ defaultOpen }: { defaultOpen?: boolean }) 
       <PopoverContent align="end" sideOffset={6} className="w-72">
         {/* The trigger's name is its status; the menu is just "Tailscale". */}
         <PopoverTitle className="sr-only">Tailscale</PopoverTitle>
-        {connected ? <TailscaleMenu variant="networks" onExitNode={choose} glyph={exitNodeGlyph} /> : <TailscaleSignIn />}
+        {connected ? (
+          <div className="flex flex-col gap-2">
+            <TailscaleSummary />
+            <TailscaleExitNodes onAction={choose} glyph={exitNodeGlyph} />
+            <TailscaleLoginButton size="sm" variant="outline" />
+          </div>
+        ) : <TailscaleSignIn />}
       </PopoverContent>
     </Popover>
   );
@@ -105,7 +112,7 @@ function TailscaleSignIn() {
         <span className="text-footnote text-foreground/70">Not connected. Sign in to reach your tailnet and choose an exit node.</span>
       </div>
       <TailscaleLoginButton size="sm" className="w-full" />
-      <TailscaleStatusBadge compact={status === 'error'} />
+      <TailscaleStatusBadge variant={status === 'error' ? 'pill' : 'inline'} />
       {status === 'error' && error ? <p role="alert" className="m-0 text-footnote">{tailscaleErrorMessage(error)}</p> : null}
     </div>
   );
@@ -135,7 +142,7 @@ function networkRow(n: Network, joining: string | null) {
     <NetworkRow
       key={n.id} id={n.id} name={n.name}
       detail={joining === n.id ? 'Connecting…' : undefined}
-      glyph={joining === n.id ? <Spinner spin size={14} /> : (
+      glyph={joining === n.id ? <Spinner size={14} /> : (
         <>
           {n.secure ? <Icon name="lock-fill" size={12} className="text-foreground/70" /> : null}
           <WifiBars level={n.bars} className="text-foreground/70" />

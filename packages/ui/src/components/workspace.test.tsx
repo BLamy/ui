@@ -426,3 +426,60 @@ it('renders its parts on the server', () => {
     `<root><tabset value="left"><header><tab value="counter">Counter<tab-close></tab-close></tab></header><toolbar><maximize></maximize></toolbar><panels><empty></empty><drop-indicator></drop-indicator></panels></tabset></root>`,
   );
 });
+
+it('tabSide puts the strips at the start or end, as a vertical tab list, and a tabset can override it', async () => {
+  render(
+    <Workspace
+      aria-label="Editor"
+      tabSide="start"
+      defaultLayout={{
+        version: 1,
+        root: {
+          type: 'split',
+          orientation: 'horizontal',
+          children: [
+            { type: 'tabset', id: 'a', tabs: [{ id: 'one', title: 'One', data: null }] },
+            { type: 'tabset', id: 'b', tabSide: 'end', tabs: [{ id: 'two', title: 'Two', data: null }] },
+          ],
+        },
+      }}
+      renderTabContent={(tab) => <p>{tab.id}</p>}
+    />,
+  );
+  await settle();
+  const sets = document.querySelectorAll('[data-slot=workspace-tabset]');
+  expect(sets[0].getAttribute('data-tab-side')).toBe('start');
+  expect(sets[1].getAttribute('data-tab-side')).toBe('end');
+  expect(sets[0].className).toContain('flex-row');
+  expect(sets[1].className).toContain('flex-row-reverse');
+  for (const list of screen.getAllByRole('tablist')) expect(list.getAttribute('aria-orientation')).toBe('vertical');
+  // The root draws no card of its own: callers add the chrome they want.
+  expect(screen.getByRole('group', { name: 'Editor' }).className).not.toContain('border');
+});
+
+it('presentation="tabs" shows every tab in one strip at the bottom, keeps state, and picks the tab in its own tabset', async () => {
+  const onLayoutChange = vi.fn();
+  render(<Workspace aria-label="Editor" presentation="tabs" defaultLayout={layout} renderTabContent={content} onLayoutChange={onLayoutChange} />);
+  await settle();
+  const root = screen.getByRole('group', { name: 'Editor' });
+  expect(root.getAttribute('data-presentation')).toBe('tabs');
+  // One strip with all three tabs; no splits, no drop targets, no maximize.
+  expect(screen.getAllByRole('tablist')).toHaveLength(1);
+  expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Counter', 'Log', 'Notes']);
+  expect(document.querySelector('[data-slot=workspace-split]')).toBeNull();
+  expect(screen.queryByRole('button', { name: /Maximize/ })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Count 0' }));
+  fireEvent.click(screen.getByRole('tab', { name: 'Log' }));
+  await settle();
+  expect(screen.getByRole('tab', { name: 'Log' }).getAttribute('aria-selected')).toBe('true');
+  expect(onLayoutChange).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ action: 'select', tab: 'log', tabset: 'left' }));
+  // Notes is already the selected tab of its own tabset: picking it makes that tabset the active one.
+  fireEvent.click(screen.getByRole('tab', { name: 'Notes' }));
+  await settle();
+  expect(screen.getByRole('tab', { name: 'Notes' }).getAttribute('aria-selected')).toBe('true');
+  expect(screen.getByRole('textbox', { name: 'Draft' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('tab', { name: 'Counter' }));
+  await settle();
+  // The counter kept its state across the switch.
+  expect(screen.getByRole('button', { name: 'Count 1' })).toBeTruthy();
+});

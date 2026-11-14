@@ -12,10 +12,12 @@ export const separatorVariants = cva('m-0 shrink-0 border-0 bg-border', {
       horizontal: 'h-px w-full',
       vertical: 'w-px self-stretch',
     },
-    /** `inset` indents a horizontal rule like an iOS list separator. */
-    inset: { true: '', false: '' },
+    /** `inset` indents a horizontal rule by 16px like an iOS list separator; a vertical rule ignores it. */
+    inset: {
+      true: 'ml-4 w-[calc(100%-16px)] data-[orientation=vertical]:ml-0 data-[orientation=vertical]:w-px',
+      false: '',
+    },
   },
-  compoundVariants: [{ orientation: 'horizontal', inset: true, className: 'ml-4 w-[calc(100%-16px)]' }],
   defaultVariants: { orientation: 'horizontal', inset: false },
 });
 

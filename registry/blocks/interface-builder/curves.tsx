@@ -7,7 +7,8 @@ import type { AreaReason, AreaValue } from '@ui-sdk/core';
 import { createParts, usePart, usePrimitive } from '@ui-sdk/react/primitive';
 import { animate, motion, useMotionValue, useReducedMotion, useTransform, type AnimationPlaybackControls, type MotionValue } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { PlainButton, PlainToggleButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
@@ -334,9 +335,9 @@ export function MotionPreview({ clock, kind, onKind }: { clock: ReturnType<typeo
           <SegmentedItem value="rotate">Rotate</SegmentedItem>
           <SegmentedItem value="fade">Fade</SegmentedItem>
         </Segmented>
-        <PlainButton aria-label="Replay" title="Replay" onClick={clock.replay} className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-secondary text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+        <SdkButton aria-label="Replay" title="Replay" onClick={clock.replay} className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-secondary text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
           <Icon name="arrow-counterclockwise" size={14} sw={2.2} />
-        </PlainButton>
+        </SdkButton>
       </div>
     </div>
   );
@@ -421,7 +422,7 @@ export function TransitionEditor({ spec, onChange, onBegin, preview = true, allo
             <div className={cn(sectionLabel, 'mb-1.5')}>Easing</div>
             <div className="grid grid-cols-3 gap-1">
               {EASE_PRESETS.map((p) => (
-                <PlainToggleButton
+                <SdkToggle
                   key={p.id}
                   aria-label={p.label}
                   pressed={sameEase(p.ease, spec.ease)}
@@ -433,7 +434,7 @@ export function TransitionEditor({ spec, onChange, onBegin, preview = true, allo
                 >
                   <EaseThumb ease={p.ease} size={18} />
                   <span className="truncate">{p.label}</span>
-                </PlainToggleButton>
+                </SdkToggle>
               ))}
             </div>
           </div>
@@ -464,9 +465,9 @@ export function TransitionEditor({ spec, onChange, onBegin, preview = true, allo
 
 function CopyButton({ label, done, onClick, children }: { label: string; done: boolean; onClick: () => void; children: ReactNode }) {
   return (
-    <PlainButton aria-label={label} title={label} onClick={onClick} className="flex h-6 cursor-pointer items-center gap-1 rounded-md border-0 bg-secondary px-1.5 font-mono text-caption2 text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+    <SdkButton aria-label={label} title={label} onClick={onClick} className="flex h-6 cursor-pointer items-center gap-1 rounded-md border-0 bg-secondary px-1.5 font-mono text-caption2 text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
       {done ? <Icon name="checkmark" size={12} sw={2.6} className="text-success" /> : children}
-    </PlainButton>
+    </SdkButton>
   );
 }
 

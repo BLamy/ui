@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useOptionalWorkbenchShell } from './workbench/workbench-shell';
 import { Button as UiButton } from '@/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { PlainButton as Button } from '@/components/ui/plain-button';
+import { Button } from '@ui-sdk/react/button';
 
 /* ══ Thread sidebar parts ══
    <ThreadSidebar>

@@ -6,7 +6,7 @@ import { useRef, useState, type ReactNode, type RefObject } from 'react';
 import { useShortcut, useShortcutHint } from '@ui-sdk/react/shortcuts';
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@ui-sdk/react/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon, type IconShape } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { nodeLabel, specOf } from './catalog';
@@ -184,13 +184,13 @@ function NodeHeader({ ctx }: { ctx: NodeCtx }) {
       <TextInput label="Name" value={node.name ?? ''} placeholder={nodeLabel({ ...node, name: undefined }, b.doc)} onCommit={(v) => ctx.update((n) => ({ ...n, name: v.trim() || undefined }))} />
       {path.length > 1 ? (
         <nav aria-label="Path" className="flex min-w-0 flex-wrap items-center gap-0.5 text-caption2 text-muted-foreground">
-          <PlainButton onClick={() => b.select({ kind: 'scene', scene: scene.id })} className="cursor-pointer rounded border-0 bg-transparent px-0.5 text-muted-foreground outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring">{scene.name}</PlainButton>
+          <SdkButton onClick={() => b.select({ kind: 'scene', scene: scene.id })} className="cursor-pointer rounded border-0 bg-transparent px-0.5 text-muted-foreground outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring">{scene.name}</SdkButton>
           {path.map((n) => (
             <span key={n.id} className="flex items-center gap-0.5">
               <Icon name="chevron-right" size={9} sw={2.6} />
-              <PlainButton onClick={() => b.selectNode(n.id)} className={cn('max-w-28 cursor-pointer truncate rounded border-0 bg-transparent px-0.5 outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring', n.id === node.id ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
+              <SdkButton onClick={() => b.selectNode(n.id)} className={cn('max-w-28 cursor-pointer truncate rounded border-0 bg-transparent px-0.5 outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring', n.id === node.id ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
                 {nodeLabel(n, b.doc)}
-              </PlainButton>
+              </SdkButton>
             </span>
           ))}
         </nav>
@@ -207,12 +207,12 @@ function MultiHeader({ count }: { count: number }) {
       <span className="text-footnote font-semibold">{count} elements</span>
       <div className="flex flex-wrap gap-1.5">
         {(['vertical', 'horizontal', 'overlay'] as const).map((axis) => (
-          <PlainButton key={axis} onClick={() => b.embed(ids, axis)} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
+          <SdkButton key={axis} onClick={() => b.embed(ids, axis)} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">
             Embed in {axis === 'vertical' ? 'V' : axis === 'horizontal' ? 'H' : 'Overlay'} Stack
-          </PlainButton>
+          </SdkButton>
         ))}
-        <PlainButton onClick={() => b.duplicate(ids)} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">Duplicate</PlainButton>
-        <PlainButton onClick={() => b.remove(ids)} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium text-destructive outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">Delete</PlainButton>
+        <SdkButton onClick={() => b.duplicate(ids)} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">Duplicate</SdkButton>
+        <SdkButton onClick={() => b.remove(ids)} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium text-destructive outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">Delete</SdkButton>
       </div>
     </div>
   );

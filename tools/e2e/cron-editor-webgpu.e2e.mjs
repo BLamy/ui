@@ -27,12 +27,15 @@ test.beforeEach(async ({ page }) => {
   test.skip(!adapter, 'this Chromium cannot create a WebGPU adapter');
 });
 
-test('the box is the only input: no note, no expression field, no presets', async ({ page }) => {
+test('the box leads: the expression it chose is shown, and the raw editor opens on "Edit expression"', async ({ page }) => {
   await expect(box(page)).toBeEnabled(SLOW);
-  await expect(page.locator('[data-slot=cron-editor-note]')).toHaveCount(0);
+  await expect(page.locator('[data-slot=cron-editor-expression]')).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Cron expression' })).toHaveCount(0);
   await expect(page.locator('[data-slot=cron-editor-fields], [data-slot=cron-editor-presets]')).toHaveCount(0);
   await expect(page.locator('[data-slot=cron-editor-next]')).toBeVisible();
+  await page.getByRole('button', { name: 'Edit expression' }).click();
+  await expect(page.getByRole('textbox', { name: 'Cron expression' })).toBeVisible();
+  await expect(page.locator('[data-slot=cron-editor-presets]')).toBeVisible();
 });
 
 test('English becomes the value as you type, and the next runs follow', async ({ page }) => {

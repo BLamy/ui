@@ -6,7 +6,6 @@ import type { ReactNode } from 'react';
 import { SizeClassProvider, usePresentation, useSizeClass, useSizeClassScope, type SizeClass } from '@/lib/container';
 import { BLProvider } from '@/lib/theme';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Credenza, CredenzaContent, CredenzaTitle } from '@/components/ui/credenza';
 
 (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
 
@@ -142,16 +141,16 @@ describe('BLProvider as a layer host and a size-class scope', () => {
   });
 });
 
-describe('Credenza with no trigger', () => {
+describe('Dialog with no trigger (the default "auto")', () => {
   function Gate({ open, sizeClass }: { open: boolean; sizeClass?: SizeClass }) {
     return (
       <BLProvider>
         <SizeClassProvider value={sizeClass}>
-          <Credenza open={open}>
-            <CredenzaContent>
-              <CredenzaTitle>Sign in</CredenzaTitle>
-            </CredenzaContent>
-          </Credenza>
+          <Dialog open={open}>
+            <DialogContent variant="tray">
+              <DialogTitle>Sign in</DialogTitle>
+            </DialogContent>
+          </Dialog>
         </SizeClassProvider>
       </BLProvider>
     );

@@ -21,7 +21,7 @@ function Notes() {
         </Button>
       </div>
       <Field disabled={meta.status !== 'ready'}>
-        <FieldLabel variant="field" className="text-foreground/70">Private note</FieldLabel>
+        <FieldLabel className="text-foreground/70">Private note</FieldLabel>
         <Textarea size="lg" value={note} onValueChange={(text) => void setNote(text)} placeholder="Reload the page, then unlock to read this again." />
       </Field>
     </div>

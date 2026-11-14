@@ -12,20 +12,22 @@ import {
   type CommandProps, type ListSeparator, type SearchFilter,
 } from '@ui-sdk/react/command';
 import { DialogContent } from '@ui-sdk/react/dialog';
-import { Dialog, DialogBackdrop, DialogTrigger, createDialogController, type DialogProps } from '@/components/ui/dialog';
+import { Dialog, DialogBackdrop, createDialogController, type DialogProps } from '@/components/ui/dialog';
 import { registerShortcut } from '@ui-sdk/react/shortcuts';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Button } from '@/components/ui/button';
-import { IconSwap } from '@/components/ui/icon-swap';
+import { EmptyState, type EmptyStateProps } from '@/components/ui/empty-state';
+import { Swap } from '@/components/ui/swap';
 import { Kbd } from '@/components/ui/kbd';
 import { Icon } from '@/lib/icon';
-import { selectableText } from '@/lib/primitives';
+import { sectionLabelVariants, selectableText } from '@/lib/primitives';
+import { shortcutKeys } from '@/lib/shortcut-text';
 import { scopeStyle, useThemeScopeProps } from '@/lib/theme';
 import { cn, cx } from '@/lib/utils';
 
 /* ══ CommandMenu — UI SDK's Command with the kit's palette look ══
    <CommandMenuDialog>
-     <CommandMenuDialogTrigger shortcut="mod+k" className={buttonVariants({ variant: 'secondary' })}>Search…</CommandMenuDialogTrigger>
+     <DialogTrigger shortcut="mod+k" render={<Button variant="secondary" />}>Search…</DialogTrigger>
      <CommandMenuDialogContent aria-label="Command menu">
        <CommandMenu onAction={run}>
          <CommandMenuInput placeholder="Search commands…" />
@@ -34,7 +36,7 @@ import { cn, cx } from '@/lib/utils';
            <CommandMenuPage>
              <CommandMenuGroup>
                <CommandMenuGroupLabel>Actions</CommandMenuGroupLabel>
-               <CommandMenuItem value="new-thread" icon="square-pencil" title="New thread" shortcut="mod+shift+o" />
+               <CommandMenuItem value="new-thread" icon="square-pencil" shortcut="mod+shift+o">New thread</CommandMenuItem>
                <CommandMenuItem value="new-thread-in" icon="folder-plus" title="New thread in…" page="projects" />
              </CommandMenuGroup>
            </CommandMenuPage>
@@ -385,18 +387,18 @@ export function CommandMenuInput({
           onClick={() => { controller.pop({ reason: 'back' }); }}
           className="-m-1.5 size-8 shrink-0 rounded-lg p-0 hover:not-data-disabled:bg-accent hover:text-foreground"
         >
-          <IconSwap id="back"><Icon name="arrow-left" size={18} sw={2} /></IconSwap>
+          <Swap effect="pop" value="back"><Icon name="arrow-left" size={18} sw={2} /></Swap>
         </Button>
       ) : (
         <span aria-hidden="true" className="-m-1.5 grid size-8 shrink-0 place-items-center text-muted-foreground">
-          <IconSwap id="search"><Icon name="magnifier" size={18} sw={1.8} /></IconSwap>
+          <Swap effect="pop" value="search"><Icon name="magnifier" size={18} sw={1.8} /></Swap>
         </span>
       )}
       {pageTitle && below && settings?.title ? (
         <span
           key={settings.title}
           data-slot="command-page-title"
-          className={cn(ARRIVE, 'inline-flex h-6 shrink-0 items-center rounded-md bg-secondary px-2 text-[12.5px] font-medium whitespace-nowrap text-secondary-foreground group-data-direction/command:starting:translate-x-2')}
+          className={cn(ARRIVE, 'inline-flex h-6 shrink-0 items-center rounded-md bg-secondary px-2 text-footnote font-medium whitespace-nowrap text-secondary-foreground group-data-direction/command:starting:translate-x-2')}
         >
           {settings.title}
         </span>
@@ -590,7 +592,10 @@ export function CommandMenuGroupLabel({ className, ...props }: ComponentProps<ty
   return (
     <CommandGroupLabel
       className={cx(
-        'sticky top-0 z-1 col-span-full bg-(--command-heading-surface,var(--command-surface)) px-3 pt-2 pb-1.5 text-[12.5px] font-medium text-muted-foreground group-data-columns/command-group:-mb-1 group-data-[sticky-headings=false]/command-list:static group-data-[sticky-headings=false]/command-list:bg-transparent',
+        [
+          sectionLabelVariants({ variant: 'menu' }),
+          'sticky top-0 z-1 col-span-full bg-(--command-heading-surface,var(--command-surface)) px-3 pt-2 pb-1.5 group-data-columns/command-group:-mb-1 group-data-[sticky-headings=false]/command-list:static group-data-[sticky-headings=false]/command-list:bg-transparent',
+        ],
         className,
       )}
       {...props}
@@ -614,15 +619,9 @@ export function CommandMenuShortcut({ className, children, ...props }: Component
   );
 }
 
-const APPLE_ORDER = '⌃⌥⇧⌘';
-
+/* One cap per key, modifiers in Apple's order (the kit's shared rendering, `lib/shortcut-text`). */
 function keycaps(text: string) {
-  // UI SDK wraps the keys in direction isolates; the caps sit in a left-to-right row instead.
-  const keys = text.replace(/[⁦-⁩]/g, '');
-  const [, modifiers = '', key = ''] = /^([⌃⌥⇧⌘]*)(.*)$/u.exec(keys) ?? [];
-  // Apple's modifier order (⌃⌥⇧⌘), whatever order the shortcut was written in.
-  const caps = modifiers ? [...[...modifiers].sort((a, b) => APPLE_ORDER.indexOf(a) - APPLE_ORDER.indexOf(b)), key] : keys.split(/\+(?=.)/);
-  return caps.filter(Boolean).map((cap, i) => <kbd key={i} className="min-w-3 text-center font-sans font-normal">{cap}</kbd>);
+  return shortcutKeys(text).map((cap, i) => <kbd key={i} className="min-w-3 text-center font-sans font-normal">{cap}</kbd>);
 }
 
 /** A command's leading icon. */
@@ -667,9 +666,11 @@ export type CommandMenuItemProps = Omit<ComponentProps<typeof CommandItem>, 'tit
   value?: string;
   /** Leading icon: an Icon name or any node (a monogram, an image). */
   icon?: string | ReactNode;
-  /** The row's text. A string shows what the search matched in bold. */
+  /** The row's text. A string shows what the search matched in bold. Plain-text children are the same thing:
+      `<CommandMenuItem>New thread</CommandMenuItem>`. */
   title?: ReactNode;
-  /** Second line (a path, an id). Searched with the title unless `label` says what to search. */
+  /** Second line (a path, an id). Searched with the title unless `label` says what to search. Screen readers hear it
+      as the option's description, not as part of its name. */
   description?: ReactNode;
   /** Trailing node (a Badge, or a CommandMenuShortcut with its own `shortcut` to show keys the app handles
       itself). Replaces the command's own shortcut keys. */
@@ -680,7 +681,8 @@ export type CommandMenuItemProps = Omit<ComponentProps<typeof CommandItem>, 'tit
   dimmed?: boolean;
   /** Overrides the menu's `closeOnSelect` for this command. */
   closeOnSelect?: boolean;
-  /** Custom row content, or a function of the command's state (replaces icon / title / description / trailing). */
+  /** Plain text: the row's title. Any other node, or a function of the command's state, is a custom row (it replaces
+      icon / title / description / trailing). In a `columns` grid, text is a custom cell too (an emoji). */
   children?: ReactNode | ((state: CommandItemState) => ReactNode);
 };
 
@@ -693,7 +695,14 @@ export function CommandMenuItem({
   const { closes } = useHandle('CommandMenuItem');
   const columns = useContext(ColumnsContext);
   const generated = useId();
-  const key = value ?? (typeof title === 'string' ? title : generated);
+  // Text children are the title, as in every other menu row; in a grid a text cell stays a custom cell.
+  const textTitle = typeof children === 'string' && columns === 1;
+  const heading = textTitle ? children : title;
+  const custom = textTitle ? null : children;
+  const key = value ?? (typeof heading === 'string' ? heading : generated);
+  // The description describes the option; its name stays the title.
+  const described = heading != null && description != null && custom == null;
+  const ids = { title: `${generated}-title`, description: `${generated}-description` };
   useLayoutEffect(() => {
     if (closeOnSelect === undefined) return;
     closes.set(key, closeOnSelect);
@@ -704,6 +713,8 @@ export function CommandMenuItem({
       value={key}
       data-value={key}
       data-dimmed={dimmed ? '' : undefined}
+      aria-labelledby={described ? ids.title : undefined}
+      aria-describedby={described ? ids.description : undefined}
       className={cx(
         [
           'group/command-item relative flex min-w-0 cursor-default items-center gap-3 rounded-ctl px-3 text-subhead text-foreground outline-none select-none [&[hidden]]:hidden',
@@ -716,15 +727,15 @@ export function CommandMenuItem({
     >
       {(state: CommandItemState) => (
         <Row id={key} highlighted={state.highlighted}>
-          {children != null ? (typeof children === 'function' ? children(state) : children) : (
+          {custom != null ? (typeof custom === 'function' ? custom(state) : custom) : (
             <>
               {icon != null ? <CommandMenuItemIcon>{typeof icon === 'string' ? <Icon name={icon} size={19} sw={1.7} /> : icon}</CommandMenuItemIcon> : null}
-              {title != null || description != null ? (
+              {heading != null || description != null ? (
                 <span className="flex min-w-0 flex-1 flex-col">
-                  {typeof title === 'string'
-                    ? <CommandMenuItemText>{title}</CommandMenuItemText>
-                    : title != null ? <span data-slot="command-item-title" className="truncate leading-[20px]">{title}</span> : null}
-                  {description != null ? <CommandMenuItemDescription>{description}</CommandMenuItemDescription> : null}
+                  {typeof heading === 'string'
+                    ? <CommandMenuItemText id={ids.title}>{heading}</CommandMenuItemText>
+                    : heading != null ? <span id={ids.title} data-slot="command-item-title" className="truncate leading-[20px]">{heading}</span> : null}
+                  {description != null ? <CommandMenuItemDescription id={ids.description}>{description}</CommandMenuItemDescription> : null}
                 </span>
               ) : null}
               {trailing ?? (props.shortcut ? <CommandMenuShortcut /> : <Numbered id={key} />)}
@@ -793,11 +804,24 @@ export function CommandMenuItems({ items }: { items: CommandMenuData }) {
 
 /* ── CommandMenuEmpty / CommandMenuStatus / CommandMenuSeparator ── */
 
-/** Shown, and announced, while no command matches. It goes beside the list, not in it. */
-export function CommandMenuEmpty({ className, children = 'No results', ...props }: ComponentProps<typeof CommandEmpty>) {
+export type CommandMenuEmptyProps = Omit<ComponentProps<typeof CommandEmpty>, 'title'> & Pick<EmptyStateProps, 'icon' | 'description' | 'action'> & {
+  /** What is missing (default "No results"). Text children say the same thing. */
+  title?: ReactNode;
+};
+
+/** Shown, and announced, while no command matches: the kit's `EmptyState` (`icon`, `title`, `description`,
+    `action`). It goes beside the list, not in it. */
+export function CommandMenuEmpty({ className, icon, title, description, action, children, ...props }: CommandMenuEmptyProps) {
   return (
-    <CommandEmpty className={cx('py-10 text-center text-detail text-muted-foreground not-data-empty:hidden', className)} {...props}>
-      {children}
+    <CommandEmpty className={cx('not-data-empty:hidden', className)} {...props}>
+      <EmptyState
+        size="sm"
+        icon={icon}
+        title={title ?? (typeof children === 'function' ? undefined : children) ?? 'No results'}
+        description={description}
+        action={action}
+        className="py-10"
+      />
     </CommandEmpty>
   );
 }
@@ -852,7 +876,7 @@ export function CommandMenuFooter({ legend = true, className, children, onMouseD
     >
       {items.map((item) => (
         <span key={item.id} className={cn(ARRIVE, 'inline-flex items-center gap-1.5 whitespace-nowrap group-data-direction/command:starting:scale-90')}>
-          {item.keys.map((key, i) => <Kbd key={i} className="h-6 min-w-6 rounded-md px-1.5 text-[12.5px] text-foreground">{key}</Kbd>)}
+          {item.keys.map((key, i) => <Kbd key={i} className="h-6 min-w-6 rounded-md px-1.5 text-footnote text-foreground">{key}</Kbd>)}
           <span>{item.label}</span>
         </span>
       ))}
@@ -873,30 +897,26 @@ export function CommandMenuDialog({ controller, ...props }: CommandMenuDialogPro
   const dialog = controller ?? own;
   return (
     <DialogContext.Provider value={dialog}>
-      <Dialog controller={dialog} {...props} />
+      <Dialog controller={dialog} presentation="dialog" {...props} />
     </DialogContext.Provider>
   );
 }
 
-/** The button that opens the palette. `shortcut="mod+k"` opens it from anywhere on the page; give it the kit's
-    look with `render={<Button … />}`. */
-export const CommandMenuDialogTrigger = DialogTrigger;
-
 export type CommandMenuDialogContentProps = ComponentProps<typeof DialogContent> & {
-  /** Scrim classes. */
-  overlayClassName?: ComponentProps<typeof DialogBackdrop>['className'];
+  /** Classes for the dialog's backdrop (the scrim). */
+  backdropClassName?: ComponentProps<typeof DialogBackdrop>['className'];
 };
 
 /** The scrim and the dialog itself, which hangs from the top rather than centring, so the card's height can spring
     between pages without the field moving. Put the CommandMenu inside; name it with `aria-label`. */
 export function CommandMenuDialogContent({
-  className, style, overlayClassName, initialFocus = '[data-slot="command-input"]', children, ...props
+  className, style, backdropClassName, initialFocus = '[data-slot="command-input"]', children, ...props
 }: CommandMenuDialogContentProps) {
   const scope = useThemeScopeProps();
   const named = props['aria-label'] !== undefined || props['aria-labelledby'] !== undefined;
   return (
     <>
-      <DialogBackdrop className={overlayClassName} />
+      <DialogBackdrop className={backdropClassName} />
       <DialogContent
         aria-label={named ? undefined : 'Command menu'}
         data-theme-scope={scope['data-theme-scope']}

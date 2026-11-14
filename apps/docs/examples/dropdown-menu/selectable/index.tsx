@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -33,7 +33,7 @@ export default function Selectable() {
   return (
     <ThemeScope className="mx-auto grid max-w-sm justify-items-start gap-4">
       <DropdownMenu>
-        <DropdownMenuTrigger className={buttonVariants({ variant: 'secondary' })}>View options</DropdownMenuTrigger>
+        <DropdownMenuTrigger render={<Button variant="secondary" />}>View options</DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuRadioGroup value={sort} onValueChange={setSort}>
             <DropdownMenuGroupLabel>Sort by</DropdownMenuGroupLabel>

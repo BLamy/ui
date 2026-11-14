@@ -2,7 +2,10 @@
 import { useState } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { AdaptivePane } from '@/components/ui/adaptive-pane';
+import {
+  AdaptivePane, AdaptivePaneClose, AdaptivePaneHeader, AdaptivePaneTitle, adaptivePanePageClass, type AdaptivePanePresentation,
+} from '@/components/ui/adaptive-pane';
+import { SizeClassProvider, type SizeClass } from '@/lib/container';
 
 beforeAll(() => {
   (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
@@ -37,7 +40,7 @@ const wide = (host: Element) => Object.defineProperty(host, 'clientWidth', { val
 
 describe('AdaptivePane resizing', () => {
   it('is a tab stop with its value range', () => {
-    const { container } = render(<div><AdaptivePane presentation="column" columnWidth={200} resizable minWidth={150} maxWidth={260}>x</AdaptivePane></div>);
+    const { container } = render(<div><AdaptivePane presentation="column" open columnWidth={200} resizable minWidth={150} maxWidth={260}>x</AdaptivePane></div>);
     wide(container.firstElementChild!);
     const handle = screen.getByRole('separator', { name: 'Resize pane' });
     expect(handle.tabIndex).toBe(0);
@@ -51,7 +54,7 @@ describe('AdaptivePane resizing', () => {
       renders += 1;
       return <p>body</p>;
     }
-    const { container } = render(<div><AdaptivePane presentation="column" columnWidth={200} resizable><Child /></AdaptivePane></div>);
+    const { container } = render(<div><AdaptivePane presentation="column" open columnWidth={200} resizable><Child /></AdaptivePane></div>);
     wide(container.firstElementChild!);
     const pane = container.querySelector<HTMLElement>('[data-slot=adaptive-pane]')!;
     pane.getBoundingClientRect = () => rect(200);
@@ -69,14 +72,14 @@ describe('AdaptivePane resizing', () => {
   });
 
   it('has no separator unless resizable', () => {
-    render(<AdaptivePane presentation="column" columnWidth={200}>x</AdaptivePane>);
+    render(<AdaptivePane presentation="column" open columnWidth={200}>x</AdaptivePane>);
     expect(screen.queryByRole('separator')).toBeNull();
   });
 
   it('resizes a column with the keyboard, clamps, and resets', () => {
     const onWidthsChange = vi.fn();
     const { container } = render(
-      <div><AdaptivePane presentation="column" columnWidth={200} resizable minWidth={150} maxWidth={260} onWidthsChange={onWidthsChange}>x</AdaptivePane></div>,
+      <div><AdaptivePane presentation="column" open columnWidth={200} resizable minWidth={150} maxWidth={260} onWidthsChange={onWidthsChange}>x</AdaptivePane></div>,
     );
     wide(container.firstElementChild!);
     const pane = container.querySelector<HTMLElement>('[data-slot=adaptive-pane]')!;
@@ -100,7 +103,7 @@ describe('AdaptivePane resizing', () => {
   it('widens a right-hand pane with the left arrow', () => {
     const onWidthsChange = vi.fn();
     const { container } = render(
-      <div><AdaptivePane presentation="column" side="right" columnWidth={200} resizable onWidthsChange={onWidthsChange}>x</AdaptivePane></div>,
+      <div><AdaptivePane presentation="column" open side="right" columnWidth={200} resizable onWidthsChange={onWidthsChange}>x</AdaptivePane></div>,
     );
     wide(container.firstElementChild!);
     container.querySelector<HTMLElement>('[data-slot=adaptive-pane]')!.getBoundingClientRect = () => rect(200);
@@ -111,7 +114,7 @@ describe('AdaptivePane resizing', () => {
   it('right to left, a start pane is on the right: its separator sits on the inline end and the left arrow widens it', () => {
     const onWidthsChange = vi.fn();
     const { container } = render(
-      <div style={{ direction: 'rtl' }}><AdaptivePane presentation="column" columnWidth={200} resizable onWidthsChange={onWidthsChange}>x</AdaptivePane></div>,
+      <div style={{ direction: 'rtl' }}><AdaptivePane presentation="column" open columnWidth={200} resizable onWidthsChange={onWidthsChange}>x</AdaptivePane></div>,
     );
     wide(container.firstElementChild!);
     container.querySelector<HTMLElement>('[data-slot=adaptive-pane]')!.getBoundingClientRect = () => rect(200);
@@ -123,7 +126,7 @@ describe('AdaptivePane resizing', () => {
 
   it('a canceled change leaves the width alone', () => {
     const { container } = render(
-      <div><AdaptivePane presentation="column" columnWidth={200} resizable onWidthsChange={(_w, details) => details.cancel()}>x</AdaptivePane></div>,
+      <div><AdaptivePane presentation="column" open columnWidth={200} resizable onWidthsChange={(_w, details) => details.cancel()}>x</AdaptivePane></div>,
     );
     wide(container.firstElementChild!);
     const pane = container.querySelector<HTMLElement>('[data-slot=adaptive-pane]')!;
@@ -256,5 +259,273 @@ describe('AdaptivePane presentations', () => {
     expect(container.querySelector('[data-slot=adaptive-pane-edge]')).toBeNull();
     rerender(<AdaptivePane presentation="drawer" open={false} swipeToOpen={false}>x</AdaptivePane>);
     expect(container.querySelector('[data-slot=adaptive-pane-edge]')).toBeNull();
+  });
+});
+
+describe('AdaptivePane auto', () => {
+  function Scoped({ sizeClass, side = 'end' as const }: { sizeClass: SizeClass; side?: 'start' | 'end' }) {
+    return (
+      <SizeClassProvider value={sizeClass}>
+        <div><AdaptivePane side={side} open aria-label="Activity">x</AdaptivePane></div>
+      </SizeClassProvider>
+    );
+  }
+  const shown = () => document.querySelector('[data-slot=adaptive-pane]')!.getAttribute('data-presentation');
+
+  it('is a column in a regular scope and a drawer in a medium one', () => {
+    const { rerender } = render(<Scoped sizeClass="regular" />);
+    expect(shown()).toBe('column');
+    rerender(<Scoped sizeClass="medium" />);
+    expect(shown()).toBe('drawer');
+  });
+
+  it('in a compact scope, an end pane is pushed and a start pane is a drawer', () => {
+    const { rerender } = render(<Scoped sizeClass="compact" />);
+    expect(shown()).toBe('push');
+    rerender(<Scoped sizeClass="compact" side="start" />);
+    expect(shown()).toBe('drawer');
+  });
+
+  it('outside every scope is a column', () => {
+    render(<div><AdaptivePane open>x</AdaptivePane></div>);
+    expect(shown()).toBe('column');
+  });
+});
+
+describe('AdaptivePane header parts', () => {
+  function Pane({ presentation, onOpenChange, open = true }: { presentation: AdaptivePanePresentation; onOpenChange?: (open: boolean, details: { reason: string }) => void; open?: boolean }) {
+    return (
+      <div>
+        <AdaptivePane side="end" presentation={presentation} open={open} onOpenChange={onOpenChange}>
+          <AdaptivePaneHeader>
+            <AdaptivePaneTitle>Activity</AdaptivePaneTitle>
+            <AdaptivePaneClose backLabel="Inbox" />
+          </AdaptivePaneHeader>
+          <p>body</p>
+        </AdaptivePane>
+      </div>
+    );
+  }
+
+  it('names the drawer by its title, and its × says what it closes', () => {
+    const onOpenChange = vi.fn();
+    render(<Pane presentation="drawer" onOpenChange={onOpenChange} />);
+    const dialog = screen.getByRole('dialog', { name: 'Activity' });
+    expect(dialog.getAttribute('data-variant')).toBe('panel');
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Close Activity' })); });
+    expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'close-press' }));
+  });
+
+  it('closes a column from its ×, and a closed column is out of sight and of the tree', () => {
+    const onOpenChange = vi.fn();
+    const { rerender } = render(<Pane presentation="column" onOpenChange={onOpenChange} />);
+    const root = document.querySelector<HTMLElement>('[data-slot=adaptive-pane]')!;
+    expect(root.hasAttribute('hidden')).toBe(false);
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Close Activity' })); });
+    expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'close-press' }));
+    rerender(<Pane presentation="column" open={false} onOpenChange={onOpenChange} />);
+    expect(root.hasAttribute('hidden')).toBe(true);
+    // The kit ships no preflight: the display class must not beat the `hidden` attribute.
+    expect(root.className.split(' ')).toContain('hidden');
+    expect(root.hasAttribute('data-closed')).toBe(true);
+  });
+
+  it('in a push, the header is the bar: the back button leads, named by where it goes', () => {
+    render(<Pane presentation="push" />);
+    const header = document.querySelector('[data-slot=adaptive-pane-header]')!;
+    expect(header.getAttribute('data-presentation')).toBe('push');
+    const back = screen.getByRole('button', { name: 'Inbox' });
+    expect(back.className).toContain('col-start-1');
+    expect(screen.getByRole('region', { name: 'Activity' })).toBeTruthy();
+  });
+
+  it('takes className on the pane box in every presentation, and a function of its state', () => {
+    const cls = ({ presentation }: { presentation: string }) => `pane-${presentation}`;
+    const { rerender } = render(<div><AdaptivePane presentation="column" open className={cls}>x</AdaptivePane></div>);
+    expect(document.querySelector('[data-slot=adaptive-pane]')!.className).toContain('pane-column');
+    rerender(<div><AdaptivePane presentation="drawer" open aria-label="Pane" className={cls}>x</AdaptivePane></div>);
+    expect(screen.getByRole('dialog', { name: 'Pane' }).className).toContain('pane-drawer');
+    rerender(<div><AdaptivePane presentation="push" open aria-label="Pane" className={cls}>x</AdaptivePane></div>);
+    expect(screen.getByRole('region', { name: 'Pane' }).className).toContain('pane-push');
+  });
+});
+
+/* ── The push (a pane pushed over a compact host, NavigationStack-style) ── */
+
+function Comment() {
+  const [text, setText] = useState('');
+  return <input aria-label="Comment" value={text} onChange={(e) => setText(e.target.value)} />;
+}
+
+function Host({ presentation = 'auto', onOpenChange, open = true, sizeClass = 'compact' }: {
+  presentation?: AdaptivePanePresentation | 'auto'; onOpenChange?: (open: boolean, details: { reason: string; cancel: () => void }) => void; open?: boolean; sizeClass?: SizeClass;
+}) {
+  return (
+    <SizeClassProvider value={sizeClass}>
+      <div data-testid="host">
+        <main className={adaptivePanePageClass}>Page <button type="button">Under</button></main>
+        <AdaptivePane side="end" presentation={presentation} open={open} onOpenChange={onOpenChange}>
+          <AdaptivePaneHeader>
+            <AdaptivePaneTitle>Activity</AdaptivePaneTitle>
+            <AdaptivePaneClose backLabel="Inbox" />
+          </AdaptivePaneHeader>
+          <Comment />
+        </AdaptivePane>
+      </div>
+    </SizeClassProvider>
+  );
+}
+
+/* Touch events a set time apart, so a swipe's speed is known. */
+function touch(type: string, x: number, y: number, ms = 50) {
+  time += ms;
+  const event = new PointerEvent(type, {
+    pointerId: 1, pointerType: 'touch', isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1,
+    bubbles: true, cancelable: true, clientX: x, clientY: y,
+  });
+  Object.defineProperty(event, 'timeStamp', { value: time });
+  return event;
+}
+
+const paneRoot = () => document.querySelector<HTMLElement>('[data-slot=adaptive-pane]')!;
+
+describe('AdaptivePane push', () => {
+  it('closing a push gives focus back to what opened it', async () => {
+    function Opener() {
+      const [open, setOpen] = useState(false);
+      return (
+        <div>
+          <main className={adaptivePanePageClass}><button type="button" onClick={() => setOpen(true)}>Open activity</button></main>
+          <AdaptivePane side="end" presentation="push" open={open} onOpenChange={setOpen}>
+            <AdaptivePaneHeader><AdaptivePaneTitle>Activity</AdaptivePaneTitle><AdaptivePaneClose backLabel="Inbox" /></AdaptivePaneHeader>
+            <Comment />
+          </AdaptivePane>
+        </div>
+      );
+    }
+    render(<Opener />);
+    const opener = screen.getByRole('button', { name: 'Open activity' });
+    opener.focus();
+    act(() => { fireEvent.click(opener); });
+    await act(() => new Promise<void>((resolve) => setTimeout(resolve, 50)));
+    expect(screen.getByRole('region', { name: 'Activity' }).contains(document.activeElement)).toBe(true);
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Inbox' })); });
+    await act(() => new Promise<void>((resolve) => setTimeout(resolve, 50)));
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it('pushes over a compact host, covers and inerts the page under it, and pops from its back button', () => {
+    const onOpenChange = vi.fn();
+    render(<Host onOpenChange={onOpenChange} />);
+    expect(paneRoot().getAttribute('data-presentation')).toBe('push');
+    const host = screen.getByTestId('host');
+    // The page under is covered: one variable on the host, and the page leaves the tab order and the tree.
+    expect(host.style.getPropertyValue('--adaptive-pane-under')).toBe('1');
+    const main = screen.getByRole('main', { hidden: true });
+    expect(main.getAttribute('style')).toBeNull();
+    expect(main.hasAttribute('inert')).toBe(true);
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Inbox' })); });
+    expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'close-press' }));
+  });
+
+  it('gives the page back when the push closes', () => {
+    const { rerender } = render(<Host />);
+    const main = screen.getByRole('main', { hidden: true });
+    expect(main.hasAttribute('inert')).toBe(true);
+    rerender(<Host open={false} />);
+    expect(main.hasAttribute('inert')).toBe(false);
+    expect(screen.getByTestId('host').style.getPropertyValue('--adaptive-pane-under')).toBe('');
+  });
+
+  it('pops from a swipe off its leading edge, scrubbing the page under it, and settles on one spring', async () => {
+    const atRelease: boolean[] = [];
+    const onOpenChange = vi.fn<(open: boolean, details: unknown) => void>(() => {
+      atRelease.push(screen.getByTestId('host').hasAttribute('data-adaptive-pane-settling'), paneRoot().hasAttribute('data-swipe-settling'));
+    });
+    function Controlled() {
+      const [open, setOpen] = useState(true);
+      return <Host open={open} onOpenChange={(next, details) => { onOpenChange(next, details); setOpen(next); }} />;
+    }
+    render(<Controlled />);
+    const host = screen.getByTestId('host');
+    const panel = screen.getByRole('region', { name: 'Activity' });
+    panel.getBoundingClientRect = () => new DOMRect(0, 0, 390, 600);
+    await act(async () => {
+      panel.dispatchEvent(touch('pointerdown', 10, 300, 0));
+      for (const x of [40, 120, 200]) {
+        document.dispatchEvent(touch('pointermove', x, 300));
+        await frame();
+      }
+    });
+    expect(panel.hasAttribute('data-swiping')).toBe(true);
+    expect(paneRoot().hasAttribute('data-swiping')).toBe(true);
+    expect(host.hasAttribute('data-adaptive-pane-swiping')).toBe(true);
+    const under = Number(host.style.getPropertyValue('--adaptive-pane-under'));
+    expect(under).toBeGreaterThan(0);
+    expect(under).toBeLessThan(1);
+    await act(async () => {
+      document.dispatchEvent(touch('pointermove', 260, 300));
+      document.dispatchEvent(touch('pointerup', 260, 300));
+    });
+    expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'swipe' }));
+    expect(host.hasAttribute('data-adaptive-pane-swiping')).toBe(false);
+    expect(atRelease).toEqual([true, true]);
+    expect(host.style.getPropertyValue('--adaptive-pane-under')).toBe('');
+    await act(async () => { await frame(); await frame(); });
+    expect(host.hasAttribute('data-adaptive-pane-settling')).toBe(false);
+  });
+
+  it('a refused swipe springs back and covers the page again', async () => {
+    const onOpenChange = vi.fn((_open: boolean, details: { cancel?: () => void }) => details.cancel?.());
+    render(<Host onOpenChange={onOpenChange} />);
+    const host = screen.getByTestId('host');
+    const panel = screen.getByRole('region', { name: 'Activity' });
+    panel.getBoundingClientRect = () => new DOMRect(0, 0, 390, 600);
+    await act(async () => {
+      panel.dispatchEvent(touch('pointerdown', 10, 300, 0));
+      for (const x of [40, 160, 260]) {
+        document.dispatchEvent(touch('pointermove', x, 300));
+        await frame();
+      }
+      document.dispatchEvent(touch('pointerup', 260, 300));
+    });
+    expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'swipe' }));
+    expect(paneRoot().getAttribute('data-presentation')).toBe('push');
+    expect(host.style.getPropertyValue('--adaptive-pane-under')).toBe('1');
+  });
+
+  it('right to left, the push swipes from the right edge and moves the way the finger goes', async () => {
+    const onOpenChange = vi.fn();
+    render(<div dir="rtl" style={{ direction: 'rtl' }}><Host onOpenChange={onOpenChange} /></div>);
+    const panel = screen.getByRole('region', { name: 'Activity' });
+    panel.getBoundingClientRect = () => new DOMRect(0, 0, 390, 600);
+    expect(panel.className).toContain('rtl:[--stack-dir:-1]');
+    expect(panel.className).toContain('data-swiping:translate-x-[calc(var(--stack-progress)*100%*var(--stack-dir,1))]');
+    expect(panel.className).toContain('data-starting-style:translate-x-[calc(103%*var(--stack-dir,1))]');
+    expect(adaptivePanePageClass).toContain('rtl:[--stack-dir:-1]');
+    await act(async () => {
+      panel.dispatchEvent(touch('pointerdown', 380, 300, 0));
+      for (const x of [340, 260, 180]) {
+        document.dispatchEvent(touch('pointermove', x, 300));
+        await frame();
+      }
+    });
+    expect(panel.hasAttribute('data-swiping')).toBe(true);
+    expect(Number(panel.style.getPropertyValue('--stack-progress'))).toBeGreaterThan(0.4);
+    await act(async () => {
+      document.dispatchEvent(touch('pointerup', 120, 300));
+    });
+    expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'swipe' }));
+  });
+
+  it('keeps its children mounted from drawer to push to column', () => {
+    const { rerender } = render(<Host presentation="drawer" />);
+    const input = screen.getByRole<HTMLInputElement>('textbox', { name: 'Comment' });
+    fireEvent.change(input, { target: { value: 'kept' } });
+    rerender(<Host presentation="push" />);
+    expect(screen.getByRole('textbox', { name: 'Comment' })).toBe(input);
+    rerender(<Host presentation="column" />);
+    expect(screen.getByRole('textbox', { name: 'Comment' })).toBe(input);
+    expect(input.value).toBe('kept');
   });
 });

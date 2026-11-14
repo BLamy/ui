@@ -31,8 +31,8 @@ Documented on [Layout hooks](https://blamy.github.io/ui/#/hooks-layout).
 | `useNavigationStack` | the stack's controller: `{ push, pop, popTo, replace, refresh, getPages }` | a `NavigationStack`; `null` outside | public |
 | `useSidebar` | `{ open, setOpen, toggle, sizeClass, compact }` | `SidebarProvider`; throws outside | public |
 | `useSidebarCollapsed` | whether the enclosing sidebar is collapsed to its icon rail | a `Sidebar`; `false` outside | public |
-| `useTabView` | `{ orientation, placement, variant }` | `TabView`; defaults outside | public |
-| `useTabViewTab` | the tab's UI SDK state, `{ selected, disabled }` | the content of a `TabViewTab`; `null` outside | public |
+| `useTabs` | `{ variant, side, orientation }` | `Tabs`; `null` outside | public |
+| `useTabsTab` | the tab's UI SDK state, `{ selected, disabled }` | the content of a `TabsTab`; `null` outside | public |
 | `useFloatingSheet` | `{ open, setOpen, progress, peek, minimized, setMinimized }` | `FloatingSheet`; throws outside | public |
 | `useHideOnScroll` | `boolean` | nothing (takes the scroller's ref) | public |
 | `useFloatingChat` | `{ open, setOpen, progress, composing, minimized, … }` | `FloatingChat`; throws outside | public |
@@ -122,11 +122,11 @@ Each is documented on the page of the component or module it belongs to.
 
 | Hook | Returns | Needs | Export | Documented on |
 | --- | --- | --- | --- | --- |
-| `useTimeParse` | `{ result, pending, … }` for a line of English | nothing (loads `gpu-time` on first use) | public | [TimeInput](https://blamy.github.io/ui/#/time-input) |
+| `useTimeParse` | `{ result, pending, … }` for a line of English | nothing (loads `gpu-time` on first use) | public | [NaturalTimeInput](https://blamy.github.io/ui/#/natural-time-input) |
 | `useCronParse` | `{ support, match, pending, … }` for a line of English | nothing (loads `gpu-cron`; needs WebGPU) | public | [CronEditor](https://blamy.github.io/ui/#/cron-editor) |
 | `useFilters` | the controlled filter list and its actions | nothing | public | [Filter](https://blamy.github.io/ui/#/filter) |
 | `useFilterBar` | the filter bar's state and actions | `FilterBar`; throws outside | public | [Filter](https://blamy.github.io/ui/#/filter) |
-| `useFilterQuery` | a natural-language query turned into filters | nothing (loads the vendored gpu-query model) | public | [FilterInput](https://blamy.github.io/ui/#/filter-input) |
+| `useFilterQuery` | a natural-language query turned into filters | nothing (loads the vendored gpu-query model) | public | [Filter](https://blamy.github.io/ui/#/filter) |
 | `useFileUpload` | `{ files, add, remove, retry, … }` | nothing | public | [useFileUpload](https://blamy.github.io/ui/#/use-file-upload) |
 | `useFilePreview` | an object URL for a file, revoked on unmount | nothing | public | [useFileUpload](https://blamy.github.io/ui/#/use-file-upload) |
 | `useVault`, `useVaultState` | the passkey vault and its state | `VaultProvider`; throws outside | public | [Passkey vault](https://blamy.github.io/ui/#/passkey-vault) |
@@ -142,7 +142,7 @@ BL UI is built on [UI SDK](https://blamy.github.io/ui/#/ui-sdk), and the behavio
 
 ## Conventions
 
-- **Context hooks fail loudly or quietly, by design.** A hook whose component cannot work without it (`useSplitView`, `useComposer`, `useCommandMenu`) throws an error that names the component to wrap it in. A hook that only adds information (`useSplitViewColumn`, `useSplitViewBack`, `useTabViewTab`, `useCodeEditor`) returns `null`. A hook with a sensible global answer (`useToast`, `useAppearance`, `useMorphTransition`, `useTabView`) falls back to it.
+- **Context hooks fail loudly or quietly, by design.** A hook whose component cannot work without it (`useSplitView`, `useComposer`, `useCommandMenu`) throws an error that names the component to wrap it in. A hook that only adds information (`useSplitViewColumn`, `useSplitViewBack`, `useTabs`, `useTabsTab`, `useCodeEditor`) returns `null`. A hook with a sensible global answer (`useToast`, `useAppearance`, `useMorphTransition`) falls back to it.
 - **Returned objects are rebuilt on each render.** The state objects from `useSplitView`, `useSidebar`, `useFloatingSheet`, `useComposer` and the like are new every render. Their function members are not always memoized either, so do not put the whole object, or a function taken from it, in a dependency array unless the page says that member is stable. The cases that are stable are called out: `useToast`'s queue, `useContainerWidth`'s `ref`, `useSizeClass`'s ref callback, `usePersistentState`'s setter, and `useNavigationStack`'s controller. `useSplitView`'s object and callbacks are kept while its state is unchanged and rebuilt when it changes.
 - **Browser APIs are guarded or run in effects.** From the source, nothing here needs `window`, `document` or `localStorage` to exist during a server render (measuring, listeners and recording start in effects; storage reads are guarded). Where the first client render can still differ from the server's (`usePersistentState`, `useSyntaxTokens`, `useAppearance`), the page for that hook says so.
 - **Reduced motion.** `useSpringTransition`, `useMorphTransition` and `createTitleFlight` honor `prefers-reduced-motion` themselves (an instant transition, no flight). The containers' gestures follow the finger and settle with CSS transitions that the components turn off with `motion-reduce:`.

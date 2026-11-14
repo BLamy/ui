@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { CodeEditor, type CodeEditorHandle } from '@/components/ui/code-editor';
 import { Terminal, type TerminalHandle } from '@/components/ui/terminal';
 import { OpenCode } from '@/components/ui/open-code';
-import { TreeFileIcon } from '@/components/ui/tree';
+import { FileBadgeIcon } from '@/lib/file-icons';
 import {
   Workspace, WorkspaceTab, WorkspaceTabClose, WorkspaceTabTrigger, WorkspaceToolbar,
   type TabNode, type TabsetNode,
@@ -147,7 +147,7 @@ export function EditorArea({ store }: { store: VSCodeStore }) {
     <WorkspaceTab value={tab.id}>
       <WorkspaceTabTrigger>
         {tab.data.kind === 'file'
-          ? <TreeFileIcon name={tab.title ?? ''} size={15} className="shrink-0 text-muted-foreground" />
+          ? <FileBadgeIcon name={tab.title ?? ''} size={15} className="shrink-0 text-muted-foreground" />
           : <TerminalTabIcon store={store} id={tab.data.id} />}
         <span className="truncate">{tab.title ?? tab.id}</span>
       </WorkspaceTabTrigger>
@@ -176,7 +176,8 @@ export function EditorArea({ store }: { store: VSCodeStore }) {
   return (
     <Workspace<TabData>
       aria-label="Editors and terminals"
-      className="rounded-none border-0"
+      // The rail switches between the editors and the terminals on a phone, so the panes stay docked.
+      presentation="docked"
       classNames={WORKSPACE_CLASSES}
       controller={store.workspace}
       defaultLayout={layout}

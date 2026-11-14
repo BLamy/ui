@@ -81,9 +81,9 @@ export function ProjectCard({ project: p }: { project: Project }) {
   return (
     <>
       <HoverCardHeader
-        media={<span className="grid size-9 place-items-center rounded-ctl bg-(--brand) text-subhead font-semibold text-white" style={{ '--brand': p.brand } as React.CSSProperties}>{p.name[0]}</span>}
+        icon={<span className="grid size-9 place-items-center rounded-ctl bg-(--brand) text-subhead font-semibold text-white" style={{ '--brand': p.brand } as React.CSSProperties}>{p.name[0]}</span>}
         title={p.name}
-        subtitle={<span className="inline-flex items-center gap-1"><Icon name="globe" size={11} sw={2} />{host(p.url)}</span>}
+        description={<span className="inline-flex items-center gap-1"><Icon name="globe" size={11} sw={2} />{host(p.url)}</span>}
       />
       <div className="mt-3 flex items-end justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -107,8 +107,8 @@ export function MemberCard({ initials, tone = 0 }: { initials: string; tone?: nu
   const projects = PROJECTS.filter((p) => p.members.includes(initials));
   return (
     <>
-      <HoverCardHeader media={<Avatar initials={initials} tone={tone} className="size-10 text-footnote ring-0" />}
-        title={m?.name ?? initials} subtitle={m ? `${m.role} · ${m.email}` : undefined} />
+      <HoverCardHeader icon={<Avatar initials={initials} tone={tone} className="size-10 text-footnote ring-0" />}
+        title={m?.name ?? initials} description={m ? `${m.role} · ${m.email}` : undefined} />
       {projects.length ? (
         <div className="mt-3 border-t border-border pt-2.5">
           <div className="mb-1.5 text-caption text-muted-foreground">On {projects.length} {projects.length === 1 ? 'project' : 'projects'}</div>

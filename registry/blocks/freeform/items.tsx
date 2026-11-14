@@ -183,9 +183,9 @@ export function ItemPreview({ item }: { item: ImageItem | LinkItem }) {
   return (
     <div className="flex flex-col gap-2">
       <HoverCardHeader
-        media={<span className="grid size-10 place-items-center rounded-panel text-white" style={{ background: LINK_ACCENT }}><Icon name="globe" size={22} sw={1.8} /></span>}
+        icon={<span className="grid size-10 place-items-center rounded-panel text-white" style={{ background: LINK_ACCENT }}><Icon name="globe" size={22} sw={1.8} /></span>}
         title={host}
-        subtitle="Link"
+        description="Link"
       />
       <p className="m-0 text-subhead leading-[1.3] font-semibold text-foreground">{item.title}</p>
       <code className="block rounded-ctl bg-secondary px-2 py-1 text-caption break-all text-muted-foreground select-text">{item.url}</code>

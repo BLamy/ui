@@ -8,7 +8,7 @@ import type { Diagnostic, ParseContext, ParseResult, ParserOptions, TimeRange, T
    batches) and falls back to the CPU by itself, so it works with or without WebGPU.
 
    The package is loaded with a dynamic `import()` the first time something parses, so an app that never mounts a
-   TimeInput never downloads it, and nothing here touches `window` at module scope (safe for SSR). One parser is kept
+   NaturalTimeInput never downloads it, and nothing here touches `window` at module scope (safe for SSR). One parser is kept
    per (backend, dateOrder) pair.
 
    gpu-time is a small model, not a calendar engine: it can pick a wrong date without any diagnostic (for example it

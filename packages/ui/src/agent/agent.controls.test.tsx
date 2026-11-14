@@ -49,7 +49,7 @@ function Settings(props: {
       </Segmented>
       <Slider label="Volume" showValue defaultValue={20} min={0} max={100} onValueChange={props.onVolume} />
       <Field name="project">
-        <FieldLabel variant="field">Project name</FieldLabel>
+        <FieldLabel>Project name</FieldLabel>
         <Input onValueChange={props.onName} />
       </Field>
       <Button onClick={props.onSave}>Save changes</Button>

@@ -1,0 +1,265 @@
+// @vitest-environment happy-dom
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { announce } from '@ui-sdk/core';
+import type { ReactNode } from 'react';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
+import { NaturalTimeInput, type NaturalTimeInputChange, type NaturalTimeInputProps } from '@/components/ui/natural-time-input';
+import { resetGpuTime } from '@/lib/gpu-time';
+
+declare global {
+  var __UI_SDK_STRICT__: boolean | undefined;
+}
+globalThis.__UI_SDK_STRICT__ = true;
+
+/* NaturalTimeInput with the real gpu-time package (CPU backend), a fixed reference and zone so the answers are exact. */
+
+const REF = '2026-09-09T12:00:00+06:00'; // a Wednesday in Dhaka
+const base = { reference: REF, timeZone: 'Asia/Dhaka', locale: 'en-US', parse: { debounceMs: 5 } } as const;
+
+/** The control as an app writes it: in a Field, named by its FieldLabel, with the field's description and error. */
+function When({ description, invalid, error, fieldDisabled, ...props }: NaturalTimeInputProps & { description?: ReactNode; invalid?: boolean; error?: ReactNode; fieldDisabled?: boolean }) {
+  return (
+    <Field invalid={invalid} disabled={fieldDisabled}>
+      <FieldLabel>When</FieldLabel>
+      <NaturalTimeInput {...props} />
+      {description ? <FieldDescription>{description}</FieldDescription> : null}
+      <FieldError>{error}</FieldError>
+    </Field>
+  );
+}
+
+// UI SDK's shared announcer, watched: what it was asked to say, in order.
+vi.mock('@ui-sdk/core', async (original) => ({ ...(await original<typeof import('@ui-sdk/core')>()), announce: vi.fn() }));
+const said = () => vi.mocked(announce).mock.calls.map(([text]) => text);
+beforeEach(() => vi.mocked(announce).mockClear());
+afterEach(() => {
+  cleanup();
+  resetGpuTime();
+});
+
+const field = () => screen.getByRole('textbox', { name: 'When' }) as HTMLInputElement;
+const type = (text: string) => fireEvent.input(field(), { target: { value: text } });
+const preview = () => document.querySelector('[data-slot=natural-time-input-preview]') as HTMLElement | null;
+const described = (el: HTMLElement) => (el.getAttribute('aria-describedby') ?? '').split(' ').filter(Boolean).map((id) => document.getElementById(id)?.textContent);
+const rows = (slot: string) => [...document.querySelectorAll(`[data-slot=${slot}] li`)].map((li) => li.textContent);
+
+describe('NaturalTimeInput', () => {
+  it('takes its Field\'s label and description, and shows no preview while empty', () => {
+    render(<When {...base} description="Read as Dhaka time." data-testid="x" />);
+    expect(field()).toBeTruthy();
+    expect(screen.getByText('Read as Dhaka time.')).toBeTruthy();
+    expect(field().getAttribute('aria-describedby')).toMatch(/\S/);
+    expect(preview()).toBeNull();
+    expect(document.querySelector('[data-slot=natural-time-input]')).toBeTruthy();
+  });
+
+  it('names itself "Date or time" outside a Field, and leaves the name to the FieldLabel inside one', () => {
+    render(<NaturalTimeInput {...base} />);
+    expect(screen.getByRole('textbox', { name: 'Date or time' })).toBeTruthy();
+    cleanup();
+    render(<When {...base} />);
+    expect(field().hasAttribute('aria-label')).toBe(false);
+  });
+
+  it('lists the resolved occurrences in the zone and highlights what it recognised', async () => {
+    render(<When {...base} />);
+    type('Sat Sun 1pm-8pm Mon 10pm-12am');
+    await waitFor(() => expect(preview()).not.toBeNull());
+    const items = rows('natural-time-input-occurrences');
+    expect(items).toHaveLength(3);
+    expect(items[0]).toMatch(/^Sat, Sep 12, 2026,? 1:00\s?[–-]\s?8:00\s?PM$/);
+    expect(items[2]).toMatch(/^Mon, Sep 14, 2026,? 10:00\sPM\s?[–-]\s?Tue, Sep 15, 2026,? 12:00\sAM$/);
+    // The whole text was recognised: no highlighted copy of it.
+    expect(document.querySelector('[data-slot=natural-time-input-recognized]')).toBeNull();
+    expect(preview()?.textContent).toContain('Times in Asia/Dhaka');
+    expect(preview()?.hasAttribute('data-stale')).toBe(false);
+    // Read out once through UI SDK's shared announcer; no live region of its own.
+    await waitFor(() => expect(said()).toEqual(['3 dates found.']));
+    expect(document.querySelector('[data-slot=natural-time-input] [role=status]')).toBeNull();
+  });
+
+  it('marks only the recognised words, leaving the rest plain', async () => {
+    render(<When {...base} />);
+    type('meet me thurs 2-3pm ok');
+    await waitFor(() => expect(document.querySelector('[data-slot=natural-time-input-recognized] mark')).not.toBeNull());
+    const line = document.querySelector('[data-slot=natural-time-input-recognized]') as HTMLElement;
+    expect(line.querySelector('mark')?.textContent).toBe('thurs 2-3pm');
+    expect(line.textContent).toBe('Recognized: meet me thurs 2-3pm ok');
+  });
+
+  it('shows a Repeats chip in words for a recurrence, with the raw rule as its title', async () => {
+    render(<When {...base} />);
+    type('every weekday at 9am');
+    await waitFor(() => expect(document.querySelector('[data-slot=natural-time-input-repeats]')).not.toBeNull());
+    const chip = document.querySelector('[data-slot=natural-time-input-repeats] [data-slot=badge]') as HTMLElement;
+    expect(chip.textContent).toMatch(/^Repeatsevery weekday at 9:00\sAM$/);
+    expect(chip.getAttribute('title')).toBe('RRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,TU,WE,TH,FR');
+    expect(rows('natural-time-input-occurrences')).toHaveLength(6); // five upcoming + "and more"
+    expect(rows('natural-time-input-occurrences')[5]).toBe('and more');
+  });
+
+  it('limits the preview with maxOccurrences', async () => {
+    render(<When {...base} maxOccurrences={2} />);
+    type('every weekday at 9am');
+    await waitFor(() => expect(rows('natural-time-input-occurrences')).toHaveLength(3));
+  });
+
+  it('shows the model\'s diagnostics, with the words they point at, and dots low-confidence spans', async () => {
+    render(<When {...base} />);
+    type('1-3pm');
+    await waitFor(() => expect(document.querySelector('[data-slot=natural-time-input-diagnostics]')).not.toBeNull());
+    const note = document.querySelector('[data-slot=natural-time-input-diagnostics] li') as HTMLElement;
+    expect(note.getAttribute('data-severity')).toBe('warning');
+    expect(note.textContent).toContain('The model is uncertain about this expression.');
+    expect(note.querySelector('q')?.textContent).toBe('1');
+    expect(document.querySelector('mark')?.getAttribute('data-confidence')).toBe('low');
+  });
+
+  it('says so when nothing is recognised', async () => {
+    render(<When {...base} />);
+    type('gibberish xyz');
+    await waitFor(() => expect(preview()?.textContent).toContain('No date or time found in that text.'));
+    expect(document.querySelector('[data-slot=natural-time-input-occurrences]')).toBeNull();
+    await waitFor(() => expect(said().at(-1)).toBe('No date or time recognized.'));
+  });
+
+  it('parses a defaultValue on mount', async () => {
+    render(<When {...base} defaultValue="tomorrow at 3pm" />);
+    expect(field().value).toBe('tomorrow at 3pm');
+    await waitFor(() => expect(rows('natural-time-input-occurrences')).toHaveLength(1));
+    expect(rows('natural-time-input-occurrences')[0]).toMatch(/^Thu, Sep 10, 2026,? 3:00\sPM$/);
+  });
+
+  it('reads day-month-year dates when dateOrder is DMY', async () => {
+    render(<When {...base} parse={{ ...base.parse, dateOrder: 'DMY' }} defaultValue="dinner on 3/4" />);
+    await waitFor(() => expect(rows('natural-time-input-occurrences')[0]).toBe('Sat, Apr 3, 2027'));
+  });
+
+  it('reports a bad time zone under the box, marks it invalid and describes it with the reason', async () => {
+    render(<When {...base} timeZone="Not/AZone" defaultValue="tomorrow" />);
+    await waitFor(() => expect(field().getAttribute('aria-invalid')).toBe('true'));
+    const note = document.querySelector('[data-slot=natural-time-input-error]') as HTMLElement;
+    expect(note.textContent).toMatch(/time zone/i);
+    expect(note.textContent).toMatch(/^Error: /);
+    expect(described(field())).toContain(note.querySelector('[id]')?.textContent);
+    expect(preview()).toBeNull();
+  });
+
+  it('is marked invalid by its Field, whose FieldError shows only while it is invalid', () => {
+    const { rerender } = render(<When {...base} error="Pick a time in the future." />);
+    expect(field().hasAttribute('aria-invalid')).toBe(false);
+    expect(screen.queryByText('Pick a time in the future.')).toBeNull();
+    rerender(<When {...base} invalid error="Pick a time in the future." />);
+    expect(field().getAttribute('aria-invalid')).toBe('true');
+    const error = screen.getByText('Pick a time in the future.').closest('[data-slot=field-error]') as HTMLElement;
+    expect(field().getAttribute('aria-describedby')?.split(' ')).toContain(error.id);
+  });
+
+  it('shows the browser\'s message for a missing required value after a submit attempt', async () => {
+    render(
+      <form onSubmit={(event) => event.preventDefault()}>
+        <When {...base} required name="when" />
+        <button type="submit">Save</button>
+      </form>,
+    );
+    expect(field().required).toBe(true);
+    expect(document.querySelector('[data-slot=field-error]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(document.querySelector('[data-slot=field-error]')?.textContent).toMatch(/\S/));
+    expect(field().getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('shows the backend only when asked', async () => {
+    const { rerender } = render(<When {...base} defaultValue="noon" />);
+    await waitFor(() => expect(preview()).not.toBeNull());
+    expect(preview()?.querySelector('[data-backend-label]')).toBeNull();
+    expect(document.querySelector('[data-slot=natural-time-input]')?.getAttribute('data-backend')).toBe('cpu');
+    rerender(<When {...base} defaultValue="noon" showBackend />);
+    expect(preview()?.querySelector('[data-backend-label]')?.textContent).toBe('CPU');
+  });
+
+  it('calls onParseChange for each keystroke, then with the result once it settles', async () => {
+    const calls: NaturalTimeInputChange[] = [];
+    render(<When {...base} onParseChange={(c) => calls.push(c)} />);
+    type('tomorrow');
+    expect(calls).toEqual([{ text: 'tomorrow', result: null, pending: true, error: null }]);
+    await waitFor(() => expect(calls).toHaveLength(2));
+    expect(calls[1]).toMatchObject({ text: 'tomorrow', pending: false, error: null });
+    expect(calls[1].result?.occurrences[0].start).toBe('2026-09-10T00:00:00+06:00');
+    type('');
+    expect(calls[calls.length - 1]).toEqual({ text: '', result: null, pending: false, error: null });
+    expect(preview()).toBeNull();
+  });
+
+  it('works controlled: onValueChange reports the text and why, and the field follows `value`', async () => {
+    const seen: [string, string][] = [];
+    const onValueChange = (text: string, details: { reason: string }) => seen.push([text, details.reason]);
+    const { rerender } = render(<When {...base} value="noon" onValueChange={onValueChange} />);
+    expect(field().value).toBe('noon');
+    type('midnight');
+    expect(seen).toEqual([['midnight', 'input-change']]);
+    await waitFor(() => expect(field().value).toBe('noon')); // not updated until the parent says so
+    rerender(<When {...base} value="midnight" onValueChange={onValueChange} />);
+    expect(field().value).toBe('midnight');
+    await waitFor(() => expect(rows('natural-time-input-occurrences')).toHaveLength(1));
+  });
+
+  it('keeps the text, and parses nothing new, when the change is canceled', async () => {
+    const calls: NaturalTimeInputChange[] = [];
+    render(<When {...base} defaultValue="noon" onValueChange={(_, details) => details.cancel()} onParseChange={(c) => calls.push(c)} />);
+    await waitFor(() => expect(calls.at(-1)).toMatchObject({ text: 'noon', pending: false }));
+    const settled = calls.length;
+    type('midnight');
+    await waitFor(() => expect(field().value).toBe('noon'));
+    expect(calls).toHaveLength(settled);
+  });
+
+  it('keeps showing the previous answer, dimmed, while a new one is pending', async () => {
+    render(<When {...base} parse={{ debounceMs: 50 }} defaultValue="noon" />);
+    await waitFor(() => expect(preview()).not.toBeNull());
+    type('midnight');
+    expect(preview()?.hasAttribute('data-stale')).toBe(true);
+    expect(preview()?.getAttribute('aria-busy')).toBe('true');
+    expect(document.querySelector('[data-slot=natural-time-input-recognized]')).toBeNull(); // offsets belong to the old text
+    await waitFor(() => expect(preview()?.hasAttribute('data-stale')).toBe(false));
+  });
+
+  it('does not parse while disabled, by its own prop or by its Field', async () => {
+    render(<When {...base} disabled defaultValue="noon" />);
+    await new Promise((r) => setTimeout(r, 60));
+    expect(preview()).toBeNull();
+    expect(field().disabled).toBe(true);
+    cleanup();
+    render(<When {...base} fieldDisabled defaultValue="noon" />);
+    await new Promise((r) => setTimeout(r, 60));
+    expect(preview()).toBeNull();
+    expect(field().disabled).toBe(true);
+  });
+
+  it('merges className and style onto the root and forwards the field props', () => {
+    render(<When {...base} className="custom" style={{ maxWidth: 300 }} name="when" />);
+    const root = document.querySelector('[data-slot=natural-time-input]') as HTMLElement;
+    expect(root.className).toContain('custom');
+    expect(root.style.maxWidth).toBe('300px');
+    expect(field().name).toBe('when');
+  });
+
+  it('renders on the server without parsing or touching window', () => {
+    const html = renderToString(<When {...base} defaultValue="tomorrow" />);
+    expect(html).toContain('data-slot="natural-time-input"');
+    expect(html).toContain('value="tomorrow"');
+    expect(html).not.toContain('data-slot="natural-time-input-preview"');
+  });
+
+  it('does not report React warnings', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    render(<When {...base} />);
+    type('every weekday at 9am');
+    await waitFor(() => expect(preview()).not.toBeNull());
+    expect(within(preview() as HTMLElement).getAllByRole('listitem').length).toBeGreaterThan(1);
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+});

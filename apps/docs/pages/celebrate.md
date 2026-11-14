@@ -1,6 +1,6 @@
 # Celebrate
 
-A burst for rare moments: a ring pulses and confetti flies out from behind an element, then falls away. The less often something happens, the more it may celebrate: a backup finishing, a first payment, a streak, not a tab switch. `Celebrate` draws nothing until you fire it.
+A burst for rare moments: a ring pulses and confetti flies out from behind an element, then falls away. The less often something happens, the more it may celebrate: a backup finishing, a first payment, a streak, not a tab switch. `Celebrate` wraps the thing that succeeded and draws nothing until you fire it. For progress use [Progress](https://blamy.github.io/ui/#/progress) or a [Spinner](https://blamy.github.io/ui/#/spinner), and for a routine confirmation a [Toast](https://blamy.github.io/ui/#/toast).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -27,17 +27,16 @@ import { Celebrate } from '@brett_lamy/ui'
 
 ## Usage
 
-Put `<Celebrate fire={n} />` next to the thing that succeeded, inside a `relative isolate` wrapper. The layer is absolutely positioned over the wrapper and sits behind its content (`-z-1`), so the burst comes out from behind the badge. Each time `fire` changes to a truthy value, a burst plays (about 1.4s). Bursts overlap if you fire again early.
+Wrap the thing that succeeded: `<Celebrate fire={n}><SuccessBadge /></Celebrate>`. Celebrate is an `inline-grid` span (`relative isolate`) around its child with the burst on a layer behind it (`-z-1`), so the confetti comes out from behind the badge. `render={<div />}` makes it a block, and `className` places it like any element. Each time `fire` changes to a truthy value, a burst plays (about 1.4s). Bursts overlap if you fire again early.
 
 {% demo src="celebrate/backup" %}
 
 ```tsx
 const [fired, setFired] = useState(0)
 
-<div className="relative isolate">
-  <Celebrate fire={fired} />
+<Celebrate fire={fired}>
   <SuccessBadge />
-</div>
+</Celebrate>
 
 // when the job completes:
 setFired((n) => n + 1)
@@ -47,22 +46,24 @@ setFired((n) => n + 1)
 
 ## Reduced motion
 
-With `prefers-reduced-motion` only the ring plays, as a soft fade; no confetti is drawn.
+With `prefers-reduced-motion` (or framer-motion's `<MotionConfig reducedMotion="always">` around it) only the ring plays, as a soft fade; no confetti is drawn.
 
 ## Accessibility
 
-The layer is `aria-hidden` and `pointer-events-none`: it is decoration only. Announce the success in text too (a `role="status"` message or the changed label), as nothing in the burst is exposed to assistive technology.
+The burst layer is `aria-hidden` and `pointer-events-none`: it is decoration only, and the child keeps its own semantics. Announce the success in text too (a `role="status"` message or the changed label), as nothing in the burst is exposed to assistive technology.
 
 ## Props
 
 | Prop | Default | Effect |
 | --- | --- | --- |
+| `children` | — | What succeeded; the burst comes from behind it. |
 | `fire` | — | Change it to a truthy value to fire a burst. |
 | `count` | `22` | Confetti pieces per burst. |
 | `spread` | `100` | How far the pieces fly, in px; they also fall by about the same distance. |
-| `colors` | primary, success and four fixed hues | CSS colours for the pieces, cycled in order. |
-| `className` / `style` | — | Merged onto the layer (`absolute inset-0`). |
+| `colors` | the theme's primary, success, warning, destructive and two chart colours | CSS colours for the pieces, cycled in order. |
+| `render` | — | Another element for the wrapper, e.g. `render={<div />}`. |
+| `className` / `style` | — | Merged onto the wrapper; every other `span` attribute passes through. |
 
 ## Styling
 
-The root is `data-slot="celebrate"`, centred in its wrapper with `overflow: visible`, so the burst can overlap neighbouring content; leave room around the wrapper. The ring uses the `--primary` colour.
+The wrapper is `data-slot="celebrate"` (`relative isolate inline-grid place-items-center`) and the layer `data-slot="celebrate-burst"`, centred with `overflow: visible`, so the burst can overlap neighbouring content; leave room around it. The ring uses the `--primary` colour and the default confetti the theme's colours, so a [ThemeScope](https://blamy.github.io/ui/#/theming) recolours both.

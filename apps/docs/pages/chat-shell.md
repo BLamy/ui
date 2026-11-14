@@ -4,7 +4,7 @@ Chat layouts, from parts. `ChatShell` is a thin layout root — it measures its 
 
 ## Installation
 
-`ChatShell` and its regions are parts of the **discord-clone** [block](https://blamy.github.io/ui/#/blocks), not the library: the shell is the layout of one product, so it is copied into your app, where it is yours to change. Adding the block also copies the library parts it is built from (AdaptivePane, SideDrawer, TabView, Composer, …).
+`ChatShell` and its regions are parts of the **discord-clone** [block](https://blamy.github.io/ui/#/blocks), not the library: the shell is the layout of one product, so it is copied into your app, where it is yours to change. Adding the block also copies the library parts it is built from (AdaptivePane, SideDrawer, Tabs, Composer, …).
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/discord-clone.json{% endcommand %}
 
@@ -27,8 +27,8 @@ import {
   ChatShellAside, ChatShellPanel,
 } from '@/components/blocks/discord-clone/components/chat-shell'
 import {
-  TabView, TabViewBar, TabViewList, TabViewTab, TabViewIndicator,
-} from '@/components/ui/tab-view'
+  Tabs, TabsBar, TabsList, TabsTab, TabsPill,
+} from '@/components/ui/tabs'
 import {
   SidebarHeader, SidebarContent, SidebarSection, SidebarItem,
 } from '@/components/ui/sidebar'
@@ -42,16 +42,16 @@ export function Chat() {
   return (
     <ChatShell breakpoint={880} tint="#0A84FF">
       <ChatShellNav>
-        <TabView orientation="vertical" defaultValue="hq" className="contents">
-          <TabViewBar variant="workspace">
-            <TabViewList aria-label="Workspaces">
-              <TabViewTab value="hq" aria-label="HQ">
-                <TabViewIndicator variant="pill" />
+        <Tabs variant="workspace" defaultValue="hq" className="contents">
+          <TabsBar>
+            <TabsList aria-label="Workspaces">
+              <TabsTab value="hq" aria-label="HQ">
+                <TabsPill />
                 <span className="…">H</span>
-              </TabViewTab>
-            </TabViewList>
-          </TabViewBar>
-        </TabView>
+              </TabsTab>
+            </TabsList>
+          </TabsBar>
+        </Tabs>
         <ChatShellSidebar>
           <SidebarHeader>HQ</SidebarHeader>
           <SidebarContent>
@@ -97,7 +97,7 @@ The full Discord layout is a registry block — `npx shadcn add` copies `page.ts
 
 ## Built from
 
-`useContainerWidth` measures the shell. [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) turns `ChatShellNav` into a docked column or a left drawer; [SideDrawer](https://blamy.github.io/ui/#/side-drawer) gives `ChatShellPanel` its docked and overlay modes; the rail is a vertical [TabView](https://blamy.github.io/ui/#/tab-view) with a `workspace` bar; the channel column can use the [Sidebar](https://blamy.github.io/ui/#/sidebar) parts. For a phone-style stack, put the sidebar and conversation in a [SplitView](https://blamy.github.io/ui/#/split-view) (below).
+`useContainerWidth` measures the shell. [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) turns `ChatShellNav` into a docked column or a left drawer, and gives `ChatShellPanel` its docked, drawer and (on a compact shell) pushed presentations; the rail is [Tabs](https://blamy.github.io/ui/#/tabs) with the `workspace` bar; the channel column can use the [Sidebar](https://blamy.github.io/ui/#/sidebar) parts. For a phone-style stack, put the sidebar and conversation in a [SplitView](https://blamy.github.io/ui/#/split-view) (below).
 
 ## Parts
 
@@ -111,7 +111,7 @@ The full Discord layout is a registry block — `npx shadcn add` copies `page.ts
 | `ChatShellHeader` | 46px title bar. Holds `ChatShellHeaderIcon` (a # by default), `ChatShellTitle`, `ChatShellDescription` (the topic, fills the middle) and `ChatShellHeaderActions` › `ChatShellHeaderAction` (`variant="icon"` or `"outline"`) and `ChatShellHeaderToggle` (UI SDK's Toggle: `pressed` / `onPressedChange`; the icon variant tints while pressed). `ChatShellBack` is a tinted back button for views that replace the channel. |
 | `ChatShellFooter` | Pins the composer under the transcript. |
 | `ChatShellAside` | A docked trailing column (the member list). Shows from `minWidth` (1320) and while `open`. |
-| `ChatShellPanel` | Thread / details panel. Docks as a column from `dockWidth` (1180), overlays below it. `open`, `onOpenChange(open, details)` (the SideDrawer's details: close button, Escape, swipe…), `title`, `width`. |
+| `ChatShellPanel` | Thread / details panel. Docks as a column from `dockWidth` (1180), a drawer over the conversation below it, and a page pushed over it on a compact shell. `open`, `onOpenChange(open, details)` (the AdaptivePane's details: close button, Escape, swipe…), `title`, `width`. |
 
 ## Context
 
@@ -153,7 +153,7 @@ The smallest shell is just `ChatShellMain`: a header, a transcript and a compose
 
 ### The rail
 
-A vertical `TabView` with `TabViewBar variant="workspace"`, tiles in Discord's style: a tile is a circle at rest and morphs into a rounded square when hovered or selected, and the pill on its leading edge grows from the unread nub to half height on hover and full height when selected — corners and pill on springs, a small dip on press.
+`Tabs variant="workspace"`, tiles in Discord's style: a tile is a circle at rest and morphs into a rounded square when hovered or selected, and the pill on its leading edge grows from the unread nub to half height on hover and full height when selected — corners and pill on springs, a small dip on press.
 
 {% demo src="chat-shell/workspace-rail" %}
 

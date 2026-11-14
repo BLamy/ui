@@ -8,10 +8,10 @@ import { Dialog } from '@/components/ui/dialog';
 import { MorphGroup, MorphPresence } from '@/components/ui/morph';
 import { NavigationStack } from '@/components/ui/navigation-stack';
 import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewSidebar, SplitViewStack, SplitViewToggle, useSplitViewStack } from '@/components/ui/split-view';
-import { TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab } from '@/components/ui/tab-view';
+import { Tabs, TabsBar, TabsList, TabsPanel, TabsPanels, TabsTab } from '@/components/ui/tabs';
 import { useContainerSize } from '@/lib/container';
 import { sizeClassOf } from '@/lib/size-class';
-import { Icon, type IconName } from '@/lib/icon';
+import type { IconName } from '@/lib/icon';
 import { BLProvider, useAppearance } from '@/lib/theme';
 import { ALBUM, albumSongs } from './data';
 import { FullPlayer, MiniPlayer } from './now-playing';
@@ -113,7 +113,7 @@ export default function AppleMusic({ initialSection = 'listen', initialAlbum, no
           )}
           {/* Now Playing is a Dialog (focus moves in and comes back to the mini player, Esc closes it, the app
               behind is inert) whose content is the morphing player. */}
-          <Dialog open={expanded} onOpenChange={setExpanded}>
+          <Dialog open={expanded} onOpenChange={setExpanded} presentation="dialog">
             <FullPlayer player={player} phone={phone} height={box.height}
               onClose={() => setExpanded(false)} finalFocus={() => ref.current?.querySelector<HTMLElement>('[data-now-playing-open]') ?? null} />
           </Dialog>
@@ -131,28 +131,25 @@ function PhoneTabs({ env, nav, setNav }: { env: Omit<Ctx, 'open'>; nav: Nav; set
   const ctx: Ctx = { ...env, open: (page) => setNav((n) => ({ ...n, stacks: { ...n.stacks, [n.tab]: [...n.stacks[n.tab], page] } })) };
   return (
     <MusicContext.Provider value={ctx}>
-      <TabView<Tab> value={tab} onValueChange={(k) => { if (k) setNav((n) => ({ ...n, tab: k })); }} className="absolute inset-0">
-        <TabViewBar hideOnScroll={false}>
-          <TabViewList aria-label="Music">
+      <Tabs<Tab> variant="bar" value={tab} onValueChange={(k) => { if (k) setNav((n) => ({ ...n, tab: k })); }} className="absolute inset-0">
+        <TabsBar hideOnScroll={false}>
+          <TabsList aria-label="Music">
             {TABS.map((t) => (
-              <TabViewTab key={t.id} value={t.id}>
-                <Icon name={t.icon} size={25} />
-                <span className="text-[10px] font-semibold tracking-[.1px]">{t.title}</span>
-              </TabViewTab>
+              <TabsTab key={t.id} value={t.id} icon={t.icon}>{t.title}</TabsTab>
             ))}
-          </TabViewList>
-        </TabViewBar>
-        <TabViewPanels>
+          </TabsList>
+        </TabsBar>
+        <TabsPanels>
           {TABS.map((t) => (
-            <TabViewPanel key={t.id} value={t.id} keepMounted className="overflow-hidden">
+            <TabsPanel key={t.id} value={t.id} keepMounted className="overflow-hidden">
               <NavigationStack bottomInset={TAB_BAR + 64} pages={stacks[t.id].map(stackKey)}
                 onPagesChange={(next) => setNav((n) => ({ ...n, stacks: { ...n.stacks, [t.id]: n.stacks[t.id].slice(0, next.length) } }))}>
                 {stacks[t.id].map((page, i) => <MusicPage key={stackKey(page, i)} value={stackKey(page, i)} page={page} />)}
               </NavigationStack>
-            </TabViewPanel>
+            </TabsPanel>
           ))}
-        </TabViewPanels>
-      </TabView>
+        </TabsPanels>
+      </Tabs>
     </MusicContext.Provider>
   );
 }

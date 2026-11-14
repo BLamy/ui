@@ -43,7 +43,7 @@ const up = useFileUpload({
   </FileInputDropzone>
 </FileInput>
 {up.files.map((f) => (
-  <FileItem key={f.id} item={f} onRemove={(x) => up.remove(x.id)} onRetry={(x) => up.retry(x.id)} />
+  <FileUploadItem key={f.id} item={f} onRemove={(x) => up.remove(x.id)} onRetry={(x) => up.retry(x.id)} />
 ))}
 ```
 

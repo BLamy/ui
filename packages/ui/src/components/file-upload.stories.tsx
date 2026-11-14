@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { FileDropZone, FileItem, FileList, FileUpload, FileUploadButton, type FileUploadProps } from '@/components/ui/file-upload';
+import { FileUploadDropzone, FileUploadItem, FileUploadList, FileUpload, FileUploadTrigger, type FileUploadProps } from '@/components/ui/file-upload';
+import { Button } from '@/components/ui/button';
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import type { UploadFile } from '@/lib/file-upload-model';
 import { Pad } from '../stories/frame';
 
@@ -103,8 +105,8 @@ export const ButtonOnly: Story = {
   render: () => (
     <Pad w={440}>
       <FileUpload>
-        <FileUploadButton>Upload files</FileUploadButton>
-        <FileList />
+        <FileUploadTrigger>Upload files</FileUploadTrigger>
+        <FileUploadList />
       </FileUpload>
     </Pad>
   ),
@@ -116,10 +118,40 @@ export const CustomRow: Story = {
     return (
       <Pad w={440}>
         <FileUpload defaultValue={files}>
-          <FileDropZone size="compact" title="Add attachments" icon="paperclip" />
-          <FileList>{(f) => <FileItem item={f} className="rounded-ctl" />}</FileList>
+          <FileUploadDropzone orientation="horizontal" title="Add attachments" icon="paperclip" />
+          <FileUploadList>{(f) => <FileUploadItem item={f} className="rounded-ctl" />}</FileUploadList>
         </FileUpload>
       </Pad>
     );
   },
+};
+
+/** In a form: a Field control. `required` blocks the empty submit, the zone turns red, and the FieldError says why. */
+export const InField: Story = {
+  render: () => (
+    <Pad w={440}>
+      <FieldGroup className="gap-5" render={<form onSubmit={(e) => e.preventDefault()} />}>
+        <Field name="docs">
+          <FieldLabel>Documents</FieldLabel>
+          <FileUpload required accept={['application/pdf']} maxSize={10_000_000} />
+          <FieldDescription>We review them within a working day.</FieldDescription>
+          <FieldError match="valueMissing">Add at least one document.</FieldError>
+        </Field>
+        <Button type="submit">Submit</Button>
+      </FieldGroup>
+    </Pad>
+  ),
+};
+
+/** The same, already invalid (as after a failed submit or a server error), for review without a click. */
+export const Invalid: Story = {
+  render: () => (
+    <Pad w={440}>
+      <Field name="docs" invalid>
+        <FieldLabel>Documents</FieldLabel>
+        <FileUpload />
+        <FieldError>Add at least one document.</FieldError>
+      </Field>
+    </Pad>
+  ),
 };

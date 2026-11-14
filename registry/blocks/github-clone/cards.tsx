@@ -18,7 +18,7 @@ export function UserCard({ user }: { user: User }) {
   const contributor = repo.contributors.some((u) => u.login === user.login) || repo.lastCommit?.author.login === user.login;
   return (
     <>
-      <HoverCardHeader media={<Avatar c={user} src={user.avatar} size={48} />} title={name || user.login} subtitle={name ? user.login : undefined} />
+      <HoverCardHeader icon={<Avatar name={`${user.f} ${user.l}`} src={user.avatar} size={48} />} title={name || user.login} description={name ? user.login : undefined} />
       {user.bio ? <p className="mt-3 mb-0 text-detail leading-[1.5] text-foreground">{user.bio}</p> : null}
       {contributor ? (
         <div className="mt-3 flex items-center gap-1.5 text-caption text-muted-foreground">
@@ -44,7 +44,7 @@ export function UserName({ user, className }: { user: User; className?: string }
 
 /** An Avatar with the person's card. */
 export function UserAvatar({ user, size, className }: { user: User; size: number; className?: string }) {
-  return <Avatar c={user} src={user.avatar} size={size} className={className} card={<UserCard user={user} />} />;
+  return <Avatar name={`${user.f} ${user.l}`} src={user.avatar} size={size} className={className} card={<UserCard user={user} />} />;
 }
 
 /** The top of an issue / pull request card: where and when, then the state glyph and title, then its labels. */
@@ -65,7 +65,7 @@ function ItemCard({ ui, state, number, title, when, verb, author, labels, childr
       {labels.length ? <div className="mt-2 flex flex-wrap gap-1 pl-6">{labels.map((l) => <LabelChip key={l.name} label={l} dark={ui.dark} />)}</div> : null}
       {children}
       <div className="mt-3 flex items-center gap-1.5 border-t border-border pt-3 text-caption text-muted-foreground">
-        <Avatar c={author} src={author.avatar} size={16} /><b className="font-semibold text-foreground">{author.login}</b> {verb}
+        <Avatar name={`${author.f} ${author.l}`} src={author.avatar} size={16} /><b className="font-semibold text-foreground">{author.login}</b> {verb}
       </div>
     </>
   );
@@ -129,7 +129,7 @@ export function CommitCard({ commit }: { commit: Commit | LastCommit }) {
         <div className="min-w-0 flex-1 text-detail leading-5 font-semibold break-words text-foreground">{commit.message}</div>
       </div>
       <div className="mt-3 flex items-center gap-1.5 border-t border-border pt-3 text-caption text-muted-foreground">
-        <Avatar c={commit.author} src={commit.author.avatar} size={16} />
+        <Avatar name={`${commit.author.f} ${commit.author.l}`} src={commit.author.avatar} size={16} />
         <span className="min-w-0 flex-1 truncate"><b className="font-semibold text-foreground">{commit.author.login}</b> committed {commit.when}</span>
         <code className="shrink-0 font-mono">{commit.sha.slice(0, 7)}</code>
       </div>

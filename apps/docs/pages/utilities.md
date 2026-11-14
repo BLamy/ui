@@ -66,7 +66,7 @@ A class string for tappable elements you draw yourself: it removes the mobile ta
 
 {% demo src="utilities/pressable" %}
 
-It is for plain elements and [PlainButton](https://blamy.github.io/ui/#/plain-button)-style parts. The styled `Button` has its own press and hover states (`active:` and `hover:` on UI SDK's Button) and does not use it.
+It is for plain elements and [unstyled UI SDK buttons](https://blamy.github.io/ui/#/button) (`Button as SdkButton` from `@ui-sdk/react/button`). The styled `Button` has its own press and hover states (`active:` and `hover:` on UI SDK's Button) and does not use it.
 
 ## brandTile
 
@@ -86,7 +86,7 @@ It is for plain elements and [PlainButton](https://blamy.github.io/ui/#/plain-bu
 | Module | Public? | What it is |
 | --- | --- | --- |
 | `lib/container.ts` | yes | `useSizeClass()` returns `[ref, sizeClass]`, the `compact` / `medium` / `regular` class of an element's own box (`bindSizeClass` from `lib/size-class.ts`, which also writes `data-size-class` on it), or the nearest size-class scope's before the ref is attached; reach for it first. `SizeClassProvider`, `useSizeClassScope()` and `usePresentation()` are the size-class scope that `presentation="auto"` popups follow (see [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)). `useContainerWidth()` and `useContainerSize()` measure an element with a `ResizeObserver` and return `[ref, width]` or `[ref, { width, height }]` (a `ContainerSize`), so a shell sizes itself from its own box instead of the viewport. The `initial` argument (1200, or 1200 by 800) is used until the first measurement. `defineSlot(name)` and `collectSlots(children)` are the slot pattern behind `FloatingChat.Chat` and `ArtifactChatContainer.Content`: a slot renders nothing itself, and its parent reads the children by name. |
-| `lib/qr.ts` | yes | `encodeQR(text, { level, minVersion, maxVersion, mask })` returns `{ size, version, level, mask, modules }` with `modules[y][x]` true for a dark module. Byte mode only; throws a `RangeError` when the text does not fit. It is what `QRSvg` draws, so use that component unless you need the matrix. |
+| `lib/qr.ts` | yes | `encodeQR(text, { level, minVersion, maxVersion, mask })` returns `{ size, version, level, mask, modules }` with `modules[y][x]` true for a dark module. Byte mode only; throws a `RangeError` when the text does not fit. It is what `QRCode` draws, so use that component unless you need the matrix. |
 | `lib/primitives.ts` | internal | Shared class fragments for the primitives: `focusRing`, `popoverSurface`, `popoverMotion`, `popoverArrow`, `popoverArrowGlyph`, `selectableText`. The file says it is not exported from the package; copy one in if you need it. |
 | `lib/row-label.ts` | internal | `RowLabelContext` and `useRowLabel`. A list row publishes its title's id so a Switch or Slider inside it is labelled by the row title unless it has its own label. |
 | `lib/persistent-host.tsx` | internal | How `ArtifactChatContainer` moves one composer and transcript between its docked column and its floating layer without remounting them: detached host elements portalled into, then re-attached to the current dock. |

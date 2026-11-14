@@ -14,7 +14,7 @@ export default function Range() {
   return (
     <ThemeScope className="mx-auto grid max-w-sm gap-5">
       <Field>
-        <FieldLabel variant="field">Stay</FieldLabel>
+        <FieldLabel>Stay</FieldLabel>
         <DatePicker
           mode="range"
           months={2}

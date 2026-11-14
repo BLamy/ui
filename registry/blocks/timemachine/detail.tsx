@@ -3,7 +3,7 @@
    the session ended, still, with its title, address and what happened in it. */
 import { useEffect, useMemo, useState } from 'react';
 import { HoverCardHeader } from '@/components/ui/hover-card';
-import { PlainButton } from '@/components/ui/plain-button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { getReplayMarkers, ReplayPreview, ReplayStage, type ReplayEvent } from '@/components/ui/replay-preview';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
@@ -42,10 +42,10 @@ export function SessionPeek({ session }: { session: SessionInfo }) {
     <div className="flex flex-col gap-3">
       <div className="grid min-h-24 place-items-center overflow-hidden rounded-lg bg-secondary text-muted-foreground">
         {events && span !== null ? (
-          <ReplayStage events={events} autoplay={false} initialTime={span} showMouse={false} className="pointer-events-none w-full" fallback={<Spinner spin size={20} />} />
-        ) : load && !events ? <span className="p-4 text-footnote">{'error' in load ? load.error : null}</span> : events ? <span className="p-4 text-footnote">Nothing recorded yet</span> : <Spinner spin size={20} />}
+          <ReplayStage events={events} autoplay={false} initialTime={span} showMouse={false} className="pointer-events-none w-full" fallback={<Spinner size={20} />} />
+        ) : load && !events ? <span className="p-4 text-footnote">{'error' in load ? load.error : null}</span> : events ? <span className="p-4 text-footnote">Nothing recorded yet</span> : <Spinner size={20} />}
       </div>
-      <HoverCardHeader title={session.title || 'Untitled page'} subtitle={host} />
+      <HoverCardHeader title={session.title || 'Untitled page'} description={host} />
       <p className="m-0 flex flex-wrap gap-x-3 gap-y-0.5 text-footnote text-muted-foreground">
         <span>{session.width} × {session.height}</span>
         {events ? <span>{plural(marks.clicks, 'click')}</span> : null}
@@ -81,13 +81,13 @@ export function SessionDetail({ session, onDeleted }: { session: SessionInfo; on
           </p>
         </div>
         {session.live ? (
-          <PlainButton aria-label="Refresh" title="Load the latest events" onClick={() => setVersion((v) => v + 1)} className="grid size-8 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground hover:bg-secondary">
+          <SdkButton aria-label="Refresh" title="Load the latest events" onClick={() => setVersion((v) => v + 1)} className="grid size-8 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground hover:bg-secondary">
             <Icon name="arrow-clockwise" size={18} sw={1.8} />
-          </PlainButton>
+          </SdkButton>
         ) : (
-          <PlainButton aria-label="Delete session" title="Delete this session" onClick={() => { void deleteSession(session.id).then(onDeleted); }} className="grid size-8 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground hover:bg-secondary hover:text-destructive">
+          <SdkButton aria-label="Delete session" title="Delete this session" onClick={() => { void deleteSession(session.id).then(onDeleted); }} className="grid size-8 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground hover:bg-secondary hover:text-destructive">
             <Icon name="trash-slim" size={18} sw={1.7} />
-          </PlainButton>
+          </SdkButton>
         )}
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
@@ -98,7 +98,7 @@ export function SessionDetail({ session, onDeleted }: { session: SessionInfo; on
         ) : events ? (
           <p className="m-0 py-16 text-center text-detail text-muted-foreground">Nothing recorded in this session yet.</p>
         ) : (
-          <div className="grid place-items-center py-16 text-muted-foreground"><Spinner spin size={24} /></div>
+          <div className="grid place-items-center py-16 text-muted-foreground"><Spinner size={24} /></div>
         )}
       </div>
     </div>
