@@ -142,6 +142,8 @@ describe("formatting toolbar", () => {
     await flush()
     expect(markdown()).toBe("[Hello](https://example.com) world\n")
     expect(document.querySelector(".gb-link-popover")).toBeNull()
+    // Applying puts the caret back in the document.
+    expect(document.activeElement).toBe(editor.view.dom)
 
     await act(async () => { editor.commands.setTextSelection({ from: 2, to: 3 }) })
     await focus(link)
@@ -153,6 +155,40 @@ describe("formatting toolbar", () => {
     expect(document.querySelector(".gb-link-popover")).toBeNull()
     expect(document.activeElement).toBe(link)
     expect(markdown()).toBe("[Hello](https://example.com) world\n")
+  })
+
+  it("removes a link from the popover, and says when the caret is in one", async () => {
+    const { editor, markdown } = await mount({ markdown: "[Hello](https://example.com) world\n", toolbar: true })
+    const link = byLabel<HTMLButtonElement>("Link")!
+    await act(async () => { editor.commands.setTextSelection(3) })
+    await flush()
+    const description = document.getElementById(link.getAttribute("aria-describedby")!)
+    expect(description?.textContent).toBe("In a link")
+    await act(async () => { link.click() })
+    await flush()
+    const remove = Array.from(document.querySelectorAll<HTMLButtonElement>(".gb-link-popover button")).find((b) => b.textContent === "Remove")!
+    expect(remove.disabled || remove.getAttribute("aria-disabled") === "true").toBe(false)
+    await click(remove)
+    expect(markdown()).toBe("Hello world\n")
+    expect(document.querySelector(".gb-link-popover")).toBeNull()
+    expect(document.activeElement).toBe(editor.view.dom)
+    expect(link.hasAttribute("aria-describedby")).toBe(false)
+  })
+
+  it("choose file: asks the host's pickFile with the kind and current path, and sets what it returns", async () => {
+    const pickFile = vi.fn(async () => "./picked.stl")
+    const { markdown } = await mount({ markdown: '{% embed url="./old.stl" %}\n', pickFile })
+    const choose = Array.from(container.querySelectorAll<HTMLButtonElement>(".gb-embed-fields button")).find((b) => b.textContent?.trim() === "Choose file…")!
+    expect(choose).toBeDefined()
+    await click(choose)
+    await flush()
+    expect(pickFile).toHaveBeenCalledWith({ kind: "embed", current: "./old.stl" })
+    expect(markdown()).toBe('{% embed url="./picked.stl" %}\n')
+  })
+
+  it("choose file: absent without a host pickFile", async () => {
+    await mount({ markdown: '{% embed url="" %}\n' })
+    expect(Array.from(container.querySelectorAll(".gb-embed-fields button")).some((b) => b.textContent?.includes("Choose file"))).toBe(false)
   })
 })
 
@@ -385,6 +421,51 @@ describe("attachment chip", () => {
     await key(chip, "Enter")
     await click(byLabel("Close", document.querySelector('[role="dialog"]')!)!)
     expect(document.querySelector('[role="dialog"]')).toBeNull()
+  })
+
+  const card = () => document.querySelector<HTMLElement>(".gb-attachment-card")
+  const wait = (ms: number) => act(async () => { await new Promise((r) => setTimeout(r, ms)) })
+
+  it("its hover card opens on keyboard focus, and Escape dismisses it until the chip is chosen again", async () => {
+    const { editor } = await mount({ markdown: "See ![image.png](attachment:att-1) here.\n", attachments })
+    const chip = container.querySelector<HTMLElement>(".gb-attachment")!
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }))
+    await focus(chip)
+    await wait(400)
+    expect(card()?.hasAttribute("data-open")).toBe(true)
+    await key(chip, "Escape")
+    await wait(300)
+    expect(card()?.hasAttribute("data-open") ?? false).toBe(false)
+    // Still dismissed while the chip stays focused.
+    await wait(300)
+    expect(card()?.hasAttribute("data-open") ?? false).toBe(false)
+    // Selecting the chip in the document re-arms it, and the card stays open while the chip is held.
+    let pos = -1
+    editor.state.doc.descendants((node, at) => {
+      if (node.type.name === "gbAttachment") pos = at
+    })
+    await act(async () => { editor.commands.focus(); editor.commands.setTextSelection(1) })
+    await wait(300)
+    await act(async () => { editor.commands.setNodeSelection(pos) })
+    await wait(300)
+    expect(card()?.hasAttribute("data-open")).toBe(true)
+    chip.dispatchEvent(new PointerEvent("pointerleave", { bubbles: false, pointerType: "mouse" }))
+    await wait(400)
+    expect(card()?.hasAttribute("data-open")).toBe(true)
+  })
+
+  it("its hover card opens on hover", async () => {
+    await mount({ markdown: "See ![image.png](attachment:att-1) here.\n", attachments })
+    const chip = container.querySelector<HTMLElement>(".gb-attachment")!
+    await act(async () => {
+      chip.dispatchEvent(new PointerEvent("pointerenter", { bubbles: false, pointerType: "mouse" }))
+      chip.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" }))
+      chip.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse" }))
+      chip.dispatchEvent(new MouseEvent("mouseenter", { bubbles: false }))
+    })
+    await wait(400)
+    expect(card()?.hasAttribute("data-open")).toBe(true)
+    expect(card()!.textContent).toContain("image.png")
   })
 
   it("a host's onAttachmentOpen replaces the viewer", async () => {
