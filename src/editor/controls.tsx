@@ -12,12 +12,13 @@ import { useEditorRuntime, type FilePickKind } from "./runtime"
 
 type NodeViewRenderer = ReturnType<typeof ReactNodeViewRenderer>
 
-// Parts that aren't native form controls (an option, a checkbox, a tab) still own their presses.
-const OWN_EVENTS = /^(?:select|checkbox|radio|tabs|collapsible|file-input|hover-card|dialog|button|input|textarea|field)(?:-|$)/
-
 /**
  * A React node view whose UI SDK parts keep their pointer and key events: ProseMirror would take a
- * press on an option or a checkbox for a click on the node, and move the selection and focus to it.
+ * press on an option, a checkbox or a slider thumb for a click on the node, and move the selection
+ * and focus to it. Every event inside a UI SDK part (any `[data-slot]` element in the node view,
+ * outside its editable content) is the part's, whichever component it is: the editor's own controls
+ * and the docstream viewers it hosts (Resizable, Toggle, Menu, Slider, …). Drags and drops still
+ * reach ProseMirror, so the node can be moved.
  */
 export function controlNodeView(...args: Parameters<typeof ReactNodeViewRenderer>): NodeViewRenderer {
   const create = ReactNodeViewRenderer(...args)
@@ -25,11 +26,12 @@ export function controlNodeView(...args: Parameters<typeof ReactNodeViewRenderer
     const view = create(props)
     const stopEvent = view.stopEvent?.bind(view)
     view.stopEvent = (event) => {
+      const dom = view.dom
       const target = event.target
       const dragging = event.type.startsWith("drag") || event.type === "drop"
-      if (!dragging && target instanceof Element && view.dom?.contains(target) && !view.contentDOM?.contains(target)) {
-        const slot = target.closest("[data-slot]")?.getAttribute("data-slot")
-        if (slot && OWN_EVENTS.test(slot)) return true
+      if (!dragging && dom && target instanceof Element && dom.contains(target) && !view.contentDOM?.contains(target)) {
+        const part = target.closest("[data-slot]")
+        if (part && part !== dom && dom.contains(part)) return true
       }
       return stopEvent ? stopEvent(event) : false
     }
