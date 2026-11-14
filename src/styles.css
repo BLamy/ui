@@ -3215,7 +3215,7 @@
 .docs-demo-icon-btn:focus-visible,
 .docs-demo-vp:focus-visible,
 .docs-demo-file:focus-visible,
-.docs-demo-handle:focus-visible,
+.docs-demo-handle:focus-visible::after,
 .docs-demo-source-body:focus-visible {
   outline: 2px solid var(--gb-primary);
   outline-offset: 1px;
@@ -3266,7 +3266,7 @@
 }
 
 .docs-demo-vp:hover,
-.docs-demo-vp[aria-pressed="true"] {
+.docs-demo-vp[data-pressed] {
   background: var(--gb-hover);
   color: var(--gb-panel-foreground);
 }
@@ -3302,28 +3302,34 @@
   background: var(--background, var(--gb-panel));
 }
 
+/* A viewport button moves the frame's edge: ease it there (a drag or a key step follows at once). */
+@media (prefers-reduced-motion: no-preference) {
+  .docs-demo-stage:not([data-dragging]) > .docs-demo-frame {
+    transition: flex-basis 420ms cubic-bezier(0.22, 1.2, 0.36, 1);
+  }
+}
+
 .docs-demo-frame[data-sized] {
   box-shadow: 1px 0 0 var(--gb-border);
 }
 
+/* UI SDK's resize handle, zero layout width (it gives the handle its hit area). The grip sits just
+   inside a full-width frame's edge, and just outside a sized one's. */
 .docs-demo-handle {
   position: relative;
   z-index: 2;
-  flex-shrink: 0;
-  width: 16px;
-  margin-left: -16px;
+  width: 0;
   cursor: ew-resize;
-  touch-action: none;
 }
 
-.docs-demo-frame[data-sized] + .docs-demo-handle {
-  margin-left: 0;
+.docs-demo-handle:focus-visible {
+  outline: none;
 }
 
 .docs-demo-handle::after {
   position: absolute;
   top: 50%;
-  left: 5px;
+  left: -11px;
   width: 5px;
   height: 40px;
   margin-top: -20px;
@@ -3333,7 +3339,11 @@
   transition: background 150ms ease, height 200ms ease, margin 200ms ease;
 }
 
-.docs-demo-handle:hover::after,
+.docs-demo-frame[data-sized] + .docs-demo-handle::after {
+  left: 5px;
+}
+
+.docs-demo-handle[data-hovering]::after,
 .docs-demo-handle:focus-visible::after,
 .docs-demo-handle[data-dragging]::after {
   height: 56px;
@@ -3568,31 +3578,38 @@
 
 /* Code view: file tree + source */
 
+/* The Code view: UI SDK tabs (one per file) around a resizable split, the file list beside the source. */
+.docs-demo-code-tabs {
+  display: contents;
+}
+
 .docs-demo-code {
   display: flex;
   background: var(--gb-panel);
 }
 
+.docs-demo-files-pane,
+.docs-demo-source-pane {
+  display: flex;
+  flex-direction: column;
+}
+
 .docs-demo-files {
-  flex-shrink: 0;
+  flex: 1;
   box-sizing: border-box;
-  /* --docs-demo-files-w is set (px) once the reader drags the handle; 188px until then. */
-  width: var(--docs-demo-files-w, 188px);
   padding: 8px;
   overflow-y: auto;
   border-right: 1px solid var(--gb-border);
   background: var(--gb-muted);
 }
 
-/* The drag handle between the file list and the source: zero layout width, with a wider hit area
-   and the same grip as the preview handle straddling the divider. */
+/* The resize handle between the file list and the source: zero layout width (UI SDK gives it a wider
+   hit area), with the same grip as the preview handle straddling the divider. */
 .docs-demo-files-handle {
   position: relative;
   z-index: 2;
-  flex: 0 0 0;
   width: 0;
   cursor: col-resize;
-  touch-action: none;
 }
 
 .docs-demo-files-handle::before {
@@ -3622,7 +3639,7 @@
   opacity: 1;
 }
 
-.docs-demo-files-handle:hover::after,
+.docs-demo-files-handle[data-hovering]::after,
 .docs-demo-files-handle:focus-visible::after,
 .docs-demo-files-handle[data-dragging]::after {
   height: 56px;
@@ -3695,14 +3712,14 @@
   background: var(--gb-hover);
 }
 
-.docs-demo-file[aria-selected="true"] {
+.docs-demo-file[data-selected] {
   background: var(--gb-panel);
   box-shadow: var(--gb-pill-shadow);
   color: var(--gb-primary);
   font-weight: 600;
 }
 
-.docs-demo-file[aria-selected="true"] svg {
+.docs-demo-file[data-selected] svg {
   color: var(--gb-primary);
 }
 
@@ -3711,6 +3728,7 @@
   flex: 1;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
 }
 
 .docs-demo-source-h {
@@ -3798,7 +3816,7 @@
 }
 
 .docs-demo-crumb:hover,
-.docs-demo-crumb[aria-expanded="true"] {
+.docs-demo-crumb[data-open] {
   background: var(--gb-hover);
   color: var(--gb-panel-foreground);
 }
@@ -3817,17 +3835,14 @@
   outline-offset: -2px;
 }
 
-/* The sibling / hidden-segment menu. Portalled next to the docs root (so it isn't clipped by the
-   viewer) and fixed under its trigger; --crumb-x / --crumb-y are set from the trigger's rect. */
+/* The sibling / hidden-segment menu: UI SDK's menu, in the top layer (so the viewer never clips it) and
+   placed under its trigger by UI SDK. */
 .docs-demo-crumb-menu {
-  position: fixed;
-  top: var(--crumb-y, 0);
-  left: var(--crumb-x, 0);
-  z-index: 60;
   box-sizing: border-box;
   min-width: 160px;
   max-width: min(320px, calc(100vw - 16px));
-  max-height: min(320px, calc(100vh - 16px));
+  max-height: min(320px, var(--available-height, calc(100vh - 16px)));
+  margin: 0;
   padding: 4px;
   overflow-y: auto;
   border: 1px solid var(--gb-border);
@@ -3859,8 +3874,7 @@
   color: var(--gb-muted-foreground);
 }
 
-.docs-demo-crumb-option:hover,
-.docs-demo-crumb-option:focus-visible {
+.docs-demo-crumb-option[data-highlighted] {
   outline: none;
   background: var(--gb-hover);
 }
@@ -3910,8 +3924,17 @@
 }
 
 @container (max-width: 560px) {
+  /* Stacked: the file list becomes a strip over the source, so the split's sizes don't apply. */
   .docs-demo-code {
-    flex-direction: column;
+    flex-direction: column !important;
+  }
+
+  .docs-demo-files-pane {
+    flex: none !important;
+  }
+
+  .docs-demo-source-pane {
+    flex: 1 1 0 !important;
   }
 
   .docs-demo-files {
@@ -4006,7 +4029,10 @@
 
 /* Fullscreen overlay + deep link */
 
+/* UI SDK's dialog content, a modal in the top layer. */
 .docs-demo-dialog {
+  position: fixed;
+  inset: 0;
   box-sizing: border-box;
   width: 100vw;
   max-width: none;
@@ -4017,10 +4043,6 @@
   border: 0;
   background: var(--background, var(--gb-panel));
   color: var(--foreground, var(--gb-panel-foreground));
-}
-
-.docs-demo-dialog:not([open]) {
-  display: none;
 }
 
 .docs-demo-dialog::backdrop {
@@ -4072,7 +4094,8 @@
   .docs-demo-handle::after,
   .docs-demo-files-handle::after,
   .docs-demo-crumb,
-  .docs-page-actions-more svg {
+  .docs-page-actions-more svg,
+  .docs-page-actions-menu {
     transition: none;
   }
 }

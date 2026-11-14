@@ -6,6 +6,7 @@
    copied as plain text (editors still parse its inline-file demos). */
 import { useEffect, useRef, useState, type DOMAttributes, type MutableRefObject } from "react"
 import { useClipboard } from "react-aria"
+import { Button } from "@ui-sdk/react/button"
 import { CopyIcon, copyText } from "../docs/copy"
 import { docstreamClipboardItems, type DocstreamClipboard } from "./clipboard"
 
@@ -78,10 +79,9 @@ export function CopyDemoButton({ clipboard, label = "Copy demo", className }: Co
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(timer.current), [])
   return (
-    <button
+    <Button
       {...props}
       ref={ref}
-      type="button"
       className={className ? `docs-copy ${className}` : "docs-copy"}
       onClick={() => {
         void copy().then((ok) => {
@@ -97,6 +97,6 @@ export function CopyDemoButton({ clipboard, label = "Copy demo", className }: Co
       data-docstream-copy-demo=""
     >
       <CopyIcon copied={copied} />
-    </button>
+    </Button>
   )
 }

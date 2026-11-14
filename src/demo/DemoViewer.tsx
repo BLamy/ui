@@ -21,12 +21,13 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type Ref,
 } from "react"
-import { motion, useReducedMotion } from "framer-motion"
+import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "@ui-sdk/react/dialog"
+import { createResizableController, Resizable, ResizableHandle, ResizablePanel } from "@ui-sdk/react/resizable"
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs"
+import { Toggle, ToggleGroup } from "@ui-sdk/react/toggle"
 import { ExternalLink, FileCode2, Folder, Maximize2, Monitor, Smartphone, Tablet, X } from "lucide-react"
 
 import type { DemoLayout, DemoNode, DemoViewport } from "../gitbook/ast"
@@ -34,7 +35,7 @@ import { parseInline } from "../gitbook/inline"
 import { CollapsibleCode } from "../docs/CollapsibleCode"
 import { HighlightedCode } from "../docs/HighlightedCode"
 import { CopyButton } from "../docs/copy"
-import { PillTabs, Segmented, rovingKeyDown } from "../docs/controls"
+import { PillTabsList, Segmented } from "../docs/controls"
 import { DocstreamDemoContext, useDemoResolver, useDemoRuntime } from "./context"
 import { createDocstreamClipboard, type DemoSourceSnapshot, type DocstreamClipboard } from "./clipboard"
 import { CopyDemoButton } from "./copy-demo"
@@ -345,98 +346,72 @@ const VIEWPORTS: { id: DemoViewport; label: string; width: number | null; Icon: 
   { id: "phone", label: "Phone", width: 390, Icon: Smartphone },
 ]
 const MIN_WIDTH = 280
+const VIEW_TABS: { id: ViewTab; label: string }[] = [{ id: "preview", label: "Preview" }, { id: "code", label: "Code" }]
 
-/** The resizable preview frame on its stage. `width === null` fills the stage. */
+/** The resizable preview frame on its stage: UI SDK's resizable, the frame and an empty stretch of stage
+ *  beside it. `width === null` fills the stage. */
 function PreviewStage({ width, onResize, height, children }: {
   width: number | null
   onResize: (width: number | null) => void
   height: string
   children: ReactNode
 }) {
-  const reduced = useReducedMotion()
-  const frame = useRef<HTMLDivElement | null>(null)
-  const [dragging, setDragging] = useState(false)
+  const stage = useRef<HTMLDivElement | null>(null)
+  const [resizable] = useState(() => createResizableController())
   const [measured, setMeasured] = useState<number | null>(null)
-  const [max, setMax] = useState<number>(0)
+  // The width this stage last reported, so the effect below doesn't push a drag's own result back.
+  const reported = useRef<number | null | undefined>(undefined)
 
   useEffect(() => {
-    const el = frame.current
-    if (!el || typeof ResizeObserver === "undefined") return
-    const observer = new ResizeObserver(() => {
-      setMeasured(Math.round(el.getBoundingClientRect().width))
-      setMax(el.parentElement?.clientWidth ?? 0)
-    })
-    observer.observe(el)
-    if (el.parentElement) observer.observe(el.parentElement)
+    const el = stage.current
+    const frame = el?.querySelector<HTMLElement>(".docs-demo-frame")
+    if (!el || !frame || typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(() => setMeasured(Math.round(frame.getBoundingClientRect().width) || null))
+    observer.observe(frame)
     return () => observer.disconnect()
   }, [])
 
-  const clamp = (next: number) => {
-    const limit = frame.current?.parentElement?.clientWidth ?? next
-    const value = Math.round(Math.min(limit, Math.max(MIN_WIDTH, next)))
-    return value >= limit - 4 ? null : value
-  }
+  useEffect(() => {
+    if (reported.current === width) return
+    reported.current = width
+    if (width === null) resizable.setLayout([100, 0])
+    else resizable.resize(0, `${width}px`)
+  }, [width, resizable])
 
-  const startDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const el = frame.current
-    if (!el || event.button !== 0) return
-    event.preventDefault()
-    const left = el.getBoundingClientRect().left
-    setDragging(true)
-    const move = (ev: PointerEvent) => onResize(clamp(ev.clientX - left))
-    const up = () => {
-      setDragging(false)
-      window.removeEventListener("pointermove", move)
-      window.removeEventListener("pointerup", up)
-      window.removeEventListener("pointercancel", up)
-    }
-    window.addEventListener("pointermove", move)
-    window.addEventListener("pointerup", up)
-    window.addEventListener("pointercancel", up)
-  }
-
-  const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const current = width ?? measured ?? max
-    const step = event.shiftKey ? 50 : 10
-    let next: number | null | undefined
-    if (event.key === "ArrowLeft") next = clamp(current - step)
-    else if (event.key === "ArrowRight") next = clamp(current + step)
-    else if (event.key === "Home") next = clamp(MIN_WIDTH)
-    else if (event.key === "End") next = null
-    if (next === undefined) return
-    event.preventDefault()
+  const onLayoutChange = (layout: number[], details: { reason: string }) => {
+    if (details.reason !== "drag" && details.reason !== "step-key") return
+    const total = stage.current?.getBoundingClientRect().width ?? 0
+    const px = Math.round(((layout[0] ?? 100) / 100) * total)
+    const next = layout[0] >= 99.5 || (total > 0 && px >= total - 4) ? null : px
+    reported.current = next
     onResize(next)
   }
 
   return (
-    <div className="docs-demo-stage" style={{ height }} data-dragging={dragging || undefined}>
-      <motion.div
-        ref={frame}
+    <Resizable
+      ref={stage}
+      className="docs-demo-stage"
+      style={{ height }}
+      controller={resizable}
+      onLayoutChange={onLayoutChange}
+    >
+      <ResizablePanel
         className="docs-demo-frame"
         data-sized={width !== null || undefined}
-        initial={false}
-        animate={{ width: width ?? "100%" }}
-        transition={dragging || reduced ? { duration: 0 } : { type: "spring", bounce: 0.12, duration: 0.5 }}
+        defaultSize={width === null ? 100 : `${width}px`}
+        minSize={`${MIN_WIDTH}px`}
       >
         {children}
-      </motion.div>
-      <div
+      </ResizablePanel>
+      <ResizableHandle
         className="docs-demo-handle"
-        role="separator"
-        tabIndex={0}
-        aria-orientation="vertical"
         aria-label="Resize preview"
-        aria-valuemin={MIN_WIDTH}
-        aria-valuemax={max || undefined}
-        aria-valuenow={measured ?? undefined}
         aria-valuetext={measured ? `${measured} pixels wide` : undefined}
-        data-dragging={dragging || undefined}
-        onPointerDown={startDrag}
-        onKeyDown={onKeyDown}
         onDoubleClick={() => onResize(null)}
       />
+      <ResizablePanel className="docs-demo-stage-rest" defaultSize={width === null ? 0 : undefined} />
       <span className="docs-demo-readout" aria-hidden="true">{measured ? `${measured}px` : ""}</span>
-    </div>
+    </Resizable>
   )
 }
 
@@ -470,18 +445,7 @@ export const FILES_MIN_WIDTH = 140
 /** The file list never takes more than this share of the viewer, so the source pane can't collapse. */
 export const FILES_MAX_SHARE = 0.6
 
-/** The widest the file list may be inside a viewer `container` px wide (never below the minimum). */
-export function filesMaxWidth(container: number): number {
-  return Math.max(FILES_MIN_WIDTH, Math.floor(container * FILES_MAX_SHARE))
-}
-
-/** Clamp a file list width to [min, 60% of the viewer]. An unmeasured viewer (0) only enforces the minimum. */
-export function clampFilesWidth(width: number, container: number): number {
-  const max = container > 0 ? filesMaxWidth(container) : Infinity
-  return Math.round(Math.min(max, Math.max(FILES_MIN_WIDTH, width)))
-}
-
-function CodeView({ src, files, height, id }: { src: string; files: DemoFile[]; height: string; id: string }) {
+function CodeView({ src, files, height }: { src: string; files: DemoFile[]; height: string }) {
   const [active, setActive] = useState(files[0]?.path ?? "")
   useEffect(() => {
     if (!files.some((f) => f.path === active)) setActive(files[0]?.path ?? "")
@@ -489,144 +453,80 @@ function CodeView({ src, files, height, id }: { src: string; files: DemoFile[]; 
   const file = files.find((f) => f.path === active) ?? files[0]
   const rows = useMemo(() => fileTree(files), [files])
   const paths = files.map((f) => f.path)
-  const tabId = (path: string) => `${id}-file-${paths.indexOf(path)}`
-  const panelId = `${id}-source`
-
-  // The file list width is the user's choice (null: the default). It lives here, so it survives file switches.
-  const code = useRef<HTMLDivElement | null>(null)
-  const [chosen, setChosen] = useState<number | null>(null)
-  const [container, setContainer] = useState(0)
-  const [dragging, setDragging] = useState(false)
-  useEffect(() => {
-    const el = code.current
-    if (!el || typeof ResizeObserver === "undefined") return
-    const observer = new ResizeObserver(() => setContainer(Math.round(el.getBoundingClientRect().width)))
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-  const width = clampFilesWidth(chosen ?? FILES_DEFAULT_WIDTH, container)
-  const max = container > 0 ? filesMaxWidth(container) : undefined
-
-  const startDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const el = code.current
-    if (!el || event.button !== 0) return
-    event.preventDefault()
-    const handle = event.currentTarget
-    const pointer = event.pointerId
-    try {
-      handle.setPointerCapture(pointer)
-    } catch {
-      /* not capturable (synthetic event): the window listeners still follow the drag */
-    }
-    const left = el.getBoundingClientRect().left
-    setDragging(true)
-    const move = (ev: PointerEvent) => setChosen(clampFilesWidth(ev.clientX - left, el.getBoundingClientRect().width))
-    const up = () => {
-      setDragging(false)
-      if (handle.hasPointerCapture?.(pointer)) handle.releasePointerCapture(pointer)
-      window.removeEventListener("pointermove", move)
-      window.removeEventListener("pointerup", up)
-      window.removeEventListener("pointercancel", up)
-    }
-    window.addEventListener("pointermove", move)
-    window.addEventListener("pointerup", up)
-    window.addEventListener("pointercancel", up)
-  }
-
-  const onResizeKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const step = event.shiftKey ? 50 : 10
-    let next: number | undefined
-    if (event.key === "ArrowLeft") next = width - step
-    else if (event.key === "ArrowRight") next = width + step
-    else if (event.key === "Home") next = FILES_MIN_WIDTH
-    else if (event.key === "End") next = max ?? width
-    if (next === undefined) return
-    event.preventDefault()
-    setChosen(clampFilesWidth(next, container))
-  }
+  // The file list width is the user's choice; it lives in the resizable, so it survives file switches.
+  const [resizable] = useState(() => createResizableController())
 
   return (
-    <div
-      ref={code}
-      className="docs-demo-code"
-      style={{ height, ...(chosen === null ? null : { "--docs-demo-files-w": `${width}px` }) } as CSSProperties}
-      data-dragging={dragging || undefined}
+    <Tabs
+      className="docs-demo-code-tabs"
+      orientation="vertical"
+      value={file?.path ?? null}
+      onValueChange={(next) => {
+        if (next) setActive(next)
+      }}
     >
-      <div
-        className="docs-demo-files"
-        role="tablist"
-        aria-orientation="vertical"
-        aria-label="Files"
-        onKeyDown={(event) => rovingKeyDown(event, paths, active, setActive, "vertical")}
-      >
-        <div className="docs-demo-files-h" aria-hidden="true">Files</div>
-        {rows.map((row) =>
-          row.kind === "dir" ? (
-            <div key={`d:${row.path}`} className="docs-demo-dir" style={{ "--depth": row.depth } as CSSProperties} aria-hidden="true">
-              <Folder width={13} height={13} aria-hidden="true" />
-              {row.name}
+      <Resizable className="docs-demo-code" style={{ height }} controller={resizable}>
+        <ResizablePanel
+          className="docs-demo-files-pane"
+          defaultSize={`${FILES_DEFAULT_WIDTH}px`}
+          minSize={`${FILES_MIN_WIDTH}px`}
+          maxSize={`${FILES_MAX_SHARE * 100}%`}
+        >
+          <TabsList className="docs-demo-files" aria-label="Files">
+            <div className="docs-demo-files-h" aria-hidden="true">Files</div>
+            {rows.map((row) =>
+              row.kind === "dir" ? (
+                <div key={`d:${row.path}`} className="docs-demo-dir" style={{ "--depth": row.depth } as CSSProperties} aria-hidden="true">
+                  <Folder width={13} height={13} aria-hidden="true" />
+                  {row.name}
+                </div>
+              ) : (
+                <TabsTab
+                  key={row.path}
+                  value={row.path}
+                  title={row.path}
+                  className="docs-demo-file"
+                  style={{ "--depth": row.depth } as CSSProperties}
+                >
+                  <FileCode2 width={13} height={13} aria-hidden="true" />
+                  <span>{row.name}</span>
+                </TabsTab>
+              ),
+            )}
+          </TabsList>
+        </ResizablePanel>
+        <ResizableHandle
+          className="docs-demo-files-handle"
+          aria-label="Resize file list"
+          onDoubleClick={() => resizable.resize(0, `${FILES_DEFAULT_WIDTH}px`)}
+        />
+        <ResizablePanel className="docs-demo-source-pane">
+          <div className="docs-demo-source">
+            {/* The header stays mounted across files, so the breadcrumb keeps focus as it switches them. */}
+            <div className="docs-demo-source-h">
+              {file ? <PathBreadcrumb src={src} path={file.path} paths={paths} onSelect={setActive} /> : <span className="docs-demo-crumbs" />}
+              {file ? <CopyButton text={file.content} label={`Copy ${file.path}`} /> : null}
             </div>
-          ) : (
-            <button
-              key={row.path}
-              id={tabId(row.path)}
-              type="button"
-              role="tab"
-              data-roving=""
-              aria-selected={row.path === active}
-              aria-controls={panelId}
-              tabIndex={row.path === active ? 0 : -1}
-              title={row.path}
-              className="docs-demo-file"
-              style={{ "--depth": row.depth } as CSSProperties}
-              onClick={() => setActive(row.path)}
-            >
-              <FileCode2 width={13} height={13} aria-hidden="true" />
-              <span>{row.name}</span>
-            </button>
-          ),
-        )}
-      </div>
-      <div
-        className="docs-demo-files-handle"
-        role="separator"
-        tabIndex={0}
-        aria-orientation="vertical"
-        aria-label="Resize file list"
-        aria-controls={panelId}
-        aria-valuemin={FILES_MIN_WIDTH}
-        aria-valuemax={max}
-        aria-valuenow={width}
-        aria-valuetext={`${width} pixels wide`}
-        data-dragging={dragging || undefined}
-        onPointerDown={startDrag}
-        onKeyDown={onResizeKey}
-        onDoubleClick={() => setChosen(null)}
-      />
-      <div className="docs-demo-source" role="tabpanel" id={panelId} aria-labelledby={file ? tabId(file.path) : undefined}>
-        <div className="docs-demo-source-h">
-          {file ? <PathBreadcrumb src={src} path={file.path} paths={paths} onSelect={setActive} /> : <span className="docs-demo-crumbs" />}
-          {file ? <CopyButton text={file.content} label={`Copy ${file.path}`} /> : null}
-        </div>
-        <div className="docs-demo-source-body" tabIndex={0} aria-label={file ? `${file.path} source` : undefined}>
-          {file ? (
-            <pre className="docs-code-numbered">
-              <HighlightedCode code={file.content.replace(/\n+$/, "")} language={file.language ?? languageForPath(file.path) ?? null} lineNumbers />
-            </pre>
-          ) : (
-            <Spinner label="Loading files" />
-          )}
-        </div>
-      </div>
-    </div>
+            {files.map((f) => (
+              <TabsPanel key={f.path} value={f.path} className="docs-demo-source-body">
+                <pre className="docs-code-numbered">
+                  <HighlightedCode code={f.content.replace(/\n+$/, "")} language={f.language ?? languageForPath(f.path) ?? null} lineNumbers />
+                </pre>
+              </TabsPanel>
+            ))}
+            {file ? null : <Spinner label="Loading files" />}
+          </div>
+        </ResizablePanel>
+      </Resizable>
+    </Tabs>
   )
 }
 
-function FullscreenButton({ onOpen, title }: { onOpen: () => void; title: string }) {
+function FullscreenButton({ title }: { title: string }) {
   return (
-    <button type="button" className="docs-demo-icon-btn" onClick={onOpen} aria-label={`Open ${title} fullscreen`} title="Fullscreen">
+    <DialogTrigger className="docs-demo-icon-btn" aria-label={`Open ${title} fullscreen`} title="Fullscreen">
       <Maximize2 width={15} height={15} aria-hidden="true" />
-    </button>
+    </DialogTrigger>
   )
 }
 
@@ -663,10 +563,9 @@ function StatusBadge({ status }: { status: string | undefined }) {
   return status ? <span className="docs-demo-status">{status}</span> : null
 }
 
-/** A full-viewport overlay (native modal dialog: top layer, focus trap, Esc to close). */
-function FullscreenDialog({ open, onClose, title, src, variants, variant, onVariant, preview, bleed, look, variantsWidth, href }: {
-  open: boolean
-  onClose: () => void
+/** The full-viewport overlay: UI SDK's modal dialog (top layer, focus trap, Escape to close). It sits inside the
+ *  `Dialog` root that wraps the viewer, so the header's fullscreen button is its trigger. */
+function FullscreenDialog({ title, src, variants, variant, onVariant, preview, bleed, look, variantsWidth, href }: {
   title: string
   src: string
   variants: DemoVariant[] | undefined
@@ -678,38 +577,24 @@ function FullscreenDialog({ open, onClose, title, src, variants, variant, onVari
   variantsWidth?: number | string
   href?: string
 }) {
-  const ref = useRef<HTMLDialogElement | null>(null)
-  const titleId = useId()
-  useEffect(() => {
-    const dialog = ref.current
-    if (!dialog) return
-    if (open && !dialog.open) {
-      if (typeof dialog.showModal === "function") dialog.showModal()
-      else dialog.setAttribute("open", "")
-    } else if (!open && dialog.open) {
-      dialog.close()
-    }
-  }, [open])
   return (
-    <dialog ref={ref} className="docs-demo-dialog" aria-labelledby={titleId} onClose={onClose} onCancel={onClose}>
-      {open ? (
-        <div className="docs-demo-dialog-inner">
-          <div className="docs-demo-dialog-bar">
-            <span id={titleId} className="docs-demo-title">{title}</span>
-            <span className="docs-demo-dialog-src">{src}</span>
-            <span className="docs-demo-spacer" />
-            <VariantSwitch variants={variants} value={variant} onChange={onVariant} title={title} width={variantsWidth} />
-            <NewTabLink href={href} title={title} />
-            <button type="button" className="docs-demo-icon-btn" onClick={onClose} aria-label="Close fullscreen" title="Close (Esc)" autoFocus>
-              <X width={16} height={16} aria-hidden="true" />
-            </button>
-          </div>
-          <div className="docs-demo-dialog-stage">
-            <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} look={look} />
-          </div>
+    <DialogContent className="docs-demo-dialog" initialFocus=".docs-demo-dialog-close">
+      <div className="docs-demo-dialog-inner">
+        <div className="docs-demo-dialog-bar">
+          <DialogTitle render={<span />} className="docs-demo-title">{title}</DialogTitle>
+          <span className="docs-demo-dialog-src">{src}</span>
+          <span className="docs-demo-spacer" />
+          <VariantSwitch variants={variants} value={variant} onChange={onVariant} title={title} width={variantsWidth} />
+          <NewTabLink href={href} title={title} />
+          <DialogClose className="docs-demo-icon-btn docs-demo-dialog-close" aria-label="Close fullscreen" title="Close (Esc)">
+            <X width={16} height={16} aria-hidden="true" />
+          </DialogClose>
         </div>
-      ) : null}
-    </dialog>
+        <div className="docs-demo-dialog-stage">
+          <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} look={look} />
+        </div>
+      </div>
+    </DialogContent>
   )
 }
 
@@ -776,7 +661,6 @@ export function DemoViewer(props: DemoViewerProps) {
   }
   const variantsWidth = props.variantsWidth ?? metaValue?.variantsWidth
   const status = props.status ?? metaValue?.status
-  const [fullscreen, setFullscreen] = useState(false)
   const href = mode === "resolver" ? resolver?.href?.(src, variant ? { variant } : undefined) : undefined
   const baseId = useId()
 
@@ -828,8 +712,6 @@ export function DemoViewer(props: DemoViewerProps) {
 
   const dialog = (
     <FullscreenDialog
-      open={fullscreen}
-      onClose={() => setFullscreen(false)}
       title={title}
       src={src}
       variants={variants}
@@ -847,6 +729,7 @@ export function DemoViewer(props: DemoViewerProps) {
   if (layout === "single") {
     const file = fileList?.[0]
     return (
+      <Dialog>
       <section ref={ref} className={wrapper("single")} data-docstream-demo="" data-demo-src={src} data-demo-mode={mode} aria-labelledby={`${baseId}-title`}>
         <div className="docs-react-demo">
           <header className="docs-react-demo-header docs-demo-single-head">
@@ -858,7 +741,7 @@ export function DemoViewer(props: DemoViewerProps) {
             <StatusBadge status={status} />
             <VariantSwitch variants={variants} value={variant} onChange={setVariant} title={title} width={variantsWidth} />
             {fileList?.length ? <CopyDemoButton clipboard={copyDemo} className="docs-demo-icon-btn" /> : null}
-            {runnable ? <FullscreenButton onOpen={() => setFullscreen(true)} title={title} /> : null}
+            {runnable ? <FullscreenButton title={title} /> : null}
           </header>
           {runnable ? (
             <div
@@ -889,10 +772,12 @@ export function DemoViewer(props: DemoViewerProps) {
         </div>
         {dialog}
       </section>
+      </Dialog>
     )
   }
 
   return (
+    <Dialog>
     <MultiFileViewer
       rootRef={ref}
       className={wrapper(layout ?? "pending")}
@@ -914,14 +799,14 @@ export function DemoViewer(props: DemoViewerProps) {
       status={status}
       variantsWidth={variantsWidth}
       href={href}
-      onFullscreen={() => setFullscreen(true)}
       copyDemo={fileList?.length ? copyDemo : undefined}
       dialog={dialog}
     />
+    </Dialog>
   )
 }
 
-function MultiFileViewer({ rootRef, className, baseId, mode, src, title, description, variants, variant, onVariant, files, preview, near, height, viewport, bleed, look, status, variantsWidth, href, onFullscreen, copyDemo, dialog }: {
+function MultiFileViewer({ rootRef, className, baseId, mode, src, title, description, variants, variant, onVariant, files, preview, near, height, viewport, bleed, look, status, variantsWidth, href, copyDemo, dialog }: {
   rootRef: Ref<HTMLElement>
   className: string
   baseId: string
@@ -942,7 +827,6 @@ function MultiFileViewer({ rootRef, className, baseId, mode, src, title, descrip
   status: string | undefined
   variantsWidth: number | string | undefined
   href: string | undefined
-  onFullscreen: () => void
   copyDemo: (() => DocstreamClipboard | null) | undefined
   dialog: ReactNode
 }) {
@@ -957,47 +841,53 @@ function MultiFileViewer({ rootRef, className, baseId, mode, src, title, descrip
   const activeViewport = width === null ? "desktop" : VIEWPORTS.find((v) => v.width === width)?.id
 
   return (
-    <section ref={rootRef} className={className} data-docstream-demo="" data-demo-src={src} data-demo-mode={mode} aria-labelledby={`${baseId}-title`}>
+    <Tabs
+      render={<section ref={rootRef} />}
+      className={className}
+      data-docstream-demo=""
+      data-demo-src={src}
+      data-demo-mode={mode}
+      aria-labelledby={`${baseId}-title`}
+      value={tab}
+      onValueChange={(next) => {
+        if (next === "preview" || next === "code") setTab(next)
+      }}
+    >
       <div className="docs-demo-head">
         <div className="docs-demo-heading">
           <div id={`${baseId}-title`} className="docs-demo-title">{title}</div>
           {description ? <p className="docs-demo-desc"><InlineMarkdown text={description} /></p> : null}
         </div>
         <div className="docs-demo-tools">
-          <PillTabs
-            options={[{ id: "preview", label: "Preview" }, { id: "code", label: "Code" }] as const}
-            value={tab}
-            onChange={setTab}
-            label={`${title} view`}
-            tabId={(id) => `${baseId}-tab-${id}`}
-            panelId={(id) => `${baseId}-panel-${id}`}
-          />
+          <PillTabsList options={VIEW_TABS} label={`${title} view`} />
           <StatusBadge status={status} />
           <VariantSwitch variants={variants} value={variant} onChange={onVariant} title={title} width={variantsWidth} />
           {tab === "preview" && runnable ? (
-            <div className="docs-demo-viewports" role="group" aria-label="Preview width">
+            <ToggleGroup
+              className="docs-demo-viewports"
+              aria-label="Preview width"
+              deselectable={false}
+              value={activeViewport ? [activeViewport] : []}
+              onValueChange={(next) => {
+                const chosen = VIEWPORTS.find((v) => v.id === next[0])
+                if (chosen) setWidth(chosen.width)
+              }}
+            >
               {VIEWPORTS.map(({ id, label, width: w, Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  className="docs-demo-vp"
-                  aria-pressed={activeViewport === id}
-                  aria-label={w ? `${label} (${w}px)` : label}
-                  title={w ? `${label} · ${w}px` : label}
-                  onClick={() => setWidth(w)}
-                >
+                <Toggle key={id} value={id} className="docs-demo-vp" aria-label={w ? `${label} (${w}px)` : label} title={w ? `${label} · ${w}px` : label}>
                   <Icon width={15} height={15} aria-hidden="true" />
-                </button>
+                </Toggle>
               ))}
-            </div>
+            </ToggleGroup>
           ) : null}
           {copyDemo ? <CopyDemoButton clipboard={copyDemo} className="docs-demo-icon-btn" /> : null}
-          {runnable ? <FullscreenButton onOpen={onFullscreen} title={title} /> : null}
+          {runnable ? <FullscreenButton title={title} /> : null}
           <NewTabLink href={href} title={title} />
         </div>
       </div>
       <div className="docs-demo-body">
-        <div id={`${baseId}-panel-preview`} role="tabpanel" aria-labelledby={`${baseId}-tab-preview`} hidden={tab !== "preview"}>
+        {/* Both panels stay mounted, so the preview keeps its state while the code shows. */}
+        <TabsPanel value="preview" keepMounted>
           {runnable ? (
             <PreviewStage width={width} onResize={setWidth} height={height}>
               {near ? <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} look={look} /> : <Spinner />}
@@ -1005,22 +895,22 @@ function MultiFileViewer({ rootRef, className, baseId, mode, src, title, descrip
           ) : (
             <DemoCanvas src={src} preview={preview} variant={variant} />
           )}
-        </div>
-        <div id={`${baseId}-panel-code`} role="tabpanel" aria-labelledby={`${baseId}-tab-code`} hidden={tab !== "code"}>
+        </TabsPanel>
+        <TabsPanel value="code" keepMounted>
           {!runnable && tab === "code" ? <DemoCanvas src={src} preview={preview} variant={variant} /> : null}
           {codeSeen || tab === "code" ? (
             files.status === "ready" ? (
-              <CodeView src={src} files={files.value} height={height} id={baseId} />
+              <CodeView src={src} files={files.value} height={height} />
             ) : files.status === "error" ? (
               <DemoError message={`${src}: ${files.error.message}`} />
             ) : (
               <div className="docs-demo-code" style={{ height }}><Spinner label="Loading files" /></div>
             )
           ) : null}
-        </div>
+        </TabsPanel>
       </div>
       {dialog}
-    </section>
+    </Tabs>
   )
 }
 

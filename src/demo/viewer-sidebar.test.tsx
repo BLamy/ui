@@ -2,7 +2,7 @@
 import { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { DemoViewer, FILES_DEFAULT_WIDTH, FILES_MIN_WIDTH, clampFilesWidth, filesMaxWidth } from "./DemoViewer"
+import { DemoViewer } from "./DemoViewer"
 import type { DemoFile } from "./types"
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -26,6 +26,7 @@ afterEach(() => {
   act(() => root.unmount())
   host.remove()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 const flush = async () => {
@@ -43,62 +44,44 @@ const handle = () => host.querySelector<HTMLElement>(".docs-demo-files-handle")!
 const code = () => host.querySelector<HTMLElement>(".docs-demo-code")!
 const menu = () => document.querySelector<HTMLElement>("[role=menu]")
 const options = () => [...(menu()?.querySelectorAll<HTMLElement>("[role=menuitem]") ?? [])].map((o) => o.textContent)
+const press = (el: Element) =>
+  act(async () => {
+    for (const type of ["pointerdown", "mousedown", "pointerup", "mouseup", "click"])
+      el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button: 0 }))
+  })
 const key = (el: Element, k: string, init: KeyboardEventInit = {}) =>
   act(async () => void el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...init })))
 
-describe("clampFilesWidth", () => {
-  it("clamps to [140, 60% of the viewer]; an unmeasured viewer only enforces the minimum", () => {
-    expect(clampFilesWidth(50, 800)).toBe(FILES_MIN_WIDTH)
-    expect(clampFilesWidth(900, 800)).toBe(480)
-    expect(clampFilesWidth(300.4, 800)).toBe(300)
-    expect(clampFilesWidth(900, 0)).toBe(900)
-    expect(filesMaxWidth(100)).toBe(FILES_MIN_WIDTH)
-  })
-})
-
+/* UI SDK's resizable sizes panels from layout, which happy-dom doesn't do: pixel bounds (188px default,
+   140px min) resolve only in a browser. These check the wiring: a named splitter that controls the file
+   list, moves with the keys, and keeps its size when another file is picked. */
 describe("file list resize handle", () => {
-  it("starts at the default and moves with the arrow keys (Shift for a bigger step), Home and End", async () => {
+  it("is a named, focusable vertical splitter that controls the file list", async () => {
     await mount()
-    expect(handle().getAttribute("aria-valuenow")).toBe(String(FILES_DEFAULT_WIDTH))
-    expect(code().style.getPropertyValue("--docs-demo-files-w")).toBe("")
+    const h = handle()
+    expect(h.getAttribute("role")).toBe("separator")
+    expect(h.getAttribute("aria-label")).toBe("Resize file list")
+    expect(h.getAttribute("aria-orientation")).toBe("vertical")
+    expect(h.tabIndex).toBe(0)
+    const pane = host.querySelector<HTMLElement>(".docs-demo-files-pane")!
+    expect(h.getAttribute("aria-controls")).toBe(pane.id)
+    expect(pane.querySelector("[role=tablist]")!.getAttribute("aria-label")).toBe("Files")
+  })
+
+  it("moves with the arrow keys, and the size survives switching files", async () => {
+    await mount()
+    const before = Number(handle().getAttribute("aria-valuenow"))
+    await act(async () => handle().focus())
     await key(handle(), "ArrowRight")
-    expect(handle().getAttribute("aria-valuenow")).toBe("198")
-    expect(code().style.getPropertyValue("--docs-demo-files-w")).toBe("198px")
-    await key(handle(), "ArrowLeft", { shiftKey: true })
-    expect(handle().getAttribute("aria-valuenow")).toBe("148")
-    await key(handle(), "Home")
-    expect(handle().getAttribute("aria-valuenow")).toBe(String(FILES_MIN_WIDTH))
-    await key(handle(), "ArrowLeft", { shiftKey: true })
-    expect(handle().getAttribute("aria-valuenow")).toBe(String(FILES_MIN_WIDTH))
-  })
-
-  it("double-click resets to the default; the width survives switching files", async () => {
-    await mount()
-    await key(handle(), "ArrowRight", { shiftKey: true })
-    expect(handle().getAttribute("aria-valuenow")).toBe("238")
+    await flush()
+    const after = Number(handle().getAttribute("aria-valuenow"))
+    expect(after).toBeGreaterThan(before)
     await act(async () => host.querySelectorAll<HTMLElement>(".docs-demo-file")[1].click())
-    expect(handle().getAttribute("aria-valuenow")).toBe("238")
-    expect(code().style.getPropertyValue("--docs-demo-files-w")).toBe("238px")
-    await act(async () => void handle().dispatchEvent(new MouseEvent("dblclick", { bubbles: true })))
-    expect(handle().getAttribute("aria-valuenow")).toBe(String(FILES_DEFAULT_WIDTH))
-    expect(code().style.getPropertyValue("--docs-demo-files-w")).toBe("")
-  })
-
-  it("drags with the pointer, clamped to the viewer", async () => {
-    await mount()
-    vi.spyOn(code(), "getBoundingClientRect").mockReturnValue({ left: 100, width: 600, right: 700, top: 0, bottom: 0, height: 0, x: 100, y: 0, toJSON() {} })
-    const down = new MouseEvent("pointerdown", { bubbles: true, cancelable: true, button: 0, clientX: 288 })
-    await act(async () => void handle().dispatchEvent(down))
-    expect(handle().getAttribute("data-dragging")).toBe("true")
-    const move = (clientX: number) => act(async () => void window.dispatchEvent(new MouseEvent("pointermove", { clientX })))
-    await move(400)
-    expect(code().style.getPropertyValue("--docs-demo-files-w")).toBe("300px")
-    await move(1200)
-    expect(code().style.getPropertyValue("--docs-demo-files-w")).toBe("360px")
-    await move(0)
-    expect(code().style.getPropertyValue("--docs-demo-files-w")).toBe(`${FILES_MIN_WIDTH}px`)
-    await act(async () => void window.dispatchEvent(new MouseEvent("pointerup")))
-    expect(handle().getAttribute("data-dragging")).toBeNull()
+    expect(Number(handle().getAttribute("aria-valuenow"))).toBe(after)
+    await key(handle(), "ArrowLeft")
+    await flush()
+    expect(Number(handle().getAttribute("aria-valuenow"))).toBe(before)
+    expect(code().getAttribute("data-slot")).toBe("resizable")
   })
 })
 
@@ -148,18 +131,24 @@ describe("breadcrumb", () => {
     const trigger = buttons()[1]
     await act(async () => trigger.focus())
     await key(trigger, "ArrowDown")
+    await flush()
     expect(options()).toEqual(["avatar.tsx", "user-panel.tsx"])
-    // focus lands on the current entry
+    // focus lands on the first entry; the current one is marked
+    expect(document.activeElement!.textContent).toBe("avatar.tsx")
+    expect(menu()!.querySelector("[aria-current=true]")!.textContent).toBe("user-panel.tsx")
+    await key(document.activeElement!, "ArrowDown")
     expect(document.activeElement!.textContent).toBe("user-panel.tsx")
     await key(document.activeElement!, "ArrowUp")
     expect(document.activeElement!.textContent).toBe("avatar.tsx")
     await key(document.activeElement!, "Escape")
+    await flush()
     expect(menu()).toBeNull()
     expect(document.activeElement).toBe(trigger)
 
     await key(trigger, "ArrowDown")
-    await key(document.activeElement!, "ArrowUp")
-    await act(async () => (document.activeElement as HTMLElement).click()) // Enter on a button is a click
+    await flush()
+    await key(document.activeElement!, "Enter")
+    await flush()
     expect(menu()).toBeNull()
     expect(crumbs()).toEqual(["components", "avatar.tsx"])
   })
@@ -168,7 +157,9 @@ describe("breadcrumb", () => {
     await mount("")
     await act(async () => buttons()[0].click())
     expect(menu()).toBeTruthy()
-    await act(async () => void document.body.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true })))
+    // A whole press, as a browser sends it: the menu consumes the outside press that closes it.
+    await press(document.body)
+    await flush()
     expect(menu()).toBeNull()
   })
 
