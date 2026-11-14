@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Check, Copy } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@ui-sdk/react/tooltip"
 
 /** Copies text, falling back to a selection copy where the Clipboard API is unavailable. */
 export async function copyText(text: string): Promise<void> {
@@ -64,19 +65,20 @@ export interface CopyButtonProps {
   className?: string
 }
 
-/** Icon button that copies `text` and swaps to a tick. */
+/** Icon button that copies `text` and swaps to a tick. Its tooltip names it, and says "Copied" after a copy. */
 export function CopyButton({ text, label = "Copy code", className }: CopyButtonProps) {
   const { copied, copy } = useCopied()
+  const name = copied ? "Copied" : label
   return (
-    <button
-      type="button"
-      className={className ? `docs-copy ${className}` : "docs-copy"}
-      onClick={() => void copy(text)}
-      aria-label={copied ? "Copied" : label}
-      title={copied ? "Copied" : label}
-      data-copied={copied || undefined}
-    >
-      <CopyIcon copied={copied} />
-    </button>
+    <Tooltip type="label" closeOnPress={false}>
+      <TooltipTrigger
+        className={className ? `docs-copy ${className}` : "docs-copy"}
+        onClick={() => void copy(text)}
+        data-copied={copied || undefined}
+      >
+        <CopyIcon copied={copied} />
+      </TooltipTrigger>
+      <TooltipContent className="docs-tooltip" sideOffset={6}>{name}</TooltipContent>
+    </Tooltip>
   )
 }

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
 import { parse as parseYaml } from "yaml"
+import { ChevronRight } from "lucide-react"
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@ui-sdk/react/collapsible"
 
 import { useAsset } from "../asset-resolver"
 import { MarkdownContent } from "../docs/DocsRenderer"
@@ -205,13 +207,16 @@ export function OpenApiOperation({
           const r = resolveRef(spec, raw)
           const schema = r.content?.["application/json"]?.schema
           return (
-            <details key={code} className="oas-response" open={code.startsWith("2")}>
-              <summary>
+            <Collapsible key={code} className="oas-response" defaultOpen={code.startsWith("2")}>
+              <CollapsibleTrigger className="oas-response-trigger">
+                <ChevronRight className="oas-response-caret" width={13} height={13} strokeWidth={2.4} aria-hidden="true" />
                 <span className={`oas-code oas-code-${code[0]}`}>{code}</span>
                 <span>{r.description}</span>
-              </summary>
-              {schema && <SchemaFields spec={spec} schema={schema} />}
-            </details>
+              </CollapsibleTrigger>
+              <CollapsiblePanel hiddenUntilFound className="oas-response-panel">
+                {schema && <SchemaFields spec={spec} schema={schema} />}
+              </CollapsiblePanel>
+            </Collapsible>
           )
         })}
       </section>

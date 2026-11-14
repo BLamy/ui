@@ -12,6 +12,7 @@
    has them. In-page demos read the values with `useDocstreamEnv()`; examples that run in
    almost-node get them as `process.env.NAME`. Without a host the gate asks for the values
    directly and keeps them in memory for the page. */
+import { Button } from "@ui-sdk/react/button"
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
 
 export type DocstreamEnvValues = Readonly<Record<string, string>>
@@ -177,9 +178,9 @@ export function EnvGate({ names, title }: { names: readonly string[]; title?: st
               <li key={n}><code>{n}</code>{host.describe?.(n) ? <span>{host.describe(n)}</span> : null}</li>
             ))}
           </ul>
-          <button type="button" className="docs-env-gate-button" onClick={() => void load()} disabled={busy}>
+          <Button className="docs-env-gate-button" onClick={load} pendingAnnouncement="Waiting for the variables">
             {busy ? "Waiting…" : (typeof host.label === "function" ? host.label(names) : host.label) ?? "Load Variables"}
-          </button>
+          </Button>
         </>
       ) : (
         <form className="docs-env-gate-form" onSubmit={submit}>

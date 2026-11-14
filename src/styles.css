@@ -330,6 +330,8 @@
 }
 
 .docs-tabs-header {
+  position: relative;
+  isolation: isolate;
   display: flex;
   width: fit-content;
   max-width: calc(100% - 24px);
@@ -359,12 +361,12 @@
   transition: color 160ms ease;
 }
 
-.docs-tabs-header .docs-tab-active {
+.docs-tabs-header [data-selected] {
   color: var(--gb-panel-foreground);
   font-weight: 600;
 }
 
-.docs-tabs-header button:hover:not(.docs-tab-active) {
+.docs-tabs-header button:hover:not([data-selected]) {
   color: var(--gb-panel-foreground);
 }
 
@@ -373,14 +375,36 @@
   outline-offset: 2px;
 }
 
+/* One indicator per strip, which UI SDK measures onto the selected tab. Until it has measured (server-rendered
+   HTML before hydration) the selected tab draws the same background itself. */
 .docs-tab-indicator {
   position: absolute;
-  inset: 0;
+  top: var(--active-tab-top);
+  left: var(--active-tab-left);
+  width: var(--active-tab-width);
+  height: var(--active-tab-height);
   z-index: -1;
+  box-sizing: border-box;
   border: 1px solid var(--gb-border);
-  border-radius: inherit;
+  border-radius: 999px;
   background: var(--gb-panel);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 1px 6px rgba(15, 23, 42, 0.06);
+  transition: top 320ms cubic-bezier(0.3, 1.25, 0.5, 1), left 320ms cubic-bezier(0.3, 1.25, 0.5, 1), width 320ms cubic-bezier(0.3, 1.25, 0.5, 1), height 320ms cubic-bezier(0.3, 1.25, 0.5, 1);
+}
+
+.docs-tab-indicator[data-activation-direction="none"],
+.docs-pill-indicator[data-activation-direction="none"] {
+  transition: none;
+}
+
+.docs-tab-indicator:not([style]),
+.docs-pill-indicator:not([style]) {
+  display: none;
+}
+
+.docs-tabs-header:has(> .docs-tab-indicator:not([style])) > [data-selected] {
+  background: var(--gb-panel);
+  box-shadow: inset 0 0 0 1px var(--gb-border), 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 .docs-tab-label {
@@ -394,7 +418,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .docs-tabs-header button {
+  .docs-tabs-header button,
+  .docs-tab-indicator,
+  .docs-pill-indicator {
     transition: none;
   }
 }
@@ -404,14 +430,45 @@
   border-radius: 12px;
 }
 
-.docs-expandable summary {
+.docs-expandable-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
   padding: 12px 16px;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: inherit;
+  font: inherit;
   font-weight: 500;
+  text-align: start;
   cursor: pointer;
+}
+
+.docs-expandable-trigger:focus-visible {
+  outline: 2px solid var(--gb-primary);
+  outline-offset: -2px;
+}
+
+.docs-expandable-caret {
+  flex: 0 0 auto;
+  color: var(--gb-muted-foreground);
+  transition: transform 160ms ease;
+}
+
+.docs-expandable-trigger[data-open] .docs-expandable-caret {
+  transform: rotate(90deg);
 }
 
 .docs-expandable-body {
   padding: 0 16px 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docs-expandable-caret {
+    transition: none;
+  }
 }
 
 .docs-stepper .docs-step {
@@ -1903,7 +1960,8 @@
 }
 
 .docs-thumb:hover .docs-thumb-frame,
-.docs-thumb:focus-visible .docs-thumb-frame {
+.docs-thumb:focus-visible .docs-thumb-frame,
+.docs-thumb[data-open] .docs-thumb-frame {
   border-color: var(--gb-panel-foreground, #18181b);
   box-shadow: 0 0 0 2px var(--gb-border);
 }
@@ -1921,12 +1979,11 @@
   pointer-events: none;
 }
 
+/* UI SDK's Hover Card: in the top layer, placed beside the thumbnail. */
 .docs-thumb-card {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  z-index: 60;
   display: block;
+  box-sizing: border-box;
+  margin: 0;
   width: min(var(--docs-thumb-card-width, 720px), calc(100vw - 32px));
   overflow: hidden;
   padding: 10px;
@@ -1934,11 +1991,12 @@
   border-radius: 16px;
   background: var(--gb-panel);
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22), 0 2px 8px rgba(15, 23, 42, 0.1);
+  transition: opacity 0.14s ease, translate 0.14s ease;
+}
+
+.docs-thumb-card:is([data-starting-style], [data-ending-style]) {
   opacity: 0;
-  visibility: hidden;
-  transform: translateY(-4px);
-  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s;
-  pointer-events: none;
+  translate: 0 -4px;
 }
 
 .docs-thumb-card img {
@@ -1952,13 +2010,6 @@
   right: 18px;
   bottom: 18px;
   font-size: 14px;
-}
-
-.docs-thumb:hover .docs-thumb-card,
-.docs-thumb:focus-visible .docs-thumb-card {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2091,13 +2142,36 @@
   margin-top: 6px;
 }
 
-.oas-response summary {
+.oas-response-trigger {
   display: flex;
   gap: 10px;
   align-items: center;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
   cursor: pointer;
   padding: 7px 0;
   font-size: 13.5px;
+}
+
+.oas-response-trigger:focus-visible {
+  outline: 2px solid var(--gb-primary);
+  outline-offset: 2px;
+}
+
+.oas-response-caret {
+  flex: 0 0 auto;
+  margin-right: -4px;
+  color: var(--gb-muted-foreground);
+  transition: transform 150ms ease;
+}
+
+.oas-response-trigger[data-open] .oas-response-caret {
+  transform: rotate(90deg);
 }
 
 .oas-code {
@@ -2483,12 +2557,12 @@
   outline-offset: 2px;
 }
 
+/* UI SDK's Hover Card: in the top layer, centred under the citation. */
 .docs-cite-card {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  z-index: 50;
   display: block;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
   width: min(320px, calc(100vw - 32px));
   overflow: hidden;
   border: 1px solid var(--gb-border);
@@ -2496,20 +2570,17 @@
   color: var(--gb-panel-foreground);
   background: var(--gb-panel);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.08);
-  opacity: 0;
-  visibility: hidden;
-  transform: translate(-50%, -4px);
-  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms;
-  pointer-events: none;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
   text-align: left;
   white-space: normal;
+  transition: opacity 120ms ease, translate 120ms ease;
 }
 
-.docs-cite-wrap:hover .docs-cite-card,
-.docs-cite-wrap:focus-within .docs-cite-card {
-  opacity: 1;
-  visibility: visible;
-  transform: translate(-50%, 0);
+.docs-cite-card:is([data-starting-style], [data-ending-style]) {
+  opacity: 0;
+  translate: 0 -4px;
 }
 
 .docs-cite-card-image-wrap {
@@ -2655,6 +2726,31 @@
   color: var(--gb-success);
 }
 
+/* The short dark hint UI SDK's Tooltip shows beside copy buttons and task checkboxes. */
+.docs-tooltip {
+  margin: 0;
+  border: 0;
+  border-radius: 5px;
+  padding: 4px 8px;
+  color: #fff;
+  background: #303030;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.13);
+  font: 500 12px/1.4 system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+  transform-origin: var(--transform-origin);
+  transition: opacity 120ms ease, scale 120ms ease;
+}
+
+.docs-tooltip:is([data-starting-style], [data-ending-style]) {
+  opacity: 0;
+  scale: 0.96;
+}
+
+.docs-tooltip[data-instant] {
+  transition: none;
+}
+
 .docs-code {
   position: relative;
 }
@@ -2712,6 +2808,8 @@
 /* ---- Pill tabs / segmented controls ---- */
 
 .docs-pills {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   flex-shrink: 0;
   gap: 2px;
@@ -2738,8 +2836,8 @@
   transition: color 150ms ease;
 }
 
-.docs-pill[aria-selected="true"],
-.docs-pill[aria-checked="true"],
+.docs-pill[data-selected],
+.docs-pill[data-checked],
 .docs-pill:hover {
   color: var(--gb-panel-foreground);
 }
@@ -2749,11 +2847,21 @@
   outline-offset: 1px;
 }
 
+/* The pill that slides to the selected tab (Tabs) or checked item (Segmented Control); UI SDK measures it. */
 .docs-pill-indicator {
   position: absolute;
-  inset: 0;
+  top: var(--active-tab-top, var(--segmented-control-indicator-top));
+  left: var(--active-tab-left, var(--segmented-control-indicator-left));
+  width: var(--active-tab-width, var(--segmented-control-indicator-width));
+  height: var(--active-tab-height, var(--segmented-control-indicator-height));
   z-index: -1;
   border-radius: 7px;
+  background: var(--gb-pill);
+  box-shadow: var(--gb-pill-shadow);
+  transition: top 300ms cubic-bezier(0.3, 1.2, 0.5, 1), left 300ms cubic-bezier(0.3, 1.2, 0.5, 1), width 300ms cubic-bezier(0.3, 1.2, 0.5, 1), height 300ms cubic-bezier(0.3, 1.2, 0.5, 1);
+}
+
+.docs-pills:has(> .docs-pill-indicator:not([style])) > :is([data-selected], [data-checked]) {
   background: var(--gb-pill);
   box-shadow: var(--gb-pill-shadow);
 }
@@ -2796,12 +2904,18 @@
   font-weight: 500;
 }
 
-.docs-tabs-code-head .docs-tabs-header .docs-tab-active {
+.docs-tabs-code-head .docs-tabs-header [data-selected] {
   font-weight: 600;
+}
+
+.docs-tabs-code-head .docs-tabs-header:has(> .docs-tab-indicator:not([style])) > [data-selected] {
+  background: var(--gb-pill);
+  box-shadow: var(--gb-pill-shadow);
 }
 
 .docs-tabs-code-head .docs-tab-indicator {
   border: 0;
+  border-radius: 7px;
   background: var(--gb-pill);
   box-shadow: var(--gb-pill-shadow);
 }
@@ -2955,17 +3069,20 @@
   transition: transform 200ms ease;
 }
 
-.docs-page-actions-more .docs-page-actions-caret-open {
+.docs-page-actions-more[data-open] .docs-page-actions-caret {
   transform: rotate(180deg);
 }
 
+/* UI SDK's Menu places the popup in the top layer beside its trigger. */
 .docs-page-actions-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 50;
+  box-sizing: border-box;
   width: 256px;
+  margin: 0;
   padding: 5px;
+  color: var(--gb-panel-foreground);
+  font-size: 12.5px;
+  transform-origin: var(--transform-origin);
+  transition: opacity 160ms ease, scale 220ms cubic-bezier(0.3, 1.25, 0.5, 1), translate 220ms cubic-bezier(0.3, 1.25, 0.5, 1);
   border: 1px solid var(--gb-border);
   border-radius: 12px;
   background: var(--gb-panel);
@@ -2989,7 +3106,13 @@
   cursor: pointer;
 }
 
-.docs-page-actions-item:hover,
+.docs-page-actions-menu:is([data-starting-style], [data-ending-style]) {
+  opacity: 0;
+  scale: 0.96;
+  translate: 0 -4px;
+}
+
+.docs-page-actions-item[data-highlighted],
 .docs-page-actions-item:focus-visible {
   outline: none;
   background: var(--gb-hover);
@@ -3401,7 +3524,8 @@
   color: var(--gb-primary-foreground, #fff);
   cursor: pointer;
 }
-.docs-env-gate-button:disabled {
+.docs-env-gate-button:disabled,
+.docs-env-gate-button[data-pending] {
   opacity: 0.6;
   cursor: default;
 }

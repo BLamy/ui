@@ -1,9 +1,9 @@
 /* "Copy page ▾": copy the page as Markdown, view it as Markdown, or open it in ChatGPT / Claude.
    Copy and View give renderable docstream Markdown: each {% demo %} keeps its tag and carries its
    real files inline, so pasting the page into docstream renders the same page (demos included). */
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import type { ReactNode } from "react"
 import { ArrowUpRight, ChevronDown, FileText } from "lucide-react"
+import { Menu, MenuContent, MenuItem, MenuTrigger } from "@ui-sdk/react/menu"
 
 import { useDemoResolver } from "../demo/context"
 import { resolveDemosToMarkdown, type ResolveDemosOptions } from "../demo/markdown"
@@ -77,26 +77,6 @@ async function pageMarkdown(props: DocPageActionsProps, resolver: DemoResolver |
 export function DocPageActions(props: DocPageActionsProps) {
   const resolver = useDemoResolver(props.resolver)
   const { copied, copy } = useCopied()
-  const [open, setOpen] = useState(false)
-  const reduced = useReducedMotion()
-  const root = useRef<HTMLDivElement | null>(null)
-  const trigger = useRef<HTMLButtonElement | null>(null)
-  const menuId = useId()
-
-  useEffect(() => {
-    if (!open) return
-    const onDown = (event: PointerEvent) => {
-      if (!root.current?.contains(event.target as Node)) setOpen(false)
-    }
-    document.addEventListener("pointerdown", onDown)
-    // Focus the first item once the menu is in the DOM.
-    const frame = requestAnimationFrame(() => root.current?.querySelector<HTMLElement>("[role=menuitem]")?.focus())
-    return () => {
-      document.removeEventListener("pointerdown", onDown)
-      cancelAnimationFrame(frame)
-    }
-  }, [open])
-
   const copyPage = () => copy(() => pageMarkdown(props, resolver))
   const here = typeof location === "undefined" ? "" : location.href
   const target = props.markdownUrl ? absolute(props.markdownUrl) : props.pageUrl ?? here
@@ -120,95 +100,42 @@ export function DocPageActions(props: DocPageActionsProps) {
   const wanted = props.actions ?? ["copy", "view", "chatgpt", "claude"]
   const items = wanted.map((id) => all.find((item) => item.id === id)).filter((item): item is MenuItem => !!item)
 
-  const close = (refocus = true) => {
-    setOpen(false)
-    if (refocus) trigger.current?.focus()
-  }
-
-  const onMenuKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    const entries = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("[role=menuitem]"))
-    const index = entries.indexOf(document.activeElement as HTMLElement)
-    let next = -1
-    if (event.key === "ArrowDown") next = (index + 1) % entries.length
-    else if (event.key === "ArrowUp") next = (index - 1 + entries.length) % entries.length
-    else if (event.key === "Home") next = 0
-    else if (event.key === "End") next = entries.length - 1
-    else if (event.key === "Escape") {
-      event.preventDefault()
-      close()
-      return
-    } else if (event.key === "Tab") {
-      close(false)
-      return
-    }
-    if (next < 0) return
-    event.preventDefault()
-    entries[next]?.focus()
-  }
-
   return (
-    <div ref={root} className={props.className ? `docs-page-actions ${props.className}` : "docs-page-actions"}>
+    <div className={props.className ? `docs-page-actions ${props.className}` : "docs-page-actions"}>
       <button type="button" className="docs-page-actions-main" onClick={() => void copyPage()} aria-label="Copy page as Markdown">
         <CopyIcon copied={copied} size={13} />
         <span aria-live="polite">{copied ? "Copied" : "Copy page"}</span>
       </button>
-      <button
-        ref={trigger}
-        type="button"
-        className="docs-page-actions-more"
-        aria-label="More page actions"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-controls={open ? menuId : undefined}
-        onClick={() => setOpen((value) => !value)}
-        onKeyDown={(event) => {
-          if (event.key === "ArrowDown" && !open) {
-            event.preventDefault()
-            setOpen(true)
-          }
-        }}
-      >
-        <ChevronDown width={13} height={13} strokeWidth={2.4} aria-hidden="true" className={open ? "docs-page-actions-caret-open" : undefined} />
-      </button>
-      <AnimatePresence>
-        {open ? (
-          <motion.div
-            id={menuId}
-            role="menu"
-            aria-label="Page actions"
-            className="docs-page-actions-menu"
-            onKeyDown={onMenuKey}
-            initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: -4 }}
-            animate={{ opacity: 1, scale: 1, y: 0, transition: reduced ? { duration: 0.1 } : { type: "spring", bounce: 0.2, duration: 0.32 } }}
-            exit={{ opacity: 0, scale: reduced ? 1 : 0.97, transition: { duration: 0.12 } }}
-            style={{ transformOrigin: "top right" }}
-          >
-            {items.map((item) => {
-              const body = (
-                <>
-                  <span className="docs-page-actions-icon">{item.icon}</span>
-                  <span className="docs-page-actions-text">
-                    <span className="docs-page-actions-label">
-                      {item.label}
-                      {item.href ? <ArrowUpRight width={12} height={12} aria-hidden="true" /> : null}
-                    </span>
-                    <span className="docs-page-actions-hint">{item.hint}</span>
+      <Menu>
+        <MenuTrigger className="docs-page-actions-more" aria-label="More page actions">
+          <ChevronDown width={13} height={13} strokeWidth={2.4} aria-hidden="true" className="docs-page-actions-caret" />
+        </MenuTrigger>
+        <MenuContent aria-label="Page actions" className="docs-page-actions-menu" side="bottom" align="end" sideOffset={6}>
+          {items.map((item) => {
+            const body = (
+              <>
+                <span className="docs-page-actions-icon">{item.icon}</span>
+                <span className="docs-page-actions-text">
+                  <span className="docs-page-actions-label">
+                    {item.label}
+                    {item.href ? <ArrowUpRight width={12} height={12} aria-hidden="true" /> : null}
                   </span>
-                </>
-              )
-              return item.href ? (
-                <a key={item.id} role="menuitem" tabIndex={-1} className="docs-page-actions-item" href={item.href} target="_blank" rel="noreferrer" onClick={() => close(false)}>
-                  {body}
-                </a>
-              ) : (
-                <button key={item.id} type="button" role="menuitem" tabIndex={-1} className="docs-page-actions-item" onClick={() => { item.run?.(); close() }}>
-                  {body}
-                </button>
-              )
-            })}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+                  <span className="docs-page-actions-hint">{item.hint}</span>
+                </span>
+              </>
+            )
+            return item.href ? (
+              <MenuItem key={item.id} value={item.id} label={item.label} className="docs-page-actions-item" render={<a href={item.href} target="_blank" rel="noreferrer" />}>
+                {body}
+              </MenuItem>
+            ) : (
+              <MenuItem key={item.id} value={item.id} label={item.label} className="docs-page-actions-item" onSelect={() => item.run?.()}>
+                {body}
+              </MenuItem>
+            )
+          })}
+        </MenuContent>
+      </Menu>
     </div>
   )
 }

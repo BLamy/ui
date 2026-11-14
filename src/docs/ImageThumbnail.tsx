@@ -1,4 +1,4 @@
-import { useId } from "react"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@ui-sdk/react/hover-card"
 import type { Inline, InlineImageNode } from "../gitbook/ast"
 import { useAsset } from "../asset-resolver"
 import { thumbnailLabel } from "../gitbook/thumbnail"
@@ -20,30 +20,28 @@ export function leadingThumbnail(nodes: Inline[]): { image: InlineImageNode; lab
 
 /**
  * A small framed image with an optional badge (a timestamp, say); hovering or focusing it opens a card
- * with the full image. First in a paragraph or list item, the text runs beside it.
+ * with the full image (UI SDK's Hover Card). First in a paragraph or list item, the text runs beside it.
  */
 export function ImageThumbnail({ image, label }: { image: InlineImageNode; label: string }) {
   const src = useAsset(image.src)
-  const cardId = useId()
   const alt = image.alt ?? ""
+  const name = alt || label || "Image"
   const badge = label ? <span className="docs-thumb-badge">{label}</span> : null
-  const thumb = (
-    <span className="docs-thumb" tabIndex={0} role="img" aria-label={alt || label || "Image"} aria-describedby={cardId}>
-      <span className="docs-thumb-frame">
-        <img src={src} alt="" loading="lazy" draggable={false} />
-        {badge}
-      </span>
-      <span className="docs-thumb-card" id={cardId} role="tooltip">
+  return (
+    <HoverCard delay={200} closeDelay={120}>
+      <HoverCardTrigger
+        className={image.link ? "docs-thumb docs-thumb-link" : "docs-thumb"}
+        render={image.link ? <a href={image.link} target="_blank" rel="noreferrer" aria-label={name} /> : <span tabIndex={0} role="img" aria-label={name} />}
+      >
+        <span className="docs-thumb-frame">
+          <img src={src} alt="" loading="lazy" draggable={false} />
+          {badge}
+        </span>
+      </HoverCardTrigger>
+      <HoverCardContent render={<span />} className="docs-thumb-card" side="bottom" align="start" sideOffset={10} collisionPadding={16}>
         <img src={src} alt={alt} loading="lazy" />
         {badge}
-      </span>
-    </span>
-  )
-  return image.link ? (
-    <a href={image.link} target="_blank" rel="noreferrer" className="docs-thumb-link">
-      {thumb}
-    </a>
-  ) : (
-    thumb
+      </HoverCardContent>
+    </HoverCard>
   )
 }
