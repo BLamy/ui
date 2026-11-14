@@ -1,10 +1,11 @@
-import { createContext } from "react"
+import { createContext, useState, type KeyboardEvent } from "react"
 import { Checkbox } from "@ui-sdk/react/checkbox"
-import { Menu, MenuContent, MenuContextTrigger, MenuItemIndicator, MenuRadioGroup, MenuRadioItem } from "@ui-sdk/react/menu"
+import { createMenuController, Menu, MenuContent, MenuContextTrigger, MenuItemIndicator, MenuRadioGroup, MenuRadioItem } from "@ui-sdk/react/menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ui-sdk/react/tooltip"
 import { Ban, Check, Circle, CircleCheck, CircleHelp, CircleMinus, CirclePause, CircleX, Clock3 } from "lucide-react"
 import type { ListItemNode, TaskState } from "../gitbook/ast"
 import { TASK_STATES } from "../gitbook/tasks"
+import { useOpenOnCurrent } from "../ui/menu-current"
 
 /** The icons used by the checkbox, tooltip and state picker. */
 export const TASK_STATE_ICONS = {
@@ -31,12 +32,21 @@ export interface TaskCheckboxProps {
 
 /**
  * An accessible multi-state task checkbox, on UI SDK's Checkbox. Intermediate states read as mixed. With `onChange`, a
- * right-click, long press, Shift+F10 or the context-menu key opens a menu of every state.
+ * right-click, long press, Shift+F10 or the context-menu key opens a menu of every state, on the current one.
  */
 export function TaskCheckbox({ state, onChange, label = "Task", className }: TaskCheckboxProps) {
   const meta = TASK_STATES.find((item) => item.id === state) ?? TASK_STATES[0]
   const StateIcon = TASK_STATE_ICONS[meta.id]
   const mixed = state !== "pending" && state !== "verified"
+  const [menu] = useState(() => createMenuController())
+  const current = useOpenOnCurrent('[role="menuitemradio"][data-checked]')
+  // The context trigger opens on the browser's `contextmenu` event, which macOS browsers don't send for Shift+F10
+  // (and keyboards there have no context-menu key), so both keys open the menu here, at the checkbox.
+  const openFromKey = (event: KeyboardEvent<HTMLElement>) => {
+    if (!onChange || !(event.key === "ContextMenu" || (event.key === "F10" && event.shiftKey))) return
+    event.preventDefault()
+    void menu.open({ anchor: event.currentTarget, focus: "first", reason: "trigger-press", event: event.nativeEvent })
+  }
   const checkbox = (
     <Checkbox
       className="docs-task-checkbox"
@@ -44,6 +54,7 @@ export function TaskCheckbox({ state, onChange, label = "Task", className }: Tas
       checked={mixed ? "indeterminate" : state === "verified"}
       readOnly={!onChange}
       onCheckedChange={() => onChange?.(state === "pending" ? "verified" : "pending")}
+      onKeyDown={onChange ? openFromKey : undefined}
     />
   )
   const control = (
@@ -57,9 +68,9 @@ export function TaskCheckbox({ state, onChange, label = "Task", className }: Tas
   if (!onChange) return <span className={classes} data-task-state={state}>{control}{icon}</span>
   return (
     <span className={classes} data-task-state={state}>
-      <Menu>
+      <Menu controller={menu} onOpenChange={(open) => current.opened(open)}>
         {control}
-        <MenuContent aria-label="Task state" className="docs-task-state-menu">
+        <MenuContent aria-label="Task state" className="docs-task-state-menu" {...current.content}>
           <MenuRadioGroup value={state} onValueChange={(next) => onChange(next as TaskState)}>
             {TASK_STATES.map((item) => {
               const Icon = TASK_STATE_ICONS[item.id]

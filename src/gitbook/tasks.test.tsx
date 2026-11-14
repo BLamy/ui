@@ -57,12 +57,11 @@ describe("extended task states", () => {
     expect(tip.textContent).toBe("Verified")
     await unmount()
   })
-  it("opens the state menu from the keyboard (Shift+F10 fires contextmenu), moves with the arrows and returns focus on Escape", async () => {
+  it("opens the state menu on Shift+F10 itself (no contextmenu event, as on macOS), moves with the arrows and returns focus on Escape", async () => {
     const { host, unmount } = await mount(<TaskCheckbox state="pending" onChange={() => {}} />)
     const checkbox = host.querySelector<HTMLElement>('[role="checkbox"]')!
     await focus(checkbox)
-    await act(async () => { checkbox.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })) })
-    await tick()
+    await press("F10", checkbox, { shiftKey: true })
     expect(document.activeElement?.getAttribute("role")).toBe("menuitemradio")
     expect(document.activeElement?.getAttribute("data-state")).toBe("pending")
     await press("ArrowDown")
@@ -72,6 +71,38 @@ describe("extended task states", () => {
     await press("Escape")
     expect(host.querySelector('[role="menu"][data-open]')).toBeNull()
     expect(document.activeElement).toBe(checkbox)
+    await unmount()
+  })
+  it("the context-menu key opens it too, and a browser's own contextmenu event (Windows Shift+F10) still does", async () => {
+    const { host, unmount } = await mount(<TaskCheckbox state="pending" onChange={() => {}} />)
+    const checkbox = host.querySelector<HTMLElement>('[role="checkbox"]')!
+    await focus(checkbox)
+    await press("ContextMenu", checkbox)
+    expect(host.querySelector('[role="menu"][data-open]')).not.toBeNull()
+    expect(document.activeElement?.getAttribute("role")).toBe("menuitemradio")
+    await press("Escape")
+    expect(document.activeElement).toBe(checkbox)
+    await act(async () => { checkbox.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })) })
+    await tick()
+    expect(host.querySelector('[role="menu"][data-open]')).not.toBeNull()
+    await press("Escape")
+    await unmount()
+  })
+  it("opens on the current state, not the first one, from the keyboard and from a right-click", async () => {
+    const { host, unmount } = await mount(<TaskCheckbox state="blocked" onChange={() => {}} />)
+    const checkbox = host.querySelector<HTMLElement>('[role="checkbox"]')!
+    await focus(checkbox)
+    await press("F10", checkbox, { shiftKey: true })
+    const highlighted = () => host.querySelector('[role="menuitemradio"][data-highlighted]')?.getAttribute("data-state")
+    expect(document.activeElement?.getAttribute("data-state")).toBe("blocked")
+    expect(highlighted()).toBe("blocked")
+    await press("ArrowDown")
+    expect(document.activeElement?.getAttribute("data-state")).toBe(TASK_STATES[TASK_STATES.findIndex((s) => s.id === "blocked") + 1]!.id)
+    await press("Escape")
+    await act(async () => { checkbox.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, button: 2, clientX: 5, clientY: 5 })) })
+    await tick()
+    expect(document.activeElement?.getAttribute("data-state")).toBe("blocked")
+    await press("Escape")
     await unmount()
   })
   it("is read-only without onChange, and has no state menu", async () => {
