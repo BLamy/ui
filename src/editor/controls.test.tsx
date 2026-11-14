@@ -189,6 +189,13 @@ describe("node view controls", () => {
     expect(after.map((tab) => tab.getAttribute("aria-selected"))).toEqual(["false", "true"])
     expect(document.activeElement).toBe(after[1])
     expect(container.querySelector(".gb-tabs-content")!.getAttribute("data-active")).toBe("1")
+    // Each tab's section is a tab panel labelled by it; only the selected one shows.
+    const panels = Array.from(container.querySelectorAll<HTMLElement>('[role="tabpanel"]'))
+    expect(panels).toHaveLength(2)
+    expect(panels.map((panel) => panel.getAttribute("aria-labelledby"))).toEqual(after.map((tab) => tab.id))
+    expect(panels.map((panel) => panel.hidden)).toEqual([true, false])
+    expect(panels.map((panel) => panel.textContent)).toEqual(["A", "B"])
+    expect(after.map((tab) => tab.getAttribute("aria-controls"))).toEqual(panels.map((panel) => panel.id))
 
     const title = byLabel<HTMLInputElement>("Tab title")!
     expect(title.value).toBe("Two")

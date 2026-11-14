@@ -1,7 +1,7 @@
 import { Node, mergeAttributes } from "@tiptap/core"
 import { CodeBlock } from "@tiptap/extension-code-block"
 import { gpuHighlightPlugin } from "./gpu-highlight"
-import { useEffect, useMemo, useState, type CSSProperties } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from "@tiptap/react"
 import { Button } from "@ui-sdk/react/button"
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@ui-sdk/react/collapsible"
@@ -152,6 +152,24 @@ function TabsView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
     updateAttributes({ active: Math.max(0, active - (index <= active ? 1 : 0)) })
   }
 
+  // Each tab's section is its tab panel: labelled by the tab, shown only while it's selected. The
+  // sections are ProseMirror's (the tab node views below), so they're pointed at once rendered.
+  const strip = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const tabs = strip.current?.querySelectorAll<HTMLElement>('[role="tab"]')
+    if (!tabs) return
+    node.forEach((_child, _offset, idx) => {
+      const pos = getPos()
+      const panel = pos === undefined ? null : editor.view.nodeDOM(childPos(idx))
+      const tab = tabs[idx]
+      if (!(panel instanceof HTMLElement) || !tab?.id) return
+      panel.id = `${tab.id}-panel`
+      panel.setAttribute("aria-labelledby", tab.id)
+      tab.setAttribute("aria-controls", panel.id)
+      panel.hidden = idx !== active
+    })
+  })
+
   const editable = editor.isEditable
   const title = typeof node.attrs.title === "string" ? node.attrs.title : ""
   const level = node.attrs.level === 3 || node.attrs.level === 4 ? node.attrs.level : 2
@@ -251,7 +269,7 @@ function TabsView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
               onValueChange={(next) => updateAttributes({ level: next === "2" ? null : Number(next) })}
             />
           )}
-          <div className="gb-tabs-pills gb-tabs-strip" data-removable={removable ? "" : undefined}>
+          <div ref={strip} className="gb-tabs-pills gb-tabs-strip" data-removable={removable ? "" : undefined}>
             {tabStrip}
           </div>
         </div>
@@ -262,7 +280,7 @@ function TabsView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
 
   return (
     <Tabs value={String(active)} onValueChange={selectTab} render={<NodeViewWrapper className="gb-tabs" />}>
-      <div className="gb-tabs-header gb-tabs-strip" data-removable={removable ? "" : undefined} contentEditable={false}>
+      <div ref={strip} className="gb-tabs-header gb-tabs-strip" data-removable={removable ? "" : undefined} contentEditable={false}>
         {tabStrip}
       </div>
       <NodeViewContent className="gb-tabs-content" data-active={active} />
@@ -324,6 +342,32 @@ export const GbTab = Node.create({
   },
   renderHTML({ HTMLAttributes, node }) {
     return ["div", mergeAttributes(HTMLAttributes, { "data-gb-tab": node.attrs.title, class: "gb-tab" }), 0]
+  },
+  addNodeView() {
+    // A tab panel. The tabs view labels it by its tab and hides it while another tab is selected;
+    // those attribute changes are the view's, not edits, so ProseMirror ignores them.
+    return ({ node, editor, getPos }) => {
+      const dom = document.createElement("div")
+      dom.className = "gb-tab"
+      dom.setAttribute("role", "tabpanel")
+      dom.setAttribute("data-gb-tab", node.attrs.title)
+      const pos = getPos()
+      if (pos !== undefined) {
+        const $pos = editor.state.doc.resolve(pos)
+        const tabs = $pos.parent
+        if (tabs.type.name === "gbTabs") dom.hidden = $pos.index() !== Math.min(tabs.attrs.active ?? 0, tabs.childCount - 1)
+      }
+      return {
+        dom,
+        contentDOM: dom,
+        update(next) {
+          if (next.type.name !== "gbTab") return false
+          dom.setAttribute("data-gb-tab", next.attrs.title)
+          return true
+        },
+        ignoreMutation: (mutation) => mutation.type === "attributes" && mutation.target === dom,
+      }
+    }
   },
 })
 
