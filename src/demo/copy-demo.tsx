@@ -1,19 +1,19 @@
 /* "Copy demo": writes the docstream clipboard (Markdown with the demo's files inline, plus the
-   `application/x-docstream+json` payload) through react-aria's `useClipboard`, so pasting into
-   a docstream editor recreates the demo with its files. A button click has no copy event of
-   its own, so the button focuses itself and runs the browser's copy command; react-aria's
-   listener then fills the event's DataTransfer. Where that is unavailable, the Markdown is
-   copied as plain text (editors still parse its inline-file demos). */
-import { useEffect, useRef, useState, type DOMAttributes, type MutableRefObject } from "react"
-import { useClipboard } from "react-aria"
+   `application/x-docstream+json` payload) onto a copy event, so pasting into a docstream editor
+   recreates the demo with its files. While the triggering element has focus, a window listener
+   claims the copy event (its target is the selection or the body, not the element) and fills the
+   event's DataTransfer: Cmd/Ctrl+C copies that way, and a click focuses the element and runs the
+   browser's copy command. Where that is unavailable, the Markdown is copied as plain text
+   (editors still parse its inline-file demos). */
+import { useEffect, useRef, useState, type FocusEventHandler, type MutableRefObject } from "react"
 import { Button } from "@ui-sdk/react/button"
 import { CopyIcon, copyText } from "../docs/copy"
-import { docstreamClipboardItems, type DocstreamClipboard } from "./clipboard"
+import { writeDocstreamClipboard, type DocstreamClipboard } from "./clipboard"
 
 export interface DocstreamCopy<T extends HTMLElement> {
   ref: MutableRefObject<T | null>
-  /** react-aria `useClipboard`'s focus handlers: Cmd/Ctrl+C on the focused element copies too. */
-  props: DOMAttributes<T>
+  /** Focus handlers that arm the copy listener: Cmd/Ctrl+C on the focused element copies too. */
+  props: { onFocus: FocusEventHandler<T>; onBlur: FocusEventHandler<T> }
   /** Copies; resolves false when there was nothing to copy. */
   copy: () => Promise<boolean>
 }
@@ -27,15 +27,24 @@ export function useDocstreamCopy<T extends HTMLElement = HTMLButtonElement>(prod
   const latest = useRef(produce)
   latest.current = produce
   const wrote = useRef(false)
-  const { clipboardProps } = useClipboard({
-    getItems: () => {
+  const disarm = useRef<(() => void) | null>(null)
+  useEffect(() => () => disarm.current?.(), [])
+
+  const arm = () => {
+    if (disarm.current || typeof window === "undefined") return
+    const onCopy = (event: ClipboardEvent) => {
       const clip = latest.current()
-      return clip ? docstreamClipboardItems(clip) : []
-    },
-    onCopy: () => {
+      if (!clip || !event.clipboardData) return
+      event.preventDefault()
+      writeDocstreamClipboard(event.clipboardData, clip)
       wrote.current = true
-    },
-  })
+    }
+    window.addEventListener("copy", onCopy)
+    disarm.current = () => {
+      window.removeEventListener("copy", onCopy)
+      disarm.current = null
+    }
+  }
 
   const copy = async (): Promise<boolean> => {
     const clip = latest.current()
@@ -43,13 +52,14 @@ export function useDocstreamCopy<T extends HTMLElement = HTMLButtonElement>(prod
     const el = ref.current
     wrote.current = false
     if (el && typeof document !== "undefined" && typeof document.execCommand === "function") {
-      // The copy event targets the selection when there is one; clear it so it targets
-      // this (focused) element and nothing else — an editor around us — claims the event.
+      // The copy event targets the selection when there is one; clear it so nothing else (an
+      // editor around us) claims the event, and the armed listener writes our representations.
       const selection = typeof window !== "undefined" ? window.getSelection() : null
       const ranges: Range[] = []
       if (selection) for (let i = 0; i < selection.rangeCount; i++) ranges.push(selection.getRangeAt(i))
       try {
         if (document.activeElement !== el) el.focus({ preventScroll: true })
+        if (document.activeElement === el) arm()
         selection?.removeAllRanges()
         document.execCommand("copy")
       } catch {
@@ -62,7 +72,7 @@ export function useDocstreamCopy<T extends HTMLElement = HTMLButtonElement>(prod
     return true
   }
 
-  return { ref, props: clipboardProps as DOMAttributes<T>, copy }
+  return { ref, props: { onFocus: arm, onBlur: () => disarm.current?.() }, copy }
 }
 
 export interface CopyDemoButtonProps {

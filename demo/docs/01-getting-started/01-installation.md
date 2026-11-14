@@ -212,6 +212,11 @@ Widget state is styled from UI SDK's attributes now, not `aria-*` or helper clas
 
 Expandables, the properties sheet and OpenAPI responses are UI SDK collapsibles instead of `<details>`; a closed panel carries `hidden="until-found"`, so find-in-page still opens it. Menus, hover cards, search and the demo's fullscreen view render in place in the browser's top layer rather than in a portal, and hover-card content mounts only while open. The task checkbox is a `button[role=checkbox]` with a hidden input.
 {% endstep %}
+{% step %}
+### Drop react-aria if only docstream needed it
+
+docstream no longer depends on `react-aria`: the Copy demo button writes its clipboard on the copy event itself.
+{% endstep %}
 {% endstepper %}
 
 ## Next

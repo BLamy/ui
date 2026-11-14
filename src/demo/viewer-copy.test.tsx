@@ -74,6 +74,27 @@ describe("DemoViewer: Copy demo", () => {
     expect(button.getAttribute("aria-label")).toBe("Copied")
   })
 
+  it("Cmd/Ctrl+C on the focused button writes the payload; elsewhere it leaves the copy alone", async () => {
+    await act(async () => root.render(<DemoViewer src="button/basic" resolver={resolver} />))
+    await flush()
+    const button = host.querySelector<HTMLButtonElement>("[data-docstream-copy-demo]")!
+    const copyOn = (target: EventTarget) => {
+      const clipboardData = new DataTransfer()
+      const event = new ClipboardEvent("copy", { clipboardData, bubbles: true, cancelable: true })
+      target.dispatchEvent(event)
+      return { clipboardData, event }
+    }
+    await act(async () => button.focus())
+    // The browser targets the body (no selection), not the button.
+    const focused = copyOn(document.body)
+    expect(focused.event.defaultPrevented).toBe(true)
+    expect(parseDocstreamClipboard(focused.clipboardData.getData(DOCSTREAM_CLIPBOARD_TYPE))?.files["button/basic"]).toHaveLength(2)
+    await act(async () => button.blur())
+    const blurred = copyOn(document.body)
+    expect(blurred.event.defaultPrevented).toBe(false)
+    expect(blurred.clipboardData.getData(DOCSTREAM_CLIPBOARD_TYPE)).toBe("")
+  })
+
   it("falls back to plain-text Markdown when the copy command is unavailable", async () => {
     ;(document as { execCommand: unknown }).execCommand = () => false
     const writeText = vi.fn(async () => {})

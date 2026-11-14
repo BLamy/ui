@@ -172,7 +172,6 @@
     "katex": "^0.18.5",
     "lucide-react": "^1.17.0",
     "pele": "1.6.0",
-    "react-aria": "^3.52.1",
     "rrweb": "2.0.0-alpha.20",
     "xstate": "5.33.3",
     "yaml": "^2.9.0"

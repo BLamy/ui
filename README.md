@@ -742,7 +742,7 @@ the first render (server rendering, static export).
 #### Copy a demo, paste it elsewhere (clipboard + demo VFS)
 
 Every demo viewer has a **Copy demo** button. It writes one clipboard item with
-three representations, through react-aria's `useClipboard`:
+three representations onto the copy event:
 
 | Type | Content |
 | --- | --- |
@@ -775,8 +775,8 @@ layering as a `DemoResolver` (`files` / `meta` from the host when it knows
 `vfs.subscribe(change => …)`, `get/set/delete/list/files()` manage it directly.
 
 Building blocks (`@brett_lamy/docstream/demo`): `createDocstreamClipboard(doc, { lookup, serialize })`
-/ `createDocstreamClipboardFromMarkdown`, `docstreamClipboardItems` (react-aria
-`DragItem`s), `writeDocstreamClipboard(dataTransfer, clip)`,
+/ `createDocstreamClipboardFromMarkdown`, `docstreamClipboardItems` (drag items,
+one record per MIME type), `writeDocstreamClipboard(dataTransfer, clip)`,
 `readDocstreamClipboard(dataTransfer)`, `readDocstreamClipboardItems(dropItems)`,
 `parseDocstreamClipboard(json)`, `docstreamPayloadFromMarkdown`,
 `useDocstreamCopy` / `CopyDemoButton`, and `prefetchDemoSources(resolver, srcs)` +
@@ -1125,6 +1125,8 @@ for layered hosts, and the markup some widgets render.
    in place in the top layer instead of a portal; hover-card content mounts only while open.
    The task checkbox is a `button[role=checkbox]`. The demo file list's width variable
    `--docs-demo-files-w` is gone (UI SDK's `--resizable-panel-size` sizes it).
+6. **`react-aria` is gone.** The Copy demo button writes the clipboard on the copy event
+   itself; remove `react-aria` if nothing else of yours uses it.
 
 The docs site's Installation page (https://blamy.github.io/docstream/) has the same notes.
 
