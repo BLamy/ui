@@ -11,6 +11,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -368,6 +369,43 @@ function cssLength(v: number | string | undefined, fallback: string) {
   return v === undefined ? fallback : typeof v === "number" ? `${v}px` : v
 }
 
+/** While `active`, writes the visible part of the site's box (in viewport px) to `--ds-site-frame-top`, `-left`,
+ *  `-width` and `-height` on its root, where an embedded site's top-layer overlays (site.css) read it to cover the
+ *  site and not the window. Follows the host page's scrolling and resizing. */
+function useOverlayFrame(root: { current: HTMLElement | null }, active: boolean) {
+  // Only ever active on the client, after a press: React 19 doesn't warn about a layout effect on the server.
+  useLayoutEffect(() => {
+    const el = root.current
+    if (!active || !el) return
+    const view = el.ownerDocument.defaultView ?? window
+    const names = ["top", "left", "width", "height"].map((side) => `--ds-site-frame-${side}`)
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      const box = el.getBoundingClientRect()
+      const top = Math.max(0, box.top)
+      const left = Math.max(0, box.left)
+      const bottom = Math.min(view.innerHeight, box.bottom)
+      const right = Math.min(view.innerWidth, box.right)
+      const values = [top, left, Math.max(0, right - left), Math.max(0, bottom - top)]
+      names.forEach((name, i) => el.style.setProperty(name, `${values[i]}px`))
+    }
+    const schedule = () => { if (!frame) frame = view.requestAnimationFrame(measure) }
+    measure()
+    view.addEventListener("scroll", schedule, { capture: true, passive: true })
+    view.addEventListener("resize", schedule)
+    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(schedule)
+    observer?.observe(el)
+    return () => {
+      if (frame) view.cancelAnimationFrame(frame)
+      view.removeEventListener("scroll", schedule, { capture: true })
+      view.removeEventListener("resize", schedule)
+      observer?.disconnect()
+      names.forEach((name) => el.style.removeProperty(name))
+    }
+  }, [active])
+}
+
 /** A complete docs site from Markdown files: sidebar from the file tree, search, outline, routing. */
 export function DocsSite(props: DocsSiteProps) {
   const {
@@ -424,9 +462,15 @@ export function DocsSite(props: DocsSiteProps) {
   const [navDrawer] = useState(() => createDrawerController())
   const [searchDialog] = useState(() => createDialogController())
   const [navOpen, setNavOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  // A site embedded in another page (memory routing) keeps its overlays to itself: they trap focus but leave the host
+  // page usable (no inert page, no scroll lock), and they cover only the site's box (useOverlayFrame).
+  const embedded = routing === "memory"
+  const overlayModal = embedded ? ("trap-focus" as const) : true
   const scrollerRef = useRef<HTMLDivElement>(null)
   const articleRef = useRef<HTMLElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
+  useOverlayFrame(rootRef, embedded && (navOpen || searchOpen))
 
   const go = useCallback(
     (slug: string, hash = "") => {
@@ -610,6 +654,7 @@ export function DocsSite(props: DocsSiteProps) {
       data-theme={theme}
       data-palette={palette ? "" : undefined}
       data-nav-open={navOpen || undefined}
+      data-embedded={embedded ? "" : undefined}
       style={rootStyle}
     >
       <header className="ds-site-header">
@@ -781,7 +826,7 @@ export function DocsSite(props: DocsSiteProps) {
         </div>
       </div>
 
-      <Drawer controller={navDrawer} side="left" onOpenChange={setNavOpen}>
+      <Drawer controller={navDrawer} side="left" modal={overlayModal} onOpenChange={setNavOpen}>
         <DrawerBackdrop className="ds-site-drawer-layer" />
         <DrawerContent className="ds-site-drawer" aria-label="Navigation" initialFocus='[data-slot="drawer-close"]'>
           <div className="ds-site-drawer-head">
@@ -800,6 +845,8 @@ export function DocsSite(props: DocsSiteProps) {
         <SiteSearch
           tree={tree}
           controller={searchDialog}
+          modal={overlayModal}
+          onOpenChange={setSearchOpen}
           shortcut={SEARCH_KEYS}
           href={href}
           onPick={(r) => {

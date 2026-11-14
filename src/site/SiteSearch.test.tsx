@@ -49,7 +49,7 @@ const keydown = async (init: KeyboardEventInit, target: EventTarget = document.b
 }
 
 describe("search", () => {
-  it("opens from its button as a modal dialog with the field focused and the first pages listed", async () => {
+  it("opens from its button as a dialog with the field focused and the first pages listed", async () => {
     const host = await open()
     expect(button(host).getAttribute("aria-label")).toBe("Search documentation")
     expect(button(host).getAttribute("aria-haspopup")).toBe("dialog")
@@ -57,7 +57,8 @@ describe("search", () => {
     expect(dialog()).toBeNull()
     await click(button(host))
     expect(dialog()!.getAttribute("aria-label")).toBe("Search documentation")
-    expect(dialog()!.getAttribute("aria-modal")).toBe("true")
+    // Embedded (memory routing), it traps focus but leaves the host page usable: see embedded-overlays.test.tsx.
+    expect(dialog()!.hasAttribute("aria-modal")).toBe(false)
     // It renders inside the site, so it keeps the site's theme and tokens.
     expect(dialog()!.closest(".ds-site")).toBe(host.querySelector(".ds-site"))
     expect(document.activeElement).toBe(input())

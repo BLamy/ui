@@ -42,13 +42,14 @@ describe("the header's controls", () => {
 })
 
 describe("the phone navigation drawer", () => {
-  it("opens from the menu button as a modal dialog inside the site, with focus on its close button", async () => {
+  it("opens from the menu button as a dialog inside the site, with focus on its close button", async () => {
     const host = await open()
     expect(drawer()).toBeNull()
     expect(root(host).hasAttribute("data-nav-open")).toBe(false)
     await click(menu(host))
     expect(drawer()!.getAttribute("aria-label")).toBe("Navigation")
-    expect(drawer()!.getAttribute("aria-modal")).toBe("true")
+    // Embedded (memory routing), it traps focus but leaves the host page usable: see embedded-overlays.test.tsx.
+    expect(drawer()!.hasAttribute("aria-modal")).toBe(false)
     expect(drawer()!.getAttribute("data-side")).toBe("left")
     expect(root(host).hasAttribute("data-nav-open")).toBe(true)
     // Rendered in place: the theme and palette on the site's root reach it.

@@ -22,6 +22,10 @@ export interface SiteSearchProps {
   shortcut: string
   href: (slug: string, hash?: string) => string
   onPick: (result: DocsSearchResult) => void
+  /** `true` (a site that is the page): the page goes inert. `"trap-focus"` (an embedded site): focus stays in the
+   *  dialog, a press outside closes it, and the host page stays usable and scrollable. */
+  modal?: boolean | "trap-focus"
+  onOpenChange?: (open: boolean) => void
 }
 
 function Snippet({ result }: { result: DocsSearchResult }) {
@@ -106,7 +110,7 @@ function Palette({ tree, controller, shortcut, href, onPick }: SiteSearchProps) 
 
 export function SiteSearch(props: SiteSearchProps) {
   return (
-    <Dialog controller={props.controller}>
+    <Dialog controller={props.controller} modal={props.modal ?? true} onOpenChange={props.onOpenChange}>
       <DialogBackdrop className="ds-site-search-layer" />
       <DialogContent className="ds-site-search" aria-label="Search documentation">
         <Palette {...props} />

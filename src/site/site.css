@@ -631,8 +631,8 @@
   font-weight: 600;
 }
 
-/* Overlays (drawer, search): UI SDK's Drawer and Dialog, in the browser's top layer over the whole window. They
-   render inside the site, so they keep its theme and tokens. */
+/* Overlays (drawer, search): UI SDK's Drawer and Dialog, in the browser's top layer. They render inside the site, so
+   they keep its theme and tokens. A site that is the page covers the window with them, modally. */
 .ds-site .ds-site-drawer-layer,
 .ds-site .ds-site-search-layer {
   position: fixed;
@@ -646,6 +646,22 @@
 
 .ds-site .ds-site-search-layer:is([data-starting-style], [data-ending-style]) {
   opacity: 0;
+}
+
+/* An embedded site (memory routing, [data-embedded]) keeps them inside its own box: the site writes the visible part
+   of that box to --ds-site-frame-* while one is open, and they leave the host page usable. The drawer's viewport is
+   placed inline by UI SDK, hence the !important. */
+.ds-site[data-embedded] :is(.ds-site-drawer-layer, .ds-site-search-layer, [data-slot="drawer-viewport"]) {
+  inset: var(--ds-site-frame-top, 0px) auto auto var(--ds-site-frame-left, 0px) !important;
+  width: var(--ds-site-frame-width, 100%) !important;
+  height: var(--ds-site-frame-height, 100%) !important;
+}
+
+.ds-site[data-embedded] .ds-site-search {
+  top: calc(var(--ds-site-frame-top, 0px) + min(var(--ds-site-frame-height, 100vh) * 0.12, 90px));
+  left: calc(var(--ds-site-frame-left, 0px) + var(--ds-site-frame-width, 100vw) / 2);
+  width: min(620px, calc(var(--ds-site-frame-width, 100vw) - 32px));
+  max-height: min(560px, calc(var(--ds-site-frame-height, 100dvh) - min(var(--ds-site-frame-height, 100vh) * 0.12, 90px) - 16px));
 }
 
 /* The drawer slides itself (and fades its backdrop): it only gets a size and a surface. */
