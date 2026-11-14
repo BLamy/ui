@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { EditorContent, useEditor, useEditorState, type Editor as TiptapEditor } from "@tiptap/react"
 import type { AnyExtension } from "@tiptap/core"
 import {
@@ -234,6 +234,7 @@ function MarkToggle({ label, pressed, onToggle, children }: { label: string; pre
 function LinkTool({ editor, active }: { editor: TiptapEditor; active: boolean }) {
   const [open, setOpen] = useState(false)
   const [url, setUrl] = useState("")
+  const linkedId = useId()
   const close = () => setOpen(false)
   return (
     <Popover
@@ -249,8 +250,13 @@ function LinkTool({ editor, active }: { editor: TiptapEditor; active: boolean })
         title="Link"
         className={active ? "gb-tool gb-tool-active" : "gb-tool"}
         data-active={active ? "" : undefined}
+        // Bold and the others say they're on with aria-pressed; a popup trigger can't, so it says so in its description.
+        aria-describedby={active ? linkedId : undefined}
       >
         <Link2 className="size-4" aria-hidden="true" />
+        <span id={linkedId} hidden>
+          In a link
+        </span>
       </ToolbarButton>
       <PopoverContent className="gb-link-popover" aria-label="Link" sideOffset={6}>
         <form
