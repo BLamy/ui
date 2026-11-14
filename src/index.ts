@@ -25,8 +25,8 @@ export type {
   ReferenceSuggestionOptions,
   ReferenceTrigger,
 } from "./editor/reference-menu"
-export { SuggestionMenuView, createSuggestionRender } from "./editor/suggestion-menu"
-export type { SuggestionMenuItem } from "./editor/suggestion-menu"
+export { tiptapTriggerAdapter } from "./editor/trigger-adapter"
+export type { TiptapTriggerAdapterOptions, TokenToNodes } from "./editor/trigger-adapter"
 export { ReactDemoEditor } from "./editor/ReactDemoEditor"
 export type { ReactDemoEditorProps } from "./editor/ReactDemoEditor"
 export { SourceFileEditor } from "./editor/SourceFileEditor"

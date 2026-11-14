@@ -1030,9 +1030,9 @@
 .gb-openapi-path { min-width: 110px; font-family: ui-monospace, Menlo, monospace; }
 .gb-openapi-url { flex: 1; }
 
-/* ── Slash and reference menus: a UI SDK listbox in the top layer, placed at the caret ── */
+/* ── Slash and reference menus: UI SDK's Trigger Menu, in the top layer at the caret ── */
 .slash-menu {
-  /* A raw popover: the browser's own popover box (inset, margin, border, padding) is reset here. */
+  /* A popover: the browser's own popover box (inset, margin, border, padding) is reset here. */
   inset: auto;
   box-sizing: border-box;
   min-width: 230px;
@@ -1061,7 +1061,7 @@
   color: inherit;
 }
 .slash-item[data-highlighted] { background: var(--accent, #f4f4f5); }
-.slash-item[aria-disabled="true"] { opacity: 0.5; cursor: default; }
+.slash-item [data-slot="trigger-menu-item-icon"] { display: inline-flex; flex-shrink: 0; }
 .slash-item svg { flex-shrink: 0; color: var(--muted-foreground, #6b7280); }
 /* What the typed text matched. */
 .slash-item mark { background: transparent; color: inherit; font-weight: 600; }

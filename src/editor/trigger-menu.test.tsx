@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
-/* The "/" and "@" / "#" menus: TipTap's suggestion plugin supplies the query and the caret, the
-   editor keeps focus, and the list (UI SDK's listbox, layer and positioning) takes its keys. */
+/* The "/" and "@" / "#" menus: one UI SDK Trigger Menu per editor, reading and writing the document
+   through `tiptapTriggerAdapter`. The editor keeps focus, and the menu takes its keys first. */
 import { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import type { Editor as TiptapEditor } from "@tiptap/react"
@@ -21,9 +21,11 @@ afterEach(() => {
   container.remove()
 })
 
-const flush = async () => {
-  for (let i = 0; i < 6; i++) await act(async () => { await new Promise((r) => setTimeout(r, 0)) })
+const flush = async (ms = 0) => {
+  for (let i = 0; i < 6; i++) await act(async () => { await new Promise((r) => setTimeout(r, ms)) })
 }
+// Loaded items wait for typing to pause (150ms).
+const loaded = () => flush(40)
 
 async function mount(props: Partial<GitbookEditorProps> = {}) {
   let editor: TiptapEditor | null = null
@@ -69,34 +71,22 @@ describe("slash menu", () => {
     await type(editor, " /")
     const list = listbox("Blocks")!
     expect(list).not.toBeNull()
-    expect(list.closest('[data-slot="suggestion-menu-content"]')?.getAttribute("popover")).toBe("manual")
+    expect(list.closest('[data-slot="trigger-menu-content"]')?.classList.contains("slash-menu")).toBe(true)
     expect(options(list).length).toBeGreaterThan(5)
     expect(highlighted(list)).toHaveLength(1)
     expect(highlighted(list)[0]).toBe(options(list)[0])
     expect(highlighted(list)[0]!.getAttribute("aria-selected")).toBe("true")
     // The options never take focus: the caret stays in the document.
     for (const option of options(list)) expect(option.hasAttribute("tabindex") ? option.tabIndex : -1).toBe(-1)
+    // The focused editor says it has a listbox popup, and points at it while open.
+    expect(editor.view.dom.getAttribute("aria-haspopup")).toBe("listbox")
+    expect(editor.view.dom.getAttribute("aria-autocomplete")).toBe("list")
     expect(editor.view.dom.getAttribute("aria-controls")).toBe(list.id)
+    // A textbox stays a textbox: no aria-expanded on it.
+    expect(editor.view.dom.getAttribute("role")).toBe("textbox")
+    expect(editor.view.dom.hasAttribute("aria-expanded")).toBe(false)
     // Not pointed at an option until the highlight moves (a screen reader would read it out of turn).
     expect(editor.view.dom.hasAttribute("aria-activedescendant")).toBe(false)
-  })
-
-  it("out of the top layer (a layer host, or no popover support) it shows in place, raised by z-index", async () => {
-    // UI SDK keeps a popup out of the top layer where it can't use it; the markup must not hide it there.
-    const showPopover = HTMLElement.prototype.showPopover
-    ;(HTMLElement.prototype as { showPopover?: unknown }).showPopover = undefined
-    try {
-      const { editor } = await mount()
-      await type(editor, " /")
-      const content = listbox("Blocks")!.closest<HTMLElement>('[data-slot="suggestion-menu-content"]')!
-      expect(content.hasAttribute("popover")).toBe(false)
-      expect(content.style.zIndex).toBe("2147483000")
-      expect(content.hasAttribute("data-open")).toBe(true)
-      await press(editor, "Escape")
-      expect(listbox("Blocks")).toBeNull()
-    } finally {
-      HTMLElement.prototype.showPopover = showPopover
-    }
   })
 
   it("moves the highlight with the arrows (wrapping), points the editor at it, and Enter inserts it", async () => {
@@ -138,7 +128,7 @@ describe("slash menu", () => {
   it("shows the empty message when nothing matches, and Enter then inserts nothing", async () => {
     const { editor, markdown } = await mount()
     await type(editor, " /zzzz")
-    expect(document.querySelector('[data-slot="suggestion-menu-empty"]')?.textContent).toBe("No matching blocks")
+    expect(document.querySelector('[data-slot="trigger-menu-empty"]')?.textContent).toBe("No matching blocks")
     const before = markdown()
     await press(editor, "Enter")
     expect(markdown()).toBe(before)
@@ -151,8 +141,41 @@ describe("slash menu", () => {
     expect((await press(editor, "Escape")).defaultPrevented).toBe(true)
     expect(listbox("Blocks")).toBeNull()
     expect(editor.getText()).toContain("/hea")
-    // A key after the dismissal is the editor's again.
+    // A key after the dismissal is the editor's again, and typing on doesn't reopen it.
     expect((await press(editor, "ArrowDown")).defaultPrevented).toBe(false)
+    await type(editor, "d")
+    expect(listbox("Blocks")).toBeNull()
+    // Control+Space reopens the dismissed match.
+    expect((await press(editor, " ", { code: "Space", ctrlKey: true })).defaultPrevented).toBe(true)
+    expect(listbox("Blocks")).not.toBeNull()
+  })
+
+  it("undo after choosing brings the typed command back", async () => {
+    const { editor, markdown } = await mount()
+    await type(editor, " /hea")
+    await press(editor, "Enter")
+    expect(markdown()).toBe("# Start\n")
+    await act(async () => { editor.commands.undo() })
+    await flush()
+    expect(editor.getText()).toContain("/hea")
+  })
+
+  it("the highlight follows the pointer", async () => {
+    const { editor } = await mount()
+    await type(editor, " /")
+    const list = listbox("Blocks")!
+    const third = options(list)[2]!
+    await act(async () => { third.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse" })) })
+    await flush()
+    expect(highlighted(list)).toEqual([third])
+  })
+
+  it("offers nothing in a code block", async () => {
+    const { editor } = await mount({ markdown: "```\ncode\n```\n" })
+    await act(async () => { editor.commands.setTextSelection(5) })
+    expect(editor.state.selection.$from.parent.type.name).toMatch(/code/i)
+    await type(editor, " /")
+    expect(listbox("Blocks")).toBeNull()
   })
 
   it("closes on a press outside the menu and the editor", async () => {
@@ -201,11 +224,14 @@ describe("reference menus", () => {
   it("groups mentions under their headings and matches labels ignoring accents", async () => {
     const { editor } = await mount({ references })
     await type(editor, " @")
+    await loaded()
     const list = listbox("Mentions")!
     expect(list).not.toBeNull()
+    // Each group is named by its label part.
     const groups = Array.from(list.querySelectorAll<HTMLElement>('[role="group"]'))
-    expect(groups.map((group) => group.getAttribute("aria-label"))).toEqual(["People", "Agents"])
+    expect(groups.map((group) => document.getElementById(group.getAttribute("aria-labelledby")!)?.textContent)).toEqual(["People", "Agents"])
     await type(editor, "resu")
+    await loaded()
     expect(options(listbox("Mentions")!).map((option) => option.textContent)).toEqual(["@lunaLuna Résumé", "@resu"])
     expect(listbox("Mentions")!.querySelector("mark")?.textContent).toBe("Résu")
   })
@@ -213,6 +239,7 @@ describe("reference menus", () => {
   it("inserts the highlighted mention as a chip on Enter", async () => {
     const { editor, markdown } = await mount({ references })
     await type(editor, " @hol")
+    await loaded()
     expect(highlighted(listbox("Mentions")!)).toHaveLength(1)
     await press(editor, "Enter")
     expect(listbox("Mentions")).toBeNull()
@@ -222,6 +249,7 @@ describe("reference menus", () => {
   it("loads tags from an async source and names its own list", async () => {
     const { editor, markdown } = await mount({ references })
     await type(editor, " #de")
+    await loaded()
     const list = listbox("Tags")!
     expect(options(list).map((option) => option.textContent)).toEqual(["#design", "#de"])
     await press(editor, "Tab")

@@ -14,7 +14,7 @@ By the end of this page you'll have the editor writing Markdown and docstream re
 {% step %}
 ### Install the editor and its peers
 
-{% command %}npm install @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm @tiptap/react @tiptap/starter-kit @tiptap/suggestion{% endcommand %}
+{% command %}npm install @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm @tiptap/react @tiptap/starter-kit @ui-sdk/core @ui-sdk/react{% endcommand %}
 
 React and the Tiptap packages are peers. `@brett_lamy/docstream` installs with the editor, at the same version. The peer table is in [Installation](01-installation.md).
 {% endstep %}

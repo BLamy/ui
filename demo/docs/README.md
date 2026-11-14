@@ -31,7 +31,7 @@ This site is itself a folder of Markdown, published with docstream's [`DocsSite`
 
 ## Install
 
-{% command %}npm install @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm @tiptap/react @tiptap/starter-kit @tiptap/suggestion react react-dom{% endcommand %}
+{% command %}npm install @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm @tiptap/react @tiptap/starter-kit @ui-sdk/core @ui-sdk/react react react-dom{% endcommand %}
 
 React and the ten Tiptap packages are peer dependencies. docstream comes along as a regular dependency, pinned to the editor's own version. See [Installation](01-getting-started/01-installation.md).
 

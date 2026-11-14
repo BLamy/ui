@@ -29,7 +29,7 @@ TipTap editor components for Docstream GitBook-style markdown documents.
 ```sh
 pnpm add @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block \
   @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm \
-  @tiptap/react @tiptap/starter-kit @tiptap/suggestion @ui-sdk/core @ui-sdk/react react react-dom
+  @tiptap/react @tiptap/starter-kit @ui-sdk/core @ui-sdk/react react react-dom
 ```
 
 React 19, the TipTap packages (including `@tiptap/extension-code`) and [UI SDK](https://ui-sdk.dev)
@@ -40,13 +40,15 @@ tabs, checkboxes, popovers and dialogs are UI SDK components, sharing your app's
 
 ### Upgrading to 2.0
 
-2.0 rebuilds the editor's interactive UI on [UI SDK](https://ui-sdk.dev). Documents, Markdown, props
-and exports are unchanged; what you install and one CSS line change.
+2.0 rebuilds the editor's interactive UI on [UI SDK](https://ui-sdk.dev). Documents, Markdown and
+props are unchanged; what you install, one CSS line and the suggestion-menu exports change.
 
 1. **React 19.** `react` and `react-dom` peers are now `>=19` (UI SDK needs it); with TypeScript,
    `@types/react` 19.2.10 or newer.
-2. **Two new peer dependencies.** Install `@ui-sdk/core` and `@ui-sdk/react` (`>=0.1.0-beta.2`)
-   next to the editor. They are peers so the editor and your own UI SDK components share one core.
+2. **Two new peer dependencies, one fewer.** Install `@ui-sdk/core` and `@ui-sdk/react`
+   (`>=0.1.0-beta.2`) next to the editor. They are
+   peers so the editor and your own UI SDK components share one core. `@tiptap/suggestion` is no
+   longer a peer; remove it if nothing else of yours uses it.
 3. **`react-aria` is gone.** The editor no longer depends on it; remove it if nothing else of yours uses it.
 4. **The `ui-sdk` cascade layer.** UI SDK adds a few rules to the page (keeping closed popups hidden,
    resetting popover boxes) in a layer named `ui-sdk`. The editor's stylesheet declares it first, so
@@ -78,10 +80,18 @@ and exports are unchanged; what you install and one CSS line change.
    `[data-disabled]`.
 7. **Link button.** The toolbar's Link button opens a popover with a URL field (Apply / Remove)
    instead of `window.prompt`.
-8. **`SuggestionMenuView`** keeps its props and gains optional `query` (marks what matched), `label`
-   (names the list), `input` (the element that keeps focus, pointed at the list with
-   `aria-controls` / `aria-activedescendant`) and `onDismiss`. `createSuggestionRender(emptyLabel, { label, pluginKey })`
-   fills them in from TipTap's suggestion props.
+8. **The `/ @ # $` menus are UI SDK's [Trigger Menu](https://ui-sdk.dev)**, one per editor, reading
+   and writing the document through a Tiptap editor adapter. `SlashMenu`, `createSlashMenu(items)` and
+   `createReferenceSuggestion(options)` keep their signatures (they are still Tiptap extensions), but
+   they no longer use `@tiptap/suggestion`: **`SuggestionMenuView`, `createSuggestionRender` and
+   `SuggestionMenuItem` are removed.** To put a menu of your own on a Tiptap editor, render a
+   `TriggerMenu` with `editor={tiptapTriggerAdapter(editor)}` (exported here). Markup: items are
+   `div[role="option"][data-slot="trigger-menu-item"]` (not `<button>`), so overrides like
+   `.slash-menu button` should target `.slash-item`; the popup is `[data-slot="trigger-menu-content"]`
+   and has no inline `position: fixed` (UI SDK positions it); groups are `[role="group"]` named by
+   their `.slash-group` label (`aria-labelledby`); the empty message is `.slash-empty`. Escape
+   dismisses a match until it's retyped, and Control+Space reopens it. Code blocks and inline code
+   open no menu.
 9. **Filtering** of the slash menu and of array reference sources uses UI SDK's text matching:
    it ignores case and the accents the reader's language ignores (`resu` finds "Résumé").
 
@@ -501,6 +511,24 @@ start of a line or after a space to open block insertion options; typing filters
 keywords. Pass `slashMenu={{ items }}` (default list: `SLASH_ITEMS`) for your own items, or
 `slashMenu={false}` to turn it off.
 
+The slash and reference menus are one UI SDK `TriggerMenu` per editor. `tiptapTriggerAdapter(editor)`
+is the editor adapter it uses (text offsets are ProseMirror positions within the caret's textblock;
+a leaf reads as U+FFFC; each replacement is its own undo step), exported for menus of your own:
+
+```tsx
+import { TriggerMenu, TriggerMenuContent, TriggerMenuList } from "@ui-sdk/react/trigger-menu"
+import { tiptapTriggerAdapter } from "@brett_lamy/docstream-editor"
+
+const adapter = useMemo(() => tiptapTriggerAdapter(editor), [editor])
+<TriggerMenu editor={adapter} triggers={[{ char: ":", items: emoji }]}>
+  <TriggerMenuContent><TriggerMenuList aria-label="Emoji" /></TriggerMenuContent>
+</TriggerMenu>
+```
+
+Keys reach the menu before ProseMirror: add a plugin whose `handleDOMEvents.keydown` returns
+`event.defaultPrevented`, so Enter or Tab that chose an item doesn't also run the editor's keymap
+(the built-in menus add it).
+
 ## Conversion Helpers
 
 Use the conversion helpers when you need to inspect or transform editor state directly.
@@ -531,7 +559,7 @@ Exports:
   `gitbookNodes`, `GbCodeBlock`, `GbCommand`, `GbDemo`, `GbReference`, `GbAttachment`, `formatBytes`,
   `SlashMenu`, `createSlashMenu`, `SLASH_ITEMS`, `SlashItem`, `createReferenceSuggestion`,
   `resolveReferenceOptions`, `ReferenceOption`, `ReferenceSource`, `ReferenceSuggestionOptions`,
-  `ReferenceTrigger`, `SuggestionMenuView`, `createSuggestionRender`, `SuggestionMenuItem`
+  `ReferenceTrigger`, `tiptapTriggerAdapter`, `TiptapTriggerAdapterOptions`, `TokenToNodes`
 - Demo clipboard and VFS: `clipboardForDoc`, `lookupDemoSource`, `payloadContent`,
   `registerPayloadFiles`, `selectionClipboard`, `useEditorClipboard`, `ClipboardBridge`,
   `DemoSources`, `PastedDemoFiles`, plus Docstream's `DOCSTREAM_CLIPBOARD_TYPE`, `createDemoVFS`,
