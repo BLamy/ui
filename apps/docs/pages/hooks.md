@@ -26,17 +26,15 @@ Documented on [Layout hooks](https://blamy.github.io/ui/#/hooks-layout).
 | `useContainerSize` | `[ref, { width, height }]` | nothing | public |
 | `useSplitView` | split view state and actions | `SplitView`; throws outside | public |
 | `useSplitViewColumn` | the column name | a split view column; `null` outside | public |
-| `useSplitViewBack` | `{ title, back }` | a `NavigationStack` at the root of a column; `null` outside | public |
-| `useSplitViewStack` | `{ push, pop, popToRoot, depth, canPop }` | `SplitViewStack`; throws outside | public |
-| `useNavigationStack` | the stack's controller: `{ push, pop, popTo, replace, refresh, getPages }` | a `NavigationStack`; `null` outside | public |
+| `useSplitViewBack` | `{ title, back }` | a bar of your own at the root of a column; `null` outside | public |
+| `useNavigationStack` | the stack's controller: `{ push, pop, popTo, replace, refresh, getPages }` | a `NavigationStack`; throws outside | public |
 | `useSidebar` | `{ open, setOpen, toggle, sizeClass, compact }` | `SidebarProvider`; throws outside | public |
 | `useSidebarCollapsed` | whether the enclosing sidebar is collapsed to its icon rail | a `Sidebar`; `false` outside | public |
 | `useTabs` | `{ variant, side, orientation }` | `Tabs`; `null` outside | public |
 | `useTabsTab` | the tab's UI SDK state, `{ selected, disabled }` | the content of a `TabsTab`; `null` outside | public |
 | `useFloatingSheet` | `{ open, setOpen, progress, peek, minimized, setMinimized }` | `FloatingSheet`; throws outside | public |
 | `useHideOnScroll` | `boolean` | nothing (takes the scroller's ref) | public |
-| `useFloatingChat` | `{ open, setOpen, progress, composing, minimized, … }` | `FloatingChat`; throws outside | public |
-| `useArtifactChatContainer` | `{ width, layout, compact, chatOpen, … }` | `ArtifactChatContainer`; throws outside | public |
+| `useArtifactChatContainer` | `{ sizeClass, layout, open, setOpen, composing, minimized, … }` | `ArtifactChatContainer`; throws outside | public |
 
 ### Motion
 
@@ -60,7 +58,8 @@ Documented on [Theme hooks](https://blamy.github.io/ui/#/hooks-theme).
 | `useAppearance` | `'light'`, `'dark'` or `undefined` | nothing; reads `AppearanceProvider`, else `<html class="dark">` | public |
 | `useThemeScopeProps` | `{ data-theme-scope, className, style }` | `ThemeScope`; `{}` outside | public |
 | `useChromeHidden` | `boolean` | nothing (a global store) | public |
-| `useWorkbenchAppearance` | `'light'` or `'dark'` | `WorkbenchTheme`, optional; the ambient value, else `'dark'` outside | public |
+| `useThemeScope` | the nearest scope's `{ scope, appearance, tint, vars }` | `ThemeScope`; `null` outside | public |
+| `useScopeAppearance` | `'light'`, `'dark'` or `undefined` | nothing; the rule a `ThemeScope` of that name applies here | public |
 | `useLayerHost` | the element popups and dialogs portal into, or `undefined` | `BLProvider`; `undefined` outside | public |
 
 6.0 removed `useScrollHidden`: floating chrome uses `useHideOnScroll` (Layout), and anything else reads `useChromeHidden()`.
@@ -87,7 +86,6 @@ Documented on [Composer hooks](https://blamy.github.io/ui/#/hooks-composer).
 | --- | --- | --- | --- |
 | `useComposer` | the draft, attachments and actions | `Composer`; throws outside | public |
 | `useComposerBump` | `{ side, open, setOpen, reveal, progress, dragging, settling, … }` | `ComposerBump`; throws outside | public |
-| `useComposerAnnotator` | an annotator component, or `null` | nothing; reads `ComposerAnnotatorProvider`, else `PencilKitAnnotator` | public |
 | `usePencilHistory` | strokes with undo, redo and clear | nothing | public |
 
 ### Feedback

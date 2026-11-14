@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { timelineMediaType, VideoTimeline, type TimelineDropDetails, type VideoTimelineChangeDetails } from '@/components/ui/video-timeline';
+import { fitTimelineZoom, timelineMediaType, VideoTimeline, type TimelineDropDetails, type VideoTimelineChangeDetails } from '@/components/ui/video-timeline';
 import { createPlayback } from '@/lib/playback';
 import { findClip, layoutTrack, type Timeline } from '@/lib/video-timeline-model';
 
@@ -42,7 +42,7 @@ function Editor({ onValueChange, onSelectedClipsChange, readOnly, initial = STAR
   const [selected, setSelected] = useState<string[]>([]);
   const [clock] = useState(() => createPlayback({ duration: 10 }));
   return (
-    <VideoTimeline value={value} clock={clock} media={MEDIA} fps={10} readOnly={readOnly}
+    <VideoTimeline value={value} playback={clock} media={MEDIA} fps={10} readOnly={readOnly}
       onValueChange={(v, d) => { onValueChange?.(v, d); setValue(v); }}
       selectedClips={selected} onSelectedClipsChange={(ids) => { onSelectedClipsChange?.(ids); setSelected(ids); }} />
   );
@@ -190,6 +190,23 @@ describe('VideoTimeline', () => {
     expect(details).toMatchObject({ reason: 'press', id: 'music', action: 'track' });
   });
 
+  it('draws the slashed glyph while a track is muted', () => {
+    render(<Editor />);
+    const mute = screen.getAllByRole('button', { name: 'Mute track' })[2];
+    const before = mute.innerHTML;
+    act(() => { fireEvent.click(mute); });
+    expect(mute.getAttribute('aria-pressed')).toBe('true');
+    expect(mute.innerHTML).not.toBe(before);
+  });
+
+  it('takes its header width, and fitTimelineZoom fits the lanes beside it', () => {
+    const clock = createPlayback({ duration: 10 });
+    const { container } = render(<VideoTimeline value={START} playback={clock} media={MEDIA} headerWidth={80} />);
+    expect((container.firstElementChild as HTMLElement).style.getPropertyValue('--header')).toBe('80px');
+    expect(fitTimelineZoom(10, 1000, { headerWidth: 80 })).toBeCloseTo((1000 - 80 - 24) / 10);
+    expect(fitTimelineZoom(10, 1000)).toBeCloseTo((1000 - 132 - 24) / 10);
+  });
+
   it('announces a keyboard edit', async () => {
     render(<Editor />);
     const t = screen.getAllByRole('button', { name: /^Title, 0:01/ })[0];
@@ -290,7 +307,7 @@ describe('VideoTimeline', () => {
     function Ruler() {
       const [c] = useState(() => createPlayback({ duration: 10 }));
       clock = c;
-      return <VideoTimeline value={START} clock={c} media={MEDIA} fps={10} />;
+      return <VideoTimeline value={START} playback={c} media={MEDIA} fps={10} />;
     }
     render(<Ruler />);
     const playhead = screen.getByRole('slider', { name: 'Playhead' });
@@ -324,7 +341,7 @@ describe('VideoTimeline zoom and drops', () => {
     const zoom = external ?? own;
     const [clock] = useState(() => createPlayback({ duration: 10 }));
     return (
-      <VideoTimeline value={START} clock={clock} media={MEDIA} fps={10} zoom={zoom}
+      <VideoTimeline value={START} playback={clock} media={MEDIA} fps={10} zoom={zoom}
         onZoomChange={(z, d) => { onZoomChange(z, d); if (accept) setZoom(z); }} />
     );
   }
@@ -377,7 +394,7 @@ describe('VideoTimeline zoom and drops', () => {
     function Drops() {
       const [clock] = useState(() => createPlayback({ duration: 10 }));
       return (
-        <VideoTimeline value={START} clock={clock} media={MEDIA} fps={10} zoom={60}
+        <VideoTimeline value={START} playback={clock} media={MEDIA} fps={10} zoom={60}
           onDropMedia={(id, details) => { drops.push([id, details]); if (refuse) details.cancel(); }} />
       );
     }

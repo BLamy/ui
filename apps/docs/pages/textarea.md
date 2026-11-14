@@ -101,13 +101,13 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/textarea`. Base classes:
 
 ```text
-[ 'box-border block w-full min-w-0 resize-none rounded-ctl border-0 bg-input px-3 py-2.5 [font-family:inherit] text-body leading-[22px] text-foreground outline-none', 'transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy placeholder:text-tertiary-foreground', 'focus:bg-transparent focus:shadow-[inset_0_0_0_1.5px_var(--primary)]', 'aria-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] data-disabled:cursor-not-allowed data-disabled:opacity-50', selectableText, ]
+['block h-auto w-full resize-none py-2.5 leading-[22px] placeholder:text-tertiary-foreground', selectableText]
 ```
 
 **`size`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `default` (default) | `min-h-24` |
 | `sm` | `min-h-16 text-subhead leading-[20px]` |
-| `lg` | `min-h-36` |
+| `default` (default) | `min-h-24 text-body` |
+| `lg` | `min-h-36 text-body` |

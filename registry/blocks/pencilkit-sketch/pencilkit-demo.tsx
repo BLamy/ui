@@ -6,11 +6,13 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { HoverCard, HoverCardContent, HoverCardHeader, createHoverCardController } from '@/components/ui/hover-card';
-import { PK_INKS, PK_TOOL_ICONS, PK_W, type PencilDrawTool, type PencilPoint, type PencilStroke, type PencilTool } from '@/components/ui/pencilkit/constants';
+import { EmptyState } from '@/components/ui/empty-state';
+import { pencilInks, pencilToolIcons, pencilWidths, type PencilDrawTool, type PencilPoint, type PencilStroke, type PencilTool } from '@/components/ui/pencilkit/constants';
 import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas';
-import { InkPicker, PencilActions, PencilToolbar, PencilToolbarDivider, ToolPicker, WidthPicker } from '@/components/ui/pencilkit/pencil-toolbar';
+import { PencilActions, PencilInkPicker, PencilToolbar, PencilToolbarPinned, PencilToolPicker, PencilWidthPicker } from '@/components/ui/pencilkit/pencil-toolbar';
 import { StrokePath } from '@/components/ui/pencilkit/stroke-path';
 import { usePencilHistory } from '@/components/ui/pencilkit/use-pencil-history';
+import { ToolbarSeparator } from '@/components/ui/toolbar';
 import { Icon } from '@/lib/icon';
 import { themeScopeProps, useAppearance, type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -38,20 +40,21 @@ const SAMPLE: PencilPoint[] = Array.from({ length: 41 }, (_, i) => {
 function BrushSample({ tool, ink, w }: { tool: PencilDrawTool; ink: string; w: number }) {
   return (
     <svg aria-hidden="true" viewBox="0 0 240 64" className={cn('block h-16 w-full rounded-lg', pencilPaperClassName)}>
-      <StrokePath st={{ tool, color: ink, w, pen: false, done: true, points: SAMPLE }} />
+      <StrokePath stroke={{ tool, color: ink, width: w, pressure: false, complete: true, points: SAMPLE }} />
     </svg>
   );
 }
 
-function BrushCard({ tool, ink, wi, strokes }: { tool: PencilTool; ink: string; wi: number; strokes: number }) {
+function BrushCard({ tool, ink, scale, strokes }: { tool: PencilTool; ink: string; scale: number; strokes: number }) {
   const info = TOOL_INFO[tool];
+  const width = pencilWidths.find((w) => w.scale === scale);
   return (
     <div className="flex flex-col gap-3">
       <HoverCardHeader
-        icon={<span className="grid size-9 place-items-center rounded-lg bg-secondary text-foreground"><Icon name={PK_TOOL_ICONS[tool]} size={20} /></span>}
+        icon={<span className="grid size-9 place-items-center rounded-lg bg-secondary text-foreground"><Icon name={pencilToolIcons[tool]} size={20} /></span>}
         title={info.title}
-        description={tool === 'eraser' ? `${strokes} stroke${strokes === 1 ? '' : 's'} on the page` : `Width ${wi + 1} · ${PK_W[wi].m}×`} />
-      {tool !== 'eraser' ? <BrushSample tool={tool} ink={ink} w={PK_W[wi].m} /> : null}
+        description={tool === 'eraser' ? `${strokes} stroke${strokes === 1 ? '' : 's'} on the page` : `${width?.label ?? 'Width'} · ${scale}×`} />
+      {tool !== 'eraser' ? <BrushSample tool={tool} ink={ink} w={scale} /> : null}
       <p className="m-0 text-footnote text-muted-foreground">{info.about}</p>
     </div>
   );
@@ -74,8 +77,8 @@ export function PencilKitDemo({ dark: darkProp, appearance, tint, defaultStrokes
   const scope = themeScopeProps({ appearance: dark ? 'dark' : 'light', tint });
 
   const [tool, setTool] = useState<PencilTool>('pen');
-  const [ink, setInk] = useState(dark ? 1 : 0);
-  const [wi, setWi] = useState(1);
+  const [ink, setInk] = useState(pencilInks[0].value);
+  const [width, setWidth] = useState(1);
   const history = usePencilHistory(defaultStrokes);
   // One card per picker: each of its buttons is a trigger handing the card its tool or width.
   const [toolCard] = useState(() => createHoverCardController<PencilTool>());
@@ -98,44 +101,41 @@ export function PencilKitDemo({ dark: darkProp, appearance, tint, defaultStrokes
     >
       <PencilCanvas
         tool={tool}
-        ink={PK_INKS[ink]}
-        width={PK_W[wi].m}
+        ink={ink}
+        width={width}
         strokes={history.strokes}
         onStrokesChange={history.onStrokesChange}
-        status="perfect-freehand@1.2.2"
-        hint={
-          <>
-            <div className="text-[15.5px] font-semibold">Draw anywhere</div>
-            <div className="mt-[3px] text-[12.5px]">
-              Apple Pencil pressure is real — mouse and touch are simulated.
-            </div>
-          </>
-        }
+        aria-label="Sketch"
+        emptyState={<EmptyState title="Draw anywhere" description="Apple Pencil pressure is real; mouse and touch are simulated." />}
       >
-        <PencilToolbar>
-          <ToolPicker value={tool} onValueChange={setTool} hoverCard={toolCard} />
-          <PencilToolbarDivider />
-          <InkPicker value={ink} onValueChange={setInk} />
-          <PencilToolbarDivider />
-          <WidthPicker value={wi} onValueChange={setWi} hoverCard={widthCard} />
-          <PencilToolbarDivider />
-          <PencilActions
-            onUndo={history.undo}
-            onRedo={history.redo}
-            onClear={history.clear}
-            canUndo={history.canUndo}
-            canRedo={history.canRedo}
-          />
+        <PencilToolbar className="absolute inset-x-2.5 bottom-3.5 mx-auto">
+          <PencilToolPicker value={tool} onValueChange={setTool} hoverCard={toolCard} />
+          <ToolbarSeparator />
+          <PencilInkPicker value={ink} onValueChange={setInk} />
+          <ToolbarSeparator />
+          <PencilWidthPicker value={width} onValueChange={setWidth} hoverCard={widthCard} />
+          <PencilToolbarPinned>
+            <ToolbarSeparator />
+            <PencilActions
+              onUndo={history.undo}
+              onRedo={history.redo}
+              onClear={history.clear}
+              canUndo={history.canUndo}
+              canRedo={history.canRedo}
+              canClear={history.canClear}
+            />
+          </PencilToolbarPinned>
         </PencilToolbar>
+        <span className="pointer-events-none absolute top-2.5 right-3 font-mono text-caption2 text-tertiary-foreground">perfect-freehand@1.2.2</span>
       </PencilCanvas>
       <HoverCard controller={toolCard}>
         <HoverCardContent<PencilTool> side="top" className="w-64">
-          {({ payload }) => (payload != null ? <BrushCard tool={payload} ink={PK_INKS[ink]} wi={wi} strokes={history.strokes.length} /> : null)}
+          {({ payload }) => (payload != null ? <BrushCard tool={payload} ink={ink} scale={width} strokes={history.strokes.length} /> : null)}
         </HoverCardContent>
       </HoverCard>
       <HoverCard controller={widthCard}>
         <HoverCardContent<number> side="top" className="w-64">
-          {({ payload }) => (payload != null ? <BrushCard tool={drawing} ink={PK_INKS[ink]} wi={payload} strokes={history.strokes.length} /> : null)}
+          {({ payload }) => (payload != null ? <BrushCard tool={drawing} ink={ink} scale={payload} strokes={history.strokes.length} /> : null)}
         </HoverCardContent>
       </HoverCard>
     </div>

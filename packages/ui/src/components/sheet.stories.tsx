@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  Sheet, SheetBackdrop, SheetBody, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger,
+  Sheet, SheetBackdrop, SheetBody, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger, SheetView,
 } from '@/components/ui/sheet';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Listbox, ListboxItem } from '@/components/ui/list-box';
+import { Listbox, ListboxItem } from '@/components/ui/listbox';
 import { Switch } from '@/components/ui/switch';
 import { focusRing } from '@/lib/primitives';
 import { cn } from '@/lib/utils';
@@ -66,43 +66,41 @@ export const Top: Story = { render: () => <Demo side="top" /> };
 export const SnapPoints: Story = { render: () => <Demo side="bottom" snapPoints={[0.5, 1]} /> };
 export const Closed: Story = { render: () => <Demo side="bottom" open={false} /> };
 
-/** `animateHeight`: a short tray that springs to its content's height as the flow steps forward. */
+/** A flow: the root's `view` and a `SheetView` spring the short tray to each step's height, and the step and its
+ *  title slide in the direction of travel. */
 function Flow({ dark }: { dark?: boolean }) {
   const [step, setStep] = useState<'pick' | 'confirm'>('pick');
   return (
     <Screen dark={dark}>
       <div>
-        <Sheet defaultOpen onOpenChange={(open) => open && setStep('pick')}>
+        <Sheet defaultOpen view={step} onOpenChange={(open) => open && setStep('pick')}>
           <SheetTrigger className={buttonVariants()}>Upgrade plan</SheetTrigger>
           <SheetBackdrop />
-          <SheetContent animateHeight>
+          <SheetContent>
             <SheetClose />
-            {step === 'pick' ? (
-              <>
-                <SheetHeader>
-                  <SheetTitle>Choose a plan</SheetTitle>
-                  <SheetDescription>You can change it any time.</SheetDescription>
-                </SheetHeader>
-                <SheetBody className="flex flex-col gap-2">
-                  <Button variant="secondary" size="lg" className="justify-between">Starter <span>$0</span></Button>
-                  <Button size="lg" className="justify-between">Team <span>$12</span></Button>
-                </SheetBody>
-                <SheetFooter>
-                  <Button size="pill" onClick={() => setStep('confirm')}>Continue</Button>
-                </SheetFooter>
-              </>
-            ) : (
-              <>
-                <SheetHeader>
-                  <SheetTitle>Confirm Team</SheetTitle>
-                  <SheetDescription>$12 per seat each month, billed today.</SheetDescription>
-                </SheetHeader>
+            {/* The header stays mounted outside the view: the title travels by itself and keeps naming the sheet. */}
+            <SheetHeader>
+              <SheetTitle>{step === 'pick' ? 'Choose a plan' : 'Confirm Team'}</SheetTitle>
+              <SheetDescription>{step === 'pick' ? 'You can change it any time.' : '$12 per seat each month, billed today.'}</SheetDescription>
+            </SheetHeader>
+            <SheetView>
+              {step === 'pick' ? (
+                <>
+                  <SheetBody className="flex flex-col gap-2">
+                    <Button variant="secondary" size="lg" className="justify-between">Starter <span>$0</span></Button>
+                    <Button size="lg" className="justify-between">Team <span>$12</span></Button>
+                  </SheetBody>
+                  <SheetFooter>
+                    <Button size="pill" onClick={() => setStep('confirm')}>Continue</Button>
+                  </SheetFooter>
+                </>
+              ) : (
                 <SheetFooter>
                   <SheetClose render={<Button size="pill" />}>Confirm and pay</SheetClose>
                   <Button size="pill" variant="secondary" onClick={() => setStep('pick')}>Back</Button>
                 </SheetFooter>
-              </>
-            )}
+              )}
+            </SheetView>
           </SheetContent>
         </Sheet>
       </div>

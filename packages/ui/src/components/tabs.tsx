@@ -12,9 +12,11 @@ import {
 } from '@ui-sdk/react/tabs';
 import { cva } from 'class-variance-authority';
 import { Icon, type IconName } from '@/lib/icon';
+import { barSurface } from '@/lib/primitives';
 import { useChromeHidden } from '@/lib/theme';
 import { cn, cx } from '@/lib/utils';
 import { Separator, type SeparatorProps } from '@/components/ui/separator';
+import { segmentIndicatorVariants, segmentItemVariants, segmentTrackVariants } from '@/components/ui/segmented';
 
 /* ══ Tabs — UI SDK's Tabs, from an in-page segmented control to an app's tab bar ══
    One root, one family of parts. `variant` picks the look and `side` where the tabs sit around the panels
@@ -133,11 +135,6 @@ export function Tabs<T extends string = string>({ variant = 'segmented', side, c
 
 /* ── Bar: the surface the list sits on ── */
 
-/** The iOS bottom bar surface (height, translucent `bg-bar`, blur, hairline). Task B3 replaces this string with the
- *  shared `barSurface` from lib/primitives. */
-const tabsBarSurface =
-  'h-[62px] [border-top:1px_solid_var(--border)] bg-bar pb-1 backdrop-blur-[20px] backdrop-saturate-[1.7]';
-
 const inline = 'flex shrink-0 data-[orientation=vertical]:flex-col';
 
 export const tabsBarVariants = cva('box-border', {
@@ -148,7 +145,7 @@ export const tabsBarVariants = cva('box-border', {
       /** iOS tab bar: translucent, pinned over the bottom of the content (the top with `side="top"`), hides with the scroll. */
       bar: cn(
         'absolute inset-x-0 bottom-0 z-120 flex data-[side=top]:top-0 data-[side=top]:bottom-auto transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
-        tabsBarSurface,
+        barSurface,
       ),
       /** Side rail: icons over labels. */
       rail: 'relative flex w-19 shrink-0 flex-col gap-1 bg-bar py-2 data-[side=end]:border-s data-[side=start]:border-e border-border',
@@ -188,7 +185,7 @@ export function TabsBar({ hideOnScroll = true, className, ...props }: TabsBarPro
 export const tabsListVariants = cva('relative outline-none', {
   variants: {
     variant: {
-      segmented: 'isolate flex gap-0.5 rounded-[9px] bg-secondary p-0.5 data-[orientation=vertical]:flex-col',
+      segmented: cn('flex', segmentTrackVariants()),
       underline:
         'isolate flex gap-5 shadow-hairline-b data-[orientation=vertical]:flex-col data-[orientation=vertical]:gap-0 data-[orientation=vertical]:border-e data-[orientation=vertical]:border-border data-[orientation=vertical]:shadow-none',
       bar: 'flex flex-1',
@@ -234,8 +231,7 @@ export const tabsTabVariants = cva(
   {
     variants: {
       variant: {
-        segmented:
-          'bl-btn flex flex-1 items-center justify-center gap-1.5 rounded-[7px] px-3 py-[5px] text-footnote leading-[inherit] font-medium whitespace-nowrap text-foreground transition-[color] duration-spring-snappy ease-spring-snappy data-selected:font-semibold focus-visible:ring-[3px] focus-visible:ring-ring/45 data-disabled:opacity-40',
+        segmented: segmentItemVariants(),
         underline: cn(
           'bl-btn -mb-px flex h-10 items-center justify-center gap-1.5 px-0.5 py-0 text-subhead leading-[inherit] font-semibold whitespace-nowrap hover:not-data-selected:not-data-disabled:text-foreground data-selected:text-primary focus-visible:rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/45 data-disabled:opacity-40',
           'data-[orientation=vertical]:mb-0 data-[orientation=vertical]:h-9 data-[orientation=vertical]:justify-start data-[orientation=vertical]:px-3',
@@ -320,7 +316,7 @@ export const tabsIndicatorVariants = cva('absolute', {
   variants: {
     variant: {
       /** The card under the selected segment. */
-      segmented: 'inset-0 rounded-[7px] bg-segment shadow-[0_1px_4px_black] shadow-black/14',
+      segmented: cn('inset-0', segmentIndicatorVariants()),
       /** A 2px tint line along the selected tab's edge (bottom; the end edge in a column). */
       underline: 'bg-primary',
       bar: 'bg-primary',
@@ -359,7 +355,7 @@ export function TabsIndicator({ className, style, ...props }: TabsIndicatorProps
    The Discord pill on a tab's leading edge: a nub for `attention`, taller while the tab is hovered, full when it is
    selected. Unlike the indicator it doesn't travel: every tab has its own. */
 export const tabsPillVariants = cva(
-  'pointer-events-none absolute start-0 top-1/2 h-0 w-1 -translate-y-1/2 rounded-e-[4px] bg-foreground opacity-0 transition-[height,opacity] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none data-attention:h-1.5 data-attention:opacity-100 group-hover/tab:not-data-selected:h-3.5 group-hover/tab:not-data-selected:opacity-100 data-selected:h-7 data-selected:opacity-100',
+  'pointer-events-none absolute start-0 top-1/2 h-0 w-1 -translate-y-1/2 rounded-e-sm bg-foreground opacity-0 transition-[height,opacity] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none data-attention:h-1.5 data-attention:opacity-100 group-hover/tab:not-data-selected:h-3.5 group-hover/tab:not-data-selected:opacity-100 data-selected:h-7 data-selected:opacity-100',
 );
 
 export interface TabsPillProps extends ComponentProps<'span'> {

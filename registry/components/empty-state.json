@@ -1,0 +1,13 @@
+{
+  "name": "empty-state",
+  "title": "EmptyState",
+  "description": "What a list, table, tree, popup, pane or page shows when it has nothing: an optional icon, a title, a description and an action, in three sizes. The default of every emptyState prop in the kit.",
+  "page": "empty-state",
+  "exports": [
+    "EmptyState",
+    "emptyStateVariants"
+  ],
+  "imports": [
+    "EmptyState"
+  ]
+}

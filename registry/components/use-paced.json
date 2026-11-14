@@ -1,0 +1,8 @@
+{
+  "name": "use-paced",
+  "title": "usePaced",
+  "description": "The latest value of something that changes faster than React can render (a playhead dragged through thousands of steps), taken at a pace it can keep up with: at once when things are quiet, the newest every so often while values keep coming.",
+  "exports": [
+    "usePaced"
+  ]
+}

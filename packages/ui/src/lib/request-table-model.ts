@@ -1,10 +1,12 @@
 import { formatFileSize } from '@ui-sdk/core/file-input';
+import type { DataTableSortValue, DataTableTimeRange } from '@/lib/data-table-model';
 import type { RowId } from '@/lib/log-list-model';
 import { formatDuration } from '@/lib/sql-format';
 
 /* ══ RequestTable's pure logic ══
-   What a row says (status, duration, size, its name from its URL), where its bar goes on the shared time range, how rows
-   sort, and how columns turn into a CSS grid. No React and no DOM. */
+   What a row says (status, duration, size, its name from its URL), where its bar goes on the shared time range, and
+   what each built-in column sorts by. How rows sort and how columns turn into a CSS grid is DataTable's
+   (lib/data-table-model). No React and no DOM. */
 
 /** A bar's color. */
 export type RequestTone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'accent';
@@ -69,8 +71,10 @@ export function requestDurationText(row: Pick<RequestRow, 'duration' | 'pending'
   return row.duration === undefined ? '—' : formatDuration(row.duration);
 }
 
+/** DevTools' Size column: "280 B" under a kilobyte (Intl would say "280 byte"), else "1.7 kB". */
 export function requestSizeText(row: Pick<RequestRow, 'size'>): string {
-  return row.size === undefined ? '—' : formatFileSize(row.size);
+  if (row.size === undefined) return '—';
+  return row.size < 1000 ? `${Math.round(row.size)} B` : formatFileSize(row.size);
 }
 
 export function requestTone(row: Pick<RequestRow, 'tone' | 'failed' | 'status' | 'pending'>): RequestTone {
@@ -79,10 +83,8 @@ export function requestTone(row: Pick<RequestRow, 'tone' | 'failed' | 'status' |
 
 /* ── The waterfall ── */
 
-export type RequestTimeRange = readonly [start: number, end: number];
-
 /** From the first request sent to the last answer. Never empty, so a bar's share of it is always a number. */
-export function requestTimeRange(rows: readonly Pick<RequestRow, 'time' | 'duration'>[]): RequestTimeRange {
+export function requestTimeRange(rows: readonly Pick<RequestRow, 'time' | 'duration'>[]): DataTableTimeRange {
   let start = Infinity;
   let end = -Infinity;
   for (const row of rows) {
@@ -97,7 +99,7 @@ export function requestTimeRange(rows: readonly Pick<RequestRow, 'time' | 'durat
 
 /** A row's bar, as percentages of the range, cut to it; null when it has no time or falls outside it. A bar with no width
  *  still draws (the part gives it a minimum). A pending row with no duration runs to the end of the range. */
-export function requestBar(row: Pick<RequestRow, 'time' | 'duration' | 'pending'>, [start, end]: RequestTimeRange): { left: number; width: number } | null {
+export function requestBar(row: Pick<RequestRow, 'time' | 'duration' | 'pending'>, [start, end]: DataTableTimeRange): { left: number; width: number } | null {
   if (row.time === undefined) return null;
   const span = end - start;
   const stop = row.duration === undefined && row.pending ? end : row.time + (row.duration ?? 0);
@@ -107,31 +109,10 @@ export function requestBar(row: Pick<RequestRow, 'time' | 'duration' | 'pending'
   return { left: ((from - start) / span) * 100, width: ((to - from) / span) * 100 };
 }
 
-/** The playhead's place on the range, 0…1, or null when it isn't on it. */
-export function playheadShare(time: number | null | undefined, [start, end]: RequestTimeRange): number | null {
-  if (time === null || time === undefined || !Number.isFinite(time) || time < start || time > end || end <= start) return null;
-  return (time - start) / (end - start);
-}
-
 /* ── Sorting ── */
 
-export type RequestSortDirection = 'ascending' | 'descending';
-
-export interface RequestSort {
-  column: string;
-  direction: RequestSortDirection;
-}
-
-/** The next sort when a column is pressed: ascending, descending, then back to the rows' own order. */
-export function nextRequestSort(sort: RequestSort | null, column: string): RequestSort | null {
-  if (sort?.column !== column) return { column, direction: 'ascending' };
-  return sort.direction === 'ascending' ? { column, direction: 'descending' } : null;
-}
-
-export type RequestSortValue = number | string | null | undefined;
-
 /** What a built-in column sorts by. */
-export function requestSortValue(row: RequestRow, column: string): RequestSortValue {
+export function requestSortValue(row: RequestRow, column: string): DataTableSortValue {
   switch (column) {
     case 'name': return requestDisplayName(row);
     case 'url': return row.url;
@@ -141,81 +122,6 @@ export function requestSortValue(row: RequestRow, column: string): RequestSortVa
     case 'size': return row.size;
     case 'duration': return row.duration;
     case 'waterfall': case 'time': return row.time;
-    default: return (row as unknown as Record<string, RequestSortValue>)[column];
+    default: return (row as unknown as Record<string, DataTableSortValue>)[column];
   }
-}
-
-const missing = (value: RequestSortValue) => value === undefined || value === null || value === '' || (typeof value === 'number' && Number.isNaN(value));
-
-/** The rows in a column's order, a new array. It's stable, ties keep the rows' own order, and rows with nothing in the
- *  column stay at the end in both directions. Strings compare case-insensitively by code unit, not by locale, which is
- *  ten times faster at 10,000 rows and right for URLs and methods. */
-export function sortRequests<T>(rows: readonly T[], sort: RequestSort | null, valueOf: (row: T, column: string) => RequestSortValue): readonly T[] {
-  if (!sort) return rows;
-  const sign = sort.direction === 'ascending' ? 1 : -1;
-  const keys = rows.map((row) => {
-    const value = valueOf(row, sort.column);
-    return typeof value === 'string' ? value.toLowerCase() : value;
-  });
-  const order = rows.map((_, i) => i);
-  order.sort((a, b) => {
-    const x = keys[a];
-    const y = keys[b];
-    const noX = missing(x);
-    const noY = missing(y);
-    if (noX || noY) return noX === noY ? a - b : noX ? 1 : -1;
-    if (x === y) return a - b;
-    // A column of numbers with a few words among them (an IPC call's "ok") keeps numbers first.
-    if (typeof x !== typeof y) return (typeof x === 'number' ? -1 : 1) * sign;
-    return ((x as number | string) < (y as number | string) ? -1 : 1) * sign;
-  });
-  return order.map((i) => rows[i]);
-}
-
-/* ── Columns ── */
-
-export interface RequestColumnSize {
-  id: string;
-  /** Fixed width in px, for a column with no `flex`. Default 80. */
-  width?: number;
-  /** Smallest width in px, also the floor for a resize. Default 40. */
-  minWidth?: number;
-  /** Largest width a resize can reach, in px. */
-  maxWidth?: number;
-  /** Share of the spare width, like `fr`. Without it the column keeps `width`. */
-  flex?: number;
-  /** Hidden while the table's own size class is below this one: `'regular'` leaves the column out of a medium or
-   *  compact table. */
-  hideBelow?: 'medium' | 'regular';
-}
-
-const COLUMN_MIN = 40;
-
-export function clampColumnWidth(column: RequestColumnSize, width: number): number {
-  return Math.round(Math.max(column.minWidth ?? COLUMN_MIN, Math.min(column.maxWidth ?? Infinity, width)));
-}
-
-/** The CSS grid for the columns, and the width under which the table scrolls sideways. A column dragged to a width keeps
- *  it; the others share what's left; and if every column has a fixed width, an empty track takes the rest. */
-export function columnTemplate(columns: readonly RequestColumnSize[], widths: Readonly<Record<string, number>>): { template: string; minWidth: number } {
-  let minWidth = 0;
-  let flexible = false;
-  const tracks = columns.map((column) => {
-    const set = widths[column.id];
-    if (set !== undefined) {
-      minWidth += set;
-      return `${set}px`;
-    }
-    if (column.flex) {
-      const least = column.minWidth ?? COLUMN_MIN;
-      minWidth += least;
-      flexible = true;
-      return `minmax(${least}px,${column.flex}fr)`;
-    }
-    const width = column.width ?? 80;
-    minWidth += width;
-    return `${width}px`;
-  });
-  if (!flexible) tracks.push('minmax(0,1fr)');
-  return { template: tracks.join(' '), minWidth };
 }

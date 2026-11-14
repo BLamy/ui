@@ -1,0 +1,14 @@
+{
+  "name": "surface",
+  "title": "Surface parts",
+  "description": "The header, title, description, body, footer, close button and sheet grabber recipes every modal surface and card shares (Dialog, AlertDialog, Sheet, AdaptivePane, Card, Popover, HoverCard, Toast). A hook-free module, so Server Components can use it; Dialog re-exports it.",
+  "exports": [
+    "surfaceHeaderVariants",
+    "surfaceTitleVariants",
+    "surfaceDescriptionVariants",
+    "surfaceBodyVariants",
+    "surfaceFooterVariants",
+    "closeButtonVariants",
+    "sheetGrabberVariants"
+  ]
+}

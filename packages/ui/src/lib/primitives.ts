@@ -55,16 +55,16 @@ export const selectableText = 'select-text [-webkit-user-select:text]';
 
 /** The small header over a group of rows. Type and color only: the host sets its padding, because the same label
     sits flush in a form and inset by a row's padding in a list.
-    - `grouped`: the iOS inset-grouped header ("NOTIFICATIONS" over a Settings card): uppercase footnote, muted.
-      List sections and FieldLegend.
+    - `grouped`: the iOS inset-grouped header ("NOTIFICATIONS" over a Settings card): uppercase footnote at 70%
+      of the text color (muted-foreground is under AA on the grouped grey). List sections and FieldLegend.
     - `sidebar`: a desktop sidebar's section title: uppercase caption2, bold, tertiary. Sidebar sections.
     - `menu`: the header of a group inside a popup or a source list: footnote semibold, muted, not uppercase.
       Listbox / Select / Combobox / DropdownMenu group labels and SplitViewSection's default label. */
 export const sectionLabelVariants = cva('m-0 min-w-0', {
   variants: {
     variant: {
-      grouped: 'text-footnote leading-[18px] font-normal tracking-[.02em] text-muted-foreground uppercase',
-      sidebar: 'text-caption2 leading-4 font-bold tracking-[.06em] whitespace-nowrap text-tertiary-foreground uppercase',
+      grouped: 'text-footnote leading-[18px] font-normal tracking-[.02em] text-foreground/70 uppercase',
+      sidebar: 'text-caption2 leading-4 font-bold tracking-[.06em] whitespace-nowrap text-muted-foreground uppercase',
       menu: 'text-footnote leading-[18px] font-semibold text-muted-foreground',
     },
   },
@@ -82,3 +82,26 @@ export const dataRowLayers = [
   'data-selected:before:bg-primary/16',
   'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
 ].join(' ');
+
+/** The iOS bar: the 62px translucent strip (`h-bar`, `bg-bar` with the system blur) of a tab bar or an edit-mode
+    toolbar, with its hairline on the edge that faces the content. A bar along the bottom (the default) has the
+    hairline on top and keeps 4px for the home indicator; `data-side="top"` turns it into a top bar, hairline below.
+    Surface only: the host positions it (TabsBar `bar` pins it over the content, Toolbar `bar` sits in the flow). */
+export const barSurface =
+  'box-border h-bar bg-bar pb-1 shadow-hairline-t backdrop-blur-[20px] backdrop-saturate-[1.7] data-[side=top]:pb-0 data-[side=top]:shadow-hairline-b';
+
+/** A table's column header cell (DataTable, Spreadsheet): caption semibold in the secondary ink (foreground at 65%, which keeps AA contrast where the iOS muted gray doesn't), one line, the inset focus
+    ring of a grid unit. The host sets its height, padding and alignment. */
+export const tableHeaderCellClass =
+  'text-caption font-semibold whitespace-nowrap text-foreground/65 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset';
+
+/** The draggable edge at a column header's end (DataTable, Spreadsheet): an 8px hit area over the boundary with a 1px
+    rule in it, which turns the primary color on hover and while dragged (`data-dragging`). The header must be
+    `relative`. */
+export const columnResizerClass =
+  "absolute inset-y-0 -end-1 z-1 w-2 cursor-col-resize touch-none after:absolute after:inset-y-1.5 after:start-[3.5px] after:w-px after:bg-border after:content-[''] hover:after:bg-primary data-dragging:after:bg-primary";
+
+/** A chosen value as a pill: a Combobox's chip and a FontStackPicker's family, with their remove button (and, on the
+    stack, a drag handle) inside. */
+export const valueChip =
+  'inline-flex h-7 max-w-full items-center gap-0.5 rounded-full bg-secondary pe-0.5 text-subhead text-secondary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring';

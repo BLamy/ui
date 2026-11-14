@@ -1,10 +1,11 @@
 {
   "name": "icon",
   "title": "Icons",
-  "description": "An SF Symbols-style icon set on a 24px grid: round-capped strokes in six weights, filled variants, and custom shapes.",
+  "description": "An SF Symbols-style icon set on a 24px grid: round-capped strokes in six weights, filled variants, and custom shapes, and a Chevron that turns to face a new direction.",
   "page": "icons",
   "exports": [
     "Icon",
+    "Chevron",
     "IC",
     "ICON_NAMES",
     "ICON_ALIASES",

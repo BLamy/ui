@@ -8,7 +8,6 @@
   ],
   "exports": [
     "ObjectTree",
-    "objectTreeRowVariants",
     "ObjectValue",
     "nodeFromValue",
     "childrenOfValue",

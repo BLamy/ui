@@ -25,7 +25,7 @@ const TREE: Record<string, string[]> = {
 function Stack() {
   const [path, setPath] = useState<string[]>([])
   const page = (title: string, root = false) => (
-    <NavigationStackPage key={title} value={title} grouped>
+    <NavigationStackPage key={title} value={title} variant="grouped">
       <NavigationStackBar hideOnScroll={false}>
         <NavigationStackTitle>{title}</NavigationStackTitle>
       </NavigationStackBar>

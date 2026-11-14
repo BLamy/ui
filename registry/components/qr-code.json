@@ -1,0 +1,12 @@
+{
+  "name": "qr-code",
+  "title": "QRCode",
+  "description": "A real, scannable QR code rendered as SVG paths in currentColor, with rounded or square modules and four error-correction levels; text too long to encode renders an empty, invalid code and calls onError.",
+  "page": "qr-code",
+  "exports": [
+    "QRCode"
+  ],
+  "imports": [
+    "QRCode"
+  ]
+}

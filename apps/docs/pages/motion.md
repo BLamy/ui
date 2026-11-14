@@ -23,9 +23,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import {
-  springs, TextMorph, NumberMorph, Swap,
-} from '@brett_lamy/ui'
+import { springs, TextMorph, NumberMorph, Swap } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
@@ -101,7 +99,7 @@ Exits are quicker than entrances: what leaves gets out of the way, what arrives 
 
 ## Trays that change height
 
-`AnimatedHeight` measures its content and springs its height to match; [Swap](https://blamy.github.io/ui/#/swap) replaces content by `value`, moving it in the direction you pass (`useDirection(step)`). Together they are Family's tray step. `DialogView` does both inside a [Dialog](https://blamy.github.io/ui/#/dialog) flow (it infers direction from the root's `view` history), and `SheetContent` takes `animateHeight` for short, content-sized sheets.
+`AnimatedHeight` measures its content and springs its height to match; [Swap](https://blamy.github.io/ui/#/swap) replaces content by `value`, moving it in the direction you pass (`useDirection(step)`). Together they are Family's tray step. `DialogView` does both inside a [Dialog](https://blamy.github.io/ui/#/dialog) flow (it infers direction from the root's `view` history), and `SheetView` does the same in a [Sheet](https://blamy.github.io/ui/#/sheet) (with the Sheet's `view`, or alone for content-sized sheets).
 
 {% demo src="motion/step-tray" %}
 
@@ -147,7 +145,7 @@ The kit's motion comes from two engines and the panel slows both: framer-motion 
 | `Radio`, `Slider` | press sink / thumb grows while dragging |
 | `Disclosure` | panel height (tray) + content fades down + chevron turns |
 | `Dialog`, `Popover`, `Tooltip`, `DropdownMenu`, `Select`, `ComboBox` | grow out of the trigger's anchor point (snappy), leave quicker |
-| `Sheet`, `AdaptivePane` drawers and pushes | slide on the tray spring; `animateHeight` for stepping sheets |
+| `Sheet`, `AdaptivePane` drawers and pushes | slide on the tray spring; `SheetView` for stepping sheets |
 | `Dialog` with `view` (`DialogView`, `DialogBack`) | height morph, directional views and titles, back chevron grows in |
 | `NavigationStack` | push / pop on the smooth spring, interruptible; swipe release continues on the tray spring |
 | `ListRow` | swipe settles on snappy; delete collapses its height on the tray spring |

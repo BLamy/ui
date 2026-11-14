@@ -1,6 +1,6 @@
 # Select
 
-A pop-up button that opens a list of options and keeps one of them. It is UI SDK's `Select` — a button, a hidden form input, and a list of options in a popup drawn like a [Listbox](https://blamy.github.io/ui/#/list-box)'s `popup` variant — drawn as an iOS filled field. Use it when the choices are a short, fixed set the user picks from; reach for [Combobox](https://blamy.github.io/ui/#/combobox) when they need to type to filter, or [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) when choosing runs an action instead of setting a value.
+A pop-up button that opens a list of options and keeps one of them. It is UI SDK's `Select` — a button, a hidden form input, and a list of options in a popup drawn like a [Listbox](https://blamy.github.io/ui/#/listbox)'s `popup` variant — drawn as an iOS filled field. Use it when the choices are a short, fixed set the user picks from; reach for [Combobox](https://blamy.github.io/ui/#/combobox) when they need to type to filter, or [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) when choosing runs an action instead of setting a value.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -81,7 +81,9 @@ A select whose options are written as `SelectItem`s and that has never been open
 
 ## Sizes
 
-`size="sm"` is a 32px trigger (`text-subhead`); the default is 44px. To show something other than the selected text, pass children to `SelectTrigger` — it always appends the up-down glyph, and `<SelectValue />` is what it renders when you pass none.
+The trigger is the kit's filled field (`fieldSurfaceVariants` from [Input](https://blamy.github.io/ui/#/input)), so it takes the field sizes and lines up with an Input: `size="sm"` is 32px (`text-subhead`), the default 44px, `lg` 50px. `size="sm"` on `SelectContent` makes the rows dense as well (32px, footnote text), for an inspector or a settings panel. To show something other than the selected text, pass children to `SelectTrigger` — it always appends the up-down glyph, and `<SelectValue />` is what it renders when you pass none.
+
+{% demo src="select/sizes" %}
 
 ## Small screens
 
@@ -117,7 +119,7 @@ UI SDK's `Select` props. The popup renders into BLProvider's root unless you pas
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `variant` | `default` | `default` filled field · `plain` iOS pop-up button (no fill, auto width, muted). |
-| `size` | `default` | `default` 44px · `sm` 32px. |
+| `size` | `default` | `sm` 32px · `default` 44px · `lg` 50px. |
 | `children` | `<SelectValue />` | Custom contents (before the glyph); a function receives the trigger's state. |
 
 ### SelectContent and SelectItem
@@ -127,16 +129,18 @@ UI SDK's `Select` props. The popup renders into BLProvider's root unless you pas
 | `side` / `align` | `bottom` / `start` | Starting position; it flips to fit. |
 | `sideOffset` | `8` | Gap to the button, px. |
 | `keepMounted` | `false` | Keep the closed list in the DOM, hidden. |
+| `size` | `default` | `sm`: dense 32px rows in footnote text. |
+| `palette` | `scope` | Where the colors come from: the ThemeScope it was opened from, or `trigger`: the trigger's own surface (for a trigger on a surface CSS paints, see [Popover](https://blamy.github.io/ui/#/popover)). |
 | `className` | — | Classes for the popup (at least as wide as the button and 200px; scrolls past 320px). |
 | `SelectItem` `value` / `label` | — | The option's value; its text when the children are not plain text. |
-| `SelectItem` `icon` / `description` | — | A leading icon and a secondary line under the label. |
+| `SelectItem` `icon` / `description` | — | A leading icon and a secondary line under the label. The description is read as the option's description, not as part of its name. |
 | `SelectItem` `disabled` | `false` | Dims the row (40% opacity) and skips it. |
 
 `SelectGroup`, `SelectGroupLabel` and `SelectSeparator` structure the list; `SelectLabel` (Label's `variant`s) names a select outside a Field. `SelectValue` accepts `className` and a `placeholder`.
 
 ## Styling
 
-Parts carry UI SDK's slots: `select-trigger`, `select-value`, `select-content`, `select-item`, `select-group`, `select-group-label`, `select-separator`. The trigger has `data-open`, `data-invalid`, `data-disabled` and styles its open and invalid outlines off them; hold-to-press is `:active`, focus is `:focus-visible`. The value carries `data-placeholder` while empty. Options expose `data-highlighted`, `data-selected` and `data-disabled`. Inside a [ThemeScope](https://blamy.github.io/ui/#/theming) the list wears the scope — see [Popover](https://blamy.github.io/ui/#/popover).
+Parts carry UI SDK's slots: `select-trigger`, `select-value`, `select-content`, `select-item`, `select-group`, `select-group-label`, `select-separator`. The trigger is the kit's field surface: a 1.5px primary edge while it has focus and while its list is open (`data-open`), a red one while invalid (`data-invalid`), dimmed when `data-disabled`; hold-to-press is `:active`. Group labels are the kit's menu section label (`sectionLabelVariants({ variant: 'menu' })`). The value carries `data-placeholder` while empty. Options expose `data-highlighted`, `data-selected` and `data-disabled`. Inside a [ThemeScope](https://blamy.github.io/ui/#/theming) the list wears the scope — see [Popover](https://blamy.github.io/ui/#/popover).
 
 ## cva recipes
 
@@ -147,19 +151,20 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/select`. Base classes:
 
 ```text
-[ 'bl-btn box-border flex w-full cursor-pointer items-center justify-between gap-2 border-0 px-3 text-left [font-family:inherit] text-foreground outline-none', 'transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy active:not-data-disabled:bg-secondary-strong', 'focus-visible:ring-[3px] focus-visible:ring-ring/45 data-open:shadow-[inset_0_0_0_1.5px_var(--primary)]', 'data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] data-disabled:cursor-default data-disabled:opacity-50', ]
+bl-btn box-border flex cursor-pointer items-center gap-2 border-0 text-left [font-family:inherit] text-foreground outline-none data-disabled:cursor-default
 ```
 
 **`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `default` (default) | `bg-input` |
-| `plain` | `w-auto justify-end bg-transparent px-1 text-muted-foreground active:not-data-disabled:bg-transparent active:not-data-disabled:opacity-60 data-open:shadow-none` |
+| `default` (default) | `w-full justify-between active:not-data-disabled:bg-secondary-strong data-open:bg-transparent data-open:shadow-[inset_0_0_0_1.5px_var(--primary)]` |
+| `plain` | `[ 'w-auto justify-end rounded-lg bg-transparent px-1 text-muted-foreground transition-opacity duration-spring-snappy ease-spring-snappy', '…` |
 
 **`size`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `sm` | `h-8 rounded-lg text-subhead` |
-| `default` (default) | `h-11 rounded-ctl text-body` |
+| `sm` | `h-8 text-subhead` |
+| `default` (default) | `h-11 text-body` |
+| `lg` | `h-[50px] text-body` |

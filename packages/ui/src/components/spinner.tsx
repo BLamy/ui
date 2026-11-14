@@ -107,8 +107,9 @@ export type SpinnerProps = SpinnerChoice &
     speed?: number;
     /** Hold it still. Every animation, `ios` included, moves unless `paused`. */
     paused?: boolean;
-    /** An accessible name. Without one the spinner is decorative (`aria-hidden`); with one it is a `role="status"`
-     *  named by the label, with the label as its (visually hidden) text so the live region announces it. */
+    /** An accessible name (`aria-label` works the same). Without one the spinner is decorative (`aria-hidden`); with
+     *  one it is a `role="status"` named by the label, with the label as its (visually hidden) text so the live
+     *  region announces it. */
     label?: string;
     ref?: Ref<HTMLSpanElement>;
   };
@@ -209,7 +210,8 @@ function useMergedRef<T>(own: React.RefObject<T | null>, ref: Ref<T> | undefined
     when it mounts (a spinner appearing is an event; popping in unannounced reads as a glitch). `animation` picks one of
     the twenty-two loaders instead. */
 export function Spinner(props: SpinnerProps) {
-  const { animation = 'ios', pattern, size, speed = 1, paused, label, className, style, ref, ...rest } = props;
+  const { animation = 'ios', pattern, size, speed = 1, paused, label: labelProp, 'aria-label': ariaLabel, className, style, ref, ...rest } = props;
+  const label = labelProp ?? ariaLabel;
   const own = useRef<HTMLSpanElement>(null);
   const setRef = useMergedRef(own, ref);
   const visible = useVisibleToUser(own);

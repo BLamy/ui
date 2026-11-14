@@ -7,7 +7,8 @@ import { prefersReducedMotion } from '@/lib/reduced-motion';
    turn leaves room for its reply, so a new turn scrolls near the top with a peek of the one before it, and the
    reply grows into that room without moving the view. A thread opens at its last anchor. Inside a composer bump
    resting at its peek (`data-peeking` on `composer-bump-content`), only the bottom edge shows, so the spacer goes
-   and the view sits at the live edge. No React: `components/message-scroller.tsx` renders it. */
+   and the view sits at the live edge. The viewport is a region named "Messages" unless the renderer names it. No
+   React: `components/message-scroller.tsx` renders it. */
 
 export type MessageScrollerOptions = {
   /** Every item's id, in order. */
@@ -266,7 +267,8 @@ export const messageScroller = definePrimitive({
       focus: 'native',
       attrs: (state) => ({
         type: 'button',
-        'aria-label': 'Jump to latest',
+        // The visible "Streaming" starts the name, so a voice user can say what they see.
+        'aria-label': state.streaming ? 'Streaming, jump to latest' : 'Jump to latest',
         'data-streaming': state.streaming ? '' : undefined,
       }),
       press: ({ api }) => api.scrollToEnd(),

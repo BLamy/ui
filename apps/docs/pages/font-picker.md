@@ -1,6 +1,6 @@
 # FontPicker
 
-Google Fonts families, picked the way a design tool picks them. The list is the most popular families on Google Fonts, searchable and filtered by category, with every family drawn in its own face: a row fetches only the glyphs of its name (a few hundred bytes from the Google Fonts CDN), and only while it is on screen. Hovering a family, or arrowing to it, **previews** it: `onPreview` hands you the family to show for now, so the text it is for wears each font as you move down the list, as Photoshop's font menu does, and gets its own font back when you leave. `FontPicker` holds one family; `FontStackPicker` holds a font stack (a family and its fallbacks) as chips you reorder; `FontList` is the list alone. Loading a family yourself, without a picker, is `useGoogleFont` and `fontStack` from `@/lib/google-fonts`.
+Google Fonts families, picked the way a design tool picks them. The list is the most popular families on Google Fonts, searchable and filtered by category, with every family drawn in its own face: a row fetches only the glyphs of its name (a few hundred bytes from the Google Fonts CDN), and only while it is on screen. Hovering a family, or arrowing to it, **previews** it: `onPreview` hands you the family to show for now, so the text it is for wears each font as you move down the list, as Photoshop's font menu does, and gets its own font back when you leave. `FontPicker` holds one family; `FontStackPicker` holds a font stack (a family and its fallbacks) as chips you reorder; `FontList` is the list alone. Loading a family yourself, without a picker, is `useGoogleFont` and `fontStack` from `@/lib/google-fonts`. For a short list of named fonts (three brand faces) a [Select](https://blamy.github.io/ui/#/select) is enough; for a list of commands, a [CommandMenu](https://blamy.github.io/ui/#/command-menu), which this list is built on.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -33,6 +33,19 @@ import { FontPicker, FontStackPicker, FontList } from '@brett_lamy/ui'
 
 {% demo src="font-picker/live-preview" %}
 
+## Anatomy
+
+`FontPicker` is compound, like [Select](https://blamy.github.io/ui/#/select): the root holds the family, the preview and the popup's open state, `FontPickerTrigger` is the pop-up button (Select's trigger, showing the family in its own face) and `FontPickerContent` is the popup with the `FontList`. With no children it renders both, so the one-liner above is the whole control. Write the parts out to size the trigger, place the popup, or open it from your code:
+
+```tsx
+<FontPicker aria-label="Body font" value={font} onValueChange={setFont} open={open} onOpenChange={setOpen}>
+  <FontPickerTrigger size="sm" />
+  <FontPickerContent side="left" align="start" />
+</FontPicker>
+```
+
+`presentation="auto"` on the root makes the popup a bottom sheet in a compact (phone) container.
+
 ## A font stack
 
 `FontStackPicker` holds several families, the one to use first: `fontStack(value)` is a CSS `font-family` that falls back from one to the next. The families are chips: drag one by its handle (or focus the handle, press Enter and use the arrow keys) to reorder, and × removes it. A family added from the list goes in front, since it is the one you are choosing; the list marks each family in the stack with its place. `maxCount` (3) caps the stack, and `onPreview` gives the stack with the hovered family in front, which is what adding it would look like. Give a stack for code `defaultCategory="monospace"` so the list opens on monospaced families.
@@ -59,7 +72,7 @@ Each family is fetched from `fonts.googleapis.com` (the stylesheet) and `fonts.g
 
 ## Accessibility
 
-Built on UI SDK. The trigger is a button named by `aria-label` and the family it holds ("Headline font: Fraunces"); it opens a popover (a dialog) holding a UI SDK Command: a search field (`combobox`) over a `listbox` of the families. Typing searches, the arrow keys move the highlight through the families (which previews them) while focus stays in the search field (`aria-activedescendant`), Enter chooses, and Escape clears the search, then closes the list and returns focus to the trigger. Only the rows on screen are rendered (`createVirtualizer`), but the arrows and Enter reach every family. The category filter is a ToggleGroup of toggle buttons (`aria-pressed`). In a stack, the chips are a `list`; each has a drag handle (a button, one tab stop for all of them) and a remove button. Reordering is UI SDK's `createReorder`: drag a handle, or focus it, press Space or Enter, move with the arrows, and press Space or Enter again to drop (Escape cancels); every step is announced.
+Built on UI SDK. The trigger is a button named by `aria-label` and the family it holds ("Headline font: Fraunces"); it opens a popover (a dialog) holding a UI SDK Command: a search field (`combobox`) over a `listbox` of the families. Typing searches, the arrow keys move the highlight through the families (which previews them) while focus stays in the search field (`aria-activedescendant`), Enter chooses, and Escape clears the search, then closes the list and returns focus to the trigger. Only the rows on screen are rendered (`createVirtualizer`), but the arrows and Enter reach every family. Each family is named by itself ("Inter", with "(in use)" on the chosen one) and described by its category. The category filter is the kit's ToggleGroup of toggle buttons (`aria-pressed`), wrapping onto a second row in a narrow popover. When nothing matches, the list shows the kit's empty state ("No fonts"). In a stack, the chips are a `list`; each has a drag handle (a button, one tab stop for all of them) and a remove button, both at least 24px (and 44px in a compact container). Reordering is UI SDK's `createReorder`: drag a handle, or focus it, press Space or Enter, move with the arrows, and press Space or Enter again to drop (Escape cancels); every step is announced.
 
 | Part | Keys |
 | --- | --- |
@@ -80,10 +93,28 @@ Built on UI SDK. The trigger is a button named by `aria-label` and the family it
 | `allowSystem` | `true` | Offer the system font first. |
 | `systemLabel` | `System` | What the system font is called. |
 | `defaultCategory` | `all` | The category the filter starts on. |
-| `size` | `default` | `sm` 32px · `default` 44px trigger. |
+| `open` / `defaultOpen` / `onOpenChange` | closed | The popup's open state. |
+| `presentation` | `popover` | `sheet`, or `auto`: a bottom sheet in a compact container. |
+| `aria-label` | `Font` | What the font is for: names the trigger (with the family) and the popup. |
+| `disabled` | `false` | Disables the trigger. |
+| `children` | trigger and content | `FontPickerTrigger` and `FontPickerContent`. |
+
+### FontPickerTrigger
+
+The [Popover](https://blamy.github.io/ui/#/popover)'s trigger in Select's trigger look (`selectTriggerVariants`: the kit's filled field box); its props pass through.
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `size` | `default` | `sm` 32px · `default` 44px · `lg` 50px. |
+
+### FontPickerContent
+
+The popover's content, 320px wide; `PopoverContent`'s props pass through.
+
+| Prop | Default | Effect |
+| --- | --- | --- |
 | `side` / `align` | `bottom` / `start` | Where the list opens. |
-| `aria-label` | `Font` | Names the trigger and the list. |
-| `disabled`, `className`, `triggerProps` | — | The trigger button's. |
+| `children` | a `FontList` of the root's family | Replace the list. |
 
 ### FontStackPicker
 
@@ -92,7 +123,10 @@ Built on UI SDK. The trigger is a button named by `aria-label` and the family it
 | `value` / `defaultValue` / `onValueChange(families, details)` | `[]` | The families, the one to use first. `details.reason`: `item-press` / `enter-key` (from the list), `drag` / `move-key` (a reorder), `remove-press` / `delete-key`; `source`, `event` and `cancel()` as on FontPicker (the chips' details are UI SDK's own). |
 | `onPreview` | — | The stack with the hovered family in front; `undefined` when the preview ends. |
 | `maxCount` | `3` | At most this many families. |
-| `fonts`, `defaultCategory`, `side`, `align`, `size`, `disabled` | — | As FontPicker's. |
+| `fonts`, `defaultCategory`, `disabled` | — | As FontPicker's. |
+| `size` | `default` | The field: `sm` 32px · `default` 44px · `lg` 50px at the least, growing as the chips wrap. |
+| `side` / `align` | `bottom` / `start` | Where the list opens (it is one piece: no content part to put them on). |
+| `open` / `defaultOpen` / `onOpenChange`, `presentation` | — | As FontPicker's. |
 | `placeholder` | `Add a font` | What the field says while the stack is empty. |
 | `aria-label` | `Font stack` | Names the field and the list. |
 
@@ -102,48 +136,24 @@ Built on UI SDK. The trigger is a button named by `aria-label` and the family it
 
 ## Styling
 
-Slots: the trigger is UI SDK's `popover-trigger` (marked `data-font-picker`), the list `command` > `command-input` / `command-list` > `command-item`, the stack `font-stack-picker`. A row carries `data-highlighted` (the pointer or the arrow keys are on it) and `data-disabled` (an unlisted family Google Fonts doesn't have, or any family once a stack is full); a chip carries `data-dragging` (while a pointer drags it, translated by `--drag-x` / `--drag-y`) and `data-grabbed` (picked up). The variants are `fontPickerTriggerVariants`, `fontStackPickerVariants` and `fontListItemVariants`.
+Slots: the trigger is UI SDK's `popover-trigger` (marked `data-font-picker`), the list the kit's [CommandMenu](https://blamy.github.io/ui/#/command-menu) (`command` > `command-input` / `command-list` > `command-item`, and `empty-state`), the stack `font-stack-picker`, the kit's filled field box (`fieldSurfaceVariants`), with its chips in the same pill as a Combobox's. A row carries `data-highlighted` (the pointer or the arrow keys are on it) and `data-disabled` (an unlisted family Google Fonts doesn't have, or any family once a stack is full); a chip carries `data-dragging` (while a pointer drags it, translated by `--drag-x` / `--drag-y`) and `data-grabbed` (picked up). The trigger's recipe is `selectTriggerVariants` (from Select), the stack's `fontStackPickerVariants`.
 
 ## cva recipes
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
-
-### `fontListItemVariants`
-
-Defined in `@/components/ui/font-picker`. Base classes:
-
-```text
-h-10 min-h-0 scroll-my-1.5 py-0 hover:bg-accent
-```
-
-No variants.
-
-### `fontPickerTriggerVariants`
-
-Defined in `@/components/ui/font-picker`. Base classes:
-
-```text
-[ 'bl-btn box-border flex w-full cursor-pointer items-center justify-between gap-2 border-0 bg-input px-3 text-left text-foreground outline-none', 'transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy active:bg-secondary-strong', 'focus-visible:ring-[3px] focus-visible:ring-ring/45 aria-expanded:shadow-[inset_0_0_0_1.5px_var(--primary)]', 'data-disabled:cursor-default data-disabled:opacity-50', ]
-```
-
-**`size`** — default `default`
-
-| Value | Adds |
-| --- | --- |
-| `sm` | `h-8 rounded-lg text-subhead` |
-| `default` (default) | `h-11 rounded-ctl text-body` |
 
 ### `fontStackPickerVariants`
 
 Defined in `@/components/ui/font-picker`. Base classes:
 
 ```text
-flex w-full flex-wrap items-center gap-1.5 rounded-ctl bg-input p-1.5 data-disabled:opacity-50
+h-auto w-full flex-wrap gap-1.5
 ```
 
 **`size`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `sm` | `min-h-8 rounded-lg p-1 text-footnote` |
-| `default` (default) | `min-h-11 text-subhead` |
+| `sm` | `[fieldSurfaceVariants({ size: 'sm' }), 'min-h-8 p-1 text-footnote']` |
+| `default` (default) | `[fieldSurfaceVariants({ size: 'default' }), 'min-h-11 p-1.5 text-subhead']` |
+| `lg` | `[fieldSurfaceVariants({ size: 'lg' }), 'min-h-[50px] p-2 text-subhead']` |

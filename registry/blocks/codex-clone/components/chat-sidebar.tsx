@@ -89,7 +89,7 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
 
   const pick = (c: Chat) => () => codex.select(c.id);
   const row = (c: Chat, nested = false) => (
-    <SplitViewItem key={c.id} id={c.id} variant="pill" className={cn(ROW, nested && 'pl-8!')} onClick={pick(c)} preview={<ChatCard chat={c} />}>
+    <SplitViewItem key={c.id} value={c.id} variant="pill" className={cn(ROW, nested && 'pl-8!')} onClick={pick(c)} preview={<ChatCard chat={c} />}>
       {c.kind === 'dot' && !nested && <DotOrb size={16} />}
       <span className="min-w-0 flex-1 truncate">{c.title}</span>
       {c.unread > 0 && <span className="grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-caption2 font-semibold text-primary-foreground">{c.unread}</span>}

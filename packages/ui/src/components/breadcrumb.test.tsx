@@ -147,6 +147,16 @@ describe('Breadcrumb items', () => {
     press(current);
     expect(onClick).toHaveBeenCalledTimes(1);
   });
+  it('hands onClick the click, so a link can be routed by the app', () => {
+    const onClick = vi.fn((event: { preventDefault(): void }) => event.preventDefault());
+    render(<Breadcrumb items={[{ id: 'a', label: 'Docs', href: '/docs', onClick }, { id: 'b', label: 'Here' }]} />);
+    const link = screen.getByRole('link', { name: 'Docs' });
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    act(() => { link.dispatchEvent(click); });
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(onClick.mock.calls[0][0]).toHaveProperty('nativeEvent', click);
+    expect(click.defaultPrevented).toBe(true);
+  });
   it('keeps a link a link when it also has a handler', () => {
     const onClick = vi.fn((event?: unknown) => event);
     render(<Breadcrumb items={[{ id: 'a', label: 'Docs', href: '#docs', onClick }, { id: 'b', label: 'Here' }]} />);
@@ -177,7 +187,7 @@ describe('Breadcrumb siblings menu', () => {
   const withSiblings = () => (
     <Breadcrumb items={[
       { id: 'home', label: 'Home', href: '/' },
-      { id: 'section', label: 'Components', items: siblings, selectedId: 'ui', onClick: () => pressed('own') },
+      { id: 'section', label: 'Components', siblings, currentSibling: 'ui', onClick: () => pressed('own') },
       { id: 'here', label: 'Breadcrumb' },
     ]} />
   );
@@ -201,6 +211,20 @@ describe('Breadcrumb siblings menu', () => {
     // Choosing closes the menu and gives focus back to the item.
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(trigger);
+  });
+  it('fires the chosen sibling from the keyboard too', async () => {
+    render(withSiblings());
+    const trigger = screen.getByRole('button', { name: 'Components' });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+    await settle();
+    const rows = within(screen.getByRole('menu')).getAllByRole('menuitemradio');
+    fireEvent.keyDown(rows[0], { key: 'ArrowDown' });
+    await settle();
+    fireEvent.keyDown(rows[1], { key: 'Enter' });
+    await settle();
+    expect(pressed).toHaveBeenCalledWith('blocks');
+    expect(screen.queryByRole('menu')).toBeNull();
   });
   it('opens with the keyboard, on the first sibling, and Escape closes it', async () => {
     render(withSiblings());
@@ -293,7 +317,7 @@ describe('Breadcrumb width', () => {
     render(
       <Breadcrumb items={[
         { id: 'home', label: 'Home', href: '/' },
-        { id: 'mid', label: 'Middle section', items: [{ id: 'a', label: 'Alpha', onClick: () => pressed('alpha') }, { id: 'b', label: 'Beta' }], selectedId: 'a' },
+        { id: 'mid', label: 'Middle section', siblings: [{ id: 'a', label: 'Alpha', onClick: () => pressed('alpha') }, { id: 'b', label: 'Beta' }], currentSibling: 'a' },
         { id: 'here', label: 'Current page here' },
       ]} />,
     );

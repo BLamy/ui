@@ -11,7 +11,7 @@ declare global { var __UI_SDK_STRICT__: boolean | undefined }
 globalThis.__UI_SDK_STRICT__ = true;
 
 // happy-dom lays nothing out: the list's scroller is 480 px tall, and as tall inside as its rows say.
-const isScroller = (el: HTMLElement) => el.getAttribute('data-slot') === 'log-list-grid' || el.getAttribute('data-slot') === 'request-table-grid';
+const isScroller = (el: HTMLElement) => el.getAttribute('data-slot') === 'log-list-grid' || el.getAttribute('data-slot') === 'data-table-grid';
 Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get(this: HTMLElement) { return isScroller(this) ? 480 : 0; } });
 Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
   configurable: true,
@@ -25,7 +25,7 @@ let messageReads = 0;
 const isMessage = (el: HTMLElement) => el.getAttribute('data-slot') === 'log-list-message';
 Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
   configurable: true,
-  get(this: HTMLElement) { return this.getAttribute('data-slot') === 'request-table' ? 1024 : isMessage(this) ? 100 : 0; },
+  get(this: HTMLElement) { return this.getAttribute('data-slot') === 'data-table' ? 1024 : isMessage(this) ? 100 : 0; },
 });
 Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
   configurable: true,
@@ -673,7 +673,7 @@ describe('ReplayDevtools\' data, which these parts are meant to share', () => {
   it('RequestTable shows its network rows just as they are, pending and failed', () => {
     const { network } = replayDevtoolsAt(getReplayDevtools(events as never), 7000);
     render(<RequestTable rows={network} />);
-    const cell = (index: number, column: string) => document.querySelector(`[data-slot=request-table-row][data-index="${index}"] [data-column=${column}]`)?.textContent;
+    const cell = (index: number, column: string) => document.querySelector(`[data-slot=data-table-row][data-index="${index}"] [data-column=${column}]`)?.textContent;
     // A request is sent as long before its event as it took, so these sort by when they were sent.
     const app = network.findIndex((request) => request.url.endsWith('app.js'));
     const cart = network.findIndex((request) => request.url.includes('cart'));
@@ -683,7 +683,7 @@ describe('ReplayDevtools\' data, which these parts are meant to share', () => {
     expect(cell(cart, 'type')).toBe('fetch');
     expect(cell(cart, 'duration')).toBe('200 ms');
     expect(cell(app, 'status')).toBe('200');
-    expect(document.querySelector(`[data-slot=request-table-row][data-index="${cart}"]`)?.hasAttribute('data-failed')).toBe(true);
+    expect(document.querySelector(`[data-slot=data-table-row][data-index="${cart}"]`)?.hasAttribute('data-failed')).toBe(true);
     cleanup();
     const early = replayDevtoolsAt(getReplayDevtools(events as never), 1000).network;
     render(<RequestTable rows={early} />);

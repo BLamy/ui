@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 import { SurfaceAgents, SurfaceAppPreview, SurfaceBrowser, SurfaceDiff, SurfaceFiles, SurfacePicker, SURFACES, SurfaceTerminal, type SurfaceKind } from '@/components/blocks/t3-clone/components/workbench/surfaces'
 import { TerminalBody } from '@/components/blocks/t3-clone/components/workbench/terminal'
 import { WorkbenchPanel, WorkbenchPanelClose, WorkbenchPanelHeader, WorkbenchPanelTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
@@ -58,12 +58,11 @@ function Surfaces() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function SurfacesExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <Surfaces />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

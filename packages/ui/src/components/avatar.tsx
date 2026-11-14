@@ -53,8 +53,8 @@ export const avatarVariants = cva(
   },
 );
 
-/** The presence dot, ringed in the surface the avatar sits on: `--avatar-ring`, which Card sets to `--card`, and
-    the page background elsewhere. Set it on any other surface: `[--avatar-ring:var(--sidebar)]`. */
+/** The presence dot, ringed in the surface the avatar sits on: `--avatar-ring`, which Card and List set to `--card`,
+    Popover and HoverCard to `--popover`, and the page background elsewhere. Set it on any other surface: `[--avatar-ring:var(--sidebar)]`. */
 export const avatarStatusVariants = cva(
   'absolute -right-[2px] -bottom-[2px] box-border size-[max(10px,calc(var(--avatar-size)*.36))] rounded-full border-[2.5px] border-(--avatar-ring,var(--background))',
   {

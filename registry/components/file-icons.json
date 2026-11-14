@@ -1,0 +1,11 @@
+{
+  "name": "file-icons",
+  "title": "File icons",
+  "description": "File and folder glyphs: a tinted type icon picked from the file name, a document badge with its extension, and an open or closed folder.",
+  "exports": [
+    "FileTypeIcon",
+    "FileBadgeIcon",
+    "FolderIcon",
+    "fileTypeOf"
+  ]
+}

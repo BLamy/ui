@@ -1,177 +1,93 @@
 import { useState } from 'react'
-import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger, type SidebarVariant } from '@/components/ui/sidebar'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarItem,
+  SidebarProvider,
+  SidebarSearch,
+  SidebarSection,
+  SidebarTrigger,
+  SidebarWorkspace,
+  type SidebarPresentation,
+  type SidebarVariant,
+} from '@/components/ui/sidebar'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
+import { Switch } from '@/components/ui/switch'
+import { cn } from '@/lib/utils'
 
-const font =
-  "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, " +
-  "'Helvetica Neue', sans-serif"
+const variants: SidebarVariant[] = ['docked', 'rail', 'float']
+const presentations: SidebarPresentation[] = ['auto', 'column', 'drawer']
+const pages = [
+  { section: 'Workspace', icon: 'house', title: 'Home' },
+  { section: 'Workspace', icon: 'bolt', title: 'Agent tasks', trailing: 4 },
+  { section: 'Workspace', icon: 'tray', title: 'Inbox' },
+  { section: 'Objects', icon: 'cube', title: 'Suppliers' },
+  { section: 'Objects', icon: 'cube', title: 'Inventory' },
+]
 
-const variants: SidebarVariant[] = ['docked', 'rail', 'float', 'overlay']
-
-/**
- * One Sidebar, four variants, plus a narrow container that turns any of them
- * into the overlay.
- */
-function SidebarVariants() {
+// One Sidebar: three looks (`variant`) and two presentations (`presentation`).
+// `auto` is a column, or a drawer while the provider is narrower than its
+// `breakpoint`: try the narrow container. The trigger toggles whichever shows.
+export default function SidebarPlayground() {
   const [variant, setVariant] = useState<SidebarVariant>('docked')
+  const [presentation, setPresentation] = useState<SidebarPresentation>('auto')
   const [narrow, setNarrow] = useState(false)
+  const [page, setPage] = useState('Home')
   return (
-    <div
-      style={{
-        display: 'grid',
-        justifyItems: 'center',
-        gap: 12,
-        padding: 16,
-        background: 'var(--background)',
-        fontFamily: font,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          gap: 6,
-        }}
-      >
-        {variants.map((v) => (
-          <Chip key={v} active={variant === v} onClick={() => setVariant(v)}>
-            {v}
-          </Chip>
-        ))}
-        <Chip active={narrow} onClick={() => setNarrow((n) => !n)}>
-          narrow container
-        </Chip>
+    <div className="grid justify-items-center gap-3 p-4">
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <Segmented aria-label="Variant" value={variant} onValueChange={(v) => setVariant(v as SidebarVariant)}>
+          {variants.map((v) => <SegmentedItem key={v} value={v}>{v}</SegmentedItem>)}
+        </Segmented>
+        <Segmented aria-label="Presentation" value={presentation} onValueChange={(v) => setPresentation(v as SidebarPresentation)}>
+          {presentations.map((p) => <SegmentedItem key={p} value={p}>{p}</SegmentedItem>)}
+        </Segmented>
+        <label className="flex items-center gap-2 text-footnote text-foreground">
+          <Switch checked={narrow} onCheckedChange={setNarrow} />
+          Narrow container
+        </label>
       </div>
       <div
-        style={{
-          width: narrow ? 380 : '100%',
-          maxWidth: 640,
-          height: 330,
-          overflow: 'hidden',
-          borderRadius: 14,
-          border: '1px solid var(--border)',
-          transition:
-            'width var(--duration-spring-smooth) var(--ease-spring-smooth)',
-        }}
+        className={cn(
+          'h-[360px] max-w-[680px] overflow-hidden rounded-card shadow-hairline transition-[width] duration-spring-smooth ease-spring-smooth',
+          narrow ? 'w-[380px]' : 'w-full',
+        )}
       >
-        {/* remount per variant so each starts in its default state */}
-        <SidebarProvider
-          key={variant + narrow}
-          defaultOpen={variant !== 'overlay'}
-          breakpoint={430}
-        >
-          <Nav variant={variant} />
+        {/* Remounted per look and presentation, so each starts in its default state. */}
+        <SidebarProvider key={variant + presentation} defaultOpen={presentation !== 'drawer'} breakpoint={430}>
+          <Sidebar variant={variant} presentation={presentation}>
+            <SidebarHeader>
+              <SidebarWorkspace title="Creamery Ops" description="Production workspace" />
+            </SidebarHeader>
+            <SidebarContent aria-label="Creamery Ops">
+              <SidebarSearch shortcut="/" />
+              <SidebarItem icon="plus" title="New task" tint="var(--primary)" />
+              {['Workspace', 'Objects'].map((section) => (
+                <SidebarSection key={section} title={section}>
+                  {pages.filter((p) => p.section === section).map((p) => (
+                    <SidebarItem
+                      key={p.title}
+                      icon={p.icon}
+                      title={p.title}
+                      trailing={p.trailing}
+                      current={page === p.title}
+                      onClick={() => setPage(p.title)}
+                    />
+                  ))}
+                </SidebarSection>
+              ))}
+            </SidebarContent>
+          </Sidebar>
           <SidebarInset>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '9px 12px',
-                borderBottom: '1px solid var(--border)',
-              }}
-            >
-              {/* the hamburger toggles every variant */}
-              <SidebarTrigger />
-              <span
-                style={{
-                  fontSize: 12.5,
-                  fontWeight: 650,
-                  color: 'var(--foreground)',
-                }}
-              >
-                Home
-              </span>
-            </div>
-            <div
-              style={{
-                padding: 16,
-                fontSize: 12.5,
-                lineHeight: 1.6,
-                color: 'var(--muted-foreground)',
-              }}
-            >
-              One API, four behaviors — the trigger toggles whichever variant is
-              mounted, and every variant becomes a hamburger overlay when the
-              container is narrower than the breakpoint. Try “narrow container”.
-            </div>
+            <header className="flex items-center gap-2 border-b border-border px-2 py-1.5">
+              <SidebarTrigger shortcut="mod+b" />
+              <strong className="text-footnote text-foreground">{page}</strong>
+            </header>
           </SidebarInset>
         </SidebarProvider>
       </div>
     </div>
-  )
-}
-
-function Nav({ variant }: { variant: SidebarVariant }) {
-  const [page, setPage] = useState('Home')
-  const item = (icon: string, label: string, badge?: number) => (
-    <Sidebar.Item
-      icon={icon}
-      label={label}
-      badge={badge}
-      active={page === label}
-      onClick={() => setPage(label)}
-    />
-  )
-  return (
-    <Sidebar variant={variant}>
-      <Sidebar.Header>
-        <Sidebar.Workspace name="Creamery Ops" detail="Production Workspace" />
-      </Sidebar.Header>
-      <Sidebar.Content>
-        <Sidebar.Search />
-        <Sidebar.Item icon="plus" label="New task" tone="var(--primary)" />
-        <Sidebar.Section title="Workspace">
-          {item('home', 'Home')}
-          {item('bolt', 'Agent tasks', 4)}
-          {item('inbox', 'Inbox')}
-        </Sidebar.Section>
-        <Sidebar.Section title="Objects">
-          {item('box', 'Suppliers')}
-          {item('box', 'Inventory')}
-        </Sidebar.Section>
-      </Sidebar.Content>
-    </Sidebar>
-  )
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: string
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        cursor: 'pointer',
-        border: 0,
-        borderRadius: 999,
-        padding: '5px 11px',
-        fontFamily: font,
-        fontSize: 12,
-        fontWeight: 600,
-        background: active ? 'var(--primary)' : 'var(--secondary-strong)',
-        color: active ? 'var(--primary-foreground)' : 'var(--foreground)',
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
-export default function SidebarVariantsExample() {
-  return (
-    <WorkbenchTheme>
-      <SidebarVariants />
-    </WorkbenchTheme>
   )
 }

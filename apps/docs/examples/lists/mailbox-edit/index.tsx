@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { EditBar } from '@/components/ui/edit-bar'
 import { List, ListRow, ListSection } from '@/components/ui/list'
+import { Toolbar, ToolbarButton, ToolbarText } from '@/components/ui/toolbar'
 
 const initialMail = [
   { id: 1, f: 'Nadia', l: 'Brooks', subject: 'Launch checklist', time: '9:41' },
@@ -85,14 +85,20 @@ function MailboxEdit() {
         </Button>
       )}
       {editing && (
-        <EditBar
-          count={picked.size}
-          onFav={() => setPicked(new Set())}
-          onDelete={() => {
-            remove(picked)
-            setPicked(new Set())
-          }}
-        />
+        <Toolbar variant="bar" aria-label="Edit" className="absolute inset-x-0 bottom-0 z-10">
+          <ToolbarButton disabled={!picked.size} onClick={() => setPicked(new Set())}>Favorite</ToolbarButton>
+          <ToolbarText aria-live="polite">{picked.size ? `${picked.size} selected` : 'Select items'}</ToolbarText>
+          <ToolbarButton
+            tone="destructive"
+            disabled={!picked.size}
+            onClick={() => {
+              remove(picked)
+              setPicked(new Set())
+            }}
+          >
+            Delete
+          </ToolbarButton>
+        </Toolbar>
       )}
     </div>
   )

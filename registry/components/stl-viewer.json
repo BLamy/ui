@@ -1,18 +1,15 @@
 {
   "name": "stl-viewer",
   "title": "StlViewer",
-  "description": "A 3D preview of an .stl model, binary or ASCII: WebGL with no dependencies, drag to orbit, pinch or ⌘-scroll to zoom, double-click to reset, and the triangle count and size under it. The model takes the theme's primary color.",
+  "description": "A 3D preview of an .stl model, binary or ASCII: WebGL, drag to orbit, pinch or ⌘-scroll to zoom, double-click to reset, and the triangle count and size under it. The model takes the theme's primary color. A re-export of @brett_lamy/docstream/stl's viewer.",
   "page": "stl-viewer",
   "exports": [
-    "StlViewer",
-    "parseStl",
-    "isStlUrl"
+    "StlViewer"
   ],
   "imports": [
     "StlViewer"
   ],
   "types": [
-    "StlViewerProps",
-    "StlMesh"
+    "StlViewerProps"
   ]
 }

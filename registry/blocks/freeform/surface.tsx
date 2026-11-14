@@ -1,15 +1,16 @@
 /* The board's surface: what Freeform does on the core Canvas. The canvas owns navigation (pan, pinch, wheel and
    keyboard zoom, the background); this owns every other pointer and key — items never take events; it hits them by
-   geometry — so selection, move, resize, rotate, connect, draw and erase are one state machine (`Gesture`) instead of
-   handlers spread over a dozen elements. Items render in the canvas's board layer, scaled by the view. Resting the
+   geometry — so selection, move, resize, rotate, connect and erase are one state machine (`Gesture`) instead of
+   handlers spread over a dozen elements. Ink is PencilKit's: a PencilCanvas in the board layer is the canvas's drawing
+   layer, takes the press while a drawing tool is in hand, and hands each finished stroke to the board as an item. Items render in the canvas's board layer, scaled by the view. Resting the
    pointer on a picture or a link (Select tool, no gesture) opens a hover card about it, found by the same hit test and
    anchored to a box laid over the item; any press, pan or zoom closes it. */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { PencilPoint, PencilTool } from '@/components/ui/pencilkit/constants';
-import { StrokePath } from '@/components/ui/pencilkit/stroke-path';
+import type { PencilPoint, PencilStroke, PencilTool } from '@/components/ui/pencilkit/constants';
+import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas';
 import { Canvas, CanvasFrame, CanvasGuides, CanvasHandles, CanvasMarquee, CanvasMiniMap, type CanvasController, type CanvasPointerInfo, type CanvasViewportChangeDetails } from '@/components/ui/canvas';
 import { HoverCard, HoverCardContent, createHoverCardController } from '@/components/ui/hover-card';
-import { dist, handleCursor, intersects, rectOf, resizeFrame, rotateFrame, snapMove, toBoard, toScreen, unionRect, type Guide, type Viewport, type HandleId, type Pt, type Rect } from '@/lib/canvas-math';
+import { dist, handleCursor, intersects, rectOf, resizeFrame, rotateFrame, snapMove, toScreen, unionRect, type Guide, type Viewport, type HandleId, type Pt, type Rect } from '@/lib/canvas-math';
 import { anchorPoint, boundsOf, connectorGeometry, hitItem, nearestAnchor, strokeFrame } from './geometry';
 import { moveItem, scaleItem, selectionFrame } from './handles';
 import { Connector, ItemPreview, ItemView } from './items';
@@ -38,7 +39,6 @@ type Gesture =
   | { k: 'scale'; handle: HandleId; origin: Pt; p0: Pt; origs: Item[]; began: boolean }
   | { k: 'rotate'; item: Item; began: boolean }
   | { k: 'endpoint'; id: string; which: 'from' | 'to'; began: boolean }
-  | { k: 'draw' }
   | { k: 'erase'; began: boolean }
   | { k: 'connect'; from: ConnectorEnd; to: ConnectorEnd };
 
@@ -51,6 +51,8 @@ interface Ui {
 }
 
 const HIT_PX = 11;
+/** The board keeps its strokes as items (so they stack with everything else): the drawing layer shows none. */
+const NO_STROKES: PencilStroke[] = [];
 /** The kit's HoverCard delays: rest this long to open, and it lingers this long after the pointer leaves. */
 const PEEK_OPEN_DELAY = 600;
 const PEEK_CLOSE_DELAY = 300;
@@ -59,8 +61,6 @@ export function BoardSurface({ viewport, onViewportChange, controller, tool, set
   const f = useFreeform();
   const { items, byId, selection, selected, board } = f;
   const g = useRef<Gesture | null>(null);
-  const live = useRef<StrokeItem | null>(null);
-  const [, redraw] = useState(0);
   const [ui, setUi] = useState<Ui>({ marquee: null, guides: [], anchors: null, cursor: 'default' });
   const [preview, setPreview] = useState<ConnectorItem | null>(null);
   const z = viewport.zoom;
@@ -99,7 +99,16 @@ export function BoardSurface({ viewport, onViewportChange, controller, tool, set
   };
   const grow = (id: string, h: number) => f.patch((all) => all.map((i) => (i.id === id && i.kind === 'text' && Math.abs(i.h - h) > 1 ? { ...i, h } : i)));
 
-  /* ── Erasing and connecting ── */
+  /* ── Drawing, erasing and connecting ── */
+  const addStroke = (st: PencilStroke | undefined) => {
+    if (!st) return;
+    const item: StrokeItem = {
+      id: `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind: 'stroke',
+      tool: st.tool, color: st.color, width: st.width, pen: st.pressure, points: st.points, rot: 0, ...strokeFrame(st.points, st.tool, st.width),
+    };
+    f.commit((all) => [...all, item], []);
+  };
+
   const eraseAt = (gs: { began: boolean }, p: Pt) => {
     const r = 14 / z;
     const hit = items.filter((i) => i.kind === 'stroke' && !i.locked && hitItem(p, i, byId, r)).map((i) => i.id);
@@ -118,12 +127,11 @@ export function BoardSurface({ viewport, onViewportChange, controller, tool, set
     unpeek();
     if (editing) setEditing(null);
 
+    // A drawing tool's presses are the drawing layer's; the eraser's are the board's (it erases items, as one step).
     if (tool === 'draw') {
-      if (draw.tool === 'eraser') { const gs = { k: 'erase' as const, began: false }; g.current = gs; eraseAt(gs, p); return; }
-      const pen = e.pointerType === 'pen';
-      live.current = { id: 'live', kind: 'stroke', tool: draw.tool, color: draw.ink, width: draw.width, pen, points: [[p.x, p.y, e.pressure > 0 ? e.pressure : 0.5]], x: p.x, y: p.y, w: 0, h: 0, rot: 0 };
-      g.current = { k: 'draw' };
-      redraw((n) => n + 1);
+      const gs = { k: 'erase' as const, began: false };
+      g.current = gs;
+      eraseAt(gs, p);
       return;
     }
 
@@ -275,19 +283,6 @@ export function BoardSurface({ viewport, onViewportChange, controller, tool, set
         patchUi({ anchors: anchor ? { id: anchor.id, side: anchor.side } : null });
         break;
       }
-      case 'draw': {
-        const st = live.current;
-        if (!st) break;
-        // The canvas's corner on screen, from where this move is in it.
-        const left = e.clientX - s.x, top = e.clientY - s.y;
-        const evs: { clientX: number; clientY: number; pressure: number }[] = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-        for (const ev of evs) {
-          const q = toBoard(viewport, ev.clientX - left, ev.clientY - top);
-          st.points.push([q.x, q.y, ev.pressure > 0 ? ev.pressure : 0.5]);
-        }
-        redraw((n) => n + 1);
-        break;
-      }
       case 'erase': eraseAt(gs, p); break;
       case 'connect': {
         const { end, anchor } = endAt(p);
@@ -305,15 +300,6 @@ export function BoardSurface({ viewport, onViewportChange, controller, tool, set
     if (!gs) return;
     g.current = null;
     if (gs.k === 'move' && !gs.began && gs.click) f.select([gs.click]);
-    if (gs.k === 'draw') {
-      const st = live.current;
-      live.current = null;
-      if (st && st.points.length > 1) {
-        const done: StrokeItem = { ...st, id: `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, ...strokeFrame(st.points, st.tool, st.width) };
-        f.commit((all) => [...all, done], []);
-      }
-      redraw((n) => n + 1);
-    }
     if (gs.k === 'connect') {
       const far = dist(toScreen(viewport, endXY(gs.from)), toScreen(viewport, endXY(gs.to))) > 12;
       setPreview(null);
@@ -390,16 +376,16 @@ export function BoardSurface({ viewport, onViewportChange, controller, tool, set
         background={board?.background ?? 'dots'}
         panning={tool === 'hand'}
         fit={fit}
-        cursor={ui.cursor}
+        style={{ cursor: ui.cursor }}
         autoFocus
         aria-label={board ? `${board.title} board` : 'Board'}
         onCanvasPointerDown={onPointerDown}
         onCanvasPointerMove={onPointerMove}
         onCanvasPointerUp={onPointerUp}
         onCanvasDoubleClick={onDoubleClick}
-        onNavigationStart={() => { g.current = null; live.current = null; unpeek(); }}
+        onNavigationStart={() => { g.current = null; unpeek(); }}
         onCanvasKeyDown={onKeyDown}
-        overlay={!items.length && !live.current ? (
+        overlay={!items.length && tool !== 'draw' ? (
           <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-tertiary-foreground">
             <div>
               <div className="text-body font-semibold">A blank board</div>
@@ -408,17 +394,21 @@ export function BoardSurface({ viewport, onViewportChange, controller, tool, set
           </div>
         ) : (
           // The whole board in the top corner (the toolbar has the bottom); the selection in the tint.
-          <CanvasMiniMap position="top-right" items={items.filter((i) => i.kind !== 'connector').map((i) => ({
+          <CanvasMiniMap side="top" items={items.filter((i) => i.kind !== 'connector').map((i) => ({
             id: i.id, ...boundsOf(i, byId), className: selection.includes(i.id) ? 'fill-primary' : undefined,
           }))} />
         )}
       >
         {items.map((it) => <ItemView key={it.id} item={it} byId={byId} editing={editing === it.id} onText={setText} onGrow={grow} />)}
-        {live.current ? (
-          <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">
-            <StrokePath st={{ tool: live.current.tool, color: live.current.color, w: live.current.width, pen: live.current.pen, points: live.current.points, done: false }} />
-          </svg>
-        ) : null}
+        <PencilCanvas
+          aria-label="New stroke"
+          disabled={tool !== 'draw' || draw.tool === 'eraser'}
+          tool={draw.tool}
+          ink={draw.ink}
+          width={draw.width}
+          strokes={NO_STROKES}
+          onStrokesChange={(next) => addStroke(next[next.length - 1])}
+        />
         {preview ? <Connector item={preview} byId={byId} preview /> : null}
   
         {/* Selection */}

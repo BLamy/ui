@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Filmstrip } from '@/components/ui/filmstrip';
 import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
-import { PlaybackControls, VideoPreview, type PreviewMedia } from '@/components/ui/video-preview';
+import { VideoPreviewControls, VideoPreview, type PreviewMedia } from '@/components/ui/video-preview';
 import { fitTimelineZoom, timelineZoomRange, VideoTimeline, type TimelineMediaInfo } from '@/components/ui/video-timeline';
 import { Waveform } from '@/components/ui/waveform';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
@@ -235,7 +235,7 @@ function Shell({ samples }: { samples: boolean }) {
           {media}
         </AdaptivePane>
         <div className="flex min-w-0 flex-1 flex-col bg-muted">
-          <VideoPreview timeline={project.timeline} media={preview} clock={clock} format={project.format} className="min-h-0 flex-1 p-3"
+          <VideoPreview timeline={project.timeline} media={preview} playback={clock} format={project.format} className="min-h-0 flex-1 p-3"
             renderClip={(clip) => (isTitle(clip) ? <TitleView clip={clip} format={project.format} /> : undefined)}>
             {duration <= 0 ? (
               <div className="absolute inset-0 grid place-items-center p-6 text-center text-footnote text-white/70">
@@ -244,7 +244,7 @@ function Shell({ samples }: { samples: boolean }) {
             ) : null}
           </VideoPreview>
           <div className="flex shrink-0 items-center justify-center border-t border-border bg-background px-2 py-1">
-            <PlaybackControls clock={clock} fps={fps} />
+            <VideoPreviewControls playback={clock} fps={fps} />
           </div>
         </div>
         <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="right" aria-label="Inspector" open={wide || panel === 'inspector'}
@@ -271,7 +271,7 @@ function Shell({ samples }: { samples: boolean }) {
             value={Math.log(zoom)} onValueChange={(v) => setZoom(Math.exp(v))} />
           <Button variant="quiet" size="sm" className="h-7 px-2 text-caption" onClick={fit}>Fit</Button>
         </div>
-        <VideoTimeline className="min-h-0 flex-1" value={project.timeline} onValueChange={(t) => ed.edit(() => t)} media={info} clock={clock} fps={fps}
+        <VideoTimeline className="min-h-0 flex-1" value={project.timeline} onValueChange={(t) => ed.edit(() => t)} media={info} playback={clock} fps={fps}
           selectedClips={ed.selection} onSelectedClipsChange={ed.select} zoom={zoom} onZoomChange={setZoom} snap={snap}
           onDropMedia={(id, details) => act.addMedia(id, details)}
           clipClassName={(clip) => (isTitle(clip) ? 'border-chart-5/55 bg-chart-5/25' : ed.media[clip.media]?.kind === 'image' ? 'border-chart-3/50 bg-chart-3/20' : undefined)}

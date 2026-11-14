@@ -50,8 +50,9 @@ export function StepButtons({
   }
   return (
     <DebugToolbar
-      size="compact"
-      className={cn('debugger-steps h-9 max-w-full overflow-x-auto rounded-none border-0 bg-transparent px-0 shadow-none [&_.codicon-gripper]:hidden [&_button]:size-7 [&_button_.codicon]:text-info [&_button_.codicon]:text-body [&_button[data-disabled]_.codicon]:grayscale [&_button:hover:not([data-disabled])]:bg-secondary [&_button:active:not([data-disabled])]:bg-secondary-strong [&_button[data-action=continue]_.codicon]:text-success [&_button[data-action=reverse-continue]_.codicon]:text-success [&_button[data-action=restart]_.codicon]:text-success [&_button[data-action=stop]_.codicon]:text-destructive', className)}
+      variant="plain"
+      size="sm"
+      className={cn('debugger-steps max-w-full overflow-x-auto', className)}
       style={style}
       disabledActions={disabled}
       onAction={(action) => {

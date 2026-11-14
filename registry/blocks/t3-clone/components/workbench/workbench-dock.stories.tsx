@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@ui-sdk/react/button';
-import { FloatingSheet } from '@/components/ui/floating-sheet';
-import { WorkbenchTheme } from '@/components/ui/workbench-theme';
+import { FloatingSheet, FloatingSheetBody } from '@/components/ui/floating-sheet';
 import { ThemeScope } from '@/lib/theme';
 import { cn, pressable } from '@/lib/utils';
 import { TerminalHeader, TerminalBody, TerminalAction } from './terminal';
@@ -16,12 +15,12 @@ const meta: Meta<typeof FloatingSheet> = {
 export default meta;
 type Story = StoryObj<typeof FloatingSheet>;
 
-/* The compact dock: a dismissible FloatingSheet in a phone frame — drag the cap between the 52% and 93%
+/* The compact dock: a FloatingSheet (`collapse="hide"`) in a phone frame — drag the cap between the 52% and 93%
    stops; a fast downward flick (or dragging past the low stop) puts it away. */
 function SheetDemo({ open: initialOpen }: { open: boolean }) {
   const [open, setOpen] = useState(initialOpen);
   return (
-    <WorkbenchTheme className="grid min-h-[760px] place-items-center p-5">
+    <ThemeScope scope="workbench" className="grid min-h-[760px] place-items-center p-5">
       <div className="relative h-[720px] w-[390px] overflow-hidden rounded-xl border border-border bg-background">
         <div className="absolute inset-0 grid place-items-center p-6 text-center text-[13px] text-tertiary-foreground">
           <div>
@@ -37,21 +36,21 @@ function SheetDemo({ open: initialOpen }: { open: boolean }) {
         {/* The drawer holds a terminal: a `terminal` theme scope, dark in either appearance. */}
         <ThemeScope scope="terminal" className="contents">
           <FloatingSheet
-            appearance="sheet"
+            variant="sheet"
             gutter={0}
             radius={16}
-            dismissible
+            collapse="hide"
             visible={open}
             onVisibleChange={setOpen}
             peek="52%"
             topGap="7%"
             hideOnScroll={false}
             scrim={false}
-            label="Dock"
+            aria-label="Dock"
             className="z-70"
             surfaceClassName="bg-background"
           >
-            <FloatingSheet.Body>
+            <FloatingSheetBody>
               <div className="flex h-full min-h-0 flex-col">
                 <TerminalHeader title="zsh — cookbook">
                   <TerminalAction icon="rectangle-split" label="Split terminal" />
@@ -60,11 +59,11 @@ function SheetDemo({ open: initialOpen }: { open: boolean }) {
                 </TerminalHeader>
                 <TerminalBody seed={TERMINAL_SEED} />
               </div>
-            </FloatingSheet.Body>
+            </FloatingSheetBody>
           </FloatingSheet>
         </ThemeScope>
       </div>
-    </WorkbenchTheme>
+    </ThemeScope>
   );
 }
 

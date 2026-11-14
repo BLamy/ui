@@ -114,6 +114,14 @@ describe('Spinner loaders', () => {
     expect(named.getAttribute('aria-hidden')).toBeNull();
   });
 
+  it('takes aria-label as its name, as label', () => {
+    const named = root(render(<Spinner animation="merge" aria-label="Syncing" />).container);
+    expect(named.getAttribute('role')).toBe('status');
+    expect(named.getAttribute('aria-label')).toBe('Syncing');
+    expect(named.querySelector('.sr-only')?.textContent).toBe('Syncing');
+    expect(named.getAttribute('aria-hidden')).toBeNull();
+  });
+
   it('passes ref and DOM props through', () => {
     let node: HTMLSpanElement | null = null;
     const el = root(render(<Spinner animation="orbit" ref={(n) => { node = n; }} id="busy" data-test="x" />).container);

@@ -96,8 +96,6 @@ function Plain({ children, last }: { children: ReactNode; last?: boolean }) {
 const Detail = ({ children }: { children?: ReactNode }) =>
   children ? <span className="min-w-0 shrink truncate text-muted-foreground">{children}</span> : null;
 
-/** macOS switches are the small control size. */
-const MAC_SWITCH = '-my-[6px] -ml-[19px] origin-right scale-[.62]';
 
 /** macOS pop-up button: a Select showing the current value and ⌃⌄, named by its row's title. */
 function Popup({ id, title, options }: { id: string; title: string; options: string[] }) {
@@ -106,8 +104,8 @@ function Popup({ id, title, options }: { id: string; title: string; options: str
     <Select<string> value={String(s.values[id])} onValueChange={(o) => { if (o != null) s.set(id, o); }}>
       <SelectTrigger aria-label={title}
         className="-my-1 h-[26px] w-auto gap-1 rounded-md bg-transparent px-2 text-footnote font-normal text-foreground shadow-[0_1px_1px_black] ring-[.5px] shadow-black/6 ring-border [&>svg]:size-3 [&>svg]:text-muted-foreground [&>svg]:opacity-100" />
-      <SelectContent align="end">
-        {options.map((o) => <SelectItem key={o} value={o} className="min-h-8 py-1.5 text-footnote">{o}</SelectItem>)}
+      <SelectContent align="end" size="sm">
+        {options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
       </SelectContent>
     </Select>
   );
@@ -134,7 +132,7 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
   switch (row.t) {
     case 'toggle':
       return <Shell last={last} icon={tile(row.glyph, row.color)} title={row.title} description={row.subtitle} 
-        accessory={<Switch checked={!!v[row.id]} onCheckedChange={(x) => s.set(row.id, x)} aria-label={mac ? row.title : undefined} className={mac ? MAC_SWITCH : undefined} />} />;
+        accessory={<Switch checked={!!v[row.id]} onCheckedChange={(x) => s.set(row.id, x)} aria-label={mac ? row.title : undefined} size={mac ? 'sm' : 'default'} />} />;
     case 'link': {
       const p = getPane(row.to);
       const value = typeof row.value === 'function' ? row.value(v) : row.value;

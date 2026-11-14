@@ -1,0 +1,17 @@
+{
+  "name": "open-code",
+  "title": "OpenCode",
+  "description": "OpenCode's real terminal UI (OpenTUI WebAssembly) on a browser workspace container, with the apps its servers open shown as live previews in a sandboxed frame beside it; Start / Stop, encrypted keychain stores and Agent Browser-compatible MCP tools.",
+  "page": "open-code",
+  "exports": [
+    "OpenCode",
+    "openCodeVariants"
+  ],
+  "imports": [
+    "OpenCode"
+  ],
+  "types": [
+    "OpenCodeProps",
+    "OpenCodeState"
+  ]
+}

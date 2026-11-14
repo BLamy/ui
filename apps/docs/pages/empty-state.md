@@ -6,7 +6,7 @@ What a list, table, tree, pane or search shows when it has nothing to show: an o
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/empty-state.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
 import { EmptyState } from '@/components/ui/empty-state'
@@ -75,3 +75,23 @@ Any `div` attribute (`id`, `role`, `aria-*`, `data-*`, event handlers) passes th
 ## Styling
 
 `data-slot="empty-state"` with `data-size`, and `data-slot` on each slot: `empty-state-icon`, `empty-state-title`, `empty-state-description`, `empty-state-action`. Override the slots from the root, for example `className="[&_[data-slot=empty-state-title]]:text-foreground"`.
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `emptyStateVariants`
+
+Defined in `@/components/ui/empty-state`. Base classes:
+
+```text
+flex flex-col items-center justify-center text-center text-balance
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `gap-0.5 px-3 py-6` |
+| `default` (default) | `h-full gap-1 p-6` |
+| `lg` | `h-full gap-1.5 p-8` |

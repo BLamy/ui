@@ -1,9 +1,8 @@
 /* ══ Composer files — kinds, accept filters, and cheap previews for attachments ══
    Pure helpers for the Composer: which kind a file is (for its tile and icon), whether it passes an
    `acceptedFileTypes` filter, and the small previews a tile shows (a video's first frame, a text file's first
-   lines). Sizes read through UI SDK's locale-aware `formatFileSize`; previews give up quietly (the tile falls back to
+   lines). Sizes read like the editor's attachment chips ("84 KB", "1.3 MB"), so a chip and its tile agree; previews give up quietly (the tile falls back to
    its icon). */
-import { formatFileSize as formatBytes } from '@ui-sdk/core/file-input';
 
 /** What an attachment is, for its tile: an image thumbnail, a video poster, a text excerpt, or an icon. */
 export type ComposerAttachmentKind = 'image' | 'video' | 'audio' | 'pdf' | 'text' | 'archive' | 'other';
@@ -79,10 +78,14 @@ export function describeAccepted(accepted: readonly string[] | undefined): strin
   return unique.length > 1 ? `${unique.slice(0, -1).join(', ')} and ${unique[unique.length - 1]}` : unique[0];
 }
 
-/** A size for a tile or a message ("86 kB", "1.3 MB"), in the reader's locale; empty when it is unknown. */
+/** A size for a tile or a message ("84 KB", "1.3 MB"); empty when it is unknown. */
 export function formatFileSize(bytes: number | undefined): string {
   if (bytes === undefined || !Number.isFinite(bytes) || bytes < 0) return '';
-  return formatBytes(bytes);
+  // The same steps and units as the Docstream editor's attachment chips ("84 KB", "1.3 MB").
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 ** 2) return `${Math.round(bytes / 1024)} KB`;
+  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+  return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
 }
 
 /** A name that is safe in `![name](attachment:id)` and `alt="…"`. */

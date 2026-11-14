@@ -9,12 +9,14 @@ import { bindSizeClass, type SizeClass } from '@/lib/size-class';
 
 /* ══ Sidebar — open state and the room its provider has ══
    The provider's root measures its own width with `bindSizeClass` (never the viewport): below `breakpoint` it is
-   `compact`, and every sidebar variant presents as an overlay drawer. Crossing the breakpoint resets `open` (closed
-   when compact, `defaultOpen` when not), reported as `content-resize`. The trigger toggles whichever presentation is
-   mounted; Escape, an outside press and a swipe close the overlay through UI SDK's Drawer, which forwards here. */
+   `compact`, and a Sidebar with `presentation="auto"` shows as a drawer. Crossing the breakpoint resets `open`
+   (closed when compact, `defaultOpen` when not), reported as `content-resize`. The trigger toggles whichever
+   presentation is mounted; Escape, an outside press, a swipe and a press on one of its rows close the drawer
+   (through AdaptivePane's drawer, UI SDK's Drawer), which forwards here. */
 
-/** Why the sidebar opened or closed: its trigger, the overlay's dismissals (`escape-key`, `outside-press`,
- *  `swipe`, `close-press`), the provider crossing its breakpoint (`content-resize`), or a controller (`imperative`). */
+/** Why the sidebar opened or closed: its trigger or its `shortcut`, the drawer's dismissals (`escape-key`,
+ *  `outside-press`, `swipe`, `close-press`, `action` for a row pressed in it), the provider crossing its breakpoint
+ *  (`content-resize`), or a controller (`imperative`). */
 export type SidebarOpenChangeReason =
   | 'trigger-press'
   | 'close-press'
@@ -49,7 +51,8 @@ export type SidebarOptions = {
   defaultOpen?: boolean;
   /** Runs when it wants to open or close; `details.reason` says why and `details.cancel()` stops it. */
   onOpenChange?: (open: boolean, details: SidebarOpenChangeDetails) => void;
-  /** The provider's own width below which it is `compact` and every variant is an overlay. Default 560. */
+  /** The provider's own width below which it is `compact` (a Sidebar with `presentation="auto"` is a drawer).
+   *  Default 560. */
   breakpoint?: number;
   controller?: SidebarController;
 };

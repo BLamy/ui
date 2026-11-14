@@ -172,9 +172,7 @@ export default function Debugger() {
             currentColumn={position.column}
             lineDecoration={lineDecoration}
             markers={markers}
-            onLineNumberClick={(_event, { line }) => jump(line)}
-            lineNumberClickable={ranAtLeastOnce}
-            lineNumberLabel={jumpLabel}
+            lineNumbers={{ onClick: (_event, { line }) => jump(line), clickable: ranAtLeastOnce, label: jumpLabel }}
           />
         </div>
       </div>

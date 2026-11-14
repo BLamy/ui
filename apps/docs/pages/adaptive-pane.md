@@ -12,7 +12,8 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  AdaptivePane, AdaptivePaneHeader, AdaptivePaneTitle, AdaptivePaneClose,
+  AdaptivePane, AdaptivePaneHeader, AdaptivePaneTitle,
+  AdaptivePaneClose,
 } from '@/components/ui/adaptive-pane'
 ```
 {% endtab %}
@@ -25,7 +26,8 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  AdaptivePane, AdaptivePaneHeader, AdaptivePaneTitle, AdaptivePaneClose,
+  AdaptivePane, AdaptivePaneHeader, AdaptivePaneTitle,
+  AdaptivePaneClose,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}

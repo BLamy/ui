@@ -2,7 +2,7 @@ import * as React from 'react';
 import { MultiFileDiff } from '@pierre/diffs/react';
 import { FileTree, useFileTree } from '@pierre/trees/react';
 import { Button } from '@ui-sdk/react/button';
-import { useWorkbenchAppearance } from '@/components/ui/workbench-theme';
+import { useScopeAppearance } from '@/lib/theme';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn, pressable, brandTile } from '@/lib/utils';
 
@@ -122,7 +122,7 @@ export interface SurfaceFilesProps {
 }
 /** A @pierre/trees file tree in Workbench tokens. */
 export function SurfaceFiles({ paths, selected, onSelect, title = 'Project files', className }: SurfaceFilesProps) {
-  const appearance = useWorkbenchAppearance();
+  const appearance = useScopeAppearance('workbench');
   const { model } = useFileTree({
     paths,
     initialExpansion: 'open',
@@ -151,7 +151,7 @@ const surfaceDiffOptions = {
 };
 /** A @pierre/diffs unified diff, themed to the Workbench appearance. */
 export function SurfaceDiff({ oldFile, newFile, className }: { oldFile: SurfaceDiffFile; newFile: SurfaceDiffFile; className?: string }) {
-  const appearance = useWorkbenchAppearance();
+  const appearance = useScopeAppearance('workbench');
   const options = React.useMemo(() => ({ ...surfaceDiffOptions, themeType: appearance }), [appearance]);
   return (
     <div data-slot="surface-diff" data-renderer="pierre-diffs" className={cn('wb-scroll min-h-0 flex-1 overflow-y-auto px-3 py-2.5', className)}>

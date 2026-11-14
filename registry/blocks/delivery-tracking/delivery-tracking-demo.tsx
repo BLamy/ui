@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { FloatingSheet, type FloatingSheetAppearance, type FloatingSheetTone } from '@/components/ui/floating-sheet';
+import { FloatingSheet, FloatingSheetBody, type FloatingSheetAppearance, type FloatingSheetVariant } from '@/components/ui/floating-sheet';
 import {
   HoverCard,
   HoverCardContent,
@@ -51,9 +51,10 @@ export interface DeliveryTrackingDemoProps {
   stageMs?: number;
   /** Height of the order card resting over the map. */
   peek?: number;
+  /** The sheet's look: an opaque `sheet` (default) or `glass`. */
+  variant?: FloatingSheetVariant;
+  /** Light or dark map and sheet. `auto` (default) follows the ambient `AppearanceProvider` value, else light. */
   appearance?: FloatingSheetAppearance;
-  /** Light or dark map and sheet. Defaults to the ambient `AppearanceProvider` value, else light. */
-  tone?: FloatingSheetTone;
   /** Inset of the sheet from the host edges; `0` docks it like a system sheet. */
   gutter?: number;
   /** Accent for the stepper, pins, and primary button. */
@@ -225,8 +226,8 @@ export function DeliveryTrackingDemo({
   autoAdvance = true,
   stageMs = 6500,
   peek = 344,
-  appearance = 'sheet',
-  tone: toneProp,
+  variant = 'sheet',
+  appearance = 'auto',
   gutter = 0,
   accent = DELIVERY_ACCENT,
   onClose,
@@ -234,8 +235,7 @@ export function DeliveryTrackingDemo({
   style,
 }: DeliveryTrackingDemoProps) {
   const ambient = useAppearance();
-  const tone: FloatingSheetTone = toneProp ?? ambient ?? 'light';
-  const dark = tone === 'dark';
+  const dark = (appearance === 'auto' ? (ambient ?? 'light') : appearance) === 'dark';
   const scheme = dark ? 'dark' : 'light';
   const mapButton = mapButtonVariants({ tone: scheme });
   const scope = themeScopeProps({ scope: 'sheet', appearance: scheme });
@@ -332,15 +332,15 @@ export function DeliveryTrackingDemo({
         peek={peek}
         gutter={gutter}
         radius={20}
-        appearance={appearance}
-        tone={tone}
+        variant={variant}
+        appearance={dark ? 'dark' : 'light'}
         bodyAlign="start"
-        minimizable={false}
+        collapse="none"
         scrim={false}
         hideOnScroll={false}
-        label="Order status"
+        aria-label="Order status"
       >
-        <FloatingSheet.Body>
+        <FloatingSheetBody>
           <div className="ck-scroll box-border h-full min-h-0! overflow-x-hidden overflow-y-auto px-5 pt-0.5 pb-8">
             <header className="mb-[18px]">
               {/* A new stage moves forward: the old title leaves up, the new one rises in (and the header's
@@ -505,7 +505,7 @@ export function DeliveryTrackingDemo({
               </HoverCard>
             </Section>
           </div>
-        </FloatingSheet.Body>
+        </FloatingSheetBody>
       </FloatingSheet>
     </div>
   );

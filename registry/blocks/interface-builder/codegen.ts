@@ -713,7 +713,7 @@ export function NavStack({ root, ...rootBar }: { root: ReactElement } & ScreenBa
       {all.map((p, i) => {
         const bar: ScreenBar = { ...(i === 0 ? rootBar : null), ...bars[p.key] };
         return (
-          <NavigationStackPage key={p.key} value={p.key} grouped={bar.grouped}>
+          <NavigationStackPage key={p.key} value={p.key} variant={bar.grouped ? 'grouped' : 'plain'}>
             <NavigationStackBar>
               {bar.leading ? <NavigationStackLeading>{bar.leading}</NavigationStackLeading> : null}
               <NavigationStackTitle>{bar.title}</NavigationStackTitle>

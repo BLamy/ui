@@ -3,7 +3,7 @@ import { cleanup, screen } from '@testing-library/react';
 import { createAgent } from '@ui-sdk/react/agent';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Combobox, ComboboxContent, ComboboxInput } from '@/components/ui/combobox';
+import { Combobox, ComboboxContent, ComboboxField, ComboboxInput, ComboboxTrigger } from '@/components/ui/combobox';
 import { CommandMenu, CommandMenuInput, CommandMenuItem, CommandMenuList } from '@/components/ui/command-menu';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -43,7 +43,10 @@ describe('Select and Combobox are agent-ready', () => {
         <Field>
           <FieldLabel>Assignee</FieldLabel>
           <Combobox items={people} onValueChange={onAssignee}>
-            <ComboboxInput placeholder="Search the team" />
+            <ComboboxField>
+              <ComboboxInput placeholder="Search the team" />
+              <ComboboxTrigger />
+            </ComboboxField>
             <ComboboxContent />
           </Combobox>
         </Field>

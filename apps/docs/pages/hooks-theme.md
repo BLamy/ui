@@ -1,16 +1,15 @@
 # Theme hooks
 
-Hooks that read the ambient light or dark appearance, the theme scope an overlay should wear, the shared "chrome hidden" flag that nav bars and tab bars follow, and the Workbench's appearance. The theme system itself (tokens, `BLProvider`, `ThemeScope`) is on the [Theming](https://blamy.github.io/ui/#/theming) page; the other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
+Hooks that read the ambient light or dark appearance, the theme scope an overlay should wear, the nearest scope and the appearance it resolves to, and the shared "chrome hidden" flag that nav bars and tab bars follow. The theme system itself (tokens, `BLProvider`, `ThemeScope`) is on the [Theming](https://blamy.github.io/ui/#/theming) page; the other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
-All four are public. 6.0 removed `useScrollHidden`: floating chrome of your own uses `useHideOnScroll` from `FloatingSheet` (see [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)), and anything else reads `useChromeHidden()`.
+All five are public. 6.0 removed `useScrollHidden`: floating chrome of your own uses `useHideOnScroll` from `@/lib/scroll-edge` (see [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)), and anything else reads `useChromeHidden()`.
 
 ```tsx
 // npm
-import { useAppearance, useThemeScopeProps, useChromeHidden, useWorkbenchAppearance } from '@brett_lamy/ui'
+import { useAppearance, useThemeScope, useScopeAppearance, useThemeScopeProps, useChromeHidden } from '@brett_lamy/ui'
 
 // shadcn registry (aliases)
-import { useAppearance, useThemeScopeProps, useChromeHidden } from '@/lib/theme'            // …/r/theme.json
-import { useWorkbenchAppearance } from '@/components/ui/workbench-theme'                    // …/r/workbench-theme.json
+import { useAppearance, useThemeScope, useScopeAppearance, useThemeScopeProps, useChromeHidden } from '@/lib/theme' // …/r/theme.json
 ```
 
 ## `useAppearance`
@@ -103,7 +102,7 @@ function FloatingAction() {
 }
 ```
 
-`NavigationStack` publishes it while its top page scrolls: the bar hides after a downward scroll of more than 5px once the scroll position is past about 70% of the bar height, and shows again on an upward scroll of more than 5px or near the top. A page opts out with `<NavigationStackBar hideOnScroll={false}>`, and the stack's `onBarHiddenChange(hidden)` reports the same change. the `Tabs` bar (`TabsBar hideOnScroll`), `List`'s sticky headers, and `useHideOnScroll` (behind `FloatingSheet` and `FloatingChat`) read it. To drive it from a scroller of your own, set the store: `chromeStore.set(true)` hides, `chromeStore.set(false)` shows.
+`NavigationStack` publishes it while its top page scrolls: the bar hides after a downward scroll of more than 5px once the scroll position is past about 70% of the bar height, and shows again on an upward scroll of more than 5px or near the top. A page opts out with `<NavigationStackBar hideOnScroll={false}>`, and the stack's `onBarHiddenChange(hidden)` reports the same change. the `Tabs` bar (`TabsBar hideOnScroll`), `List`'s sticky headers, and `useHideOnScroll` (behind `FloatingSheet` and `ArtifactChatContainer`) read it. To drive it from a scroller of your own, set the store: `chromeStore.set(true)` hides, `chromeStore.set(false)` shows.
 
 Gotchas:
 
@@ -112,24 +111,25 @@ Gotchas:
 - Nothing is published on the server; it is `false` there.
 - `chromeOffset(top, hidden)` turns a bar height into the offset sticky headers stop at: while hidden it moves up by one bar height (`BARH`, 52px), never below zero.
 
-## `useWorkbenchAppearance`
+## `useThemeScope` and `useScopeAppearance`
 
-The resolved appearance of the nearest Workbench root, for pieces whose third-party renderers need it as a prop (a diff theme, an editor theme).
+The nearest `ThemeScope`'s resolved state, and the appearance a scope of a given name resolves to here, for pieces whose third-party renderers need the appearance as a prop (a diff theme, an editor theme).
 
-- **Export:** public, with `WorkbenchTheme` and `WorkbenchAppearanceProvider`. Registry item `workbench-theme`.
-- **Needs:** nothing, but it is meant for use below a `WorkbenchTheme` (or the WorkbenchShell block, which provides it). **Outside one:** it still works and returns the ambient appearance, else `'dark'`.
+- **Export:** public. Registry item `theme` (`@/lib/theme`).
+- **Needs:** nothing. **Outside a scope:** `useThemeScope()` is `null`; `useScopeAppearance` still answers from the ambient appearance and the scope's default.
 
 ```ts
-function useWorkbenchAppearance(explicit?: 'light' | 'dark'): 'light' | 'dark'
+function useThemeScope(): { scope?: string; appearance?: 'light' | 'dark'; tint?: string; vars?: ThemeVars } | null
+function useScopeAppearance(scope?: ThemeScopeName, appearance?: 'light' | 'dark'): 'light' | 'dark' | undefined
 ```
 
-The result is the first of: the `explicit` argument, the enclosing Workbench root's appearance, the ambient `AppearanceProvider` value (or `<html class="dark">`), then `'dark'`. Unlike `useAppearance`, it is never `undefined`, and it never falls back to light.
+`useScopeAppearance` is the rule `ThemeScope` itself applies: the terminal scope is always dark; otherwise the explicit `appearance`, else an enclosing scope of the same name, else the ambient `AppearanceProvider` value (or `<html class="dark">`), else the scope's default (`'dark'` for `workbench`, `'light'` for the other named scopes, `undefined` for a plain scope). A `BLProvider` resets the scope for what it contains, as it does for overlays.
 
 ```tsx
 function FileDiff({ patch }: { patch: string }) {
-  const appearance = useWorkbenchAppearance()
+  const appearance = useScopeAppearance('workbench')
   return <Diff patch={patch} theme={appearance === 'dark' ? 'github-dark' : 'github-light'} />
 }
 ```
 
-Details are on the [WorkbenchTheme](https://blamy.github.io/ui/#/workbench-theme) page.
+The workbench scope is described on the [Theming](https://blamy.github.io/ui/#/theming) page.

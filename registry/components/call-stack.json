@@ -8,7 +8,6 @@
   ],
   "exports": [
     "CallStack",
-    "callStackRowVariants",
     "shortLocation",
     "fullLocation",
     "fileBaseName"

@@ -18,10 +18,10 @@ Reach for these only for a part the kit does not have. The kit's own parts alrea
 
 | Behavior | Where the kit uses it |
 | --- | --- |
-| Roving focus and typeahead | `Listbox` and `Tree`, `ObjectTree` and `CallStack` (UI SDK's Listbox and Tree), `DebugToolbar` and `EditBar` (UI SDK's Toolbar), the tab strips in `Workspace` (UI SDK's Tabs). Menus, Select and Combobox have it inside their UI SDK parts. |
-| `createGridFocus` | `ResultTable`, `RequestTable` and `LogList` (through `lib/grid-behaviors.ts`). |
+| Roving focus and typeahead | `Listbox` and `Tree`, `ObjectTree` and `CallStack` (UI SDK's Listbox and Tree), `Toolbar` and its presets (`DebugToolbar`, `FilterToolbar`, `PencilToolbar`: UI SDK's Toolbar), the tab strips in `Workspace` (UI SDK's Tabs). Menus, Select and Combobox have it inside their UI SDK parts. |
+| `createGridFocus` | `DataTable` (and its preset `RequestTable`) and `LogList` (through `lib/grid-behaviors.ts`). |
 | `createFocusRecovery` | `Workspace` (a closed tab hands focus to its neighbour), and the grids above (a removed row hands focus back to the scroller). |
-| `isFocusFromKeyboard` | `ResultTable`'s tab stop (`createTabStop` in `lib/grid-behaviors.ts`): Tab into the table moves on into the active cell; a click does not. |
+| `isFocusFromKeyboard` | `DataTable`'s tab stop (`createTabStop` in `lib/grid-behaviors.ts`): Tab into the table moves on into the active row; a click does not. |
 | `nearestInDirection` | `CommandMenu`'s `columns` groups: the arrows follow the layout. |
 | Shortcut labels | `Kbd` with `keys="mod+k"` (UI SDK's `useShortcutHint`), and a menu or command item's `shortcut` prop. |
 
@@ -33,7 +33,7 @@ There is no `data-focus-visible` any more. 6.0 uses the browser's own `:focus-vi
 - List rows, cells and toolbar items in these examples: `focus-visible:ring-[3px] focus-visible:ring-ring/45`.
 - A group that should light up while anything inside has focus: `focus-within:`.
 
-The browser decides when `:focus-visible` matches: after Tab or an arrow key, and for a text field on any focus (a clicked field matches too). When a primitive needs the same answer in script, for example "did this focus come from the keyboard, or from a click or a popup handing focus back?", call `isFocusFromKeyboard()` in the `focusin` handler. That is how `ResultTable` decides whether to step into a cell.
+The browser decides when `:focus-visible` matches: after Tab or an arrow key, and for a text field on any focus (a clicked field matches too). When a primitive needs the same answer in script, for example "did this focus come from the keyboard, or from a click or a popup handing focus back?", call `isFocusFromKeyboard()` in the `focusin` handler. That is how `DataTable` decides whether to step into a row.
 
 ## Roving focus
 

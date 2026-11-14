@@ -4,7 +4,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { MarkdownView } from '@/components/ui/markdown-view';
-import { Toolbar, ToolbarButton } from '@ui-sdk/react/toolbar';
+import { Toolbar, ToolbarButton } from '@/components/ui/toolbar';
 import { chatUserAvatar, useChatUsers, type ChatUser } from './chat-users';
 import { UserCard } from './user-card';
 import { cn, cx } from '@/lib/utils';
@@ -202,9 +202,11 @@ export function MessageReaction({ emoji, count, mine, className, ...props }: Mes
 export function MessageActions({ className, ...props }: ComponentProps<typeof Toolbar>) {
   return (
     <Toolbar
+      variant="floating"
+      size="sm"
       aria-label="Message actions"
       className={cx(
-        'absolute -top-[10px] right-[16px] flex gap-[2px] rounded-[9px] border border-border bg-card p-[2px] opacity-0 [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-hover/message:opacity-100 has-focus-visible:opacity-100',
+        'absolute -top-[10px] right-[16px] gap-0.5 rounded-panel bg-card p-0.5 opacity-0 shadow-hairline [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-hover/message:opacity-100 has-focus-visible:opacity-100',
         className,
       )}
       {...props}
@@ -220,9 +222,10 @@ export type MessageActionProps = ComponentProps<typeof ToolbarButton> & {
 export function MessageAction({ label, className, ...props }: MessageActionProps) {
   return (
     <ToolbarButton
+      size="icon-sm"
       aria-label={label}
       title={label}
-      className={cx('grid cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent px-[6px] py-[3px] text-footnote text-muted-foreground hover:bg-secondary', className)}
+      className={cx('h-6 w-auto rounded-md px-1.5 text-footnote', className)}
       {...props}
     />
   );

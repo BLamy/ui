@@ -89,7 +89,7 @@ export function FullPlayer({ player: p, phone, height, onClose, finalFocus }: {
       <Transport p={p} />
       <div className="flex items-center gap-2 text-white/55">
         <Icon name="speaker-low-fill" size={16} />
-        <Slider aria-label="Volume" tone="onDark" size="sm" value={p.volume} onValueChange={p.setVolume} className="flex-1" />
+        <Slider aria-label="Volume" variant="on-dark" size="sm" value={p.volume} onValueChange={p.setVolume} className="flex-1" />
         <Icon name="speaker-high-fill" size={18} />
       </div>
       <div className="flex items-center justify-around px-6">
@@ -161,7 +161,7 @@ function Scrubber({ p }: { p: Player }) {
   const dur = p.current.track.dur;
   return (
     <div className="flex flex-col gap-1.5">
-      <Slider aria-label="Playback position" tone="onDark" size="sm" min={0} max={dur} step={1}
+      <Slider aria-label="Playback position" variant="on-dark" size="sm" min={0} max={dur} step={1}
         value={Math.floor(p.position)} onValueChange={(v) => p.seek(v)} />
       <div className="flex justify-between text-caption font-medium tabular-nums text-white/55">
         <span>{fmt(p.position)}</span>

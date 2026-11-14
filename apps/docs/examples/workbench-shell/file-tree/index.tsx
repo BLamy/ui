@@ -1,4 +1,4 @@
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 import { SurfaceFiles } from '@/components/blocks/t3-clone/components/workbench/surfaces'
 
 const PATHS = [
@@ -30,12 +30,11 @@ function Files() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function FilesExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <Files />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

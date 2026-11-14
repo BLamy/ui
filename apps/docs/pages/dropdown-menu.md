@@ -216,12 +216,32 @@ Parts carry UI SDK's slots: `menu-trigger` (a submenu's row too), `menu-context-
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
 
+### `dropdownMenuContentVariants`
+
+Defined in `@/components/ui/dropdown-menu`. Base classes:
+
+```text
+[popoverSurface, popoverMotion, popoverSheet, 'bl-scroll box-border overflow-y-auto py-1']
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `min-w-[230px]` |
+| `sm` | `min-w-[190px] px-1` |
+
 ### `dropdownMenuItemVariants`
 
 Defined in `@/components/ui/dropdown-menu`. Base classes:
 
 ```text
-[ 'bl-btn relative box-border flex min-h-11 cursor-pointer items-center gap-3 py-[11px] pr-4 pl-4 text-body leading-[22px] text-foreground outline-none', 'data-highlighted:bg-accent data-highlighted:not-data-disabled:active:bg-secondary-strong data-open:bg-accent data-disabled:cursor-default data-disabled:opacity-40 data-destructive:text-destructive data-pending:cursor-progress', // The shortcut UI SDK draws from `shortcut`: before the trailing icon, in the look of DropdownMenuShortcut. '*:data-[slot=menu-shortcut]:shrink-0 *:data-[slot=menu-shortcut]:text-subhead *:data-[slot=menu-shortcut]:tracking-[.08em] *:data-[slot=menu-shortcut]:text-muted-foreground', // Hairline between rows — not under the last row, nor above a group band. 'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border last:after:hidden [&:has(+[data-slot=menu-separator])]:after:hidden', ]
+[ 'bl-btn relative box-border flex cursor-pointer items-center text-foreground outline-none', 'data-highlighted:bg-accent data-highlighted:not-data-disabled:active:bg-secondary-strong data-open:bg-accent data-disabled:cursor-default data-disabled:opacity-40 data-destructive:text-destructive data-pending:cursor-progress', ]
 ```
 
-No variants.
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `[ 'min-h-11 gap-3 py-[11px] pr-4 pl-4 text-body leading-[22px]', // Hairline between rows — not under the last row, nor above a group band.…` |
+| `sm` | `min-h-8 gap-2 rounded-lg px-2.5 py-1.5 text-footnote leading-[18px]` |

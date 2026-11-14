@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DialogClose } from '@/components/ui/dialog';
-import { Listbox, ListboxItem } from '@/components/ui/list-box';
+import { Listbox, ListboxItem } from '@/components/ui/listbox';
 import { SearchInput } from '@/components/ui/search-input';
 import { FileBadgeIcon } from '@/lib/file-icons';
 import type { Note } from './data';

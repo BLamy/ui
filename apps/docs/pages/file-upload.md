@@ -22,7 +22,9 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { FileUpload, FileUploadDropzone, FileUploadList } from '@brett_lamy/ui'
+import {
+  FileUpload, FileUploadDropzone, FileUploadList,
+} from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
@@ -295,15 +297,15 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/file-upload`. Base classes:
 
 ```text
-group/zone relative box-border flex border-2 border-dashed border-border text-center outline-none transition-[border-color,background-color,box-shadow,opacity] duration-spring-snappy motion-reduce:transition-none data-dragging:border-primary data-dragging:bg-primary/10 data-invalid:border-destructive data-disabled:opacity-40
+[ 'group/zone relative box-border flex border-2 border-dashed border-border text-center outline-none transition-[border-color,background-color,box-shadow,opacity] duration-spring-snappy motion-reduce:transition-none', 'data-dragging:border-primary data-dragging:bg-primary/10 in-data-invalid:border-destructive has-[[data-invalid]]:border-destructive data-disabled:opacity-40', ]
 ```
 
-**`size`** — default `default`
+**`orientation`** — default `vertical`
 
 | Value | Adds |
 | --- | --- |
-| `default` (default) | `min-h-40 flex-col items-center justify-center gap-2 rounded-card p-6` |
-| `compact` | `flex-row items-center justify-start gap-3 rounded-panel p-3 text-left` |
+| `vertical` (default) | `min-h-40 flex-col items-center justify-center gap-2 rounded-card p-6` |
+| `horizontal` | `flex-row items-center justify-start gap-3 rounded-panel p-3 text-left` |
 
 ### `fileUploadItemVariants`
 

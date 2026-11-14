@@ -1,12 +1,14 @@
 import { bindDrag, createListbox, definePrimitive } from '@ui-sdk/core';
+import { bindRowInset } from '@/lib/wave-rail';
 
 /* ══ The index-bar primitive: a jump rail of stops along one edge ══
    The rail is a listbox that keeps focus and points `aria-activedescendant` at the highlighted stop (UI SDK's
    `createListbox` with virtual focus): the arrows, PageUp and PageDown move the highlight, Home and End go to either
    end, and every move jumps there. A press on the rail jumps to the stop under it and a drag scrubs through the
    stops (`bindDrag`); a mouse resting on the rail only peeks at a stop. Where the pointer is along the rail, in
-   stops, is state too, for the wave's swell. A right-side rail also publishes how far list rows run under it as
-   `--bl-index-bar-inset` on the element it overlays. No React: `components/index-bar.tsx` renders it. */
+   stops, is state too, for the wave's swell. A rail on the end side also publishes how far list rows run under it as
+   `--bl-index-bar-inset` on the element it overlays (`bindRowInset`, shared with TraceTimeline's rail in
+   lib/wave-rail). No React: `components/index-bar.tsx` renders it. */
 
 /** Why the rail jumped: a press or a scrub across the stops, a key, a stop clicked (assistive tech, the panel),
  *  or code. */
@@ -15,10 +17,8 @@ export type IndexBarJumpReason = 'drag' | 'list-navigation' | 'item-press' | 'im
 export type IndexBarOptions = {
   /** How many stops the rail has. */
   count: number;
-  /** Which edge it sits on. Only a right rail publishes `--bl-index-bar-inset`. */
-  side?: 'left' | 'right';
-  /** The rail's width in px, the inset to publish when there are no rows to measure. */
-  width?: number;
+  /** Which edge it sits on. Only an `end` rail publishes `--bl-index-bar-inset`. */
+  side?: 'start' | 'end';
   /** Publish `--bl-index-bar-inset` on the parent. */
   insetContent?: boolean;
   /** Called with the stop's index each time the rail lands on another one. */
@@ -51,7 +51,7 @@ const PANEL = '[data-slot="index-bar-panel"]';
 
 export const indexBar = definePrimitive({
   name: 'index-bar',
-  options: { count: 'number', side: 'string', width: 'number', insetContent: 'boolean', onJump: 'callback' },
+  options: { count: 'number', side: 'string', insetContent: 'boolean', onJump: 'callback' },
   state: (_options: IndexBarOptions): IndexBarState => ({
     highlighted: null, scrubbing: false, scrub: -1, peek: -1, pointer: null, inside: false, focused: false, geometry: null,
   }),
@@ -63,7 +63,7 @@ export const indexBar = definePrimitive({
     let stopDrag: (() => void) | undefined;
     let resync: (() => void) | undefined;
     context.onDestroy(() => stopDrag?.());
-    // A new side, width or insetContent re-publishes the inset.
+    // A new side or insetContent re-publishes the inset.
     context.onOptions(() => { resync?.(); });
 
     const measure = () => {
@@ -108,37 +108,18 @@ export const indexBar = definePrimitive({
       internal: {
         bindRail(el: HTMLElement) {
           rail = el;
-          const host = el.parentElement;
-          let raf = 0;
-          let observers: (() => void) | undefined;
-          // How far the rows run under the rail: a row's right edge minus the rail's left edge (the rail's width for an
-          // edge-to-edge list, less, often nothing, for an inset-grouped one). Rows' own padding doesn't move their
-          // edge, so publishing it never feeds back.
-          const sync = () => {
-            raf = 0;
-            if (!host) return;
-            const { insetContent = true, side = 'right', width = 22 } = context.options();
-            if (!insetContent || side !== 'right') { host.style.removeProperty('--bl-index-bar-inset'); return; }
-            const row = host.querySelector<HTMLElement>('[data-slot="list-row-content"]');
-            const overlap = row ? Math.max(0, row.getBoundingClientRect().right - el.getBoundingClientRect().left) : width;
-            const v = `${Math.round(overlap)}px`;
-            if (host.style.getPropertyValue('--bl-index-bar-inset') !== v) host.style.setProperty('--bl-index-bar-inset', v);
-          };
-          const later = () => { if (!raf) raf = requestAnimationFrame(sync); };
-          if (host) {
-            sync();
-            const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(later) : null;
-            ro?.observe(host);
-            const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(later) : null;
-            mo?.observe(host, { childList: true, subtree: true });
-            observers = () => { ro?.disconnect(); mo?.disconnect(); };
-          }
-          resync = later;
+          // With no rows to measure, the inset is the rail's own width.
+          const inset = bindRowInset(el, {
+            enabled: () => {
+              const { insetContent = true, side = 'end' } = context.options();
+              return insetContent && side === 'end';
+            },
+            fallback: () => el.offsetWidth,
+          });
+          resync = inset.sync;
           return () => {
             if (rail === el) { rail = null; resync = undefined; }
-            cancelAnimationFrame(raf);
-            observers?.();
-            host?.style.removeProperty('--bl-index-bar-inset');
+            inset.cleanup();
           };
         },
         pointerdown(event: PointerEvent, el: HTMLElement) {

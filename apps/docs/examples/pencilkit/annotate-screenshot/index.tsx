@@ -1,14 +1,21 @@
 import { useState } from 'react'
-import { type PencilTool } from '@/components/ui/pencilkit/constants'
+import { type PencilInk, type PencilTool } from '@/components/ui/pencilkit/constants'
 import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas'
-import { InkPicker, PencilActions, PencilToolbar, PencilToolbarDivider, ToolPicker } from '@/components/ui/pencilkit/pencil-toolbar'
+import {
+  PencilActions, PencilInkPicker, PencilToolbar, PencilToolbarPinned, PencilToolPicker,
+} from '@/components/ui/pencilkit/pencil-toolbar'
+import { ToolbarSeparator } from '@/components/ui/toolbar'
 import { usePencilHistory } from '@/components/ui/pencilkit/use-pencil-history'
 
-const highlighters = ['#FFD60A', '#FF375F', '#30D158']
+const highlighters: PencilInk[] = [
+  { value: '#FFD60A', label: 'Yellow' },
+  { value: '#FF375F', label: 'Pink' },
+  { value: '#30D158', label: 'Green' },
+]
 
 export default function AnnotateScreenshot() {
   const [tool, setTool] = useState<PencilTool>('marker')
-  const [ink, setInk] = useState(0)
+  const [ink, setInk] = useState(highlighters[0].value)
   const history = usePencilHistory()
   return (
     <div
@@ -73,26 +80,30 @@ export default function AnnotateScreenshot() {
       </div>
       <PencilCanvas
         tool={tool}
-        ink={highlighters[ink]}
+        ink={ink}
         strokes={history.strokes}
         onStrokesChange={history.onStrokesChange}
       >
-        <PencilToolbar>
-          <ToolPicker
+        {/* The toolbar sits in the flow: place it over the canvas yourself. */}
+        <PencilToolbar className="absolute inset-x-2.5 bottom-3.5 mx-auto">
+          <PencilToolPicker
             value={tool}
             onValueChange={setTool}
             tools={['marker', 'pen', 'eraser']}
           />
-          <PencilToolbarDivider />
-          <InkPicker value={ink} onValueChange={setInk} inks={highlighters} />
-          <PencilToolbarDivider />
-          <PencilActions
-            onUndo={history.undo}
-            onRedo={history.redo}
-            onClear={history.clear}
-            canUndo={history.canUndo}
-            canRedo={history.canRedo}
-          />
+          <ToolbarSeparator />
+          <PencilInkPicker value={ink} onValueChange={setInk} inks={highlighters} />
+          <PencilToolbarPinned>
+            <ToolbarSeparator />
+            <PencilActions
+              onUndo={history.undo}
+              onRedo={history.redo}
+              onClear={history.clear}
+              canUndo={history.canUndo}
+              canRedo={history.canRedo}
+              canClear={history.canClear}
+            />
+          </PencilToolbarPinned>
         </PencilToolbar>
       </PencilCanvas>
     </div>

@@ -1,19 +1,24 @@
 'use client';
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Toolbar, ToolbarButton } from '@ui-sdk/react/toolbar';
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
+import { Toolbar, ToolbarButton, type ToolbarProps } from '@/components/ui/toolbar';
 import { Icon } from '@/lib/icon';
 import { usePlaybackState, type Playback } from '@/lib/playback';
 import { cn } from '@/lib/utils';
 import { clipDuration, clipEnd, formatTimecode, lookCss, type Timeline, type TimelineClip, type TimelineFormat, type TimelineTrack } from '@/lib/video-timeline-model';
-import { buttonVariants } from '@/components/ui/button';
 
 /* ══ VideoPreview — a timeline played live in the page ══
    Nothing is rendered ahead of time: every clip near the playhead is a <video>, <audio> or <img> of its media, laid out
-   in its frame, with its look as a CSS filter and its fades as opacity and volume, bottom track first. The playback
-   clock (lib/playback) owns the time and the elements follow it: they play along while it runs, are re-synced when
+   in its frame, with its look as a CSS filter and its fades as opacity and volume, bottom track first. The `playback`
+   (a shared clock from `usePlaybackClock`, lib/playback) owns the time and the elements follow it: they play along while it runs, are re-synced when
    they drift, seek as it scrubs, and the clips about to start are loaded ahead so a cut doesn't stall. A clip whose
    media isn't a file (a title, a shape) is drawn by `renderClip`. The picture keeps the format's aspect, as large as
-   its box allows. A preview approximates the render (lib/video-render): volume can't go past 100 %, and looks are CSS. ══ */
+   its box allows. A preview approximates the render (lib/video-render): volume can't go past 100 %, and looks are CSS.
+
+   The same playback drives a VideoTimeline, the transport (`VideoPreviewControls`) and the time (`VideoPreviewTimecode`):
+
+     const playback = usePlaybackClock()
+     <VideoPreview timeline={timeline} media={media} playback={playback} format={format} aria-label="Program" />
+     <VideoPreviewControls playback={playback} fps={30} /> ══ */
 
 export interface PreviewMedia {
   /** An object URL or any playable URL. */
@@ -21,11 +26,12 @@ export interface PreviewMedia {
   kind: 'video' | 'audio' | 'image';
 }
 
-export interface VideoPreviewProps {
+export interface VideoPreviewProps extends Omit<ComponentProps<'div'>, 'children'> {
   timeline: Timeline;
   /** The media clips play, by the ids clips use. */
   media: Record<string, PreviewMedia | undefined>;
-  clock: Playback;
+  /** The shared playback clock (`usePlaybackClock`) the picture follows. */
+  playback: Playback;
   /** The output's size (only its aspect matters here). */
   format: Pick<TimelineFormat, 'width' | 'height'>;
   /** Draws a clip itself (a title); return undefined for the default. */
@@ -34,8 +40,8 @@ export interface VideoPreviewProps {
   preload?: number;
   /** Over the picture: guides, a play button, … */
   children?: ReactNode;
-  className?: string;
-  style?: CSSProperties;
+  /** Names the preview (default "Preview"), to tell two apart (a source and a program monitor). */
+  'aria-label'?: string;
 }
 
 interface Layer {
@@ -73,7 +79,9 @@ function layersOf(timeline: Timeline): Layer[] {
 const windowAt = (layers: Layer[], t: number, ahead: number) =>
   layers.filter((l) => l.clip.start - ahead <= t && t < clipEnd(l.clip) + 0.25).map((l) => l.clip.id).join('|');
 
-export function VideoPreview({ timeline, media, clock, format, renderClip, preload = 2, children, className, style }: VideoPreviewProps) {
+export function VideoPreview({
+  timeline, media, playback: clock, format, renderClip, preload = 2, children, 'aria-label': label = 'Preview', className, ...rest
+}: VideoPreviewProps) {
   const layers = layersOf(timeline);
   const layersRef = useRef(layers);
   layersRef.current = layers;
@@ -125,8 +133,8 @@ export function VideoPreview({ timeline, media, clock, format, renderClip, prelo
     else els.current.delete(id);
   };
   return (
-    <div data-slot="video-preview" role="group" aria-label="Preview"
-      className={cn('relative grid size-full place-items-center overflow-hidden [container-type:size]', className)} style={style}>
+    <div data-slot="video-preview" role="group" aria-label={label} {...rest}
+      className={cn('relative grid size-full place-items-center overflow-hidden [container-type:size]', className)}>
       <div className="relative aspect-(--ar) w-[min(100cqw,calc(100cqh*var(--ar)))] overflow-hidden bg-black"
         style={{ '--ar': `${format.width} / ${format.height}` } as CSSProperties}>
         {layers.filter((l) => mounted.has(l.clip.id)).map((l) => {
@@ -162,61 +170,58 @@ export function VideoPreview({ timeline, media, clock, format, renderClip, prelo
 
 /* ── Transport ── */
 
-export interface PlaybackTimecodeProps {
-  clock: Playback;
+export interface VideoPreviewTimecodeProps extends Omit<ComponentProps<'span'>, 'children'> {
+  playback: Playback;
   /** Frames per second: show `HH:MM:SS:FF` instead of `M:SS.t`. */
   fps?: number;
   /** Also show the duration. */
   showDuration?: boolean;
-  className?: string;
 }
 
-/** The clock's time (and length), in tabular figures. */
-export function PlaybackTimecode({ clock, fps, showDuration, className }: PlaybackTimecodeProps) {
+/** The playback's time (and length), in tabular figures. Not a live region: the slider or the controls announce. */
+export function VideoPreviewTimecode({ playback: clock, fps, showDuration, className, ...rest }: VideoPreviewTimecodeProps) {
   const time = usePlaybackState(clock, (s) => (fps ? Math.round(s.time * fps) / fps : Math.floor(s.time * 10) / 10));
   const duration = usePlaybackState(clock, (s) => s.duration);
   return (
-    <span data-slot="playback-timecode" className={cn('font-mono text-footnote text-foreground tabular-nums', className)}>
+    <span data-slot="video-preview-timecode" {...rest} className={cn('font-mono text-footnote text-foreground tabular-nums', className)}>
       {formatTimecode(time, fps)}
       {showDuration ? <span className="text-foreground/60"> / {formatTimecode(duration, fps)}</span> : null}
     </span>
   );
 }
 
-export interface PlaybackControlsProps {
-  clock: Playback;
+export interface VideoPreviewControlsProps extends Omit<ToolbarProps, 'children'> {
+  playback: Playback;
   /** Frames per second, for the frame steps and the timecode. Default 30. */
   fps?: number;
-  /** Show the timecode between the buttons. Default true. */
+  /** Show the timecode after the buttons. Default true. */
   timecode?: boolean;
-  className?: string;
 }
 
-/** Start, frame back, play/pause, frame forward, end, and the time. A UI SDK Toolbar: one tab stop, arrow keys
-    between the buttons. */
-export function PlaybackControls({ clock, fps = 30, timecode = true, className }: PlaybackControlsProps) {
+/** Start, frame back, play/pause, frame forward, end, and the time: the kit's Toolbar (default name "Playback"), so
+    one tab stop and arrow keys between the buttons. */
+export function VideoPreviewControls({ playback: clock, fps = 30, timecode = true, size = 'sm', ...rest }: VideoPreviewControlsProps) {
   const playing = usePlaybackState(clock, (s) => s.playing);
   const atEnd = usePlaybackState(clock, (s) => s.duration > 0 && s.time >= s.duration);
   const step = (n: number) => { clock.pause(); clock.step(n / fps); };
-  const small = buttonVariants({ variant: 'quiet', size: 'icon-sm' });
   return (
-    <Toolbar aria-label="Playback" className={cn('flex items-center gap-1', className)}>
-      <ToolbarButton className={small} aria-label="Go to start" onClick={() => { clock.pause(); clock.seek(0); }}>
+    <Toolbar aria-label="Playback" size={size} {...rest}>
+      <ToolbarButton size="icon-sm" aria-label="Go to start" onClick={() => { clock.pause(); clock.seek(0); }}>
         <Icon name="backward" size={16} />
       </ToolbarButton>
-      <ToolbarButton className={small} aria-label="Previous frame" onClick={() => step(-1)}>
+      <ToolbarButton size="icon-sm" aria-label="Previous frame" onClick={() => step(-1)}>
         <Icon name="chevL" size={16} />
       </ToolbarButton>
-      <ToolbarButton className={buttonVariants({ variant: 'ghost', size: 'icon' })} aria-label={playing ? 'Pause' : atEnd ? 'Replay' : 'Play'} onClick={clock.toggle}>
+      <ToolbarButton variant="ghost" size="icon" aria-label={playing ? 'Pause' : atEnd ? 'Replay' : 'Play'} onClick={clock.toggle}>
         <Icon name={playing ? 'pause' : 'play'} size={20} />
       </ToolbarButton>
-      <ToolbarButton className={small} aria-label="Next frame" onClick={() => step(1)}>
+      <ToolbarButton size="icon-sm" aria-label="Next frame" onClick={() => step(1)}>
         <Icon name="chev" size={16} />
       </ToolbarButton>
-      <ToolbarButton className={small} aria-label="Go to end" onClick={() => { clock.pause(); clock.seek(clock.getState().duration); }}>
+      <ToolbarButton size="icon-sm" aria-label="Go to end" onClick={() => { clock.pause(); clock.seek(clock.getState().duration); }}>
         <Icon name="forward" size={16} />
       </ToolbarButton>
-      {timecode ? <PlaybackTimecode clock={clock} fps={fps} showDuration className="ms-2" /> : null}
+      {timecode ? <VideoPreviewTimecode playback={clock} fps={fps} showDuration className="ms-2" /> : null}
     </Toolbar>
   );
 }

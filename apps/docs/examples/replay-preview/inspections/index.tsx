@@ -1,4 +1,5 @@
-import { ReplayPreview, replayDemoEvents, type ReplayInspection } from '@/components/ui/replay-preview'
+import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo'
+import { ReplayPreview, type ReplayInspection } from '@/components/ui/replay-preview'
 
 // What a debugger looked at, and when. Press play: at 0:06.8 DevTools opens on the
 // promo request, at 0:07.0 on the deprecation warning, at 0:07.6 on the checkout

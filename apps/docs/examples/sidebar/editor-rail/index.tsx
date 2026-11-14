@@ -1,103 +1,66 @@
-import { useState, type ReactNode } from 'react'
-import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { useState } from 'react'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarItem,
+  SidebarProvider,
+  SidebarSearch,
+  SidebarSection,
+  SidebarTrigger,
+  SidebarWorkspace,
+} from '@/components/ui/sidebar'
+import { ThemeScope } from '@/lib/theme'
 
-function EditorRail() {
+const panels = [
+  { icon: 'doc', title: 'Explorer' },
+  { icon: 'branch', title: 'Source control', trailing: 3 },
+  { icon: 'play', title: 'Run and debug' },
+  { icon: 'cube', title: 'Extensions' },
+]
+
+// `variant="rail"` with `defaultOpen={false}`: closed, the same rows are cut to
+// their icons (each keeps its name, and a tooltip shows it on hover), section
+// labels turn into hairlines, and the trigger (or ⌘B / Ctrl+B) expands it.
+// In a `workbench` theme scope it wears the Workbench palette.
+export default function CollapsibleRail() {
   const [panel, setPanel] = useState('Explorer')
-  const item = (icon: string, label: string, badge?: number) => (
-    <Sidebar.Item
-      icon={icon}
-      label={label}
-      badge={badge}
-      active={panel === label}
-      onClick={() => setPanel(label)}
-    />
-  )
   return (
-    <div style={{ height: 340 }}>
-      {/* rail: closed collapses to icons (with tooltips) instead of sliding
-          away */}
-      <SidebarProvider defaultOpen={false} breakpoint={420}>
-        <Sidebar variant="rail" width={210} railWidth={52}>
-          <Sidebar.Header>
-            <Sidebar.Workspace name="bl-ui" detail="main · 3 changes" />
-          </Sidebar.Header>
-          <Sidebar.Content>
-            <Sidebar.Search />
-            <Sidebar.Section title="Workspace">
-              {item('doc', 'Explorer')}
-              {item('code', 'Source control', 3)}
-              {item('bolt', 'Run and debug')}
-              {item('box', 'Extensions')}
-            </Sidebar.Section>
-          </Sidebar.Content>
-        </Sidebar>
-        <SidebarInset>
-          <header
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '9px 12px',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <SidebarTrigger />
-            <strong style={{ fontSize: 13.5, color: 'var(--foreground)' }}>
-              {panel}
-            </strong>
-          </header>
-          <pre
-            style={{
-              margin: 0,
-              padding: 16,
-              fontSize: 12.5,
-              lineHeight: 1.6,
-              color: 'var(--muted-foreground)',
-            }}
-          >
-            {'export function App() {\n  return <Sidebar variant="rail" />\n}'}
-          </pre>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
-  )
-}
-
-function CollapsibleRail() {
-  return (
-    <Window>
-      <EditorRail />
-    </Window>
-  )
-}
-
-/**
- * A rounded window with a hairline border; `width` caps it (phone-sized
- * examples), centered.
- */
-function Window({ width, children }: { width?: number; children?: ReactNode }) {
-  return (
-    <div
-      style={{
-        maxWidth: width,
-        margin: '0 auto',
-        borderRadius: 14,
-        overflow: 'hidden',
-        boxShadow: '0 0 0 1px var(--border)',
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
-export default function CollapsibleRailExample() {
-  return (
-    <WorkbenchTheme style={{ padding: 18 }}>
-      <CollapsibleRail />
-    </WorkbenchTheme>
+    <ThemeScope scope="workbench" className="p-4">
+      <div className="mx-auto h-[360px] overflow-hidden rounded-card shadow-hairline">
+        <SidebarProvider defaultOpen={false} breakpoint={420}>
+          <Sidebar variant="rail" width={220} railWidth={52}>
+            <SidebarHeader>
+              <SidebarWorkspace title="bl-ui" description="main · 3 changes" />
+            </SidebarHeader>
+            <SidebarContent aria-label="Editor">
+              <SidebarSearch />
+              <SidebarSection title="Workspace">
+                {panels.map((p) => (
+                  <SidebarItem
+                    key={p.title}
+                    icon={p.icon}
+                    title={p.title}
+                    trailing={p.trailing}
+                    current={panel === p.title}
+                    onClick={() => setPanel(p.title)}
+                  />
+                ))}
+              </SidebarSection>
+            </SidebarContent>
+          </Sidebar>
+          <SidebarInset>
+            <header className="flex items-center gap-2 border-b border-border px-2 py-1.5">
+              <SidebarTrigger shortcut="mod+b" />
+              <strong className="text-footnote text-foreground">{panel}</strong>
+            </header>
+            <pre className="m-0 p-4 font-mono text-caption leading-relaxed text-muted-foreground">
+              {'export function App() {\n  return <Sidebar variant="rail" />\n}'}
+            </pre>
+          </SidebarInset>
+        </SidebarProvider>
+      </div>
+    </ThemeScope>
   )
 }

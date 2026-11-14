@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { RequestLink, RequestTable, createRequestTableController, type RequestColumn } from '@/components/ui/request-table';
+import { createDataTableController, type DataTableColumn } from '@/components/ui/data-table';
+import { RequestLink, RequestTable } from '@/components/ui/request-table';
 import type { RowId } from '@/lib/log-list-model';
 import type { RequestRow } from '@/lib/request-table-model';
 
@@ -11,7 +12,7 @@ globalThis.__UI_SDK_STRICT__ = true;
 // happy-dom lays nothing out. The table is `tableWidth` wide (regular, unless a test narrows it), and the ResizeObservers
 // watching it hear about a new width from `resizeTable`.
 let tableWidth = 1024;
-const isTable = (el: Element) => el.getAttribute('data-slot') === 'request-table';
+const isTable = (el: Element) => el.getAttribute('data-slot') === 'data-table';
 Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get(this: HTMLElement) { return isTable(this) ? tableWidth : 0; } });
 const watching = new Map<ResizeObserver, { callback: ResizeObserverCallback; targets: Set<Element> }>();
 class TestResizeObserver {
@@ -39,10 +40,10 @@ const makeRows = (count: number): RequestRow[] => Array.from({ length: count }, 
 }));
 
 const grid = () => screen.getByRole('grid');
-const row = (index: number) => document.querySelector<HTMLElement>(`[data-slot=request-table-row][data-index="${index}"]`) as HTMLElement;
-const allRows = () => [...document.querySelectorAll<HTMLElement>('[data-slot=request-table-row]')];
+const row = (index: number) => document.querySelector<HTMLElement>(`[data-slot=data-table-row][data-index="${index}"]`) as HTMLElement;
+const allRows = () => [...document.querySelectorAll<HTMLElement>('[data-slot=data-table-row]')];
 const column = (id: string) => document.querySelector<HTMLElement>(`[role=columnheader][data-column="${id}"]`) as HTMLElement;
-/** The playhead's line is placed by the grid's `--request-playhead`. */
+/** The playhead's line is placed by the grid's `--data-table-playhead`. */
 const line = () => grid();
 const firstName = () => row(0).querySelector('[data-slot=request-table-name]')?.textContent;
 
@@ -50,7 +51,7 @@ describe('RequestTable', () => {
   it('is a grid with a slot, taking className and style, and mounts only a window of the rows', () => {
     render(<RequestTable rows={makeRows(10_000)} aria-label="Network" className="my-table" style={{ height: 300 }} data-testid="root" />);
     const root = screen.getByTestId('root');
-    expect(root.getAttribute('data-slot')).toBe('request-table');
+    expect(root.getAttribute('data-slot')).toBe('data-table');
     expect(root.classList.contains('my-table')).toBe(true);
     expect(root.style.height).toBe('300px');
     expect(root.getAttribute('data-rows')).toBe('10000');
@@ -75,7 +76,7 @@ describe('RequestTable', () => {
   });
 
   it('shows the columns it is given, a built-in adjusted or one of your own', () => {
-    const own: RequestColumn<RequestRow & { from: string }> = { id: 'from', title: 'From', width: 90, render: (r) => `from ${r.from}` };
+    const own: DataTableColumn<RequestRow & { from: string }> = { id: 'from', title: 'From', width: 90, render: (r) => `from ${r.from}` };
     render(<RequestTable rows={[{ id: 1, url: 'cart:add', from: 'renderer', status: 'ok' }]} columns={[{ id: 'url', title: 'Channel' }, own, 'status']} />);
     expect(screen.getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Channel', 'From', 'Status']);
     expect(row(0).querySelector('[data-column=url]')?.textContent).toBe('cart:add');
@@ -124,28 +125,28 @@ describe('the playhead', () => {
   it('draws a line at its share of the range and dims rows sent after it', () => {
     render(<RequestTable rows={makeRows(11)} timeRange={[0, 1000]} playhead={250} />);
     expect(grid().hasAttribute('data-playhead')).toBe(true);
-    expect(line().style.getPropertyValue('--request-playhead')).toBe('0.25');
+    expect(line().style.getPropertyValue('--data-table-playhead')).toBe('0.25');
     expect(row(2).hasAttribute('data-future')).toBe(false);
     expect(row(3).hasAttribute('data-future')).toBe(true);
   });
 
   it('moves without rendering a single row', () => {
     const renders = vi.fn();
-    const columns: (RequestColumn | 'waterfall')[] = [{ id: 'name', title: 'Name', render: (r) => { renders(); return r.url; } }, 'waterfall'];
+    const columns: (DataTableColumn | 'waterfall')[] = [{ id: 'name', title: 'Name', render: (r) => { renders(); return r.url; } }, 'waterfall'];
     const rows = makeRows(100);
     const { rerender } = render(<RequestTable rows={rows} columns={columns} timeRange={[0, 10_000]} playhead={100} />);
     renders.mockClear();
     for (const playhead of [500, 900, 2000, 5000]) rerender(<RequestTable rows={rows} columns={columns} timeRange={[0, 10_000]} playhead={playhead} onAction={() => {}} />);
     expect(renders).not.toHaveBeenCalled();
     expect(row(5).hasAttribute('data-future')).toBe(false);
-    expect(line().style.getPropertyValue('--request-playhead')).toBe('0.5');
+    expect(line().style.getPropertyValue('--data-table-playhead')).toBe('0.5');
   });
 
   it('moves with no React at all through the controller, and hides off the range', () => {
-    const controller = createRequestTableController();
+    const controller = createDataTableController();
     render(<RequestTable controller={controller} rows={makeRows(11)} timeRange={[0, 1000]} />);
     act(() => { controller.setPlayhead(500); });
-    expect(line().style.getPropertyValue('--request-playhead')).toBe('0.5');
+    expect(line().style.getPropertyValue('--data-table-playhead')).toBe('0.5');
     expect(row(6).hasAttribute('data-future')).toBe(true);
     act(() => { controller.setPlayhead(5000); });
     expect(grid().hasAttribute('data-playhead')).toBe(false);
@@ -206,7 +207,7 @@ describe('sorting', () => {
 
   it('a column can sort by a value of its own, or not at all', () => {
     const rows = makeRows(3);
-    const columns: RequestColumn[] = [
+    const columns: DataTableColumn[] = [
       { id: 'mine', title: 'Mine', render: (r) => r.method, sortValue: (r) => -(r.time ?? 0) },
       { id: 'plain', title: 'Plain', render: (r) => r.method },
     ];
@@ -342,7 +343,7 @@ describe('keyboard', () => {
 });
 
 describe('its own size class', () => {
-  const root = () => document.querySelector('[data-slot=request-table]') as HTMLElement;
+  const root = () => document.querySelector('[data-slot=data-table]') as HTMLElement;
   const headers = () => [...document.querySelectorAll('[role=columnheader][data-column]')].map((el) => el.getAttribute('data-column'));
 
   it('follows the table\'s width, not the window\'s: columns go below regular, rows stack when compact', () => {
@@ -359,11 +360,11 @@ describe('its own size class', () => {
     expect(root().getAttribute('data-layout')).toBe('stacked');
     expect(headers()).toEqual([]);
     expect(screen.getByRole('button', { name: 'Sort by' })).toBeTruthy();
-    expect(grid().style.getPropertyValue('--request-row')).toBe('46px');
+    expect(grid().style.getPropertyValue('--data-table-row')).toBe('46px');
     resizeTable(900);
     expect(root().getAttribute('data-layout')).toBe('table');
     expect(headers()).toContain('type');
-    expect(grid().style.getPropertyValue('--request-row')).toBe('26px');
+    expect(grid().style.getPropertyValue('--data-table-row')).toBe('26px');
   });
 
   it('takes breakpoints of its own, and a fixed layout ignores them', () => {
@@ -420,7 +421,7 @@ describe('rows given as they come', () => {
 describe('stacked rows', () => {
   it('has two lines and a sort menu instead of column headers', () => {
     render(<RequestTable rows={makeRows(5)} layout="stacked" />);
-    expect(document.querySelector('[data-slot=request-table]')?.getAttribute('data-layout')).toBe('stacked');
+    expect(document.querySelector('[data-slot=data-table]')?.getAttribute('data-layout')).toBe('stacked');
     expect(column('name')).toBeNull();
     expect(screen.getByRole('button', { name: 'Sort by' })).toBeTruthy();
     expect(screen.getByText('5 requests')).toBeTruthy();

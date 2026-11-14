@@ -69,9 +69,9 @@ function TerminalPane({ store, id }: { store: VSCodeStore; id: string }) {
           </div>
           <OpenCode
             host={openCode.host}
-            theme={appearance ?? 'dark'}
-            className="min-h-0 flex-1 rounded-none border-0"
-            style={{ height: '100%', minHeight: 0 }}
+            appearance={appearance}
+            variant="plain"
+            className="h-full min-h-0 flex-1"
             onStateChange={(state) => { if (state === 'stopped') openCode.close(); }}
           />
         </div>

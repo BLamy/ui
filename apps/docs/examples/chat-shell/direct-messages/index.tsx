@@ -68,15 +68,15 @@ function Conversations({
           Direct messages
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent aria-label="Direct messages">
         <SidebarSection title="Recent">
           {['maya', 'jonas', 'priya'].map((id) => (
             <SidebarItem
               key={id}
               icon={<Avatar name={`${people[id].f} ${people[id].l}`} size={18} />}
-              label={people[id].f}
-              active={who === id}
-              badge={id === 'jonas' ? 1 : undefined}
+              title={people[id].f}
+              current={who === id}
+              trailing={id === 'jonas' ? 1 : undefined}
               onClick={() => {
                 onPick(id)
                 shell.setNavOpen(false)

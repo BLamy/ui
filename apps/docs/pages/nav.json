@@ -46,13 +46,12 @@
         { "id": "segmented", "title": "Segmented" },
         { "id": "select", "title": "Select" },
         { "id": "combobox", "title": "Combobox" },
-        { "id": "date-field", "title": "DateField" },
+        { "id": "date-input", "title": "DateInput" },
         { "id": "date-picker", "title": "DatePicker" },
         { "id": "calendar", "title": "Calendar" },
-        { "id": "color-field", "title": "ColorField" },
         { "id": "color-picker", "title": "ColorPicker" },
         { "id": "font-picker", "title": "FontPicker" },
-        { "id": "list-box", "title": "Listbox" },
+        { "id": "listbox", "title": "Listbox" },
         { "id": "tree", "title": "Tree" },
         { "id": "form", "title": "Forms" },
         { "id": "natural-time-input", "title": "NaturalTimeInput" },
@@ -102,6 +101,7 @@
         { "id": "separator", "title": "Separator" },
         { "id": "kbd", "title": "Kbd" },
         { "id": "qr-code", "title": "QRCode" },
+        { "id": "data-table", "title": "DataTable" },
         { "id": "spreadsheet", "title": "Spreadsheet" },
         { "id": "log-list", "title": "LogList" },
         { "id": "request-table", "title": "RequestTable" }
@@ -113,7 +113,7 @@
         { "id": "navigation-stack", "title": "NavigationStack" },
         { "id": "breadcrumb", "title": "Breadcrumb" },
         { "id": "tabs", "title": "Tabs" },
-        { "id": "edit-bar", "title": "EditBar" },
+        { "id": "toolbar", "title": "Toolbar" },
         { "id": "split-view", "title": "SplitView" },
         { "id": "sidebar", "title": "Sidebar" },
         { "id": "adaptive-pane", "title": "AdaptivePane" },
@@ -135,9 +135,7 @@
       "pages": [
         { "id": "composer", "title": "Composer" },
         { "id": "conversation", "title": "Conversation" },
-        { "id": "chat-column", "title": "ChatColumn" },
         { "id": "message-scroller", "title": "MessageScroller" },
-        { "id": "floating-chat", "title": "FloatingChat" },
         { "id": "artifact-chat-container", "title": "ArtifactChatContainer" },
         { "id": "chat-shell", "title": "ChatShell" }
       ]
@@ -159,8 +157,7 @@
         { "id": "object-tree", "title": "ObjectTree" },
         { "id": "object-value", "title": "ObjectValue" },
         { "id": "call-stack", "title": "CallStack" },
-        { "id": "workbench-shell", "title": "WorkbenchShell" },
-        { "id": "workbench-theme", "title": "WorkbenchTheme" }
+        { "id": "workbench-shell", "title": "WorkbenchShell" }
       ]
     },
     {
@@ -176,9 +173,7 @@
     {
       "section": "Audio",
       "pages": [
-        { "id": "strudel-player", "title": "StrudelPlayer" },
-        { "id": "strudel-rack", "title": "StrudelRack" },
-        { "id": "strudel-syntax", "title": "Strudel syntax tree" }
+        { "id": "strudel", "title": "Strudel" }
       ]
     },
     {

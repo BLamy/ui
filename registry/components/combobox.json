@@ -1,12 +1,16 @@
 {
   "name": "combobox",
   "title": "Combobox",
-  "description": "A filterable text field with a suggestion list: UI SDK's Combobox. Type to narrow the options (by label and keywords), arrow keys to move, Enter to choose, with options from data, an empty message and optional custom values.",
+  "description": "A filterable text field with a suggestion list: UI SDK's Combobox, composed from a field (the kit's field box, in three sizes), its input, disclosure and clear buttons and chips. Type to narrow the options (by label and keywords), arrow keys to move, Enter to choose, with options from data, an empty state, multiple choice and custom values.",
   "page": "combobox",
   "exports": [
     "Combobox",
     "ComboboxLabel",
+    "ComboboxField",
     "ComboboxInput",
+    "ComboboxTrigger",
+    "ComboboxClear",
+    "ComboboxChips",
     "ComboboxContent",
     "ComboboxList",
     "ComboboxEmpty",
@@ -21,14 +25,17 @@
   ],
   "imports": [
     "Combobox",
+    "ComboboxField",
     "ComboboxInput",
+    "ComboboxTrigger",
     "ComboboxContent",
     "ComboboxItem"
   ],
   "types": [
     "ComboboxProps",
     "ComboboxLabelProps",
-    "ComboboxInputProps",
+    "ComboboxFieldProps",
+    "ComboboxChipsProps",
     "ComboboxContentProps",
     "ComboboxItemProps",
     "ComboboxChipProps",

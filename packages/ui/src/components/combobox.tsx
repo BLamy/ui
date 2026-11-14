@@ -18,19 +18,23 @@ import {
   ComboboxList as SdkComboboxList,
   ComboboxSeparator as SdkComboboxSeparator,
   ComboboxStatus as SdkComboboxStatus,
-  ComboboxTrigger,
+  ComboboxTrigger as SdkComboboxTrigger,
   ComboboxValue,
   type ComboboxContentState,
   type ComboboxProps as SdkComboboxProps,
   type ComboboxValueState,
 } from '@ui-sdk/react/combobox';
 import type { VariantProps } from 'class-variance-authority';
+import { EmptyState } from '@/components/ui/empty-state';
+import { fieldSurfaceVariants } from '@/components/ui/input';
 import { labelVariants } from '@/components/ui/label';
+import { listboxItemVariants, listboxVariants } from '@/components/ui/listbox';
+import { Icon } from '@/lib/icon';
 import {
-  ListboxRow, ListDataItems, listboxGroupClass, listboxGroupLabelClass, listboxItemVariants, listboxSeparatorClass, listboxSheetClass,
-  listboxVariants, optionLabel, type ListboxRowProps, type ListDataParts,
-} from '@/components/ui/list-box';
-import { popoverMotion, popoverSurface, selectableText } from '@/lib/primitives';
+  ListDataItems, OptionRow, optionGroupClass, optionGroupLabelClass, optionLabel, optionSeparatorClass, optionSheetClass, useOptionDescription,
+  type ListDataParts, type OptionRowProps,
+} from '@/lib/option-row';
+import { popoverMotion, popoverSurface, selectableText, valueChip } from '@/lib/primitives';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
 import { usePresentation } from '@/lib/container';
 import { cn, cx } from '@/lib/utils';
@@ -42,16 +46,20 @@ import { cn, cx } from '@/lib/utils';
    <Field>
      <FieldLabel>City</FieldLabel>
      <Combobox>
-       <ComboboxInput placeholder="Search cities" />
+       <ComboboxField>
+         <ComboboxInput placeholder="Search cities" />
+         <ComboboxTrigger />
+       </ComboboxField>
        <ComboboxContent>
          <ComboboxEmpty>No cities found.</ComboboxEmpty>
          <ComboboxList>{cities.map((c) => <ComboboxItem key={c} value={c}>{c}</ComboboxItem>)}</ComboboxList>
        </ComboboxContent>
      </Combobox>
    </Field>
-   Options can be data too: `<Combobox items={cities}>` with an empty `<ComboboxContent />`.
-   With `multiple`, `<ComboboxInput chips />` shows the chosen options as removable chips before the text;
-   `clearable` adds UI SDK's Clear button. `ComboboxStatus` is the loading or error line of an async list. ══ */
+   Options can be data too: `<Combobox items={cities}>` with an empty `<ComboboxContent />`, and an empty
+   `<ComboboxField />` is an input and its disclosure button. With `multiple`, put the input in a `ComboboxChips` to
+   show the chosen options as removable chips before the text; a `ComboboxClear` empties the choice and the text.
+   `ComboboxStatus` is the loading or error line of an async list. ══ */
 
 /** The field around the input: what the popup hangs from and matches in width. */
 const AnchorContext = createContext<[HTMLElement | null, Dispatch<SetStateAction<HTMLElement | null>>] | null>(null);
@@ -85,37 +93,59 @@ export function ComboboxLabel({ className, variant, ...props }: ComboboxLabelPro
   return <SdkComboboxLabel className={cx(labelVariants({ variant }), className)} {...props} />;
 }
 
-export type ComboboxInputProps = ComponentProps<typeof SdkComboboxInput> & {
-  /** Classes for the field around the input and its button. */
-  groupClassName?: string;
-  /** The disclosure button's accessible name. Default "Show options". */
-  triggerLabel?: string;
-  /** With `multiple`: the chosen options as chips before the text (UI SDK's ComboboxChips). `true` draws a
-   *  `ComboboxChip` for each; a function draws your own from the value's state. Arrow keys move between chips, and
-   *  Backspace in the empty input removes the last. */
-  chips?: boolean | ((state: ComboboxValueState) => ReactNode);
-  /** Adds UI SDK's Clear button, shown while there is a selection or a query; it clears both and keeps focus. */
-  clearable?: boolean;
-  /** The Clear button's accessible name. Default "Clear". */
-  clearLabel?: string;
-};
+/* With chips in it the field grows a line at a time, from its height as the least. */
+const chipsHeight = {
+  sm: 'has-data-[slot=combobox-chips]:min-h-8',
+  default: 'has-data-[slot=combobox-chips]:min-h-11',
+  lg: 'has-data-[slot=combobox-chips]:min-h-[50px]',
+} as const;
 
-/** The default chip row: a chip per chosen option, in the order they were chosen. */
-const defaultChips = (state: ComboboxValueState) =>
-  (Array.isArray(state.value) ? state.value : []).map((value, i) => (
-    <ComboboxChip key={String(value)} value={value}>{state.labels[i]}</ComboboxChip>
-  ));
+/* The kit's field surface, keeping its edge while the list is open (the input's `aria-expanded`). */
+const comboboxField = [
+  'w-full gap-0 pe-1',
+  'has-[[data-slot=combobox-input][aria-expanded=true]]:bg-transparent has-[[data-slot=combobox-input][aria-expanded=true]]:shadow-[inset_0_0_0_1.5px_var(--primary)]',
+  'has-[[data-slot=combobox-input][aria-invalid=true]]:shadow-[inset_0_0_0_1.5px_var(--destructive)]',
+  'has-data-[slot=combobox-chips]:h-auto has-data-[slot=combobox-chips]:ps-1.5',
+];
 
-/** The input and its disclosure button, drawn as one iOS filled field. The button is for the pointer: it stays out of
- *  the tab order. */
-export function ComboboxInput({ className, groupClassName, triggerLabel = 'Show options', chips, clearable, clearLabel = 'Clear', ...props }: ComboboxInputProps) {
+export interface ComboboxFieldProps extends ComponentProps<'div'>, VariantProps<typeof fieldSurfaceVariants> {}
+
+/** The field: the kit's filled field box (`fieldSurfaceVariants`, `size` sm / default / lg), which the popup hangs
+ *  from and matches in width, and which keeps its edge while the list is open. Without children it is a `ComboboxInput` and a
+ *  `ComboboxTrigger`; pass children to lay out your own (`ComboboxChips`, `ComboboxInput`, `ComboboxClear`,
+ *  `ComboboxTrigger`). */
+export function ComboboxField({ className, size, children, ref, ...props }: ComboboxFieldProps) {
   const field = useContext(AnchorContext);
-  const input = (
+  return (
+    <div
+      ref={(el) => {
+        field?.[1](el);
+        if (typeof ref === 'function') return ref(el);
+        if (ref) ref.current = el;
+      }}
+      data-slot="combobox-field"
+      data-size={size ?? 'default'}
+      className={cn(fieldSurfaceVariants({ size }), comboboxField, chipsHeight[size ?? 'default'], className)}
+      {...props}
+    >
+      {children ?? (
+        <>
+          <ComboboxInput />
+          <ComboboxTrigger />
+        </>
+      )}
+    </div>
+  );
+}
+
+/** The text input, bare: the ComboboxField draws the box around it. In a Field the label names it. */
+export function ComboboxInput({ className, ...props }: ComponentProps<typeof SdkComboboxInput>) {
+  return (
     <SdkComboboxInput
       className={cx(
         [
-          'h-full min-w-0 flex-1 border-0 bg-transparent pr-1 pl-3 [font-family:inherit] text-body text-foreground outline-none placeholder:text-tertiary-foreground',
-          chips && 'h-8 min-w-20 pl-1.5',
+          'h-full min-w-0 flex-1 border-0 bg-transparent p-0 [font:inherit] text-foreground outline-none placeholder:text-tertiary-foreground',
+          'in-data-[slot=combobox-chips]:h-8 in-data-[slot=combobox-chips]:min-w-20 in-data-[slot=combobox-chips]:ps-1',
           selectableText,
         ],
         className,
@@ -123,40 +153,55 @@ export function ComboboxInput({ className, groupClassName, triggerLabel = 'Show 
       {...props}
     />
   );
+}
+
+/* The small buttons inside the field: no ring of their own beside the field's edge, a fill under the keyboard. */
+const fieldButton =
+  'bl-btn grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground outline-none focus-visible:bg-secondary focus-visible:text-foreground active:bg-accent in-data-[size=sm]:size-7';
+
+/** The disclosure button, for the pointer: it opens and closes the list and stays out of the tab order (the arrow keys
+ *  open the list from the input). Named "Show options"; pass `aria-label` in another language. */
+export function ComboboxTrigger({ className, children, 'aria-label': ariaLabel = 'Show options', ...props }: ComponentProps<typeof SdkComboboxTrigger>) {
   return (
-    <div
-      ref={field?.[1]}
-      className={cn(
-        'box-border flex w-full items-center rounded-ctl bg-input transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy',
-        chips ? 'min-h-11' : 'h-11',
-        'focus-within:bg-transparent focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)]',
-        'has-[input[data-invalid]]:shadow-[inset_0_0_0_1.5px_var(--destructive)] has-[input:disabled]:opacity-50',
-        groupClassName,
+    <SdkComboboxTrigger aria-label={ariaLabel} className={cx(['group/trigger', fieldButton], className)} {...props}>
+      {children ?? (
+        <Icon name="chevron-down" size={16} sw={2.2} className="transition-transform duration-spring-snappy ease-spring-snappy group-data-open/trigger:rotate-180 motion-reduce:transition-none" />
       )}
-    >
-      {chips ? (
-        <SdkComboboxChips className="flex min-w-0 flex-1 flex-wrap items-center gap-1 py-1.5 pl-1.5">
-          <ComboboxValue>{chips === true ? defaultChips : chips}</ComboboxValue>
-          {input}
-        </SdkComboboxChips>
-      ) : input}
-      {clearable ? (
-        <SdkComboboxClear
-          aria-label={clearLabel}
-          className="bl-btn grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/45 active:bg-accent"
-        >
-          <CrossGlyph size={14} />
-        </SdkComboboxClear>
-      ) : null}
-      <ComboboxTrigger
-        aria-label={triggerLabel}
-        className="bl-btn group/trigger mr-1 grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/45 active:bg-accent"
-      >
-        <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden="true" className="transition-transform duration-spring-snappy ease-spring-snappy group-data-open/trigger:rotate-180 motion-reduce:transition-none">
-          <path d="M6.5 9.5l5.5 5.5 5.5-5.5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </ComboboxTrigger>
-    </div>
+    </SdkComboboxTrigger>
+  );
+}
+
+/** UI SDK's Clear button: shown while there is a choice or a query, it empties both and keeps focus in the input.
+ *  Named "Clear"; pass `aria-label` in another language. */
+export function ComboboxClear({ className, children, 'aria-label': ariaLabel = 'Clear', ...props }: ComponentProps<typeof SdkComboboxClear>) {
+  return (
+    <SdkComboboxClear aria-label={ariaLabel} className={cx(fieldButton, className)} {...props}>
+      {children ?? <Icon name="xmark-circle-fill" size={18} />}
+    </SdkComboboxClear>
+  );
+}
+
+/** The default chip row: a chip per chosen option, in the order they were chosen. */
+const defaultChips = (state: ComboboxValueState) =>
+  (Array.isArray(state.value) ? state.value : []).map((value, i) => (
+    <ComboboxChip key={String(value)} value={value}>{state.labels[i]}</ComboboxChip>
+  ));
+
+export type ComboboxChipsProps = Omit<ComponentProps<typeof SdkComboboxChips>, 'children'> & {
+  /** What follows the chips: the `ComboboxInput`. */
+  children?: ReactNode;
+  /** Draws the chips from the value's state; default a `ComboboxChip` for each chosen option. */
+  renderChips?: (state: ComboboxValueState) => ReactNode;
+};
+
+/** With `multiple`: the chosen options as chips, then the input (its children). The arrow keys move between chips,
+ *  and Backspace in the empty input removes the last. Put it in a ComboboxField. */
+export function ComboboxChips({ className, children, renderChips = defaultChips, ...props }: ComboboxChipsProps) {
+  return (
+    <SdkComboboxChips className={cx('flex min-w-0 flex-1 flex-wrap items-center gap-1 py-1.5', className)} {...props}>
+      <ComboboxValue>{renderChips}</ComboboxValue>
+      {children ?? <ComboboxInput />}
+    </SdkComboboxChips>
   );
 }
 
@@ -178,7 +223,7 @@ export function ComboboxContent({ className, style, sideOffset = 8, anchor, chil
           popoverSurface, popoverMotion, 'box-border flex w-(--anchor-width) flex-col',
           // Nothing to show (no option matches and no empty or status message): no empty bubble.
           '[&:not(:has([data-slot=combobox-item]:not([hidden]),[data-empty],[data-slot=combobox-status]:not(:empty)))]:hidden',
-          listboxSheetClass, scope.className,
+          optionSheetClass, scope.className,
         ],
         className,
       )}
@@ -199,14 +244,6 @@ export function ComboboxList({ className, children, ...props }: ComponentProps<t
   );
 }
 
-function CrossGlyph({ size }: { size: number }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
-      <path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export type ComboboxChipProps<T = string> = Omit<ComponentProps<typeof SdkComboboxChip<T>>, 'children'> & {
   /** What the chip says. Default: the option's label. */
   children?: ReactNode;
@@ -214,12 +251,12 @@ export type ComboboxChipProps<T = string> = Omit<ComponentProps<typeof SdkCombob
   removeLabel?: string;
 };
 
-/** One chosen option of a `multiple` combobox, as a pill with its remove button. Put it in `ComboboxInput`'s `chips`. */
+/** One chosen option of a `multiple` combobox, as a pill with its remove button. `ComboboxChips` draws one per option. */
 export function ComboboxChip<T = string>({ className, removeLabel, children, ...props }: ComboboxChipProps<T>) {
   return (
     <SdkComboboxChip<T>
       className={cx(
-        'inline-flex h-7 max-w-full items-center gap-0.5 rounded-full bg-secondary pr-0.5 pl-2.5 text-subhead text-secondary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        [valueChip, 'ps-2.5'],
         className,
       )}
       {...props}
@@ -241,7 +278,7 @@ export function ComboboxChipRemove({ className, children, ...props }: ComponentP
       className={cx('grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-muted-foreground outline-none hover:bg-accent disabled:hidden', className)}
       {...props}
     >
-      {children ?? <CrossGlyph size={12} />}
+      {children ?? <Icon name="xmark" size={10} sw={2.6} />}
     </SdkComboboxChipRemove>
   );
 }
@@ -251,37 +288,48 @@ export function ComboboxStatus({ className, ...props }: ComponentProps<typeof Sd
   return <SdkComboboxStatus className={cx('px-3 py-2 text-subhead text-muted-foreground empty:hidden', className)} {...props} />;
 }
 
-/** Shown, and announced, while no option matches. */
-export function ComboboxEmpty({ className, ...props }: ComponentProps<typeof SdkComboboxEmpty>) {
-  return <SdkComboboxEmpty className={cx('px-3 py-2 text-subhead text-muted-foreground empty:hidden', className)} {...props} />;
+/** Shown, and announced, while no option matches: text children are the title of the kit's `EmptyState`; any other
+ *  node is shown as it is. */
+export function ComboboxEmpty({ className, children, ...props }: ComponentProps<typeof SdkComboboxEmpty>) {
+  return (
+    <SdkComboboxEmpty className={cx('empty:hidden', className)} {...props}>
+      {typeof children === 'string' ? <EmptyState size="sm" title={children} /> : children}
+    </SdkComboboxEmpty>
+  );
 }
 
-export type ComboboxItemProps<T = string> = Omit<ComponentProps<typeof SdkComboboxItem<T>>, 'children'> & ListboxRowProps;
+export type ComboboxItemProps<T = string> = Omit<ComponentProps<typeof SdkComboboxItem<T>>, 'children'> & OptionRowProps;
 
 /** An option. `value` is what the combobox's value becomes; `label` is the text the input shows and filtering matches
  *  when the children are not plain text, and `keywords` are more words that match. */
 export function ComboboxItem<T = string>({ className, icon, description, label, children, ...props }: ComboboxItemProps<T>) {
+  const described = useOptionDescription(description);
   return (
-    <SdkComboboxItem<T> label={optionLabel(label, children)} className={cx(listboxItemVariants({ variant: 'popup' }), className)} {...props}>
-      <ListboxRow variant="popup" icon={icon} description={description} Indicator={ComboboxItemIndicator} ItemIcon={ComboboxItemIcon}>
+    <SdkComboboxItem<T>
+      label={optionLabel(label, children)}
+      aria-describedby={described.describedBy}
+      className={cx(listboxItemVariants({ variant: 'popup' }), className)}
+      {...props}
+    >
+      <OptionRow variant="popup" icon={icon} description={description} descriptionId={described.id} Indicator={ComboboxItemIndicator} ItemIcon={ComboboxItemIcon}>
         {children}
-      </ListboxRow>
+      </OptionRow>
     </SdkComboboxItem>
   );
 }
 
 /** A group of options, named by its `ComboboxGroupLabel`, hidden while none of them matches. */
 export function ComboboxGroup({ className, ...props }: ComponentProps<typeof SdkComboboxGroup>) {
-  return <SdkComboboxGroup className={cx(listboxGroupClass, className)} {...props} />;
+  return <SdkComboboxGroup className={cx(optionGroupClass, className)} {...props} />;
 }
 
 export function ComboboxGroupLabel({ className, ...props }: ComponentProps<typeof SdkComboboxGroupLabel>) {
-  return <SdkComboboxGroupLabel className={cx(listboxGroupLabelClass, className)} {...props} />;
+  return <SdkComboboxGroupLabel className={cx(optionGroupLabelClass, className)} {...props} />;
 }
 
 /** A hairline between options or groups, hidden from screen readers. */
 export function ComboboxSeparator({ className, ...props }: ComponentProps<typeof SdkComboboxSeparator>) {
-  return <SdkComboboxSeparator className={cx(listboxSeparatorClass, className)} {...props} />;
+  return <SdkComboboxSeparator className={cx(optionSeparatorClass, className)} {...props} />;
 }
 
 const comboboxParts: ListDataParts = { Item: ComboboxItem, Group: ComboboxGroup, GroupLabel: ComboboxGroupLabel, Separator: ComboboxSeparator };

@@ -63,8 +63,19 @@ export function ScrollAreaViewport({ className, ...props }: ScrollAreaViewportPr
   return <SdkScrollAreaViewport className={cx(scrollAreaViewportVariants({ orientation }), className)} {...props} />;
 }
 
-export const ScrollAreaContent = SdkScrollAreaContent;
-export const ScrollAreaCorner = SdkScrollAreaCorner;
+export type ScrollAreaContentProps = ComponentProps<typeof SdkScrollAreaContent>;
+
+/** The content box inside the viewport, which UI SDK measures for the overflow state. No look of its own. */
+export function ScrollAreaContent(props: ScrollAreaContentProps) {
+  return <SdkScrollAreaContent {...props} />;
+}
+
+export type ScrollAreaCornerProps = ComponentProps<typeof SdkScrollAreaCorner>;
+
+/** The square where two overlay scrollbars meet (both axes only). No look of its own. */
+export function ScrollAreaCorner(props: ScrollAreaCornerProps) {
+  return <SdkScrollAreaCorner {...props} />;
+}
 
 export type ScrollAreaScrollbarProps = ComponentProps<typeof SdkScrollAreaScrollbar>;
 
@@ -91,13 +102,17 @@ export function ScrollAreaThumb({ className, ...props }: ScrollAreaThumbProps) {
 
 export type ScrollAreaScrollToEndProps = ComponentProps<typeof SdkScrollAreaScrollToEnd>;
 
-/** "Jump to latest" for a `stickToEnd` area: a small secondary button over the bottom edge, there only while the
+/** "Jump to latest" for a `stickToEnd` area: a small button on the popover surface over the bottom edge, there only while the
     view is away from the end. Name it with its content. */
 export function ScrollAreaScrollToEnd({ className, ...props }: ScrollAreaScrollToEndProps) {
   return (
     <SdkScrollAreaScrollToEnd
       className={cx(
-        [buttonVariants({ variant: 'secondary', size: 'sm' }), 'absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 data-visible:opacity-100'],
+        [
+          buttonVariants({ variant: 'secondary', size: 'sm' }),
+          'absolute bottom-3 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground shadow-popover',
+          'pointer-events-none opacity-0 transition-[opacity,translate] duration-spring-snappy ease-spring-snappy motion-safe:translate-y-1 data-visible:pointer-events-auto data-visible:translate-y-0 data-visible:opacity-100 motion-reduce:transition-none',
+        ],
         className,
       )}
       {...props}

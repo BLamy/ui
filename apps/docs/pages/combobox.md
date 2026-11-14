@@ -10,7 +10,8 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  Combobox, ComboboxInput, ComboboxContent, ComboboxItem,
+  Combobox, ComboboxField, ComboboxInput, ComboboxTrigger,
+  ComboboxContent, ComboboxItem,
 } from '@/components/ui/combobox'
 ```
 {% endtab %}
@@ -23,7 +24,8 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  Combobox, ComboboxInput, ComboboxContent, ComboboxItem,
+  Combobox, ComboboxField, ComboboxInput, ComboboxTrigger,
+  ComboboxContent, ComboboxItem,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
@@ -31,13 +33,16 @@ import {
 
 ## Anatomy
 
-The `Combobox` root renders no element: lay the label, the field and any help text out with a [Field](https://blamy.github.io/ui/#/field). `ComboboxInput` is the input and its disclosure button drawn as one field; `ComboboxContent` is the popup, as wide as the field, holding a `ComboboxList` of options and a `ComboboxEmpty` message beside it. Options written as children are filtered for you by their text (or `label`, plus `keywords`).
+The `Combobox` root renders no element: lay the label, the field and any help text out with a [Field](https://blamy.github.io/ui/#/field). `ComboboxField` is the kit's filled field box (the same box, heights and focus edge as an [Input](https://blamy.github.io/ui/#/input)), which the popup hangs from; inside it go the bare `ComboboxInput` and the `ComboboxTrigger` (the disclosure button), and with no children it is those two. `ComboboxContent` is the popup, as wide as the field, holding a `ComboboxList` of options and a `ComboboxEmpty` message beside it. Options written as children are filtered for you by their text (or `label`, plus `keywords`).
 
 ```tsx
 <Field>
   <FieldLabel>City</FieldLabel>
   <Combobox>
-    <ComboboxInput placeholder="Search cities" />
+    <ComboboxField>
+      <ComboboxInput placeholder="Search cities" />
+      <ComboboxTrigger />
+    </ComboboxField>
     <ComboboxContent>
       <ComboboxEmpty>No cities found.</ComboboxEmpty>
       <ComboboxList>
@@ -58,7 +63,10 @@ The value is an option (`value` / `defaultValue` / `onValueChange(value, details
 
 ```tsx
 <Combobox items={people} value={assignee} onValueChange={setAssignee}>
-  <ComboboxInput placeholder="Search the team" />
+  <ComboboxField>
+    <ComboboxInput placeholder="Search the team" />
+    <ComboboxTrigger />
+  </ComboboxField>
   <ComboboxContent>
     <ComboboxEmpty>No one matches.</ComboboxEmpty>
     <ComboboxList>
@@ -80,13 +88,19 @@ The value is an option (`value` / `defaultValue` / `onValueChange(value, details
 
 ## Choosing several
 
-With `multiple` the value is a list, and choosing an option toggles it and keeps the list open. `chips` on `ComboboxInput` shows the chosen options as chips before the text, each with a remove button; Backspace in the empty input removes the last one, and the arrow keys move between chips. `clearable` adds a Clear button that empties the selection and the text and keeps focus in the input.
+With `multiple` the value is a list, and choosing an option toggles it and keeps the list open. Put the input in a `ComboboxChips` to show the chosen options as chips before the text, each with a remove button; Backspace in the empty input removes the last one, and the arrow keys move between chips. The field then grows a line at a time. A `ComboboxClear` is a Clear button that empties the selection and the text and keeps focus in the input; it shows while there is something to clear.
 
 ```tsx
 <Field>
   <FieldLabel>Cities</FieldLabel>
   <Combobox multiple defaultValue={['Berlin']}>
-    <ComboboxInput chips clearable placeholder="Add a city" />
+    <ComboboxField>
+      <ComboboxChips>
+        <ComboboxInput placeholder="Add a city" />
+      </ComboboxChips>
+      <ComboboxClear />
+      <ComboboxTrigger />
+    </ComboboxField>
     <ComboboxContent>
       <ComboboxList>{cities.map((c) => <ComboboxItem key={c} value={c}>{c}</ComboboxItem>)}</ComboboxList>
     </ComboboxContent>
@@ -94,7 +108,11 @@ With `multiple` the value is a list, and choosing an option toggles it and keeps
 </Field>
 ```
 
-To draw the chips yourself, pass a function of the value's state: `chips={(state) => (state.value as string[]).map((v) => <ComboboxChip key={v} value={v} removeLabel={`Remove ${v}`} />)}`.
+To draw the chips yourself, pass `ComboboxChips` a function of the value's state: `renderChips={(state) => (state.value as string[]).map((v) => <ComboboxChip key={v} value={v} removeLabel={`Remove ${v}`} />)}`.
+
+## Sizes
+
+`size` on `ComboboxField` is `sm` (32px, for a toolbar or an inspector row), `default` (44px) or `lg` (50px), as on every field; the buttons inside shrink with it.
 
 ## When the list opens
 
@@ -106,7 +124,7 @@ Typing opens the list, and so do the Down and Up arrows and the chevron. The che
 
 ## Accessibility
 
-UI SDK provides the combobox pattern: the input has `role="combobox"` with `aria-expanded`, `aria-controls` and `aria-activedescendant`, so focus stays in the input while the arrows move a virtual highlight (`data-highlighted`) through a `listbox`. Down/Up open the list, Enter chooses the highlighted option, Esc closes the list, and the disclosure button opens it for pointer users. `ComboboxEmpty` is announced when nothing matches.
+An option's `description` is its description, not part of its name: screen readers hear "Ana Torres", then "ana@example.com". UI SDK provides the combobox pattern: the input has `role="combobox"` with `aria-expanded`, `aria-controls` and `aria-activedescendant`, so focus stays in the input while the arrows move a virtual highlight (`data-highlighted`) through a `listbox`. Down/Up open the list, Enter chooses the highlighted option, Esc closes the list, and the disclosure button opens it for pointer users. `ComboboxEmpty` is announced when nothing matches.
 
 Give the field a name: a `FieldLabel` in a Field is wired automatically, else a `ComboboxLabel`, else `aria-label` on the input. `FieldDescription` and `FieldError` in the same Field are announced with the input.
 
@@ -129,15 +147,15 @@ UI SDK's `Combobox` props. The popup renders into BLProvider's root unless you p
 | `disabled` / `required` / `readOnly` / `name` | — | State and the form input (a Field's `name` and `disabled` reach it). |
 | `presentation` / `controller` | — | Sheet on small screens; `createComboboxController()`. |
 
-### ComboboxInput
+### ComboboxField and its parts
 
-| Prop | Default | Effect |
-| --- | --- | --- |
-| `groupClassName` | — | Classes for the field around the input (the filled, 44px rounded box). |
-| `triggerLabel` | `Show options` | The disclosure button's accessible name. |
-| `chips` | — | With `multiple`: `true` shows each chosen option as a `ComboboxChip`; a function `(state) => node` draws your own. |
-| `clearable` / `clearLabel` | `false` / `Clear` | A Clear button, shown while there is a selection or text. |
-| `className` and the rest | — | On the `<input>`. |
+| Part | Props |
+| --- | --- |
+| `ComboboxField` | A `<div>`: `size` `sm` / `default` / `lg`; `children` default to a `ComboboxInput` and a `ComboboxTrigger`. |
+| `ComboboxInput` | UI SDK's input, bare: `placeholder`, `aria-label` (outside a Field), `className`… |
+| `ComboboxTrigger` | The disclosure button, out of the tab order. `aria-label` defaults to `Show options`; children replace the chevron. |
+| `ComboboxClear` | The Clear button. `aria-label` defaults to `Clear`; children replace the icon. |
+| `ComboboxChips` | With `multiple`: the chips, then its children (the `ComboboxInput`). `renderChips(state)` draws your own chips. |
 
 ### ComboboxContent, ComboboxList and ComboboxItem
 
@@ -149,8 +167,8 @@ UI SDK's `Combobox` props. The popup renders into BLProvider's root unless you p
 | `ComboboxItem` `value` / `label` / `keywords` | — | The option's value; its text when the children are not plain text; more words that match. |
 | `ComboboxItem` `icon` / `description` / `disabled` | — | Leading icon; secondary line; dimmed and skipped. |
 
-`ComboboxChip` (`value`, `removeLabel`, children default to the option's label) with its `ComboboxChipRemove`, `ComboboxStatus` (the loading or error line of an async list, as `(state) => node` children), `ComboboxEmpty` (shown while nothing matches), `ComboboxGroup`, `ComboboxGroupLabel`, `ComboboxSeparator` and `ComboboxLabel` complete the set.
+`ComboboxChip` (`value`, `removeLabel`, children default to the option's label) with its `ComboboxChipRemove`, `ComboboxStatus` (the loading or error line of an async list, as `(state) => node` children), `ComboboxEmpty` (shown while nothing matches; text children become the kit's [EmptyState](https://blamy.github.io/ui/#/empty-state) title), `ComboboxGroup`, `ComboboxGroupLabel`, `ComboboxSeparator` and `ComboboxLabel` complete the set.
 
 ## Styling
 
-Parts carry UI SDK's slots: `combobox-input`, `combobox-trigger`, `combobox-content`, `combobox-list`, `combobox-item`, `combobox-empty`, `combobox-group`, `combobox-chips`, `combobox-chip`, `combobox-chip-remove`, `combobox-clear`, `combobox-status`. The field's focus outline is `focus-within`; it shows a red outline when the input is `data-invalid` and dims when it is disabled. The chevron rotates on the trigger's `data-open`. The popup hides itself while there is nothing to show. There is no cva recipe: change the classes in your copy.
+Parts carry UI SDK's slots: `combobox-input`, `combobox-trigger`, `combobox-content`, `combobox-list`, `combobox-item`, `combobox-empty`, `combobox-group`, `combobox-chips`, `combobox-chip`, `combobox-chip-remove`, `combobox-clear`, `combobox-status`, and the kit's `combobox-field` (with `data-size`). The field is `fieldSurfaceVariants` from [Input](https://blamy.github.io/ui/#/input): a 1.5px primary edge while the input has focus and while the list is open, a red one when the input is invalid, dimmed when disabled. The chevron rotates on the trigger's `data-open`. Group labels are the kit's menu section label (`sectionLabelVariants({ variant: 'menu' })`). The popup hides itself while there is nothing to show. There is no cva recipe of its own: the field is `fieldSurfaceVariants`.

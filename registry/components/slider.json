@@ -1,7 +1,7 @@
 {
   "name": "slider",
   "title": "Slider",
-  "description": "UI SDK Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, plus on-dark and on-light tones and a small scrubber size.",
+  "description": "UI SDK Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, plus on-dark and on-light variants, a small scrubber size and --bl-slider-* color variables.",
   "page": "slider",
   "exports": [
     "Slider",
@@ -15,5 +15,9 @@
   ],
   "imports": [
     "Slider"
+  ],
+  "types": [
+    "SliderProps",
+    "SliderVariant"
   ]
 }

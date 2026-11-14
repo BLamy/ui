@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ReplayPreview, replayDemoEvents, type ReplayMarker } from '@/components/ui/replay-preview'
+import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo'
+import { ReplayPreview, type ReplayMarker } from '@/components/ui/replay-preview'
 
 // Your own moments on the rail — findings from an agent, test assertions —
 // instead of the recorded ones. `onMarkerPress` tells you which was chosen.

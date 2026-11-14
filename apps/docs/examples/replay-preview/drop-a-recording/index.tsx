@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError } from '@/components/ui/field'
 import { FileUploadDropzone, FileUploadTrigger } from '@/components/ui/file-upload'
-import { ReplayPreview, getReplayMeta, replayDemoEvents, type ReplayEvent } from '@/components/ui/replay-preview'
+import { getReplayMeta } from '@brett_lamy/docstream/replay'
+import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo'
+import { ReplayPreview, type ReplayEvent } from '@/components/ui/replay-preview'
 import { Icon } from '@/lib/icon'
 
 // Drop an rrweb recording (.rrweb, .json, or either gzipped) on the frame and it

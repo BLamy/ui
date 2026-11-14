@@ -2,7 +2,7 @@
 
 A console for a recording: a virtualized list of log rows that stays smooth at 100,000 rows, with a marker that says where you are. Rows are plain data, so it doesn't know what produced them. Long messages wrap or open on press, the rows after the marker are dimmed as the future, and the marker can move on every frame without rendering a single row. Its partner for requests is [RequestTable](https://blamy.github.io/ui/#/request-table).
 
-Use a sibling instead when the rows have **columns** to sort and resize (RequestTable, or the SQL console's results table), when they are **pressable rows** of a settings or navigation screen ([List](https://blamy.github.io/ui/#/lists)), or when they form a **hierarchy** ([Tree](https://blamy.github.io/ui/#/tree), [CallStack](https://blamy.github.io/ui/#/call-stack)).
+Use a sibling instead when the rows have **columns** to sort and resize ([DataTable](https://blamy.github.io/ui/#/data-table), or its preset for requests, [RequestTable](https://blamy.github.io/ui/#/request-table)), when they are **pressable rows** of a settings or navigation screen ([List](https://blamy.github.io/ui/#/lists)), or when they form a **hierarchy** ([Tree](https://blamy.github.io/ui/#/tree), [CallStack](https://blamy.github.io/ui/#/call-stack)).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}

@@ -21,13 +21,19 @@
     "CommandMenuSeparator",
     "CommandMenuFooter",
     "CommandMenuDialog",
-    "CommandMenuDialogTrigger",
     "CommandMenuDialogContent",
     "createCommandMenuController",
     "useCommandMenu",
     "useCommandMenuValue"
   ],
-  "imports": ["CommandMenu", "CommandMenuInput", "CommandMenuList", "CommandMenuGroup", "CommandMenuGroupLabel", "CommandMenuItem"],
+  "imports": [
+    "CommandMenu",
+    "CommandMenuInput",
+    "CommandMenuList",
+    "CommandMenuGroup",
+    "CommandMenuGroupLabel",
+    "CommandMenuItem"
+  ],
   "types": [
     "CommandMenuProps",
     "CommandMenuInputProps",

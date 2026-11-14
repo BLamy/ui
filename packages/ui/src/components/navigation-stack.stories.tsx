@@ -4,15 +4,20 @@ import { Avatar } from '@/components/ui/avatar';
 import { List, ListRow, ListSection } from '@/components/ui/list';
 import {
   NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackPage,
-  NavigationStackTitle,
+  NavigationStackLeading, NavigationStackTitle, useNavigationStack,
 } from '@/components/ui/navigation-stack';
+import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSidebar, SplitViewToggle } from '@/components/ui/split-view';
 import { Tabs, TabsBar, TabsList, TabsTab } from '@/components/ui/tabs';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof NavigationStack> = {
   title: 'Organisms/NavigationStack',
   component: NavigationStack,
-  decorators: [(Story, ctx) => <Phone dark={!!ctx.parameters.dark}><Story /></Phone>],
+  // `parameters.frame` sizes the frame (a phone by default).
+  decorators: [(Story, ctx) => {
+    const frame = ctx.parameters.frame as { w: number; h: number } | undefined;
+    return <Phone dark={!!ctx.parameters.dark} w={frame?.w} h={frame?.h}><Story /></Phone>;
+  }],
 };
 export default meta;
 type Story = StoryObj<typeof NavigationStack>;
@@ -30,7 +35,7 @@ function Simple({ value, title, grouped, large, showOnScroll, hideOnScroll, bott
   bottomInset?: number; onRefresh?: () => unknown; children: ReactNode;
 }) {
   return (
-    <NavigationStackPage value={value} grouped={grouped}>
+    <NavigationStackPage value={value} variant={grouped ? 'grouped' : 'plain'}>
       <NavigationStackBar hideOnScroll={hideOnScroll}>
         <NavigationStackTitle showOnScroll={showOnScroll}>{title}</NavigationStackTitle>
       </NavigationStackBar>
@@ -199,4 +204,93 @@ export const BackLabelFallback: Story = {
 export const BackLabelTruncatedDark: Story = {
   render: () => <Deep prev="Notifications and Focus" title="Scheduled Summary" />,
   parameters: { dark: true },
+};
+
+/** At tablet and desktop widths: the content keeps a readable width (`maxWidth` on NavigationStackContent) and the
+ *  stack's size class is regular, which popups inside follow. */
+export const Wide: Story = {
+  parameters: { frame: { w: 1180, h: 700 } },
+  render: () => (
+    <NavigationStack>
+      <NavigationStackPage value="settings" variant="grouped">
+        <NavigationStackBar><NavigationStackTitle>Settings</NavigationStackTitle></NavigationStackBar>
+        <NavigationStackContent maxWidth={640}>
+          <NavigationStackLargeTitle />
+          <List variant="inset">
+            <ListSection title="General">
+              {['About', 'Software Update', 'Storage', 'Background App Refresh'].map((t, i, a) => (
+                <ListRow key={t} title={t} accessory="chevron" onClick={() => undefined} divider={i < a.length - 1} />
+              ))}
+            </ListSection>
+          </List>
+        </NavigationStackContent>
+      </NavigationStackPage>
+    </NavigationStack>
+  ),
+};
+
+const ALBUMS = ['Neon Tidewater', 'Quiet Orchard', 'Soft Static', 'Meridian'];
+
+function AlbumRows() {
+  const stack = useNavigationStack();
+  return (
+    <List>
+      <ListSection>
+        {ALBUMS.map((a, i) => (
+          <ListRow key={a} title={a} accessory="chevron" divider={i < ALBUMS.length - 1}
+            onClick={(event) => stack.push(a, { reason: 'trigger-press', event: event.nativeEvent })} />
+        ))}
+      </ListSection>
+    </List>
+  );
+}
+
+/** A SplitView column that pushes pages holds a NavigationStack. Tiled (here), its first page shows the sidebar
+ *  toggle; collapsed (`DetailColumnCompact`), the first page goes back to the sidebar, and Escape and the edge swipe
+ *  pop the stack's pages before the columns. `renderPage` draws the pushed keys. */
+function InSplitView({ compact }: { compact?: boolean }) {
+  return (
+    <SplitView aria-label="Music" sizeClass={compact ? 'compact' : undefined} defaultCompactColumn="detail" defaultValue={{ sidebar: 'albums' }}>
+      <SplitViewSidebar aria-label="Library" width={260}>
+        <SplitViewHeader title="Library" />
+        <SplitViewContent className="px-2.5 pt-2">
+          <SplitViewItem value="albums" title="Albums" />
+          <SplitViewItem value="songs" title="Songs" />
+        </SplitViewContent>
+      </SplitViewSidebar>
+      <SplitViewDetail aria-label="Albums">
+        <NavigationStack defaultPages={['albums', 'Soft Static']} renderPage={(album) => (
+          <Simple value={album} title={album} showOnScroll>
+            <div className="px-4 pb-6"><div className="text-[26px] font-bold tracking-[-.4px]">{album}</div></div>
+            {tallRows(12)}
+          </Simple>
+        )}>
+          <NavigationStackPage value="albums">
+            <NavigationStackBar>
+              <NavigationStackLeading><SplitViewToggle /></NavigationStackLeading>
+              <NavigationStackTitle>Albums</NavigationStackTitle>
+            </NavigationStackBar>
+            <NavigationStackContent>
+              <NavigationStackLargeTitle />
+              <AlbumRows />
+            </NavigationStackContent>
+          </NavigationStackPage>
+        </NavigationStack>
+      </SplitViewDetail>
+    </SplitView>
+  );
+}
+
+export const DetailColumnOfASplitView: Story = {
+  parameters: { frame: { w: 1180, h: 700 } },
+  render: () => <InSplitView />,
+};
+
+export const DetailColumnCompact: Story = {
+  render: () => <InSplitView compact />,
+};
+
+export const DetailColumnCompactDark: Story = {
+  parameters: { dark: true },
+  render: () => <InSplitView compact />,
 };

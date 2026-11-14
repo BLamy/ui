@@ -1,16 +1,5 @@
 import { useState } from 'react'
-import { DebugToolbar, type DebugToolbarAction } from '@/components/ui/debug-toolbar'
-
-const LABELS: Record<DebugToolbarAction, string> = {
-  continue: 'Continue',
-  'step-over': 'Step over',
-  'step-into': 'Step in',
-  'step-out': 'Step out',
-  'step-back': 'Step back',
-  'reverse-continue': 'Reverse',
-  restart: 'Restart',
-  stop: 'Stop',
-}
+import { DebugToolbar, debugToolbarActions, type DebugToolbarAction } from '@/components/ui/debug-toolbar'
 
 export default function DebugToolbarDemo() {
   const [lastAction, setLastAction] = useState<DebugToolbarAction | null>(null)
@@ -18,15 +7,15 @@ export default function DebugToolbarDemo() {
   return (
     <div className="flex flex-col items-center gap-3 py-5">
       <DebugToolbar onAction={setLastAction} />
-      <p className="min-h-5 text-caption text-foreground/70" aria-live="polite">
-        {lastAction ? `Last action: ${LABELS[lastAction]}` : 'Choose a debugger action'}
+      <p className="min-h-5 text-caption text-muted-foreground" aria-live="polite">
+        {lastAction ? `Last action: ${debugToolbarActions[lastAction].label}` : 'Choose a debugger action'}
       </p>
-      <div className="w-full border-t border-border pt-5">
+      <div className="flex w-full justify-center border-t border-border pt-5">
         <DebugToolbar
-          size="compact"
+          variant="plain"
+          size="sm"
           onAction={setLastAction}
           disabledActions={['step-into', 'step-out', 'reverse-continue']}
-          className="mx-auto"
         />
       </div>
     </div>

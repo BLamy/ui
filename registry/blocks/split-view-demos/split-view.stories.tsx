@@ -124,17 +124,33 @@ export const LargeTitleCompact: Story = {
   render: () => <Phone w={390} h={760}><SplitViewRemindersDemo defaultCompactColumn="detail" /></Phone>,
 };
 
-/** A push/pop stack inside the detail column (`SplitViewStack` + `useSplitViewStack`): album → credits.
- *  The sidebar selection is the stack's `resetKey`, so picking a section drops back to its root. */
+/** A column that pushes holds a NavigationStack: album → credits in the detail column. The sidebar selection is
+ *  the stack's `resetKey`, so picking a section drops back to its first page; `renderPage` draws the album and
+ *  credits pages from their keys. */
 export const NestedStack: Story = {
   render: () => <Phone w={1080} h={640}><SplitViewLibraryDemo initialAlbum="static" /></Phone>,
 };
 
+export const NestedStackDark: Story = {
+  render: () => <Phone w={1080} h={640} dark><SplitViewLibraryDemo initialAlbum="static" /></Phone>,
+};
+
+/** At tablet width the sidebar floats over the stack (the toggle on the stack's first page opens it). */
+export const NestedStackMedium: Story = {
+  render: () => <Phone w={834} h={760}><SplitViewLibraryDemo /></Phone>,
+};
+
 /** Compact with a nested stack: the album page is on top. Its back button carries the page below's title,
- *  "Recently Added Albums", truncated to the room the centered title leaves. The edge swipe (and Esc) pops
- *  the album page first; only at the stack's root does it pop the column. */
+ *  "Recently Added Albums", or "Back" when that doesn't fit beside the centered title. The edge swipe (and Esc)
+ *  pops the album page first; only at the stack's first page does it pop the column, whose back button that
+ *  page shows. */
 export const NestedStackCompact: Story = {
   render: () => <Phone w={390} h={760} dark><SplitViewLibraryDemo defaultCompactColumn="detail" initialAlbum="tidewater" /></Phone>,
+};
+
+/** Compact, at the stack's first page: the back button goes to the sidebar column, named by its title. */
+export const NestedStackCompactRoot: Story = {
+  render: () => <Phone w={390} h={760}><SplitViewLibraryDemo defaultCompactColumn="detail" /></Phone>,
 };
 
 /** Gallery: `defaultSupplementaryOpen={false}`: the list column has slid away and the detail fills its space.
@@ -158,28 +174,26 @@ export const NestedNavigationStack: Story = {
           <SplitViewSidebar aria-label="Library">
             <SplitViewHeader title="Library" />
             <SplitViewContent className="px-2.5 pt-2">
-              <SplitViewItem id="recent" title="Recently Added" />
+              <SplitViewItem value="recent" title="Recently Added" />
             </SplitViewContent>
           </SplitViewSidebar>
           <SplitViewDetail aria-label="Albums">
-            <div className="relative min-h-0 flex-1">
-              <NavigationStack pages={pages} onPagesChange={setPages}>
-                <NavigationStackPage value="root">
-                  <NavigationStackBar><NavigationStackTitle>Recently Added</NavigationStackTitle></NavigationStackBar>
-                  <NavigationStackContent>
-                    <div className="px-4 py-3 text-[16px]">
-                      <button type="button" className="bl-btn cursor-pointer border-0 bg-transparent p-0 text-[16px] text-primary" onClick={() => setPages(['root', 'album'])}>Open album</button>
-                    </div>
-                  </NavigationStackContent>
-                </NavigationStackPage>
-                <NavigationStackPage value="album">
-                  <NavigationStackBar><NavigationStackTitle>Neon Tidewater</NavigationStackTitle></NavigationStackBar>
-                  <NavigationStackContent>
-                    <div className="px-4 py-3 text-[16px]">Swipe from the leading edge: this page pops, the column stays.</div>
-                  </NavigationStackContent>
-                </NavigationStackPage>
-              </NavigationStack>
-            </div>
+            <NavigationStack pages={pages} onPagesChange={setPages}>
+              <NavigationStackPage value="root">
+                <NavigationStackBar><NavigationStackTitle>Recently Added</NavigationStackTitle></NavigationStackBar>
+                <NavigationStackContent>
+                  <div className="px-4 py-3 text-[16px]">
+                    <button type="button" className="bl-btn cursor-pointer border-0 bg-transparent p-0 text-[16px] text-primary" onClick={() => setPages(['root', 'album'])}>Open album</button>
+                  </div>
+                </NavigationStackContent>
+              </NavigationStackPage>
+              <NavigationStackPage value="album">
+                <NavigationStackBar><NavigationStackTitle>Neon Tidewater</NavigationStackTitle></NavigationStackBar>
+                <NavigationStackContent>
+                  <div className="px-4 py-3 text-[16px]">Swipe from the leading edge: this page pops, the column stays.</div>
+                </NavigationStackContent>
+              </NavigationStackPage>
+            </NavigationStack>
           </SplitViewDetail>
         </SplitView>
       </Phone>
@@ -196,28 +210,26 @@ export const NavigationStackRootBack: Story = {
         <SplitViewSidebar aria-label="Library">
           <SplitViewHeader title="Library" />
           <SplitViewContent className="px-2.5 pt-2">
-            <SplitViewItem id="recent" title="Recently Added" />
+            <SplitViewItem value="recent" title="Recently Added" />
           </SplitViewContent>
         </SplitViewSidebar>
         <SplitViewDetail aria-label="Albums">
-          <div className="relative min-h-0 flex-1">
-            <NavigationStack defaultPages={['root']}>
-              <NavigationStackPage value="root">
-                <NavigationStackBar><NavigationStackTitle>Recently Added</NavigationStackTitle></NavigationStackBar>
-                <NavigationStackContent>
-                  <NavigationStackLargeTitle />
-                  <div className="px-4 py-3 text-[16px] text-muted-foreground">The back button returns to the Library column.</div>
-                </NavigationStackContent>
-              </NavigationStackPage>
-            </NavigationStack>
-          </div>
+          <NavigationStack defaultPages={['root']}>
+            <NavigationStackPage value="root">
+              <NavigationStackBar><NavigationStackTitle>Recently Added</NavigationStackTitle></NavigationStackBar>
+              <NavigationStackContent>
+                <NavigationStackLargeTitle />
+                <div className="px-4 py-3 text-[16px] text-muted-foreground">The back button returns to the Library column.</div>
+              </NavigationStackContent>
+            </NavigationStackPage>
+          </NavigationStack>
         </SplitViewDetail>
       </SplitView>
     </Phone>
   ),
 };
 
-/** Header and section options: the sidebar's bar shows its title only once the list scrolls (`titleOnScroll`);
+/** Header and section options: the sidebar's bar shows its title only once the list scrolls (`showOnScroll`);
  *  "My Lists" is a `prominent` section label; the detail's large title carries a trailing count
  *  (`largeTitleTrailing`) and lines up with the centred content (`largeTitleClassName`). */
 export const HeaderOptions: Story = {
@@ -225,10 +237,10 @@ export const HeaderOptions: Story = {
     <Phone w={1100} h={600}>
       <SplitView aria-label="Reminders" defaultValue={{ sidebar: 'today' }} sidebarBehavior="tile">
         <SplitViewSidebar aria-label="Lists" className="bg-muted">
-          <SplitViewHeader title="Lists" titleOnScroll className="bg-muted" />
+          <SplitViewHeader title="Lists" showOnScroll className="bg-muted" />
           <SplitViewContent className="px-2.5">
             <SplitViewSection title="My Lists" variant="prominent">
-              {['Today', 'Groceries', 'Work'].map((t) => <SplitViewItem key={t} id={t.toLowerCase()} title={t} />)}
+              {['Today', 'Groceries', 'Work'].map((t) => <SplitViewItem key={t} value={t.toLowerCase()} title={t} />)}
             </SplitViewSection>
           </SplitViewContent>
         </SplitViewSidebar>
@@ -246,5 +258,41 @@ export const HeaderOptions: Story = {
         </SplitViewDetail>
       </SplitView>
     </Phone>
+  ),
+};
+
+/** Nothing selected: the detail column shows the kit's `EmptyState`. */
+export const EmptyDetail: Story = {
+  render: () => <Phone w={1180} h={700}><SplitViewMailDemo defaultValue={{ sidebar: 'inbox' }} /></Phone>,
+};
+
+/** Item states, light and dark: current (pill and row), a tinted item, a description, a trailing count, disabled. */
+export const ItemStates: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 24 }}>
+      {[false, true].map((dark) => (
+        <Phone key={String(dark)} w={560} h={360} dark={dark}>
+          <SplitView aria-label="Items" sizeClass="regular" defaultValue={{ sidebar: 'inbox', detail: 'two' }}>
+            <SplitViewSidebar aria-label="Mailboxes" width={260} resizable={false}>
+              <SplitViewHeader title="Mailboxes" />
+              <SplitViewContent className="px-2.5">
+                <SplitViewSection title="iCloud">
+                  <SplitViewItem value="inbox" title="Inbox" trailing={4} />
+                  <SplitViewItem value="flagged" title="Flagged" tint="#FF9500" description="2 unread" />
+                  <SplitViewItem value="archive" title="Archive (offline)" disabled />
+                </SplitViewSection>
+              </SplitViewContent>
+            </SplitViewSidebar>
+            <SplitViewDetail aria-label="Rows">
+              <SplitViewHeader title="Rows" />
+              <SplitViewContent>
+                <SplitViewItem value="one" title="A row" description="variant row" />
+                <SplitViewItem value="two" title="The current row" description="a 14% wash of the tint" />
+              </SplitViewContent>
+            </SplitViewDetail>
+          </SplitView>
+        </Phone>
+      ))}
+    </div>
   ),
 };

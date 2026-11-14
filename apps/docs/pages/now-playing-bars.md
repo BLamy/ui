@@ -38,13 +38,13 @@ Tap a track to play it, tap it again to pause:
 
 ## In a mini player
 
-Beside the artwork and a scrubber: the bars mark what is playing, and the [Slider](https://blamy.github.io/ui/#/slider)s use its `tone="onDark"` for translucent tracks over dark glass (the Slider page documents its tones).
+Beside the artwork and a scrubber: the bars mark what is playing, and the [Slider](https://blamy.github.io/ui/#/slider)s use its `variant="on-dark"` for translucent tracks over dark glass (the Slider page documents its variants).
 
 {% demo src="now-playing-bars/media-controls" %}
 
 ```tsx
 <NowPlayingBars size={16} playing={playing} className="text-white" />
-<Slider aria-label="Playback position" tone="onDark" size="sm" max={duration} value={position} onValueChange={(value) => seek(value)} />
+<Slider aria-label="Playback position" variant="on-dark" size="sm" max={duration} value={position} onValueChange={(value) => seek(value)} />
 ```
 
 ## Accessibility

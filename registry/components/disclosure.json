@@ -5,6 +5,7 @@
   "page": "disclosure",
   "exports": [
     "Disclosure",
+    "DisclosureHeader",
     "DisclosureTrigger",
     "DisclosurePanel",
     "DisclosureGroup",
@@ -22,5 +23,8 @@
     "DisclosureGroupHeader",
     "DisclosureGroupTrigger",
     "DisclosureGroupPanel"
+  ],
+  "types": [
+    "DisclosureHeaderProps"
   ]
 }

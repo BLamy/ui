@@ -1,5 +1,5 @@
 'use client';
-import { useLayoutEffect, useRef, type CSSProperties } from 'react';
+import { useCallback, useLayoutEffect, useRef, type CSSProperties, type Ref } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { useAppearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -7,19 +7,26 @@ import { cn } from '@/lib/utils';
 /* ══ Waveform — audio peaks drawn across a stretch of media time ══
    Give it peaks (the loudest sample of each slice, 0…1, `rate` slices per second, e.g. from `useMediaPeaks`) and the
    range it stands for (`from`…`to`, a clip's in and out points). It draws one bar per device pixel on a canvas, in the
-   text colour (`text-…` classes tint it; read again when the appearance changes), mirrored around the middle or rising from the bottom, scaled by `gain` (a
-   clip's volume). Decorative: it is hidden from assistive tech; the clip it sits in carries the label. ══ */
+   text colour, mirrored around the middle or rising from the bottom, scaled by `gain` (a clip's volume). `tone` picks a
+   semantic colour; any `text-…` class tints it instead (`text-primary`), and the colour is read again when the
+   appearance changes. Decorative: it is hidden from assistive tech; the clip it sits in carries the label. ══ */
 
 export const waveformVariants = cva('relative block h-full w-full', {
   variants: {
+    /** Where the bars grow from (drawn on the canvas; written as `data-variant`). */
+    variant: {
+      mirror: '',
+      bottom: '',
+    },
     tone: {
-      default: 'text-foreground/55',
-      primary: 'text-primary',
+      default: 'text-foreground/70',
+      muted: 'text-muted-foreground/60',
       success: 'text-success',
-      muted: 'text-muted-foreground',
+      warning: 'text-warning',
+      destructive: 'text-destructive',
     },
   },
-  defaultVariants: { tone: 'default' },
+  defaultVariants: { variant: 'mirror', tone: 'default' },
 });
 
 export interface WaveformProps extends VariantProps<typeof waveformVariants> {
@@ -33,14 +40,19 @@ export interface WaveformProps extends VariantProps<typeof waveformVariants> {
   to?: number;
   /** Scales the bars (a clip's volume). Default 1. */
   gain?: number;
-  /** `mirror` grows from the middle; `bottom` rises from the floor. Default `mirror`. */
-  variant?: 'mirror' | 'bottom';
   className?: string;
   style?: CSSProperties;
+  ref?: Ref<HTMLCanvasElement>;
 }
 
-export function Waveform({ peaks, rate, from = 0, to, gain = 1, variant = 'mirror', tone, className, style }: WaveformProps) {
+export function Waveform({ peaks, rate, from = 0, to, gain = 1, variant: variantProp, tone, className, style, ref: refProp }: WaveformProps) {
+  const variant = variantProp ?? 'mirror';
   const ref = useRef<HTMLCanvasElement | null>(null);
+  const setRef = useCallback((el: HTMLCanvasElement | null) => {
+    ref.current = el;
+    if (typeof refProp === 'function') refProp(el);
+    else if (refProp) refProp.current = el;
+  }, [refProp]);
   const end = to ?? peaks.length / Math.max(1e-6, rate);
   // The canvas holds the colour it was drawn in, so a change of appearance draws it again. Without a provider to say
   // so, the host's class, `data-theme` or style on <html> is all there is to watch.
@@ -81,5 +93,5 @@ export function Waveform({ peaks, rate, from = 0, to, gain = 1, variant = 'mirro
       watcher?.disconnect();
     };
   }, [peaks, rate, from, end, gain, variant, tone, className, appearance]);
-  return <canvas ref={ref} data-slot="waveform" aria-hidden className={cn(waveformVariants({ tone }), className)} style={style} />;
+  return <canvas ref={setRef} data-slot="waveform" data-variant={variant} aria-hidden className={cn(waveformVariants({ variant, tone }), className)} style={style} />;
 }

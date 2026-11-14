@@ -4,9 +4,9 @@ import {
   ColorPicker,
   ColorPickerSlider,
   ColorPickerSwatches,
+  ColorPickerSwatch,
   ColorPickerSwatchItem,
 } from '@/components/ui/color-picker'
-import { ColorFieldSwatch } from '@/components/ui/color-field'
 import { Label } from '@/components/ui/label'
 
 const presets = ['#ff453a', '#ff9f0a', '#ffd60a', '#30d158', '#0a84ff', '#bf5af2']
@@ -35,7 +35,7 @@ export default function PresetsOpacity() {
       </div>
       <ColorPickerSlider channel="alpha" label="Opacity" showValue />
       <div className="flex items-center gap-3">
-        <ColorFieldSwatch className="size-10 rounded-ctl" />
+        <ColorPickerSwatch className="size-10 rounded-ctl" />
         <code className="text-footnote text-foreground/70">
           {parsed ? formatColor(parsed, 'hex') : color}
         </code>

@@ -13,8 +13,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ListRow, ListSection } from '@/components/ui/list';
 import { SearchInput } from '@/components/ui/search-input';
-import { SIDEBAR_ICONS } from '@/components/ui/sidebar';
-import { SplitView, SplitViewContent, SplitViewDetail, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, SplitViewStack, SplitViewSupplementary, SplitViewToggle, useSplitView, useSplitViewStack, type SplitViewProps } from '@/components/ui/split-view';
+import { EmptyState } from '@/components/ui/empty-state';
+import {
+  NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLeading, NavigationStackPage, NavigationStackTitle,
+  NavigationStackTrailing, useNavigationStack,
+} from '@/components/ui/navigation-stack';
+import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, SplitViewSupplementary, SplitViewToggle, useSplitView, type SplitViewProps } from '@/components/ui/split-view';
 import { Switch } from '@/components/ui/switch';
 import { useContainerWidth } from '@/lib/container';
 import { Icon } from '@/lib/icon';
@@ -26,7 +30,20 @@ const SYSTEM = {
   green: '#34C759', orange: '#FF9500',
 } as const;
 
-const EXTRA_ICONS: Record<string, string> = {
+/** The demo's stroke glyphs (24×24 paths), keyed by name. */
+const DEMO_ICONS: Record<string, string> = {
+  search: 'M10.5 4a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM20 20l-4.2-4.2',
+  plus: 'M12 5v14M5 12h14',
+  home: 'M4 11l8-7 8 7v9h-5v-6h-6v6H4z',
+  inbox: 'M4 13l3-8h10l3 8v6H4zM4 13h5l1.5 2h3L15 13h5',
+  box: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12L4 7.5M12 12v9',
+  bolt: 'M13 2L4 14h6l-1 8 9-12h-6z',
+  bell: 'M6 9a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6M10 20a2 2 0 004 0',
+  cal: 'M4 6h16v15H4zM4 10h16M8 3v4M16 3v4',
+  doc: 'M7 3h7l4 4v14H7zM14 3v4h4',
+  user: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4 4-6 8-6s8 2 8 6',
+  code: 'M8 7l-5 5 5 5M16 7l5 5-5 5',
+  globe: 'M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3c-2.5 2.6-2.5 15.4 0 18c2.5-2.6 2.5-15.4 0-18',
   send: 'M21 3L10 14M21 3l-7 18-4-7-7-4z',
   flag: 'M5 21V4M5 4h11l-2 4 2 4H5',
   archive: 'M3 5h18v4H3zM5 9v10h14V9M10 13h4',
@@ -48,7 +65,7 @@ const EXTRA_ICONS: Record<string, string> = {
   clock: 'M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
   album: 'M3 3h18v18H3zM12 12m-4 0a4 4 0 108 0 4 4 0 10-8 0M12 12h.01',
 };
-const PATHS = { ...SIDEBAR_ICONS, ...EXTRA_ICONS };
+const PATHS = DEMO_ICONS;
 
 /** Stroke glyph from the demo icon set. */
 export function DemoGlyph({ name, size = 20, sw = 1.9 }: { name: string; size?: number; sw?: number }) {
@@ -67,10 +84,6 @@ function BarButton({ label, children, onClick }: { label: string; children: Reac
     </Button>
   );
 }
-
-const SectionLabel = ({ children }: { children: ReactNode }) => (
-  <div className="px-3 pt-4 pb-1.5 text-footnote font-semibold tracking-[-.1px] text-muted-foreground">{children}</div>
-);
 
 type DemoProps = Omit<SplitViewProps, 'children'> & { className?: string; style?: CSSProperties };
 
@@ -112,12 +125,11 @@ function MailSidebar() {
     <SplitViewSidebar aria-label="Mailboxes">
       <SplitViewHeader title="Mailboxes" trailing={<BarButton label="Edit mailboxes"><span className="text-body">Edit</span></BarButton>} />
       <SplitViewContent className="px-2.5 pb-4">
-        <SectionLabel>iCloud</SectionLabel>
-        <div className="flex flex-col gap-px">
+        <SplitViewSection title="iCloud">
           {MAILBOXES.map((m) => (
-            <SplitViewItem key={m.id} id={m.id} title={m.title} icon={<DemoGlyph name={m.icon} />} badge={m.count} />
+            <SplitViewItem key={m.id} value={m.id} title={m.title} icon={<DemoGlyph name={m.icon} />} trailing={m.count} />
           ))}
-        </div>
+        </SplitViewSection>
       </SplitViewContent>
     </SplitViewSidebar>
   );
@@ -134,9 +146,9 @@ function MailList() {
         trailing={<BarButton label="New message"><DemoGlyph name="compose" size={21} /></BarButton>} />
       <SplitViewContent>
         <div className="px-4 pt-2.5 pb-2"><SearchInput value={q} onValueChange={setQ} /></div>
-        {msgs.length === 0 ? <SplitViewEmpty className="h-48" title="No Mail" description={q ? `Nothing matches “${q}”` : undefined} /> : null}
+        {msgs.length === 0 ? <EmptyState className="h-48" title="No Mail" description={q ? `Nothing matches “${q}”` : undefined} /> : null}
         {msgs.map((m) => (
-          <SplitViewItem key={m.id} id={m.id} className="items-start py-3 pl-7">
+          <SplitViewItem key={m.id} value={m.id} className="items-start py-3 pl-7">
             {m.unread ? <span aria-label="Unread" className="absolute top-[18px] left-2.5 size-[9px] rounded-full bg-primary" /> : null}
             <span className="min-w-0 flex-1">
               <span className="flex items-baseline gap-2">
@@ -210,7 +222,7 @@ function MailMessage() {
           </article>
         </SplitViewContent>
       ) : (
-        <SplitViewEmpty icon={<DemoGlyph name="inbox" size={48} sw={1.2} />} title="No Message Selected" />
+        <EmptyState icon={<DemoGlyph name="inbox" size={48} sw={1.2} />} title="No Message Selected" />
       )}
     </SplitViewDetail>
   );
@@ -243,11 +255,10 @@ export function SplitViewNotesDemo({ defaultValue, listWidth = 300, ...props }: 
       <SplitViewSidebar aria-label="Notes" width={listWidth} minWidth={Math.min(200, listWidth)} className="bg-background">
         <SplitViewHeader title="Notes" trailing={<BarButton label="New note"><DemoGlyph name="compose" size={21} /></BarButton>} />
         <SplitViewContent className="px-2.5 pt-1 pb-4">
-          <SectionLabel>Today</SectionLabel>
-          <div className="flex flex-col gap-0.5">{NOTES.map((n) => (
-            <SplitViewItem key={n.id} id={n.id} variant="pill" title={<span className="font-semibold">{n.title}</span>}
-              subtitle={<><span className="mr-1.5">{n.date}</span>{n.body}</>} className="py-2" />
-          ))}</div>
+          <SplitViewSection title="Today">{NOTES.map((n) => (
+            <SplitViewItem key={n.id} value={n.id} variant="pill" title={<span className="font-semibold">{n.title}</span>}
+              description={<><span className="mr-1.5">{n.date}</span>{n.body}</>} className="py-2" />
+          ))}</SplitViewSection>
         </SplitViewContent>
       </SplitViewSidebar>
       <NotesEditor />
@@ -269,7 +280,7 @@ function NotesEditor() {
             <p className="m-0 text-body leading-[1.55]">{n.body}</p>
           </div>
         </SplitViewContent>
-      ) : <SplitViewEmpty icon={<DemoGlyph name="note" size={48} sw={1.2} />} title="No Note Selected" />}
+      ) : <EmptyState icon={<DemoGlyph name="note" size={48} sw={1.2} />} title="No Note Selected" />}
     </SplitViewDetail>
   );
 }
@@ -314,7 +325,7 @@ function SettingsPane() {
             </ListSection>
           </div>
         </SplitViewContent>
-      ) : <SplitViewEmpty title="Choose a setting" />}
+      ) : <EmptyState title="Choose a setting" />}
     </SplitViewDetail>
   );
 }
@@ -331,7 +342,7 @@ export function SplitViewSettingsDemo({ defaultValue, ...props }: DemoProps) {
             <div className="min-w-0"><div className="truncate text-callout font-semibold">Brett Lamy</div><div className="truncate text-footnote text-muted-foreground">Account, iCloud, Media</div></div>
           </div>
           <div className="flex flex-col gap-px">
-            {SETTINGS.map((x) => <SplitViewItem key={x.id} id={x.id} title={x.title} icon={<Tile icon={x.icon} color={x.color} />} badge={x.value} />)}
+            {SETTINGS.map((x) => <SplitViewItem key={x.id} value={x.id} title={x.title} icon={<Tile icon={x.icon} color={x.color} />} trailing={x.value} />)}
           </div>
         </SplitViewContent>
       </SplitViewSidebar>
@@ -422,9 +433,9 @@ function RListCard({ l }: { l: RList }) {
 function RListItem({ id }: { id: string }) {
   const l = RLISTS[id];
   return (
-    <SplitViewItem id={id} tint={l.color} title={l.title} badge={l.items.length} preview={<RListCard l={l} />}
+    <SplitViewItem value={id} tint={l.color} title={l.title} trailing={l.items.length} preview={<RListCard l={l} />}
       icon={
-        <span className="grid size-[26px] place-items-center rounded-full bg-(--split-item-tint) text-white transition-colors duration-150 group-data-selected/item:bg-white group-data-selected/item:text-(--split-item-tint)">
+        <span className="grid size-[26px] place-items-center rounded-full bg-(--split-item-tint) text-white transition-colors duration-150 group-data-current/item:bg-white group-data-current/item:text-(--split-item-tint)">
           <DemoGlyph name={l.icon} size={15} sw={2.4} />
         </span>
       } />
@@ -525,12 +536,20 @@ function AlbumCard({ a }: { a: Album }) {
   );
 }
 
-function TrackPage({ a, track }: { a: Album; track: string }) {
+/** A page of the detail column's stack, by key: `album:<id>`, or `credits:<id>:<track>`. */
+function LibraryPage({ page }: { page: string }) {
+  const [kind, id, track] = page.split(':');
+  const a = ALBUMS.find((x) => x.id === id);
+  if (!a) return null;
+  return kind === 'credits' ? <TrackPage value={page} a={a} track={a.tracks[Number(track)] ?? ''} /> : <AlbumPage value={page} a={a} />;
+}
+
+function TrackPage({ value, a, track }: { value: string; a: Album; track: string }) {
   return (
-    <>
-      <SplitViewHeader title="Credits" />
-      <SplitViewContent>
-        <div className="mx-auto max-w-[560px] px-6 pt-6 pb-10">
+    <NavigationStackPage value={value}>
+      <NavigationStackBar><NavigationStackTitle>Credits</NavigationStackTitle></NavigationStackBar>
+      <NavigationStackContent>
+        <div className="mx-auto max-w-[560px] px-6 pt-4 pb-10">
           <div className="text-[22px] font-bold tracking-[-.3px]">{track}</div>
           <div className="mt-1 mb-2 text-subhead text-muted-foreground">{a.artist} · {a.title}</div>
           <ListSection title="Performed by">
@@ -541,18 +560,21 @@ function TrackPage({ a, track }: { a: Album; track: string }) {
             <ListRow title="M. Vell, K. Osei" divider={false} />
           </ListSection>
         </div>
-      </SplitViewContent>
-    </>
+      </NavigationStackContent>
+    </NavigationStackPage>
   );
 }
 
-function AlbumPage({ a }: { a: Album }) {
-  const stack = useSplitViewStack();
+function AlbumPage({ value, a }: { value: string; a: Album }) {
+  const stack = useNavigationStack();
   return (
-    <>
-      <SplitViewHeader title={a.title} trailing={<BarButton label="Favourite"><DemoGlyph name="star" /></BarButton>} />
-      <SplitViewContent>
-        <div className="mx-auto max-w-[620px] px-6 pt-6 pb-10">
+    <NavigationStackPage value={value}>
+      <NavigationStackBar>
+        <NavigationStackTitle showOnScroll>{a.title}</NavigationStackTitle>
+        <NavigationStackTrailing><BarButton label="Favourite"><DemoGlyph name="star" /></BarButton></NavigationStackTrailing>
+      </NavigationStackBar>
+      <NavigationStackContent>
+        <div className="mx-auto max-w-[620px] px-6 pt-4 pb-10">
           <div className="flex items-end gap-5">
             <Cover a={a} className="size-[132px]" />
             <div className="min-w-0 pb-1">
@@ -563,7 +585,7 @@ function AlbumPage({ a }: { a: Album }) {
           </div>
           <div className="mt-6">
             {a.tracks.map((t, i) => (
-              <Button key={t} variant="link" onClick={() => stack.push(<TrackPage a={a} track={t} />, { key: `${a.id}-${i}` })}
+              <Button key={t} variant="link" onClick={(event) => stack.push(`credits:${a.id}:${i}`, { reason: 'trigger-press', event: event.nativeEvent })}
                 className="flex h-auto w-full justify-start gap-4 rounded-none px-1 py-3 text-left text-callout font-normal whitespace-normal text-foreground shadow-hairline-b active:not-aria-expanded:not-data-disabled:scale-100 active:bg-accent focus-visible:ring-offset-0">
                 <span className="w-5 text-right text-detail text-muted-foreground tabular-nums">{i + 1}</span>
                 <span className="min-w-0 flex-1 truncate">{t}</span>
@@ -572,29 +594,28 @@ function AlbumPage({ a }: { a: Album }) {
             ))}
           </div>
         </div>
-      </SplitViewContent>
-    </>
+      </NavigationStackContent>
+    </NavigationStackPage>
   );
 }
 
-function LibraryRoot({ initialAlbum }: { initialAlbum?: string }) {
+/** The stack's first page: the section the sidebar picked, as a grid of albums. */
+function LibraryRoot({ value }: { value: string }) {
   const s = useSplitView();
-  const stack = useSplitViewStack();
+  const stack = useNavigationStack();
   const sec = SECTIONS_LIB.find((x) => x.id === s.value.sidebar) ?? SECTIONS_LIB[0];
-  const opened = useRef(false);
-  useEffect(() => {
-    const a = ALBUMS.find((x) => x.id === initialAlbum);
-    if (a && !opened.current) { opened.current = true; stack.push(<AlbumPage a={a} />, { key: a.id }); }
-  }, [initialAlbum, stack]);
   return (
-    <>
-      <SplitViewHeader title={sec.title} leading={<SplitViewToggle />} />
-      <SplitViewContent>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-4 gap-y-5 px-5 pt-5 pb-10">
+    <NavigationStackPage value={value}>
+      <NavigationStackBar>
+        <NavigationStackLeading><SplitViewToggle /></NavigationStackLeading>
+        <NavigationStackTitle>{sec.title}</NavigationStackTitle>
+      </NavigationStackBar>
+      <NavigationStackContent>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-4 gap-y-5 px-5 pt-3 pb-10">
           {ALBUMS.map((a) => (
             <HoverCard key={a.id}>
               <HoverCardTrigger
-                render={<Button variant="link" onClick={() => stack.push(<AlbumPage a={a} />, { key: a.id })}
+                render={<Button variant="link" onClick={(event) => stack.push(`album:${a.id}`, { reason: 'trigger-press', event: event.nativeEvent })}
                   className="flex h-auto w-full flex-col items-stretch justify-start gap-1.5 rounded-ctl text-left font-normal whitespace-normal text-foreground focus-visible:ring-offset-0" />}>
                 <Cover a={a} className="aspect-square w-full" />
                 <span className="mt-0.5 truncate text-detail font-medium">{a.title}</span>
@@ -604,24 +625,28 @@ function LibraryRoot({ initialAlbum }: { initialAlbum?: string }) {
             </HoverCard>
           ))}
         </div>
-      </SplitViewContent>
-    </>
+      </NavigationStackContent>
+    </NavigationStackPage>
   );
 }
 
+/** The detail column pushes pages, so it holds a NavigationStack: the column is its parent (collapsed, the first
+ *  page goes back to the sidebar), `resetKey` pops it when the sidebar picks another section, and `renderPage` draws
+ *  the album and credits pages from their keys. */
 function LibraryDetail({ initialAlbum }: { initialAlbum?: string }) {
   const s = useSplitView();
   return (
     <SplitViewDetail aria-label="Albums">
-      <SplitViewStack resetKey={s.value.sidebar}>
-        <LibraryRoot initialAlbum={initialAlbum} />
-      </SplitViewStack>
+      <NavigationStack defaultPages={initialAlbum ? ['root', `album:${initialAlbum}`] : ['root']} resetKey={s.value.sidebar}
+        renderPage={(page) => <LibraryPage page={page} />}>
+        <LibraryRoot value="root" />
+      </NavigationStack>
     </SplitViewDetail>
   );
 }
 
-/** Library: the sidebar picks a section; albums push onto a stack inside the detail column (album → credits).
- *  A pushed page's back button is labelled with the page below's title, truncated to the room it has. */
+/** Library: the sidebar picks a section; albums push onto a NavigationStack inside the detail column (album →
+ *  credits). A pushed page's back button names the page below: its title, "Back", or the chevron alone. */
 export function SplitViewLibraryDemo({ defaultValue, initialAlbum, ...props }: DemoProps & { initialAlbum?: string }) {
   return (
     <SplitView aria-label="Library" defaultValue={defaultValue ?? { sidebar: 'recent' }} defaultCompactColumn="sidebar" {...props}>
@@ -629,7 +654,7 @@ export function SplitViewLibraryDemo({ defaultValue, initialAlbum, ...props }: D
         <SplitViewHeader title="Library" />
         <SplitViewContent className="px-2.5 pt-2 pb-4">
           <SplitViewSection>
-            {SECTIONS_LIB.map((x) => <SplitViewItem key={x.id} id={x.id} title={x.short} icon={<DemoGlyph name={x.icon} />} />)}
+            {SECTIONS_LIB.map((x) => <SplitViewItem key={x.id} value={x.id} title={x.short} icon={<DemoGlyph name={x.icon} />} />)}
           </SplitViewSection>
         </SplitViewContent>
       </SplitViewSidebar>
@@ -689,7 +714,7 @@ function GalleryDetail() {
             <p className="m-0 text-body leading-[1.55]">{n.body}</p>
           </div>
         </SplitViewContent>
-      ) : <SplitViewEmpty icon={<DemoGlyph name="note" size={48} sw={1.2} />} title="No Note Selected" />}
+      ) : <EmptyState icon={<DemoGlyph name="note" size={48} sw={1.2} />} title="No Note Selected" />}
     </SplitViewDetail>
   );
 }
@@ -703,7 +728,7 @@ export function SplitViewGalleryDemo({ defaultValue, ...props }: DemoProps) {
         <SplitViewHeader title="Folders" />
         <SplitViewContent className="px-2.5 pb-4">
           <SplitViewSection title="iCloud">
-            {FOLDERS.map((f) => <SplitViewItem key={f.id} id={f.id} title={f.title} icon={<DemoGlyph name={f.icon} />} badge={NOTES.length} />)}
+            {FOLDERS.map((f) => <SplitViewItem key={f.id} value={f.id} title={f.title} icon={<DemoGlyph name={f.icon} />} trailing={NOTES.length} />)}
           </SplitViewSection>
         </SplitViewContent>
       </SplitViewSidebar>
@@ -711,8 +736,8 @@ export function SplitViewGalleryDemo({ defaultValue, ...props }: DemoProps) {
         <SplitViewHeader title="Notes" leading={<SplitViewToggle />} trailing={<ViewSwitch />} />
         <SplitViewContent className="px-2.5 pt-1 pb-4">
           <div className="flex flex-col gap-0.5">{NOTES.map((n) => (
-            <SplitViewItem key={n.id} id={n.id} variant="pill" title={<span className="font-semibold">{n.title}</span>}
-              subtitle={<><span className="mr-1.5">{n.date}</span>{n.body}</>} className="py-2" />
+            <SplitViewItem key={n.id} value={n.id} variant="pill" title={<span className="font-semibold">{n.title}</span>}
+              description={<><span className="mr-1.5">{n.date}</span>{n.body}</>} className="py-2" />
           ))}</div>
         </SplitViewContent>
       </SplitViewSupplementary>

@@ -15,8 +15,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ColorPicker, ColorPickerContent, ColorPickerTrigger } from '@/components/ui/color-picker';
-import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxList } from '@/components/ui/combobox';
-import { DateField } from '@/components/ui/date-field';
+import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxField, ComboboxInput, ComboboxList, ComboboxTrigger } from '@/components/ui/combobox';
+import { DateInput } from '@/components/ui/date-input';
 import { DatePicker, DatePickerContent, DatePickerField } from '@/components/ui/date-picker';
 import { Disclosure, DisclosurePanel, DisclosureTrigger } from '@/components/ui/disclosure';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -376,7 +376,7 @@ export const KIT: Record<string, ComponentSpec> = {
       { name: 'step', control: { kind: 'number', min: 0.01 }, default: 1 },
       { name: 'showValue', control: { kind: 'boolean' }, default: true },
       { name: 'size', control: { kind: 'enum', options: values('default', 'sm') }, default: 'default' },
-      { name: 'tone', control: { kind: 'enum', options: values('default', 'onDark', 'onLight') }, default: 'default' },
+      { name: 'variant', control: { kind: 'enum', options: values('default', 'on-dark', 'on-light') }, default: 'default' },
     ],
     events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the value' }, { name: 'onValueCommit', label: 'onValueCommit', value: 'the value' }],
     layout: { width: 'fill' },
@@ -390,7 +390,7 @@ export const KIT: Record<string, ComponentSpec> = {
         max={num(p.max, 100)}
         step={num(p.step, 1) || 1}
         size={pick(p.size, ['default', 'sm'] as const, 'default')}
-        tone={pick(p.tone, ['default', 'onDark', 'onLight'] as const, 'default')}
+        variant={pick(p.variant, ['default', 'on-dark', 'on-light'] as const, 'default')}
         onValueChange={(v) => on.onValueChange?.(v)}
         onValueCommit={(v) => on.onValueCommit?.(v)}
       />
@@ -454,7 +454,7 @@ export const KIT: Record<string, ComponentSpec> = {
     type: 'Combobox', title: 'Combobox', section: 'Forms and inputs', source: 'kit', icon: 'magnifier',
     description: "UI SDK's Combobox: a text field with a suggestion list. Type to narrow the options, arrow keys to move, Enter to commit, in a Field with its label.",
     module: '@/components/ui/combobox', tag: 'Combobox', focusable: true,
-    uses: ['@/components/ui/field|FieldLabel', '@/components/ui/combobox|ComboboxInput', '@/components/ui/combobox|ComboboxContent', '@/components/ui/combobox|ComboboxList'],
+    uses: ['@/components/ui/field|FieldLabel', '@/components/ui/combobox|ComboboxField', '@/components/ui/combobox|ComboboxInput', '@/components/ui/combobox|ComboboxTrigger', '@/components/ui/combobox|ComboboxContent', '@/components/ui/combobox|ComboboxList'],
     props: [
       { name: 'label', control: { kind: 'text' }, default: 'Assignee', part: '<FieldLabel>' },
       { name: 'items', control: { kind: 'items' }, default: 'Ana Torres, Kim Park, Lee Chen, Maya Okafor', part: 'items' },
@@ -466,7 +466,10 @@ export const KIT: Record<string, ComponentSpec> = {
     render: ({ p, on }) => (
       <Labelled label={p.label}>
         <Combobox items={dataItems(p.items)} value={str(p.value) || null} onValueChange={(v) => on.onValueChange?.(v)}>
-          <ComboboxInput placeholder={str(p.placeholder)} aria-label={p.label ? undefined : 'Choose'} />
+          <ComboboxField>
+            <ComboboxInput placeholder={str(p.placeholder)} aria-label={p.label ? undefined : 'Choose'} />
+            <ComboboxTrigger />
+          </ComboboxField>
           <ComboboxContent>
             <ComboboxEmpty>No matches.</ComboboxEmpty>
             <ComboboxList />
@@ -475,14 +478,14 @@ export const KIT: Record<string, ComponentSpec> = {
       </Labelled>
     ),
     code: (g) => {
-      parts(g, '@/components/ui/combobox', 'Combobox', 'ComboboxInput', 'ComboboxContent', 'ComboboxEmpty', 'ComboboxList');
-      return fieldCode(g, `<Combobox items={${itemsCode(g, 'items')}} value={${g.expr('value')} || null}${g.on('onValueChange')}>\n  <ComboboxInput${g.attr('placeholder')} />\n  <ComboboxContent>\n    <ComboboxEmpty>No matches.</ComboboxEmpty>\n    <ComboboxList />\n  </ComboboxContent>\n</Combobox>`);
+      parts(g, '@/components/ui/combobox', 'Combobox', 'ComboboxField', 'ComboboxInput', 'ComboboxTrigger', 'ComboboxContent', 'ComboboxEmpty', 'ComboboxList');
+      return fieldCode(g, `<Combobox items={${itemsCode(g, 'items')}} value={${g.expr('value')} || null}${g.on('onValueChange')}>\n  <ComboboxField>\n    <ComboboxInput${g.attr('placeholder')} />\n    <ComboboxTrigger />\n  </ComboboxField>\n  <ComboboxContent>\n    <ComboboxEmpty>No matches.</ComboboxEmpty>\n    <ComboboxList />\n  </ComboboxContent>\n</Combobox>`);
     },
   },
-  DateField: {
-    type: 'DateField', title: 'DateField', section: 'Forms and inputs', source: 'kit', icon: 'calendar',
+  DateInput: {
+    type: 'DateInput', title: 'DateInput', section: 'Forms and inputs', source: 'kit', icon: 'calendar',
     description: "Segmented date and time fields: UI SDK's Date Input and Time Input, each part of the value its own spin button, in the filled iOS field. Values are ISO strings; a Field gives it a label, description and error.",
-    module: '@/components/ui/date-field', tag: 'DateField', focusable: true, uses: ['@/components/ui/field|FieldLabel'],
+    module: '@/components/ui/date-input', tag: 'DateInput', focusable: true, uses: ['@/components/ui/field|FieldLabel'],
     props: [
       { name: 'label', control: { kind: 'text' }, default: 'Birthday', part: '<FieldLabel>' },
       { name: 'value', control: { kind: 'date' }, default: '2026-10-04', twoWay: 'onValueChange', help: 'An ISO date' },
@@ -493,12 +496,12 @@ export const KIT: Record<string, ComponentSpec> = {
     layout: { width: 'fill' },
     render: ({ p, on }) => (
       <Labelled label={p.label}>
-        <DateField value={date(p.value)} onValueChange={(v) => on.onValueChange?.(v)} size={pick(p.size, ['default', 'sm', 'lg'] as const, 'default')} disabled={!!p.disabled} aria-label={p.label ? undefined : 'Date'} />
+        <DateInput value={date(p.value)} onValueChange={(v) => on.onValueChange?.(v)} size={pick(p.size, ['default', 'sm', 'lg'] as const, 'default')} disabled={!!p.disabled} aria-label={p.label ? undefined : 'Date'} />
       </Labelled>
     ),
     code: (g) => {
-      g.use('@/components/ui/date-field', 'DateField');
-      return fieldCode(g, `<DateField value={${g.expr('value')}}${g.on('onValueChange')}${g.attr('size')}${g.attr('disabled')} />`);
+      g.use('@/components/ui/date-input', 'DateInput');
+      return fieldCode(g, `<DateInput value={${g.expr('value')}}${g.on('onValueChange')}${g.attr('size')}${g.attr('disabled')} />`);
     },
   },
   DatePicker: {

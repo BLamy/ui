@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { PencilCanvas, type PencilStrokesChangeDetails } from '@/components/ui/pencilkit/pencil-canvas';
 import { PencilActions, PencilToolbar } from '@/components/ui/pencilkit/pencil-toolbar';
+import { Canvas } from '@/components/ui/canvas';
 import { usePencilHistory } from '@/components/ui/pencilkit/use-pencil-history';
 import type { PencilStroke, PencilTool } from '@/components/ui/pencilkit/constants';
 
@@ -28,9 +29,10 @@ async function stroke(x0: number, x1: number, y = 20, pointerType = 'mouse') {
 }
 
 describe('PencilCanvas', () => {
-  it('commits a drawn stroke with its tool, ink and points, and hides the hint', async () => {
+  it('commits a drawn stroke with its tool, ink and points, and hides the empty state', async () => {
     const onStrokesChange = vi.fn();
-    render(<PencilCanvas tool="marker" ink="tomato" width={2} hint="Draw here" onStrokesChange={onStrokesChange} />);
+    render(<PencilCanvas tool="marker" ink="tomato" width={2} emptyState="Draw here" onStrokesChange={onStrokesChange} />);
+    expect(surface().hasAttribute('data-empty')).toBe(true);
     expect(screen.getByText('Draw here')).toBeTruthy();
     await stroke(10, 60);
     expect(onStrokesChange).toHaveBeenCalledTimes(1);
@@ -38,10 +40,21 @@ describe('PencilCanvas', () => {
     expect(details).toMatchObject({ reason: 'draw', canceled: false });
     expect(details.event?.type).toBe('pointerup');
     expect(strokes).toHaveLength(1);
-    expect(strokes[0]).toMatchObject({ tool: 'marker', color: 'tomato', w: 2, pen: false, done: true });
+    expect(strokes[0]).toMatchObject({ tool: 'marker', color: 'tomato', width: 2, pressure: false, complete: true });
     expect(strokes[0].points.length).toBeGreaterThan(5);
     expect(paths()).toBeGreaterThan(0);
     expect(screen.queryByText('Draw here')).toBeNull();
+    expect(surface().hasAttribute('data-empty')).toBe(false);
+  });
+
+  it('is a named drawing (an image) and draws nothing while disabled', async () => {
+    const onStrokesChange = vi.fn();
+    const { rerender } = render(<PencilCanvas disabled onStrokesChange={onStrokesChange} />);
+    expect(screen.getByRole('img', { name: 'Drawing' })).toBeTruthy();
+    await stroke(10, 60);
+    expect(onStrokesChange).not.toHaveBeenCalled();
+    rerender(<PencilCanvas aria-label="Signature" onStrokesChange={onStrokesChange} />);
+    expect(screen.getByRole('img', { name: 'Signature' })).toBeTruthy();
   });
 
   it('drops a tap (a single point) and ignores a secondary mouse button', async () => {
@@ -59,7 +72,7 @@ describe('PencilCanvas', () => {
     const onStrokesChange = vi.fn();
     const { rerender } = render(<PencilCanvas tool="pen" onStrokesChange={onStrokesChange} />);
     await stroke(10, 60, 20, 'pen');
-    expect((onStrokesChange.mock.calls[0][0] as PencilStroke[])[0].pen).toBe(true);
+    expect((onStrokesChange.mock.calls[0][0] as PencilStroke[])[0].pressure).toBe(true);
     await stroke(10, 60, 200);
     expect((onStrokesChange.mock.lastCall![0] as PencilStroke[])).toHaveLength(2);
     rerender(<PencilCanvas tool="eraser" onStrokesChange={onStrokesChange} />);
@@ -113,7 +126,7 @@ function Sketch({ tool = 'pen' }: { tool?: PencilTool }) {
     <>
       <PencilCanvas tool={tool} strokes={h.strokes} onStrokesChange={h.onStrokesChange} />
       <PencilToolbar>
-        <PencilActions onUndo={h.undo} onRedo={h.redo} onClear={h.clear} canUndo={h.canUndo} canRedo={h.canRedo} />
+        <PencilActions onUndo={h.undo} onRedo={h.redo} onClear={h.clear} canUndo={h.canUndo} canRedo={h.canRedo} canClear={h.canClear} />
       </PencilToolbar>
       <output data-testid="count">{h.strokes.length}</output>
     </>
@@ -143,5 +156,64 @@ describe('usePencilHistory with PencilActions', () => {
     fireEvent.click(action('Clear'));
     expect(count()).toBe('0');
     expect(paths()).toBe(0);
+    // A clear is a step too.
+    fireEvent.click(action('Undo'));
+    expect(count()).toBe('2');
+  });
+
+  it('brings erased strokes back on undo, and leaves the others alone', async () => {
+    const { rerender } = render(<Sketch />);
+    await stroke(10, 60, 20);
+    await stroke(10, 60, 200);
+    expect(count()).toBe('2');
+    rerender(<Sketch tool="eraser" />);
+    fireEvent.pointerDown(surface(), { pointerId: 9, pointerType: 'mouse', button: 0, clientX: 30, clientY: 20 });
+    fireEvent.pointerUp(surface(), { pointerId: 9, pointerType: 'mouse', clientX: 30, clientY: 20 });
+    expect(count()).toBe('1');
+    fireEvent.click(action('Undo'));
+    expect(count()).toBe('2');
+    fireEvent.click(action('Redo'));
+    expect(count()).toBe('1');
+  });
+});
+
+describe('PencilCanvas on a Canvas', () => {
+  /** A press, a few moves and a release on the canvas's root, which hands them to its pointer layers. */
+  async function drawOn(root: HTMLElement, x0: number, x1: number, y: number) {
+    fireEvent.pointerDown(root, { pointerId: 1, pointerType: 'mouse', button: 0, buttons: 1, clientX: x0, clientY: y, pressure: 0.5 });
+    for (let x = x0 + 10; x <= x1; x += 10) fireEvent.pointerMove(root, { pointerId: 1, pointerType: 'mouse', buttons: 1, clientX: x, clientY: y, pressure: 0.5 });
+    fireEvent.pointerUp(root, { pointerId: 1, pointerType: 'mouse', clientX: x1, clientY: y });
+  }
+
+  it('is the board\'s drawing layer: it takes the press before the host and draws in board units', async () => {
+    const onStrokesChange = vi.fn();
+    const onCanvasPointerDown = vi.fn();
+    render(
+      <Canvas viewport={{ x: 100, y: 50, zoom: 2 }} onCanvasPointerDown={onCanvasPointerDown}>
+        <PencilCanvas tool="pen" onStrokesChange={onStrokesChange} />
+      </Canvas>,
+    );
+    const root = screen.getByRole('application');
+    await drawOn(root, 100, 140, 50);
+    expect(onCanvasPointerDown).not.toHaveBeenCalled();
+    const [strokes] = onStrokesChange.mock.lastCall as [PencilStroke[]];
+    // Client (100, 50) is the board's origin under this view; 40 px across at 2× is 20 board units.
+    expect(strokes[0].points[0].slice(0, 2)).toEqual([0, 0]);
+    expect(strokes[0].points.at(-1)?.[0]).toBe(20);
+    // It renders no box of its own: a zero-sized svg in the board layer.
+    expect(surface().tagName.toLowerCase()).toBe('svg');
+  });
+
+  it('hands presses back to the host while disabled', async () => {
+    const onStrokesChange = vi.fn();
+    const onCanvasPointerDown = vi.fn();
+    render(
+      <Canvas onCanvasPointerDown={onCanvasPointerDown}>
+        <PencilCanvas disabled onStrokesChange={onStrokesChange} />
+      </Canvas>,
+    );
+    await drawOn(screen.getByRole('application'), 10, 60, 20);
+    expect(onCanvasPointerDown).toHaveBeenCalledTimes(1);
+    expect(onStrokesChange).not.toHaveBeenCalled();
   });
 });

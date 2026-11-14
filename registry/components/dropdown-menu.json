@@ -1,11 +1,12 @@
 {
   "name": "dropdown-menu",
   "title": "DropdownMenu",
-  "description": "UI SDK's Menu drawn as an iOS pull-down menu: rows with trailing icons, descriptions and platform shortcuts, group bands, checkbox and radio items, submenus, menus from data, and a sheet on small touch screens.",
+  "description": "UI SDK's Menu drawn as an iOS pull-down menu: rows with trailing icons, descriptions and platform shortcuts, group bands, checkbox and radio items, submenus, menus from data, two sizes, a context-menu trigger (right-click, long press, Shift+F10), and a sheet on small touch screens.",
   "page": "dropdown-menu",
   "exports": [
     "DropdownMenu",
     "DropdownMenuTrigger",
+    "DropdownMenuContextTrigger",
     "DropdownMenuContent",
     "DropdownMenuItem",
     "DropdownMenuCheckboxItem",
@@ -20,7 +21,8 @@
     "DropdownMenuSubContent",
     "DropdownMenuItems",
     "dropdownMenuItemVariants",
-    "createMenuController"
+    "createDropdownMenuController",
+    "dropdownMenuContentVariants"
   ],
   "imports": [
     "DropdownMenu",
@@ -40,8 +42,8 @@
     "DropdownMenuGroupProps",
     "DropdownMenuSubProps",
     "DropdownMenuSubTriggerProps",
-    "MenuController",
-    "MenuData",
-    "MenuDataItem"
+    "DropdownMenuController",
+    "DropdownMenuData",
+    "DropdownMenuDataItem"
   ]
 }

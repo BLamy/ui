@@ -2,6 +2,8 @@
 
 A Markdown field on the `@brett_lamy/docstream-editor` WYSIWYG editor. It reads and writes the same GitBook-flavored Markdown that [MarkdownView](https://blamy.github.io/ui/#/docstream) renders, so what you type is what readers get. Type `/` for blocks, paste Markdown to get structure, and paste or drop images as inline image blocks or as attachment chips.
 
+Use a sibling when the job differs: [MarkdownView](https://blamy.github.io/ui/#/docstream) shows Markdown nobody edits (a reply, release notes), [Textarea](https://blamy.github.io/ui/#/textarea) takes plain text with no formatting, and [CodeEditor](https://blamy.github.io/ui/#/code-editor) edits source code.
+
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/markdown-editor.json{% endcommand %}
@@ -67,7 +69,7 @@ A controlled editor beside a `MarkdownView` of the same value. Every edit serial
 
 ### In a form
 
-`name` submits the Markdown with the form through a hidden input. `aria-labelledby`, `aria-describedby` and `invalid` go on the editable element, so a `Label` and help text are read with the field. Inside a UI SDK `Field` it is the field's control: `FieldLabel` names it, `FieldDescription` and `FieldError` describe it, and the field's `name`, `disabled` and `invalid` apply.
+Put it in a `Field`, like any other control: `FieldLabel` names it, `FieldDescription` and `FieldError` describe it, and the field's `name`, `disabled` and `invalid` apply (the red ring and `aria-invalid` come only from the Field). `name` submits the Markdown with the form through a hidden input. Outside a Field, `aria-label`, `aria-labelledby` and `aria-describedby` go on the editable element.
 
 ```tsx
 <Field name="notes">
@@ -100,7 +102,7 @@ Fences labelled `xstate` or `tscircuit` use the same source-and-preview cards as
 | `onValueChange` | `(markdown, details) => void` | — | Called with serialized Markdown on every edit. `details.reason` is `input-change` (typing, paste, a toolbar or "/" command) or `imperative` (the ref's `setMarkdown`, `insertMarkdown`, `clear`), with `event` and `source`; `details.cancel()` puts the document back. |
 | `onSubmit` | `(markdown) => void` | — | ⌘/Ctrl+Enter. |
 | `placeholder` | `string` | — | Shown while the document is empty. |
-| `variant` | `'default' \| 'ghost' \| 'card'` | `'default'` | Filled field, no chrome, or a raised card. |
+| `variant` | `'default' \| 'ghost' \| 'card'` | `'default'` | The kit's filled field box (Input's and Textarea's), no chrome, or a card with a hairline. |
 | `size` | `'sm' \| 'default' \| 'lg'` | `'default'` | Type size, padding and default minimum height. |
 | `minHeight` / `maxHeight` | `number \| string` | size-based / none | Writing-area bounds; content scrolls past `maxHeight`. |
 | `toolbar` | `boolean` | `false` | Bold, italic, strike, code and link buttons. Hidden while read-only or disabled. |
@@ -114,18 +116,16 @@ Fences labelled `xstate` or `tscircuit` use the same source-and-preview cards as
 | `onAttachmentRemove` | `(ids) => void` | — | Chip mode: chips deleted, cut or cleared. |
 | `onAttachmentOpen` | `(attachment) => void` | built-in viewer | Chip mode: a chip was clicked. |
 | `readOnly` | `boolean` | `false` | Not editable; selectable, field chrome kept. |
-| `disabled` | `boolean` | `false` | Not editable and dimmed. |
-| `invalid` | `boolean` | `false` | Red ring and `aria-invalid`. |
+| `disabled` | `boolean` | `false` | Not editable and dimmed. A `Field`'s `disabled` applies too. |
 | `autoFocus` | `boolean` | `false` | Focus on mount. |
 | `name` | `string` | — | Submit the Markdown with a form. |
-| `onKeyDown` / `onPaste` | `(event) => boolean` | — | Run before the editor's own handling; return `true` when handled. |
-| `onFocus` / `onBlur` | `() => void` | — | Focus changes. |
+| `handleKeyDown` / `handlePaste` | `(event) => boolean` | — | ProseMirror's hooks: run before the editor's own handling; return `true` when you handled it. |
+| `onFocus` / `onBlur` | `(event: FocusEvent) => void` | — | The writing area took or lost focus. |
 | `onEditorReady` | `(editor \| null) => void` | — | The TipTap editor once mounted. |
 | `classNames` | `MarkdownEditorClassNames` | — | Classes for parts of the document: `title`, `heading`, `paragraph`, `list`, `checklist`, `checklistItem`, `checkbox`, `table`, `tableHeader`, `tableCell`, `blockquote`, `codeBlock`, `link`, `toolbar`, `editor`, `content`. |
-| `contentClassName` | `string` | — | Classes for the writing area (the contenteditable); same as `classNames.content`. |
 | `ref` | `MarkdownEditorHandle` | — | `editor`, `commands`, `chain()`, `focus()`, `blur()`, `getMarkdown()`, `setMarkdown()`, `insertMarkdown()`, `clear()`, `isEmpty()`. |
 
-`id`, `aria-label`, `aria-labelledby`, `aria-describedby`, `className` and `style` are passed through as well. `markdownEditorVariants` is the cva recipe; `looksLikeMarkdown` and `insertMarkdown(editor, markdown)` are the paste helpers, exported for editors of your own.
+`id`, `aria-label`, `aria-labelledby` and `aria-describedby` go on the writing area; every other `div` prop (`className`, `style`, `data-*`, …) goes on the root. `markdownEditorVariants` is the cva recipe; `looksLikeMarkdown` and `insertMarkdown(editor, markdown)` are the paste helpers, exported for editors of your own.
 
 ## Theming
 
@@ -171,9 +171,9 @@ Defined in `@/components/ui/markdown-editor`. Base classes:
 
 | Value | Adds |
 | --- | --- |
-| `default` (default) | `rounded-ctl bg-input focus-within:bg-transparent focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] data-readonly:focus-within:bg-input data-readonly:focus…` |
+| `default` (default) | — |
 | `ghost` | `rounded-none bg-transparent` |
-| `card` | `rounded-card bg-card shadow-[0_0_0_1px_var(--border),0_1px_2px_--alpha(black/4%)] focus-within:shadow-[0_0_0_1.5px_var(--primary),0_1px_2px_--alpha(black/4%)] …` |
+| `card` | `rounded-card bg-card shadow-hairline focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)]` |
 
 **`size`** — default `default`
 

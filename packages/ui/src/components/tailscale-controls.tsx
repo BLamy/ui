@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import type { ChangeDetails } from '@ui-sdk/core';
 import type { ListboxValueChangeReason } from '@ui-sdk/react/listbox';
-import { Listbox, ListboxItem } from '@/components/ui/list-box';
+import { Listbox, ListboxItem } from '@/components/ui/listbox';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon, type IconName } from '@/lib/icon';
 import { tailscaleErrorMessage, type Tailscale, type TailscalePeer, type TailscaleSnapshot, type TailscaleStatus } from '@/lib/tailscale';

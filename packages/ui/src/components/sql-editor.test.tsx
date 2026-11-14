@@ -4,7 +4,7 @@ import { renderHook } from '@testing-library/react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setPlatform } from '@ui-sdk/core/testing';
-import { SqlEditor, useSqlHistory, type SqlEditorHandle } from '@/components/ui/sql-editor';
+import { SqlEditor, SqlEditorFooter, SqlEditorRun, useSqlHistory, type SqlEditorHandle } from '@/components/ui/sql-editor';
 
 declare global {
   var __UI_SDK_STRICT__: boolean | undefined;
@@ -58,7 +58,7 @@ describe('SqlEditor', () => {
     expect(runButton().disabled).toBe(false);
     fireEvent.click(runButton());
     expect(onRun).toHaveBeenLastCalledWith('select 1');
-    rerender(<SqlEditor onRun={onRun} running />);
+    rerender(<SqlEditor onRun={onRun} pending />);
     expect(runButton().disabled).toBe(true);
     modEnter();
     expect(onRun).toHaveBeenCalledTimes(1);
@@ -66,6 +66,22 @@ describe('SqlEditor', () => {
     expect(area().disabled).toBe(true);
     expect(runButton().disabled).toBe(true);
     expect(document.querySelector('[data-slot=sql-editor]')?.hasAttribute('data-disabled')).toBe(true);
+  });
+
+  it('the footer is a part: your controls go before Run, your own footer replaces it, `false` leaves it out', () => {
+    const onRun = vi.fn();
+    const { rerender } = render(<SqlEditor onRun={onRun} defaultValue="select 1" pending rows={4}><SqlEditorFooter><button type="button">Format</button></SqlEditorFooter></SqlEditor>);
+    const root = document.querySelector<HTMLElement>('[data-slot=sql-editor]')!;
+    expect(root.hasAttribute('data-pending')).toBe(true);
+    expect(root.style.getPropertyValue('--editor-rows')).toBe('4');
+    const buttons = [...document.querySelectorAll('[data-slot=sql-editor-footer] button')].map((b) => b.textContent);
+    expect(buttons).toEqual(['Format', 'Running…']);
+    rerender(<SqlEditor onRun={onRun} defaultValue="select 1"><div><SqlEditorRun>Execute</SqlEditorRun></div></SqlEditor>);
+    expect(document.querySelector('[data-slot=sql-editor-footer]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Execute' }));
+    expect(onRun).toHaveBeenCalledWith('select 1');
+    rerender(<SqlEditor onRun={onRun} defaultValue="select 1">{false}</SqlEditor>);
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('ArrowUp on the first line and ArrowDown on the last step through the history (createInputHistory)', () => {

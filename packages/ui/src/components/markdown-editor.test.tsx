@@ -22,14 +22,40 @@ async function mount(props: Props) {
 }
 
 describe('MarkdownEditor', () => {
-  it('names the contenteditable and carries the field state onto it', async () => {
-    await mount({ 'aria-label': 'Notes', 'aria-describedby': 'hint', placeholder: 'Write…', invalid: true, defaultValue: 'Hello' });
+  it('names the contenteditable, and passes the rest of its props to the root', async () => {
+    await mount({ 'aria-label': 'Notes', 'aria-describedby': 'hint', placeholder: 'Write…', defaultValue: 'Hello', 'data-testid': 'mde', title: 'Notes field' } as Props);
     await waitFor(() => expect(doc().getAttribute('aria-label')).toBe('Notes'));
     expect(doc().getAttribute('aria-describedby')).toBe('hint');
-    expect(doc().getAttribute('aria-invalid')).toBe('true');
+    expect(doc().hasAttribute('aria-invalid')).toBe(false);
     expect(doc().getAttribute('aria-placeholder')).toBe('Write…');
     expect(doc().textContent).toContain('Hello');
-    expect(document.querySelector('[data-slot=markdown-editor]')!.hasAttribute('data-invalid')).toBe(true);
+    const root = document.querySelector<HTMLElement>('[data-slot=markdown-editor]')!;
+    expect(root.getAttribute('data-testid')).toBe('mde');
+    expect(root.title).toBe('Notes field');
+    expect(root.hasAttribute('data-invalid')).toBe(false);
+  });
+
+  it('draws the kit field box (fieldSurfaceVariants) in the default variant', async () => {
+    await mount({ 'aria-label': 'Notes', size: 'sm' });
+    const root = document.querySelector<HTMLElement>('[data-slot=markdown-editor]')!;
+    expect(root.className).toContain('bg-input');
+    expect(root.className).toContain('rounded-ctl');
+    expect(root.className).toContain('h-auto');
+    expect(root.className).not.toContain('h-8');
+  });
+
+  it('hands handleKeyDown the key first, and onFocus / onBlur the focus event', async () => {
+    const handleKeyDown = vi.fn(() => true);
+    const onFocus = vi.fn();
+    const onBlur = vi.fn();
+    const { ref } = await mount({ 'aria-label': 'Notes', handleKeyDown, onFocus, onBlur });
+    act(() => ref.current!.focus());
+    await waitFor(() => expect(onFocus).toHaveBeenCalled());
+    expect((onFocus.mock.calls[0] as unknown[])[0]).toBeInstanceOf(FocusEvent);
+    fireEvent.keyDown(doc(), { key: 'b', metaKey: true });
+    expect(handleKeyDown).toHaveBeenCalled();
+    act(() => ref.current!.blur());
+    await waitFor(() => expect(onBlur).toHaveBeenCalled());
   });
 
   it('uncontrolled: setMarkdown replaces the document, reports Markdown and submits it with the form', async () => {
@@ -87,6 +113,7 @@ describe('MarkdownEditor', () => {
     const described = doc().getAttribute('aria-describedby')!.split(' ').map((id) => document.getElementById(id)?.textContent);
     expect(described).toEqual(expect.arrayContaining(['Markdown is fine.', 'Too short.']));
     expect(doc().getAttribute('aria-invalid')).toBe('true');
+    expect(document.querySelector('[data-slot=markdown-editor]')!.hasAttribute('data-invalid')).toBe(true);
     expect(doc().getAttribute('aria-disabled')).toBe('true');
     expect(doc().getAttribute('contenteditable')).toBe('false');
     expect(container.querySelector<HTMLInputElement>('input[type=hidden]')!.name).toBe('notes');

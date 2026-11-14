@@ -1,19 +1,25 @@
 {
   "name": "video-preview",
   "title": "VideoPreview",
-  "description": "Plays a video timeline live, without rendering: the clips near the playhead as video, audio and image elements in their frames, with looks as CSS filters and fades as opacity and volume, following a shared playback clock (re-synced on drift, the next clip loaded ahead). With transport controls (a UI SDK Toolbar) and a timecode.",
+  "description": "Plays a video timeline live, without rendering: the clips near the playhead as video, audio and image elements in their frames, with looks as CSS filters and fades as opacity and volume, following a shared playback clock (re-synced on drift, the next clip loaded ahead). With transport controls on the kit Toolbar and a timecode.",
   "page": "video-preview",
   "files": [
     "components/video-preview.tsx"
   ],
   "exports": [
     "VideoPreview",
-    "PlaybackControls",
-    "PlaybackTimecode"
+    "VideoPreviewControls",
+    "VideoPreviewTimecode"
   ],
   "imports": [
     "VideoPreview",
-    "PlaybackControls",
+    "VideoPreviewControls",
     "usePlaybackClock"
+  ],
+  "types": [
+    "VideoPreviewProps",
+    "VideoPreviewControlsProps",
+    "VideoPreviewTimecodeProps",
+    "PreviewMedia"
   ]
 }

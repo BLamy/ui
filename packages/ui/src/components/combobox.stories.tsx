@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '@/components/ui/combobox';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import {
+  Combobox, ComboboxChips, ComboboxClear, ComboboxContent, ComboboxEmpty, ComboboxField, ComboboxGroup, ComboboxGroupLabel, ComboboxInput,
+  ComboboxItem, ComboboxList, ComboboxStatus, ComboboxTrigger,
+} from '@/components/ui/combobox';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Icon } from '@/lib/icon';
 import { Screen } from '../stories/primitive-frame';
 
@@ -34,7 +37,10 @@ function City({ query, open }: { query?: string; open?: boolean }) {
     <Field ref={ref}>
       <FieldLabel>City</FieldLabel>
       <Combobox defaultOpen={open && !query}>
-        <ComboboxInput placeholder="Search cities" />
+        <ComboboxField>
+          <ComboboxInput placeholder="Search cities" />
+          <ComboboxTrigger />
+        </ComboboxField>
         <ComboboxContent>
           <ComboboxEmpty>No cities found.</ComboboxEmpty>
           <ComboboxList>
@@ -66,7 +72,10 @@ export const FromData: Story = {
       <Field>
         <FieldLabel>Assignee</FieldLabel>
         <Combobox defaultOpen defaultValue="kim" items={people}>
-          <ComboboxInput placeholder="Search the team" />
+          <ComboboxField>
+            <ComboboxInput placeholder="Search the team" />
+            <ComboboxTrigger />
+          </ComboboxField>
           <ComboboxContent>
             <ComboboxEmpty>No one matches.</ComboboxEmpty>
             <ComboboxList>
@@ -79,6 +88,121 @@ export const FromData: Story = {
           </ComboboxContent>
         </Combobox>
       </Field>
+    </Screen>
+  ),
+};
+
+function Cities({ dark, open }: { dark?: boolean; open?: boolean }) {
+  return (
+    <Screen dark={dark} h={520}>
+      <Field>
+        <FieldLabel>Cities</FieldLabel>
+        <Combobox multiple defaultValue={['Lisbon', 'Seoul', 'Tokyo']} defaultOpen={open}>
+          <ComboboxField>
+            <ComboboxChips><ComboboxInput placeholder="Add a city" /></ComboboxChips>
+            <ComboboxClear />
+            <ComboboxTrigger />
+          </ComboboxField>
+          <ComboboxContent>
+            <ComboboxEmpty>No cities found.</ComboboxEmpty>
+            <ComboboxList>{cities.map((c) => <ComboboxItem key={c} value={c}>{c}</ComboboxItem>)}</ComboboxList>
+          </ComboboxContent>
+        </Combobox>
+        <FieldDescription>Backspace removes the last; the arrow keys move between chips.</FieldDescription>
+      </Field>
+    </Screen>
+  );
+}
+
+/** `multiple`, with the choice as chips and a Clear button. */
+export const Multiple: Story = { render: () => <Cities open /> };
+export const MultipleDark: Story = { render: () => <Cities dark open /> };
+
+export const Groups: Story = {
+  render: () => (
+    <Screen h={520}>
+      <Field>
+        <FieldLabel>City</FieldLabel>
+        <Combobox defaultOpen>
+          <ComboboxField />
+          <ComboboxContent>
+            <ComboboxList>
+              <ComboboxGroup>
+                <ComboboxGroupLabel>Europe</ComboboxGroupLabel>
+                {['Amsterdam', 'Berlin', 'Lisbon'].map((c) => <ComboboxItem key={c} value={c}>{c}</ComboboxItem>)}
+              </ComboboxGroup>
+              <ComboboxGroup>
+                <ComboboxGroupLabel>Asia</ComboboxGroupLabel>
+                {['Seoul', 'Tokyo'].map((c) => <ComboboxItem key={c} value={c}>{c}</ComboboxItem>)}
+              </ComboboxGroup>
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
+      </Field>
+    </Screen>
+  ),
+};
+
+/** An async list's status line, while results load. */
+export const AsyncStatus: Story = {
+  render: () => (
+    <Screen h={320}>
+      <Field>
+        <FieldLabel>Movie</FieldLabel>
+        <Combobox items={[]} status="loading" filter={false} defaultOpen>
+          <ComboboxField />
+          <ComboboxContent>
+            <ComboboxStatus>{(state) => (state.loading ? 'Searching…' : null)}</ComboboxStatus>
+            <ComboboxList />
+          </ComboboxContent>
+        </Combobox>
+      </Field>
+    </Screen>
+  ),
+};
+
+export const Invalid: Story = {
+  render: () => (
+    <Screen h={300}>
+      <Field invalid>
+        <FieldLabel>City</FieldLabel>
+        <Combobox items={cities}>
+          <ComboboxField />
+          <ComboboxContent />
+        </Combobox>
+        <FieldError match>Pick a city we fly to.</FieldError>
+      </Field>
+    </Screen>
+  ),
+};
+
+export const Disabled: Story = {
+  render: () => (
+    <Screen h={300}>
+      <Field disabled>
+        <FieldLabel>City</FieldLabel>
+        <Combobox items={cities} defaultValue="Lisbon">
+          <ComboboxField />
+          <ComboboxContent />
+        </Combobox>
+      </Field>
+    </Screen>
+  ),
+};
+
+/** The field in its three sizes: 32, 44 and 50px. */
+export const Sizes: Story = {
+  render: () => (
+    <Screen h={360}>
+      {(['sm', 'default', 'lg'] as const).map((size) => (
+        <Combobox key={size} items={cities} defaultValue="Paris">
+          <ComboboxField size={size}>
+            <ComboboxInput aria-label={`City, ${size}`} />
+            <ComboboxTrigger />
+          </ComboboxField>
+          <ComboboxContent />
+        </Combobox>
+      ))}
     </Screen>
   ),
 };

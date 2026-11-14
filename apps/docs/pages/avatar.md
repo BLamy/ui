@@ -6,11 +6,10 @@ A round avatar showing a person's initials on a gradient derived from their name
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/avatar.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. `AvatarGroup` is its own item (`avatar-group.json`), so a lone avatar never installs the menu it uses. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
 import { Avatar } from '@/components/ui/avatar'
-import { AvatarGroup } from '@/components/ui/avatar-group'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -21,7 +20,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Avatar, AvatarGroup } from '@brett_lamy/ui'
+import { Avatar } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
@@ -164,13 +163,3 @@ absolute -right-[2px] -bottom-[2px] box-border size-[max(10px,calc(var(--avatar-
 | `idle` | `bg-warning` |
 | `dnd` | `bg-destructive` |
 | `offline` | `bg-tertiary-foreground` |
-
-### `avatarGroupVariants`
-
-Defined in `@/components/ui/avatar-group`. Base classes:
-
-```text
-inline-flex items-center rounded-full outline-none [&>*]:ring-2 [&>*]:ring-(--avatar-ring,var(--background)) [&>*+*]:-ml-(--avatar-overlap)
-```
-
-No variants.

@@ -105,8 +105,7 @@ function Workspace({
   connectionStore,
   basePath = '',
   title = 'Vibecoder',
-  theme = 'dark',
-  height = 720,
+  appearance = 'dark',
   style,
   onReady,
   onStateChange,
@@ -133,7 +132,7 @@ function Workspace({
   return (
     <ThemeScope
       scope="terminal"
-      appearance={theme}
+      appearance={appearance}
       className="flex h-full min-h-0 w-full flex-col bg-background text-foreground"
     >
       {keychain && (
@@ -188,8 +187,7 @@ function Workspace({
         credentialStore={credentialStore ?? stores?.credentials}
         connectionStore={connectionStore ?? stores?.connection}
         title={title}
-        theme={theme}
-        height={height}
+        appearance={appearance}
         style={{ flex: 1, minHeight: 360, ...style }}
         host={host}
         createHost={createHost ?? (host ? undefined : createStarter)}

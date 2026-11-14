@@ -12,7 +12,7 @@ import { createSelection, createLasso, createCellRange, byCellRange, cellsToText
 
 | Need | Use |
 | --- | --- |
-| A list to pick one or many from | [`Listbox`](https://blamy.github.io/ui/#/list-box) (`multiple`, `value`, `onValueChange`), on UI SDK's Listbox. |
+| A list to pick one or many from | [`Listbox`](https://blamy.github.io/ui/#/listbox) (`multiple`, `value`, `onValueChange`), on UI SDK's Listbox. |
 | A tree with selectable rows | [`Tree`](https://blamy.github.io/ui/#/tree), on UI SDK's Tree. |
 | Toggle buttons, radio, segmented | [`ToggleGroup`](https://blamy.github.io/ui/#/toggle), [`RadioGroup`](https://blamy.github.io/ui/#/radio-group), [`Segmented`](https://blamy.github.io/ui/#/segmented). |
 | A sheet of cells | [`Spreadsheet`](https://blamy.github.io/ui/#/spreadsheet). |

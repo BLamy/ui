@@ -9,7 +9,7 @@
      All of it is invented sample data and nothing connects to anything: turning it off only dims the glyph. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { Listbox, ListboxGroup, ListboxGroupLabel, ListboxItem } from '@/components/ui/list-box';
+import { Listbox, ListboxGroup, ListboxGroupLabel, ListboxItem } from '@/components/ui/listbox';
 import { Popover, PopoverClose, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
@@ -177,7 +177,7 @@ export function WifiStatusItem({ defaultOpen }: { defaultOpen?: boolean }) {
           <div className="flex items-center justify-between gap-2">
             <PopoverTitle className="text-subhead">Wi-Fi</PopoverTitle>
             {/* The switch is a phone's size; scaled to sit in a menu without taking the room it was made for. */}
-            <span className="-my-1 inline-grid origin-right scale-75"><Switch checked={on} onCheckedChange={setOn} aria-label="Wi-Fi" /></span>
+            <Switch size="sm" checked={on} onCheckedChange={setOn} aria-label="Wi-Fi" />
           </div>
           {on ? (
             <Listbox

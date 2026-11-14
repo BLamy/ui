@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Filmstrip } from '@/components/ui/filmstrip'
-import { PlaybackControls } from '@/components/ui/video-preview'
+import { VideoPreviewControls } from '@/components/ui/video-preview'
 import { VideoTimeline } from '@/components/ui/video-timeline'
 import { Waveform } from '@/components/ui/waveform'
 import { usePlaybackClock } from '@/lib/playback'
@@ -64,7 +64,7 @@ export default function TimelineEditor() {
   return (
     <div className="flex h-[340px] w-full flex-col bg-background">
       <div className="flex items-center gap-2 border-b border-border px-2 py-1">
-        <PlaybackControls clock={clock} />
+        <VideoPreviewControls playback={clock} />
         <div className="flex-1" />
         <Button variant="ghost" size="sm" onClick={split}>Split</Button>
         <Button variant="ghost" size="sm" disabled={history.length < 2} onClick={() => setHistory((h) => h.slice(0, -1))}>Undo</Button>
@@ -73,7 +73,7 @@ export default function TimelineEditor() {
         className="min-h-0 flex-1"
         value={timeline}
         onValueChange={edit}
-        clock={clock}
+        playback={clock}
         media={{ ...MEDIA, title: { name: 'Title', kind: 'image', duration: Infinity } }}
         selectedClips={selection}
         onSelectedClipsChange={setSelection}

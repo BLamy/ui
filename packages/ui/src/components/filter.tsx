@@ -7,7 +7,7 @@ import { Command, CommandEmpty, CommandInput, CommandItem, CommandList, type Lis
 import { Listbox, ListboxItem, ListboxItemIndicator } from '@ui-sdk/react/listbox';
 import { createParts } from '@ui-sdk/react/primitive';
 import { useShortcut } from '@ui-sdk/react/shortcuts';
-import { Toolbar, ToolbarButton } from '@ui-sdk/react/toolbar';
+import { ToolbarButton as SdkToolbarButton } from '@ui-sdk/react/toolbar';
 import { announce as announceText, createFocusRecovery, type ChangeDetails, type ChangeSource } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Button as SdkButton } from '@ui-sdk/react/button';
@@ -15,9 +15,10 @@ import { Button } from '@/components/ui/button';
 import { checkboxVariants } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { listboxItemVariants, listboxVariants } from '@/components/ui/list-box';
+import { listboxItemVariants, listboxVariants } from '@/components/ui/listbox';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger, createPopoverController, type PopoverProps } from '@/components/ui/popover';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
+import { Toolbar } from '@/components/ui/toolbar';
 import {
   DATE_PRESETS, RELATIVE_UNITS, createFilter, describeFilter, describeValue, isDateValue, isFilterComplete,
   operatorLabel, operatorsFor, withOperator, withValue,
@@ -152,7 +153,7 @@ const InToolbar = createContext(false);
 /* ── variants ── */
 
 const barClass = 'flex min-w-0 flex-col gap-2';
-const toolbarClass = 'flex min-w-0 flex-wrap items-center gap-1.5';
+const toolbarClass = 'flex-wrap gap-1.5';
 
 export const filterChipVariants = cva(
   'box-border inline-flex max-w-full min-w-0 items-stretch rounded-lg text-foreground',
@@ -205,7 +206,7 @@ type BarButtonProps = Omit<ComponentProps<'button'>, 'className' | 'onClick'> & 
 /** A button of the row: a Toolbar button inside a FilterToolbar (so the arrows reach it), else the element itself. */
 function BarButton({ render, ...props }: BarButtonProps) {
   const inBar = useContext(InToolbar);
-  if (inBar) return <ToolbarButton render={render} {...props} />;
+  if (inBar) return <SdkToolbarButton render={render} {...props} />;
   return render ? cloneElement(render, props) : <SdkButton {...props} />;
 }
 
@@ -427,8 +428,8 @@ function DateEditor({ operator, value, onChange, onDone }: { operator?: FilterOp
           size="sm"
           className="tabular-nums"
         />
-        <Segmented<RelativeUnit> aria-label="Unit" value={relative.unit} onValueChange={(unit, details) => { if (unit) send(amount, unit, via(details)); }}>
-          {RELATIVE_UNITS.map((u) => <SegmentedItem key={u} value={u} className="px-1.5">{`${u}s`}</SegmentedItem>)}
+        <Segmented<RelativeUnit> aria-label="Unit" size="sm" value={relative.unit} onValueChange={(unit, details) => { if (unit) send(amount, unit, via(details)); }}>
+          {RELATIVE_UNITS.map((u) => <SegmentedItem key={u} value={u}>{`${u}s`}</SegmentedItem>)}
         </Segmented>
       </div>
     );

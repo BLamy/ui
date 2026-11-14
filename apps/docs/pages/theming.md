@@ -239,6 +239,33 @@ Outside a `ThemeScope` the hook returns nothing, so the overlay wears the page a
 
 {% demo src="theming/custom-scope" %}
 
+### The workbench scope
+
+`<ThemeScope scope="workbench">` is the Workbench's dark-first IDE palette (with a light counterpart in the Apple and Codex-desktop style). Wrap [Conversation](https://blamy.github.io/ui/#/conversation), [Composer](https://blamy.github.io/ui/#/composer), [MessageScroller](https://blamy.github.io/ui/#/message-scroller) and code parts in it when you use them outside the `t3-clone` block's `WorkbenchShell`, which opens the same scope itself. With the bl-theme the scope root also paints itself: the scope's background and text color, the sans font and antialiasing, in the base layer, so your classes on it win.
+
+```tsx
+<ThemeScope scope="workbench" className="p-4">
+  <MessageScroller threadKey="t1">{messages}</MessageScroller>
+</ThemeScope>
+
+<ThemeScope scope="workbench" appearance="light" tint="#30d158">…</ThemeScope>
+```
+
+Its appearance is the explicit `appearance`, else an enclosing `workbench` scope's, else the ambient `AppearanceProvider` value (the `dark` class on `<html>` counts), else **dark**: unlike the other named scopes it never falls back to light. Popovers, menus and tooltips opened inside wear it (above). The chip in each scope below reads `useThemeScope()` from inside.
+
+{% demo src="theming/workbench-scope" %}
+
+For a third-party renderer that takes the appearance as a prop (a diff viewer, a syntax highlighter), read it from the scope rather than from CSS:
+
+```tsx
+import { useThemeScope, useScopeAppearance } from '@/lib/theme'
+
+const scope = useThemeScope()                       // the nearest scope's { scope, appearance, tint, vars }, or null
+const appearance = useScopeAppearance('workbench')  // what a workbench scope here resolves to: 'light' | 'dark'
+```
+
+`useScopeAppearance(scope, appearance?)` applies the same rule `ThemeScope` does, so a component that renders its own scope root (a shell) can know its appearance before it renders.
+
 ## Using with a shadcn preset
 
 Nothing to convert. A preset (from `shadcn create` or a theme copied off ui.shadcn.com) defines the variables BL UI reads: `:root` and `.dark` blocks with `--background`, `--primary`, `--radius`, and so on. BL UI's parts use them as they are.
@@ -285,10 +312,10 @@ Everything below it, overlays included, now reads those values. The library ship
 
 | Scope | Where | Changes |
 | --- | --- | --- |
-| `workbench` | bl-theme | surfaces, labels, fills, hairlines, code blocks (dark `#141419` / light `#FFFFFF` background). `WorkbenchTheme` and the `t3-clone` block's `WorkbenchShell` open it |
+| `workbench` | bl-theme | surfaces, labels, fills, hairlines, code blocks (dark `#141419` / light `#FFFFFF` background). `<ThemeScope scope="workbench">` and the `t3-clone` block's `WorkbenchShell` open it; dark unless told otherwise, and the root paints its background, text color and font |
 | `terminal` | bl-theme | always dark; background `#0C0C10` (`#1A1A1F` in a light Workbench). The `t3-clone` block's dock and terminal open it |
-| `sheet` | bl-theme | the floating surface's text, card, fills and hairlines in a light or dark tone (background and accent stay the host's). `FloatingSheet`, `FloatingChat` and `ArtifactChatContainer` with a `tone` open it |
-| `glass` | bl-theme | the translucent composer card over content, inside `FloatingChat` and `ArtifactChatContainer` |
+| `sheet` | bl-theme | the floating surface's text, card, fills and hairlines in a light or dark appearance (background and accent stay the host's). `FloatingSheet` and `ArtifactChatContainer` given an `appearance` open it |
+| `glass` | bl-theme | the translucent composer card over content, inside `ArtifactChatContainer` (in the chat's appearance) |
 | `chat` | `discord-clone` block | chat grays, link and mention colors, in `chat-theme.css` next to the block. Its `ChatShell` opens it |
 
 Without the bl-theme, a built-in scope is just its `light` / `dark` class and wears your theme. Blocks bring their own scope CSS with them, so installing one is enough.

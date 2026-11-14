@@ -1,7 +1,7 @@
 {
   "name": "filter",
   "title": "Filter",
-  "description": "Linear-style filtering on UI SDK: a Filter button (and F shortcut) opens a searchable Command of fields, then a searchable multi-select of values (an option search: the field keeps focus, the arrows move, Enter ticks); each filter is a chip with its own operator menu and value popover, removable with \u00d7, Backspace or Delete. One Toolbar tab stop with arrow keys across the chips, announcements through UI SDK's announce(), change details with reason, source, event and cancel(), match all/any and Clear all.",
+  "description": "Linear-style filtering on UI SDK: a Filter button (and F shortcut) opens a searchable Command of fields, then a searchable multi-select of values (an option search: the field keeps focus, the arrows move, Enter ticks); each filter is a chip with its own operator menu and value popover, removable with ×, Backspace or Delete. One Toolbar tab stop with arrow keys across the chips, announcements through UI SDK's announce(), change details with reason, source, event and cancel(), match all/any and Clear all.",
   "page": "filter",
   "files": [
     "components/filter.tsx"
@@ -18,8 +18,6 @@
     "useFilters",
     "useFilterBar",
     "useOptionalFilterBar",
-    "filterBarVariants",
-    "filterToolbarVariants",
     "filterChipVariants"
   ],
   "imports": [

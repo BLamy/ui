@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { FloatingSheet, type FloatingSheetAppearance } from '@/components/ui/floating-sheet'
+import {
+  FloatingSheet,
+  FloatingSheetBody,
+  FloatingSheetFoot,
+  type FloatingSheetVariant,
+} from '@/components/ui/floating-sheet'
 import { ProgressStepper } from '@/components/ui/progress-stepper'
 import { useAppearance } from '@/lib/theme'
 
@@ -85,29 +90,28 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
   )
 }
 
-// Changing appearance (or tone) morphs the same surface — background, border
+// Changing `variant` (or `appearance`) morphs the same surface — background, border
 // and shadow cross on the spring curves; nothing remounts.
 export default function AppearanceMorph({
   variant = 'glass',
 }: {
   variant?: string
 }) {
-  const appearance: FloatingSheetAppearance =
-    variant === 'sheet' ? 'sheet' : 'glass'
+  const look: FloatingSheetVariant = variant === 'sheet' ? 'sheet' : 'glass'
   return (
     <Host
       note={
-        'Switch the appearance in the header: the same surface changes ' +
+        'Switch the variant in the header: the same surface changes ' +
         'material — no remount, no jump.'
       }
     >
       <FloatingSheet
-        appearance={appearance}
+        variant={look}
         peek={150}
-        label="Order"
+        aria-label="Order"
         hideOnScroll={false}
       >
-        <FloatingSheet.Body>
+        <FloatingSheetBody>
           <div style={{ padding: '2px 20px 24px', display: 'grid', gap: 12 }}>
             <h3 style={{ margin: 0, fontSize: 20 }}>Preparing your order</h3>
             <ProgressStepper current={1} labels steps={steps} />
@@ -122,12 +126,12 @@ export default function AppearanceMorph({
               />
             ))}
           </div>
-        </FloatingSheet.Body>
-        <FloatingSheet.Foot>
+        </FloatingSheetBody>
+        <FloatingSheetFoot>
           <div style={{ padding: '8px 16px 16px' }}>
             <Button size="pill">Track order</Button>
           </div>
-        </FloatingSheet.Foot>
+        </FloatingSheetFoot>
       </FloatingSheet>
     </Host>
   )

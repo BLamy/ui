@@ -61,14 +61,13 @@ export default function Wave() {
       </div>
       <IndexBar
         variant="wave"
-        side="left"
+        side="start"
         panel
         panelTitle="On this page"
-        label="Sections"
+        aria-label="Sections"
         items={stops}
-        value={current}
-        top={16}
-        bottom={16}
+        current={current}
+        className="top-4 bottom-4"
         onJump={(id) => {
           const el = heads.current[id]
           if (el && scroller.current) scroller.current.scrollTop = el.offsetTop - 12

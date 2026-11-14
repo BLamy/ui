@@ -31,15 +31,15 @@ function SmartIcon({ glyph }: { glyph: Smart['glyph'] }) {
 function SmartTile({ t }: { t: Smart }) {
   const { items } = useReminders();
   return (
-    <SplitViewItem id={t.id} tint={t.color}
+    <SplitViewItem value={t.id} tint={t.color}
       className="min-h-0 flex-col items-stretch gap-1.5 rounded-panel bg-card px-2.5 pt-2.5 pb-2 hover:bg-card active:scale-[.97] data-selected:bg-(--split-item-tint) transition-[background-color,scale] duration-spring-snappy ease-spring-snappy">
       <span className="flex items-start justify-between">
-        <span className="grid size-[31px] place-items-center rounded-full bg-(--split-item-tint) text-white group-data-selected/item:bg-white group-data-selected/item:text-(--split-item-tint)">
+        <span className="grid size-[31px] place-items-center rounded-full bg-(--split-item-tint) text-white group-data-current/item:bg-white group-data-current/item:text-(--split-item-tint)">
           <SmartIcon glyph={t.glyph} />
         </span>
         <NumberMorph value={countFor(t.id, items)} className="text-[26px] leading-[30px] font-bold tabular-nums" />
       </span>
-      <span className="text-subhead font-semibold text-muted-foreground group-data-selected/item:text-white">{t.name}</span>
+      <span className="text-subhead font-semibold text-muted-foreground group-data-current/item:text-white">{t.name}</span>
     </SplitViewItem>
   );
 }
@@ -50,13 +50,13 @@ function ListItem({ l, collapsed }: { l: RList; collapsed: boolean }) {
   const { items } = useReminders();
   return (
     <div className="relative flex w-full after:absolute after:right-0 after:bottom-0 after:left-[55px] after:h-px after:bg-border last:after:hidden has-data-selected:after:hidden">
-      <SplitViewItem id={l.id} tint={l.color} preview={<ListPreview list={l} items={items} />}
+      <SplitViewItem value={l.id} tint={l.color} preview={<ListPreview list={l} items={items} />}
         className="min-h-[50px] gap-3 rounded-ctl px-3 text-body">
-        <ListIcon glyph={l.glyph} color={l.color} size={30} className="transition-colors duration-150 group-data-selected/item:bg-white group-data-selected/item:text-(--list-color)" />
+        <ListIcon glyph={l.glyph} color={l.color} size={30} className="transition-colors duration-150 group-data-current/item:bg-white group-data-current/item:text-(--list-color)" />
         <span className="min-w-0 flex-1 truncate" title={l.file?.path}>{l.name}
-          {l.file ? <span className="block truncate text-footnote text-muted-foreground group-data-selected/item:text-white/80">{l.file.path.split('/').slice(1).join('/')}</span> : null}
+          {l.file ? <span className="block truncate text-footnote text-muted-foreground group-data-current/item:text-white/80">{l.file.path.split('/').slice(1).join('/')}</span> : null}
         </span>
-        <span className="text-muted-foreground tabular-nums group-data-selected/item:text-white/85">{countFor(l.id, items)}</span>
+        <span className="text-muted-foreground tabular-nums group-data-current/item:text-white/85">{countFor(l.id, items)}</span>
         {collapsed ? <Icon name="chevron-right" size={14} weight="bold" className="text-tertiary-foreground" /> : null}
       </SplitViewItem>
     </div>

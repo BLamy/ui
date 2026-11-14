@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
 import { ToastProvider, ToastRegion, createToaster } from '@/components/ui/toast'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 import { type ComposerAttachment } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
 // Stand-ins so the example opens with one of each kind of tile.
@@ -75,13 +75,13 @@ function FilesAndDrop() {
 export default function FilesAndDropExample() {
   const [frame, setFrame] = useState<HTMLDivElement | null>(null)
   return (
-    <WorkbenchTheme style={{ padding: 18, position: 'relative' }}>
+    <ThemeScope scope="workbench" style={{ padding: 18, position: 'relative' }}>
       <div ref={setFrame}>
         <ToastProvider toaster={queue}>
           <FilesAndDrop />
         </ToastProvider>
         {frame ? <ToastRegion toaster={queue} side="top" offset={12} container={frame} /> : null}
       </div>
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

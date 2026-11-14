@@ -1,4 +1,4 @@
-import { Composer, ComposerAddon, ComposerAttach, ComposerAttachments, ComposerCard, ComposerInput, ComposerSend, type ComposerProps } from '@/components/ui/composer/composer';
+import { Composer, ComposerAddon, ComposerAdd, ComposerAttachments, ComposerCard, ComposerInput, ComposerSend, type ComposerProps } from '@/components/ui/composer/composer';
 import { useChatUsers } from './components/chat-users';
 
 export interface MessageComposerProps extends Omit<ComposerProps, 'children' | 'onSubmit'> {
@@ -28,7 +28,7 @@ export function MessageComposer({ placeholder, autoFocus, channels, onSend, ...p
       <ComposerCard>
         <ComposerAttachments />
         <ComposerAddon align="inline-start">
-          <ComposerAttach label="Attach images" />
+          <ComposerAdd icon="paperclip-diagonal" label="Attach images" />
         </ComposerAddon>
         <ComposerInput placeholder={placeholder} autoFocus={autoFocus} references={references} />
         <ComposerAddon align="inline-end">

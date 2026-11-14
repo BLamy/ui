@@ -8,7 +8,7 @@ const reminders = [
 ]
 
 /**
- * - The sidebar bar shows "Lists" only once the list scrolls (`titleOnScroll`).
+ * - The sidebar bar shows "Lists" only once the list scrolls (`showOnScroll`).
  * - "My Lists" is a `prominent` section label (and `labelClassName` restyles it).
  * - The detail's large title carries the open count on its line
  *   (`largeTitleTrailing`) and lines up with the centred content
@@ -31,11 +31,11 @@ export default function HeaderOptions() {
         defaultValue={{ sidebar: 'today' }}
       >
         <SplitViewSidebar aria-label="Lists" width={240}>
-          <SplitViewHeader title="Lists" titleOnScroll />
+          <SplitViewHeader title="Lists" showOnScroll />
           <SplitViewContent style={{ padding: '0 10px' }}>
             <SplitViewSection title="My Lists" variant="prominent">
               {['Today', 'Groceries', 'Work'].map((t) => (
-                <SplitViewItem key={t} id={t.toLowerCase()} title={t} />
+                <SplitViewItem key={t} value={t.toLowerCase()} title={t} />
               ))}
             </SplitViewSection>
           </SplitViewContent>

@@ -4,7 +4,9 @@
 import type { ReactNode } from 'react';
 import { Swap } from '@/components/ui/swap';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
+import {
+  NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackLeading, NavigationStackPage, NavigationStackTitle, NavigationStackTrailing,
+} from '@/components/ui/navigation-stack';
 import { Tabs, TabsBar, TabsIndicator, TabsList, TabsTab } from '@/components/ui/tabs';
 import { Icon } from '@/lib/icon';
 import { useDirection } from '@/lib/motion';
@@ -28,7 +30,7 @@ const TABS: { id: ProjectTab; label: string; icon: string }[] = [
   { id: 'tests', label: 'Playwright tests', icon: 'doc-text' },
 ];
 
-export function ProjectPage({ project: p }: { project: Project }) {
+export function ProjectPage({ value, project: p }: { value: string; project: Project }) {
   const qa = useLoopQA();
   const index = TABS.findIndex((t) => t.id === qa.tab);
   const dir = useDirection(index);
@@ -36,9 +38,14 @@ export function ProjectPage({ project: p }: { project: Project }) {
   const runs = qa.runs.filter((r) => r.projectId === p.id).length;
   const wrap = 'mx-auto w-full max-w-[1180px] px-5 @3xl:px-8!';
   return (
-    <>
-      <SplitViewHeader title={p.name} largeTitle largeTitleClassName={wrap} leading={<Leading />} trailing={<PageActions />} />
-      <SplitViewContent className="@container">
+    <NavigationStackPage value={value}>
+      <NavigationStackBar hideOnScroll={false}>
+        <NavigationStackLeading><Leading /></NavigationStackLeading>
+        <NavigationStackTitle>{p.name}</NavigationStackTitle>
+        <NavigationStackTrailing><PageActions /></NavigationStackTrailing>
+      </NavigationStackBar>
+      <NavigationStackContent className="@container">
+        <NavigationStackLargeTitle className={wrap} />
         <div className={cn(wrap, '-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 pb-3 text-footnote text-muted-foreground')}>
           <a href={p.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-muted-foreground no-underline hover:text-foreground">
             <Icon name="globe" size={13} sw={2} />{host(p.url)}<Icon name="arrow-up-right" size={11} sw={2.2} />
@@ -69,8 +76,8 @@ export function ProjectPage({ project: p }: { project: Project }) {
             <Panel tab={qa.tab} project={p} />
           </Swap>
         </div>
-      </SplitViewContent>
-    </>
+      </NavigationStackContent>
+    </NavigationStackPage>
   );
 }
 

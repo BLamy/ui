@@ -1,138 +1,63 @@
-import { useState, type ReactNode } from 'react'
-import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { useState } from 'react'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarItem,
+  SidebarProvider,
+  SidebarSection,
+  SidebarTrigger,
+  SidebarWorkspace,
+} from '@/components/ui/sidebar'
 
-interface MenuItemProps {
-  icon: string
-  label: string
-  badge?: number
-  page: string
-  onPick: (label: string) => void
-}
+const pages = [
+  { icon: 'tray', title: 'Inbox', trailing: 6 },
+  { icon: 'bolt', title: 'Agent tasks', trailing: 2 },
+  { icon: 'bell', title: 'Alerts' },
+]
 
-/**
- * Any child can read the provider: close the drawer after a pick when it is an
- * overlay.
- */
-function MenuItem({ icon, label, badge, page, onPick }: MenuItemProps) {
-  const { compact, setOpen } = useSidebar()
-  return (
-    <Sidebar.Item
-      icon={icon}
-      label={label}
-      badge={badge}
-      active={page === label}
-      onClick={() => {
-        onPick(label)
-        if (compact) setOpen(false)
-      }}
-    />
-  )
-}
-
-function MobileMenu() {
+// This 380px frame is narrower than the provider's `breakpoint`, so the
+// provider is compact and `presentation="auto"` shows the sidebar as a drawer
+// behind the trigger, with 44px rows. A press on a row closes the drawer by
+// itself; Escape, the scrim and a swipe toward the edge close it too.
+export default function NarrowContainer() {
   const [page, setPage] = useState('Inbox')
   return (
-    <div style={{ height: 400 }}>
-      {/* Below the breakpoint every variant becomes an overlay drawer behind
-          the hamburger */}
-      <SidebarProvider breakpoint={560}>
-        <Sidebar variant="docked" width={250}>
-          <Sidebar.Header>
-            <Sidebar.Workspace name="Creamery Ops" detail="Production" />
-          </Sidebar.Header>
-          <Sidebar.Content>
-            <Sidebar.Item icon="plus" label="New task" tone="var(--primary)" />
-            <Sidebar.Section title="Workspace">
-              <MenuItem
-                icon="inbox"
-                label="Inbox"
-                badge={6}
-                page={page}
-                onPick={setPage}
-              />
-              <MenuItem
-                icon="bolt"
-                label="Agent tasks"
-                badge={2}
-                page={page}
-                onPick={setPage}
-              />
-              <MenuItem
-                icon="bell"
-                label="Alerts"
-                page={page}
-                onPick={setPage}
-              />
-            </Sidebar.Section>
-          </Sidebar.Content>
-        </Sidebar>
-        <SidebarInset>
-          <header
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '9px 12px',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <SidebarTrigger />
-            <strong style={{ fontSize: 14, color: 'var(--foreground)' }}>
-              {page}
-            </strong>
-          </header>
-          <p
-            style={{
-              padding: '4px 16px',
-              fontSize: 13.5,
-              lineHeight: 1.6,
-              color: 'var(--muted-foreground)',
-            }}
-          >
-            This pane is narrower than the breakpoint, so the docked sidebar
-            lives behind the hamburger. Picking an item closes it.
-          </p>
-        </SidebarInset>
-      </SidebarProvider>
+    <div className="p-4">
+      <div className="mx-auto h-[440px] max-w-[380px] overflow-hidden rounded-card shadow-hairline">
+        <SidebarProvider breakpoint={560}>
+          <Sidebar width={260}>
+            <SidebarHeader>
+              <SidebarWorkspace title="Creamery Ops" description="Production" />
+            </SidebarHeader>
+            <SidebarContent aria-label="Creamery Ops">
+              <SidebarItem icon="plus" title="New task" tint="var(--primary)" />
+              <SidebarSection title="Workspace">
+                {pages.map((p) => (
+                  <SidebarItem
+                    key={p.title}
+                    icon={p.icon}
+                    title={p.title}
+                    trailing={p.trailing}
+                    current={page === p.title}
+                    onClick={() => setPage(p.title)}
+                  />
+                ))}
+              </SidebarSection>
+            </SidebarContent>
+          </Sidebar>
+          <SidebarInset>
+            <header className="flex items-center gap-1 border-b border-border px-1 py-0.5">
+              <SidebarTrigger />
+              <strong className="text-subhead text-foreground">{page}</strong>
+            </header>
+            <p className="m-0 p-4 text-footnote leading-relaxed text-muted-foreground">
+              Open the sidebar with the button, then pick a page.
+            </p>
+          </SidebarInset>
+        </SidebarProvider>
+      </div>
     </div>
-  )
-}
-
-function NarrowHamburger() {
-  return (
-    <Window width={380}>
-      <MobileMenu />
-    </Window>
-  )
-}
-
-/**
- * A rounded window with a hairline border; `width` caps it (phone-sized
- * examples), centered.
- */
-function Window({ width, children }: { width?: number; children?: ReactNode }) {
-  return (
-    <div
-      style={{
-        maxWidth: width,
-        margin: '0 auto',
-        borderRadius: 14,
-        overflow: 'hidden',
-        boxShadow: '0 0 0 1px var(--border)',
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
-export default function NarrowHamburgerExample() {
-  return (
-    <WorkbenchTheme style={{ padding: 18 }}>
-      <NarrowHamburger />
-    </WorkbenchTheme>
   )
 }

@@ -1,6 +1,6 @@
 # Segmented
 
-The iOS segmented control: a short row of mutually exclusive options in a tinted track, with one card under the selected option that slides (and resizes) to the next on a spring. It is UI SDK's `SegmentedControl`, a radio group, so it picks a *value* — a time range, a filter, a view mode — and does not own any panels. If each option reveals its own content, use [Tabs](https://blamy.github.io/ui/#/tabs), which has the same look (`variant="segmented"`) with tab and panel semantics; for the bottom navigation bar use [Tabs](https://blamy.github.io/ui/#/tabs) with `variant="bar"`, and for a richer tab container [Tabs](https://blamy.github.io/ui/#/tabs) with a bar.
+The iOS segmented control: a short row of mutually exclusive options in a tinted track, with one card under the selected option that slides (and resizes) to the next on a spring. It is UI SDK's `SegmentedControl`, a radio group, so it picks a *value* — a time range, a filter, a view mode — and does not own any panels. If each option reveals its own content, use [Tabs](https://blamy.github.io/ui/#/tabs), which has the same look (`variant="segmented"`) with tab and panel semantics; for the bottom navigation bar use [Tabs](https://blamy.github.io/ui/#/tabs) with `variant="bar"`. A [ToggleGroup](https://blamy.github.io/ui/#/toggle) with `variant="filled"` draws the same track for buttons that press (several at once, or none), where arrow keys only move focus; a choice inside a form with longer labels is a [RadioGroup](https://blamy.github.io/ui/#/radio-group).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -41,9 +41,22 @@ const [range, setRange] = useState('week')
 </Segmented>
 ```
 
-## Sizing and filtering a list
+## Sizes
 
-The track fills its container and gives each segment an equal share. Size it with `className` or `style` — `w-fit` hugs the labels, a fixed width pins it. Items take any children, so an icon or a count works; keep them short, they never wrap.
+`size` sets the height: `sm` 32px, `default` 36px, `lg` 44px, the same heights as [Button](https://blamy.github.io/ui/#/button), so a segmented control lines up with the buttons in a toolbar. Use `sm` in dense inspectors and toolbars, `lg` where it is the main control of a touch screen. On a touch screen every size reaches a 44px hit area, without changing its look.
+
+{% demo src="segmented/sizes" %}
+
+```tsx
+<Segmented aria-label="Axis" size="sm" defaultValue="x">
+  <SegmentedItem value="x">X</SegmentedItem>
+  <SegmentedItem value="y">Y</SegmentedItem>
+</Segmented>
+```
+
+## Width and filtering a list
+
+The track fills its container and gives each segment an equal share. Size it with `className` or `style`: `w-fit` hugs the labels (the card then resizes as it slides between segments of different widths), a fixed width pins it. Items take any children, so an icon or a count works; keep them short, they never wrap. A segment with only an icon needs an `aria-label`.
 
 {% demo src="segmented/filter" %}
 
@@ -75,14 +88,76 @@ It renders UI SDK's `SegmentedControl` (`role="radiogroup"`), and each `Segmente
 | `onValueChange` | — | `(value, details) => void`, called when a different item is checked; `value` is `null` when a reset leaves nothing checked. |
 | `disabled` / `readOnly` / `required` | `false` | As described above. |
 | `name` / `form` | — | Submit the value under `name`, optionally with a form elsewhere on the page. |
+| `size` | `default` | `sm` (32px) · `default` (36px) · `lg` (44px). |
 | `orientation` | `horizontal` | `vertical` stacks the segments. |
 | `loop` | `true` | Arrow keys wrap from the last item to the first. |
 | `controller` | — | From `createSegmentedControlController()`. |
 | `aria-label` | — | The group's accessible name. |
 | `className` / `style` | — | Applied to the track (merged last); `className` may be a function of the state. |
 
-`SegmentedItem` takes `value` (required), `disabled`, `className` and `render`.
+`SegmentedItem` takes `value` (required), `disabled`, `className` and `render`; its size comes from the control.
 
 ## Styling
 
-The track is `data-slot="segmented-control"` (`rounded-[9px]`, `bg-secondary`, 2px padding), each segment `data-slot="segmented-control-item"`, and the sliding card UI SDK's `SegmentedControlIndicator` (`data-slot="segmented-control-indicator"`), which the root renders for you. The checked item has `data-checked` (the others `data-unchecked`); `data-disabled`, `data-readonly`, `data-required` and `data-orientation` are there for selectors, and hover, press and keyboard focus are plain `hover:`, `active:` and `focus-visible:`. The indicator is positioned from the CSS variables UI SDK writes on it (`--segmented-control-indicator-left`, `-top`, `-width`, `-height`). Its look, `segmentIndicator`, is shared with [Tabs](https://blamy.github.io/ui/#/tabs) and the toggle group so all of them move the same way; it only transitions under normal motion.
+The track is `data-slot="segmented-control"` (with `data-size`), each segment `data-slot="segmented-control-item"`, and the sliding card UI SDK's `SegmentedControlIndicator` (`data-slot="segmented-control-indicator"`), which the root renders for you. The checked item has `data-checked` (the others `data-unchecked`); `data-disabled`, `data-readonly`, `data-required` and `data-orientation` are there for selectors, and hover, press and keyboard focus are plain `hover:`, `active:` and `focus-visible:`. The indicator is positioned from the CSS variables UI SDK writes on it (`--segmented-control-indicator-left`, `-top`, `-width`, `-height`).
+
+The look is four exports, shared with [Tabs](https://blamy.github.io/ui/#/tabs) `variant="segmented"` and [ToggleGroup](https://blamy.github.io/ui/#/toggle) `variant="filled"`, so the three are pixel-alike at the same size:
+
+| Export | What it draws |
+| --- | --- |
+| `segmentTrackVariants({ size })` | The tray: `bg-secondary`, 2px padding, the radius of a Button of that size. Add `flex` or `inline-flex`. |
+| `segmentItemVariants({ size })` | A segment: height, padding, text size, medium weight (semibold when `data-checked`, `data-selected` or `data-pressed`), the solid focus ring, the 44px touch hit area. |
+| `segmentIndicatorVariants({ size })` | The card: `bg-segment` (a raised gray in dark), its shadow, the track's radius minus the padding. |
+| `segmentIndicatorSlide` | How the card moves: behind the labels, sliding and resizing on the smooth spring, still under reduced motion. |
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `segmentTrackVariants`
+
+Defined in `@/components/ui/segmented`. Base classes:
+
+```text
+group/segments relative isolate gap-0.5 bg-secondary p-0.5 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `rounded-lg` |
+| `default` (default) | `rounded-ctl` |
+| `lg` | `rounded-xl` |
+
+### `segmentItemVariants`
+
+Defined in `@/components/ui/segmented`. Base classes:
+
+```text
+[ 'bl-btn relative box-border flex flex-1 cursor-pointer items-center justify-center gap-1.5 border-0 bg-transparent [font-family:inherit] font-medium whitespace-nowrap text-foreground outline-none [&_svg]:shrink-0', 'data-checked:font-semibold data-selected:font-semibold data-pressed:font-semibold', // Stacked, each segment keeps its height instead of sharing the track's. 'group-data-[orientation=vertical]/segments:flex-none', // The solid ring of every control, without the offset: the neighbours are 2px away. 'focus-visible:ring-2 focus-visible:ring-ring', 'pointer-coarse:group-data-[orientation=horizontal]/segments:after:absolute pointer-coarse:group-data-[orientation=horizontal]/segments:after:inset-x-0', 'data-disabled:cursor-default not-in-data-disabled:data-disabled:opacity-40', ]
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `h-7 px-2.5 text-footnote leading-[inherit] rounded-[calc(var(--radius-lg)-2px)] pointer-coarse:after:-inset-y-2` |
+| `default` (default) | `h-8 px-3 text-subhead leading-[inherit] rounded-[calc(var(--radius-ctl)-2px)] pointer-coarse:after:-inset-y-1.5` |
+| `lg` | `h-10 px-3.5 text-body leading-[inherit] rounded-[calc(var(--radius-xl)-2px)] pointer-coarse:after:-inset-y-0.5` |
+
+### `segmentIndicatorVariants`
+
+Defined in `@/components/ui/segmented`. Base classes:
+
+```text
+bg-segment shadow-[0_1px_4px_black] shadow-black/14
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `rounded-[calc(var(--radius-lg)-2px)]` |
+| `default` (default) | `rounded-[calc(var(--radius-ctl)-2px)]` |
+| `lg` | `rounded-[calc(var(--radius-xl)-2px)]` |

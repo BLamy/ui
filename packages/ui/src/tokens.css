@@ -28,6 +28,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground, var(--primary-foreground));
+  /* A media timeline's playhead: the destructive red unless a theme sets `--playhead`. */
+  --color-playhead: var(--playhead, var(--destructive));
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -50,6 +52,8 @@
   --color-warning: var(--warning, oklch(0.769 0.165 70.1));
   --color-tertiary-foreground: var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent));
   --color-secondary-strong: var(--secondary-strong, var(--accent));
+  /* The edge of an unchecked checkbox or radio: 3:1 against the surface in both schemes (WCAG 1.4.11). */
+  --color-control-border: var(--control-border, var(--muted-foreground));
   /* The selected thumb of a segmented control, tabs or toggle group: the card in light, a raised gray in dark. */
   --color-segment: var(--segment, var(--card));
   --color-overlay: var(--overlay, color-mix(in oklab, black 40%, transparent));
@@ -66,6 +70,10 @@
   --color-git-renamed: var(--git-renamed, color-mix(in oklab, oklch(0.754 0.151 89.4) 55%, var(--foreground)));
   --color-git-deleted: var(--git-deleted, color-mix(in oklab, oklch(0.647 0.239 23.8) 70%, var(--foreground)));
   --color-git-ignored: var(--git-ignored, oklch(0.749 0.006 286.3));
+  /* iOS system hues the kit names by role (a file's kind on a Composer attachment tile): video, audio, archive. */
+  --color-kind-video: var(--kind-video, #AF52DE);
+  --color-kind-audio: var(--kind-audio, #FF2D55);
+  --color-kind-archive: var(--kind-archive, #A2845E);
   /* The HUD pill ("Copied"): a dark translucent material, the same in light and dark, as on iOS. */
   --color-hud: var(--hud, rgb(30 30 32 / .86));
   --color-hud-foreground: var(--hud-foreground, white);
@@ -86,6 +94,8 @@
   --text-callout: 16px;
   --text-body: 17px;
   --text-title: 20px;
+  /* iOS's large title: a NavigationStack page's or a SplitView column's, before it folds into the bar. */
+  --text-large-title: 34px;
 
   /* ── Shadows ── the hairlines that separate bars and cards. */
   --shadow-hairline: inset 0 0 0 1px var(--border);
@@ -96,6 +106,10 @@
   --shadow-popover: 0 12px 40px color-mix(in oklab, black 20%, transparent), 0 0 0 .5px var(--border);
   --shadow-tooltip: 0 4px 14px color-mix(in oklab, black 18%, transparent);
   --shadow-hud: 0 8px 30px color-mix(in oklab, black 25%, transparent);
+  /* The edge of a page pushed over another (a NavigationStack page, a compact SplitView column) or of a sidebar
+     floating over the columns: cast toward the page under it, left or right. */
+  --shadow-edge-left: -10px 0 30px color-mix(in oklab, black 16%, transparent);
+  --shadow-edge-right: 10px 0 30px color-mix(in oklab, black 16%, transparent);
   /* A surface raised off the page but not floating over it: Card `elevated`. */
   --shadow-raised: 0 1px 3px color-mix(in oklab, black 6%, transparent), 0 6px 24px color-mix(in oklab, black 12%, transparent), 0 0 0 .5px var(--border);
 
@@ -103,6 +117,8 @@
      `h-toolbar`; a list row is at least `min-h-row`. */
   --spacing-toolbar: 52px;
   --spacing-row: 46px;
+  /* The iOS bottom bar (a tab bar, an edit-mode toolbar): `h-bar`, drawn by `barSurface` in lib/primitives. */
+  --spacing-bar: 62px;
 
   /* ── Fonts ── the app's own `--font-sans` wins; the bl-theme (and this default) is the iOS stack. */
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;

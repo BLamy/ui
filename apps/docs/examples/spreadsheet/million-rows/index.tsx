@@ -31,7 +31,7 @@ export default function MillionRows() {
           {last ? `Last sort: ${last.rows.toLocaleString()} rows on the ${last.ranOn.toUpperCase()} in ${last.ms.toFixed(1)} ms` : rows ? 'Click a number column’s arrows to sort it' : 'Nothing is generated until you ask'}
         </span>
       </div>
-      {rows ? <Spreadsheet aria-label="Orders" value={rows} onValueChange={setRows} onSort={setLast} className="h-[420px]" /> : null}
+      {rows ? <Spreadsheet aria-label="Orders" value={rows} onValueChange={setRows} onSorted={setLast} className="h-[420px]" /> : null}
     </div>
   )
 }

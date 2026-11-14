@@ -5,28 +5,22 @@
   "page": "replay-preview",
   "exports": [
     "ReplayPreview",
-    "formatReplayTime",
-    "getReplayMarkers",
-    "getReplayMeta",
-    "getReplayPointerTrack",
-    "replayPointerAt",
-    "getReplayDevtools",
-    "replayDevtoolsAt"
+    "formatReplayTime"
   ],
   "imports": [
     "ReplayPreview"
   ],
   "types": [
+    "ReplayPreviewProps",
+    "ReplayPreviewHandle",
+    "ReplaySource",
+    "ReplayChrome",
     "ReplayEvent",
     "ReplayMarker",
     "ReplayMarkerKind",
-    "ReplayMeta",
-    "ReplayPointerTrack",
-    "ReplayConsoleEntry",
-    "ReplayConsoleLevel",
     "ReplayDevtools",
-    "ReplayDevtoolsState",
     "ReplayDevtoolsTab",
-    "ReplayRequest"
+    "ReplayInspection",
+    "ReplayInspectionTab"
   ]
 }

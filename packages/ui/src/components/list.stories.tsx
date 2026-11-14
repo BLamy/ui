@@ -2,8 +2,8 @@ import { useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState as EmptyStateView } from '@/components/ui/empty-state';
-import { EditBar } from '@/components/ui/edit-bar';
-import { IndexBar, AL } from '@/components/ui/index-bar';
+import { Toolbar, ToolbarButton, ToolbarText } from '@/components/ui/toolbar';
+import { IndexBar, alphabetItems } from '@/components/ui/index-bar';
 import { List, ListRow, ListSection } from '@/components/ui/list';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -79,6 +79,8 @@ interface Contact { id: string; f: string; l: string; role: string; com: string 
 const CONTACTS: Contact[] = RAW.map(([f, l, role, com]) => ({ id: (f + l).toLowerCase(), f, l, role, com }));
 const FAVS = new Set(['ameliaadler', 'weichen', 'anyakowalski', 'hanasato', 'linyang']);
 
+const AL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
 /* Flagship contacts screen: 39 rows across 24 letter sections, sticky headers, IndexBar overlaid and wired.
    The jump uses the same logic as the prototype App: closest available letter, scroller offset by list top. */
 function ContactsDemo({ grouped }: { grouped?: boolean }) {
@@ -135,7 +137,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
   return (
     <>
       <NavigationStack pages={['list']}>
-        <NavigationStackPage value="list" grouped={grouped}>
+        <NavigationStackPage value="list" variant={grouped ? "grouped" : "plain"}>
           <NavigationStackBar>
             <NavigationStackTitle>{edit ? (selN ? selN + ' Selected' : 'Select Contacts') : 'Contacts'}</NavigationStackTitle>
             <NavigationStackTrailing>
@@ -153,23 +155,29 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
             </NavigationStackSubheader>
             {content}
           </NavigationStackContent>
-          <IndexBar avail={avail} onLetter={jump} top={BARH + 4} bottom={10} />
+          <IndexBar items={alphabetItems(avail)} onJump={jump} className="top-14 bottom-2.5" />
         </NavigationStackPage>
       </NavigationStack>
       {edit ? (
-        <EditBar count={selN} allFav={selN > 0 && [...pick].every((id) => favs.has(id))}
-          onFav={() => {
-            const all = [...pick].every((id) => favs.has(id)); const n = new Set(favs);
-            pick.forEach((id) => { if (all) n.delete(id); else n.add(id); }); setFavs(n);
-          }}
-          onDelete={() => { setGone((g) => new Set([...g, ...pick])); setPick(new Set()); }} />
+        <Toolbar variant="bar" aria-label="Edit" className="absolute inset-x-0 bottom-0 z-130">
+          <ToolbarButton disabled={!selN}
+            onClick={() => {
+              const all = [...pick].every((id) => favs.has(id)); const n = new Set(favs);
+              pick.forEach((id) => { if (all) n.delete(id); else n.add(id); }); setFavs(n);
+            }}>
+            {selN > 0 && [...pick].every((id) => favs.has(id)) ? 'Unfavorite' : 'Favorite'}
+          </ToolbarButton>
+          <ToolbarText aria-live="polite">{selN ? `${selN} selected` : 'Select items'}</ToolbarText>
+          <ToolbarButton tone="destructive" disabled={!selN}
+            onClick={() => { setGone((g) => new Set([...g, ...pick])); setPick(new Set()); }}>Delete</ToolbarButton>
+        </Toolbar>
       ) : null}
     </>
   );
 }
 
 /** Flagship: plain sticky sections + wired IndexBar (scrub or click a letter to jump),
- *  sticky large-title search subheader, swipe-to-delete rows, Select → edit mode with EditBar,
+ *  sticky large-title search subheader, swipe-to-delete rows, Select → edit mode with a `bar` Toolbar,
  *  pull-to-refresh restores deleted rows. */
 export const ContactsWithIndexBar: Story = {
   render: () => <Phone><ContactsDemo /></Phone>,
@@ -239,8 +247,8 @@ export const SwipeToDelete: Story = {
   },
 };
 
-/** Edit mode: rows animate open a check gutter; the EditBar drives bulk favorite / delete. */
-export const EditModeWithEditBar: Story = {
+/** Edit mode: rows animate open a check gutter; a `bar` Toolbar drives bulk favorite / delete. */
+export const EditModeWithToolbar: Story = {
   render: function EditModeStory() {
     const [pick, setPick] = useState<Set<string>>(() => new Set(['weichen']));
     const [gone, setGone] = useState<Set<string>>(() => new Set());
@@ -268,8 +276,12 @@ export const EditModeWithEditBar: Story = {
             </NavigationStackContent>
           </NavigationStackPage>
         </NavigationStack>
-        <EditBar count={pick.size} allFav={false}
-          onDelete={() => { setGone((g) => new Set([...g, ...pick])); setPick(new Set()); }} />
+        <Toolbar variant="bar" aria-label="Edit" className="absolute inset-x-0 bottom-0 z-130">
+          <ToolbarButton disabled={!pick.size}>Favorite</ToolbarButton>
+          <ToolbarText aria-live="polite">{pick.size ? `${pick.size} selected` : 'Select items'}</ToolbarText>
+          <ToolbarButton tone="destructive" disabled={!pick.size}
+            onClick={() => { setGone((g) => new Set([...g, ...pick])); setPick(new Set()); }}>Delete</ToolbarButton>
+        </Toolbar>
       </Phone>
     );
   },
@@ -335,7 +347,7 @@ function SettingsDemo({ density }: { density?: 'compact' | 'default' | 'comforta
 function SettingsScreen({ density }: { density?: 'compact' | 'default' | 'comfortable' }) {
   return (
     <NavigationStack pages={['settings']}>
-      <NavigationStackPage value="settings" grouped>
+      <NavigationStackPage value="settings" variant="grouped">
         <NavigationStackBar><NavigationStackTitle>Settings</NavigationStackTitle></NavigationStackBar>
         <NavigationStackContent>
           <NavigationStackLargeTitle />
@@ -400,7 +412,7 @@ function ReorderDemo({ startEditing = true }: { startEditing?: boolean }) {
   );
   return (
     <NavigationStack pages={['up-next']}>
-      <NavigationStackPage value="up-next" grouped>
+      <NavigationStackPage value="up-next" variant="grouped">
         <NavigationStackBar>
           <NavigationStackLeading>{bar('Add', add)}</NavigationStackLeading>
           <NavigationStackTitle>Up Next</NavigationStackTitle>

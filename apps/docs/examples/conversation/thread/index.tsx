@@ -4,7 +4,6 @@ import {
   Conversation,
   ConversationComposer,
   ConversationEmpty,
-  ConversationGreeting,
   ConversationMessages,
   ConversationSuggestions,
   MessageMarkdown,
@@ -21,7 +20,7 @@ import {
   ComposerSend,
   ComposerSpacer,
 } from '@/components/ui/composer/composer'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 import { Button } from '@/components/ui/button'
 
 interface Turn {
@@ -89,19 +88,16 @@ function Thread() {
   return (
     <div className="flex h-[480px] flex-col overflow-hidden rounded-card border border-border bg-background">
       <Conversation empty={empty}>
-        <ConversationEmpty>
-          <ConversationGreeting
+        <ConversationEmpty
             title="What are we building?"
-            description="Ask about your code, or start from a suggestion."
-          />
-        </ConversationEmpty>
+            description="Ask about your code, or start from a suggestion." />
         <ConversationMessages threadKey="demo" streaming={streaming}>
           {turns.map((t) => [
             <UserMessage key={`${t.id}-u`}>{t.prompt}</UserMessage>,
             <AssistantMessage key={`${t.id}-a`}>
               <WorkLog summary={t.worked}>
-                <ToolCall icon="doc-text" title="Read" detail="src/app.tsx" />
-                <ToolCall title="Ran" code="pnpm nx test ui" detail="42 passed" />
+                <ToolCall icon="doc-text" title="Read" description="src/app.tsx" />
+                <ToolCall title="Ran" code="pnpm nx test ui" description="42 passed" />
               </WorkLog>
               <MessageMarkdown
                 markdown={t === last && streaming ? reply : t.reply}
@@ -136,7 +132,7 @@ function Thread() {
 export default function ThreadExample() {
   const [key, setKey] = useState(0)
   return (
-    <WorkbenchTheme className="rounded-card p-4">
+    <ThemeScope scope="workbench" className="rounded-card p-4">
       <div className="mx-auto grid max-w-[720px] gap-3">
         <Thread key={key} />
         <div className="flex items-center justify-between text-footnote text-muted-foreground">
@@ -146,6 +142,6 @@ export default function ThreadExample() {
           </Button>
         </div>
       </div>
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

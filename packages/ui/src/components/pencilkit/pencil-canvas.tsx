@@ -2,28 +2,39 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { bindDrag, type ChangeDetails, type PointerSample } from '@ui-sdk/core';
+import { useCanvas, type CanvasContextValue } from '@/components/ui/canvas';
 import { changeDetails } from '@/lib/change-details';
 import { cn } from '@/lib/utils';
 import {
-  PK_INKS,
-  PK_TOOLS,
+  pencilInks,
+  pencilTools,
   type PencilDrawTool,
   type PencilPoint,
   type PencilStroke,
   type PencilTool,
 } from '@/components/ui/pencilkit/constants';
-import { MemoStroke, StrokePath } from '@/components/ui/pencilkit/stroke-path';
+import { StrokePath } from '@/components/ui/pencilkit/stroke-path';
+
+/* ══ PencilCanvas — freehand ink on perfect-freehand ══
+   On its own it fills its positioned parent (`absolute inset-0`) and points are in its own pixels:
+
+     <div className="relative h-80"><PencilCanvas tool="pen" ink={ink} strokes={strokes} onStrokesChange={set} /></div>
+
+   Inside a `<Canvas>` it is the board's drawing layer: it draws in board units under the canvas's pan and zoom, takes
+   presses before the canvas's host (`useCanvas().addPointerLayer`), and leaves Space-drag, pinch and the wheel to the
+   canvas. A host that keeps strokes in its own model (to interleave them with other items) passes `strokes={[]}`
+   and adds the drawn stroke from `onStrokesChange` (`next.at(-1)`). `disabled` hands presses back to the host. */
 
 /** Why the strokes changed: a stroke was drawn, or the eraser took some away. */
 export type PencilStrokesChangeReason = 'draw' | 'erase';
 export type PencilStrokesChangeDetails = ChangeDetails<PencilStrokesChangeReason>;
 
-export interface PencilCanvasProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
-  /** Active tool. Default 'pen'. */
+export interface PencilCanvasProps extends Omit<React.ComponentProps<'div'>, 'onChange'> {
+  /** Active tool. Default `pen`. */
   tool?: PencilTool;
-  /** Ink color for new strokes. Default PK_INKS[0]. */
+  /** Ink for new strokes, any CSS color. Default the theme-following black (`pencilInks[0].value`). */
   ink?: string;
-  /** Width multiplier for new strokes (PK_W[i].m). Default 1. */
+  /** Width scale for new strokes (a `pencilWidths` scale). Default 1. */
   width?: number;
   /** Controlled strokes. Omit for uncontrolled. */
   strokes?: PencilStroke[];
@@ -32,31 +43,37 @@ export interface PencilCanvasProps extends Omit<React.HTMLAttributes<HTMLDivElem
   /** Called with the new strokes and why (`details.reason`: `draw` or `erase`), before anything moves. When
    *  uncontrolled, `details.cancel()` keeps the strokes as they were. */
   onStrokesChange?: (strokes: PencilStroke[], details: PencilStrokesChangeDetails) => void;
-  /** Empty-state hint content, shown only while the canvas has no strokes. */
-  hint?: React.ReactNode;
-  /** Small monospace status label rendered top-right (e.g. 'perfect-freehand@1.2.2'). */
-  status?: React.ReactNode;
-  /** Render the plain-stroke fallback instead of perfect-freehand outlines. Default false. */
-  plain?: boolean;
+  /** Shown centered while there are no strokes (an `EmptyState`, a line of text). */
+  emptyState?: React.ReactNode;
+  /** `freehand` (default) draws perfect-freehand's pressure outlines; `plain` draws the raw polylines. */
+  variant?: 'freehand' | 'plain';
+  /** Takes no presses (a read-only drawing; on a Canvas, the host's tool is not a drawing one). */
+  disabled?: boolean;
+  /** The drawing's accessible name (default "Drawing"). */
+  'aria-label'?: string;
 }
+
+const NO_STROKES: PencilStroke[] = [];
 
 export function PencilCanvas({
   tool = 'pen',
-  ink = PK_INKS[0],
+  ink = pencilInks[0].value,
   width = 1,
   strokes: strokesProp,
   defaultStrokes,
   onStrokesChange,
-  hint,
-  status,
-  plain = false,
+  emptyState,
+  variant = 'freehand',
+  disabled = false,
+  'aria-label': ariaLabel = 'Drawing',
   className,
   style,
   children,
   ...rest
 }: PencilCanvasProps) {
+  const board = useCanvas({ optional: true });
   const controlled = strokesProp !== undefined;
-  const [innerStrokes, setInnerStrokes] = useState<PencilStroke[]>(defaultStrokes || []);
+  const [innerStrokes, setInnerStrokes] = useState<PencilStroke[]>(defaultStrokes ?? NO_STROKES);
   const strokes = controlled ? (strokesProp as PencilStroke[]) : innerStrokes;
   const strokesRef = useRef(strokes);
   strokesRef.current = strokes;
@@ -76,17 +93,30 @@ export function PencilCanvas({
     setInnerStrokes(next);
   };
 
-  const pos = (e: { clientX: number; clientY: number; pressure: number }): PencilPoint => {
+  /** A pointer sample in the drawing's units: board units on a Canvas, the element's pixels on its own. */
+  const at = (e: { clientX: number; clientY: number; pressure: number }, canvas: CanvasContextValue | null): PencilPoint => {
+    const pressure = e.pressure > 0 ? e.pressure : 0.5;
+    if (canvas) {
+      const p = canvas.toBoard(e);
+      return [p.x, p.y, pressure];
+    }
     const r = (box.current as HTMLDivElement).getBoundingClientRect();
-    return [e.clientX - r.left, e.clientY - r.top, e.pressure > 0 ? e.pressure : 0.5];
+    return [e.clientX - r.left, e.clientY - r.top, pressure];
   };
 
+  // The latest props for the handlers below, which a Canvas or bindDrag holds on to between renders.
+  const latest = useRef({ tool, ink, width, board, disabled });
+  latest.current = { tool, ink, width, board, disabled };
+
   const eraseAt = (e: PointerEvent) => {
-    const p = pos(e), x = p[0], y = p[1];
+    const { board: canvas } = latest.current;
+    const p = at(e, canvas), x = p[0], y = p[1];
+    // The eraser's reach is 12 screen px past the stroke's half width.
+    const reach = 12 / (canvas?.zoom ?? 1);
     commit(
       (ss) =>
         ss.filter((st) => {
-          const rad = 12 + (PK_TOOLS[st.tool].opt.size * st.w) / 2;
+          const rad = reach + (pencilTools[st.tool].options.size * st.width) / 2;
           for (let i = 0; i < st.points.length; i += 2) {
             const dx = st.points[i][0] - x,
               dy = st.points[i][1] - y;
@@ -99,73 +129,108 @@ export function PencilCanvas({
     );
   };
 
-  // The stroke follows UI SDK's bindDrag (capture, document listeners, cancel), which reports once a frame with
-  // the latest pointer event; that event's coalesced samples are every position since the last frame.
-  const stopDrag = useRef<(() => void) | null>(null);
-  useEffect(() => () => stopDrag.current?.(), []);
+  const begin = (e: PointerEvent) => {
+    const { tool: t, ink: color, width: w, board: canvas } = latest.current;
+    if (t === 'eraser') return eraseAt(e);
+    live.current = { tool: t as PencilDrawTool, color, width: w, pressure: e.pointerType === 'pen', points: [at(e, canvas)], complete: false };
+    setV((v) => v + 1);
+  };
 
-  const move = ({ event }: PointerSample) => {
-    if (tool === 'eraser') return eraseAt(event);
+  const extend = (event: PointerEvent) => {
+    if (latest.current.tool === 'eraser') return eraseAt(event);
     const s = live.current;
     if (!s) return;
     // An untrusted event has no coalesced samples, so it stands for itself.
     const coalesced = event.getCoalescedEvents?.() ?? [];
-    for (const ev of coalesced.length ? coalesced : [event]) s.points.push(pos(ev));
+    for (const ev of coalesced.length ? coalesced : [event]) s.points.push(at(ev, latest.current.board));
     setV((v) => v + 1);
   };
 
-  const end = (event: PointerEvent) => {
-    stopDrag.current = null;
-    if (tool === 'eraser') return;
+  const finish = (event: PointerEvent | null) => {
     const s = live.current;
     live.current = null;
-    if (s && s.points.length > 1) {
-      s.done = true;
-      commit((ss) => [...ss, s], 'draw', event);
-    }
-    // The live stroke is gone either way (committed, a tap, or canceled by the consumer).
+    if (s && event && s.points.length > 1) commit((ss) => [...ss, { ...s, complete: true }], 'draw', event);
+    // The live stroke is gone either way (committed, a tap, or canceled).
     setV((v) => v + 1);
   };
+
+  // On a Canvas: a pointer layer, asked for each press before the host.
+  useEffect(() => {
+    if (!board) return;
+    return board.addPointerLayer({
+      onPointerDown: (event) => {
+        if (latest.current.disabled) return false;
+        if (event.pointerType === 'mouse' && event.button !== 0) return false;
+        begin(event);
+        return true;
+      },
+      onPointerMove: (event) => extend(event),
+      onPointerUp: (event) => finish(event),
+      onCancel: () => finish(null),
+    });
+    // The layer reads the latest props through `latest`; it is added once per canvas.
+  }, [board?.addPointerLayer]);
+
+  // On its own: the stroke follows UI SDK's bindDrag (capture, document listeners, cancel), which reports once a
+  // frame with the latest pointer event; that event's coalesced samples are every position since the last frame.
+  const stopDrag = useRef<(() => void) | null>(null);
+  useEffect(() => () => stopDrag.current?.(), []);
 
   const down = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (disabled || (e.pointerType === 'mouse' && e.button !== 0)) return;
     stopDrag.current?.();
-    stopDrag.current = bindDrag(e.currentTarget, e.nativeEvent, { onMove: move, onEnd: end });
-    if (tool === 'eraser') return eraseAt(e.nativeEvent);
-    live.current = {
-      tool: tool as PencilDrawTool,
-      color: ink,
-      w: width,
-      pen: e.pointerType === 'pen',
-      points: [pos(e)],
-      done: false,
-    };
-    setV((v) => v + 1);
+    stopDrag.current = bindDrag(e.currentTarget, e.nativeEvent, {
+      onMove: ({ event }: PointerSample) => extend(event),
+      onEnd: (event: PointerEvent) => { stopDrag.current = null; finish(event); },
+    });
+    begin(e.nativeEvent);
   };
 
+  const ink$ = (
+    <>
+      {strokes.map((s, i) => (
+        <StrokePath key={i} stroke={s} variant={variant} />
+      ))}
+      {live.current ? <StrokePath stroke={live.current} variant={variant} /> : null}
+    </>
+  );
+
+  if (board) {
+    // In board units: a zero-sized svg at the board's origin whose ink overflows it, like every board item.
+    return (
+      <svg
+        data-slot="pencil-canvas"
+        role="img"
+        aria-label={ariaLabel}
+        data-disabled={disabled ? '' : undefined}
+        className={cn('pointer-events-none absolute top-0 left-0 overflow-visible', className)}
+        style={style}
+        width="1"
+        height="1"
+      >
+        {ink$}
+      </svg>
+    );
+  }
+
+  const empty = !strokes.length && !live.current;
   return (
     <div
       ref={box}
       data-slot="pencil-canvas"
+      data-empty={empty ? '' : undefined}
+      data-disabled={disabled ? '' : undefined}
       onPointerDown={down}
-      className={cn('absolute inset-0 cursor-crosshair touch-none', className)}
+      className={cn('absolute inset-0 cursor-crosshair touch-none data-disabled:cursor-default', className)}
       style={style}
       {...rest}
     >
-      <svg width="100%" height="100%" className="absolute inset-0 block">
-        {strokes.map((s, i) => (
-          <MemoStroke key={i} st={s} pf={!plain} />
-        ))}
-        {live.current ? <StrokePath st={live.current} pf={!plain} /> : null}
+      <svg role="img" aria-label={ariaLabel} width="100%" height="100%" className="absolute inset-0 block">
+        {ink$}
       </svg>
-      {hint && !strokes.length && !live.current ? (
-        <div data-slot="pencil-canvas-hint" className="pointer-events-none absolute inset-x-0 top-0 bottom-[90px] grid place-items-center">
-          <div className="text-center text-tertiary-foreground">{hint}</div>
-        </div>
-      ) : null}
-      {status != null ? (
-        <div data-slot="pencil-canvas-status" className="pointer-events-none absolute top-2.5 right-3 font-mono text-[10.5px] text-tertiary-foreground">
-          {status}
+      {emptyState != null && empty ? (
+        <div data-slot="pencil-canvas-empty" className="pointer-events-none absolute inset-0 grid place-items-center text-center text-tertiary-foreground">
+          {emptyState}
         </div>
       ) : null}
       {children}

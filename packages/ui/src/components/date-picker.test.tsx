@@ -316,4 +316,18 @@ describe('DatePicker mode="range"', () => {
     expect(within(popup).getAllByRole('grid').map((grid) => grid.getAttribute('aria-label'))).toEqual(['September 2026', 'October 2026']);
     expect(within(popup).getByRole('heading').textContent).toBe('September – October 2026');
   });
+
+  it('sizes its default field from the root, and a DatePickerField\'s own size wins', async () => {
+    const { unmount } = render(<DatePicker size="sm" locale="en-US" />);
+    const field = () => document.querySelector<HTMLElement>('[data-slot=date-picker-field]')!;
+    expect(field().dataset.size).toBe('sm');
+    expect(field().className).toContain('h-8');
+    unmount();
+    render(
+      <DatePicker size="sm" locale="en-US">
+        <DatePickerField size="lg" />
+      </DatePicker>,
+    );
+    expect(field().dataset.size).toBe('lg');
+  });
 });

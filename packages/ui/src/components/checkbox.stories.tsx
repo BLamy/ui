@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Checkbox, CheckboxGroup } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Checkbox> = {
@@ -9,7 +10,7 @@ const meta: Meta<typeof Checkbox> = {
   component: Checkbox,
   args: { shape: 'circle' },
   argTypes: { shape: { control: 'inline-radio', options: ['circle', 'square'] } },
-  decorators: [(Story) => <Panel><Story /></Panel>],
+  decorators: [(Story, { parameters }) => <Panel dark={parameters.dark}><Story /></Panel>],
 };
 export default meta;
 type Story = StoryObj<typeof Checkbox>;
@@ -30,7 +31,7 @@ const states = (shape: 'circle' | 'square') => (
 
 export const Circle: Story = { render: () => states('circle') };
 export const Square: Story = { render: () => states('square') };
-export const Dark: Story = { decorators: [(Story) => <Panel dark><Story /></Panel>], render: () => states('circle') };
+export const Dark: Story = { parameters: { dark: true }, render: () => states('circle') };
 
 export const Group: Story = {
   render: () => (
@@ -56,3 +57,24 @@ export const SelectAll: Story = {
     </CheckboxGroup>
   ),
 };
+
+/** Every state side by side: disabled off and on, read-only, and invalid from a Field (with its error text). */
+export const States: Story = {
+  render: () => (
+    <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+        <Label variant="control"><Checkbox disabled />Disabled</Label>
+        <Label variant="control"><Checkbox disabled defaultChecked />Disabled on</Label>
+        <Label variant="control"><Checkbox readOnly defaultChecked />Read-only on</Label>
+        <Label variant="control"><Checkbox disabled defaultChecked="indeterminate" />Disabled mixed</Label>
+      </div>
+      <Field invalid className="gap-2">
+        <FieldLabel className="sr-only">Terms</FieldLabel>
+        <Label variant="control"><Checkbox shape="square" />I agree to the Terms of Service</Label>
+        <FieldError>Accept the terms to continue.</FieldError>
+      </Field>
+    </div>
+  ),
+};
+
+export const StatesDark: Story = { parameters: { dark: true }, render: States.render };

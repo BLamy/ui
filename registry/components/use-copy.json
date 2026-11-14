@@ -1,0 +1,12 @@
+{
+  "name": "use-copy",
+  "title": "useCopy",
+  "description": "Copy text to the clipboard with a short-lived \"Copied\" state per key and an announcement, for copy buttons in rows and toolbars.",
+  "exports": [
+    "useCopy"
+  ],
+  "types": [
+    "UseCopy",
+    "UseCopyOptions"
+  ]
+}

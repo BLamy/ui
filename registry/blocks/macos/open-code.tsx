@@ -116,8 +116,8 @@ function OpenCodeWorkspace() {
         autoStart={false}
         createHost={createHost}
         credentialStore={credentialStore}
-        className="min-h-[360px] flex-1 rounded-none border-0"
-        style={{ height: 'auto' }}
+        variant="plain"
+        className="min-h-[360px] flex-1"
         runtimeUrl={import.meta.env.VITE_OPENCODE_RUNTIME_URL}
         onReady={(_, readyHost) => {
           currentHost.current = readyHost;

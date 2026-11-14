@@ -173,7 +173,7 @@ describe('CodeEditor as a source view', () => {
       const { unmount } = render(<CodeEditor readOnly variant="ghost" lines={numbered(3)} />);
       expect(screen.queryByRole('button')).toBeNull();
       unmount();
-      render(<CodeEditor readOnly variant="ghost" lines={numbered(3)} onLineNumberClick={onLineNumberClick} lineNumberClickable={(n) => n !== 2} lineNumberLabel={(n) => `Jump to ${n}`} />);
+      render(<CodeEditor readOnly variant="ghost" lines={numbered(3)} lineNumbers={{ onClick: onLineNumberClick, clickable: (n) => n !== 2, label: (n) => `Jump to ${n}` }} />);
       fireEvent.click(screen.getByRole('button', { name: 'Jump to 3' }));
       expect(onLineNumberClick).toHaveBeenCalledWith(expect.objectContaining({ type: 'click' }), expect.objectContaining({ line: 3 }));
       expect(screen.queryByRole('button', { name: 'Jump to 2' })).toBeNull();
@@ -273,13 +273,13 @@ describe('CodeEditor as a source view', () => {
     });
 
     it('goes to a line through the prop, when it changes', () => {
-      const { rerender } = render(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} scrollToLine={{ line: 500, align: 'start' }} />);
+      const { rerender } = render(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} revealLine={{ line: 500, align: 'start' }} />);
       expect(root().scrollTop).toBe(499 * LINE);
       root().scrollTop = 0;
       // The same target again, as a new object: not a change.
-      rerender(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} scrollToLine={{ line: 500, align: 'start' }} />);
+      rerender(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} revealLine={{ line: 500, align: 'start' }} />);
       expect(root().scrollTop).toBe(0);
-      rerender(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} scrollToLine={700} />);
+      rerender(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} revealLine={700} />);
       expect(root().scrollTop).toBe(699 * LINE + LINE / 2 - HEIGHT / 2);
     });
 
@@ -552,7 +552,7 @@ describe('CodeEditor as a source view', () => {
     const controls = () => [...document.querySelectorAll<HTMLElement>('[data-slot="code-editor-content"] button')];
 
     it('has one tab stop among all the buttons', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={numbered(50)} gutters={gutters} onLineNumberClick={() => {}} />);
+      render(<CodeEditor readOnly variant="ghost" lines={numbered(50)} gutters={gutters} lineNumbers={{ onClick: () => {} }} />);
       const stops = controls().filter((el) => el.getAttribute('tabindex') !== '-1');
       expect(controls().length).toBeGreaterThan(40);
       expect(stops.length).toBe(1);
@@ -665,11 +665,11 @@ describe('which renderer', () => {
       <CodeEditor readOnly value="a" currentLine={1} />,
       <CodeEditor readOnly value="a" markers={[]} />,
       <CodeEditor readOnly value="a" lineDecoration={() => null} />,
-      <CodeEditor readOnly value="a" scrollToLine={1} />,
+      <CodeEditor readOnly value="a" revealLine={1} />,
       <CodeEditor readOnly value="a" highlight={() => null} />,
       <CodeEditor readOnly value="a" onCopyText={() => {}} />,
       <CodeEditor readOnly value="a" onSelectionChange={() => {}} />,
-      <CodeEditor readOnly value="a" onLineNumberClick={() => {}} />,
+      <CodeEditor readOnly value="a" lineNumbers={{ onClick: () => {} }} />,
     ];
     for (const element of cases) {
       const { unmount } = render(element);

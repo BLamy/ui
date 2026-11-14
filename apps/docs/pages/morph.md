@@ -9,7 +9,7 @@ A shared-element transition: one element that springs between two layouts. The m
 Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import { MorphGroup, Morph, MorphPresence, useMorphTransition } from '@/components/ui/morph'
+import { MorphGroup, Morph } from '@/components/ui/morph'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -20,7 +20,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { MorphGroup, Morph, MorphPresence, useMorphTransition } from '@brett_lamy/ui'
+import { MorphGroup, Morph } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}

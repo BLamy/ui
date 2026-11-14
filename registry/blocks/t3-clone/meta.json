@@ -13,6 +13,7 @@
     "components/app-sidebar.tsx",
     "components/thread-sidebar.tsx",
     "components/thread-view.tsx",
+    "components/settled-banner.tsx",
     "components/surface-panel.tsx",
     "components/terminal-dock.tsx",
     "components/commands.tsx",

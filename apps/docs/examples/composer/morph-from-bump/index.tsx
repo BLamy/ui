@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Composer, ComposerBump, ComposerBumpHandle, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer'
 import { ComposerCards, ComposerMorphCard } from '@/components/ui/composer/composer-cards'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 
 const STEPS = ['Read the billing page', 'Found the usage endpoint', 'Wrote a failing test']
 
@@ -44,8 +44,8 @@ function FromBump() {
 
 export default function FromBumpExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <FromBump />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

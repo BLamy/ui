@@ -54,7 +54,7 @@ export function useThreads(initial: string | null = 't1', { onCreate, onNew }: {
         text: words.join(' '),
         live: false,
         summary: `Worked for ${secs}s`,
-        steps: [{ title: 'Parsed the request' }, { title: 'Searched the workspace', detail: 'rg -n' }, { title: 'Drafted and streamed the reply' }],
+        steps: [{ title: 'Parsed the request' }, { title: 'Searched the workspace', description: 'rg -n' }, { title: 'Drafted and streamed the reply' }],
       });
       setLive(null);
     }, 90);

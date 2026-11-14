@@ -1,0 +1,36 @@
+{
+  "name": "data-table",
+  "title": "DataTable",
+  "description": "A virtualized table of rows on UI SDK's virtualizer, grid focus and resize: typed columns (fixed or flexible widths, a cell renderer, a sort value), sort, column resize, single selection or none, density, a size class of its own (bindSizeClass) that hides columns and stacks the rows when it is narrow, a toolbar, a footer and an EmptyState, and an optional playhead for rows on a timeline. An ARIA grid with one tab stop. Stays smooth at 100,000 rows. RequestTable and the SQL console's results are presets of it.",
+  "page": "data-table",
+  "files": [
+    "components/data-table.tsx"
+  ],
+  "exports": [
+    "DataTable",
+    "DataTableCell",
+    "dataTableVariants",
+    "createDataTableController"
+  ],
+  "imports": [
+    "DataTable"
+  ],
+  "types": [
+    "DataTableColumn",
+    "DataTableDensity",
+    "DataTableOverlayState",
+    "DataTableRowAttributes",
+    "DataTableRow",
+    "DataTableController",
+    "DataTableActionDetails",
+    "DataTableValueChangeReason",
+    "DataTableSortChangeReason",
+    "DataTableColumnWidthsChangeReason",
+    "DataTableBreakpoints",
+    "DataTableColumnSize",
+    "DataTableSort",
+    "DataTableSortDirection",
+    "DataTableSortValue",
+    "DataTableTimeRange"
+  ]
+}

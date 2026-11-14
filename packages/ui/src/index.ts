@@ -18,7 +18,7 @@ export { AnimatedHeight } from './components/animated-height';
 export { Canvas, CanvasFrame, CanvasHandles, CanvasMarquee, CanvasGuides, CanvasMiniMap, useCanvas, createCanvasController } from './components/canvas';
 export type {
   CanvasProps, CanvasPointerInfo, CanvasContextValue, CanvasController, CanvasFitOptions, CanvasViewportChangeDetails, CanvasViewportReason,
-  CanvasFrameProps, CanvasMiniMapProps, CanvasMiniMapItem,
+  CanvasFrameProps, CanvasHandlesProps, CanvasMarqueeProps, CanvasGuidesProps, CanvasMiniMapProps, CanvasMiniMapItem, CanvasPointerLayer,
 } from './components/canvas';
 export {
   toBoard, toScreen, MIN_SIZE,
@@ -32,7 +32,7 @@ export type { CelebrateProps } from './components/celebrate';
 export {
   BLProvider, BLSafeCtx, BLStickyCtx, chromeStore, useChromeHidden, chromeOffset,
   AppearanceContext, AppearanceProvider, useAppearance,
-  ThemeScope, ThemeScopeContext, useThemeScopeProps, themeScopeProps, themeScopeClass, tintVars, themeVarStyle, readThemeVars, THEME_VARS,
+  ThemeScope, ThemeScopeContext, useThemeScope, useScopeAppearance, useThemeScopeProps, themeScopeProps, themeScopeClass, tintVars, themeVarStyle, readThemeVars, THEME_VARS,
   useLayerHost,
 } from './lib/theme';
 export type { BLProviderProps, Appearance, ThemeScopeProps, ThemeScopeName, ThemeScopeState, ThemeVars, ThemeVar } from './lib/theme';
@@ -47,7 +47,7 @@ export { bindEdgeSwipe } from './lib/edge-swipe';
 export type { BindEdgeSwipeOptions, EdgeSwipeDetails, EdgeSwipeEndDetails } from './lib/edge-swipe';
 export { bindPullToRefresh } from './lib/pull-to-refresh';
 export type { BindPullToRefreshOptions, PullToRefreshDetails, PullToRefresh } from './lib/pull-to-refresh';
-export { bindScrollEdge } from './lib/scroll-edge';
+export { bindScrollEdge, useHideOnScroll } from './lib/scroll-edge';
 export type { BindScrollEdgeOptions } from './lib/scroll-edge';
 export { LocalStreams, StreamFullError, pack, unpack } from './lib/append-stream';
 export { DurableStreamsClient, CloudSync, useCloud, deviceId } from './lib/durable-streams';
@@ -65,10 +65,13 @@ export { Avatar, AvatarImage, AvatarFallback, avatarVariants, avatarStatusVarian
 export type { AvatarProps, AvatarStatus } from './components/avatar';
 export { AvatarGroup, avatarGroupVariants } from './components/avatar-group';
 export type { AvatarGroupProps } from './components/avatar-group';
-export { Switch, SwitchThumb, createSwitchController } from './components/switch';
+export { Switch, SwitchThumb, switchVariants, createSwitchController } from './components/switch';
 export type { SwitchProps } from './components/switch';
-export { Segmented, SegmentedItem, createSegmentedControlController } from './components/segmented';
-export type { SegmentedProps, SegmentedItemProps } from './components/segmented';
+export {
+  Segmented, SegmentedItem, segmentTrackVariants, segmentItemVariants, segmentIndicatorVariants, segmentIndicatorSlide,
+  createSegmentedControlController,
+} from './components/segmented';
+export type { SegmentedProps, SegmentedItemProps, SegmentSize } from './components/segmented';
 export { Spinner, spinnerAnimations } from './components/spinner';
 export type { SpinnerProps, SpinnerAnimation, SpinnerPattern, SpinnerPatternOf, SpinnerAnimationInfo } from './components/spinner';
 export { SearchInput, searchInputVariants } from './components/search-input';
@@ -82,10 +85,16 @@ export type {
   ListProps, ListDensity, ListSectionProps, ListRowProps, ListRowAction, ListRowActionDetails, ListRowActionReason, ListRowController,
   ListRowFullSwipe, ListSectionOrderChangeDetails, ListSectionOrderChangeReason,
 } from './components/list';
-export { IndexBar, AL, indexBarVariants } from './components/index-bar';
-export type { IndexBarProps, IndexBarItem, IndexBarKey, IndexBarJumpReason } from './components/index-bar';
-export { EditBar } from './components/edit-bar';
-export type { EditBarProps } from './components/edit-bar';
+export { IndexBar, alphabetItems, indexBarVariants } from './components/index-bar';
+export type { IndexBarProps, IndexBarItem, IndexBarKey, IndexBarJumpReason, IndexBarJumpDetails } from './components/index-bar';
+export {
+  Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator, ToolbarText, toolbarVariants, toolbarButtonVariants, useToolbar,
+  createToolbarController,
+} from './components/toolbar';
+export type {
+  ToolbarProps, ToolbarButtonProps, ToolbarGroupProps, ToolbarSeparatorProps, ToolbarTextProps, ToolbarVariant, ToolbarSize,
+  ToolbarTone, ToolbarController,
+} from './components/toolbar';
 export {
   NavigationStack, NavigationStackPage, NavigationStackBar, NavigationStackTitle, NavigationStackBack, NavigationStackLeading,
   NavigationStackTrailing, NavigationStackContent, NavigationStackLargeTitle, NavigationStackSubheader,
@@ -99,19 +108,17 @@ export type {
 } from './components/navigation-stack';
 export {
   SplitView, SplitViewSidebar, SplitViewSupplementary, SplitViewDetail, SplitViewHeader, SplitViewContent, SplitViewToggle,
-  SplitViewItem, SplitViewEmpty, useSplitView, useSplitViewColumn, useSplitViewBack,
-  SplitViewSection, SplitViewStack, useSplitViewStack, splitViewItemVariants, splitViewSectionLabelVariants,
-  createSplitViewController, createSplitViewStackController,
+  SplitViewItem, useSplitView, useSplitViewColumn, useSplitViewBack,
+  SplitViewSection, splitViewItemVariants, createSplitViewController,
 } from './components/split-view';
 export type {
-  SplitViewProps, SplitViewColumnProps, SplitViewHeaderProps, SplitViewToggleProps, SplitViewItemProps, SplitViewEmptyProps,
+  SplitViewProps, SplitViewColumnProps, SplitViewHeaderProps, SplitViewContentProps, SplitViewToggleProps, SplitViewItemProps,
   SplitViewState, SplitViewContextValue, SplitViewColumn, SplitViewSizeClass, SplitViewSidebarBehavior, SplitViewValue,
-  SplitViewSectionProps, SplitViewStackProps, SplitViewStackApi, SplitViewItemTint,
+  SplitViewSectionProps, SplitViewItemTint,
   SplitViewController, SplitViewColumnWidths, SplitViewDefaultSidebarOpen, SplitViewColumnState, SplitViewItemState, SplitViewHeaderState,
   SplitViewSidebarOpenChangeDetails, SplitViewSidebarOpenChangeReason, SplitViewValueChangeDetails, SplitViewValueChangeReason,
   SplitViewCompactColumnChangeDetails, SplitViewCompactColumnChangeReason, SplitViewSupplementaryOpenChangeDetails,
   SplitViewSupplementaryOpenChangeReason, SplitViewColumnWidthsChangeDetails, SplitViewColumnWidthsChangeReason,
-  SplitViewStackPagesChangeDetails, SplitViewStackPagesChangeReason, SplitViewStackController,
 } from './components/split-view';
 export {
   AdaptivePane, AdaptivePaneHeader, AdaptivePaneTitle, AdaptivePaneClose, adaptivePanePageClass, createAdaptivePaneController,
@@ -120,12 +127,12 @@ export { useKeptChildren } from './lib/kept-children';
 export type { KeptChildren } from './lib/kept-children';
 export {
   Sidebar, SidebarProvider, SidebarHeader, SidebarContent, SidebarFooter, SidebarWorkspace, SidebarSearch,
-  SidebarSection, SidebarItem, SidebarTrigger, SidebarInset, SidebarNav, useSidebar, useSidebarCollapsed, SIDEBAR_ICONS,
+  SidebarSection, SidebarItem, SidebarTrigger, SidebarInset, sidebarItemVariants, useSidebar, useSidebarCollapsed,
   createSidebarController,
 } from './components/sidebar';
 export type {
-  SidebarContextValue, SidebarProviderProps, SidebarVariant, SidebarProps, SidebarWorkspaceProps, SidebarSearchProps,
-  SidebarSectionProps, SidebarItemProps, SidebarNavProps, SidebarController, SidebarOpenChangeDetails, SidebarOpenChangeReason,
+  SidebarContextValue, SidebarProviderProps, SidebarVariant, SidebarPresentation, SidebarState, SidebarProps,
+  SidebarWorkspaceProps, SidebarSearchProps, SidebarSectionProps, SidebarItemProps, SidebarTriggerProps, SidebarController, SidebarOpenChangeDetails, SidebarOpenChangeReason,
 } from './components/sidebar';
 export type {
   AdaptivePaneProps, AdaptivePaneState, AdaptivePaneCloseProps, AdaptivePanePresentation, AdaptivePaneController, AdaptivePaneOpenChangeDetails,
@@ -159,7 +166,7 @@ export {
   ScrollAreaScrollToEnd, scrollAreaViewportVariants, createScrollAreaController,
 } from './components/scroll-area';
 export type {
-  ScrollAreaProps, ScrollAreaViewportProps, ScrollAreaScrollbarProps, ScrollAreaThumbProps, ScrollAreaScrollToEndProps,
+  ScrollAreaProps, ScrollAreaViewportProps, ScrollAreaContentProps, ScrollAreaCornerProps, ScrollAreaScrollbarProps, ScrollAreaThumbProps, ScrollAreaScrollToEndProps,
 } from './components/scroll-area';
 export { Input, inputVariants, fieldSurfaceVariants, createInputController } from './components/input';
 export type { InputProps, InputController } from './components/input';
@@ -194,20 +201,21 @@ export type {
 } from './components/tabs';
 export {
   Dialog, DialogTrigger, DialogBackdrop, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogBody, DialogFooter,
-  DialogClose, DialogBack, DialogView, dialogVariants, createDialogController,
+  DialogClose, DialogBack, DialogView, SurfaceFlow, SurfaceFlowTitle, dialogVariants, createDialogController,
   surfaceHeaderVariants, surfaceTitleVariants, surfaceDescriptionVariants, surfaceBodyVariants, surfaceFooterVariants, closeButtonVariants,
   AlertDialog, AlertDialogTrigger, AlertDialogBackdrop, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogClose, alertDialogCloseVariants, createAlertDialogController, createConfirm,
 } from './components/dialog';
 export type {
   DialogProps, DialogContentProps, DialogHeaderProps, DialogFooterProps, DialogBackProps, DialogViewProps, DialogController,
+  SurfaceFlowProps,
   AlertDialogProps, AlertDialogContentProps, AlertDialogFooterProps, AlertDialogCloseProps, AlertDialogController,
 } from './components/dialog';
 export {
   Sheet, SheetTrigger, SheetBackdrop, SheetContent, SheetHandle, SheetHeader, SheetTitle, SheetDescription, SheetBody,
-  SheetFooter, SheetClose, sheetVariants, sheetGrabberVariants, createSheetController,
+  SheetFooter, SheetClose, SheetView, sheetVariants, sheetGrabberVariants, createSheetController,
 } from './components/sheet';
-export type { SheetProps, SheetContentProps, SheetController } from './components/sheet';
+export type { SheetProps, SheetContentProps, SheetViewProps, SheetController } from './components/sheet';
 export {
   Popover, PopoverTrigger, PopoverContent, PopoverArrow, PopoverTitle, PopoverDescription, PopoverClose,
   popoverContentVariants, createPopoverController,
@@ -240,18 +248,20 @@ export type {
   SelectProps, SelectLabelProps, SelectTriggerProps, SelectContentProps, SelectItemProps, SelectController,
 } from './components/select';
 export {
-  Combobox, ComboboxLabel, ComboboxInput, ComboboxContent, ComboboxList, ComboboxEmpty, ComboboxItem, ComboboxGroup,
-  ComboboxGroupLabel, ComboboxSeparator, ComboboxChip, ComboboxChipRemove, ComboboxStatus, createComboboxController,
+  Combobox, ComboboxLabel, ComboboxField, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxChips, ComboboxContent, ComboboxList,
+  ComboboxEmpty, ComboboxItem, ComboboxGroup, ComboboxGroupLabel, ComboboxSeparator, ComboboxChip, ComboboxChipRemove, ComboboxStatus,
+  createComboboxController,
 } from './components/combobox';
 export type {
-  ComboboxProps, ComboboxLabelProps, ComboboxInputProps, ComboboxContentProps, ComboboxItemProps, ComboboxChipProps, ComboboxController,
+  ComboboxProps, ComboboxLabelProps, ComboboxFieldProps, ComboboxChipsProps, ComboboxContentProps, ComboboxItemProps, ComboboxChipProps,
+  ComboboxController,
 } from './components/combobox';
 export { Slider, SliderValue, SliderControl, SliderTrack, SliderIndicator, SliderThumb, sliderVariants, createSliderController } from './components/slider';
-export type { SliderProps, SliderTone } from './components/slider';
+export type { SliderProps, SliderVariant } from './components/slider';
 export {
   Listbox, ListboxItem, ListboxGroup, ListboxGroupLabel, ListboxSeparator, listboxVariants, listboxItemVariants, createListboxController,
-} from './components/list-box';
-export type { ListboxProps, ListboxItemProps, ListData, ListboxController } from './components/list-box';
+} from './components/listbox';
+export type { ListboxProps, ListboxItemProps, ListData, ListboxController } from './components/listbox';
 export {
   Tree, TreeItem, TreeItemLabel, TreeItemIndicator, TreeItemCheckbox, TreeGroup, treeVariants, treeRowVariants,
   createTreeController, treeFromPaths, visibleTreeRows,
@@ -284,100 +294,67 @@ export type { CodeToken, CodeTokenType, SyntaxToken, SyntaxTokenType, SyntaxSpan
 // ── Workbench: IDE-style agent workspace — composer, chat, terminal dock, surface panel, WorkbenchShell ──
 export {
   MarkdownView,
-  FbMd,
-  HlPre,
-  hlTokens,
-  DocstreamRefContext,
   type MarkdownViewProps,
-  type DocstreamRefContextValue,
   type ReferenceNode,
 } from './components/markdown-view';
-export { MessageScroller, type MessageScrollerProps, type MessageScrollerItem } from './components/message-scroller';
+export { MessageScroller, MessageScrollerItem, type MessageScrollerProps, type MessageScrollerItemProps } from './components/message-scroller';
 export {
   Composer,
-  ComposerOutlet,
   ComposerCard,
   ComposerAddon,
   ComposerFooter,
   ComposerSpacer,
   ComposerSeparator,
   ComposerText,
-  ComposerButton,
-  ComposerPillLabel,
+  ComposerPill,
   ComposerSelect,
-  ComposerMenuItem,
   ComposerSend,
   ComposerStop,
   ComposerAdd,
-  ComposerAttach,
   ComposerExpand,
   ComposerAttachments,
   ComposerInput,
+  ComposerOptions,
+  ComposerOptionsOutlet,
   ComposerBump,
   ComposerBumpHandle,
   ComposerBumpContent,
-  ComposerFab,
-  ComposerOptions,
-  ComposerOptionsOutlet,
-  composerFabVariants,
-  AnnotateLightbox,
   useComposer,
   useComposerBump,
   composerCardVariants,
   composerAddonVariants,
-  composerButtonVariants,
   composerBumpVariants,
-  composerMenuItemVariants,
   type ComposerProps,
   type ComposerCollapse,
-  type ComposerFabProps,
   type ComposerContextValue,
   type ComposerAttachment,
   type ComposerAttachmentKind,
   type ComposerAttachOptions,
   type ComposerFileSource,
   type ComposerFileRejection,
-  type ComposerAddProps,
-  type ComposerOutletProps,
   type ComposerCardProps,
   type ComposerAddonProps,
-  type ComposerButtonProps,
+  type ComposerPillProps,
   type ComposerSelectProps,
-  type ComposerSelectOption,
+  type ComposerSelectItem,
   type ComposerSelectChangeDetails,
-  type ComposerMenuItemProps,
   type ComposerSendProps,
   type ComposerStopProps,
+  type ComposerAddProps,
+  type ComposerExpandProps,
   type ComposerInputProps,
+  type ComposerOptionsProps,
+  type ComposerOptionsOutletProps,
   type ComposerBumpProps,
-  type ComposerBumpProgress,
   type ComposerBumpContextValue,
   type ComposerBumpHandleProps,
   type ComposerBumpContentProps,
-  type ComposerValueChangeReason,
   type ComposerValueChangeDetails,
-  type ComposerAttachmentsChangeReason,
   type ComposerAttachmentsChangeDetails,
-  type ComposerExpandedChangeReason,
   type ComposerExpandedChangeDetails,
-  type ComposerCollapsedChangeReason,
   type ComposerCollapsedChangeDetails,
-  type ComposerBumpOpenChangeReason,
   type ComposerBumpOpenChangeDetails,
-  type ComposerBumpMinimizedChangeReason,
-  type ComposerBumpMinimizedChangeDetails,
-  type AnnotateLightboxProps,
 } from './components/composer/composer';
-export {
-  ComposerAnnotatorProvider,
-  useComposerAnnotator,
-  type ComposerAnnotator,
-  type ComposerAnnotatorProps,
-  type ComposerAnnotatorSurface,
-} from './components/composer/annotator';
-export {
-  WbPopoverContent, useSurfacePalette, type WbPopoverContentProps, type SurfacePalette,
-} from './components/composer/composer-popover';
 export {
   ComposerCards,
   ComposerMorphCard,
@@ -387,45 +364,49 @@ export {
   type ComposerQueueProps,
   type ComposerQueueItem,
   type ComposerQueueActions,
-  type ComposerQueueItemsChangeReason,
   type ComposerQueueItemsChangeDetails,
 } from './components/composer/composer-cards';
 
 // ── Chat: floating/artifact chat containers (ChatShell and the Discord-style parts live in the discord-clone block) ──
 export {
   FloatingSheet,
+  FloatingSheetBody,
+  FloatingSheetFoot,
+  FloatingSheetFab,
   useFloatingSheet,
-  useHideOnScroll,
-  type FloatingSheetChangeDetails,
+  floatingSheetVariants,
+  floatingSheetSurfaceVariants,
+  floatingSheetFabVariants,
   type FloatingSheetProps,
+  type FloatingSheetBodyProps,
+  type FloatingSheetFootProps,
+  type FloatingSheetFabProps,
   type FloatingSheetContextValue,
-  type FloatingSheetFabPosition,
+  type FloatingSheetChangeDetails,
+  type FloatingSheetMinimizedChangeDetails,
+  type FloatingSheetMinimizedChangeReason,
+  type FloatingSheetVariant,
   type FloatingSheetAppearance,
-  type FloatingSheetTone,
+  type FloatingSheetCollapse,
+  type FloatingSheetFabSide,
+  type FloatingSheetFabAlign,
   type FloatingSheetSize,
 } from './components/floating-sheet';
 export {
-  FloatingChat,
-  useFloatingChat,
-  type FloatingChatProps,
-  type FloatingChatContextValue,
-  type FloatingChatFabPosition,
-  type FloatingChatOpenChangeDetails,
-  type FloatingChatOpenChangeReason,
-  type FloatingChatMinimizedChangeDetails,
-  type FloatingChatMinimizedChangeReason,
-  type FloatingChatComposingChangeDetails,
-  type FloatingChatComposingChangeReason,
-} from './components/floating-chat';
-export { ChatColumn, ChatColumnTranscript, ChatColumnComposer, type ChatColumnProps } from './components/chat-column';
-export {
   ArtifactChatContainer,
+  ArtifactChatContainerContent,
+  ArtifactChatContainerChat,
+  ArtifactChatContainerComposer,
   useArtifactChatContainer,
+  artifactChatContainerVariants,
   type ArtifactChatContainerProps,
+  type ArtifactChatContainerContentProps,
   type ArtifactChatContainerContextValue,
-  type ArtifactChatContainerSlotChildren,
-  type ArtifactChatFabPosition,
+  type ArtifactChatContainerOpenChangeDetails,
+  type ArtifactChatComposingChangeDetails,
+  type ArtifactChatComposingChangeReason,
   type ArtifactChatLayout,
+  type ArtifactChatSide,
 } from './components/artifact-chat-container';
 export {
   ProgressStepper, ProgressStep, ProgressStepIcon, ProgressStepTrack, ProgressStepLabel, ProgressStepDescription, progressStepperVariants,
@@ -433,44 +414,41 @@ export {
 } from './components/progress-stepper';
 
 // PencilKit — freehand drawing on perfect-freehand (formerly @brett_lamy/pencilkit)
-export {
-  PK_TOOLS,
-  PK_INKS,
-  PK_W,
-  PK_TOOL_ICONS,
-} from './components/pencilkit/constants';
 export type {
   PencilTool,
   PencilDrawTool,
-  PencilToolDef,
   PencilPoint,
   PencilStroke,
+  PencilInk,
+  PencilWidth,
 } from './components/pencilkit/constants';
-export { outlinePath, StrokePath, MemoStroke } from './components/pencilkit/stroke-path';
+export { StrokePath } from './components/pencilkit/stroke-path';
 export type { StrokePathProps } from './components/pencilkit/stroke-path';
 export { PencilCanvas } from './components/pencilkit/pencil-canvas';
 export type { PencilCanvasProps, PencilStrokesChangeDetails, PencilStrokesChangeReason } from './components/pencilkit/pencil-canvas';
 export {
-  PencilToolButton,
-  pencilToolButtonVariants,
   PencilToolbar,
-  PencilToolbarDivider,
-  ToolPicker,
-  InkPicker,
-  WidthPicker,
+  PencilToolbarPinned,
+  PencilToolPicker,
+  PencilInkPicker,
+  PencilWidthPicker,
   PencilActions,
 } from './components/pencilkit/pencil-toolbar';
 export type {
-  PencilToolButtonProps,
   PencilToolbarProps,
-  ToolPickerProps,
-  InkPickerProps,
-  WidthPickerProps,
+  PencilToolbarPinnedProps,
+  PencilToolPickerProps,
+  PencilInkPickerProps,
+  PencilWidthPickerProps,
   PencilActionsProps,
 } from './components/pencilkit/pencil-toolbar';
 export { usePencilHistory } from './components/pencilkit/use-pencil-history';
 export type { PencilHistory } from './components/pencilkit/use-pencil-history';
 export { PencilKitAnnotator } from './components/pencilkit/pencilkit-annotator';
+export { ImageAnnotator, ImageAnnotatorProvider } from './components/pencilkit/image-annotator';
+export type {
+  ImageAnnotatorProps, ImageAnnotatorProviderProps, ImageAnnotatorEngine, ImageAnnotatorEngineProps, ImageAnnotatorSurface,
+} from './components/pencilkit/image-annotator';
 
 // ── feedback, media and morph primitives ──
 export {
@@ -484,33 +462,16 @@ export type {
 export { ProgressRing, CountdownRing, useCountdown, progressRingVariants, countdownRingLabelVariants } from './components/progress-ring';
 export type { ProgressRingProps, ProgressRingSize, ProgressRingTone, CountdownRingProps, UseCountdownOptions, Countdown } from './components/progress-ring';
 // ReplayPreview lives in docstream; re-exported here (see components/replay-preview.tsx)
-export {
-  ReplayPreview, formatReplayTime, replayDemoEvents, getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt,
-  getReplayDevtools, replayDevtoolsAt, ReplayStage, preloadReplayStage,
-} from './components/replay-preview';
+export { ReplayPreview, formatReplayTime } from './components/replay-preview';
 export type {
-  ReplayPreviewHandle, ReplayPreviewProps, ReplayEvent, ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerTrack,
-  ReplayConsoleEntry, ReplayConsoleLevel, ReplayDevtools, ReplayDevtoolsState, ReplayDevtoolsTab, ReplayRequest,
-  ReplayStageHandle, ReplayStageLayout, ReplayStageProps,
+  ReplayPreviewProps, ReplayPreviewHandle, ReplaySource, ReplayChrome, ReplayEvent, ReplayMarker, ReplayMarkerKind,
+  ReplayDevtools, ReplayDevtoolsTab, ReplayInspection, ReplayInspectionTab,
 } from './components/replay-preview';
-// The STL viewer lives in docstream; re-exported here (see components/stl-viewer.tsx)
-export { StlViewer, parseStl, isStlUrl } from './components/stl-viewer';
-export type { StlViewerProps, StlMesh } from './components/stl-viewer';
-// The Strudel player, rack and syntax tree live in docstream; re-exported here (see components/strudel-*.tsx)
-export {
-  StrudelPlayer, DEFAULT_SAMPLES, playStrudel, stopStrudel, updateStrudel, subscribeStrudel, getStrudelSnapshot, strudelNow,
-} from './components/strudel-player';
-export type { StrudelPlayerProps, StrudelPattern, StrudelHap, StrudelSnapshot } from './components/strudel-player';
-export { StrudelRack, RackGrid, StepGrid, Knob, Fader, STRUDEL_PARAMS, trackName } from './components/strudel-rack';
-export type { StrudelRackProps, RackGridProps, GridItem, GridLayout, StepGridProps, ControlProps } from './components/strudel-rack';
-export {
-  parseStrudel, parseMini, miniAtoms, miniLayers, chainCalls, findCall, StrudelSyntaxError, MiniSyntaxError,
-  applyEdits, formatNumber, setArg, setMethod, removeMethod, setTempo, setMiniAtom, setMiniSource, mixCode, isAudible,
-} from './components/strudel-syntax';
-export type {
-  StrudelSong, StrudelTrack, StrudelChain, StrudelCall, StrudelArg, StrudelTempo, StrudelTrackKind, StrudelMix, CodeEdit,
-  MiniGroup, MiniSequence, MiniLayers, MiniStep, MiniSlice, MiniAtom, MiniOp, MiniNode, MiniSubcycle, MiniAlternation, MiniPolymeter,
-} from './components/strudel-syntax';
+// The STL viewer and the Strudel player live in docstream; re-exported here (see components/stl-viewer.tsx, strudel-player.tsx)
+export { StlViewer } from './components/stl-viewer';
+export type { StlViewerProps } from './components/stl-viewer';
+export { StrudelPlayer, playStrudel, stopStrudel, updateStrudel, subscribeStrudel, getStrudelSnapshot } from './components/strudel-player';
+export type { StrudelPlayerProps, StrudelSnapshot } from './components/strudel-player';
 export { NowPlayingBars } from './components/now-playing-bars';
 export type { NowPlayingBarsProps } from './components/now-playing-bars';
 export { MorphGroup, Morph, MorphPresence, useMorphTransition } from './components/morph';
@@ -529,45 +490,43 @@ export type {
   CommandMenuState, CommandMenuData, CommandMenuDataItem, CommandMenuDataGroup,
 } from './components/command-menu';
 
-// ── Workbench surface theme and AI transcript parts (used by the Composer, FloatingChat and several blocks) ──
-export { useWorkbenchAppearance, WorkbenchTheme, WorkbenchAppearanceProvider, type WorkbenchThemeProps } from './components/workbench-theme';
+// ── AI transcript parts (used by the Composer, ArtifactChatContainer and several blocks) ──
 export {
-  Conversation, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationComposer, ConversationSuggestions,
-  Suggestion, UserMessage, AssistantMessage, MessageMarkdown, ConversationTyping, WorkLog, ToolCall, SettledBanner,
-  type ConversationProps, type ConversationGreetingProps, type ConversationMessagesProps, type UserMessageProps,
-  type SuggestionProps, type WorkLogProps, type ToolCallProps, type SettledBannerProps,
+  Conversation, ConversationEmpty, ConversationMessages, ConversationComposer, ConversationSuggestions, Suggestion,
+  UserMessage, AssistantMessage, MessageMarkdown, ConversationTyping, WorkLog, ToolCall,
+  type ConversationProps, type ConversationEmptyProps, type ConversationMessagesProps, type ConversationComposerProps,
+  type ConversationSuggestionsProps, type SuggestionProps, type MessageProps, type UserMessageProps, type MessageMarkdownProps,
+  type WorkLogProps, type ToolCallProps,
 } from './components/conversation';
 
-// ── Calendar / DateField / DatePicker / ColorField / ColorPicker ──
+// ── Calendar / DateInput / DatePicker / ColorPicker ──
 export {
   Calendar, CalendarHeader, CalendarHeading, CalendarPrevious, CalendarNext, CalendarMonthSelect, CalendarYearSelect,
-  CalendarGrid, CalendarWeekdays, CalendarWeekday, CalendarWeeks, CalendarDay, calendarVariants, createCalendarController,
-  type CalendarProps, type CalendarDayProps, type CalendarController, type CalendarDayState, type CalendarGridCell,
+  CalendarMonths, CalendarGrid, CalendarWeekdays, CalendarWeekday, CalendarWeeks, CalendarDay, calendarVariants, createCalendarController,
+  type CalendarProps, type CalendarMonthsProps, type CalendarDayProps, type CalendarController, type CalendarDayState, type CalendarGridCell,
   type CalendarMode, type CalendarValue, type DateMatcher, type DateMatchers,
 } from './components/calendar';
 export {
-  DateField, DateFieldSegment, TimeField, TimeFieldSegment, dateFieldVariants, createDateFieldController, createTimeFieldController,
-  type DateFieldProps, type TimeFieldProps, type DateFieldController, type TimeFieldController, type DateFieldSegmentData, type DateFieldState,
-} from './components/date-field';
+  DateInput, DateInputSegment, TimeInput, TimeInputSegment, dateInputVariants, createDateInputController, createTimeInputController,
+  type DateInputProps, type TimeInputProps, type DateInputController, type TimeInputController, type DateInputSegmentData, type DateInputState,
+} from './components/date-input';
 export {
   DatePicker, DatePickerField, DatePickerInput, DatePickerTrigger, DatePickerClear, DatePickerHint, DatePickerPreset, DatePickerContent,
   datePickerFieldVariants, createDatePickerController,
   type DatePickerProps, type DatePickerFieldProps, type DatePickerContentProps, type DatePickerController, type DatePickerMode, type DatePickerValue,
 } from './components/date-picker';
 export {
-  ColorField, ColorFieldGroup, ColorFieldInput, ColorFieldChannelInput, ColorFieldSwatch, ColorSwatch, colorFieldVariants,
-  type ColorFieldProps, type ColorFieldGroupProps, type ColorSwatchProps,
-} from './components/color-field';
-export {
   ColorPicker, ColorPickerTrigger, ColorPickerContent, ColorPickerArea, ColorPickerAreaThumb, ColorPickerAreaCanvas,
-  ColorPickerSlider, ColorPickerSliderThumb, ColorPickerSwatches, ColorPickerSwatchItem,
-  ColorPickerEyeDropper, createColorPickerController,
+  ColorPickerSlider, ColorPickerSliderThumb, ColorPickerSwatches, ColorPickerSwatchItem, ColorPickerField, ColorPickerInput,
+  ColorPickerChannelInput, ColorPickerSwatch, ColorPickerEyeDropper, ColorInput, ColorSwatch, colorPickerTriggerVariants,
+  createColorPickerController,
   type ColorPickerProps, type ColorPickerTriggerProps, type ColorPickerContentProps, type ColorPickerSliderProps,
-  type ColorPickerController,
+  type ColorPickerFieldProps, type ColorInputProps, type ColorSwatchProps, type ColorPickerController,
 } from './components/color-picker';
 export {
-  FontPicker, FontList, FontStackPicker, fontPickerTriggerVariants, fontListItemVariants, fontStackPickerVariants,
-  type FontPickerProps, type FontListProps, type FontStackPickerProps, type FontPickerChangeDetails, type FontPickerReason,
+  FontPicker, FontPickerTrigger, FontPickerContent, FontList, FontStackPicker, fontStackPickerVariants,
+  type FontPickerProps, type FontPickerTriggerProps, type FontPickerContentProps, type FontListProps, type FontStackPickerProps,
+  type FontPickerChangeDetails, type FontPickerReason,
 } from './components/font-picker';
 export {
   GOOGLE_FONTS, FONT_CATEGORIES, findGoogleFont, fontStack, googleFontsUrl, loadGoogleFont, useGoogleFont, useGoogleFontStatus,
@@ -649,17 +608,15 @@ export { sqlSpans, splitStatements, positionToLineColumn } from './lib/sql-lex';
 export type { SqlSpan, SqlSpanType, SqlStatement } from './lib/sql-lex';
 export { formatCell, toCsv, toJson, pgTypeName, formatDuration, pluralRows, PG_TYPE } from './lib/sql-format';
 export type { FormattedCell, CellKind, TabularResult } from './lib/sql-format';
-export { SqlEditor, useSqlHistory, sqlEditorVariants } from './components/sql-editor';
-export type { SqlEditorProps, SqlEditorHandle, SqlHistory } from './components/sql-editor';
-export { ResultTable, resultTableVariants } from './components/result-table';
-export type { ResultTableProps, ResultSet, ResultField, ResultTableColumnWidthsChangeReason } from './components/result-table';
-export { SqlConsole, sqlConsoleVariants } from './components/sql-console';
-export type { SqlConsoleProps } from './components/sql-console';
+export { SqlEditor, SqlEditorFooter, SqlEditorRun, useSqlHistory } from './components/sql-editor';
+export type { SqlEditorProps, SqlEditorFooterProps, SqlEditorRunProps, SqlEditorHandle, SqlHistory } from './components/sql-editor';
+export { SqlConsole, SqlConsoleHeader, SqlConsoleDatabaseMenu, SqlConsoleSidebar, SqlConsoleEditor, SqlConsoleResults } from './components/sql-console';
+export type { SqlConsoleProps, SqlConsoleHeaderProps, SqlConsoleEditorProps } from './components/sql-console';
 
 // Spreadsheet: a virtualized grid with GPU sorting and histograms, and the CSV reader it pairs with
-export { Spreadsheet, spreadsheetVariants, columnName, createSpreadsheetController } from './components/spreadsheet';
+export { Spreadsheet, spreadsheetVariants, createSpreadsheetController } from './components/spreadsheet';
 export type {
-  SpreadsheetProps, SpreadsheetController, SpreadsheetSortInfo, SpreadsheetValueChangeReason, SpreadsheetColumnWidthsChangeReason,
+  SpreadsheetProps, SpreadsheetController, SpreadsheetSortInfo, SpreadsheetSortChangeReason, SpreadsheetValueChangeReason, SpreadsheetColumnWidthsChangeReason,
 } from './components/spreadsheet';
 export {
   parseCellNumber, parseCellDate, inferColumnType, columnNumbers, sortKeys, sortPermutationCpu, sortTextPermutation, sortRows,
@@ -788,21 +745,21 @@ export { buildRender, renderTimeline, renderMime } from './lib/video-render';
 export type { RenderMedia, RenderContainer, RenderQuality, RenderOptions, RenderPlan, RenderTimelineOptions } from './lib/video-render';
 export { createPlayback, usePlaybackClock, usePlaybackState } from './lib/playback';
 export type { Playback, PlaybackState } from './lib/playback';
-export { VideoTimeline, timelineMediaType, fitTimelineZoom, timelineZoomRange, rulerSteps } from './components/video-timeline';
+export { VideoTimeline, timelineMediaType, fitTimelineZoom, timelineZoomRange } from './components/video-timeline';
 export type {
   VideoTimelineProps, TimelineMediaInfo, TimelineDrop, TimelineDropDetails, VideoTimelineAction, VideoTimelineChangeDetails, VideoTimelineChangeReason,
   VideoTimelineSelectionReason, VideoTimelineZoomReason,
 } from './components/video-timeline';
-export { VideoPreview, PlaybackControls, PlaybackTimecode } from './components/video-preview';
-export type { VideoPreviewProps, PreviewMedia, PlaybackControlsProps, PlaybackTimecodeProps } from './components/video-preview';
+export { VideoPreview, VideoPreviewControls, VideoPreviewTimecode } from './components/video-preview';
+export type { VideoPreviewProps, PreviewMedia, VideoPreviewControlsProps, VideoPreviewTimecodeProps } from './components/video-preview';
 export { Filmstrip } from './components/filmstrip';
 export type { FilmstripProps, FilmstripFrame } from './components/filmstrip';
 export { Waveform, waveformVariants } from './components/waveform';
 export type { WaveformProps } from './components/waveform';
 
-export { TuiPreview, TuiEmbed, DEFAULT_TUI_RUNTIME_URL, isTuiCodeBlock } from './components/tui-preview';
+export { TuiPreview } from './components/tui-preview';
 export type { TuiPreviewProps, TuiPreviewOptions, TuiPreviewState, TuiTheme } from './components/tui-preview';
-export { OpenCode } from './components/open-code';
+export { OpenCode, openCodeVariants } from './components/open-code';
 export { DEFAULT_OPENCODE_PREVIEW_URL } from './lib/open-code-preview';
 export type { OpenCodeProps, OpenCodeState } from './components/open-code';
 export { createAlmostNodeOpenCodeHost, createAgentWasmOpenCodeHost, loadOpenCodeRuntime, DEFAULT_OPENCODE_RUNTIME_URL } from './lib/open-code-host';
@@ -825,8 +782,8 @@ export type {
 } from './components/workspace';
 
 // Debugging parts
-export { DebugToolbar } from './components/debug-toolbar';
-export type { DebugToolbarAction, DebugToolbarProps } from './components/debug-toolbar';
+export { DebugToolbar, DebugToolbarButton, debugToolbarActions } from './components/debug-toolbar';
+export type { DebugToolbarAction, DebugToolbarProps, DebugToolbarButtonProps } from './components/debug-toolbar';
 export { TraceTimeline, TraceTimelinePreview, traceTimelineVariants } from './components/trace-timeline';
 export type { TraceTimelineProps, TraceTimelinePreviewProps, TraceTimelineHandle, TraceValueChangeDetails, TraceValueChangeReason, TraceValueCommitDetails, TraceViewChangeDetails, TraceViewChangeReason, TracePickReason, TraceFocusedLaneChangeDetails, TraceSelectedThreadChangeDetails, TraceSelectedRequestChangeDetails, TraceDrawStats, TraceFetchActivity } from './components/trace-timeline';
 export { linearAxis, stopAxis, advanceAlong, selectStops, formatTraceTime, TRACE_SCRUB_SPEEDS } from './lib/trace-timeline-model';
@@ -836,7 +793,7 @@ export {
   codeEditorVariants, codeEditorLineVariants, codeEditorGutterCellVariants,
 } from './components/code-editor';
 export type {
-  CodeEditorProps, CodeEditorContentProps, CodeEditorCopyButtonProps, CodeEditorDisplayProps, CodeEditorHandle, CodeEditorChangeReason, CodeEditorEdit, CodeEditorValueChangeDetails,
+  CodeEditorProps, CodeEditorContentProps, CodeEditorCopyButtonProps, CodeEditorDisplayProps, CodeEditorLineNumbers, CodeEditorHandle, CodeEditorChangeReason, CodeEditorEdit, CodeEditorValueChangeDetails,
   CodeEditorSelectionChangeReason, CodeEditorSelectionChangeDetails, CodeEditorGutterClickDetails, CodeEditorMarkerClickDetails, CodeEditorCopy, CodeEditorGutter, CodeEditorMarker,
   CodeEditorLineDecoration, CodeEditorScrollOptions, CodeEditorScrollTarget, CodeEditorPosition, CodeEditorSelection, CodeEditorAlign, CodeHighlight, CodeHighlightContext, CodeLineRange,
   UseSyntaxTokensOptions, SyntaxTokensState,
@@ -864,13 +821,17 @@ export type {
 } from './components/log-list';
 export { LOG_LEVELS, countLogLevels, formatLogTime, logRowText, nodeText, normalizeLogLevel } from './lib/log-list-model';
 export type { LogLevel, LogLevelCounts, LogRow, RowId } from './lib/log-list-model';
-export { RequestLink, RequestTable, REQUEST_COLUMNS, requestTableVariants, createRequestTableController } from './components/request-table';
+export { DataTable, DataTableCell, dataTableVariants, createDataTableController } from './components/data-table';
 export type {
-  RequestColumn, RequestColumnId, RequestLinkProps, RequestTableProps, RequestTableController, RequestTableActionDetails,
-  RequestTableValueChangeReason, RequestTableSortChangeReason, RequestTableColumnWidthsChangeReason, RequestTableBreakpoints,
-} from './components/request-table';
-export { isRequestFailed, requestDisplayName, requestDurationText, requestName, requestSizeText, requestStatusText, requestTimeRange, requestTone, sortRequests } from './lib/request-table-model';
-export type { RequestRow, RequestSort, RequestSortDirection, RequestSortValue, RequestColumnSize, RequestTimeRange, RequestTone } from './lib/request-table-model';
+  DataTableProps, DataTableColumn, DataTableDensity, DataTableOverlayState, DataTableRowAttributes, DataTableRow, DataTableController,
+  DataTableActionDetails, DataTableValueChangeReason, DataTableSortChangeReason, DataTableColumnWidthsChangeReason, DataTableBreakpoints,
+  DataTableColumnSize, DataTableSort, DataTableSortDirection, DataTableSortValue, DataTableTimeRange,
+} from './components/data-table';
+export { sortDataTableRows } from './lib/data-table-model';
+export { RequestLink, RequestTable, REQUEST_COLUMNS } from './components/request-table';
+export type { RequestColumnId, RequestLinkProps, RequestTableProps } from './components/request-table';
+export { isRequestFailed, requestDisplayName, requestDurationText, requestName, requestSizeText, requestStatusText, requestTimeRange, requestTone } from './lib/request-table-model';
+export type { RequestRow, RequestTone } from './lib/request-table-model';
 export { Terminal, terminalVariants } from './components/terminal';
 export type { TerminalProps, TerminalHandle } from './components/terminal';
 export { createTerminalShell, createLineState, applyKey, applyCompletion, readKeys, renderLine, eraseLine, wordAtCursor, formatColumns, cellWidth, textWidth, stripAnsi, advance, toTerminalNewlines, trimTranscript, MAX_HISTORY } from './lib/terminal-line';

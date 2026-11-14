@@ -30,7 +30,7 @@ function Editor({ onValueChange, onSelectedClipsChange }: { onValueChange: (v: T
   const [selected, setSelected] = useState<string[]>([]);
   const [clock] = useState(() => createPlayback({ duration: 10 }));
   return (
-    <VideoTimeline aria-label="Edit" value={value} clock={clock} media={MEDIA} fps={10}
+    <VideoTimeline aria-label="Edit" value={value} playback={clock} media={MEDIA} fps={10}
       onValueChange={(v, d) => { setValue(v); onValueChange(v, d); }}
       selectedClips={selected} onSelectedClipsChange={(ids, d) => { setSelected(ids); onSelectedClipsChange(ids, d); }} />
   );

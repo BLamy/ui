@@ -11,6 +11,7 @@
     "CalendarNext",
     "CalendarMonthSelect",
     "CalendarYearSelect",
+    "CalendarMonths",
     "CalendarGrid",
     "CalendarWeekdays",
     "CalendarWeekday",
@@ -24,6 +25,7 @@
   ],
   "types": [
     "CalendarProps",
+    "CalendarMonthsProps",
     "CalendarDayProps",
     "CalendarValue",
     "CalendarMode",

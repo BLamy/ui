@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { MessageScroller, type MessageScrollerItem } from '@/components/ui/message-scroller'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { MessageScroller, MessageScrollerItem } from '@/components/ui/message-scroller'
+import { ThemeScope } from '@/lib/theme'
 
 function UserBubble({ children }: { children: ReactNode }) {
   return (
@@ -66,7 +66,7 @@ function TurnsRise() {
       420,
     )
   }
-  const items: MessageScrollerItem[] = msgs.map((m) => ({
+  const items = msgs.map((m) => ({
     id: m.id,
     anchor: m.user,
     node: m.user ? (
@@ -89,7 +89,13 @@ function TurnsRise() {
         border: '1px solid var(--border)',
       }}
     >
-      <MessageScroller items={items} threadKey="turns" />
+      <MessageScroller threadKey="turns">
+        {items.map((it) => (
+          <MessageScrollerItem key={it.id} value={it.id} anchor={it.anchor}>
+            {it.node}
+          </MessageScrollerItem>
+        ))}
+      </MessageScroller>
       <div
         style={{
           padding: 10,
@@ -120,12 +126,11 @@ function TurnsRise() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function TurnsRiseExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <TurnsRise />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

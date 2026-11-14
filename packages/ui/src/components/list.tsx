@@ -45,7 +45,8 @@ const SectionParts = createParts(listSection, { root: 'div', rows: 'div', item: 
 
 /** The list itself: `plain` rows run edge to edge (Contacts, Mail); `inset` floats each section as a rounded card
  *  with a margin (Settings, iOS's inset-grouped style). */
-export const listVariants = cva('', {
+// Rows are card-filled in both looks, so an Avatar's ring (its gap in an AvatarGroup, its presence dot) is the card's.
+export const listVariants = cva('[--avatar-ring:var(--card)]', {
   variants: {
     variant: { plain: 'p-0', inset: 'px-4 py-0' },
   },

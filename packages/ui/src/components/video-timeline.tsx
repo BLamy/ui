@@ -5,7 +5,9 @@ import {
 } from 'react';
 import { createParts, usePart, usePrimitive, type PrimitiveHandle } from '@ui-sdk/react/primitive';
 import { Slider, SliderControl, SliderThumb, SliderTrack } from '@ui-sdk/react/slider';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { changeDetails } from '@/lib/change-details';
+import { useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { usePlaybackState, type Playback } from '@/lib/playback';
 import { cn } from '@/lib/utils';
@@ -43,7 +45,10 @@ export type {
    to the track above or below; Home/End reach the track's first and last clip. Enter or Space selects (⇧ adds),
    Escape clears, Delete removes the selection. On the ruler: ←/→ a frame, ⇧←/→ or Page Up/Down a second, Home/End.
 
-   <VideoTimeline value={timeline} onValueChange={(next) => push(next)} clock={clock} media={media} /> ══ */
+   The track headers are 132 px wide (`headerWidth`). In a compact container (a phone, a narrow pane) they shrink to
+   56 px: the track's short name on a button whose menu holds Hide, Mute and Lock.
+
+   <VideoTimeline value={timeline} onValueChange={(next) => push(next)} playback={playback} media={media} /> ══ */
 
 /** The MIME type a drag carries to drop media on the timeline (its data is the media id). */
 export const timelineMediaType = 'application/x-bl-timeline-media';
@@ -61,8 +66,8 @@ export interface TimelineDrop {
 export type TimelineDropDetails = ChangeDetails<'drop'> & TimelineDrop;
 
 export interface VideoTimelineProps extends Omit<VideoTimelineOptions, 'playback'> {
-  /** The playback clock the playhead and the ruler follow. */
-  clock: Playback;
+  /** The shared playback clock (`usePlaybackClock`) the playhead and the ruler follow. */
+  playback: Playback;
   /** A clip's content: a Filmstrip, a Waveform, a title… (default: its name). */
   renderClip?: (clip: TimelineClip, track: TimelineTrack, info: { width: number; selected: boolean }) => ReactNode;
   /** A clip's tint (border and background classes), in place of the default: primary for video, success for audio. */
@@ -71,6 +76,8 @@ export interface VideoTimelineProps extends Omit<VideoTimelineOptions, 'playback
   trackHeight?: (track: TimelineTrack) => number;
   /** Media dragged in (`timelineMediaType`) was dropped on a lane. */
   onDropMedia?: (mediaId: string, details: TimelineDropDetails) => void;
+  /** Width of the track headers, px. Default 132, or 56 in a compact container. */
+  headerWidth?: number;
   /** Names the timeline. Default "Timeline". */
   'aria-label'?: string;
   className?: string;
@@ -78,16 +85,18 @@ export interface VideoTimelineProps extends Omit<VideoTimelineOptions, 'playback
 }
 
 const HEADER = 132;
+const COMPACT_HEADER = 56;
 const RULER = 28;
 const defaultHeight = (t: TimelineTrack) => (t.kind === 'audio' ? 40 : t.magnetic ? 64 : 44);
 
-/** The zoom (pixels per second) that fits `duration` seconds into `width` pixels of lanes. */
-export function fitTimelineZoom(duration: number, width: number): number {
-  return clampTimelineZoom(duration > 0 ? (width - HEADER - 24) / duration : 60);
+/** The zoom (pixels per second) that fits `duration` seconds into a timeline `width` pixels wide, whose track headers
+ *  are `headerWidth` (default 132; pass the timeline's own when you set one, or 56 for a compact one). */
+export function fitTimelineZoom(duration: number, width: number, { headerWidth = HEADER }: { headerWidth?: number } = {}): number {
+  return clampTimelineZoom(duration > 0 ? (width - headerWidth - 24) / duration : 60);
 }
 
 /** Ruler spacing: labelled ticks at least 64 px apart, and minor ticks between them when there's room. */
-export function rulerSteps(pps: number, fps: number): { major: number; minor: number | null } {
+function rulerSteps(pps: number, fps: number): { major: number; minor: number | null } {
   const f = 1 / Math.max(1, fps);
   const steps = [f, 2 * f, 5 * f, 10 * f, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600];
   const major = steps.find((s) => s * pps >= 64) ?? 3600;
@@ -108,16 +117,21 @@ type Handle = PrimitiveHandle<typeof videoTimeline>;
 type RootState = { value: Timeline; selectedClips: string[]; zoom: number; guide: number | null; lifted: { id: string; span: ClipSpan } | null; readOnly: boolean };
 
 export function VideoTimeline({
-  clock, renderClip, clipClassName, trackHeight = defaultHeight, onDropMedia, 'aria-label': label = 'Timeline',
+  playback, renderClip, clipClassName, trackHeight = defaultHeight, onDropMedia, headerWidth, 'aria-label': label = 'Timeline',
   className, style, ...options
 }: VideoTimelineProps) {
-  const handle = usePrimitive(videoTimeline, { ...options, playback: clock } as VideoTimelineOptions);
+  const handle = usePrimitive(videoTimeline, { ...options, playback } as VideoTimelineOptions);
+  // The root's own width picks the header: full in a medium or regular container, a menu button in a compact one.
+  const [sizeRef, sizeClass] = useSizeClass();
+  const compact = sizeClass === 'compact';
+  const header = headerWidth ?? (compact ? COMPACT_HEADER : HEADER);
   return usePart(handle, 'root', {}, {
+    ref: sizeRef,
     'aria-label': label,
     className: cn('relative flex min-h-0 flex-col overflow-hidden bg-background text-foreground select-none', className),
-    style: { '--header': `${HEADER}px`, '--ruler': `${RULER}px`, ...style } as CSSProperties,
+    style: { '--header': `${header}px`, '--ruler': `${RULER}px`, ...style } as CSSProperties,
     children: (state: RootState) => (
-      <TimelineBody state={state} handle={handle} clock={clock} fps={options.fps ?? 30} media={options.media ?? {}}
+      <TimelineBody state={state} handle={handle} clock={playback} fps={options.fps ?? 30} media={options.media ?? {}} header={header} compact={compact}
         renderClip={renderClip} clipClassName={clipClassName} trackHeight={trackHeight} onDropMedia={onDropMedia} />
     ),
   }, 'div');
@@ -127,12 +141,15 @@ interface BodyProps extends Pick<VideoTimelineProps, 'renderClip' | 'clipClassNa
   state: RootState;
   handle: Handle;
   clock: Playback;
+  /** Header width, px, and whether it is the compact menu header. */
+  header: number;
+  compact: boolean;
   fps: number;
   media: Record<string, TimelineMediaInfo | undefined>;
   trackHeight: (track: TimelineTrack) => number;
 }
 
-function TimelineBody({ state, handle, clock, fps, media, renderClip, clipClassName, trackHeight, onDropMedia }: BodyProps) {
+function TimelineBody({ state, handle, clock, header: HEADER, compact, fps, media, renderClip, clipClassName, trackHeight, onDropMedia }: BodyProps) {
   const { api } = handle;
   const { value: shown, selectedClips, zoom, guide, lifted, readOnly } = state;
   const scroller = useRef<HTMLDivElement | null>(null);
@@ -158,7 +175,7 @@ function TimelineBody({ state, handle, clock, fps, media, renderClip, clipClassN
     };
     move();
     return clock.subscribe(move);
-  }, [clock, zoom]);
+  }, [clock, zoom, HEADER]);
 
   // Viewport size and scroll, for the ruler and the content width.
   useLayoutEffect(() => {
@@ -238,15 +255,16 @@ function TimelineBody({ state, handle, clock, fps, media, renderClip, clipClassN
 
   const lanesH = shown.tracks.reduce((h, t) => h + trackHeight(t), 0);
   const dropClip = dropAt && shown.tracks.find((t) => t.id === dropAt.trackId);
-  const headerToggle = 'size-6 min-w-6 rounded-md px-0';
+  // A 24 px glyph box with a 44 px hit area on touch.
+  const headerToggle = 'relative size-6 min-w-6 rounded-md px-0 pointer-coarse:after:absolute pointer-coarse:after:-inset-2.5';
 
   return (
     <TimelineScroller ref={scroller} className="bl-scroll relative min-h-0 flex-1 overflow-auto overscroll-contain">
       <div className="relative w-(--content)" style={{ '--content': `${contentW}px`, '--lanes': `${lanesH}px` } as CSSProperties}>
         {/* Ruler: a corner, then the scale (it stays in view while the lanes scroll under it). */}
         <div className="sticky top-0 z-30 flex h-(--ruler) w-full shadow-hairline-b">
-          <div className="sticky left-0 z-10 box-border flex w-(--header) shrink-0 items-center border-r border-border bg-background px-3">
-            <TimeReadout clock={clock} fps={fps} />
+          <div className="sticky left-0 z-10 box-border flex w-(--header) shrink-0 items-center overflow-hidden border-r border-border bg-background px-3 data-compact:px-1.5" data-compact={compact || undefined}>
+            <TimeReadout clock={clock} fps={compact ? undefined : fps} />
           </div>
           <RulerSlider clock={clock} fps={fps} max={extent} canvas={ruler} viewWidth={view.w} />
         </div>
@@ -256,23 +274,46 @@ function TimelineBody({ state, handle, clock, fps, media, renderClip, clipClassN
           const editable = !readOnly;
           return (
             <div key={track.id} className="relative flex h-(--h) shadow-hairline-b" style={{ '--h': `${trackHeight(track)}px` } as CSSProperties}>
-              <div className="sticky left-0 z-20 box-border flex w-(--header) shrink-0 items-center gap-0.5 border-r border-border bg-background ps-3 pe-1.5">
-                <span className="min-w-0 flex-1 truncate text-caption font-semibold text-foreground/70">{name}</span>
-                {track.kind === 'video' ? (
-                  <Toggle size="sm" aria-label="Hide track" pressed={!!track.hidden} disabled={!editable} className={headerToggle}
-                    onPressedChange={(v, d) => api.setTrack(track.id, { hidden: v }, { reason: 'press', event: d.event })}>
-                    <Icon name="eye" size={14} />
+              {compact ? (
+                <div className="sticky left-0 z-20 box-border flex w-(--header) shrink-0 items-center justify-center border-r border-border bg-background">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger disabled={!editable} aria-label={`${name} options`}
+                      className="relative flex h-7 max-w-[calc(var(--header)-8px)] cursor-pointer items-center gap-0.5 rounded-md border-0 bg-transparent px-1 text-caption font-semibold text-foreground/70 hover:bg-secondary data-disabled:cursor-default pointer-coarse:after:absolute pointer-coarse:after:-inset-2">
+                      <span className="truncate">{shortTrackName(track, ti)}</span>
+                      {track.hidden || track.muted || track.locked ? <Icon name={track.locked ? 'lock-fill' : track.hidden ? 'eye-slash' : 'speaker-slash'} size={11} className="shrink-0" /> : null}
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent size="sm" align="start">
+                      {track.kind === 'video' ? (
+                        <DropdownMenuCheckboxItem value="hidden" checked={!!track.hidden} icon={<Icon name="eye-slash" size={15} />}
+                          onCheckedChange={(v, d) => api.setTrack(track.id, { hidden: v }, { reason: 'press', event: d.event })}>Hide Track</DropdownMenuCheckboxItem>
+                      ) : null}
+                      <DropdownMenuCheckboxItem value="muted" checked={!!track.muted} icon={<Icon name="speaker-slash" size={15} />}
+                        onCheckedChange={(v, d) => api.setTrack(track.id, { muted: v }, { reason: 'press', event: d.event })}>Mute Track</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem value="locked" checked={!!track.locked} icon={<Icon name="lock-fill" size={15} />}
+                        onCheckedChange={(v, d) => api.setTrack(track.id, { locked: v }, { reason: 'press', event: d.event })}>Lock Track</DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ) : (
+                <div className="sticky left-0 z-20 box-border flex w-(--header) shrink-0 items-center gap-0.5 border-r border-border bg-background ps-3 pe-1.5">
+                  <span className="min-w-0 flex-1 truncate text-caption font-semibold text-foreground/70">{name}</span>
+                  {/* Each toggle shows the state it is in: the slashed glyph while the track is hidden or muted. */}
+                  {track.kind === 'video' ? (
+                    <Toggle size="sm" aria-label="Hide track" pressed={!!track.hidden} disabled={!editable} className={headerToggle}
+                      onPressedChange={(v, d) => api.setTrack(track.id, { hidden: v }, { reason: 'press', event: d.event })}>
+                      <Icon name={track.hidden ? 'eye-slash' : 'eye'} size={14} />
+                    </Toggle>
+                  ) : null}
+                  <Toggle size="sm" aria-label="Mute track" pressed={!!track.muted} disabled={!editable} className={headerToggle}
+                    onPressedChange={(v, d) => api.setTrack(track.id, { muted: v }, { reason: 'press', event: d.event })}>
+                    <Icon name={track.muted ? 'speaker-slash' : 'speaker'} size={14} />
                   </Toggle>
-                ) : null}
-                <Toggle size="sm" aria-label="Mute track" pressed={!!track.muted} disabled={!editable} className={headerToggle}
-                  onPressedChange={(v, d) => api.setTrack(track.id, { muted: v }, { reason: 'press', event: d.event })}>
-                  <Icon name="speaker" size={14} />
-                </Toggle>
-                <Toggle size="sm" aria-label="Lock track" pressed={!!track.locked} disabled={!editable} className={headerToggle}
-                  onPressedChange={(v, d) => api.setTrack(track.id, { locked: v }, { reason: 'press', event: d.event })}>
-                  <Icon name="lock" size={14} />
-                </Toggle>
-              </div>
+                  <Toggle size="sm" aria-label="Lock track" pressed={!!track.locked} disabled={!editable} className={headerToggle}
+                    onPressedChange={(v, d) => api.setTrack(track.id, { locked: v }, { reason: 'press', event: d.event })}>
+                    <Icon name={track.locked ? 'lock-fill' : 'lock'} size={14} />
+                  </Toggle>
+                </div>
+              )}
               <TimelineLane value={track.id} aria-label={name}
                 className={cn('relative min-w-0 flex-1', track.magnetic ? 'bg-secondary/60' : 'bg-secondary/30', track.locked && 'opacity-60')}
                 onDragOver={(e) => onLaneDragOver(e, track)} onDragLeave={() => setDropAt(null)} onDrop={(e) => onLaneDrop(e, track)}>
@@ -332,7 +373,7 @@ function TimelineBody({ state, handle, clock, fps, media, renderClip, clipClassN
         })}
         {/* Playhead line and snap guide, over the lanes and under the headers. */}
         <div aria-hidden className="pointer-events-none absolute top-(--ruler) left-(--header) z-10 h-(--lanes) w-0">
-          <div ref={head} className="absolute inset-y-0 left-0 w-px translate-x-(--ph) bg-destructive" />
+          <div ref={head} className="absolute inset-y-0 left-0 w-px translate-x-(--ph) bg-playhead" />
           {guide != null ? <div className="absolute inset-y-0 left-(--sx) w-px bg-warning" style={{ '--sx': `${guide * zoom}px` } as CSSProperties} /> : null}
         </div>
       </div>
@@ -340,9 +381,16 @@ function TimelineBody({ state, handle, clock, fps, media, renderClip, clipClassN
   );
 }
 
+/** A track's name in a compact header: `V1`, `A2`, `Main`, or the first word of its own name. */
+function shortTrackName(track: TimelineTrack, index: number): string {
+  if (track.name) return track.name.split(/\s+/)[0] ?? track.name;
+  return track.kind === 'audio' ? `A${index + 1}` : track.magnetic ? 'Main' : `V${index + 1}`;
+}
+
 /** The playhead's time, re-rendered on its own as the clock ticks. */
-function TimeReadout({ clock, fps }: { clock: Playback; fps: number }) {
-  const time = usePlaybackState(clock, (s) => quantize(s.time, fps));
+function TimeReadout({ clock, fps }: { clock: Playback; fps?: number }) {
+  // Frames with `fps`; without (a compact header), the shorter M:SS.t.
+  const time = usePlaybackState(clock, (s) => (fps ? quantize(s.time, fps) : Math.floor(s.time * 10) / 10));
   return <span className="font-mono text-caption2 text-foreground/70 tabular-nums">{formatTimecode(time, fps)}</span>;
 }
 
@@ -365,7 +413,7 @@ function RulerSlider({ clock, fps, max, canvas, viewWidth }: { clock: Playback; 
           <canvas ref={canvas} aria-hidden className="sticky left-(--header) block h-full w-[calc(var(--view)-var(--header))] text-muted-foreground"
             style={{ '--view': `${viewWidth}px` } as CSSProperties} />
           <SliderThumb aria-label="Playhead" className="flex h-full w-[11px] items-end outline-none">
-            <span className="h-3 w-full rounded-b-sm bg-destructive" />
+            <span className="h-3 w-full rounded-b-sm bg-playhead" />
           </SliderThumb>
         </SliderTrack>
       </SliderControl>

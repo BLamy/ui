@@ -1,5 +1,5 @@
 /* Showing query results: PostgreSQL type names, type-aware cell formatting (NULL, booleans, numbers, dates, JSON,
-   bytea, arrays) and CSV / JSON serialisation. Pure functions — no DOM, no React — shared by ResultTable, SqlConsole
+   bytea, arrays) and CSV / JSON serialisation. Pure functions — no DOM, no React — shared by SqlConsole's result tables
    and anything that wants to print a row.
 
    Values arrive already parsed by PGlite: int8 as number (a bigint beyond 2^53), json/jsonb as objects, dates as

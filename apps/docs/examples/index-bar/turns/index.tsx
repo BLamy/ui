@@ -15,14 +15,14 @@ const turns = [
 // Custom stops: `key` is handed back to onJump untouched (a number here),
 // `label` prints on the rail (leave it out for a dot), `caption` names the
 // stop for screen readers and heads the bubble, `preview` is what the bubble
-// shows while you hover or scrub. `dim` only softens a stop; it stays
+// shows while you hover or scrub. `disabled` only softens a stop; it stays
 // reachable.
 const stops: IndexBarItem<number>[] = turns.map((t, i) => ({
   key: t.id,
   label: i % 3 === 0 ? String(i + 1) : undefined,
   caption: t.who,
   preview: t.text,
-  dim: t.who === 'Assistant',
+  disabled: t.who === 'Assistant',
 }))
 
 export default function Turns() {
@@ -53,10 +53,9 @@ export default function Turns() {
         ))}
       </div>
       <IndexBar
-        label="Jump to turn"
+        aria-label="Jump to turn"
         items={stops}
-        top={12}
-        bottom={12}
+        className="top-3 bottom-3"
         onJump={(id) => {
           const el = rows.current[id]
           if (el && scroller.current) scroller.current.scrollTop = el.offsetTop - 16

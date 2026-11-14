@@ -16,7 +16,8 @@ import { cn } from '@/lib/utils';
    `pop`) stacks both in one grid cell, so nothing around it moves.
    The views come and go with UI SDK's presence (`data-starting-style` / `data-ending-style`); the motion is CSS on
    the kit's tokens, and every distance is a variable on the root (`--swap-enter`, `--swap-exit`, `--swap-scale`,
-   `--swap-blur`). Reduced motion keeps only a short fade. */
+   `--swap-blur`). Reduced motion keeps only a short fade. While a view leaves it is `aria-hidden` and `inert`: only
+   the arriving content is announced and focusable. */
 
 export type SwapEffect = 'slide' | 'pop';
 
@@ -74,7 +75,15 @@ function View({ entry, inline, className }: { entry: PresenceEntry<Item>; inline
   useEnterExit(ref, entry.present, { appear: entry.appear, exited: entry.exited });
   const Tag = inline ? 'span' : 'div';
   return (
-    <Tag ref={ref as Ref<HTMLDivElement & HTMLSpanElement>} data-slot="swap-view" className={className}>
+    <Tag
+      ref={ref as Ref<HTMLDivElement & HTMLSpanElement>}
+      data-slot="swap-view"
+      // The leaving view is only a picture of what was there: out of the accessibility tree (a dialog's name is the
+      // arriving title alone) and out of the tab order (its controls can't be reached while it fades).
+      aria-hidden={entry.present ? undefined : true}
+      inert={!entry.present}
+      className={className}
+    >
       {entry.item.node}
     </Tag>
   );

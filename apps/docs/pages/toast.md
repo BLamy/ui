@@ -218,8 +218,8 @@ flex outline-none focus-visible:ring-2 focus-visible:ring-primary
 
 | Value | Adds |
 | --- | --- |
-| `banner` (default) | `[ 'absolute inset-x-0 z-[calc(100_-_var(--toast-index))] box-border h-(--toast-height) items-start gap-3 overflow-hidden rounded-2xl bg-card px-3.5 py-…` |
-| `hud` | `[ 'w-fit items-center gap-2 rounded-full bg-[rgba(30,30,32,.86)] px-4 py-2.5 text-detail font-semibold text-white shadow-[0_8px_30px_black] shadow-blac…` |
+| `banner` (default) | `[ 'absolute inset-x-0 z-[calc(100_-_var(--toast-index))] box-border h-(--toast-height) items-start gap-3 overflow-hidden rounded-card bg-card px-3.5 py…` |
+| `hud` | `[ 'w-fit items-center gap-2 rounded-full bg-hud px-4 py-2.5 text-detail font-semibold text-hud-foreground shadow-hud backdrop-blur-xl backdrop-saturate…` |
 
 ### `toastIconVariants`
 

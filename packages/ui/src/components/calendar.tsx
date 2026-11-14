@@ -1,5 +1,5 @@
 'use client';
-import type { ComponentProps, ReactNode } from 'react';
+import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
 import {
   Calendar as SdkCalendar,
   CalendarDay as SdkCalendarDay,
@@ -18,6 +18,7 @@ import {
 } from '@ui-sdk/react/calendar';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { buttonVariants } from '@/components/ui/button';
+import { useSizeClassScope } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn, cx } from '@/lib/utils';
 
@@ -67,17 +68,29 @@ export function CalendarHeading({ className, ...props }: ComponentProps<typeof S
   return <SdkCalendarHeading className={cx('mx-0 my-[.83em] min-w-0 flex-1 truncate text-center text-subhead font-semibold', className)} {...props} />;
 }
 
+/* The month and year selects read as iOS header pop-up buttons: as wide as their text, with the kit's up-down glyph
+   in place of the native arrow. */
 const headerSelect =
-  'h-8 min-w-0 cursor-pointer rounded-lg border-0 bg-transparent px-1.5 [font-family:inherit] text-subhead font-semibold text-foreground outline-none transition-colors duration-spring-snappy ease-spring-snappy hover:not-data-disabled:bg-secondary focus-visible:ring-2 focus-visible:ring-ring data-disabled:cursor-default data-disabled:opacity-40';
+  'h-8 min-w-0 cursor-pointer appearance-none rounded-lg border-0 bg-transparent ps-1.5 pe-5 [font-family:inherit] text-subhead font-semibold text-foreground outline-none field-sizing-content transition-colors duration-spring-snappy ease-spring-snappy hover:not-data-disabled:bg-secondary focus-visible:ring-2 focus-visible:ring-ring data-disabled:cursor-default data-disabled:opacity-40';
+
+/** The native select inside a span that carries the glyph (a select can't hold one). */
+function withGlyph(props: ComponentProps<'select'>) {
+  return (
+    <span data-slot="calendar-select" className="relative inline-flex min-w-0 items-center">
+      <select {...props} />
+      <Icon name="chevron-up-down" size={12} sw={2.2} className="pointer-events-none absolute end-1.5 text-muted-foreground" />
+    </span>
+  );
+}
 
 /** A native select of the months, to jump straight to one (a birthday). Use it in place of the heading's text. */
-export function CalendarMonthSelect({ className, ...props }: ComponentProps<typeof SdkCalendarMonthSelect>) {
-  return <SdkCalendarMonthSelect className={cx(headerSelect, className)} {...props} />;
+export function CalendarMonthSelect({ className, render = withGlyph, ...props }: ComponentProps<typeof SdkCalendarMonthSelect>) {
+  return <SdkCalendarMonthSelect className={cx(headerSelect, className)} render={render} {...props} />;
 }
 
 /** A native select of the years from `min` to `max` (ten either side of the year on show without them). */
-export function CalendarYearSelect({ className, ...props }: ComponentProps<typeof SdkCalendarYearSelect>) {
-  return <SdkCalendarYearSelect className={cx(headerSelect, className)} {...props} />;
+export function CalendarYearSelect({ className, render = withGlyph, ...props }: ComponentProps<typeof SdkCalendarYearSelect>) {
+  return <SdkCalendarYearSelect className={cx(headerSelect, className)} render={render} {...props} />;
 }
 
 /** The row over the grids: previous and next around the month and year. Pass children to lay out your own
@@ -118,9 +131,12 @@ export function CalendarDay({ className, children, ...props }: CalendarDayProps)
     <SdkCalendarDay
       className={cx(
         [
-          'group/day relative size-9 cursor-default p-0 text-center text-subhead outline-none',
+          // 36px days, and 44px touch targets in a compact (phone) container.
+          'group/day relative size-9 cursor-default p-0 text-center text-subhead outline-none in-data-[size-class=compact]:size-11',
           'data-outside:text-muted-foreground data-disabled:not-data-unavailable:opacity-30',
           'before:absolute before:inset-0 before:hidden before:bg-primary/15 data-range-start:before:block data-range-middle:before:block data-range-end:before:block data-range-start:before:start-1/2 data-range-end:before:end-1/2',
+          // The band is rounded where a week row cuts it, and an end at a row's edge has no half-cell tab beside it.
+          'first:before:rounded-s-full last:before:rounded-e-full first:data-range-end:before:hidden last:data-range-start:before:hidden',
         ],
         className,
       )}
@@ -131,7 +147,7 @@ export function CalendarDay({ className, children, ...props }: CalendarDayProps)
         return (
           <span
             className={cn(
-              'relative z-1 grid size-9 place-items-center rounded-full tabular-nums transition-colors duration-spring-snappy ease-spring-snappy',
+              'relative z-1 grid size-9 place-items-center rounded-full tabular-nums transition-colors duration-spring-snappy ease-spring-snappy in-data-[size-class=compact]:size-11',
               'cursor-pointer not-group-data-selected/day:not-group-data-disabled/day:group-hover/day:bg-secondary-strong group-focus-visible/day:ring-2 group-focus-visible/day:ring-ring',
               'group-data-unavailable/day:text-destructive group-data-unavailable/day:line-through group-data-disabled/day:cursor-default',
               day.today && 'font-semibold text-primary',
@@ -165,6 +181,26 @@ export function CalendarGrid({ className, children, ...props }: ComponentProps<t
   );
 }
 
+/* How many months the Calendar shows, for CalendarMonths. */
+const MonthsContext = createContext(1);
+
+export interface CalendarMonthsProps extends ComponentProps<'div'> {
+  /** How many grids. Default: the Calendar's `months` (pass the DatePicker's inside a DatePickerContent). */
+  months?: number;
+}
+
+/** The month grids on show, one CalendarGrid per month, side by side while they fit and wrapping onto rows in a
+    narrow container (a phone, a sidebar) rather than running past its edge. */
+export function CalendarMonths({ months, className, ...props }: CalendarMonthsProps) {
+  const fromCalendar = useContext(MonthsContext);
+  const shown = Math.max(1, Math.floor(months ?? fromCalendar));
+  return (
+    <div data-slot="calendar-months" className={cn('flex flex-wrap gap-x-6 gap-y-3', className)} {...props}>
+      {Array.from({ length: shown }, (_, offset) => <CalendarGrid key={offset} offset={offset} />)}
+    </div>
+  );
+}
+
 type SdkCalendarProps = ComponentProps<typeof SdkCalendar>;
 
 /** UI SDK's Calendar props, with `value`, `defaultValue` and `onValueChange` narrowed to the `mode`: a date or
@@ -189,17 +225,19 @@ export function Calendar<Mode extends CalendarMode = 'single'>({
   children,
   ...props
 }: CalendarProps<Mode>) {
+  // The size class it sits in (the day cells grow to touch size in a compact one).
+  const sizeClass = useSizeClassScope();
   return (
-    <SdkCalendar months={months} showOutsideDays={showOutsideDays} weekdayFormat={weekdayFormat} className={cx(calendarVariants({ variant }), className)} {...(props as SdkCalendarProps)}>
-      {children ?? (
-        <>
-          <CalendarHeader />
-          <div className="flex gap-6">
-            {Array.from({ length: Math.max(1, Math.floor(months)) }, (_, offset) => <CalendarGrid key={offset} offset={offset} />)}
-          </div>
-        </>
-      )}
-    </SdkCalendar>
+    <MonthsContext.Provider value={months}>
+      <SdkCalendar data-size-class={sizeClass} months={months} showOutsideDays={showOutsideDays} weekdayFormat={weekdayFormat} className={cx(calendarVariants({ variant }), className)} {...(props as SdkCalendarProps)}>
+        {children ?? (
+          <>
+            <CalendarHeader />
+            <CalendarMonths />
+          </>
+        )}
+      </SdkCalendar>
+    </MonthsContext.Provider>
   );
 }
 

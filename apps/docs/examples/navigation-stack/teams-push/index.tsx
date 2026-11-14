@@ -43,7 +43,7 @@ export default function TeamsPush() {
           if (pages.length === 1) setTeam(null)
         }}
       >
-        <NavigationStackPage value="root" grouped>
+        <NavigationStackPage value="root" variant="grouped">
           <NavigationStackBar>
             <NavigationStackTitle>Teams</NavigationStackTitle>
           </NavigationStackBar>
@@ -65,7 +65,7 @@ export default function TeamsPush() {
           </NavigationStackContent>
         </NavigationStackPage>
         {team ? (
-          <NavigationStackPage value="detail" grouped>
+          <NavigationStackPage value="detail" variant="grouped">
             <NavigationStackBar>
               <NavigationStackTitle>{team}</NavigationStackTitle>
             </NavigationStackBar>

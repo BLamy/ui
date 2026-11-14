@@ -38,7 +38,7 @@
     "TabDropTarget",
     "TabDropRegion",
     "WorkspaceOrientation",
-    "WorkspaceTabPlacement",
+    "WorkspaceTabSide",
     "WorkspaceMinSize",
     "WorkspaceController",
     "WorkspaceChangeOptions",
@@ -50,6 +50,7 @@
     "WorkspaceTabsetState",
     "WorkspaceTabState",
     "WorkspaceTabContentState",
-    "WorkspaceClassNames"
+    "WorkspaceClassNames",
+    "WorkspacePresentation"
   ]
 }

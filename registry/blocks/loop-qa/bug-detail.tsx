@@ -6,8 +6,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MarkdownView } from '@/components/ui/markdown-view';
-import { ReplayPreview, formatReplayTime, replayDemoEvents, type ReplayPreviewHandle } from '@/components/ui/replay-preview';
-import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
+import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo';
+import { ReplayPreview, formatReplayTime, type ReplayPreviewHandle } from '@/components/ui/replay-preview';
+import {
+  NavigationStackBar, NavigationStackContent, NavigationStackPage, NavigationStackTitle, NavigationStackTrailing,
+} from '@/components/ui/navigation-stack';
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -21,7 +24,7 @@ import { PageActions } from './header';
 import { EnvBadge, KindLabel, Panel, SEVERITY_TONE, SectionLabel, pillVariants, Pressable } from './parts';
 import { useLoopQA } from './state';
 
-export function BugPage({ id }: { id: string }) {
+export function BugPage({ value, id }: { value: string; id: string }) {
   const qa = useLoopQA();
   const b = qa.bugs.find((x) => x.id === id);
   const player = useRef<ReplayPreviewHandle>(null);
@@ -34,13 +37,18 @@ export function BugPage({ id }: { id: string }) {
   const seek = (ms: number) => player.current?.seek(ms);
 
   return (
-    <>
-      <SplitViewHeader title={b.id} titleOnScroll trailing={<PageActions run={false} extra={
-        <Button size="sm" variant="secondary" className="mr-1 h-8 rounded-[9px]" onClick={() => qa.copyBugReport(b.id)}>
-          <Icon name="copy" size={13} sw={2} /><span className="hidden @xl:inline!">Copy report</span>
-        </Button>
-      } />} />
-      <SplitViewContent className="@container">
+    <NavigationStackPage value={value}>
+      <NavigationStackBar hideOnScroll={false}>
+        <NavigationStackTitle showOnScroll>{b.id}</NavigationStackTitle>
+        <NavigationStackTrailing>
+          <PageActions run={false} extra={
+            <Button size="sm" variant="secondary" className="mr-1 h-8 rounded-[9px]" onClick={() => qa.copyBugReport(b.id)}>
+              <Icon name="copy" size={13} sw={2} /><span className="hidden @xl:inline!">Copy report</span>
+            </Button>
+          } />
+        </NavigationStackTrailing>
+      </NavigationStackBar>
+      <NavigationStackContent className="@container">
         <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-5 px-5 pt-3 pb-14 @3xl:px-8!">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -121,8 +129,8 @@ export function BugPage({ id }: { id: string }) {
             <Details bug={b} project={project?.name ?? ''} />
           </div>
         </div>
-      </SplitViewContent>
-    </>
+      </NavigationStackContent>
+    </NavigationStackPage>
   );
 }
 

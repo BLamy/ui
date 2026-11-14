@@ -1,10 +1,20 @@
 {
   "name": "adaptive-pane",
   "title": "AdaptivePane",
-  "description": "One pane presented as a column, a drawer, a cover or hidden, chosen by its host, resizable, with its children kept mounted.",
+  "description": "One pane presented as a column, a drawer, a page pushed over a compact host, a cover or hidden, chosen by its host or by the size class (auto), resizable, with its children kept mounted, and a header with a title and a close or back button.",
   "page": "adaptive-pane",
   "exports": [
     "AdaptivePane",
-    "createAdaptivePaneController"
+    "AdaptivePaneHeader",
+    "AdaptivePaneTitle",
+    "AdaptivePaneClose",
+    "createAdaptivePaneController",
+    "adaptivePanePageClass"
+  ],
+  "imports": [
+    "AdaptivePane",
+    "AdaptivePaneHeader",
+    "AdaptivePaneTitle",
+    "AdaptivePaneClose"
   ]
 }

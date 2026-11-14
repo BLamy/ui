@@ -10,15 +10,22 @@ import {
   SplitViewItem,
   SplitViewSection,
   SplitViewSidebar,
-  SplitViewStack,
   SplitViewSupplementary,
   SplitViewToggle,
   createSplitViewController,
-  createSplitViewStackController,
   useSplitView,
-  useSplitViewStack,
   type SplitViewProps,
 } from './split-view';
+import {
+  NavigationStack,
+  NavigationStackBar,
+  NavigationStackContent,
+  NavigationStackPage,
+  NavigationStackTitle,
+  createNavigationStackController,
+  useNavigationStack,
+  type NavigationStackProps,
+} from './navigation-stack';
 import { useSizeClassScope } from '@/lib/container';
 
 declare global {
@@ -47,16 +54,16 @@ function Mail(props: Partial<SplitViewProps>) {
         <SplitViewHeader title="Mailboxes" />
         <SplitViewContent>
           <SplitViewSection title="iCloud">
-            <SplitViewItem id="inbox" title="Inbox" />
-            <SplitViewItem id="sent" title="Sent" />
+            <SplitViewItem value="inbox" title="Inbox" />
+            <SplitViewItem value="sent" title="Sent" />
           </SplitViewSection>
         </SplitViewContent>
       </SplitViewSidebar>
       <SplitViewSupplementary aria-label="Inbox">
         <SplitViewHeader title="Inbox" leading={<SplitViewToggle />} />
         <SplitViewContent>
-          <SplitViewItem id="m1" title="Hello" />
-          <SplitViewItem id="m2" title="Review" />
+          <SplitViewItem value="m1" title="Hello" />
+          <SplitViewItem value="m2" title="Review" />
         </SplitViewContent>
       </SplitViewSupplementary>
       <Detail />
@@ -81,7 +88,7 @@ it('tiles at regular: the toggle closes and opens the sidebar, with a reason', a
   expect(screen.getByRole('button', { name: 'Show sidebar' }).getAttribute('aria-expanded')).toBe('false');
 });
 
-it('selects by value: items report the column, and every copy of a value draws selected', async () => {
+it('selects by value: items report the column, and every copy of a value draws current', async () => {
   const onValueChange = vi.fn();
   render(<Mail sizeClass="regular" onValueChange={onValueChange} />);
   await settle();
@@ -90,7 +97,7 @@ it('selects by value: items report the column, and every copy of a value draws s
   fireEvent.click(screen.getByRole('button', { name: 'Review' }));
   expect(onValueChange).toHaveBeenLastCalledWith({ sidebar: 'inbox', supplementary: 'm2' }, expect.objectContaining({ reason: 'item-press', column: 'supplementary' }));
   expect(screen.getByText('Reading m2')).toBeTruthy();
-  expect(screen.getByRole('button', { name: 'Review' }).hasAttribute('data-selected')).toBe(true);
+  expect(screen.getByRole('button', { name: 'Review' }).hasAttribute('data-current')).toBe(true);
 });
 
 it('each column is one tab stop: Up, Down, Home and End move between its items', async () => {
@@ -124,10 +131,10 @@ it('a header follows its content: the inline title comes in once the large title
     <SplitView aria-label="Notes" sizeClass="regular">
       <SplitViewSidebar aria-label="Folders">
         <SplitViewHeader title="Folders" largeTitle />
-        <SplitViewContent><SplitViewItem id="a" title="All" /></SplitViewContent>
+        <SplitViewContent><SplitViewItem value="a" title="All" /></SplitViewContent>
       </SplitViewSidebar>
       <SplitViewDetail aria-label="Note">
-        <SplitViewHeader title="Note" titleOnScroll />
+        <SplitViewHeader title="Note" showOnScroll />
         <SplitViewContent><p>Body</p></SplitViewContent>
       </SplitViewDetail>
     </SplitView>,
@@ -152,7 +159,7 @@ it('a header follows its content: the inline title comes in once the large title
   act(() => { list.scrollTop = 60; list.dispatchEvent(new Event('scroll')); });
   expect(list.hasAttribute('data-under')).toBe(true);
   expect(folders.hasAttribute('data-title-hidden')).toBe(false);
-  // titleOnScroll: shown once the content leaves its top, hidden (and out of the tree) back at it.
+  // showOnScroll: shown once the content leaves its top, hidden (and out of the tree) back at it.
   act(() => { body.scrollTop = 12; body.dispatchEvent(new Event('scroll')); });
   expect(note.hasAttribute('data-title-hidden')).toBe(false);
   act(() => { body.scrollTop = 0; body.dispatchEvent(new Event('scroll')); });
@@ -176,8 +183,8 @@ it('collapses into a stack: a pick pushes, covered columns are inert, back and E
   expect(onCompactColumnChange).toHaveBeenLastCalledWith('supplementary', expect.objectContaining({ reason: 'item-press' }));
   expect(column('supplementary').hasAttribute('data-top')).toBe(true);
   expect(column('sidebar').hasAttribute('inert')).toBe(true);
-  // Rows are navigation while collapsed: nothing draws selected.
-  expect(inbox.hasAttribute('data-selected')).toBe(false);
+  // Rows are navigation while collapsed: nothing draws current.
+  expect(inbox.hasAttribute('data-current')).toBe(false);
 
   fireEvent.click(screen.getByRole('button', { name: 'Hello' }));
   await settle();
@@ -312,50 +319,168 @@ it('closing the supplementary column hides it from the stack', async () => {
   expect(column('detail').hasAttribute('data-top')).toBe(true);
 });
 
-function Pages() {
-  const stack = useSplitViewStack();
+/* ── A column that pushes holds a NavigationStack ── */
+
+function OpenAlbum() {
+  const stack = useNavigationStack();
+  return <button type="button" onClick={(event) => stack.push('tidewater', { reason: 'trigger-press', event: event.nativeEvent })}>Open album</button>;
+}
+
+/** A page `renderPage` draws for a key no child is for. */
+function Album({ page }: { page: string }) {
   return (
-    <>
-      <SplitViewHeader title="Albums" />
-      <SplitViewContent>
-        <button type="button" onClick={() => stack.push(<><SplitViewHeader title="Tidewater" /><p>Tracks</p></>, { key: 'tidewater' })}>Open album</button>
-        <span>Depth {stack.depth}</span>
-      </SplitViewContent>
-    </>
+    <NavigationStackPage value={page}>
+      <NavigationStackBar><NavigationStackTitle>{page}</NavigationStackTitle></NavigationStackBar>
+      <NavigationStackContent><p>Tracks of {page}</p></NavigationStackContent>
+    </NavigationStackPage>
   );
 }
 
-it('a nested stack pops first, then the column stack', async () => {
-  const onCompactColumnChange = vi.fn();
-  const onPagesChange = vi.fn();
-  render(
-    <SplitView aria-label="Library" sizeClass="compact" defaultCompactColumn="detail" defaultValue={{ sidebar: 'recent' }} onCompactColumnChange={onCompactColumnChange}>
+function Albums(props: Partial<NavigationStackProps>) {
+  return (
+    <NavigationStack defaultPages={['albums']} renderPage={(page) => <Album page={page} />} {...props}>
+      <NavigationStackPage value="albums">
+        <NavigationStackBar><NavigationStackTitle>Albums</NavigationStackTitle></NavigationStackBar>
+        <NavigationStackContent><OpenAlbum /></NavigationStackContent>
+      </NavigationStackPage>
+    </NavigationStack>
+  );
+}
+
+function Library({ stack, ...props }: Partial<SplitViewProps> & { stack?: Partial<NavigationStackProps> }) {
+  return (
+    <SplitView aria-label="Library" defaultValue={{ sidebar: 'recent' }} {...props}>
       <SplitViewSidebar aria-label="Library">
         <SplitViewHeader title="Library" />
-        <SplitViewItem id="recent" title="Recent" />
+        <SplitViewContent>
+          <SplitViewItem value="recent" title="Recent" />
+          <SplitViewItem value="songs" title="Songs" />
+        </SplitViewContent>
       </SplitViewSidebar>
-      <SplitViewDetail aria-label="Albums">
-        <SplitViewStack onPagesChange={onPagesChange}><Pages /></SplitViewStack>
-      </SplitViewDetail>
-    </SplitView>,
+      <SplitViewDetail aria-label="Albums"><Albums {...stack} /></SplitViewDetail>
+    </SplitView>
   );
+}
+
+const stackPages = () => [...document.querySelectorAll<HTMLElement>('[data-slot=navigation-stack-page]')].map((p) => p.dataset.value);
+
+it('a NavigationStack in a column pops first, then the column stack', async () => {
+  const onCompactColumnChange = vi.fn();
+  const onPagesChange = vi.fn();
+  render(<Library sizeClass="compact" defaultCompactColumn="detail" onCompactColumnChange={onCompactColumnChange} stack={{ onPagesChange }} />);
   await settle();
   const open = screen.getByRole('button', { name: 'Open album' });
   open.focus();
   fireEvent.click(open);
   await settle();
-  expect(onPagesChange).toHaveBeenLastCalledWith(['root', 'tidewater'], expect.objectContaining({ reason: 'imperative' }));
-  expect(screen.getByText('Tracks')).toBeTruthy();
+  expect(onPagesChange).toHaveBeenLastCalledWith(['albums', 'tidewater'], expect.objectContaining({ reason: 'trigger-press' }));
+  expect(screen.getByText('Tracks of tidewater')).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Back to Albums' })).toBeTruthy();
 
   escape();
   await settle();
-  expect(onPagesChange).toHaveBeenLastCalledWith(['root'], expect.objectContaining({ reason: 'escape-key' }));
+  expect(onPagesChange).toHaveBeenLastCalledWith(['albums'], expect.objectContaining({ reason: 'escape-key' }));
   expect(onCompactColumnChange).not.toHaveBeenCalled();
 
   escape();
   await settle();
   expect(onCompactColumnChange).toHaveBeenLastCalledWith('sidebar', expect.objectContaining({ reason: 'escape-key' }));
+});
+
+it('collapsed, the first page of a column\'s stack goes back to the column before, named by its title', async () => {
+  const onCompactColumnChange = vi.fn();
+  render(<Library sizeClass="compact" defaultCompactColumn="detail" onCompactColumnChange={onCompactColumnChange} />);
+  await settle();
+  const back = screen.getByRole('button', { name: 'Back to Library' });
+  expect(back.getAttribute('data-slot')).toBe('navigation-stack-back');
+  fireEvent.click(back);
+  await settle();
+  expect(onCompactColumnChange).toHaveBeenLastCalledWith('sidebar', expect.objectContaining({ reason: 'trigger-press' }));
+  expect(column('sidebar').hasAttribute('data-top')).toBe(true);
+});
+
+it('a column after a stack labels its back button with the stack\'s first page', async () => {
+  render(
+    <SplitView aria-label="Library" sizeClass="compact" defaultCompactColumn="detail">
+      <SplitViewSidebar aria-label="Library"><Albums /></SplitViewSidebar>
+      <SplitViewDetail aria-label="Album"><SplitViewHeader title="Tidewater" /></SplitViewDetail>
+    </SplitView>,
+  );
+  await settle();
+  expect(screen.getByRole('button', { name: 'Back to Albums' }).getAttribute('data-slot')).toBe('split-view-back');
+});
+
+it('tiled, the stack\'s first page has no back button and Escape there passes through', async () => {
+  const onCompactColumnChange = vi.fn();
+  render(<Library sizeClass="regular" onCompactColumnChange={onCompactColumnChange} />);
+  await settle();
+  expect(document.querySelector('[data-slot=navigation-stack-back]')).toBeNull();
+  const open = screen.getByRole('button', { name: 'Open album' });
+  open.focus();
+  const behind = vi.fn((event: KeyboardEvent) => event.defaultPrevented);
+  window.addEventListener('keydown', behind);
+  escape();
+  window.removeEventListener('keydown', behind);
+  expect(behind).toHaveReturnedWith(false);
+  expect(onCompactColumnChange).not.toHaveBeenCalled();
+});
+
+it('collapsed, a swipe from the leading edge pops the column\'s stack before the columns', async () => {
+  const onCompactColumnChange = vi.fn();
+  const onPagesChange = vi.fn();
+  render(<Library sizeClass="compact" defaultCompactColumn="detail" onCompactColumnChange={onCompactColumnChange}
+    stack={{ defaultPages: ['albums', 'tidewater'], onPagesChange }} />);
+  await settle();
+  const at = (type: string, x: number) =>
+    new PointerEvent(type, { pointerId: 1, pointerType: 'touch', isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1, bubbles: true, cancelable: true, clientX: x, clientY: 200 });
+  const swipe = async (el: HTMLElement) => {
+    el.dispatchEvent(at('pointerdown', 4));
+    document.dispatchEvent(at('pointermove', 40));
+    document.dispatchEvent(at('pointermove', 600));
+    await act(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
+    act(() => void document.dispatchEvent(at('pointerup', 600)));
+    await settle();
+  };
+  await swipe(screen.getByText('Tracks of tidewater'));
+  expect(onPagesChange).toHaveBeenLastCalledWith(['albums'], expect.objectContaining({ reason: 'swipe' }));
+  expect(onCompactColumnChange).not.toHaveBeenCalled();
+  await swipe(screen.getByRole('button', { name: 'Open album' }));
+  expect(onCompactColumnChange).toHaveBeenLastCalledWith('sidebar', expect.objectContaining({ reason: 'swipe' }));
+});
+
+it('resetKey pops the stack to its first page when the sidebar picks something else', async () => {
+  function Reset() {
+    const [value, setValue] = useState<SplitViewProps['value']>({ sidebar: 'recent' });
+    return <Library sizeClass="regular" defaultValue={undefined} value={value} onValueChange={setValue} stack={{ defaultPages: ['albums', 'tidewater'], resetKey: value?.sidebar }} />;
+  }
+  render(<Reset />);
+  await settle();
+  expect(stackPages()).toContain('tidewater');
+  fireEvent.click(screen.getByRole('button', { name: 'Songs' }));
+  await settle();
+  await settle();
+  expect(stackPages()).toEqual(['albums']);
+});
+
+it('the column\'s stack keeps its pages through size-class changes: the handoff between tiled and collapsed', async () => {
+  // The column on top while collapsed is tracked at every size: the detail, where the reader is.
+  const { rerender } = render(<Library sizeClass="regular" defaultCompactColumn="detail" stack={{ defaultPages: ['albums', 'tidewater'] }} />);
+  await settle();
+  const page = screen.getByText('Tracks of tidewater').closest('[data-slot=navigation-stack-page]');
+  expect(screen.getByRole('button', { name: 'Back to Albums' })).toBeTruthy();
+  rerender(<Library sizeClass="compact" defaultCompactColumn="detail" stack={{ defaultPages: ['albums', 'tidewater'] }} />);
+  await settle();
+  // The same page, still on top, now in the column on top of the compact stack.
+  expect(screen.getByText('Tracks of tidewater').closest('[data-slot=navigation-stack-page]')).toBe(page);
+  expect(column('detail').hasAttribute('data-top')).toBe(true);
+  escape();
+  await settle();
+  // At its first page, the stack now offers the way back to the sidebar.
+  expect(screen.getByRole('button', { name: 'Back to Library' })).toBeTruthy();
+  rerender(<Library sizeClass="regular" defaultCompactColumn="detail" stack={{ defaultPages: ['albums', 'tidewater'] }} />);
+  await settle();
+  expect(document.querySelector('[data-slot=navigation-stack-back]')).toBeNull();
+  expect(column('sidebar').hasAttribute('inert')).toBe(false);
 });
 
 /** A transition that runs for 100 ms on the elements `match` picks, as a browser reports a running `translate`. */
@@ -410,55 +535,42 @@ it('right to left, the compact columns move by --stack-dir and the swipe starts 
   expect(onCompactColumnChange).toHaveBeenLastCalledWith('sidebar', expect.objectContaining({ reason: 'swipe' }));
 });
 
-function Album({ page }: { page: string }) {
-  return <><SplitViewHeader title={page} /><p>Tracks of {page}</p></>;
-}
-
-function Library({ initial, onPagesChange }: { initial: string[]; onPagesChange?: (pages: string[], details: unknown) => void }) {
+function Controlled({ initial, onPagesChange }: { initial: string[]; onPagesChange?: (pages: string[], details: unknown) => void }) {
   const [pages, setPages] = useState(initial);
-  return (
-    <SplitView aria-label="Library" sizeClass="compact" defaultCompactColumn="detail" defaultValue={{ sidebar: 'recent' }}>
-      <SplitViewSidebar aria-label="Library"><SplitViewHeader title="Library" /><SplitViewItem id="recent" title="Recent" /></SplitViewSidebar>
-      <SplitViewDetail aria-label="Albums">
-        <SplitViewStack pages={pages} onPagesChange={(next, details) => { onPagesChange?.(next, details); setPages(next); }} renderPage={(page) => <Album page={page} />}>
-          <Pages />
-        </SplitViewStack>
-      </SplitViewDetail>
-    </SplitView>
-  );
+  return <Library sizeClass="compact" defaultCompactColumn="detail" stack={{ defaultPages: undefined, pages, onPagesChange: (next, details) => { onPagesChange?.(next, details); setPages(next); } }} />;
 }
 
 it('controlled pages: a deep link renders its pages from renderPage, and a pop is heard and fed back', async () => {
   const onPagesChange = vi.fn();
-  render(<Library initial={['root', 'tidewater', 'live']} onPagesChange={onPagesChange} />);
+  render(<Controlled initial={['albums', 'tidewater', 'live']} onPagesChange={onPagesChange} />);
   await settle();
   expect(screen.getByText('Tracks of live')).toBeTruthy();
-  expect(screen.getByRole('button', { name: 'Back to tidewater' })).toBeTruthy();
+  expect(screen.getAllByRole('button', { name: 'Back to tidewater' }).length).toBeGreaterThan(0);
   escape();
   await settle();
-  expect(onPagesChange).toHaveBeenLastCalledWith(['root', 'tidewater'], expect.anything());
+  expect(onPagesChange).toHaveBeenLastCalledWith(['albums', 'tidewater'], expect.anything());
   await settle();
   expect(screen.queryByText('Tracks of live')).toBeNull();
-  // A node pushed from inside still works with controlled pages.
+  // A key pushed from inside still works with controlled pages.
   escape();
   await settle();
   fireEvent.click(screen.getByRole('button', { name: 'Open album' }));
   await settle();
-  expect(onPagesChange).toHaveBeenLastCalledWith(['root', 'tidewater'], expect.objectContaining({ reason: 'imperative' }));
-  expect(screen.getByText('Tracks')).toBeTruthy();
+  expect(onPagesChange).toHaveBeenLastCalledWith(['albums', 'tidewater'], expect.objectContaining({ reason: 'trigger-press' }));
+  expect(screen.getByText('Tracks of tidewater')).toBeTruthy();
 });
 
-it('a controlled pop keeps the page on screen through its exit', async () => {
-  render(<Library initial={['root', 'live']} />);
+it('a controlled pop keeps a renderPage page on screen through its exit', async () => {
+  render(<Controlled initial={['albums', 'live']} />);
   await settle();
-  const page = screen.getByText('Tracks of live').closest<HTMLElement>('[data-slot="split-view-stack-page"]')!;
+  const page = screen.getByText('Tracks of live').closest<HTMLElement>('[data-slot="navigation-stack-page"]')!;
   // Its exit runs until `finish`, as a CSS transition would (with a computed duration, so UI SDK's safety
   // timeout waits for it).
   let finish = () => {};
   const finished = new Promise<void>((resolve) => (finish = resolve));
-  page.getAnimations = () => [{ transitionProperty: 'translate', finished, effect: null } as unknown as Animation];
+  page.getAnimations = () => [{ transitionProperty: 'transform', finished, effect: null } as unknown as Animation];
   const style = document.head.appendChild(document.createElement('style'));
-  style.textContent = '[data-slot="split-view-stack-page"] { transition-duration: 10s; transition-delay: 0s; animation-duration: 0s; animation-delay: 0s; animation-iteration-count: 1 }';
+  style.textContent = '[data-slot="navigation-stack-page"] { transition-duration: 10s; transition-delay: 0s; animation-duration: 0s; animation-delay: 0s; animation-iteration-count: 1 }';
   try {
     fireEvent.click(screen.getByRole('button', { name: 'Back to Albums' }));
     await settle();
@@ -474,31 +586,60 @@ it('a controlled pop keeps the page on screen through its exit', async () => {
   }
 });
 
-it('a controller drives the stack from outside, and a canceled push keeps the pages', async () => {
-  const controller = createSplitViewStackController();
+it('a controller drives the column\'s stack from outside, and a canceled push keeps the pages', async () => {
+  const controller = createNavigationStackController();
   let cancel = false;
-  render(
-    <SplitView aria-label="Library" sizeClass="compact" defaultCompactColumn="detail">
-      <SplitViewDetail aria-label="Albums">
-        <SplitViewStack controller={controller} onPagesChange={(_pages, details) => { if (cancel) details.cancel(); }} renderPage={(page) => <Album page={page} />}>
-          <Pages />
-        </SplitViewStack>
-      </SplitViewDetail>
-    </SplitView>,
-  );
+  render(<Library sizeClass="compact" defaultCompactColumn="detail" stack={{ controller, onPagesChange: (_pages, details) => { if (cancel) details.cancel(); } }} />);
   await settle();
-  act(() => void controller.push('tidewater'));
+  act(() => void controller.push('live'));
   await settle();
-  expect(controller.getPages()).toEqual(['root', 'tidewater']);
-  expect(screen.getByText('Tracks of tidewater')).toBeTruthy();
-  act(() => void controller.popToRoot());
+  expect(controller.getPages()).toEqual(['albums', 'live']);
+  expect(screen.getByText('Tracks of live')).toBeTruthy();
+  act(() => void controller.popTo('albums'));
   await settle();
-  expect(controller.getPages()).toEqual(['root']);
+  expect(controller.getPages()).toEqual(['albums']);
   cancel = true;
   fireEvent.click(screen.getByRole('button', { name: 'Open album' }));
   await settle();
-  expect(controller.getPages()).toEqual(['root']);
-  expect(screen.queryByText('Tracks')).toBeNull();
+  expect(controller.getPages()).toEqual(['albums']);
+  expect(screen.queryByText('Tracks of tidewater')).toBeNull();
+});
+
+it('a disabled item is skipped by the arrow keys and does not select', async () => {
+  const onValueChange = vi.fn();
+  render(
+    <SplitView aria-label="Lists" sizeClass="regular" onValueChange={onValueChange}>
+      <SplitViewSidebar aria-label="Lists">
+        <SplitViewItem value="a" title="Work" />
+        <SplitViewItem value="b" title="Archived" disabled />
+        <SplitViewItem value="c" title="Travel" />
+      </SplitViewSidebar>
+      <SplitViewDetail aria-label="List" />
+    </SplitView>,
+  );
+  await settle();
+  const [work, archived, travel] = ['Work', 'Archived', 'Travel'].map((name) => screen.getByRole('button', { name }));
+  expect(archived.hasAttribute('disabled')).toBe(true);
+  fireEvent.click(archived);
+  expect(onValueChange).not.toHaveBeenCalled();
+  work.focus();
+  fireEvent.keyDown(work, { key: 'ArrowDown' });
+  expect(document.activeElement).toBe(travel);
+});
+
+it('columns take rest props and a className of their own, merged last', async () => {
+  render(
+    <SplitView aria-label="Mail" sizeClass="regular">
+      <SplitViewSidebar aria-label="Boxes" data-testid="boxes" className="bg-muted" />
+      <SplitViewDetail aria-label="Message" className={(s) => (s.top ? 'is-top' : 'not-top')} />
+    </SplitView>,
+  );
+  await settle();
+  const sidebar = column('sidebar');
+  expect(sidebar.getAttribute('data-testid')).toBe('boxes');
+  expect(sidebar.className).toContain('bg-muted');
+  expect(sidebar.className).not.toContain('bg-sidebar');
+  expect(column('detail').className).toContain('not-top');
 });
 
 it('a collapsible section folds through UI SDK Collapsible', async () => {
@@ -507,7 +648,7 @@ it('a collapsible section folds through UI SDK Collapsible', async () => {
     <SplitView aria-label="Lists" sizeClass="regular">
       <SplitViewSidebar aria-label="Lists">
         <SplitViewSection title="My Lists" collapsible onOpenChange={onOpenChange}>
-          <SplitViewItem id="work" title="Work" />
+          <SplitViewItem value="work" title="Work" />
         </SplitViewSection>
       </SplitViewSidebar>
       <SplitViewDetail aria-label="List" />
@@ -527,7 +668,7 @@ it('an item with a preview is a hover card trigger that still selects', async ()
   render(
     <SplitView aria-label="Lists" sizeClass="regular" onValueChange={onValueChange}>
       <SplitViewSidebar aria-label="Lists">
-        <SplitViewItem id="work" title="Work" preview={<p>Motion review</p>} />
+        <SplitViewItem value="work" title="Work" preview={<p>Motion review</p>} />
       </SplitViewSidebar>
       <SplitViewDetail aria-label="List" />
     </SplitView>,

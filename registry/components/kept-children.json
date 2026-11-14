@@ -1,0 +1,11 @@
+{
+  "name": "kept-children",
+  "title": "useKeptChildren",
+  "description": "Keeps the last children of a closing panel mounted while it animates out, so a drawer or pushed page never empties before it leaves.",
+  "exports": [
+    "useKeptChildren"
+  ],
+  "types": [
+    "KeptChildren"
+  ]
+}

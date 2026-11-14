@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { IndexBar } from '@/components/ui/index-bar'
+import { IndexBar, alphabetItems } from '@/components/ui/index-bar'
 import { List, ListRow, ListSection } from '@/components/ui/list'
 
 const people = [
@@ -14,9 +14,9 @@ const byLetter: Record<string, string[]> = {}
 for (const name of people) byLetter[name[0]] = [...(byLetter[name[0]] ?? []), name]
 const letters = Object.keys(byLetter)
 
-// With no `items`, IndexBar is the UIKit A–Z rail. `avail` says which letters
-// have a section — the rest are dimmed but still reachable — and `onLetter`
-// fires as the pointer (or the arrow keys) crosses a letter. Hover shows the
+// `alphabetItems(letters)` is the UIKit A–Z rail: the letters with no section
+// are disabled (dimmed but still reachable), and `onJump` fires as the pointer
+// (or the arrow keys) crosses a letter. Hover shows the
 // letter without jumping; press and drag to scrub.
 export default function Alphabet() {
   const scroller = useRef<HTMLDivElement>(null)
@@ -48,11 +48,10 @@ export default function Alphabet() {
         </List>
       </div>
       <IndexBar
-        label="Jump to letter"
-        avail={new Set(letters)}
-        top={8}
-        bottom={8}
-        onLetter={(letter) => {
+        aria-label="Jump to letter"
+        items={alphabetItems(letters)}
+        className="top-2 bottom-2"
+        onJump={(letter) => {
           const el = sections.current[letter]
           if (el && scroller.current) scroller.current.scrollTop = el.offsetTop
         }}

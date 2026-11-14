@@ -147,7 +147,7 @@ const PAGE = [
 ].join(' ')
 ```
 
-Render every page: each one renders only while it is in the stack or animating out. With a right-to-left page the swipe comes from the right (`side: 'start'`) and `--stack-progress` still grows from 0 to 1, so every offset is times `--stack-dir`, which `rtl:` sets to `-1`: pages enter from the left and follow the finger. The kit's NavigationStack, SplitView and SideDrawer do the same.
+Render every page: each one renders only while it is in the stack or animating out. With a right-to-left page the swipe comes from the right (`side: 'start'`) and `--stack-progress` still grows from 0 to 1, so every offset is times `--stack-dir`, which `rtl:` sets to `-1`: pages enter from the left and follow the finger. The kit's NavigationStack, SplitView and AdaptivePane (its `push` presentation) do the same.
 
 {% hint style="info" %}
 A link's target is its `value`, not a `to` prop: a part's key is its `id` or its `value`, and parts of one slot with neither all share one key, so every link would hear the last link's props.

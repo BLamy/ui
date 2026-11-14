@@ -24,11 +24,11 @@ import { cn } from '@/lib/utils';
    opaque, mixed rather than `--muted-foreground`, because the terminal core takes them as plain RGB and drops any alpha. */
 export const terminalVariants = cva(
   [
-    'bl-scroll size-full min-h-0 min-w-0 rounded-none p-2 font-mono shadow-none',
+    'bl-scroll size-full min-h-0 min-w-0 rounded-none px-3 py-2.5 font-mono shadow-none',
     '[--term-bg:var(--background)] [--term-fg:var(--foreground)] [--term-cursor:var(--primary)]',
     '[--term-selection-bg:color-mix(in_oklab,var(--primary)_30%,transparent)] selection:bg-primary/30',
     '[--term-search-match:color-mix(in_oklab,var(--term-yellow)_30%,transparent)] [--term-search-active:color-mix(in_oklab,var(--term-yellow)_55%,transparent)] [--term-search-border:var(--term-yellow)]',
-    '[--term-red:var(--destructive)] [--term-green:var(--success,oklch(0.723_0.191_149.6))] [--term-yellow:var(--warning,oklch(0.769_0.165_70.1))] [--term-blue:var(--link,var(--primary))]',
+    '[--term-red:var(--destructive)] [--term-green:var(--success)] [--term-yellow:var(--warning)] [--term-blue:var(--link,var(--primary))]',
     '[--term-magenta:color-mix(in_oklch,var(--term-red),var(--term-blue))] [--term-cyan:color-mix(in_oklch,var(--term-blue),var(--term-green))]',
     '[--term-color-0:var(--foreground)] [--term-color-7:color-mix(in_oklab,var(--foreground)_55%,var(--background))] [--term-color-8:color-mix(in_oklab,var(--foreground)_55%,var(--background))] [--term-color-15:color-mix(in_oklab,var(--foreground)_70%,var(--background))]',
     '[--term-color-1:color-mix(in_oklab,var(--term-red)_85%,black)] [--term-color-2:color-mix(in_oklab,var(--term-green)_65%,black)] [--term-color-3:color-mix(in_oklab,var(--term-yellow)_55%,black)]',
@@ -43,11 +43,11 @@ export const terminalVariants = cva(
   {
     variants: {
       size: {
-        sm: '[--term-font-size:12px] [--term-row-height:16px]',
-        md: '[--term-font-size:13px] [--term-row-height:18px]',
+        sm: '[--term-font-size:var(--text-caption)] [--term-row-height:16px]',
+        default: '[--term-font-size:var(--text-footnote)] [--term-row-height:18px]',
       },
     },
-    defaultVariants: { size: 'md' },
+    defaultVariants: { size: 'default' },
   },
 );
 
@@ -283,6 +283,10 @@ export function Terminal({
           }
         }
         focusWas.current = undefined;
+        // wterm names its input after the root; say when nothing typed there goes anywhere.
+        const field = instance.element.querySelector('textarea');
+        if (readOnly) field?.setAttribute('aria-readonly', 'true');
+        else field?.removeAttribute('aria-readonly');
         if (readOnly) instance.write('\x1b[?25l');
         for (const data of early.current.splice(0)) instance.write(data);
         attach(instance);

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectGroup, SelectGroupLabel } from '@/components/ui/select';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Card } from '@/components/ui/card';
+import { Icon } from '@/lib/icon';
 import { Screen } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Select> = {
@@ -119,3 +120,64 @@ export const Invalid: Story = {
 
 /** `presentation="sheet"`: the options slide up from the bottom of their host. */
 export const Sheet: Story = { render: () => <Screen h={560}><Repeat open presentation="sheet" /></Screen> };
+
+/** The three field sizes, beside an Input's: 32, 44 and 50px. */
+export const Sizes: Story = {
+  render: () => (
+    <Screen h={360}>
+      {(['sm', 'default', 'lg'] as const).map((size) => (
+        <Select key={size} defaultValue="Every Week">
+          <SelectTrigger aria-label={`Repeat, ${size}`} size={size} />
+          <SelectContent>
+            {repeat.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      ))}
+    </Screen>
+  ),
+};
+
+export const Disabled: Story = {
+  render: () => (
+    <Screen h={300}>
+      <Field disabled>
+        <FieldLabel>Repeat</FieldLabel>
+        <Select defaultValue="Every Week">
+          <SelectTrigger />
+          <SelectContent>{repeat.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+        </Select>
+      </Field>
+    </Screen>
+  ),
+};
+
+/** Options with an icon and a second line (the description is read as the option's description, not its name). */
+export const RichOptions: Story = {
+  render: () => (
+    <Screen h={520}>
+      <Field>
+        <FieldLabel>Share with</FieldLabel>
+        <Select defaultOpen defaultValue="team">
+          <SelectTrigger />
+          <SelectContent>
+            <SelectItem value="me" icon={<Icon name="lock" size={18} />} description="Only you can open it">Private</SelectItem>
+            <SelectItem value="team" icon={<Icon name="person" size={18} />} description="Everyone in Design">Team</SelectItem>
+            <SelectItem value="link" icon={<Icon name="link" size={18} />} description="Anyone with the link">Public link</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
+    </Screen>
+  ),
+};
+
+/** `size="sm"` on the content: dense 32px rows, for an inspector or a settings row. */
+export const DenseOptions: Story = {
+  render: () => (
+    <Screen h={460}>
+      <Select defaultOpen defaultValue="Every Week">
+        <SelectTrigger aria-label="Repeat" size="sm" />
+        <SelectContent size="sm">{repeat.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+      </Select>
+    </Screen>
+  ),
+};

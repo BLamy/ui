@@ -2,6 +2,8 @@
 
 The path to the current page. Every item is pressable (a link, a button, or a picker of its siblings like VS Code's breadcrumb), and when the trail is wider than its container the middle collapses into one `…` menu, so the first and the last item are always there. It is a `nav` with an ordered list of native links and UI SDK buttons, with the siblings and the hidden items in a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu).
 
+Use it for a location inside a hierarchy (files, folders, a docs section). For moving back through pages the user pushed, use [NavigationStack](https://blamy.github.io/ui/#/navigation-stack)'s back button; for switching between peer views, [Tabs](https://blamy.github.io/ui/#/tabs); for a menu of actions, [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu). On touch, every face keeps its width but answers to a 44px-tall hit area.
+
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/breadcrumb.json{% endcommand %}
@@ -55,7 +57,7 @@ The last item is plain text; give it an `onClick` or an `href` and it is pressab
 
 ## Sibling menus
 
-An item that carries `items` is a picker: pressing it opens a menu of the other entries of its parent, the `selectedId` one checked, and choosing one fires that entry's `href` or `onClick`. Use it for a file path, a project switcher or any hierarchy where the siblings are one step away. The item's own `href` and `onClick` are not used (the menu replaces them), so put the "go there" action in the entries.
+An item that carries `siblings` is a picker: pressing it opens a menu of the other entries of its parent, the `currentSibling` one checked, and choosing one fires that entry's `href` or `onClick`. Use it for a file path, a project switcher or any hierarchy where the siblings are one step away. The item's own `href` and `onClick` are not used (the menu replaces them), so put the "go there" action in the entries.
 
 An item that opens a popup of your own instead (a file picker dialog, say) is a button with `onClick` plus `aria-haspopup`, `aria-expanded` and `aria-controls`, which go onto the item's button. In the `…` menu it is an ordinary item that runs `onClick`.
 
@@ -66,8 +68,8 @@ An item that opens a popup of your own instead (a file picker dialog, say) is a 
   id: 'folder',
   label: 'ui',
   icon: 'folder',
-  selectedId: 'ui',
-  items: [
+  currentSibling: 'ui',
+  siblings: [
     { id: 'ui', label: 'ui', icon: 'folder', href: '/ui' },
     { id: 'docs', label: 'docs', icon: 'folder', href: '/docs' },
   ],
@@ -120,11 +122,11 @@ For an agent (UI SDK's `createAgent`), the trail is one `breadcrumb` entry named
 | `label` | — | The plain-text name (a `string`): what shows, what the menus' type-to-select and an agent read. |
 | `children` | `label` | Content to show instead, like an icon and a styled name; the menus show it too and still read `label`. On `BreadcrumbItem`, children alone (a string) work as the label. |
 | `icon` | — | An icon name or a node, before the label. |
-| `href` / `onClick` | — | The link and / or press handler (`() => void`). |
-| `items` | — | `BreadcrumbEntry[]` (`id`, `label`, `children`, `icon`, `href`, `onClick`): the siblings, shown as a menu on press. |
-| `selectedId` | — | The `items` entry that is current; the menu's rows are then radio items and this one is checked. |
+| `href` / `onClick` | — | The link and / or press handler. `onClick(event)` gets the click (call `event.preventDefault()` on a link to route it yourself), or, for a row chosen in a menu, the event that chose it. |
+| `siblings` | — | `BreadcrumbEntry[]` (`id`, `label`, `children`, `icon`, `href`, `onClick`): the entries of this item's parent, shown as a menu on press. |
+| `currentSibling` | — | The id of the `siblings` entry that is current; the menu's rows are then radio items and this one is checked. |
 
-`BreadcrumbEllipsis` (`items`, `label`) is the `…` item the root renders; use it directly for a trail you shorten by hand. `BreadcrumbSeparator` is the chevron span (children replace the icon).
+`BreadcrumbEllipsis` (`items`, `aria-label`) is the `…` item the root renders; use it directly for a trail you shorten by hand. `BreadcrumbSeparator` is the chevron span (children replace the icon).
 
 ## Styling
 
@@ -139,7 +141,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/breadcrumb`. Base classes:
 
 ```text
-relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px] [contain:inline-size]
+relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px] pointer-coarse:[overflow-clip-margin:12px] [contain:inline-size]
 ```
 
 **`size`** — default `default`
@@ -155,7 +157,7 @@ relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [o
 Defined in `@/components/ui/breadcrumb`. Base classes:
 
 ```text
-[ 'bl-btn box-border inline-flex max-w-full min-w-0 items-center rounded-md border-0 bg-transparent py-0 text-foreground/70 no-underline [font:inherit] whitespace-nowrap outline-none transition-colors motion-reduce:transition-none', 'aria-[current=page]:text-foreground', 'focus-visible:ring-2 focus-visible:ring-ring', ]
+[ 'bl-btn relative box-border inline-flex max-w-full min-w-0 items-center rounded-md border-0 bg-transparent py-0 text-foreground/70 no-underline [font:inherit] whitespace-nowrap outline-none transition-colors motion-reduce:transition-none', // On touch the face keeps its measured width but its hit area grows to 44px tall. "pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:top-1/2 pointer-coarse:after:h-11 pointer-coarse:after:-translate-y-1/2 pointer-coarse:after:content-['']", 'aria-[current=page]:text-foreground', 'focus-visible:ring-2 focus-visible:ring-ring', ]
 ```
 
 **`size`** — default `default`

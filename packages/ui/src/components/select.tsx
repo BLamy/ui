@@ -1,5 +1,5 @@
 'use client';
-import type { ComponentProps, ReactNode } from 'react';
+import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
 import {
   Select as SdkSelect,
   SelectContent as SdkSelectContent,
@@ -17,13 +17,17 @@ import {
   type SelectTriggerState,
 } from '@ui-sdk/react/select';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { fieldSurfaceVariants } from '@/components/ui/input';
 import { labelVariants } from '@/components/ui/label';
+import { listboxItemVariants, listboxVariants } from '@/components/ui/listbox';
+import { Icon } from '@/lib/icon';
 import {
-  ListboxRow, ListDataItems, listboxGroupClass, listboxGroupLabelClass, listboxItemVariants, listboxSeparatorClass, listboxSheetClass,
-  listboxVariants, optionLabel, type ListboxRowProps, type ListDataParts,
-} from '@/components/ui/list-box';
+  ListDataItems, OptionRow, optionGroupClass, optionGroupLabelClass, optionLabel, optionSeparatorClass, optionSheetClass, useOptionDescription,
+  type ListDataParts, type OptionRowProps,
+} from '@/lib/option-row';
 import { popoverMotion, popoverSurface } from '@/lib/primitives';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
+import { useTriggerPalette, type PopupPalette } from '@/lib/trigger-palette';
 import { usePresentation } from '@/lib/container';
 import { cx } from '@/lib/utils';
 
@@ -67,42 +71,38 @@ export function SelectLabel({ className, variant, ...props }: SelectLabelProps) 
   return <SdkSelectLabel className={cx(labelVariants({ variant }), className)} {...props} />;
 }
 
+const fieldSizes = ['sm', 'default', 'lg'] as const;
+
+/** The pop-up button. `default` is the kit's filled field (`fieldSurfaceVariants`: the same box, heights and focus edge
+    as an Input), which keeps the edge while its list is open; `plain` is the iOS pop-up button at the end of a row. */
 export const selectTriggerVariants = cva(
-  [
-    'bl-btn box-border flex w-full cursor-pointer items-center justify-between gap-2 border-0 px-3 text-left [font-family:inherit] text-foreground outline-none',
-    'transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy active:not-data-disabled:bg-secondary-strong',
-    'focus-visible:ring-[3px] focus-visible:ring-ring/45 data-open:shadow-[inset_0_0_0_1.5px_var(--primary)]',
-    'data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] data-disabled:cursor-default data-disabled:opacity-50',
-  ],
+  'bl-btn box-border flex cursor-pointer items-center gap-2 border-0 text-left [font-family:inherit] text-foreground outline-none data-disabled:cursor-default',
   {
     variants: {
       variant: {
-        default: 'bg-input',
+        default: 'w-full justify-between active:not-data-disabled:bg-secondary-strong data-open:bg-transparent data-open:shadow-[inset_0_0_0_1.5px_var(--primary)]',
         /** iOS pop-up button: tinted value, no fill, e.g. at the trailing edge of a list row. */
-        plain: 'w-auto justify-end bg-transparent px-1 text-muted-foreground active:not-data-disabled:bg-transparent active:not-data-disabled:opacity-60 data-open:shadow-none',
+        plain: [
+          'w-auto justify-end rounded-lg bg-transparent px-1 text-muted-foreground transition-opacity duration-spring-snappy ease-spring-snappy',
+          'focus-visible:ring-2 focus-visible:ring-ring active:not-data-disabled:opacity-60 data-disabled:opacity-50',
+        ],
       },
       size: {
-        sm: 'h-8 rounded-lg text-subhead',
-        default: 'h-11 rounded-ctl text-body',
+        sm: 'h-8 text-subhead',
+        default: 'h-11 text-body',
+        lg: 'h-[50px] text-body',
       },
     },
+    compoundVariants: fieldSizes.map((size) => ({ variant: 'default' as const, size, class: fieldSurfaceVariants({ size }) })),
     defaultVariants: { variant: 'default', size: 'default' },
   },
 );
 
 export type SelectTriggerProps = ComponentProps<typeof SdkSelectTrigger> & VariantProps<typeof selectTriggerVariants>;
 
-function UpDown() {
-  return (
-    <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden="true" className="shrink-0 opacity-70">
-      <path d="M8 9.5l4-4 4 4M8 14.5l4 4 4-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 /** The button: its children (a `SelectValue` when it has none), then the up-down chevrons. */
 export function SelectTrigger({ className, variant, size, children, ...props }: SelectTriggerProps) {
-  const face = (kids: ReactNode) => <>{kids ?? <SelectValue />}<UpDown /></>;
+  const face = (kids: ReactNode) => <>{kids ?? <SelectValue />}<Icon name="chevron-up-down" size={16} sw={2.2} className="shrink-0 opacity-70" /></>;
   return (
     <SdkSelectTrigger className={cx(selectTriggerVariants({ variant, size }), className)} {...props}>
       {typeof children === 'function' ? (state: SelectTriggerState) => face(children(state)) : face(children)}
@@ -115,58 +115,82 @@ export function SelectValue({ className, ...props }: ComponentProps<typeof SdkSe
   return <SdkSelectValue className={cx('min-w-0 flex-1 truncate data-placeholder:text-tertiary-foreground', className)} {...props} />;
 }
 
-export type SelectContentProps = ComponentProps<typeof SdkSelectContent>;
+/** The rows' size: `sm` is the dense list of an inspector or a settings row (32px rows, footnote text). */
+type SelectContentSize = 'sm' | 'default';
+const RowSizeContext = createContext<SelectContentSize>('default');
+const rowSizes = { sm: 'min-h-8 py-1.5 text-footnote leading-[18px]', default: '' } as const;
+
+export type SelectContentProps = ComponentProps<typeof SdkSelectContent> & {
+  /** `sm`: 32px rows in footnote text, for a select in a dense panel. Default `default`. */
+  size?: SelectContentSize;
+  /** Where the colors come from: the ThemeScope it was opened from (`scope`, the default), or the trigger's
+      element (`trigger`), for a trigger on a surface that CSS paints rather than a ThemeScope (see `useTriggerPalette`). */
+  palette?: PopupPalette;
+};
 
 /** The popup and its list: 8px under the button, at least as wide as it (and 200px), scrolling past 320px. It renders
  *  into BLProvider's root (see `useLayerHost`) and wears the ThemeScope it was opened from. Without children it draws
  *  the select's `items`. */
-export function SelectContent({ className, style, sideOffset = 8, children, ...props }: SelectContentProps) {
+export function SelectContent({ className, style, sideOffset = 8, size = 'default', palette = 'scope', ref, children, ...props }: SelectContentProps) {
   const scope = useThemeScopeProps();
+  const trigger = useTriggerPalette(palette === 'trigger', ref);
+  const colors = trigger.props ?? scope;
   return (
-    <SdkSelectContent
-      data-theme-scope={scope['data-theme-scope']}
-      sideOffset={sideOffset}
-      className={cx(
-        [
-          popoverSurface, popoverMotion, listboxVariants({ variant: 'popup' }), 'min-w-[max(var(--anchor-width),200px)]',
-          listboxSheetClass, scope.className,
-        ],
-        className,
-      )}
-      style={scopeStyle(scope.style, style)}
-      {...props}
-    >
-      {children ?? ((state: SelectContentState) => <ListDataItems items={state.items} parts={selectParts} />)}
-    </SdkSelectContent>
+    <RowSizeContext.Provider value={size}>
+      <SdkSelectContent
+        ref={trigger.ref}
+        data-theme-scope={colors['data-theme-scope']}
+        data-size={size}
+        sideOffset={sideOffset}
+        className={cx(
+          [
+            popoverSurface, popoverMotion, listboxVariants({ variant: 'popup' }), 'min-w-[max(var(--anchor-width),200px)]',
+            optionSheetClass, colors.className,
+          ],
+          className,
+        )}
+        style={scopeStyle(colors.style, style)}
+        {...props}
+      >
+        {children ?? ((state: SelectContentState) => <ListDataItems items={state.items} parts={selectParts} />)}
+      </SdkSelectContent>
+    </RowSizeContext.Provider>
   );
 }
 
-export type SelectItemProps<T = string> = Omit<ComponentProps<typeof SdkSelectItem<T>>, 'children'> & ListboxRowProps;
+export type SelectItemProps<T = string> = Omit<ComponentProps<typeof SdkSelectItem<T>>, 'children'> & OptionRowProps;
 
 /** An option. `value` is what the select's value becomes; `label` is the text the button shows and typing finds when
  *  the children are not plain text. */
 export function SelectItem<T = string>({ className, icon, description, label, children, ...props }: SelectItemProps<T>) {
+  const size = useContext(RowSizeContext);
+  const described = useOptionDescription(description);
   return (
-    <SdkSelectItem<T> label={optionLabel(label, children)} className={cx(listboxItemVariants({ variant: 'popup' }), className)} {...props}>
-      <ListboxRow variant="popup" icon={icon} description={description} Indicator={SelectItemIndicator} ItemIcon={SelectItemIcon}>
+    <SdkSelectItem<T>
+      label={optionLabel(label, children)}
+      aria-describedby={described.describedBy}
+      className={cx([listboxItemVariants({ variant: 'popup' }), rowSizes[size]], className)}
+      {...props}
+    >
+      <OptionRow variant="popup" icon={icon} description={description} descriptionId={described.id} Indicator={SelectItemIndicator} ItemIcon={SelectItemIcon}>
         {children}
-      </ListboxRow>
+      </OptionRow>
     </SdkSelectItem>
   );
 }
 
 /** A group of options, named by its `SelectGroupLabel`. */
 export function SelectGroup({ className, ...props }: ComponentProps<typeof SdkSelectGroup>) {
-  return <SdkSelectGroup className={cx(listboxGroupClass, className)} {...props} />;
+  return <SdkSelectGroup className={cx(optionGroupClass, className)} {...props} />;
 }
 
 export function SelectGroupLabel({ className, ...props }: ComponentProps<typeof SdkSelectGroupLabel>) {
-  return <SdkSelectGroupLabel className={cx(listboxGroupLabelClass, className)} {...props} />;
+  return <SdkSelectGroupLabel className={cx(optionGroupLabelClass, className)} {...props} />;
 }
 
 /** A hairline between options or groups, hidden from screen readers. */
 export function SelectSeparator({ className, ...props }: ComponentProps<typeof SdkSelectSeparator>) {
-  return <SdkSelectSeparator className={cx(listboxSeparatorClass, className)} {...props} />;
+  return <SdkSelectSeparator className={cx(optionSeparatorClass, className)} {...props} />;
 }
 
 const selectParts: ListDataParts = { Item: SelectItem, Group: SelectGroup, GroupLabel: SelectGroupLabel, Separator: SelectSeparator };

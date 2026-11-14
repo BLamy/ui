@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { bindSizeClass, type SizeClass } from '@/lib/size-class';
 import { SizeClassProvider } from '@/lib/container';
 import { cn, BARH } from '@/lib/utils';
@@ -130,11 +130,40 @@ export function readThemeVars(el: Element | null | undefined): CSSProperties {
   return out as CSSProperties;
 }
 
-export interface ThemeScopeProps extends HTMLAttributes<HTMLDivElement> {
-  /** A named surface palette — `[data-theme-scope="name"] { … }` in your CSS, or one the bl-theme and the blocks define (`workbench`, `chat`, `terminal`, `sheet`, `glass`). Omit for the plain theme. */
+/** The appearance a named scope falls back to when neither its prop, an enclosing scope of the same name nor the
+    ambient appearance decides. The Workbench is dark-first; other surface scopes are light. */
+const SCOPE_DEFAULT_APPEARANCE: Partial<Record<string, Appearance>> = { workbench: 'dark' };
+
+/** The nearest ThemeScope's resolved state (`scope`, `appearance`, `tint`, `vars`), or `null` outside every scope.
+    Use it for third-party renderers that take the appearance as a prop (a diff viewer, a highlighter). */
+export function useThemeScope(): ThemeScopeState | null {
+  return useContext(ThemeScopeContext);
+}
+
+/** The appearance a `<ThemeScope scope={scope} appearance={appearance}>` rendered here resolves to: the terminal scope
+    is always dark; otherwise the explicit value, else the enclosing scope's when it has the same name, else the ambient
+    `AppearanceProvider` (or `.dark` on `<html>`), else the scope's default (dark for `workbench`, light for the other
+    named scopes, none for a plain scope). For a component that renders its own scope root, such as a shell. */
+export function useScopeAppearance(scope: ThemeScopeName, appearance?: Appearance): Appearance;
+export function useScopeAppearance(scope?: ThemeScopeName, appearance?: Appearance): Appearance | undefined;
+export function useScopeAppearance(scope?: ThemeScopeName, appearance?: Appearance): Appearance | undefined {
+  const parent = useContext(ThemeScopeContext);
+  const ambient = useAppearance();
+  if (scope === 'terminal') return 'dark';
+  return appearance
+    ?? (scope && parent?.scope === scope ? parent.appearance : undefined)
+    ?? ambient
+    ?? (scope ? (SCOPE_DEFAULT_APPEARANCE[scope] ?? 'light') : undefined);
+}
+
+export interface ThemeScopeProps extends ComponentProps<'div'> {
+  /** A named surface palette — `[data-theme-scope="name"] { … }` in your CSS, or one the bl-theme and the blocks define
+      (`workbench`, `chat`, `terminal`, `sheet`, `glass`). Omit for the plain theme. The bl-theme's `workbench` scope
+      also paints its root (background, text color, sans font, antialiasing). */
   scope?: ThemeScopeName;
-  /** Defaults to the ambient `AppearanceProvider` value; without one a plain scope inherits the page's `.dark` / light,
-      a surface scope is light (the terminal scope is always dark). */
+  /** Defaults to an enclosing scope of the same name, else the ambient `AppearanceProvider` value; without either a
+      plain scope inherits the page's `.dark` / light, `workbench` is dark, other surface scopes are light, and the
+      terminal scope is always dark. */
   appearance?: Appearance;
   /** Accent for the subtree (--primary / --ring). */
   tint?: string;
@@ -145,8 +174,7 @@ export interface ThemeScopeProps extends HTMLAttributes<HTMLDivElement> {
 /** A subtree with its own appearance, accent, variables and (optionally) named surface palette. Overlays opened inside
     it (popovers, menus, dialogs, tooltips) wear the same scope. Scopes nest; the nearest one wins. */
 export function ThemeScope({ scope, appearance: appearanceProp, tint, vars, className, style, ...props }: ThemeScopeProps) {
-  const ambient = useAppearance();
-  const appearance: Appearance | undefined = scope === 'terminal' ? 'dark' : (appearanceProp ?? ambient ?? (scope ? 'light' : undefined));
+  const appearance = useScopeAppearance(scope, appearanceProp);
   const p = themeScopeProps({ scope, appearance, tint, vars });
   const state = useMemo<ThemeScopeState>(() => ({ scope, appearance, tint, vars }), [scope, appearance, tint, vars]);
   return (

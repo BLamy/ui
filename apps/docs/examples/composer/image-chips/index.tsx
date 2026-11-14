@@ -1,5 +1,5 @@
-import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import { ThemeScope } from '@/lib/theme'
 import { type ComposerAttachment } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
 // A stand-in "pasted screenshot" so the example has an image to start with.
@@ -28,7 +28,7 @@ const seed: ComposerAttachment[] = [
 // Paste or attach an image: a chip lands at the caret and a thumbnail pops into
 // the strip. Press either — the PencilKit annotator (the default) zooms out of
 // it; Save flattens the strokes and lands back in it. (Swap it with <Composer
-// annotator={MyAnnotator}> or a <ComposerAnnotatorProvider>; annotator={null}
+// annotator={MyAnnotator}> or a <ImageAnnotatorProvider engine={…}>; annotator={null}
 // opts out.)
 function ImageChips() {
   return (
@@ -45,7 +45,7 @@ function ImageChips() {
           <ComposerAttachments />
           <ComposerInput placeholder="Paste an image" />
           <ComposerFooter>
-            <ComposerAttach />
+            <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
             <ComposerSpacer />
             <ComposerSend />
           </ComposerFooter>
@@ -66,12 +66,11 @@ function ImageChips() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function ImageChipsExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <ImageChips />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

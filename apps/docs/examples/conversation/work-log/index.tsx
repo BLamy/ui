@@ -3,17 +3,18 @@ import {
   AssistantMessage,
   ConversationTyping,
   MessageMarkdown,
-  SettledBanner,
   ToolCall,
   UserMessage,
   WorkLog,
 } from '@/components/ui/conversation'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 import { Button } from '@/components/ui/button'
+import { SettledBanner } from '@/components/blocks/t3-clone/components/settled-banner'
 
 // The transcript parts standing alone: a user turn with an image, a WorkLog
 // whose tool calls are done, running and failed, the typing dots, and the
-// banner a settled thread shows above its composer.
+// banner a settled thread shows above its composer (T3 Code's SettledBanner, from
+// the t3-clone block).
 const SHOT =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
@@ -23,22 +24,22 @@ const SHOT =
 export default function WorkLogExample() {
   const [settled, setSettled] = useState(true)
   return (
-    <WorkbenchTheme className="rounded-card p-5">
+    <ThemeScope scope="workbench" className="rounded-card p-5">
       <div className="mx-auto grid max-w-[620px] gap-1">
-        <UserMessage images={[SHOT]}>
+        <UserMessage attachments={[{ id: 'shot', name: 'checkout.png', src: SHOT, kind: 'image' }]}>
           The checkout button is clipped on mobile, can you fix it?
         </UserMessage>
         <AssistantMessage>
           <WorkLog summary="Worked for 1m 4s" defaultOpen>
-            <ToolCall icon="doc-text" title="Read" detail="checkout/button.tsx" />
+            <ToolCall icon="doc-text" title="Read" description="checkout/button.tsx" />
             <ToolCall
               icon="doc-text"
               title="Edited"
-              detail="checkout/button.tsx"
+              description="checkout/button.tsx"
               code={'- className="w-[420px]"\n+ className="w-full max-w-[420px]"'}
             />
-            <ToolCall status="running" title="Running" detail="pnpm nx test checkout" />
-            <ToolCall status="error" title="Type check failed" detail="2 errors" />
+            <ToolCall status="running" title="Running" description="pnpm nx test checkout" />
+            <ToolCall status="error" title="Type check failed" description="2 errors" />
           </WorkLog>
           <MessageMarkdown markdown="The button had a fixed **420px** width. It is now `w-full` with a max width, so it shrinks inside narrow screens." />
         </AssistantMessage>
@@ -60,6 +61,6 @@ export default function WorkLogExample() {
           )}
         </div>
       </div>
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

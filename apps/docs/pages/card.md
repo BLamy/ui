@@ -10,7 +10,7 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent, CardFooter,
+  Card, CardHeader, CardTitle, CardContent,
 } from '@/components/ui/card'
 ```
 {% endtab %}
@@ -23,7 +23,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent, CardFooter,
+  Card, CardHeader, CardTitle, CardContent,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}

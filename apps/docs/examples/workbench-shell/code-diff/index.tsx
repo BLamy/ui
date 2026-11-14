@@ -1,4 +1,4 @@
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 import { SurfaceDiff } from '@/components/blocks/t3-clone/components/workbench/surfaces'
 
 function Change() {
@@ -41,12 +41,11 @@ function Change() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function ChangeExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <Change />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

@@ -91,19 +91,19 @@ it('an Escape outside the player (another layer has it) does not close Now Playi
 it('keeps the open album across the compact boundary, both ways', async () => {
   await act(async () => root.render(<AppleMusic initialSection="albums" initialAlbum="neon-tidewater" />));
   await settle();
-  // Wide: the SplitView, with the album pushed over Albums.
-  expect(element.querySelector('[data-slot="split-view-stack"]')?.getAttribute('data-depth')).toBe('2');
+  // Wide: the SplitView, with the album pushed over Albums on the detail column's NavigationStack.
+  const detailPages = () => [...element.querySelectorAll('[data-slot="split-view-detail"] [data-slot="navigation-stack-page"]')];
+  expect(detailPages()).toHaveLength(2);
   expect(albumTitle()).toContain('Neon Tidewater');
 
   await resize(390, 844);
-  expect(element.querySelector('[data-slot="split-view-stack"]')).toBeNull();
+  expect(element.querySelector('[data-slot="split-view"]')).toBeNull();
   const tab = element.querySelector('[role="tab"][aria-selected="true"]');
   expect(tab?.textContent).toContain('Library');
   expect(albumTitle()).toContain('Neon Tidewater');
 
   await resize(1200);
-  const stack = element.querySelector('[data-slot="split-view-stack"]');
-  expect(stack?.getAttribute('data-depth')).toBe('2');
-  expect(element.querySelector('[data-slot="split-view-item"][data-selected]')?.textContent).toContain('Albums');
+  expect(detailPages()).toHaveLength(2);
+  expect(element.querySelector('[data-slot="split-view-item"][data-current]')?.textContent).toContain('Albums');
   expect(albumTitle()).toContain('Neon Tidewater');
 });

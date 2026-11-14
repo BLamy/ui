@@ -5,7 +5,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { HoverCardHeader } from '@/components/ui/hover-card';
 import { Tree, type TreeNode } from '@/components/ui/tree';
-import type { MiniGroup, MiniSequence, MiniStep, StrudelArg, StrudelSong, StrudelTrack } from '@/components/ui/strudel-syntax';
+import type { MiniGroup, MiniSequence, MiniStep, StrudelArg, StrudelSong, StrudelTrack } from '@brett_lamy/docstream/strudel';
 import { cn } from '@/lib/utils';
 
 type Mini = Extract<StrudelArg, { kind: 'mini' }>;

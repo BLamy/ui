@@ -81,7 +81,7 @@ export function NoteEditor({ notes, n, source, format, editorRef }: {
       <MarkdownEditor key={n.id} ref={editorRef} value={n.body} variant="ghost" toolbar={format} aria-label={`${info.name} note`}
         demoResolver={demos.resolver} demoVFS={demos.vfs} demoRuntime={demos.runtime}
         resolveAsset={project.resolveAsset} pickFile={project.pickFile} onDropEmbeds={project.onDropEmbeds}
-        placeholder="Start writing…" minHeight="60vh" onKeyDown={onSaveKey}
+        placeholder="Start writing…" minHeight="60vh" handleKeyDown={onSaveKey}
         onValueChange={(markdown) => {
           if (markdown !== n.body) notes.edit(n.id, markdown);
         }}

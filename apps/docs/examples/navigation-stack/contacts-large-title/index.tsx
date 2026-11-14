@@ -94,7 +94,7 @@ function ContactsLargeTitle() {
           </NavigationStackContent>
         </NavigationStackPage>
         {open ? (
-          <NavigationStackPage value="detail" grouped>
+          <NavigationStackPage value="detail" variant="grouped">
             <NavigationStackBar hideOnScroll={false}>
               {/* the bar title fades in once the header scrolls away */}
               <NavigationStackTitle showOnScroll>

@@ -1,0 +1,12 @@
+{
+  "name": "swap",
+  "title": "Swap",
+  "description": "Content that changes in place, keyed by value: the slide effect moves the leaving view out and the next one in, in the direction of travel, and the pop effect shrinks and blurs one glyph out as the next grows in. The leaving view is hidden from assistive technology and focus while it exits.",
+  "page": "swap",
+  "exports": [
+    "Swap"
+  ],
+  "imports": [
+    "Swap"
+  ]
+}

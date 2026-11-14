@@ -1,0 +1,27 @@
+{
+  "name": "date-input",
+  "title": "DateInput",
+  "description": "Segmented date and time inputs: UI SDK's Date Input and Time Input, each part of the value its own spin-button input, in the kit's filled field. Values are ISO strings; a Field wires the label, description and error.",
+  "page": "date-input",
+  "exports": [
+    "DateInput",
+    "DateInputSegment",
+    "TimeInput",
+    "TimeInputSegment",
+    "dateInputVariants",
+    "createDateInputController",
+    "createTimeInputController"
+  ],
+  "imports": [
+    "DateInput",
+    "TimeInput"
+  ],
+  "types": [
+    "DateInputProps",
+    "TimeInputProps",
+    "DateInputController",
+    "TimeInputController",
+    "DateInputSegmentData",
+    "DateInputState"
+  ]
+}

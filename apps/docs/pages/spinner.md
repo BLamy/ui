@@ -111,7 +111,7 @@ Under `prefers-reduced-motion` the loaders hold a still frame (at 85% opacity, s
 | `size` | `22` (`ios`) / `32` | Width and height in px; 12–160 for the loaders. |
 | `speed` | `1` | Playback rate of the loaders, 0.25–3. |
 | `paused` | `false` | Hold it still (any animation, `ios` included). |
-| `label` | — | Makes it a `role="status"` named by the label, with the label as visually hidden text (what the live region announces); without it the spinner is `aria-hidden`. |
+| `label` (or `aria-label`) | — | Makes it a `role="status"` named by the label, with the label as visually hidden text (what the live region announces); without it the spinner is `aria-hidden`. |
 | `className` / `style` | — | Merged onto the root `span`; set the colour with a `text-*` class or `color`. |
 | `ref`, DOM props | — | Passed to the root `span` (`id`, `data-*`, `aria-*`, events). |
 

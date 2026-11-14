@@ -1,5 +1,5 @@
 'use client';
-import { createContext, use, useId, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
+import { createContext, use, useId, type ComponentProps, type ReactNode } from 'react';
 import {
   Slider as SdkSlider, SliderControl as SdkSliderControl, SliderIndicator as SdkSliderIndicator,
   SliderThumb as SdkSliderThumb, SliderTrack as SdkSliderTrack, SliderValue as SdkSliderValue,
@@ -29,20 +29,21 @@ import { Label } from '@/components/ui/label';
      </SliderControl>
    </Slider> */
 
-/** Root layout plus the tone's track / fill colors (as --bl-slider-* knobs the track and thumb read). */
+/** Root layout plus the variant's track / fill colors, as the `--bl-slider-track`, `--bl-slider-fill` and
+    `--bl-slider-thumb` knobs the parts read. Set a knob yourself for any other color:
+    `className="[--bl-slider-fill:var(--success)]"`. */
 export const sliderVariants = cva('group grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 data-disabled:opacity-40', {
   variants: {
-    tone: {
+    variant: {
       default: '',
-      onDark: '[--bl-slider-track:--alpha(white/22%)] [--bl-slider-fill:--alpha(white/88%)]',
-      onLight: '[--bl-slider-track:--alpha(black/14%)] [--bl-slider-fill:--alpha(black/72%)]',
+      'on-dark': '[--bl-slider-track:--alpha(white/22%)] [--bl-slider-fill:--alpha(white/88%)]',
+      'on-light': '[--bl-slider-track:--alpha(black/14%)] [--bl-slider-fill:--alpha(black/72%)]',
     },
-    size: { default: '', sm: '' },
   },
-  defaultVariants: { tone: 'default', size: 'default' },
+  defaultVariants: { variant: 'default' },
 });
 
-export type SliderTone = 'default' | 'onDark' | 'onLight';
+export type SliderVariant = 'default' | 'on-dark' | 'on-light';
 
 export type SliderProps<Value extends number | number[] = number | number[]> = ComponentProps<typeof SdkSlider<Value>> & {
   /** A visible label. It names the thumb (or, for a range, the group). */
@@ -51,18 +52,12 @@ export type SliderProps<Value extends number | number[] = number | number[]> = C
   showValue?: boolean;
   /** Names for a range's thumbs, in order (default "Minimum" and "Maximum"). */
   thumbLabels?: string[];
-  /** Color scheme of the track, fill and thumb. `default`: the tint on the fill color. `onDark`: translucent
-      white for media controls over artwork or dark glass (Music's scrubber and volume). `onLight`: translucent
-      black for light imagery. Fine-tune any of them with `trackColor` / `fillColor` / `thumbColor`. */
-  tone?: SliderTone | null;
+  /** The look of the track and fill. `default`: the tint on the fill color. `on-dark`: translucent white for media
+      controls over artwork or dark glass (Music's scrubber and volume). `on-light`: translucent black for light
+      imagery. */
+  variant?: SliderVariant | null;
   /** `default`: the 26px iOS thumb. `sm`: a 12px thumb on a 20px-tall hit area that grows while dragging (scrubbers). */
   size?: 'default' | 'sm' | null;
-  /** Any CSS color for the unfilled track. */
-  trackColor?: string;
-  /** Any CSS color for the filled part. */
-  fillColor?: string;
-  /** Any CSS color for the thumb. */
-  thumbColor?: string;
 };
 
 type SliderName = { 'aria-label'?: string; 'aria-labelledby'?: string };
@@ -74,8 +69,7 @@ const thumbName = (count: number, index: number, labels?: string[]) =>
   labels?.[index] ?? (count === 2 ? ['Minimum', 'Maximum'][index] : `Thumb ${index + 1}`);
 
 export function Slider<Value extends number | number[] = number | number[]>({
-  className, style, label, showValue, thumbLabels, children, tone = 'default', size = 'default',
-  trackColor, fillColor, thumbColor, id, 'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy, ...props
+  className, label, showValue, thumbLabels, children, variant = 'default', size = 'default', id, 'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy, ...props
 }: SliderProps<Value>) {
   const generatedId = useId();
   const rootId = id ?? generatedId;
@@ -85,20 +79,13 @@ export function Slider<Value extends number | number[] = number | number[]>({
   // A range is a group, which takes the name, around thumbs with names of their own.
   const shape = props.value ?? props.defaultValue;
   const range = Array.isArray(shape) && shape.length > 1;
-  // Caller-picked colors are runtime values, fed in as the --bl-slider-* knobs.
-  const knobs = {
-    ...(trackColor ? { '--bl-slider-track': trackColor } : null),
-    ...(fillColor ? { '--bl-slider-fill': fillColor } : null),
-    ...(thumbColor ? { '--bl-slider-thumb': thumbColor } : null),
-  } as CSSProperties;
   return (
     <SliderNameContext value={range ? null : name}>
       <SdkSlider<Value>
         id={rootId}
-        data-tone={tone === 'default' ? undefined : tone}
+        data-variant={variant === 'default' ? undefined : variant}
         data-size={size === 'default' ? undefined : size}
-        className={cx(sliderVariants({ tone, size }), className)}
-        style={typeof style === 'function' ? (state) => ({ ...knobs, ...style(state) }) : { ...knobs, ...style }}
+        className={cx(sliderVariants({ variant }), className)}
         {...(range ? name : null)}
         {...props}
       >
@@ -170,7 +157,8 @@ export function SliderThumb({ className, 'aria-label': ariaLabel, 'aria-labelled
           'size-[26px] rounded-full bg-[var(--bl-slider-thumb,white)] shadow-[0_1px_4px_--alpha(black/28%),0_0_1px_--alpha(black/22%)] outline-none',
           'group-data-[size=sm]:size-3 group-data-[size=sm]:shadow-[0_0_0_.5px_--alpha(black/18%),0_1px_2px_--alpha(black/18%)] group-data-[size=sm]:data-dragging:scale-150',
           'transition-[scale,box-shadow] duration-spring-snappy ease-spring-snappy data-dragging:scale-110 motion-reduce:transition-none',
-          'has-focus-visible:shadow-[0_1px_4px_--alpha(black/28%),0_0_0_4px_color-mix(in_oklab,var(--primary)_45%,transparent)]',
+          // The kit's solid focus ring (the native range input inside takes focus).
+          'has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background',
         ],
         className,
       )}

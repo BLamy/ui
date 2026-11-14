@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Filmstrip, type FilmstripFrame } from '@/components/ui/filmstrip';
 import { VideoTimeline, type TimelineMediaInfo } from '@/components/ui/video-timeline';
@@ -108,17 +108,17 @@ function TimelineDemo({ zoom, time, fps, snap, readOnly, initial = TIMELINE, sel
   useEffect(() => { clock.setDuration(duration); }, [clock, duration]);
   useEffect(() => { clock.seek(time); }, [clock, time]);
   return (
-    <VideoTimeline className="h-full" value={timeline} onValueChange={setTimeline} readOnly={readOnly} media={MEDIA} clock={clock} fps={fps}
+    <VideoTimeline className="h-full" value={timeline} onValueChange={setTimeline} readOnly={readOnly} media={MEDIA} playback={clock} fps={fps}
       selectedClips={selection} onSelectedClipsChange={setSelection} zoom={zoom} snap={snap}
       clipClassName={(clip) => (isTitle(clip) ? 'border-chart-5/55 bg-chart-5/25' : undefined)}
       renderClip={(clip, track) => <ClipBody clip={clip} track={track} />} />
   );
 }
 
-/** The timeline is a container: the page's width, 300 px tall. */
-function Frame({ dark, children }: { dark?: boolean; children: ReactNode }) {
+/** The timeline is a container: the page's width (or `width` px), 300 px tall. */
+function Frame({ dark, width, children }: { dark?: boolean; width?: number; children: ReactNode }) {
   return (
-    <div className="relative h-[300px] w-full overflow-hidden">
+    <div className="relative h-[300px] w-(--w,100%) overflow-hidden" style={width ? ({ '--w': `${width}px` } as CSSProperties) : undefined}>
       <BLProvider dark={dark}>{children}</BLProvider>
     </div>
   );
@@ -132,7 +132,7 @@ const meta: Meta<Args> = {
     time: { control: { type: 'range', min: 0, max: 12, step: 0.1 } },
     fps: { control: 'inline-radio', options: [24, 25, 30, 60] },
   },
-  decorators: [(Story, ctx) => <Frame dark={!!ctx.parameters.dark}><Story /></Frame>],
+  decorators: [(Story, ctx) => <Frame dark={!!ctx.parameters.dark} width={ctx.parameters.width}><Story /></Frame>],
   render: (args) => <TimelineDemo {...args} />,
 };
 export default meta;
@@ -153,3 +153,10 @@ export const LockedTrack: Story = { render: (args) => <TimelineDemo {...args} in
 export const ReadOnly: Story = { args: { readOnly: true } };
 
 export const Dark: Story = { parameters: { dark: true } };
+
+/** In a compact container (a phone's width) the headers fold to 56 px: the track's short name on a button whose menu
+    holds Hide, Mute and Lock, so the lanes keep the room. */
+export const Compact: Story = { parameters: { width: 390 } };
+
+/** Compact, in dark. */
+export const CompactDark: Story = { parameters: { width: 390, dark: true } };

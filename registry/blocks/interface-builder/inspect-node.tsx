@@ -3,7 +3,7 @@
    box's fill, corners, border, shadow and opacity. Connections: Interface Builder's, in React terms — the outlet
    (a ref), the first responder (autoFocus, and the commands it handles), and the events it sends (its actions). */
 import type { ReactNode } from 'react';
-import { FontPicker } from '@/components/ui/font-picker';
+import { FontPicker, FontPickerContent, FontPickerTrigger } from '@/components/ui/font-picker';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
@@ -80,17 +80,10 @@ function FontInput({ label, value, systemLabel, onChange, onPreview }: {
   label: string; value: string | null; systemLabel: string; onChange: (v: string | null) => void; onPreview: (f: string | null | undefined) => void;
 }) {
   return (
-    <FontPicker
-      aria-label={label}
-      value={value}
-      systemLabel={systemLabel}
-      onValueChange={onChange}
-      onPreview={onPreview}
-      size="sm"
-      side="left"
-      align="start"
-      className="h-7 rounded-md bg-secondary px-2 text-footnote hover:bg-secondary-strong"
-    />
+    <FontPicker aria-label={label} value={value} systemLabel={systemLabel} onValueChange={onChange} onPreview={onPreview}>
+      <FontPickerTrigger size="sm" className="h-7 rounded-md bg-secondary px-2 text-footnote hover:bg-secondary-strong" />
+      <FontPickerContent side="left" align="start" />
+    </FontPicker>
   );
 }
 
@@ -244,7 +237,8 @@ function SizeRow({ label, value, onChange, ctx }: { label: string; value: Sizing
           aria-label={`${label} sizing`}
           value={mode}
           onValueChange={(m) => m && onChange(m === 'fixed' ? 120 : (m as Sizing))}
-          className="flex-1 [&_[role=radio]]:px-1 [&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption"
+          size="sm"
+          className="flex-1"
         >
           <SegmentedItem value="fit">Fit</SegmentedItem>
           <SegmentedItem value="fill">Fill</SegmentedItem>
@@ -260,7 +254,7 @@ function SizeRow({ label, value, onChange, ctx }: { label: string; value: Sizing
 
 function IconChoice<T extends string>({ value, options, onChange, label }: { value: T; options: { id: T; icon: string; label: string }[]; onChange: (v: T) => void; label: string }) {
   return (
-    <Segmented<T> aria-label={label} value={value} onValueChange={(v) => v && onChange(v)} className="[&_[role=radio]]:py-[4px]">
+    <Segmented<T> aria-label={label} value={value} onValueChange={(v) => v && onChange(v)} size="sm">
       {options.map((o) => (
         <SegmentedItem key={o.id} value={o.id} aria-label={o.label} title={o.label}>
           <Icon name={o.icon} size={14} sw={2} className="mx-auto" />

@@ -87,11 +87,11 @@ The group is `role="radiogroup"` and each `Radio` a `<button>` with the `radio` 
 
 ### RadioIndicator
 
-The white dot inside a checked radio; it has `data-starting-style` / `data-ending-style` as it comes and goes.
+The dot inside a checked radio (`bg-primary-foreground`); it has `data-starting-style` / `data-ending-style` as it comes and goes.
 
 ## Styling
 
-`data-slot="radio-group"`, `"radio"` and `"radio-indicator"`. A radio carries `data-checked` / `data-unchecked`, `data-disabled`, `data-readonly` and `data-required`; pressed is `active:` and keyboard focus `focus-visible:`. Invalid is `aria-invalid` (which a Field writes) on the radio or the group. `radioGroupVariants({ orientation })` and `radioVariants()` return the class lists.
+`data-slot="radio-group"` (with `data-orientation`), `"radio"` and `"radio-indicator"`. The unchecked ring is `border-control-border`, 3:1 against the surface in light and dark, and keyboard focus draws the kit's solid focus ring. A radio carries `data-checked` / `data-unchecked`, `data-disabled`, `data-readonly` and `data-required`; pressed is `active:` and keyboard focus `focus-visible:`. Invalid is `aria-invalid` (which a Field writes) on the radio or the group. `radioGroupVariants({ orientation })` and `radioVariants()` (one look, no variants) return the class lists.
 
 ## cva recipes
 
@@ -117,7 +117,7 @@ group flex
 Defined in `@/components/ui/radio-group`. Base classes:
 
 ```text
-[ 'box-border grid size-[22px] shrink-0 cursor-pointer rounded-full border-[1.5px] border-tertiary-foreground bg-transparent p-0 outline-none', 'transition-[border-width,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'data-checked:border-[7px] data-checked:border-primary', 'active:not-data-disabled:scale-90 focus-visible:ring-[3px] focus-visible:ring-ring/45', // Invalid: the radio itself (`aria-invalid`, which a Field writes on its control) or the group around it. 'aria-invalid:border-destructive group-aria-invalid:border-destructive', 'data-disabled:cursor-default data-disabled:opacity-40', ]
+[ 'box-border grid size-[22px] shrink-0 cursor-pointer rounded-full border-[1.5px] border-control-border bg-transparent p-0', 'transition-[border-width,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'data-checked:border-[7px] data-checked:border-primary', 'active:not-data-disabled:scale-90', pressableFocusRing, // Invalid: the radio itself (`aria-invalid`, which a Field writes on its control) or the group around it. 'aria-invalid:border-destructive group-aria-invalid:border-destructive', 'data-disabled:cursor-default data-disabled:opacity-40', ]
 ```
 
 No variants.

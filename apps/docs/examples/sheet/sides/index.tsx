@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { Listbox, ListboxItem } from '@/components/ui/list-box'
+import { Listbox, ListboxItem } from '@/components/ui/listbox'
 import {
   Sheet,
   SheetBackdrop,

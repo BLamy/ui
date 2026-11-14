@@ -2,16 +2,14 @@ import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { animateIn, type ChangeDetails } from '@ui-sdk/core';
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@ui-sdk/react/command';
-import { MenuContent } from '@ui-sdk/react/menu';
 import type { PopoverOpenChangeReason } from '@ui-sdk/react/popover';
 import { registerShortcut } from '@ui-sdk/react/shortcuts';
 import { Toggle as SdkToggle, ToggleGroup } from '@ui-sdk/react/toggle';
 import { cva } from 'class-variance-authority';
 import { motion } from 'framer-motion';
-import { useSurfacePalette, WbPopoverContent, wbPopoverSurface } from '@/components/ui/composer/composer-popover';
-import { ComposerButton, ComposerPillLabel } from '@/components/ui/composer/composer';
-import { DropdownMenu, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Popover, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
+import { ComposerPill } from '@/components/ui/composer/composer';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@ui-sdk/react/button';
 import { changeDetails } from '@/lib/change-details';
 import { useControllableChange } from '@/lib/controllable-state';
@@ -37,8 +35,8 @@ export type ModelPickerValueChangeReason = 'item-press' | 'shortcut';
 /** Why the favorites changed: a row's star, or Shift+Enter on the highlighted row. */
 export type ModelPickerFavoritesChangeReason = 'star-press' | 'shortcut';
 
-type Side = React.ComponentProps<typeof WbPopoverContent>['side'];
-type Align = React.ComponentProps<typeof WbPopoverContent>['align'];
+type Side = React.ComponentProps<typeof PopoverContent>['side'];
+type Align = React.ComponentProps<typeof PopoverContent>['align'];
 
 export interface ModelPickerProps {
   models: ModelOption[];
@@ -107,7 +105,6 @@ function SlideIn({ travel, children }: { travel: number; children: React.ReactNo
 
 /** "Legacy models": a row that opens the older models beside the picker. */
 function LegacyMenu({ legacy, value, providerOf, onPick }: { legacy: ModelOption[]; value: string; providerOf: (m?: ModelOption) => ModelProvider | undefined; onPick: (id: string, event?: Event) => void }) {
-  const palette = useSurfacePalette();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex w-full cursor-pointer items-center gap-2 rounded-[9px] border-0 bg-transparent px-2.5 py-2 text-left font-sans text-footnote text-foreground outline-none hover:bg-secondary focus-visible:bg-secondary data-open:bg-secondary">
@@ -116,15 +113,7 @@ function LegacyMenu({ legacy, value, providerOf, onPick }: { legacy: ModelOption
         <span className="text-caption text-tertiary-foreground">{legacy.length} models</span>
         <Icon name="chevron-right-wide" size={12} sw={2.4} className="text-tertiary-foreground" />
       </DropdownMenuTrigger>
-      <MenuContent
-        ref={palette.ref}
-        side="right"
-        align="end"
-        sideOffset={4}
-        data-theme-scope={palette['data-theme-scope']}
-        className={cn(wbPopoverSurface, palette.className, 'min-w-[220px] p-1')}
-        style={palette.style}
-      >
+      <DropdownMenuContent size="sm" side="right" align="end" sideOffset={4} palette="trigger" className="min-w-[220px]">
         <DropdownMenuRadioGroup value={value} onValueChange={(id, details) => id && onPick(id, details.event)}>
           {legacy.map((m) => (
             <DropdownMenuRadioItem key={m.id} value={m.id} label={m.name} closeOnSelect icon={<span className="text-caption text-muted-foreground">{providerOf(m)?.icon}</span>}>
@@ -132,7 +121,7 @@ function LegacyMenu({ legacy, value, providerOf, onPick }: { legacy: ModelOption
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
-      </MenuContent>
+      </DropdownMenuContent>
     </DropdownMenu>
   );
 }
@@ -235,15 +224,17 @@ export function ModelPicker({
       }}
     >
       <PopoverTrigger
-        render={<ComposerButton variant="pill" tint={tint} aria-label={`Model: ${current?.name ?? 'none'}`} className={className} />}
+        render={<ComposerPill icon={triggerIcon} aria-label={`Model: ${current?.name ?? 'none'}`} className={cn(tint && 'text-primary', className)} />}
       >
-        <ComposerPillLabel icon={triggerIcon}>{current?.name ?? 'Choose model'}</ComposerPillLabel>
+        {current?.name ?? 'Choose model'}
       </PopoverTrigger>
-      <WbPopoverContent
+      <PopoverContent
+        variant="surface"
+        palette="trigger"
         side={side}
         align={align}
         initialFocus={() => searchRef.current}
-        className={cn('w-[370px] max-w-[calc(100vw-24px)] overflow-hidden p-0', popoverClassName)}
+        className={cn('w-[370px] max-w-[calc(100cqw-24px)] overflow-hidden p-0', popoverClassName)}
       >
         {/* The popup's name (UI SDK points `aria-labelledby` at the title, over the trigger's "Model: …"). */}
         <PopoverTitle className="sr-only">Choose a model</PopoverTitle>
@@ -372,7 +363,7 @@ export function ModelPicker({
             </div>
           ) : null}
         </div>
-      </WbPopoverContent>
+      </PopoverContent>
     </Popover>
   );
 }

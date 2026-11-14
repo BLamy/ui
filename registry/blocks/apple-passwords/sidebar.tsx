@@ -35,11 +35,11 @@ export function Sidebar({ vault, onOpenService }: { vault: Vault; onOpenService:
         </div>
         <SplitViewSection title="Shared Groups" className="mt-2">
           {GROUPS.map((g) => (
-            <SplitViewItem key={g.id} id={'group:' + g.id}
+            <SplitViewItem key={g.id} value={'group:' + g.id}
               icon={<Icon name="people" size={20} />}
               title={g.name}
-              subtitle={g.members.map((m) => m.f).join(', ')}
-              badge={vault.accounts.filter((a) => a.group === g.id).length}
+              description={g.members.map((m) => m.f).join(', ')}
+              trailing={vault.accounts.filter((a) => a.group === g.id).length}
               preview={<GroupPreview group={g} vault={vault} />} />
           ))}
         </SplitViewSection>
@@ -61,7 +61,7 @@ export function Sidebar({ vault, onOpenService }: { vault: Vault; onOpenService:
 /** A category: a card that fills with the accent when selected. A SplitViewItem, so it selects (or pushes) like a row. */
 function Tile({ id, label, icon, color, count }: { id: CategoryId; label: string; icon: IconName; color: string; count: number }) {
   return (
-    <SplitViewItem id={id}
+    <SplitViewItem value={id}
       className={cn(
         'min-h-0 flex-col items-stretch gap-2 rounded-panel p-2.5',
         'transition-[background-color,scale,box-shadow] duration-spring-snappy ease-spring-snappy active:scale-[.97]',
@@ -69,7 +69,7 @@ function Tile({ id, label, icon, color, count }: { id: CategoryId; label: string
         'data-selected:bg-primary data-selected:text-primary-foreground data-selected:shadow-none data-selected:hover:bg-primary data-selected:active:bg-primary',
       )}>
       <span className="flex w-full items-start justify-between">
-        <span className="grid size-[30px] place-items-center rounded-full bg-(--tile) text-white transition-colors duration-200 group-data-selected/item:bg-white group-data-selected/item:text-(--tile)"
+        <span className="grid size-[30px] place-items-center rounded-full bg-(--tile) text-white transition-colors duration-200 group-data-current/item:bg-white group-data-current/item:text-(--tile)"
           style={{ '--tile': color } as CSSProperties}>
           <Icon name={icon} size={18} weight="semibold" />
         </span>

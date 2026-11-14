@@ -7,7 +7,7 @@ import { Panel } from '../stories/primitive-frame';
 const meta: Meta<typeof RadioGroup> = {
   title: 'Molecules/RadioGroup',
   component: RadioGroup,
-  decorators: [(Story) => <Panel><Story /></Panel>],
+  decorators: [(Story, { parameters }) => <Panel dark={parameters.dark}><Story /></Panel>],
 };
 export default meta;
 type Story = StoryObj<typeof RadioGroup>;
@@ -52,4 +52,20 @@ export const Invalid: Story = {
   ),
 };
 
-export const Dark: Story = { decorators: [(Story) => <Panel dark><Story /></Panel>], render: () => plan };
+export const Dark: Story = { parameters: { dark: true }, render: () => plan };
+
+/** Disabled as a whole, and read-only (focusable, but the choice can't change). */
+export const States: Story = {
+  render: () => (
+    <div className="flex flex-col gap-5">
+      <RadioGroup aria-label="Delivery, disabled" disabled defaultValue="standard">
+        <Label variant="control"><Radio value="standard" />Standard</Label>
+        <Label variant="control"><Radio value="express" />Express</Label>
+      </RadioGroup>
+      <RadioGroup aria-label="Delivery, read-only" readOnly defaultValue="express">
+        <Label variant="control"><Radio value="standard" />Standard</Label>
+        <Label variant="control"><Radio value="express" />Express (read-only)</Label>
+      </RadioGroup>
+    </div>
+  ),
+};

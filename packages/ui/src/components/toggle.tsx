@@ -3,10 +3,12 @@ import { createContext, use, type ComponentProps } from 'react';
 import { Toggle as SdkToggle, ToggleGroup as SdkToggleGroup, ToggleIcon as SdkToggleIcon } from '@ui-sdk/react/toggle';
 import { createParts } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cx } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 import { pressableFocusRing } from '@/lib/primitives';
 import { selectionIndicator } from '@/lib/selection-indicator-primitive';
-import { segmentIndicator } from '@/components/ui/segmented';
+import {
+  segmentIndicatorSlide, segmentIndicatorVariants, segmentItemVariants, segmentTrackVariants, type SegmentSize,
+} from '@/components/ui/segmented';
 
 /* ══ Toggle — UI SDK's Toggle (a button that stays pressed) with the kit's variants ══
    `pressed` / `defaultPressed` / `onPressedChange(pressed, details)`, `disabled`, and a controller from
@@ -87,14 +89,16 @@ export function ToggleIcon({ className, ...props }: ComponentProps<typeof SdkTog
      <ToggleGroupItem value="grid">Grid</ToggleGroupItem>
    </ToggleGroup>
 
-   Items take the group's variant and size. `filled` is a tray; in one that presses one at a time, the pressed card
-   is one element that slides between items. `outline` joins the items in one hairline frame. */
+   Items take the group's variant and size. `filled` is Segmented's track (the same tray, segments and card at the
+   same `size`); in one that presses one at a time, the pressed card is one element that slides between items.
+   `outline` joins the items in one hairline frame. */
 export const toggleGroupVariants = cva('relative isolate inline-flex w-fit items-center', {
   variants: {
     variant: {
       default: 'gap-1',
       quiet: 'gap-1',
-      filled: 'gap-0.5 rounded-[11px] bg-secondary p-0.5',
+      /** Segmented's track (`segmentTrackVariants`, sized by the group's `size`). */
+      filled: '',
       /** Joined items sharing a hairline frame. */
       outline: 'gap-0 rounded-ctl shadow-hairline',
     },
@@ -109,13 +113,21 @@ const { Root: ToggleGroupIndicator } = createParts(selectionIndicator, { root: '
 
 export type ToggleGroupProps<T extends string = string> = ComponentProps<typeof SdkToggleGroup<T>> & ToggleGroupStyle;
 
+/** A toggle size as a segment size: the icon sizes are square segments of the same height. */
+const SEGMENT_SIZE: Record<ToggleSize, SegmentSize> = {
+  sm: 'sm', default: 'default', lg: 'lg', 'icon-sm': 'sm', icon: 'default', 'icon-lg': 'lg',
+};
+
 export function ToggleGroup<T extends string = string>({ className, variant, size, children, ...props }: ToggleGroupProps<T>) {
   const single = !props.multiple;
-  const indicator = variant === 'filled' && single ? (
+  const filled = variant === 'filled';
+  const segment = SEGMENT_SIZE[size ?? 'default'];
+  const indicator = filled && single ? (
     <ToggleGroupIndicator
-      className={cx(
-        segmentIndicator,
-        'top-(--selection-indicator-top) left-(--selection-indicator-left) h-(--selection-indicator-height) w-(--selection-indicator-width) rounded-[9px]',
+      className={cn(
+        segmentIndicatorSlide,
+        segmentIndicatorVariants({ size: segment }),
+        'top-(--selection-indicator-top) left-(--selection-indicator-left) h-(--selection-indicator-height) w-(--selection-indicator-width)',
       )}
     />
   ) : null;
@@ -123,7 +135,7 @@ export function ToggleGroup<T extends string = string>({ className, variant, siz
     <ToggleGroupContext value={{ variant, size, single }}>
       <SdkToggleGroup<T>
         data-variant={variant ?? 'default'}
-        className={cx(toggleGroupVariants({ variant }), className)}
+        className={cx(cn(toggleGroupVariants({ variant }), filled && segmentTrackVariants({ size: segment })), className)}
         {...props}
       >
         {typeof children === 'function' ? (state) => <>{indicator}{children(state)}</> : <>{indicator}{children}</>}
@@ -134,25 +146,32 @@ export function ToggleGroup<T extends string = string>({ className, variant, siz
 
 export type ToggleGroupItemProps = ToggleProps;
 
-/** A Toggle in the group. Its `value` is what the group's value lists while it is pressed. */
+/** A Toggle in the group. Its `value` is what the group's value lists while it is pressed. In a `filled` group it
+    is a segment (`segmentItemVariants`); when several can be pressed, each pressed one wears the card. */
 export function ToggleGroupItem({ className, variant, size, ...props }: ToggleGroupItemProps) {
   const group = use(ToggleGroupContext);
   const v = variant ?? group.variant;
+  const s = size ?? group.size ?? 'default';
+  if (v === 'filled') {
+    const segment = SEGMENT_SIZE[s];
+    const base = cn(segmentItemVariants({ size: segment }), s.startsWith('icon') && 'aspect-square flex-none px-0');
+    const card = segmentIndicatorVariants({ size: segment });
+    return (
+      <SdkToggle
+        className={(state) => cn(base, !group.single && state.pressed && card, typeof className === 'function' ? className(state) : className)}
+        {...props}
+      />
+    );
+  }
   return (
     <Toggle
-      variant={v === 'filled' ? 'default' : v}
-      size={size ?? group.size}
+      variant={v}
+      size={s}
       className={cx(
-        [
-          v === 'filled' && (group.single
-            // The sliding card draws the pressed state.
-            ? 'relative rounded-[9px] data-pressed:bg-transparent data-pressed:text-foreground data-pressed:active:not-data-disabled:bg-transparent'
-            : 'rounded-[9px] data-pressed:bg-card data-pressed:text-foreground data-pressed:shadow-[0_1px_4px_black] data-pressed:shadow-black/14 data-pressed:active:not-data-disabled:bg-card'),
-          // Joined: square inner corners, a hairline between neighbours, and the focus ring drawn inside the frame.
-          v === 'outline' && [
-            'rounded-none shadow-none not-first:shadow-[inset_1px_0_0_var(--border)] data-pressed:shadow-none data-pressed:not-first:shadow-[inset_1px_0_0_var(--border)]',
-            'first:rounded-s-ctl last:rounded-e-ctl focus-visible:z-10 focus-visible:ring-offset-0 focus-visible:ring-inset',
-          ],
+        // Joined: square inner corners, a hairline between neighbours, and the focus ring drawn inside the frame.
+        v === 'outline' && [
+          'rounded-none shadow-none not-first:shadow-[inset_1px_0_0_var(--border)] data-pressed:shadow-none data-pressed:not-first:shadow-[inset_1px_0_0_var(--border)]',
+          'first:rounded-s-ctl last:rounded-e-ctl focus-visible:z-10 focus-visible:ring-offset-0 focus-visible:ring-inset',
         ],
         className,
       )}

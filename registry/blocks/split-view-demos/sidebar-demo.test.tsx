@@ -19,7 +19,7 @@ afterEach(async () => {
 const chip = (name: string) => [...document.querySelectorAll<HTMLElement>('button[aria-pressed]')].find((b) => b.textContent === name)!;
 const pressed = () => [...document.querySelectorAll('[role=group][aria-label=Variant] [aria-pressed=true]')].map((b) => b.textContent);
 
-it('picks one variant at a time (a ToggleGroup) and toggles the narrow container on its own', async () => {
+it('picks one variant and one presentation at a time (ToggleGroups) and toggles the narrow container on its own', async () => {
   host = document.body.appendChild(document.createElement('div'));
   root = createRoot(host);
   await act(async () => root!.render(<SidebarDemo />));
@@ -32,5 +32,11 @@ it('picks one variant at a time (a ToggleGroup) and toggles the narrow container
   expect(chip('narrow container').getAttribute('aria-pressed')).toBe('false');
   await act(async () => chip('narrow container').click());
   expect(chip('narrow container').getAttribute('aria-pressed')).toBe('true');
+  expect(pressed()).toEqual(['rail']);
+  // Presentation is a second, independent choice.
+  const presentation = () => [...document.querySelectorAll('[role=group][aria-label=Presentation] [aria-pressed=true]')].map((b) => b.textContent);
+  expect(presentation()).toEqual(['auto']);
+  await act(async () => chip('drawer').click());
+  expect(presentation()).toEqual(['drawer']);
   expect(pressed()).toEqual(['rail']);
 });

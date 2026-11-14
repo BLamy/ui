@@ -1,6 +1,6 @@
 # VideoTimeline
 
-A video editor's timeline. A ruler you scrub sits over one lane per track, each behind a header that hides, mutes or locks it. On a lane are clips, UI SDK spans (`createSpans`): drag one along its track or to another track, drag an edge to trim it, and watch the playhead run over them. The main track is **magnetic**: its clips butt end to end, so trimming or removing one closes the gap, and dragging one makes room among the others. Moves and trims land on frames and snap to clip edges and the playhead. It edits a plain `Timeline` value, a model of pure functions you can also drive from code, and the same value plays live in [VideoPreview](https://blamy.github.io/ui/#/video-preview) and renders with [FFmpeg](https://blamy.github.io/ui/#/ffmpeg).
+A video editor's timeline. A ruler you scrub sits over one lane per track, each behind a header that hides, mutes or locks it. On a lane are clips, UI SDK spans (`createSpans`): drag one along its track or to another track, drag an edge to trim it, and watch the playhead run over them. The main track is **magnetic**: its clips butt end to end, so trimming or removing one closes the gap, and dragging one makes room among the others. Moves and trims land on frames and snap to clip edges and the playhead. It edits a plain `Timeline` value, a model of pure functions you can also drive from code, and the same value plays live in [VideoPreview](https://blamy.github.io/ui/#/video-preview) and renders with [FFmpeg](https://blamy.github.io/ui/#/ffmpeg). For a strip of frames or a waveform on its own (a media library's thumbnails), use [Filmstrip](https://blamy.github.io/ui/#/filmstrip) or [Waveform](https://blamy.github.io/ui/#/waveform); for one clip's in and out points, a range [Slider](https://blamy.github.io/ui/#/slider) is enough.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -40,21 +40,21 @@ import { VideoTimeline } from '@/components/ui/video-timeline'
 import { usePlaybackClock } from '@/lib/playback'
 import { timelineDuration } from '@/lib/video-timeline-model'
 
-const clock = usePlaybackClock()
+const playback = usePlaybackClock()
 const [timeline, setTimeline] = useState(start)
-useEffect(() => clock.setDuration(timelineDuration(timeline)), [clock, timeline])
+useEffect(() => playback.setDuration(timelineDuration(timeline)), [playback, timeline])
 
 <VideoTimeline
   value={timeline}
   onValueChange={setTimeline}
-  clock={clock}
+  playback={playback}
   fps={30}
   media={{ beach: { kind: 'video', duration: 12, name: 'Beach' } }}
   renderClip={(clip) => <Filmstrip frames={frames[clip.media]} from={clip.in} to={clip.out} />}
 />
 ```
 
-`media` gives each media id its length (a trim can't run past the end of the file; stills have no limit) and the name a clip shows. `selectedClips` / `defaultSelectedClips` / `onSelectedClipsChange(ids, details)` (reasons `item-press`, `track-press`, `escape-key`, `remove-press`) and `zoom` / `defaultZoom` / `onZoomChange(zoom, details)` (pixels per second, reason `wheel`) can be controlled; `readOnly` shows the edit without letting anything change it; `fitTimelineZoom(duration, width)` fits an edit to a width. `onDropMedia(id, details)` reports media dragged in from a library: put `timelineMediaType` on the drag with the media id. `details` has where it landed (`trackId`, `time` and, on a magnetic track, `index`), the drop's `event` and `source`, and `cancel()` to refuse it. ⌘/Ctrl + wheel zooms with `reason: 'wheel'`; a zoom the host refuses leaves the scroll where it was.
+`media` gives each media id its length (a trim can't run past the end of the file; stills have no limit) and the name a clip shows. `selectedClips` / `defaultSelectedClips` / `onSelectedClipsChange(ids, details)` (reasons `item-press`, `track-press`, `escape-key`, `remove-press`) and `zoom` / `defaultZoom` / `onZoomChange(zoom, details)` (pixels per second, reason `wheel`) can be controlled; `readOnly` shows the edit without letting anything change it; `fitTimelineZoom(duration, width, { headerWidth })` fits an edit to a width. `onDropMedia(id, details)` reports media dragged in from a library: put `timelineMediaType` on the drag with the media id. `details` has where it landed (`trackId`, `time` and, on a magnetic track, `index`), the drop's `event` and `source`, and `cancel()` to refuse it. ⌘/Ctrl + wheel zooms with `reason: 'wheel'`; a zoom the host refuses leaves the scroll where it was.
 
 ## The model
 
@@ -111,15 +111,29 @@ The behavior is a UI SDK primitive, `videoTimeline` in `lib/video-timeline-primi
 
 ## Rendering
 
-`renderTimeline(ffmpeg, timeline, media, { width, height, fps }, { container, quality })` renders the timeline to a file with [FFmpeg](https://blamy.github.io/ui/#/ffmpeg) and returns a Blob, reporting progress as it goes. `buildRender` returns the command without running it. Each clip is an input, seeked to its in point and cut to its length. Each picture is fitted into its frame, given its look and fades, and laid over the background at its time, bottom track first, so a transition is the incoming clip's fade-in over the outgoing one. Each sound is retimed (`atempo`), levelled, faded, delayed to its start and mixed.
+The timeline renders to a file with FFmpeg in the browser: see [Rendering a timeline](https://blamy.github.io/ui/#/ffmpeg) on the FFmpeg page.
 
-| `container` | Holds | Plays |
+## API
+
+| Prop | Default | Effect |
 | --- | --- | --- |
-| `webm` | VP8 and Opus | in every browser |
-| `mp4` | MPEG-4 Part 2 and AAC | in QuickTime, VLC, phones and editors, but not in Chrome or Firefox (H.264 needs an encoder this LGPL build doesn't have) |
-| `gif` | A palette per render, up to 480 px wide at 15 fps | everywhere, without sound |
-| `mp3`, `wav` | The soundtrack | everywhere |
+| `value` / `defaultValue` / `onValueChange(value, details)` | — | The edit; `details` has `reason`, `id`, `action` and `cancel()`. Once per gesture or key. |
+| `playback` | required | The shared clock (`usePlaybackClock`) the playhead and the ruler follow. |
+| `media` | `{}` | Each media id's `duration`, `kind` and `name`. |
+| `fps` | `30` | Frames per second: edits land on frames. |
+| `selectedClips` / `defaultSelectedClips` / `onSelectedClipsChange` | `[]` | The selection. |
+| `zoom` / `defaultZoom` / `onZoomChange` | `60` | Pixels per second. |
+| `readOnly` | `false` | Show the edit without changing it. |
+| `renderClip(clip, track, { width, selected })` | the clip's name | A clip's content: a `Filmstrip`, a `Waveform`, a title. |
+| `clipClassName(clip, track)` | primary for video, success for audio | A clip's tint classes. |
+| `trackHeight(track)` | 64 magnetic video, 44 video, 40 audio | Lane height in px. |
+| `headerWidth` | 132, or 56 in a compact container | Track header width in px. In a compact container the header is the track's short name on a button whose menu holds Hide, Mute and Lock. |
+| `onDropMedia(id, details)` | — | Media dragged in with `timelineMediaType`. |
+| `aria-label` | "Timeline" | Names the timeline. |
+| `className` / `style` | — | On the root. |
+
+The playhead and its handle are `bg-playhead`, the destructive red unless a theme sets `--playhead`.
 
 ## Accessibility
 
-The timeline is a group of track groups. Each clip is a button whose name says what it is and where it sits ("Beach, 0:03.5 to 0:08.5"), and `aria-pressed` says whether it's selected; the clips share one Tab stop (UI SDK's roving focus). Moves, trims and removals are announced through UI SDK's live region. The ruler is UI SDK's Slider, named "Playhead", whose value text is the timecode. The track toggles are toggle buttons. Thumbnails and waveforms are decorative and hidden from assistive technology.
+The timeline is a group of track groups. Each clip is a button whose name says what it is and where it sits ("Beach, 0:03.5 to 0:08.5"), and `aria-pressed` says whether it's selected; the clips share one Tab stop (UI SDK's roving focus). Moves, trims and removals are announced through UI SDK's live region. The ruler is UI SDK's Slider, named "Playhead", whose value text is the timecode. The track toggles are toggle buttons that show their state in the glyph too (a slashed eye or speaker, a closed lock), and take a 44 px hit area on touch. Thumbnails and waveforms are decorative and hidden from assistive technology.

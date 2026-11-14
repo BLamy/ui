@@ -7,7 +7,7 @@ import {
 } from '@ui-sdk/react/hover-card';
 import { popoverArrow, popoverArrowGlyph, popoverMotion, popoverSurface } from '@/lib/primitives';
 import { cn, cx } from '@/lib/utils';
-import { surfaceDescriptionVariants, surfaceTitleVariants } from '@/components/ui/dialog';
+import { surfaceDescriptionVariants, surfaceTitleVariants } from '@/lib/surface';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
 
 /* ══ HoverCard — UI SDK's Hover Card on the kit's floating surface ══
@@ -57,7 +57,7 @@ export function HoverCardContent<Payload = unknown>({
     <SdkHoverCardContent<Payload>
       data-theme-scope={scope['data-theme-scope']}
       sideOffset={sideOffset}
-      className={cx([popoverSurface, popoverMotion, 'box-border w-72 max-w-(--available-width) p-4 text-subhead', scope.className], className)}
+      className={cx([popoverSurface, popoverMotion, 'box-border w-72 max-w-(--available-width) p-4 text-subhead [--avatar-ring:var(--popover)]', scope.className], className)}
       style={scopeStyle(scope.style, style)}
       onPointerDown={contained(onPointerDown)}
       onPointerUp={contained(onPointerUp)}

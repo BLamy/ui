@@ -7,7 +7,7 @@ import { PLAYLISTS } from './data';
 import { ALBUM_ICON } from './screens';
 
 const Item = ({ id, icon, title }: { id: string; icon: IconName | readonly IconShape[]; title: string }) => (
-  <SplitViewItem id={id} title={title}
+  <SplitViewItem value={id} title={title}
     icon={typeof icon === 'string' ? <Icon name={icon} size={21} /> : <Icon shapes={icon} size={21} />} />
 );
 
@@ -32,7 +32,7 @@ export function MusicSidebar() {
         </SplitViewSection>
         <SplitViewSection title="Playlists">
           {PLAYLISTS.map((p) => (
-            <SplitViewItem key={p.id} id={'playlist:' + p.id} title={p.title} icon={<PlaylistArt playlist={p} size={24} rounded={4} />} />
+            <SplitViewItem key={p.id} value={'playlist:' + p.id} title={p.title} icon={<PlaylistArt playlist={p} size={24} rounded={4} />} />
           ))}
         </SplitViewSection>
       </SplitViewContent>

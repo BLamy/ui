@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { AssistantMessage, Conversation, ConversationComposer, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationSuggestions, MessageMarkdown, Suggestion, UserMessage } from '@/components/ui/conversation'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { AssistantMessage, Conversation, ConversationComposer, ConversationEmpty, ConversationMessages, ConversationSuggestions, MessageMarkdown, Suggestion, UserMessage } from '@/components/ui/conversation'
+import { ThemeScope } from '@/lib/theme'
 import { stripAttachmentRefs, WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
 function NewThread() {
@@ -41,12 +41,9 @@ function NewThread() {
         }}
       >
         <Conversation empty={empty}>
-          <ConversationEmpty>
-            <ConversationGreeting
+          <ConversationEmpty
               title="What are we building?"
-              description="Start a thread — ask anything about this workspace."
-            />
-          </ConversationEmpty>
+              description="Start a thread — ask anything about this workspace." />
           <ConversationMessages threadKey="new">
             {messages.map((m) =>
               m.role === 'user' ? (
@@ -77,12 +74,11 @@ function NewThread() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function NewThreadExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <NewThread />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

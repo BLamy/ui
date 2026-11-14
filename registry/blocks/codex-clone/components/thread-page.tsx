@@ -94,14 +94,14 @@ function TurnRail({
     <div className="@max-[899px]:hidden">
       <IndexBar
         variant="wave"
-        side="left"
-        label="Jump to message"
+        side="start"
+        aria-label="Jump to message"
         items={turns}
-        value={active}
+        current={active}
         previewLines={3}
         previewWidth={360}
         onJump={(id) => onJump(String(id))}
-        className="top-1/2 left-1 -translate-y-1/2"
+        className="top-1/2 bottom-auto start-1 -translate-y-1/2"
       />
     </div>
   );

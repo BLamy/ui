@@ -1,6 +1,6 @@
 'use client';
 
-export { OpenCode } from './components/open-code';
+export { OpenCode, openCodeVariants } from './components/open-code';
 export type { OpenCodeProps, OpenCodeState } from './components/open-code';
 export { DEFAULT_OPENCODE_PREVIEW_URL } from './lib/open-code-preview';
 export {

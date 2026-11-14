@@ -2,6 +2,8 @@
 
 Code you can edit, by default, and read-only code of any shape: a snippet on a docs page, inline code in a sentence, or a debugger's source pane on half a million lines. It's one component with one API, and it draws in one of two ways, because those jobs need opposite things from the page.
 
+Use a sibling when the job differs: [MarkdownEditor](https://blamy.github.io/ui/#/markdown-editor) for prose people format, [MarkdownView](https://blamy.github.io/ui/#/docstream) for rendered Markdown, the [SQL console](https://blamy.github.io/ui/#/sql-console) for a SQL box with Run, history and results, and [Terminal](https://blamy.github.io/ui/#/terminal) for a shell or a REPL.
+
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/code-editor.json{% endcommand %}
@@ -58,7 +60,7 @@ Windowed, it fills its parent when the parent has a height, and follows its cont
 
 You get the windowed renderer when it's editable, when a prop only it can honor is used, or when the text is too big to put in the page. Otherwise you get the page. `windowed` overrides that where it can: `windowed` on a read-only text always windows it, and `windowed={false}` keeps it in the page however big it is. It can't be `false` on an editor, or `true` on `variant="inline"`, and the types won't let you ask.
 
-These props mean windowed, because the page can't honor them: `lines`, `lineCount` and `getLine`, `gutters`, `onLineNumberClick`, `currentLine`, `markers`, `lineDecoration`, `scrollToLine`, a function for `highlight`, `onCopyText`, `onSelectionChange` and `maxLineLength`. Everything else works in both.
+These props mean windowed, because the page can't honor them: `lines`, `lineCount` and `getLine`, `gutters`, `lineNumbers` with an `onClick`, `currentLine`, `markers`, `lineDecoration`, `revealLine`, a function for `highlight`, `onCopyText`, `onSelectionChange` and `maxLineLength`. Everything else works in both.
 
 A read-only text goes in the page up to **5,000 lines**, **32 KB on a line** and **256 KB** in all (`MAX_PAGE_LINES`, `MAX_PAGE_LINE_LENGTH`, `MAX_PAGE_CHARS`). Those come from timing the in-page renderer in Chromium, from first render to settled colors, on a hardware GPU:
 
@@ -261,8 +263,7 @@ const gutters = useMemo(() => [
   variant="ghost"
   lines={lines}
   gutters={gutters}
-  onLineNumberClick={(event, { line }) => jumpToLine(line)}
-  lineNumberClickable={ranAtLeastOnce}
+  lineNumbers={{ onClick: (event, { line }) => jumpToLine(line), clickable: ranAtLeastOnce }}
 />
 ```
 
@@ -280,14 +281,14 @@ A stepping debugger re-renders on every step. With `gutters` memoized and the ca
 
 ### Scrolling
 
-`scrollToLine` works through a ref and a prop. `align` is `start`, `center` (the default), `end` or `nearest`, `column` scrolls sideways too, and `smooth` animates unless the reader prefers reduced motion. The prop acts when its value changes, so going back to the same line again is what the ref is for.
+The ref's `scrollToLine(line, options)` scrolls once; the `revealLine` prop brings a line into view whenever its value changes. `align` is `start`, `center` (the default), `end` or `nearest`, `column` scrolls sideways too, and `smooth` animates unless the reader prefers reduced motion. Going back to the same line again is what the ref is for.
 
 ```tsx
 const editor = useRef<CodeEditorHandle>(null)
 
 editor.current?.scrollToLine(1200, { align: 'start', smooth: true })
 
-<CodeEditor ref={editor} readOnly lines={lines} scrollToLine={{ line: 1200, column: 80 }} />
+<CodeEditor ref={editor} readOnly lines={lines} revealLine={{ line: 1200, column: 80 }} />
 ```
 
 ### Big files
@@ -387,8 +388,8 @@ The code is a list of lines, each announcing its place in the whole file with `a
 | `language` | — | `ts`, `tsx`, `json`, `bash`, … Shown as `data-language`. `text` / `plaintext` turns highlighting off. gpu-lexer works out the language itself. |
 | `variant` | `'default'` | `default`: a bordered card. `ghost`: no chrome. `inline`: a `<code>` span. |
 | `title` | — | Header title, usually a filename. It also names the code for screen readers. |
-| `showCopy` | `false` | A copy button in the header, or floating when there is no title. |
-| `lineNumbers` | depends | A line-number gutter. On in an editor and for `lines` or `getLine`, off for a read-only text. Windowed, `start` puts it first and `end` next to the code. |
+| `showCopy` | `false` | The one shorthand: a `CodeEditorCopyButton` in the header, or floating when there is no title. Compose the parts for anything else. |
+| `lineNumbers` | depends | A line-number gutter. On in an editor and for `lines` or `getLine`, off for a read-only text. Windowed, `start` puts it first and `end` next to the code. An object `{ side, onClick, clickable, label, title }` makes the numbers buttons (windowed): `onClick(event, { line, source })`, on the lines `clickable(line)` allows, named by `label(line)` (default `Line N`), with `title(line)` as a tooltip. |
 | `startLine` | `1` | Number of the first line. Line numbers everywhere use the displayed numbers. |
 | `highlightLines` | — | Lines to highlight: `[3, [7, 9], '12-14']`. |
 | `addedLines` / `removedLines` | — | Lines tinted green with a `+`, or red with a `−`. |
@@ -400,20 +401,17 @@ The code is a list of lines, each announcing its place in the whole file with `a
 | `tabSize` | `2` | Cells between tab stops. |
 | `lineHeight` | `20` windowed | Height of a line, in px. In the page it's 1.6 times the font unless you say. |
 | `appearance` | ambient | Force the token palette. It defaults to the `AppearanceProvider` value, and otherwise follows the color scheme. |
-| `contentClassName` | — | Class for the inner `<pre>` or windowed view. |
 | `gutters` | `[]` | `CodeEditorGutter[]`, in order. Memoize it. |
-| `onLineNumberClick` / `lineNumberClickable` | — | Makes line numbers buttons, on the lines you say. `onLineNumberClick(event, { line, source })`. |
-| `lineNumberLabel` / `lineNumberTitle` | `Line N` / — | Their accessible name and tooltip. |
 | `currentLine` / `currentColumn` | — | The line and column execution is on. |
 | `revealCurrentLine` | `true` | Keep the current line in view. `{ smooth: true }` animates it. |
 | `lineDecoration` | — | `(lineNumber) => { tint, className, textClassName, gutterClassName }`. |
 | `markers` | — | `CodeEditorMarker[]`, or `(lineNumber) => CodeEditorMarker[]`. |
-| `scrollToLine` | — | Scrolls when this changes: a line, or `{ line, column, align, smooth }`. |
+| `revealLine` | — | Brings this line into view when it changes: a line, or `{ line, column, align, smooth }`. |
 | `maxLineLength` | — | The widest line in cells, if you know it. Saves a pass over the file. |
 | `onCopyText` | — | `({ text, truncated })` when a selection is copied. |
 | `onSelectionChange` | — | `(selection \| null, details)`, with lines from `startLine` and columns from 0, and `details.reason`. |
 
-`className`, `style` and other `div` props go on the root. `CodeEditorContent` takes `lineNumbers` … `lineHeight` plus a `value` and `language` of its own, for the page. `CodeEditorCopyButton` takes `value`, `label` (default `"Copy code"`) and `onCopy`, and it can be used outside an editor (the GitHub clone's *Copy raw file* button is one). `codeEditorVariants` is the cva recipe.
+`className`, `style` and other `div` props go on the root. `CodeEditorContent` takes `lineNumbers` … `lineHeight` plus a `value` and `language` of its own, for the page. `CodeEditorCopyButton` is the kit's quiet `icon-sm` [Button](https://blamy.github.io/ui/#/button) (any Button prop, `variant` and `size` included): it takes `value` (default: the editor's text) and `onValueCopy(value)`, is named "Copy code" unless you pass `aria-label`, grows to a 44px target on touch screens, and works outside an editor too (the GitHub clone's *Copy raw file* button is one). To style a class of your own on the inner `<pre>` or windowed view, compose `<CodeEditorContent className=…>`. `codeEditorVariants` is the cva recipe.
 
 ### CodeEditorGutter
 
@@ -486,42 +484,6 @@ A class on `CodeEditor` changes the font and its size, and the character width f
 ## cva recipes
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
-
-### `codeEditorLineVariants`
-
-Defined in `@/components/ui/code-editor-window`. Base classes:
-
-```text
-pointer-events-none absolute inset-x-0 h-(--code-editor-line)
-```
-
-**`tint`** — default `none`
-
-| Value | Adds |
-| --- | --- |
-| `none` (default) | — |
-| `current` | `bg-primary/15 shadow-[inset_3px_0_var(--primary)]` |
-| `info` | `bg-primary/10 shadow-[inset_3px_0_color-mix(in_srgb,var(--primary)_45%,transparent)]` |
-| `success` | `bg-success/15` |
-| `warning` | `bg-warning/15` |
-| `danger` | `bg-destructive/15` |
-| `muted` | `bg-secondary` |
-
-### `codeEditorGutterCellVariants`
-
-Defined in `@/components/ui/code-editor-window`. Base classes:
-
-```text
-box-border flex h-full shrink-0 items-center overflow-hidden
-```
-
-**`align`** — default `center`
-
-| Value | Adds |
-| --- | --- |
-| `start` | `justify-start` |
-| `center` (default) | `justify-center` |
-| `end` | `justify-end` |
 
 ### `codeEditorVariants`
 

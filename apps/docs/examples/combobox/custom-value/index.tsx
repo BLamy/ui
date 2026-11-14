@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Combobox, ComboboxContent, ComboboxInput } from '@/components/ui/combobox'
+import { Combobox, ComboboxContent, ComboboxField, ComboboxInput, ComboboxTrigger } from '@/components/ui/combobox'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { ThemeScope } from '@/lib/theme'
 
@@ -17,7 +17,10 @@ export default function CustomValue() {
       <Field>
         <FieldLabel>Label</FieldLabel>
         <Combobox items={labels} allowCustomValue value={label} onValueChange={setLabel}>
-          <ComboboxInput placeholder="Pick one or type your own" />
+          <ComboboxField>
+            <ComboboxInput placeholder="Pick one or type your own" />
+            <ComboboxTrigger />
+          </ComboboxField>
           <ComboboxContent />
         </Combobox>
         <FieldDescription>

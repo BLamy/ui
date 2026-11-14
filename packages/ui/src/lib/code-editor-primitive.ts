@@ -8,7 +8,7 @@ import { createRovingFocus, definePrimitive, dispatch, selects, type ChangeDetai
    to the line's first and last. A cell whose content holds a control of its own (a popover's trigger, an input) joins
    through that control, and one that comes or goes while the cell is on screen joins or leaves with it. An editable
    editor's input is its `input` part, so agents find it by the editor's name: `getValue()` reads the text and
-   `setValue(text)` replaces it as one edit through the editor's own edit path. No React: `components/code-editor-window.tsx`
+   `setValue(text)` replaces it as one edit through the editor's own edit path. No React: `lib/code-editor-window.tsx`
    renders it with `usePart`. ══ */
 
 export type CodeEditorControlsOptions = {

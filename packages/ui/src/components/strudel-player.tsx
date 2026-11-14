@@ -1,7 +1,7 @@
 /* StrudelPlayer lives in docstream (`@brett_lamy/docstream/strudel`), where ```strudel fences and `.strudel`
-   embeds render it. This module is the one place the ui package (and the `strudel-player` registry item) reaches
-   it, so `@/components/ui/strudel-player` resolves the same way as every other part. */
+   embeds render it. This module re-exports the player and the functions that drive its one shared runtime from your
+   own controls. The rack, its hardware and the syntax tree are imported from `@brett_lamy/docstream/strudel`. */
 export {
-  StrudelPlayer, DEFAULT_SAMPLES, playStrudel, stopStrudel, updateStrudel, subscribeStrudel, getStrudelSnapshot, strudelNow,
+  StrudelPlayer, playStrudel, stopStrudel, updateStrudel, subscribeStrudel, getStrudelSnapshot,
 } from '@brett_lamy/docstream/strudel';
-export type { StrudelPlayerProps, StrudelPattern, StrudelHap, StrudelSnapshot } from '@brett_lamy/docstream/strudel';
+export type { StrudelPlayerProps, StrudelSnapshot } from '@brett_lamy/docstream/strudel';

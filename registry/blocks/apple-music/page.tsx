@@ -3,11 +3,11 @@
    springs open into the full Now Playing screen (scrubber, transport, volume, lyrics, up next) and folds back.
    Wide: a SplitView sidebar beside a pushed detail stack. Phone: the iOS tab bar with the mini player above it.
    All artists, albums and songs are invented; artwork is generated. */
-import { useContext, useEffect, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { MorphGroup, MorphPresence } from '@/components/ui/morph';
 import { NavigationStack } from '@/components/ui/navigation-stack';
-import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewSidebar, SplitViewStack, SplitViewToggle, useSplitViewStack } from '@/components/ui/split-view';
+import { SplitView, SplitViewDetail, SplitViewSidebar, SplitViewToggle } from '@/components/ui/split-view';
 import { Tabs, TabsBar, TabsList, TabsPanel, TabsPanels, TabsTab } from '@/components/ui/tabs';
 import { useContainerSize } from '@/lib/container';
 import { sizeClassOf } from '@/lib/size-class';
@@ -16,7 +16,7 @@ import { BLProvider, useAppearance } from '@/lib/theme';
 import { ALBUM, albumSongs } from './data';
 import { FullPlayer, MiniPlayer } from './now-playing';
 import { usePlayer } from './player';
-import { MusicContext, MusicPage, PageView, isDetail, pageKey, pageOfKey, pageTitle, stackKey, type Ctx, type Page } from './screens';
+import { MusicContext, MusicPage, pageKey, stackKey, type Ctx, type Page } from './screens';
 import { MusicSidebar } from './sidebar';
 
 export type MusicSection = 'listen' | 'browse' | 'radio' | 'search' | 'library' | 'recent' | 'artists' | 'albums' | 'songs';
@@ -154,10 +154,15 @@ function PhoneTabs({ env, nav, setNav }: { env: Omit<Ctx, 'open'>; nav: Nav; set
   );
 }
 
-/** Wide: the sidebar picks a section; albums, artists and playlists push onto a stack in the detail column. The
-    stack's own page keys are the record of what is open (pushes, back, Esc, a swipe), so `nav` follows it. */
+/** Wide: the sidebar picks a section; albums, artists and playlists push onto the detail column's NavigationStack,
+    the same `MusicPage`s a phone tab's stack draws. The section is the stack's first page; the pages over it are
+    `nav`'s, so a push, back, Esc or a swipe goes through `nav` and crossing the compact boundary keeps the place. */
 function Wide({ env, nav, setNav, children }: { env: Omit<Ctx, 'open'>; nav: Nav; setNav: SetNav; children: ReactNode }) {
   const { section, pages } = wideOf(nav);
+  const all = [sectionPage(section), ...pages];
+  // The first page keeps one key for every section, so picking another section pops the pages over it.
+  const keyOf = (p: Page, i: number) => (i === 0 ? 'section' : stackKey(p, i));
+  const ctx: Ctx = { ...env, open: (page) => setNav((n) => { const w = wideOf(n); return fromWide(n, w.section, [...w.pages, page]); }) };
   return (
     <SplitView aria-label="Music" value={{ sidebar: section }}
       onValueChange={(v) => { if (v.sidebar) setNav((n) => fromWide(n, v.sidebar!, [])); }}>
@@ -165,43 +170,16 @@ function Wide({ env, nav, setNav, children }: { env: Omit<Ctx, 'open'>; nav: Nav
         <MusicSidebar />
       </SplitViewSidebar>
       <SplitViewDetail>
-        {/* Each stack page provides its own `open` (a push labelled with its title). */}
-        <MusicContext.Provider value={{ ...env, open: () => undefined }}>
-          <SplitViewStack resetKey={section}
-            onPagesChange={(keys) => setNav((n) => fromWide(n, wideOf(n).section, keys.slice(1).map(pageOfKey)))}>
-            <StackPage page={sectionPage(section)} restore={pages} />
-          </SplitViewStack>
+        <MusicContext.Provider value={ctx}>
+          <NavigationStack pages={all.map(keyOf)} bottomInset={68}
+            onPagesChange={(keys) => setNav((n) => { const w = wideOf(n); return fromWide(n, w.section, w.pages.slice(0, keys.length - 1)); })}>
+            {all.map((page, i) => (
+              <MusicPage key={keyOf(page, i)} value={keyOf(page, i)} page={page} leading={i === 0 ? <SplitViewToggle /> : undefined} maxWidth={1180} />
+            ))}
+          </NavigationStack>
         </MusicContext.Provider>
         {children}
       </SplitViewDetail>
     </SplitView>
-  );
-}
-
-/** A page of the wide stack. The root one gets `restore`: the pages that were open when the layout mounted (the
-    phone layout's, after a resize), pushed back on top of it. */
-function StackPage({ page, back, restore }: { page: Page; back?: string; restore?: Page[] }) {
-  const stack = useSplitViewStack();
-  const env = useContext(MusicContext)!;
-  const title = pageTitle(page);
-  const detail = isDetail(page);
-  const ctx: Ctx = { ...env, open: (p) => stack.push(<StackPage page={p} back={title} />, { key: pageKey(p) }) };
-  const restoring = useRef(restore);
-  useEffect(() => {
-    const saved = restoring.current ?? [];
-    restoring.current = undefined;
-    saved.forEach((p, i) => stack.push(<StackPage page={p} back={pageTitle(i ? saved[i - 1] : page)} />, { key: pageKey(p) }));
-    // Once, on mount: later pages come from `open`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return (
-    <MusicContext.Provider value={ctx}>
-      {/* Detail pages keep their title in the page itself, as Music does; the bar is just the back button. */}
-      <SplitViewHeader title={detail ? undefined : title} largeTitle={!detail} backLabel={back} leading={<SplitViewToggle />}
-        className={detail ? 'shadow-none' : undefined} />
-      <SplitViewContent>
-        <div className="mx-auto max-w-[1180px] pb-24"><PageView page={page} /></div>
-      </SplitViewContent>
-    </MusicContext.Provider>
   );
 }

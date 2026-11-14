@@ -24,7 +24,8 @@ import {
   WorkbenchTab,
   useOptionalWorkbenchShell,
 } from './workbench-shell';
-import { Conversation, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationComposer, ConversationSuggestions, Suggestion, UserMessage, AssistantMessage, MessageMarkdown, WorkLog, ToolCall, SettledBanner } from '@/components/ui/conversation';
+import { Conversation, ConversationEmpty, ConversationMessages, ConversationComposer, ConversationSuggestions, Suggestion, UserMessage, AssistantMessage, MessageMarkdown, WorkLog, ToolCall } from '@/components/ui/conversation';
+import { SettledBanner } from '../settled-banner';
 import { SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSearch, SidebarSection, SidebarWorkspace } from '@/components/ui/sidebar';
 import { Icon } from '@/lib/icon';
 
@@ -77,24 +78,24 @@ function ThreadNav({
 }) {
   const shell = useOptionalWorkbenchShell();
   return (
-    <nav aria-label="Threads" className="flex h-full flex-col bg-sidebar">
+    <div className="flex h-full flex-col bg-sidebar">
       <SidebarHeader>
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
-            <SidebarWorkspace name={brand} detail={detail} />
+            <SidebarWorkspace title={brand} description={detail} />
           </div>
           <WorkbenchSidebarClose />
         </div>
         {search ? <SidebarSearch placeholder="Search threads" /> : null}
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent aria-label="Threads">
         <SidebarSection title={label}>
           {threads.map((t) => (
             <SidebarItem
               key={t.id}
-              icon={<Icon name="bubble-left" size={15} sw={1.8} />}
-              label={t.title}
-              active={t.id === current}
+              icon="bubble-left"
+              title={t.title}
+              current={t.id === current}
               onClick={() => {
                 onPick?.(t.id);
                 if (shell?.compact) shell.setSidebarOpen(false);
@@ -104,7 +105,7 @@ function ThreadNav({
         </SidebarSection>
       </SidebarContent>
       {children}
-    </nav>
+    </div>
   );
 }
 
@@ -138,7 +139,7 @@ function ShellDemo({
         <WorkbenchSidebar>
           <ThreadNav brand="Workbench" detail="cookbook" threads={threads.filter((t) => t.settled).slice(0, 7)} current={cur} onPick={setCur} label="Settled" search>
             <SidebarFooter>
-              <SidebarItem icon={<Icon name="gearshape" size={15} sw={1.8} />} label="Settings" />
+              <SidebarItem icon="gearshape" title="Settings" />
             </SidebarFooter>
           </ThreadNav>
         </WorkbenchSidebar>
@@ -155,9 +156,7 @@ function ShellDemo({
           </WorkbenchHeader>
           <WorkbenchContent>
             <Conversation empty={!thread}>
-              <ConversationEmpty>
-                <ConversationGreeting title="What are we building?" description="Start a thread — ask anything about this workspace." />
-              </ConversationEmpty>
+              <ConversationEmpty title="What are we building?" description="Start a thread — ask anything about this workspace." />
               <ConversationMessages threadKey={thread?.id}>
                 {thread?.messages.map((m) =>
                   m.role === 'user' ? (

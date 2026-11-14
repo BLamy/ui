@@ -1,98 +1,60 @@
-import { useState, type ReactNode } from 'react'
-import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { useState } from 'react'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarInset,
+  SidebarItem,
+  SidebarProvider,
+  SidebarSection,
+  SidebarTrigger,
+} from '@/components/ui/sidebar'
 
 const guides = ['Introduction', 'Installation', 'Theming']
 const components = ['Button', 'List', 'NavigationStack', 'Sidebar', 'Tabs']
 
-function DocsSidebar() {
+// `variant="float"`: the sidebar is an inset card with its own border and
+// radius, which suits documentation and settings. Rows render as links with
+// `render`; `current` marks the page that shows (aria-current="page").
+export default function FloatingDocs() {
   const [page, setPage] = useState('Sidebar')
-  return (
-    <div style={{ height: 380 }}>
-      {/* float: an inset card with its own border and radius */}
-      <SidebarProvider breakpoint={520}>
-        <Sidebar variant="float" width={230}>
-          <Sidebar.Content>
-            <Sidebar.Section title="Getting started">
-              {guides.map((g) => (
-                <Sidebar.Item
-                  key={g}
-                  icon="doc"
-                  label={g}
-                  active={page === g}
-                  onClick={() => setPage(g)}
-                />
-              ))}
-            </Sidebar.Section>
-            <Sidebar.Section title="Components">
-              {components.map((c) => (
-                <Sidebar.Item
-                  key={c}
-                  icon="box"
-                  label={c}
-                  active={page === c}
-                  onClick={() => setPage(c)}
-                />
-              ))}
-            </Sidebar.Section>
-          </Sidebar.Content>
-        </Sidebar>
-        <SidebarInset>
-          <article style={{ padding: '18px 22px', color: 'var(--foreground)' }}>
-            <SidebarTrigger style={{ marginLeft: -6 }} />
-            <h2 style={{ margin: '8px 0 6px', fontSize: 22 }}>{page}</h2>
-            <p
-              style={{
-                margin: 0,
-                fontSize: 13.5,
-                lineHeight: 1.6,
-                color: 'var(--muted-foreground)',
-              }}
-            >
-              The floating card suits documentation and settings, where the
-              sidebar reads as its own surface.
-            </p>
-          </article>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
-  )
-}
-
-function FloatingDocs() {
-  return (
-    <Window>
-      <DocsSidebar />
-    </Window>
-  )
-}
-
-/**
- * A rounded window with a hairline border; `width` caps it (phone-sized
- * examples), centered.
- */
-function Window({ width, children }: { width?: number; children?: ReactNode }) {
-  return (
-    <div
-      style={{
-        maxWidth: width,
-        margin: '0 auto',
-        borderRadius: 14,
-        overflow: 'hidden',
-        boxShadow: '0 0 0 1px var(--border)',
+  const link = (title: string, icon: string) => (
+    <SidebarItem
+      key={title}
+      icon={icon}
+      title={title}
+      current={page === title}
+      render={<a href={`#${title.toLowerCase()}`} />}
+      onClick={(event) => {
+        event.preventDefault()
+        setPage(title)
       }}
-    >
-      {children}
-    </div>
+    />
   )
-}
-
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
-export default function FloatingDocsExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
-      <FloatingDocs />
-    </WorkbenchTheme>
+    <div className="p-4">
+      <div className="mx-auto h-[400px] overflow-hidden rounded-card shadow-hairline">
+        <SidebarProvider breakpoint={520}>
+          <Sidebar variant="float" width={232}>
+            <SidebarContent aria-label="Documentation" className="pt-2">
+              <SidebarSection title="Getting started">
+                {guides.map((g) => link(g, 'doc'))}
+              </SidebarSection>
+              <SidebarSection title="Components">
+                {components.map((c) => link(c, 'cube'))}
+              </SidebarSection>
+            </SidebarContent>
+          </Sidebar>
+          <SidebarInset>
+            <article className="px-5 py-4">
+              <SidebarTrigger className="-ms-2" />
+              <h2 className="mt-2 mb-1.5 text-title font-semibold text-foreground">{page}</h2>
+              <p className="m-0 text-footnote leading-relaxed text-muted-foreground">
+                The floating card reads as its own surface beside the page.
+              </p>
+            </article>
+          </SidebarInset>
+        </SidebarProvider>
+      </div>
+    </div>
   )
 }

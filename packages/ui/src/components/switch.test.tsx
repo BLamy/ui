@@ -109,4 +109,16 @@ describe('Switch', () => {
     render(<form data-testid="form"><Switch aria-label="Updates" name="updates" defaultChecked /></form>);
     expect(new FormData(screen.getByTestId('form') as HTMLFormElement).get('updates')).toBe('on');
   });
+
+  it('takes a size, which its thumb reads from the track', () => {
+    render(<Switch aria-label="Wi-Fi" size="sm" defaultChecked />);
+    const track = screen.getByRole('switch', { name: 'Wi-Fi' });
+    expect(track.getAttribute('data-size')).toBe('sm');
+    expect(track.className).toContain('w-[38px]');
+    expect(track.querySelector('[data-slot="switch-thumb"]')!.className).toContain('group-data-[size=sm]:w-[18px]');
+    cleanup();
+    render(<Switch aria-label="Wi-Fi" />);
+    expect(screen.getByRole('switch').getAttribute('data-size')).toBe('default');
+  });
 });
+

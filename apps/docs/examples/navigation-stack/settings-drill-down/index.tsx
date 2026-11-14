@@ -13,7 +13,7 @@ import { Icon } from '@/lib/icon'
 /** A grouped page with a title, its bar pinned. */
 function Page({ value, title, children }: { value: string; title: string; children: ReactNode }) {
   return (
-    <NavigationStackPage value={value} grouped>
+    <NavigationStackPage value={value} variant="grouped">
       <NavigationStackBar hideOnScroll={false}>
         <NavigationStackTitle>{title}</NavigationStackTitle>
       </NavigationStackBar>

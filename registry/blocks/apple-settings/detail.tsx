@@ -26,7 +26,7 @@ function ToolButton({ label, icon, disabled, onClick }: { label: string; icon: '
 /** One pane as a stack page: an inline title that stays put, over the grouped pane. */
 function PanePage({ value, pane }: { value: string; pane: string }) {
   return (
-    <NavigationStackPage value={value} grouped>
+    <NavigationStackPage value={value} variant="grouped">
       <NavigationStackBar hideOnScroll={false}>
         <NavigationStackTitle>{getPane(pane)?.title}</NavigationStackTitle>
       </NavigationStackBar>

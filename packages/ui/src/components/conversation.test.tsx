@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import {
-  Conversation, ConversationComposer, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationSuggestions,
+  Conversation, ConversationComposer, ConversationEmpty, ConversationMessages, ConversationSuggestions,
   Suggestion, UserMessage,
 } from '@/components/ui/conversation';
 
@@ -38,9 +38,7 @@ const chips = () => document.querySelector<HTMLElement>('[data-slot=conversation
 function Thread({ empty }: { empty: boolean }) {
   return (
     <Conversation empty={empty}>
-      <ConversationEmpty>
-        <ConversationGreeting title="What are we building?" />
-      </ConversationEmpty>
+      <ConversationEmpty title="What are we building?" />
       <ConversationMessages threadKey="t1">
         {empty ? null : <UserMessage key="u1">Build a map</UserMessage>}
       </ConversationMessages>
@@ -93,5 +91,27 @@ describe('Conversation', () => {
     rerender(<Thread empty />);
     expect(greeting()?.hasAttribute('data-starting-style')).toBe(true);
     expect(chips()?.hasAttribute('data-starting-style')).toBe(true);
+  });
+
+  it('names the empty state with a heading', () => {
+    render(<Thread empty />);
+    expect(screen.getByRole('heading', { level: 2, name: 'What are we building?' })).toBeTruthy();
+  });
+});
+
+describe('UserMessage', () => {
+  it('shows what the Composer sent: images by name, other files as chips', () => {
+    render(
+      <UserMessage
+        attachments={[
+          { id: 'i', name: 'shot.png', type: 'image/png', src: 'data:image/png;base64,AAAA' },
+          { id: 'f', name: 'notes.pdf', type: 'application/pdf', size: 2048 },
+        ]}
+      >
+        Look
+      </UserMessage>,
+    );
+    expect(screen.getByRole('img', { name: 'shot.png' })).toBeTruthy();
+    expect(screen.getByText('notes.pdf')).toBeTruthy();
   });
 });

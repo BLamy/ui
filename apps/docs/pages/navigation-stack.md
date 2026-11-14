@@ -1,6 +1,15 @@
 # NavigationStack
 
-iOS's navigation controller as composable parts, on a UI SDK primitive. The stack is a list of page keys, bottom to top — `pages` / `defaultPages` / `onPagesChange(pages, details)`, or a controller — and each page is declared as a child with its bar, title and content. Push by adding a key; the back button, Escape, the platform back and an edge swipe ask for one fewer.
+iOS's navigation controller as composable parts, on a UI SDK primitive. The stack is a list of page keys, bottom to top — `pages` / `defaultPages` / `onPagesChange(pages, details)`, or a controller — and each page is declared as a child with its bar, title and content (or drawn from its key by `renderPage`). Push by adding a key; the back button, Escape, the platform back and an edge swipe ask for one fewer.
+
+Use it for a drill-down: a phone app, or the pages of one [SplitView](#/split-view) column (it is the kit's only push stack, and inside a column it knows it: the first page goes back to the column before when the split view collapses).
+
+| You need | Use |
+| --- | --- |
+| Pages pushed and popped by key, with iOS bars, large titles and the back swipe | **NavigationStack** |
+| Columns beside each other that collapse into a stack on a phone | [SplitView](#/split-view), with a NavigationStack in a column that pushes |
+| One side panel that pushes over a page on a phone | [AdaptivePane](#/adaptive-pane) `presentation="push"` |
+| A modal flow with its own steps | [Dialog](#/dialog) `view` |
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -59,23 +68,36 @@ import {
 </NavigationStack>
 ```
 
-Pages are the stack's direct children (fragments and arrays are fine), each with a `value`. The stack renders the ones in `pages`, so you can declare every page up front (a settings tree) or render only the ones in the stack. A page you stop rendering while it pops stays on screen, as it was, until it has slid out.
+Pages are the stack's direct children (fragments and arrays are fine), each with a `value`. The stack renders the ones in `pages`, so you can declare every page up front (a settings tree) or render only the ones in the stack. A key no child is for is drawn by `renderPage(key)` (return a `NavigationStackPage` with that `value`): pages pushed by key from a row (`useNavigationStack().push('album:42')`), a deep link, a stack restored after a reload. A page you stop rendering while it pops stays on screen, as it was, until it has slid out. With neither `pages` nor `defaultPages`, the stack starts on its first page child.
+
+```jsx
+<NavigationStack renderPage={(key) => <AlbumPage value={key} id={key.slice(6)} />}>
+  <NavigationStackPage value="albums">
+    <NavigationStackBar><NavigationStackTitle>Albums</NavigationStackTitle></NavigationStackBar>
+    <NavigationStackContent>
+      <AlbumGrid onOpen={(id) => stack.push(`album:${id}`)} />  {/* stack = useNavigationStack() */}
+    </NavigationStackContent>
+  </NavigationStackPage>
+</NavigationStack>
+```
 
 ## Parts
 
 | Part | What it is |
 | --- | --- |
-| `NavigationStack` | The root. `pages` / `defaultPages` / `onPagesChange(pages, details)` (`details.reason`: `trigger-press`, `escape-key`, `back`, `swipe`, `imperative`; `details.cancel()` keeps the pages), `controller`, `rootBack`, `safeTop`, `bottomInset`, `onBarHiddenChange`. Writes `data-size-class` from its own width. |
-| `NavigationStackPage` | One page, by `value`. `grouped` gives it the inset-grouped background. Covered pages are `inert` with `data-covered`; a pushed page enters with `data-starting-style`, a popped one leaves with `data-ending-style`; `data-scrolled` once its content scrolls past the large title. Anything else inside (an index bar, a tab bar) floats over the content. |
-| `NavigationStackBar` | The navigation bar. It draws the back button itself when there is a page to go back to. `hideOnScroll` (default true) slides it away as the content scrolls down; `data-hidden` while it is away. |
-| `NavigationStackTitle` | The bar's centered title, and the page's name: the next page's back label and the large title read it. `showOnScroll` fades it in only once the content has scrolled. |
+| `NavigationStack` | The root. `pages` / `defaultPages` / `onPagesChange(pages, details)` (`details.reason`: `trigger-press`, `escape-key`, `back`, `swipe`, `imperative`; `details.cancel()` keeps the pages), `controller`, `renderPage(key)`, `resetKey` (a new value pops to the first page: the sidebar selection the stack belongs to), `rootBack`, `safeTop` (px), `bottomInset`, `onBarHiddenChange`. Writes `data-size-class` from its own width and is the size-class scope of its pages. |
+| `NavigationStackPage` | One page, by `value`. `variant="grouped"` gives it the inset-grouped background (`plain` is the default). Covered pages are `inert` with `data-covered`; a pushed page enters with `data-starting-style`, a popped one leaves with `data-ending-style`; `data-scrolled` once its content scrolls past the large title. Anything else inside (an index bar, a tab bar) floats over the content. |
+| `NavigationStackBar` | The navigation bar, on the kit's iOS bar surface (`barSurface`), which fades in once the content scrolls under it. It draws the back button itself when there is a page to go back to. `hideOnScroll` (default true) slides it away as the content scrolls down; `data-hidden` while it is away. |
+| `NavigationStackTitle` | The bar's centered title, and the page's name: the next page's back label and the large title read it. `showOnScroll` fades it in only once the content has scrolled. While it is faded out it is out of the accessibility tree (the large title is the page's heading). |
 | `NavigationStackLeading` / `NavigationStackTrailing` | Bar items at either edge. Leading items give way to the back button. |
-| `NavigationStackBack` | A back button of your own (the bar already has one): pops its page, or runs `rootBack` on the first page. |
+| `NavigationStackBack` | A back button of your own (the bar already has one): pops its page, or runs `rootBack` on the first page. The bar's own is named "Back to *title*", whatever its label shows. |
 | `NavigationStackContent` | The scrolling content under the bar. `onRefresh` adds pull to refresh, `maxWidth` a readable width, `bottomInset` room for bars that ride over it. |
-| `NavigationStackLargeTitle` | iOS's large title at the top of the content; it collapses into the bar as you scroll. Its text defaults to the page's title. |
+| `NavigationStackLargeTitle` | iOS's large title at the top of the content, the page's level-1 heading; it collapses into the bar as you scroll. Its text defaults to the page's title. |
 | `NavigationStackSubheader` | Under the large title: a search field, a segmented control. |
 
-`createNavigationStackController()` gives a handle with `push`, `pop`, `popTo`, `replace`, `refresh` and `getPages`; `useNavigationStack()` returns the same methods to anything inside a stack.
+`createNavigationStackController()` gives a handle with `push`, `pop`, `popTo`, `replace`, `refresh` and `getPages`; `useNavigationStack()` returns the same methods to anything inside a stack (it throws outside one, as `useSplitView` does).
+
+A push slides the page in from the trailing edge with the `shadow-edge-*` edge, over the page under it, which slides back 30% under a 10% shade: the same motion as a compact SplitView's columns.
 
 ## Back gestures
 
@@ -140,8 +162,12 @@ The stack is an array of keys in state: rows push by appending, and `onPagesChan
 
 {% demo src="navigation-stack/inbox-actions" %}
 
-### Inside a collapsed SplitView
+### In a SplitView column
 
-When a SplitView collapses to one column, a `NavigationStack` in a later column shows a back button on its first page that returns to the column before it, labelled with that column's title. Pass `rootBack` to set it yourself, or `rootBack={false}` to hide it.
+A SplitView column that pushes pages holds a NavigationStack, and the column is its parent. When the split view collapses to one column, the stack's first page shows a back button that returns to the column before it, labelled with that column's title, and the stack's first title labels the next column's back button. Escape, the platform back and the swipe pop the stack's pages before the columns move. Pass `rootBack` to set the first page's back button yourself, or `rootBack={false}` to hide it. See [SplitView: a column that pushes](#/split-view).
 
 {% demo src="navigation-stack/in-split-view" %}
+
+## Stories
+
+Storybook's **Organisms/NavigationStack**: push/pop, pull to refresh, safe top, title on scroll, the chrome hiding on scroll (with a tab bar, disabled, with a safe top), the title morph, the back label fitting, truncated, falling back and dark, a wide page (`Wide`), and the detail column of a SplitView, tiled and compact (`DetailColumnOfASplitView`, `DetailColumnCompact`, `DetailColumnCompactDark`).

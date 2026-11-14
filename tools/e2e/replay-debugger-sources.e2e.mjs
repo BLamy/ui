@@ -91,10 +91,10 @@ test('the toolbar uses the requested icons and order, grays unavailable Step out
   await openDemo(page, 'blocks/replay-debugger', '[data-slot=replay-debugger]');
   const toolbar = page.getByRole('toolbar', { name: 'Debugger controls' });
   await expect(toolbar.getByRole('button')).toHaveCount(8);
-  expect(await toolbar.getByRole('button').evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label')))).toEqual(['Continue', 'Step over', 'Step in', 'Step out', 'Step back', 'Reverse', 'Restart', 'Stop']);
+  expect(await toolbar.getByRole('button').evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label')))).toEqual(['Continue', 'Step over', 'Step into', 'Step out', 'Step back', 'Reverse continue', 'Restart', 'Stop']);
   expect(await toolbar.getByRole('button').evaluateAll((buttons) => buttons.map((button) => [...button.querySelector('.codicon').classList].find((name) => name.startsWith('codicon-debug-'))))).toEqual(['codicon-debug-continue', 'codicon-debug-step-over', 'codicon-debug-step-into', 'codicon-debug-step-out', 'codicon-debug-step-back', 'codicon-debug-reverse-continue', 'codicon-debug-restart', 'codicon-debug-stop']);
   await expect(toolbar.getByRole('button', { name: 'Step out', exact: true })).toBeDisabled();
-  expect(await toolbar.locator('[data-action=step-out] .codicon').evaluate((icon) => getComputedStyle(icon).filter)).toBe('grayscale(1)');
+  expect(await toolbar.locator('[data-action=step-out]').evaluate((button) => getComputedStyle(button).opacity)).toBe('0.4');
   const appearance = await toolbar.evaluate((el) => ({
     border: getComputedStyle(el).borderTopWidth,
     background: getComputedStyle(el).backgroundColor,

@@ -15,7 +15,7 @@ const PEAKS = Array.from({ length: 12 * RATE }, (_, i) => {
   return Math.min(1, swell * beat * grain);
 });
 
-const TONES = ['default', 'primary', 'success', 'muted'] as const;
+const TONES = ['default', 'muted', 'success', 'warning', 'destructive'] as const;
 
 type Args = WaveformProps & { width: number; height: number };
 
@@ -63,16 +63,22 @@ export const ZoomedRange: Story = { args: { from: 2, to: 4 } };
 /** `gain` scales the bars like a clip's volume: 0.4 here. */
 export const Gain: Story = { args: { gain: 0.4 } };
 
-/** The tones side by side: `default` (the text colour, 55 %), `primary`, `success` (audio clips) and `muted`. */
+/** The tones side by side: `default` (the text colour, 70 %), `muted`, and the semantic `success` (audio clips), `warning` and `destructive`. Any `text-…` class tints it instead. */
 export const Tones: Story = {
   render: ({ width, height, ...props }) => (
-    <div className="grid w-(--w) grid-cols-4 gap-3" style={{ '--w': `${width}px` } as CSSProperties}>
+    <div className="grid w-(--w) grid-cols-5 gap-3" style={{ '--w': `${width}px` } as CSSProperties}>
       {TONES.map((tone) => (
         <div key={tone} className="flex min-w-0 flex-col gap-1.5">
           <Caption>{tone}</Caption>
-          <Box width={(width - 36) / 4} height={height}><Waveform {...props} tone={tone} /></Box>
+          <Box width={(width - 48) / 5} height={height}><Waveform {...props} tone={tone} /></Box>
         </div>
       ))}
     </div>
   ),
 };
+
+/** On a dark surface: the default tone is the light text colour. */
+export const Dark: Story = { parameters: { dark: true } };
+
+/** The tones on a dark surface. */
+export const TonesDark: Story = { ...Tones, parameters: { dark: true } };

@@ -6,7 +6,8 @@ import { cn } from '@/lib/utils';
 import { Icon } from '@/lib/icon';
 import { insertMarkdown } from '@/components/ui/markdown-editor';
 import { MORPH_REACH as REACH, morphNeck as neck, roundedRectPath as roundedRect, toDropShadow, type MorphBox as Box } from '@/lib/morph-path';
-import { ComposerButton, useComposer, type ComposerAttachment } from '@/components/ui/composer/composer';
+import { Button } from '@/components/ui/button';
+import { useComposer, useComposerInternals, type ComposerAttachment } from '@/components/ui/composer/composer';
 import { usePresenceList } from '@/lib/presence';
 import { prefersReducedMotion } from '@/lib/motion';
 import { useAppearance } from '@/lib/theme';
@@ -498,7 +499,7 @@ export function ComposerQueue({
   'aria-label': ariaLabel = 'Queued messages',
   ...props
 }: ComposerQueueProps) {
-  const ctx = useComposer();
+  const ctx = useComposerInternals();
   const { streaming, setQueue, submit, stop } = ctx;
   const [items, change] = useControllableChange<ComposerQueueItem[], ComposerQueueItemsChangeReason>(itemsProp, defaultItems, onItemsChange);
   const itemsRef = useRef(items);
@@ -598,15 +599,15 @@ function QueuedMessage({ item, actions }: { item: ComposerQueueItem; actions: Co
           </span>
         ) : null}
       </div>
-      <ComposerButton aria-label="Edit queued message" onClick={(event) => actions.edit(event.nativeEvent)}>
+      <Button variant="quiet" size="icon-sm" aria-label="Edit queued message" onClick={(event) => actions.edit(event.nativeEvent)}>
         <Icon name="square-pencil" size={14} />
-      </ComposerButton>
-      <ComposerButton aria-label="Send now" onClick={(event) => actions.sendNow(event.nativeEvent)}>
+      </Button>
+      <Button variant="quiet" size="icon-sm" aria-label="Send now" onClick={(event) => actions.sendNow(event.nativeEvent)}>
         <Icon name="arrow-up-compact" size={14} sw={2.2} />
-      </ComposerButton>
-      <ComposerButton aria-label="Remove from queue" onClick={(event) => actions.remove(event.nativeEvent)}>
+      </Button>
+      <Button variant="quiet" size="icon-sm" aria-label="Remove from queue" onClick={(event) => actions.remove(event.nativeEvent)}>
         <Icon name="xmark-large" size={12} />
-      </ComposerButton>
+      </Button>
     </div>
   );
 }

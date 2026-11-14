@@ -8,7 +8,7 @@
 import type { CSSProperties } from 'react';
 import { useArtifactChatContainer } from '@/components/ui/artifact-chat-container';
 import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer';
-import { AssistantMessage, Conversation, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationSuggestions, MessageMarkdown, Suggestion, ToolCall, UserMessage, WorkLog } from '@/components/ui/conversation';
+import { AssistantMessage, Conversation, ConversationEmpty, ConversationMessages, ConversationSuggestions, MessageMarkdown, Suggestion, ToolCall, UserMessage, WorkLog } from '@/components/ui/conversation';
 import { SUGGESTIONS } from './agent';
 import { PROJECTS } from './data';
 import { BarButton, LoopMark } from './parts';
@@ -39,20 +39,17 @@ export function AskQA() {
         </span>
         <span className="flex-1" />
         <BarButton label="New chat" icon="square-pencil" className="size-8" disabled={empty} onClick={qa.newChat} />
-        {chat.compact ? (
+        {chat.layout === 'floating' ? (
           <BarButton label="Collapse chat" icon="chevron-down" className="size-8" onClick={() => qa.setChatOpen(false)} />
         ) : (
           <BarButton label="Hide Ask QA (⌘J)" icon="sidebar-right" className="size-8" onClick={() => qa.setAskOpen(false)} />
         )}
       </div>
       <Conversation empty={empty} className={empty ? 'px-4 py-6' : undefined}>
-        <ConversationEmpty>
-          <ConversationGreeting
+        <ConversationEmpty
             icon={<LoopMark size={40} className="mx-auto" />}
             title="Ask QA"
-            description={`Ask about ${project.name}'s bugs, runs and replays — or have it start a run.`}
-          />
-        </ConversationEmpty>
+            description={`Ask about ${project.name}'s bugs, runs and replays — or have it start a run.`} />
         <ConversationMessages threadKey={project.id} streaming={!!qa.streaming}>
           {qa.messages.map((m) => m.role === 'user' ? (
             <UserMessage key={m.id} className="px-3.5">{m.text}</UserMessage>
@@ -60,7 +57,7 @@ export function AskQA() {
             <AssistantMessage key={m.id} className="px-3.5 text-[13.5px]">
               {m.tools?.length ? (
                 <WorkLog summary={m.worked ?? 'Worked'} className="mb-2">
-                  {m.tools.map((t) => <ToolCall key={t.title} icon={t.icon} title={t.title} detail={t.detail} />)}
+                  {m.tools.map((t) => <ToolCall key={t.title} icon={t.icon} title={t.title} description={t.detail} />)}
                 </WorkLog>
               ) : null}
               <MessageMarkdown markdown={m.text} streaming={qa.streaming === m.id} />

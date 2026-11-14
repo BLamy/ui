@@ -123,7 +123,7 @@ export function FileColumn({ atlas }: { atlas: AtlasState }) {
   const state = atlas.view === 'files' ? atlas.files : atlas.diff;
   return (
     <SplitViewSupplementary aria-label={atlas.view === 'files' ? 'Files' : 'Changes'} width={320} minWidth={260}>
-      <SplitViewHeader titleAlign="leading" leading={<SplitViewToggle />}
+      <SplitViewHeader titleAlign="start" leading={<SplitViewToggle />}
         title={w ? <span className="flex min-w-0 items-center gap-1.5">
           <BranchIcon size={15} className="text-muted-foreground" />
           <span className={cn('truncate', !w.branch && 'italic')}>{branchLabel(w)}</span>

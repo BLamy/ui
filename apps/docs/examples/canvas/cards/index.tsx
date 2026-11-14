@@ -79,7 +79,7 @@ export default function Cards() {
         viewport={viewport}
         onViewportChange={setViewport}
         fit={{ x: 60, y: 60, w: 380, h: 290 }}
-        cursor={cursor}
+        style={{ cursor }}
         aria-label="Cards on a canvas"
         onCanvasPointerDown={down}
         onCanvasPointerMove={move}

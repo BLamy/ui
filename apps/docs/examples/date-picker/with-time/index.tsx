@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { TimeField } from '@/components/ui/date-field'
+import { TimeInput } from '@/components/ui/date-input'
 import { DatePicker, DatePickerContent, DatePickerField } from '@/components/ui/date-picker'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { ThemeScope } from '@/lib/theme'
 
-// A DatePicker holds a date only. For a date and a time, put a TimeField beside
+// A DatePicker holds a date only. For a date and a time, put a TimeInput beside
 // it and join the two yourself: both are ISO strings, so the local date-time is
 // `${date}T${time}`. Values are pinned so the demo reads the same for everyone.
 export default function WithTime() {
@@ -23,7 +23,7 @@ export default function WithTime() {
             <DatePickerContent />
           </DatePicker>
         </Field>
-        <TimeField
+        <TimeInput
           aria-label="Start time"
           locale="en-US"
           className="w-auto"

@@ -1,0 +1,26 @@
+{
+  "name": "listbox",
+  "title": "Listbox",
+  "description": "UI SDK's Listbox with single or multiple selection: an iOS inset-grouped list with trailing checks, or the compact popup list Select and Combobox draw. Groups, separators and options from data.",
+  "page": "listbox",
+  "exports": [
+    "Listbox",
+    "ListboxItem",
+    "ListboxGroup",
+    "ListboxGroupLabel",
+    "ListboxSeparator",
+    "listboxVariants",
+    "listboxItemVariants",
+    "createListboxController"
+  ],
+  "imports": [
+    "Listbox",
+    "ListboxItem"
+  ],
+  "types": [
+    "ListboxProps",
+    "ListboxItemProps",
+    "ListData",
+    "ListboxController"
+  ]
+}

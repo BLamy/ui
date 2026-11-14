@@ -38,7 +38,7 @@ function FriendsTab() {
           if (pages.length === 1) setOpen(null)
         }}
       >
-        <NavigationStackPage value="friends" grouped>
+        <NavigationStackPage value="friends" variant="grouped">
           <NavigationStackBar hideOnScroll={false}>
             <NavigationStackTitle>Friends</NavigationStackTitle>
           </NavigationStackBar>
@@ -62,7 +62,7 @@ function FriendsTab() {
           </NavigationStackContent>
         </NavigationStackPage>
         {open ? (
-          <NavigationStackPage value="friend" grouped>
+          <NavigationStackPage value="friend" variant="grouped">
             <NavigationStackBar hideOnScroll={false}>
               <NavigationStackTitle>{open.f}</NavigationStackTitle>
             </NavigationStackBar>

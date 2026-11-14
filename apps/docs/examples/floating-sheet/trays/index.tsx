@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { FloatingSheet } from '@/components/ui/floating-sheet'
+import { FloatingSheet, FloatingSheetBody, FloatingSheetFoot } from '@/components/ui/floating-sheet'
 import { ProgressStepper } from '@/components/ui/progress-stepper'
 import { AnimatePresence, motion } from 'framer-motion'
 import { springs } from '@/lib/motion'
@@ -168,14 +168,14 @@ export default function Trays() {
     >
       <FloatingSheet
         peek={tray.peek}
-        appearance="sheet"
-        minimizable={false}
+        variant="sheet"
+        collapse="none"
         gutter={12}
         radius={26}
-        label="Checkout"
+        aria-label="Checkout"
         hideOnScroll={false}
       >
-        <FloatingSheet.Body>
+        <FloatingSheetBody>
           <div style={{ padding: '2px 20px 20px', overflow: 'hidden' }}>
             <AnimatePresence mode="popLayout" initial={false} custom={dir}>
               <motion.div
@@ -194,8 +194,8 @@ export default function Trays() {
               </motion.div>
             </AnimatePresence>
           </div>
-        </FloatingSheet.Body>
-        <FloatingSheet.Foot>
+        </FloatingSheetBody>
+        <FloatingSheetFoot>
           <div style={{ display: 'flex', gap: 8, padding: '8px 16px 16px' }}>
             <Button
               className="flex-1"
@@ -209,7 +209,7 @@ export default function Trays() {
               {last ? 'Start over' : 'Continue'}
             </Button>
           </div>
-        </FloatingSheet.Foot>
+        </FloatingSheetFoot>
       </FloatingSheet>
     </Host>
   )

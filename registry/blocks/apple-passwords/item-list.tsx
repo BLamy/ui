@@ -2,7 +2,8 @@
    detail beside them — or push it on a phone. Resting on a sign-in previews it (AccountPreview). */
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { SearchInput } from '@/components/ui/search-input';
-import { SplitViewContent, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewToggle } from '@/components/ui/split-view';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewToggle } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { SEVERITY } from './data';
@@ -29,7 +30,7 @@ export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
       </div>
       <SplitViewContent>
         {total === 0 ? (
-          <SplitViewEmpty icon={<Icon name={query ? 'magnifyingglass' : 'key'} size={34} />}
+          <EmptyState icon={<Icon name={query ? 'magnifyingglass' : 'key'} size={34} />}
             title={query ? 'No Results' : category === 'security' ? 'No Security Recommendations' : 'Nothing Here'}
             description={query ? `Nothing matches “${query}”.` : category === 'deleted' ? 'Deleted passwords stay here for 30 days.' : undefined} />
         ) : sections.map((s) => (
@@ -52,7 +53,7 @@ function Row({ entry: e, category, now }: { entry: Entry; category: Selection; n
   const a = e.account;
   // Wi-Fi rows already show all a network has but its password.
   return (
-    <SplitViewItem id={e.id} variant="row" className="min-h-[58px] py-2" preview={a ? <AccountPreview account={a} /> : undefined}>
+    <SplitViewItem value={e.id} variant="row" className="min-h-[58px] py-2" preview={a ? <AccountPreview account={a} /> : undefined}>
       {e.kind === 'wifi' ? (
         <WifiTile />
       ) : <SiteTile title={e.title} color={a!.color} size={32} className={cn(e.kind === 'deleted' && 'opacity-60 grayscale')} />}

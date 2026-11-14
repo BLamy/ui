@@ -7,7 +7,9 @@ import { Morph, MorphGroup, MorphPresence } from '@/components/ui/morph';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { SearchInput } from '@/components/ui/search-input';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
-import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
+import {
+  NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackLeading, NavigationStackPage, NavigationStackTitle, NavigationStackTrailing,
+} from '@/components/ui/navigation-stack';
 import { Icon } from '@/lib/icon';
 import { isOpen } from './agent';
 import { MemberPreview } from './cards';
@@ -16,7 +18,7 @@ import { Leading, PageActions } from './header';
 import { Empty, Pill, SeverityBar, SiteThumb, Sparkline, StatTile, Pressable } from './parts';
 import { useLoopQA } from './state';
 
-export function ProjectsHome() {
+export function ProjectsHome({ value }: { value: string }) {
   const qa = useLoopQA();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'paused'>('all');
@@ -30,9 +32,14 @@ export function ProjectsHome() {
     (!query || `${p.name} ${p.url}`.toLowerCase().includes(query.toLowerCase()))), [filter, query]);
 
   return (
-    <>
-      <SplitViewHeader title="Projects" largeTitle largeTitleClassName="mx-auto w-full max-w-[1180px] px-5 @3xl:px-8!" leading={<Leading />} trailing={<PageActions run={false} />} />
-      <SplitViewContent className="@container">
+    <NavigationStackPage value={value}>
+      <NavigationStackBar hideOnScroll={false}>
+        <NavigationStackLeading><Leading /></NavigationStackLeading>
+        <NavigationStackTitle>Projects</NavigationStackTitle>
+        <NavigationStackTrailing><PageActions run={false} /></NavigationStackTrailing>
+      </NavigationStackBar>
+      <NavigationStackContent className="@container">
+        <NavigationStackLargeTitle className="mx-auto w-full max-w-[1180px] px-5 @3xl:px-8!" />
         <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-5 pb-12 @3xl:px-8!">
           <p className="-mt-1 m-0 text-detail text-muted-foreground">Every app Loop QA is testing — what it found and when it last looked.</p>
 
@@ -78,8 +85,8 @@ export function ProjectsHome() {
             <Empty icon="magnifyingglass" title="No projects match" text={`Nothing matches “${query}”. Try a name or a URL.`} />
           )}
         </div>
-      </SplitViewContent>
-    </>
+      </NavigationStackContent>
+    </NavigationStackPage>
   );
 }
 

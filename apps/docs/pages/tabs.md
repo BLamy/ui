@@ -273,3 +273,145 @@ Slots are UI SDK's: `data-slot="tabs"`, `tabs-list`, `tabs-tab`, `tabs-tab-icon`
 ## cva recipes
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `tabsVariants`
+
+Defined in `@/components/ui/tabs`. Base classes:
+
+```text
+flex min-h-0 min-w-0 [&>[data-slot=tabs-panels]~[data-slot=tabs-bar]]:-order-1 [&>[data-slot=tabs-panels]~[data-slot=tabs-list]]:-order-1 [&>[data-slot=tabs-panel]~[data-slot=tabs-list]]:-order-1
+```
+
+**`side`** — default `top`
+
+| Value | Adds |
+| --- | --- |
+| `top` (default) | `flex-col` |
+| `bottom` | `flex-col-reverse` |
+| `start` | `flex-row` |
+| `end` | `flex-row-reverse` |
+
+**`variant`** — default `segmented`
+
+| Value | Adds |
+| --- | --- |
+| `segmented` (default) | `gap-4` |
+| `underline` | `gap-4` |
+| `bar` | — |
+| `rail` | — |
+| `workspace` | — |
+| `plain` | — |
+
+### `tabsBarVariants`
+
+Defined in `@/components/ui/tabs`. Base classes:
+
+```text
+box-border
+```
+
+**`variant`** — default `plain`
+
+| Value | Adds |
+| --- | --- |
+| `segmented` | `inline` |
+| `underline` | `inline` |
+| `bar` | `cn( 'absolute inset-x-0 bottom-0 z-120 flex data-[side=top]:top-0 data-[side=top]:bottom-auto transition-transform duration-spring-smooth ease-spring-s…` |
+| `rail` | `relative flex w-19 shrink-0 flex-col gap-1 bg-bar py-2 data-[side=end]:border-s data-[side=start]:border-e border-border` |
+| `workspace` | `flex w-13 shrink-0 flex-col items-center gap-2 border-e border-border bg-muted px-0 py-2.5` |
+| `plain` (default) | `inline` |
+
+### `tabsListVariants`
+
+Defined in `@/components/ui/tabs`. Base classes:
+
+```text
+relative outline-none
+```
+
+**`variant`** — default `segmented`
+
+| Value | Adds |
+| --- | --- |
+| `segmented` (default) | `cn('flex', segmentTrackVariants())` |
+| `underline` | `isolate flex gap-5 shadow-hairline-b data-[orientation=vertical]:flex-col data-[orientation=vertical]:gap-0 data-[orientation=vertical]:border-e data-[orientat…` |
+| `bar` | `flex flex-1` |
+| `rail` | `flex flex-col gap-1 px-1.5` |
+| `workspace` | `flex min-h-0 w-full flex-col items-center gap-2 overflow-y-auto overscroll-contain -mt-1 -mb-1.5 pt-1 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidd…` |
+| `plain` | `flex data-[orientation=vertical]:flex-col` |
+
+### `tabsTabVariants`
+
+Defined in `@/components/ui/tabs`. Base classes:
+
+```text
+group/tab relative box-border cursor-pointer border-0 bg-transparent [font-family:inherit] outline-none data-disabled:cursor-default
+```
+
+**`variant`** — default `segmented`
+
+| Value | Adds |
+| --- | --- |
+| `segmented` (default) | `segmentItemVariants()` |
+| `underline` | `cn( 'bl-btn -mb-px flex h-10 items-center justify-center gap-1.5 px-0.5 py-0 text-subhead leading-[inherit] font-semibold whitespace-nowrap hover:not…` |
+| `bar` | `cn( 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] p-0 text-center leading-[normal] data-selected:text-primary focus-visible:roun…` |
+| `rail` | `cn( 'bl-btn flex flex-col items-center justify-center gap-[3px] rounded-panel px-1 pt-[7px] pb-1.5 text-center leading-[normal] hover:not-data-select…` |
+| `workspace` | `group flex w-full shrink-0 justify-center p-0 text-inherit pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:-inset-y-1.5` |
+| `plain` | `p-0 text-inherit` |
+
+### `tabsIndicatorVariants`
+
+Defined in `@/components/ui/tabs`. Base classes:
+
+```text
+absolute
+```
+
+**`variant`** — default `segmented`
+
+| Value | Adds |
+| --- | --- |
+| `segmented` (default) | `cn('inset-0', segmentIndicatorVariants())` |
+| `underline` | `bg-primary` |
+| `bar` | `bg-primary` |
+| `rail` | `bg-primary` |
+| `workspace` | `bg-primary` |
+| `plain` | `bg-primary` |
+
+**`orientation`** — default `horizontal`
+
+| Value | Adds |
+| --- | --- |
+| `horizontal` (default) | — |
+| `vertical` | — |
+
+4 compound variants — see the source.
+
+### `tabsPillVariants`
+
+Defined in `@/components/ui/tabs`. Base classes:
+
+```text
+pointer-events-none absolute start-0 top-1/2 h-0 w-1 -translate-y-1/2 rounded-e-sm bg-foreground opacity-0 transition-[height,opacity] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none data-attention:h-1.5 data-attention:opacity-100 group-hover/tab:not-data-selected:h-3.5 group-hover/tab:not-data-selected:opacity-100 data-selected:h-7 data-selected:opacity-100
+```
+
+No variants.
+
+### `tabsActionVariants`
+
+Defined in `@/components/ui/tabs`. Base classes:
+
+```text
+cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring/45 data-disabled:cursor-default data-disabled:opacity-40
+```
+
+**`variant`** — default `plain`
+
+| Value | Adds |
+| --- | --- |
+| `segmented` | `bl-btn border-0 bg-transparent p-0 [font-family:inherit] text-muted-foreground hover:not-data-disabled:text-foreground` |
+| `underline` | `bl-btn border-0 bg-transparent p-0 [font-family:inherit] text-muted-foreground hover:not-data-disabled:text-foreground` |
+| `bar` | `bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 leading-[normal] [font-family:inherit] text-muted-foreground acti…` |
+| `rail` | `bl-btn mx-1.5 flex flex-col items-center justify-center gap-[3px] rounded-panel border-0 bg-transparent px-1 pt-[7px] pb-1.5 leading-[normal] [font-family:inhe…` |
+| `workspace` | `relative grid size-[34px] shrink-0 place-items-center rounded-[17px] border border-dashed border-border bg-transparent text-muted-foreground [transition:border…` |
+| `plain` (default) | `bl-btn border-0 bg-transparent p-0 [font-family:inherit]` |

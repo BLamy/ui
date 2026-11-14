@@ -70,12 +70,12 @@ If `items` is omitted or empty, the component retains its A-Z form:
 
 ## Exports
 
-- Containers: `NavigationStack`, `SplitView`, `Credenza`, `SideDrawer`, `AdaptivePane`, `Sidebar`
-- Lists and navigation: `List`, `List.Section`, `List.Row`, `IndexBar`, `TabBar`, `TabView`, `EditBar`
-- Inputs and feedback: `SearchInput`, `Switch`, `Segmented`, plus shadcn-style primitives (`Button`, `Dialog`, `Sheet`, `Select`, `ComboBox`, `Tabs`, …)
-- Motion: `springs`, `springCss`, `TextMorph`, `NumberMorph`, `AnimatedHeight`, `ContentSwap`, `Celebrate`
+- Containers: `NavigationStack`, `SplitView`, `Dialog` (a card, or a tray with views in a compact container), `Sheet`, `AdaptivePane`, `Sidebar`
+- Lists and navigation: `List`, `ListSection`, `ListRow`, `IndexBar`, `Tabs` (segmented, underline, the iOS tab bar, rails), `EditBar`
+- Inputs and feedback: `SearchInput`, `Switch`, `Segmented`, plus shadcn-style primitives (`Button`, `Toggle`, `Select`, `Combobox`, …)
+- Motion: `springs`, `springCss`, `TextMorph`, `NumberMorph`, `AnimatedHeight`, `Swap`, `Celebrate`
 - Foundations: `BLProvider`, `ThemeScope`, `AppearanceProvider`, `Icon`, `Avatar`, `Spinner`
-- Team chat: `ChatShell` and its regions (`ChatShellNav`, `ChatShellSidebar`, `ChatShellMain`, `ChatShellHeader`, `ChatShellAside`, `ChatShellPanel`…), `FloatingSheet`, `FloatingChat`, `ChatColumn`, `ArtifactChatContainer` (the Discord parts — channels, messages, threads, members — live in the `discord-clone` registry block)
+- Team chat: `ChatShell` and its regions (`ChatShellNav`, `ChatShellSidebar`, `ChatShellMain`, `ChatShellHeader`, `ChatShellAside`, `ChatShellPanel`…), `FloatingSheet`, `ArtifactChatContainer` (the Discord parts — channels, messages, threads, members — live in the `discord-clone` registry block)
 - Workbench: `WorkbenchShell` and its parts (`WorkbenchSidebar`, `WorkbenchMain`, `WorkbenchHeader`, `WorkbenchDock`, `WorkbenchPanel`, `WorkbenchTabBar`, …), conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `TerminalHeader` / `TerminalBody`, surfaces (`SurfacePicker`, `SurfaceBrowser`, `SurfaceFiles`, `SurfaceDiff`, `SurfaceAgents`), `Composer` and its parts, `ModelPicker`, `MessageScroller`, `MarkdownView`
 - Demo apps: `MapChatDemo`, `DeliveryTrackingDemo`, `SidebarDemo` (full apps — Discord, T3 Code, GitHub — are registry blocks)
 
@@ -88,7 +88,7 @@ Every component exports its props type from the package root. See the Storybook 
 ```tsx
 import {
   ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain, ChatShellHeader, ChatShellNavTrigger, ChatShellTitle,
-  ChatShellFooter, TabView, TabViewBar, TabViewList, TabViewTab, TabViewPill, SidebarContent, SidebarSection,
+  ChatShellFooter, Tabs, TabsBar, TabsList, TabsTab, TabsPill, SidebarContent, SidebarSection,
   SidebarItem, Composer, ComposerCard, ComposerInput, ComposerFooter, ComposerSpacer, ComposerSend,
 } from '@brett_lamy/ui';
 
@@ -97,13 +97,13 @@ export function Chat() {
   return (
     <ChatShell breakpoint={880}>
       <ChatShellNav>
-        <TabView orientation="vertical" defaultValue="hq" className="contents">
-          <TabViewBar variant="workspace">
-            <TabViewList aria-label="Workspaces">
-              <TabViewTab value="hq" aria-label="HQ"><TabViewPill />{/* tile */}</TabViewTab>
-            </TabViewList>
-          </TabViewBar>
-        </TabView>
+        <Tabs variant="workspace" defaultValue="hq" className="contents">
+          <TabsBar>
+            <TabsList aria-label="Workspaces">
+              <TabsTab value="hq" aria-label="HQ"><TabsPill />{/* tile */}</TabsTab>
+            </TabsList>
+          </TabsBar>
+        </Tabs>
         <ChatShellSidebar>
           <SidebarContent>
             <SidebarSection title="Team">
@@ -130,13 +130,13 @@ export function Chat() {
 }
 ```
 
-`ArtifactChatContainer` keeps a conversation beside an artifact when space permits. Below its container breakpoint the artifact keeps the full canvas and the `Composer` floats over it, with the transcript on a draggable top bump.
+`ArtifactChatContainer` keeps a conversation beside an artifact when space permits. Below its container breakpoint the artifact keeps the full canvas and the chat floats over it as a `FloatingSheet`: the `Composer` is its foot, the transcript grows above it, and it folds into a FAB.
 
 ```tsx
 <ArtifactChatContainer working={isWorking}>
-  <ArtifactChatContainer.Chat><Conversation /></ArtifactChatContainer.Chat>
-  <ArtifactChatContainer.Composer><MyComposer /></ArtifactChatContainer.Composer>
-  <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
+  <ArtifactChatContainerContent><Artifact /></ArtifactChatContainerContent>
+  <ArtifactChatContainerChat><Conversation /></ArtifactChatContainerChat>
+  <ArtifactChatContainerComposer><MyComposer /></ArtifactChatContainerComposer>
 </ArtifactChatContainer>
 ```
 

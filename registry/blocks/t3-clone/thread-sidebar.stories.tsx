@@ -18,7 +18,7 @@ import {
   SidebarUser,
   type ThreadStatus,
 } from './components/thread-sidebar';
-import { WorkbenchTheme } from '@/components/ui/workbench-theme';
+import { ThemeScope } from '@/lib/theme';
 import { THREADS } from './lib/data';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/lib/icon';
@@ -29,11 +29,11 @@ const meta: Meta<typeof ThreadSidebar> = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
-      <WorkbenchTheme style={{ minHeight: 640, padding: 24, display: 'grid', placeItems: 'center' }}>
+      <ThemeScope scope="workbench" style={{ minHeight: 640, padding: 24, display: 'grid', placeItems: 'center' }}>
         <div style={{ width: 242, height: 560, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
           <Story />
         </div>
-      </WorkbenchTheme>
+      </ThemeScope>
     ),
   ],
 };

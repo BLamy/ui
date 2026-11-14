@@ -90,7 +90,7 @@ The tick (or dash) inside the box. It stays mounted (`keepMounted`) so the tick 
 
 ## Styling
 
-The box is `data-slot="checkbox"`, the mark `data-slot="checkbox-indicator"` and the group `data-slot="checkbox-group"`. The box carries `data-checked`, `data-unchecked`, `data-indeterminate`, `data-disabled`, `data-readonly` and `data-required`; pressed is `active:` and keyboard focus `focus-visible:`. Invalid is `aria-invalid` (which a Field writes) on the box or the group around it. The tick animates by stroke-dashoffset and stays still under reduced motion. `checkboxVariants({ shape })` styles the box on its own.
+The box is `data-slot="checkbox"`, the mark `data-slot="checkbox-indicator"` and the group `data-slot="checkbox-group"`. The box carries `data-checked`, `data-unchecked`, `data-indeterminate`, `data-disabled`, `data-readonly` and `data-required`; pressed is `active:` and keyboard focus `focus-visible:`. Invalid is `aria-invalid` (which a Field writes) on the box or the group around it. The unchecked edge is `border-control-border` (the `--control-border` token, `--muted-foreground` unless a theme sets it), which keeps 3:1 against the surface in light and dark; the tick is `text-primary-foreground`, so it follows a theme's tint. Keyboard focus draws the kit's solid focus ring. The tick animates by stroke-dashoffset and stays still under reduced motion. `checkboxVariants({ shape })` styles the box on its own.
 
 ## cva recipes
 
@@ -101,7 +101,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/checkbox`. Base classes:
 
 ```text
-[ 'box-border grid size-[22px] shrink-0 cursor-pointer place-items-center border-[1.5px] border-tertiary-foreground bg-transparent p-0 text-white outline-none', 'transition-[background-color,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'data-checked:border-primary data-checked:bg-primary', 'data-indeterminate:border-primary data-indeterminate:bg-primary', 'active:not-data-disabled:scale-90 focus-visible:ring-[3px] focus-visible:ring-ring/45', // Invalid: the box itself (`aria-invalid`, which a Field writes on its control) or the group around it. 'aria-invalid:border-destructive group-aria-invalid:border-destructive', 'aria-invalid:data-checked:border-destructive aria-invalid:data-checked:bg-destructive group-aria-invalid:data-checked:border-destructive group-aria-invalid:data-checked:bg-destructive', 'data-disabled:cursor-default data-disabled:opacity-40', ]
+[ 'box-border grid size-[22px] shrink-0 cursor-pointer place-items-center border-[1.5px] border-control-border bg-transparent p-0 text-primary-foreground', 'transition-[background-color,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'data-checked:border-primary data-checked:bg-primary', 'data-indeterminate:border-primary data-indeterminate:bg-primary', 'active:not-data-disabled:scale-90', pressableFocusRing, // Invalid: the box itself (`aria-invalid`, which a Field writes on its control) or the group around it. 'aria-invalid:border-destructive group-aria-invalid:border-destructive', 'aria-invalid:data-checked:border-destructive aria-invalid:data-checked:bg-destructive group-aria-invalid:data-checked:border-destructive group-aria-invalid:data-checked:bg-destructive', 'data-disabled:cursor-default data-disabled:opacity-40', ]
 ```
 
 **`shape`** — default `circle`

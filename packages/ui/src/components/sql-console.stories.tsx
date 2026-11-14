@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SqlConsole } from '@/components/ui/sql-console';
+import { Button } from '@/components/ui/button';
+import { SqlConsole, SqlConsoleDatabaseMenu, SqlConsoleEditor, SqlConsoleHeader, SqlConsoleResults } from '@/components/ui/sql-console';
 import { PGliteProvider, useDatabaseStatus } from '@/lib/pglite';
 import type { Migration } from '@/lib/pglite-core';
 import { Panel } from '../stories/primitive-frame';
@@ -46,26 +47,28 @@ function Ready({ children }: { children?: ReactNode }) {
   return children;
 }
 
+function Frame({ w = 1000, dark, children }: { w?: number; dark?: boolean; children?: ReactNode }) {
+  return (
+    <Panel w={w} dark={dark}>
+      <PGliteProvider migrations={seed}>
+        <Ready>{children}</Ready>
+      </PGliteProvider>
+    </Panel>
+  );
+}
+
 const meta: Meta<typeof SqlConsole> = {
   title: 'Organisms/SqlConsole',
   component: SqlConsole,
   parameters: { layout: 'padded' },
-  render: (args) => (
-    <Panel w={1000} dark={args.className === 'dark'}>
-      <PGliteProvider migrations={seed}>
-        <Ready>
-          <SqlConsole {...args} className={undefined} />
-        </Ready>
-      </PGliteProvider>
-    </Panel>
-  ),
+  render: (args) => <Frame><SqlConsole {...args} /></Frame>,
 };
 export default meta;
 type Story = StoryObj<typeof SqlConsole>;
 
 export const Default: Story = { args: { defaultValue: query, autoRun: true, timing: false } };
 export const MultipleStatements: Story = {
-  args: { defaultValue: "select count(*)::int as books from books;\nselect title, tags, meta from books order by id;", autoRun: true, timing: false },
+  args: { defaultValue: "select count(*)::int as books from books;\nselect title, price, tags, meta from books order by id;", autoRun: true, timing: false },
 };
 export const WriteResult: Story = {
   args: { defaultValue: "create table notes (id serial primary key, body text);\ninsert into notes (body) values ('hello'), ('world');", autoRun: true, timing: false },
@@ -73,5 +76,32 @@ export const WriteResult: Story = {
 export const QueryError: Story = {
   args: { defaultValue: 'select 1;\nselect * from boooks;', autoRun: true, timing: false },
 };
-export const Stacked: Story = { args: { defaultValue: query, autoRun: true, timing: false, layout: 'stacked', sidebar: false } };
-export const Dark: Story = { args: { defaultValue: query, autoRun: true, timing: false, className: 'dark' } };
+/** An empty result: the table's EmptyState under its typed headers. */
+export const NoRows: Story = {
+  args: { defaultValue: 'select title, price from books where price > 100;', autoRun: true, timing: false },
+};
+/** Composed from its parts: no sidebar, so one column at any width, and a header with a control of your own. */
+export const WithoutSidebar: Story = {
+  render: (args) => (
+    <Frame w={720}>
+      <SqlConsole {...args}>
+        <SqlConsoleHeader>
+          <Button size="sm" variant="ghost">Help</Button>
+          <SqlConsoleDatabaseMenu />
+        </SqlConsoleHeader>
+        <SqlConsoleEditor rows={4} />
+        <SqlConsoleResults />
+      </SqlConsole>
+    </Frame>
+  ),
+  args: { defaultValue: query, autoRun: true, timing: false },
+};
+/** Its own width, not the viewport's: a phone-sized console is one column, and the result table stacks its rows. */
+export const Compact: Story = {
+  render: (args) => <Frame w={390}><SqlConsole {...args} /></Frame>,
+  args: { defaultValue: query, autoRun: true, timing: false },
+};
+export const Dark: Story = {
+  render: (args) => <Frame dark><SqlConsole {...args} /></Frame>,
+  args: { defaultValue: query, autoRun: true, timing: false },
+};

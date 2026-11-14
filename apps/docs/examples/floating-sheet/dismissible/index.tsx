@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { FloatingSheet } from '@/components/ui/floating-sheet'
+import { FloatingSheet, FloatingSheetBody } from '@/components/ui/floating-sheet'
 
 const places = [
   ['Blue Bottle Coffee', 'Coffee · 0.2 mi'],
@@ -14,8 +14,9 @@ const places = [
 ]
 
 // A docked bottom sheet you can put away, like the Maps or Find My sheet.
-// `peek` and `detents` are shares of the host's height; dragging below the
-// resting height slides the sheet off the edge and calls `onVisibleChange(false)`.
+// `peek` and `snapPoints` are shares of the host's height; dragging below the
+// resting height (`collapse="hide"`) slides the sheet off the edge and calls
+// `onVisibleChange(false)`.
 export default function Dismissible() {
   const [visible, setVisible] = useState(false)
   return (
@@ -25,20 +26,20 @@ export default function Dismissible() {
         <Button onClick={() => setVisible(true)}>Nearby places</Button>
       </div>
       <FloatingSheet
-        appearance="sheet"
+        variant="sheet"
         gutter={0}
         radius={16}
-        dismissible
+        collapse="hide"
         visible={visible}
         onVisibleChange={setVisible}
         peek="40%"
-        detents={['70%']}
+        snapPoints={['70%']}
         topGap="5%"
         hideOnScroll={false}
-        label="Nearby places"
+        aria-label="Nearby places"
       >
         {/* One child: the body stretches each direct child to its full height. */}
-        <FloatingSheet.Body>
+        <FloatingSheetBody>
           <div className="flex h-full min-h-0 flex-col">
             <div className="flex items-center justify-between px-5 pb-2">
               <h2 className="m-0 text-title font-bold">Nearby</h2>
@@ -55,7 +56,7 @@ export default function Dismissible() {
               ))}
             </div>
           </div>
-        </FloatingSheet.Body>
+        </FloatingSheetBody>
       </FloatingSheet>
     </div>
   )

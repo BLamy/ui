@@ -1,6 +1,12 @@
 # MarkdownView
 
-Workbench chat replies and these docs use `@brett_lamy/docstream` through the package's `MarkdownView` adapter. Docstream provides GitBook-aware parsing, code highlighting, tables, hints, and streaming-aware markup.
+`MarkdownView` renders Markdown you only read: an AI reply as it streams in, release notes, a pull-request body, a docs article. It is [Docstream](https://github.com/BLamy/docstream)'s GitBook-flavored renderer (these docs use it too) behind one small component, so a host never imports Docstream itself.
+
+Use a sibling when the job differs:
+
+- **The user writes the Markdown:** [MarkdownEditor](https://blamy.github.io/ui/#/markdown-editor), a rich, form-ready field. Toggle between the two for an edit / preview pair.
+- **Source code, not prose:** [CodeEditor](https://blamy.github.io/ui/#/code-editor), editable or read-only, with gutters and a windowed renderer for big files.
+- **A whole chat transcript:** [Conversation](https://blamy.github.io/ui/#/conversation), whose `MessageMarkdown` is a `MarkdownView` with the reply styling.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -9,9 +15,7 @@ Workbench chat replies and these docs use `@brett_lamy/docstream` through the pa
 Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import {
-  MarkdownView, HlPre, DocstreamRefContext,
-} from '@/components/ui/markdown-view'
+import { MarkdownView } from '@/components/ui/markdown-view'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -22,9 +26,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import {
-  MarkdownView, HlPre, DocstreamRefContext,
-} from '@brett_lamy/ui'
+import { MarkdownView } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
@@ -55,9 +57,28 @@ Pass the latest accumulated markdown as chunks arrive. `streaming` is forwarded 
 <MarkdownView markdown={partialAnswer} streaming={isStreaming} />
 ```
 
+## Props
+
+| Prop | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `markdown` | `string` | `''` | The Markdown source. Pass the whole text each time; while streaming, the latest accumulated text. |
+| `streaming` | `boolean` | `false` | The text is still arriving: an unfinished block stays open, the region is marked busy, and the root gets `data-streaming`. |
+| `onReferenceClick` | `(ref: ReferenceNode) => void` | | Called when an @mention, #tag or citation chip is clicked. |
+| `renderReference` | `(ref: ReferenceNode) => ReactNode \| null` | | Draw a chip yourself; return `null` for the default chip. |
+| `demoResolver` | Docstream's resolver | | Resolves `{% demo %}` blocks to components and their source files. |
+| `sourceRenderer` | Docstream's renderer | | Renders component and Storybook source references. |
+| `tui` | Docstream's TUI options \| `false` | | Configures the sandboxed terminal behind `tui` code fences (see [TuiPreview](https://blamy.github.io/ui/#/tui-preview)); `false` renders them as code. |
+| `ref`, `className`, `style`, … | `div` props | | Passed to the root `div`; `className` merges after `wb-md`. |
+
+`ReferenceNode` (the chip's `kind`, `label`, `id` and `url`) is exported with the component.
+
 ## Styling
 
-Import `@brett_lamy/ui/styles.css`. Docstream's styles are included by the Workbench adapter. The rendered wrapper uses `data-slot="markdown-view"` and class `wb-md`; pass `className` or `style` for layout-specific adjustments.
+Import `@brett_lamy/ui/styles.css`; the component brings Docstream's stylesheet with it. The root is `<div data-slot="markdown-view" data-renderer="docstream" class="wb-md">`. `.wb-md` sets the reading rhythm (headings, lists, inline code, tables) from the theme's variables, and code fences take their colors from `--code`, `--code-foreground` and CodeEditor's `--bl-syntax-*` knobs, so a dark scope or a custom palette restyles them. Pass `className` for layout. Docstream's own sheet is not in a cascade layer yet, so to override one of its rules use a selector at least as specific as its own.
+
+## Accessibility
+
+The output is semantic HTML: real headings, lists, tables, links and `code` elements, no injected raw HTML. Chips are buttons named by their label. While `streaming`, Docstream marks the region `aria-busy`, so a screen reader reads the reply once it settles instead of every chunk.
 
 ## Live example
 

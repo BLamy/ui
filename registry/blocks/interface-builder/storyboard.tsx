@@ -642,7 +642,7 @@ export function Storyboard({ viewport, onViewportChange, controller, appearance,
             controller={controller}
             background="dots"
             fit={fit}
-            cursor={ui.cursor}
+            style={{ cursor: ui.cursor }}
             aria-label="Storyboard"
             className="bg-muted"
             onCanvasPointerDown={onPointerDown}

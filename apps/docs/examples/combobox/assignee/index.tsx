@@ -3,7 +3,9 @@ import {
   Combobox,
   ComboboxContent,
   ComboboxEmpty,
+  ComboboxField,
   ComboboxInput,
+  ComboboxTrigger,
   ComboboxItem,
   ComboboxList,
 } from '@/components/ui/combobox'
@@ -42,7 +44,10 @@ export default function Assignee() {
           onValueChange={setValue}
           onQueryChange={setQuery}
         >
-          <ComboboxInput placeholder="Search the team" />
+          <ComboboxField>
+            <ComboboxInput placeholder="Search the team" />
+            <ComboboxTrigger />
+          </ComboboxField>
           <ComboboxContent>
             <ComboboxEmpty>No one matches “{query}”.</ComboboxEmpty>
             <ComboboxList>
@@ -69,7 +74,7 @@ export default function Assignee() {
       <Field disabled>
         <FieldLabel>Reviewer (locked)</FieldLabel>
         <Combobox items={[{ value: 'ana', label: 'Ana Torres' }]} defaultValue="ana">
-          <ComboboxInput />
+          <ComboboxField />
           <ComboboxContent />
         </Combobox>
       </Field>

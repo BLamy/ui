@@ -66,8 +66,9 @@ function Caption({ children }: { children: ReactNode }) {
   )
 }
 
-// The detail column hosts a SplitViewStack: albums push, their tracks push a
-// credits page. The sidebar selection is the stack's resetKey.
+// The detail column pushes pages, so it holds a NavigationStack: albums push,
+// their tracks push a credits page. The sidebar selection is the stack's
+// resetKey; renderPage draws the pushed pages from their keys.
 export default function NestedStack({
   variant = 'regular',
 }: {
@@ -87,7 +88,7 @@ export default function NestedStack({
           ? 'Swipe from the leading edge (or press Esc): the album pops ' +
             'first, then the column.'
           : 'Open an album, then a track. The back button carries the page ' +
-            'below’s title, truncated to fit.'}
+            'below’s title, or “Back” when it doesn’t fit.'}
       </Caption>
     </div>
   )

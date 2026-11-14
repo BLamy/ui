@@ -1,4 +1,5 @@
-import { ReplayPreview, replayDemoEvents } from '@/components/ui/replay-preview'
+import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo'
+import { ReplayPreview } from '@/components/ui/replay-preview'
 
 // DevTools open on the Network tab just after checkout failed: 8 requests, 1 failed in red. Select a row for its
 // headers, payload and response, switch to Console for the error, or scrub back to watch both lists shrink.

@@ -1,32 +1,23 @@
 {
   "name": "request-table",
   "title": "RequestTable",
-  "description": "A virtualized table of requests on UI SDK's virtualizer, grid focus and resize: resizable, sortable columns, a waterfall with a playhead that moves without re-rendering, links to the other end of a call, and a size class of its own (bindSizeClass) that hides columns and goes to two-line rows when it is narrow. Stays smooth at 10,000 rows.",
+  "description": "A network pane, as a preset of DataTable: the request columns (name, method, status, type, size, time), a waterfall on a shared time range, a playhead line that moves without re-rendering a row, links to the other end of a call, and two-line rows with a small waterfall when the table is narrow. Sorting, resizing, selection, the keyboard and virtual rows are DataTable's. Stays smooth at 10,000 rows.",
   "page": "request-table",
   "files": [
     "components/request-table.tsx"
   ],
   "exports": [
-    "RequestLink",
     "RequestTable",
-    "REQUEST_COLUMNS",
-    "requestTableVariants",
-    "createRequestTableController"
+    "RequestLink",
+    "REQUEST_COLUMNS"
   ],
   "imports": [
     "RequestTable",
     "RequestLink"
   ],
   "types": [
-    "RequestColumn",
     "RequestColumnId",
     "RequestLinkProps",
-    "RequestTableProps",
-    "RequestTableController",
-    "RequestTableActionDetails",
-    "RequestTableValueChangeReason",
-    "RequestTableSortChangeReason",
-    "RequestTableColumnWidthsChangeReason",
-    "RequestTableBreakpoints"
+    "RequestTableProps"
   ]
 }

@@ -1,0 +1,25 @@
+{
+  "name": "tailscale-controls",
+  "title": "Tailscale controls",
+  "description": "The Tailscale connection as controls, over useTailscale: a \"Sign in with Tailscale\" button that follows the connection (sign in, signing in and cancel, connected and sign out, error and retry), a status badge (inline, stacked or a pill) with the tailnet, the error and the sign-in link when a popup is blocked, and the parts of a connection panel: TailscaleSummary (tailnet and this device) and TailscaleExitNodes, a listbox of exit nodes like macOS's Wi-Fi menu.",
+  "page": "tailscale-login",
+  "exports": [
+    "TailscaleLoginButton",
+    "TailscaleStatusBadge",
+    "TailscaleSummary",
+    "TailscaleExitNodes",
+    "TailscaleMark",
+    "tailscaleStatusBadgeVariants"
+  ],
+  "imports": [
+    "TailscaleLoginButton",
+    "TailscaleStatusBadge",
+    "TailscaleSummary",
+    "TailscaleExitNodes"
+  ],
+  "types": [
+    "TailscaleExitNodeLabels",
+    "TailscaleExitNodeState",
+    "TailscaleExitNodeChangeDetails"
+  ]
+}

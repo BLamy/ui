@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { SearchInput } from '@/components/ui/search-input';
 import { FileBadgeIcon } from '@/lib/file-icons';
 import type { MarkdownEditorHandle } from '@/components/ui/markdown-editor';
-import { SplitViewContent, SplitViewDetail, SplitViewEmpty, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
 import { Chevron, Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import type { Folder } from './data';
@@ -167,21 +168,21 @@ export function NoteColumn({ notes }: { notes: NotesState }) {
     : <span title={`${n.file.path} · ${notes.fileStatus(n).label} · Double-click to rename`}
       onDoubleClick={() => { if (!n.file.standalone) notes.setRenaming({ id: n.id, in: 'title' }); }}>{n.file.name}</span> : undefined;
   if (!n && model) return <SplitViewDetail aria-label={viewerLabel(model)}>
-    <SplitViewHeader title={<span title={model.path}>{model.name}</span>} titleAlign="leading" trailing={<>
+    <SplitViewHeader title={<span title={model.path}>{model.name}</span>} titleAlign="start" trailing={<>
       {model.kind === 'json' || model.kind === 'yaml' ? <DataModeToggle mode={dataMode} onChange={setDataMode} /> : null}
       {compose}
     </>} />
     <SplitViewContent key={`${model.id}:${dataMode}`}><FileView notes={notes} file={model} mode={dataMode} /></SplitViewContent>
   </SplitViewDetail>;
   return <SplitViewDetail aria-label="Note">
-    <SplitViewHeader title={name} titleAlign="leading" trailing={n ? <>
+    <SplitViewHeader title={name} titleAlign="start" trailing={n ? <>
       {s.collapsed ? null : tools}
       <ShareMenu n={n} />
       <NoteMenu notes={notes} n={n} />
       {s.collapsed ? null : compose}
     </> : compose} />
     {n ? <SplitViewContent key={n.id}><NoteEditor notes={notes} n={n} source={source} format={format} editorRef={editorRef} /></SplitViewContent>
-      : <SplitViewEmpty icon={<Icon name="note" size={48} sw={1.2} />} title="No Note Selected" />}
+      : <EmptyState icon={<Icon name="note" size={48} sw={1.2} />} title="No Note Selected" />}
     {s.collapsed && n ? <BottomBar className="justify-between px-3">{tools}{compose}</BottomBar> : null}
   </SplitViewDetail>;
 }

@@ -1,7 +1,7 @@
 {
   "name": "select",
   "title": "Select",
-  "description": "A pop-up button that opens a list of options: UI SDK's Select with a filled or plain trigger, groups, options from data, typeahead on the closed button, Field integration and a sheet on small touch screens.",
+  "description": "A pop-up button that opens a list of options: UI SDK's Select with a filled (the kit's field box, in three sizes) or plain trigger, groups, options with icons and descriptions or from data, dense rows, typeahead on the closed button, Field integration and a sheet on small touch screens.",
   "page": "select",
   "exports": [
     "Select",

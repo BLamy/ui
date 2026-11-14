@@ -1,7 +1,7 @@
 {
   "name": "color-picker",
   "title": "ColorPicker",
-  "description": "UI SDK's ColorPicker drawn as iOS: an area, channel sliders, preset swatches and an eye dropper that edit one CSS color, and a popover that composes them with a color field behind a trigger that shows the current color.",
+  "description": "UI SDK's ColorPicker drawn as iOS: an area, channel sliders, preset swatches, typed and per-channel inputs in the kit's field box and an eye dropper that edit one CSS color; a trigger and popover the root opens; ColorInput, the one-line typed color field; and ColorSwatch, a chip on its own.",
   "page": "color-picker",
   "exports": [
     "ColorPicker",
@@ -14,23 +14,30 @@
     "ColorPickerSliderThumb",
     "ColorPickerSwatches",
     "ColorPickerSwatchItem",
+    "ColorPickerField",
+    "ColorPickerInput",
+    "ColorPickerChannelInput",
+    "ColorPickerSwatch",
     "ColorPickerEyeDropper",
+    "ColorInput",
+    "ColorSwatch",
+    "colorPickerTriggerVariants",
     "createColorPickerController"
   ],
   "imports": [
     "ColorPicker",
     "ColorPickerTrigger",
     "ColorPickerContent",
-    "ColorPickerArea",
-    "ColorPickerSlider",
-    "ColorPickerSwatches",
-    "ColorPickerSwatchItem"
+    "ColorInput"
   ],
   "types": [
     "ColorPickerProps",
     "ColorPickerTriggerProps",
     "ColorPickerContentProps",
     "ColorPickerSliderProps",
+    "ColorPickerFieldProps",
+    "ColorInputProps",
+    "ColorSwatchProps",
     "ColorPickerController"
   ]
 }

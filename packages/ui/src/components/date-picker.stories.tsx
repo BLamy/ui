@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { CalendarGrid, CalendarHeader } from '@/components/ui/calendar';
-import { TimeField } from '@/components/ui/date-field';
+import { TimeInput } from '@/components/ui/date-input';
 import {
   DatePicker,
   DatePickerClear,
@@ -73,7 +73,7 @@ export const WithTime: Story = {
           <DatePickerContent />
         </DatePicker>
       </Field>
-      <TimeField aria-label="Start time" locale="en-US" defaultValue="09:30" className="w-auto" />
+      <TimeInput aria-label="Start time" locale="en-US" defaultValue="09:30" className="w-auto" />
     </div>
   ),
 };

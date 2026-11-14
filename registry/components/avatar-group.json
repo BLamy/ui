@@ -1,0 +1,12 @@
+{
+  "name": "avatar-group",
+  "title": "AvatarGroup",
+  "description": "Avatars overlapping in a row, with a +N count past the limit; with `menu`, the stack is one button whose menu lists everyone.",
+  "exports": [
+    "AvatarGroup",
+    "avatarGroupVariants"
+  ],
+  "imports": [
+    "AvatarGroup"
+  ]
+}

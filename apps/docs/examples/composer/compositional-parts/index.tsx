@@ -5,19 +5,19 @@ import {
   useState,
   type RefObject,
 } from 'react'
-import { Composer, ComposerAttach, ComposerAttachments, ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop, ComposerText } from '@/components/ui/composer/composer'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { Composer, ComposerAdd, ComposerAttachments, ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop, ComposerText } from '@/components/ui/composer/composer'
+import { ThemeScope } from '@/lib/theme'
 import { ModelPicker } from '@/components/blocks/t3-clone/components/workbench/model-picker'
 import { WORKBENCH_MODELS, WORKBENCH_PROVIDERS } from '@/components/blocks/t3-clone/components/workbench/models'
 
 const efforts = [
-  { id: 'low', label: 'Low' },
-  { id: 'medium', label: 'Medium' },
-  { id: 'high', label: 'High' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
 ]
 const access = [
-  { id: 'full', label: 'Full access' },
-  { id: 'read', label: 'Read only' },
+  { value: 'full', label: 'Full access' },
+  { value: 'read', label: 'Read only' },
 ]
 
 /* A chat transcript for the scroll-linked composer: it opens at the newest
@@ -217,14 +217,14 @@ function CompositionalParts({ variant = 'full' }: { variant?: string }) {
             <ComposerSeparator />
             <ComposerSelect
               aria-label="Effort"
-              options={efforts}
+              items={efforts}
               defaultValue="medium"
             />
             <ComposerSeparator />
-            <ComposerSelect aria-label="Access" icon="lock-rounded" options={access} />
+            <ComposerSelect aria-label="Access" icon="lock-rounded" items={access} />
           </ComposerOptions>
           <ComposerSpacer />
-          <ComposerAttach />
+          <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
           <ComposerStop variant="solid" />
           <ComposerSend morph={false} />
         </ComposerFooter>
@@ -265,16 +265,15 @@ function CompositionalParts({ variant = 'full' }: { variant?: string }) {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function CompositionalPartsExample({
   variant,
 }: {
   variant?: string
 }) {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <CompositionalParts variant={variant} />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

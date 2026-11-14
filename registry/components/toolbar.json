@@ -1,0 +1,26 @@
+{
+  "name": "toolbar",
+  "title": "Toolbar",
+  "description": "A row of controls with one tab stop on UI SDK's Toolbar: plain, a floating card, or the iOS bottom bar of a list in edit mode.",
+  "page": "toolbar",
+  "exports": [
+    "Toolbar",
+    "ToolbarButton",
+    "ToolbarGroup",
+    "ToolbarSeparator",
+    "ToolbarText",
+    "toolbarVariants",
+    "toolbarButtonVariants",
+    "useToolbar",
+    "createToolbarController"
+  ],
+  "imports": [
+    "Toolbar",
+    "ToolbarButton",
+    "ToolbarSeparator",
+    "ToolbarText"
+  ],
+  "types": [
+    "ToolbarController"
+  ]
+}

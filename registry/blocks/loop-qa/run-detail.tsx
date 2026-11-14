@@ -8,7 +8,9 @@ import { MarkdownView } from '@/components/ui/markdown-view';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import { ReplayPreview } from '@/components/ui/replay-preview';
 import { Spinner } from '@/components/ui/spinner';
-import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
+import {
+  NavigationStackBar, NavigationStackContent, NavigationStackPage, NavigationStackTitle, NavigationStackTrailing,
+} from '@/components/ui/navigation-stack';
 import { Chevron, Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { BugPreview } from './cards';
@@ -19,7 +21,7 @@ import { EXPLORATION_EVENTS } from './recordings';
 import { RunRing } from './runs';
 import { useLoopQA } from './state';
 
-export function RunPage({ id }: { id: string }) {
+export function RunPage({ value, id }: { value: string; id: string }) {
   const qa = useLoopQA();
   const r = qa.runs.find((x) => x.id === id);
   if (!r) return null;
@@ -31,9 +33,12 @@ export function RunPage({ id }: { id: string }) {
     { label: 'Passed', list: r.journeys.filter((j) => j.status === 'passed' && !j.bugIds.length) },
   ];
   return (
-    <>
-      <SplitViewHeader title={`Run #${r.id.slice(4)}`} titleOnScroll trailing={<PageActions />} />
-      <SplitViewContent className="@container">
+    <NavigationStackPage value={value}>
+      <NavigationStackBar hideOnScroll={false}>
+        <NavigationStackTitle showOnScroll>{`Run #${r.id.slice(4)}`}</NavigationStackTitle>
+        <NavigationStackTrailing><PageActions /></NavigationStackTrailing>
+      </NavigationStackBar>
+      <NavigationStackContent className="@container">
         <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-5 px-5 pt-3 pb-14 @3xl:px-8!">
           <div className="flex items-start gap-4">
             <RunRing run={r} size={56} />
@@ -91,8 +96,8 @@ export function RunPage({ id }: { id: string }) {
             {r.status === 'running' ? <Pending run={r} /> : null}
           </section>
         </div>
-      </SplitViewContent>
-    </>
+      </NavigationStackContent>
+    </NavigationStackPage>
   );
 }
 

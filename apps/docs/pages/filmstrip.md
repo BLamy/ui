@@ -37,4 +37,11 @@ const frames = useMediaFrames(file, { count: 24, height: 64 })
 </div>
 ```
 
-The strip fills its box: give the box a height. Cells keep the media's aspect, measured from the first frame unless you pass `aspect`. It's decorative and hidden from assistive technology; label what it sits in (a timeline clip names itself).
+The strip fills its box: give the box a height. Cells keep the media's aspect, measured from the first frame unless you pass `aspect`. While the frames are still coming (`frames={[]}`), the same cells show as shimmering placeholders (`data-loading` on the strip; still under reduced motion), so a clip keeps its rhythm, and the frames fade in when they land. It's decorative and hidden from assistive technology; label what it sits in (a timeline clip names itself). For sound use [Waveform](https://blamy.github.io/ui/#/waveform); for a single poster frame, an `<img>`.
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `frames` | required | `{ time, src }[]`, in any order. Empty while loading. |
+| `from` / `to` | the first / last frame's time | The media range across the strip. |
+| `aspect` | the first frame's, else 16 / 9 | Width over height of a cell. |
+| `className` / `style` / `ref` | — | On the strip. |

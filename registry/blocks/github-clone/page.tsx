@@ -15,10 +15,9 @@ import {
 } from '@/components/ui/navigation-stack';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Tabs, TabsBar, TabsList } from '@/components/ui/tabs';
-import { WorkbenchTheme } from '@/components/ui/workbench-theme';
 import { SizeClassProvider, useSizeClass, useSizeClassScope } from '@/lib/container';
 import type { Tailscale } from '@/lib/tailscale';
-import { BLProvider, useAppearance } from '@/lib/theme';
+import { BLProvider, useAppearance, ThemeScope } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { PasswordsKeychain, useKeychainSignIn, type DeviceAuth } from '../apple-passwords/page';
 import { githubClient, githubRepo, type GitHub } from './github-api';
@@ -69,7 +68,7 @@ export default function GithubClone({ keychain = true, auth, tailscale, ...props
   const app = <GithubApp {...props} dark={appearance === 'dark'} />;
   return (
     <BLProvider tint={GITHUB_TINT[appearance]} style={GITHUB_THEME[appearance]} className="min-h-0 bg-background">
-      <WorkbenchTheme appearance={appearance} tint={GITHUB_TINT[appearance]} style={GITHUB_THEME[appearance]}
+      <ThemeScope scope="workbench" appearance={appearance} tint={GITHUB_TINT[appearance]} style={GITHUB_THEME[appearance]}
         className="h-full w-full bg-background text-detail text-foreground select-text">
         <div ref={ref} className="@container/gh relative flex h-full min-h-0 w-full flex-col">
           <SizeClassProvider value={sizeClass}>
@@ -78,7 +77,7 @@ export default function GithubClone({ keychain = true, auth, tailscale, ...props
               : app}
           </SizeClassProvider>
         </div>
-      </WorkbenchTheme>
+      </ThemeScope>
     </BLProvider>
   );
 }

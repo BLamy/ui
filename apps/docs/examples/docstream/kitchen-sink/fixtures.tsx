@@ -1,4 +1,5 @@
-import { ReplayPreview, replayDemoEvents } from '@/components/ui/replay-preview'
+import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo'
+import { ReplayPreview } from '@/components/ui/replay-preview'
 
 export function ComponentExample({ label = 'A real component export' }: { label?: string }) {
   return (

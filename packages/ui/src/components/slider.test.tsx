@@ -111,9 +111,9 @@ describe('Slider', () => {
     expect(onValueChange).toHaveBeenLastCalledWith(50, expect.objectContaining({ reason: 'imperative' }));
   });
 
-  it('names a thumb you place yourself, and takes its size and tone', () => {
+  it('names a thumb you place yourself, and takes its size and variant', () => {
     const { container } = render(
-      <Slider aria-label="Time" size="sm" tone="onDark" defaultValue={5} max={60}>
+      <Slider aria-label="Time" size="sm" variant="on-dark" defaultValue={5} max={60}>
         <SliderValue />
         <SliderControl><SliderTrack><SliderIndicator /><SliderThumb /></SliderTrack></SliderControl>
       </Slider>,
@@ -121,7 +121,8 @@ describe('Slider', () => {
     expect(screen.getByRole('slider', { name: 'Time' })).toBeTruthy();
     const root = container.querySelector('[data-slot="slider"]')!;
     expect(root.getAttribute('data-size')).toBe('sm');
-    expect(root.getAttribute('data-tone')).toBe('onDark');
+    expect(root.getAttribute('data-variant')).toBe('on-dark');
+    expect(root.className).toContain('[--bl-slider-fill:--alpha(white/88%)]');
     expect(root.querySelector('[data-slot="slider-value"]')!.textContent).toBe('5');
   });
 
@@ -143,9 +144,9 @@ describe('Slider', () => {
     expect(screen.getByRole('slider', { name: 'Zoom' }).hasAttribute('aria-labelledby')).toBe(false);
   });
 
-  it('feeds caller colors in as variables and submits with a form', () => {
-    const { container } = render(<form data-testid="form"><Slider aria-label="Warmth" name="warmth" defaultValue={62} fillColor="orange" /></form>);
-    expect((container.querySelector('[data-slot="slider"]') as HTMLElement).style.getPropertyValue('--bl-slider-fill')).toBe('orange');
+  it('takes caller colors as variables in className, and submits with a form', () => {
+    const { container } = render(<form data-testid="form"><Slider aria-label="Warmth" name="warmth" defaultValue={62} className="[--bl-slider-fill:orange]" /></form>);
+    expect((container.querySelector('[data-slot="slider"]') as HTMLElement).className).toContain('[--bl-slider-fill:orange]');
     expect(new FormData(screen.getByTestId('form') as HTMLFormElement).get('warmth')).toBe('62');
   });
 });

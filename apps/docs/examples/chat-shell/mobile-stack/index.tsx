@@ -3,7 +3,6 @@ import { Avatar } from '@/components/ui/avatar'
 import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
 import { SidebarContent, SidebarHeader, SidebarItem, SidebarSection } from '@/components/ui/sidebar'
 import { SplitView, SplitViewDetail, SplitViewSidebar, useSplitView } from '@/components/ui/split-view'
-import { Icon } from '@/lib/icon'
 import { ChatShell, ChatShellBack, ChatShellFooter, ChatShellHeader, ChatShellHeaderIcon, ChatShellMain, ChatShellSidebar, ChatShellTitle } from '@/components/blocks/discord-clone/components/chat-shell'
 
 const rooms = [
@@ -28,16 +27,16 @@ function Rooms() {
           Motion Lab
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent aria-label="Channels">
         <SidebarSection title="Channels">
           {rooms.map((r) => (
             <SidebarItem
               key={r.id}
-              icon={<Icon name="number" size={13} sw={2} />}
-              label={r.name}
+              icon="number"
+              title={r.name}
               // Collapsed, the rows are navigation: nothing stays selected.
-              active={!collapsed && value.sidebar === r.id}
-              badge={r.unread ? 'new' : undefined}
+              current={!collapsed && value.sidebar === r.id}
+              trailing={r.unread ? 'new' : undefined}
               onClick={() => select('sidebar', r.id)}
             />
           ))}

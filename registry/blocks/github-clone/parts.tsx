@@ -14,7 +14,7 @@ import type { FileNode, Label, PullRequest } from './data';
 
 /* ── Palette ──
    GitHub's Primer colors. The block is an app with its own palette: `GITHUB_THEME` overrides the theme's shadcn
-   variables on the block's root (BLProvider / WorkbenchTheme `style`), so every utility and library part inside picks
+   variables on the block's root (BLProvider / workbench ThemeScope `style`), so every utility and library part inside picks
    them up. The --gh-* extras are GitHub's state / diff / button colors; --bl-syntax-* recolor CodeEditor
    with Primer's prettylights palette. */
 const PRIMER = {
@@ -63,7 +63,7 @@ function primerVars(dark: boolean): CSSProperties {
 
 /** The block root's theme override (shadcn variables + GitHub extras), per appearance. */
 export const GITHUB_THEME = { light: primerVars(false), dark: primerVars(true) } as const;
-/** GitHub's accent blue, per appearance (the `tint` of the block's BLProvider / WorkbenchTheme). */
+/** GitHub's accent blue, per appearance (the `tint` of the block's BLProvider / workbench ThemeScope). */
 export const GITHUB_TINT = { light: PRIMER.light.tint, dark: PRIMER.dark.tint } as const;
 
 /* ── Octicon-style glyphs (16px grid, drawn for this block) ──

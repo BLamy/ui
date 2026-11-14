@@ -7,6 +7,7 @@ import { parseMarkdown } from '@brett_lamy/docstream/gitbook';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { useFieldControl } from '@ui-sdk/react/field';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { fieldSurfaceVariants } from '@/components/ui/input';
 import { changeDetails } from '@/lib/change-details';
 import { cn } from '@/lib/utils';
 
@@ -20,7 +21,7 @@ import { cn } from '@/lib/utils';
    popover, the chip hover card) render in place in the top layer, so they inherit the same tokens and, inside a
    BLProvider, stay within its layer host.
    Inside a UI SDK Field it is the field's control: the FieldLabel names it, FieldDescription and FieldError
-   describe it, and the field's name, disabled and invalid state apply. */
+   describe it, and the field's name, disabled and invalid state apply (invalid comes only from the Field). */
 
 /** The TipTap editor instance behind a MarkdownEditor. */
 export type MarkdownEditorInstance = NonNullable<Parameters<NonNullable<GitbookEditorProps['onEditorReady']>>[0]>;
@@ -67,13 +68,12 @@ export const markdownEditorVariants = cva(
   {
     variants: {
       variant: {
-        /** A filled field, like Input and Textarea: tint ring while editing. */
-        default:
-          'rounded-ctl bg-input focus-within:bg-transparent focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] data-readonly:focus-within:bg-input data-readonly:focus-within:shadow-none data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)]',
+        /** A filled field: Input's and Textarea's box (`fieldSurfaceVariants`), growing with its text. */
+        default: '',
         /** No chrome: text on the surface it sits on (inline notes, full-page documents). */
         ghost: 'rounded-none bg-transparent',
-        /** A raised card with a hairline, for editors that stand on their own. */
-        card: 'rounded-card bg-card shadow-[0_0_0_1px_var(--border),0_1px_2px_--alpha(black/4%)] focus-within:shadow-[0_0_0_1.5px_var(--primary),0_1px_2px_--alpha(black/4%)] data-readonly:focus-within:shadow-[0_0_0_1px_var(--border),0_1px_2px_--alpha(black/4%)] data-invalid:shadow-[0_0_0_1.5px_var(--destructive)]',
+        /** A raised card with a hairline, for editors that stand on their own; the same rings as a field. */
+        card: 'rounded-card bg-card shadow-hairline focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)]',
       },
       size: {
         sm: 'bl-mde-sm',
@@ -81,9 +81,18 @@ export const markdownEditorVariants = cva(
         lg: 'bl-mde-lg',
       },
     },
+    compoundVariants: (['sm', 'default', 'lg'] as const).map((size) => ({
+      variant: 'default' as const,
+      size,
+      // The field box minus its one-line height and inline padding (the document pads itself, `--mde-px`).
+      class: [fieldSurfaceVariants({ size }), 'h-auto flex-col items-stretch gap-0 px-0'],
+    })),
     defaultVariants: { variant: 'default', size: 'default' },
   },
 );
+
+/* Read-only keeps the field's rest look while focused (the text is still selectable). */
+const readOnlyFocus = 'data-readonly:focus-within:shadow-none data-[variant=default]:data-readonly:focus-within:bg-input data-[variant=card]:data-readonly:focus-within:shadow-hairline';
 
 /** What a MarkdownEditor ref exposes: the editor's commands plus Markdown-level helpers. */
 export interface MarkdownEditorHandle {
@@ -110,7 +119,7 @@ export interface MarkdownEditorHandle {
 export interface MarkdownEditorClassNames {
   /** The editor surface (the flex column holding the toolbar and the writing area). */
   editor?: string;
-  /** The writing area (the contenteditable). Same as `contentClassName`. */
+  /** The writing area (the contenteditable). */
   content?: string;
   /** The first block, whatever it is — a Notes-style title line. */
   title?: string;
@@ -223,7 +232,7 @@ function applySlotClasses(
   for (const [el, list] of want) applied.set(el, list);
 }
 
-export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorVariants> {
+type MarkdownEditorOwnProps = VariantProps<typeof markdownEditorVariants> & {
   /** First-party YAML frontmatter property sheet. */
   documentProperties?: GitbookEditorProps['documentProperties'];
   /** Markdown (controlled). */
@@ -238,10 +247,8 @@ export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorV
   placeholder?: string;
   /** Not editable, but focusable and selectable; the field chrome stays. */
   readOnly?: boolean;
-  /** Not editable and dimmed. */
+  /** Not editable and dimmed. Inside a Field, the field's `disabled` applies too. */
   disabled?: boolean;
-  /** Marks the field invalid (red ring, aria-invalid). */
-  invalid?: boolean;
   autoFocus?: boolean;
   /** The formatting toolbar (bold, italic, strike, code, link). Hidden while read-only or disabled. */
   toolbar?: boolean;
@@ -272,12 +279,14 @@ export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorV
   pickFile?: GitbookEditorProps['pickFile'];
   /** Claim a drop: return the URLs to embed at the drop point, or `null` for the default handling. */
   onDropEmbeds?: GitbookEditorProps['onDropEmbeds'];
-  /** Runs before the editor's keymaps; return true when handled. */
-  onKeyDown?: (event: KeyboardEvent) => boolean;
-  /** Runs before the editor's paste handling; return true when handled. */
-  onPaste?: (event: ClipboardEvent) => boolean;
-  onFocus?: () => void;
-  onBlur?: () => void;
+  /** Runs before the editor's keymaps (ProseMirror's `handleKeyDown`); return true when you handled the key. */
+  handleKeyDown?: (event: KeyboardEvent) => boolean;
+  /** Runs before the editor's paste handling (ProseMirror's `handlePaste`); return true when you handled it. */
+  handlePaste?: (event: ClipboardEvent) => boolean;
+  /** The writing area took focus. */
+  onFocus?: (event: FocusEvent) => void;
+  /** The writing area lost focus. */
+  onBlur?: (event: FocusEvent) => void;
   /** The TipTap editor, once mounted (and null on teardown). */
   onEditorReady?: (editor: MarkdownEditorInstance | null) => void;
   /** Minimum height of the writing area (px or any CSS length). */
@@ -286,17 +295,20 @@ export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorV
   maxHeight?: number | string;
   /** Submits the Markdown with a form under this name (a hidden input). Inside a Field, defaults to the field's. */
   name?: string;
+  /** The writing area's id (the contenteditable, which is the field's control). */
   id?: string;
+  /** Names the writing area. Inside a Field, its FieldLabel does. */
   'aria-label'?: string;
   'aria-labelledby'?: string;
   'aria-describedby'?: string;
-  className?: string;
-  /** Classes for the writing area (the contenteditable) — shorthand for `classNames.content`. */
-  contentClassName?: string;
-  /** Classes for parts of the document: title line, headings, checklists and their checkboxes, tables, … */
+  /** Classes for parts of the document: the writing area, title line, headings, checklists and their checkboxes, tables, … */
   classNames?: MarkdownEditorClassNames;
-  style?: React.CSSProperties;
-}
+  ref?: React.Ref<MarkdownEditorHandle>;
+};
+
+/** The root `div` takes the rest (`className`, `style`, `data-*`…); `id` and the `aria-*` names go on the writing area. */
+export type MarkdownEditorProps = MarkdownEditorOwnProps &
+  Omit<React.HTMLAttributes<HTMLDivElement>, keyof MarkdownEditorOwnProps | 'children' | 'onChange' | 'onInput'>;
 
 /** Sets a callback or object ref. */
 function setRef<T>(ref: React.Ref<T>, value: T | null) {
@@ -310,8 +322,8 @@ const len = (v: number | string | undefined) => (typeof v === 'number' ? `${v}px
  * A Markdown field on the Docstream editor: WYSIWYG blocks, "/" commands, Markdown paste, inline or chip image
  * paste. Controlled (`value`) or uncontrolled (`defaultValue`); the ref exposes the editor's commands.
  */
-export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor(
-  {
+export function MarkdownEditor({
+    ref,
     value,
     defaultValue = '',
     onValueChange,
@@ -319,7 +331,6 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
     placeholder,
     readOnly = false,
     disabled: disabledProp = false,
-    invalid: invalidProp = false,
     autoFocus = false,
     toolbar = false,
     documentProperties,
@@ -338,8 +349,8 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
     resolveAsset,
     pickFile,
     onDropEmbeds,
-    onKeyDown,
-    onPaste,
+    handleKeyDown: onKeyDownHook,
+    handlePaste: onPasteHook,
     onFocus,
     onBlur,
     onEditorReady,
@@ -353,12 +364,10 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
     variant,
     size,
     className,
-    contentClassName,
     classNames,
     style,
-  },
-  ref,
-) {
+    ...props
+}: MarkdownEditorProps) {
   const controlled = value !== undefined;
   const [inner, setInner] = React.useState(defaultValue);
   const markdown = controlled ? value : inner;
@@ -370,7 +379,7 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
     | (Record<string, unknown> & { ref?: React.Ref<HTMLElement> })
     | undefined;
   const disabled = disabledProp || !!field?.disabled;
-  const invalid = invalidProp || fieldProps?.['aria-invalid'] === 'true' || fieldProps?.['aria-invalid'] === true;
+  const invalid = fieldProps?.['aria-invalid'] === 'true' || fieldProps?.['aria-invalid'] === true;
   const name = nameProp ?? field?.name;
   const controlId = (fieldProps?.id as string | undefined) ?? id;
   const labelledBy = (fieldProps?.['aria-labelledby'] as string | undefined) ?? ariaLabelledby;
@@ -380,8 +389,8 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
   const editable = !readOnly && !disabled;
 
   // Handlers the editor captured at creation read the latest props through here.
-  const latest = React.useRef({ markdown, onValueChange, onSubmit, onKeyDown, onPaste, pasteMarkdown, onReady: onEditorReady, controlled });
-  latest.current = { markdown, onValueChange, onSubmit, onKeyDown, onPaste, pasteMarkdown, onReady: onEditorReady, controlled };
+  const latest = React.useRef({ markdown, onValueChange, onSubmit, onKeyDown: onKeyDownHook, onPaste: onPasteHook, pasteMarkdown, onReady: onEditorReady, controlled });
+  latest.current = { markdown, onValueChange, onSubmit, onKeyDown: onKeyDownHook, onPaste: onPasteHook, pasteMarkdown, onReady: onEditorReady, controlled };
 
   // Why the next change happens: a call through the ref says so while it runs; otherwise it is an edit, caused by
   // the input event seen last in this task (a key, a paste, a drop, a toolbar press).
@@ -492,8 +501,8 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
 
   React.useEffect(() => {
     if (!editor) return;
-    const f = () => onFocus?.();
-    const b = () => onBlur?.();
+    const f = ({ event }: { event: FocusEvent }) => onFocus?.(event);
+    const b = ({ event }: { event: FocusEvent }) => onBlur?.(event);
     editor.on('focus', f);
     editor.on('blur', b);
     return () => {
@@ -540,11 +549,11 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
   );
 
   // Slot classes onto the live document, re-applied after every transaction (ProseMirror re-renders nodes).
-  const slotKey = JSON.stringify([contentClassName, classNames ?? null]);
+  const slotKey = JSON.stringify(classNames ?? null);
   React.useEffect(() => {
     if (!editor) return;
     return whenMounted(editor, () => {
-      const slots: MarkdownEditorClassNames = { ...classNames, content: cn(classNames?.content, contentClassName) || undefined };
+      const slots: MarkdownEditorClassNames = { ...classNames };
       const applied = new Map<Element, string[]>();
       const dom = editorDom(editor);
       if (!dom) return;
@@ -568,11 +577,11 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
         applySlotClasses(editor, {}, applied);
       };
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, slotKey]);
 
   return (
     <div
+      {...props}
       ref={rootRef}
       data-slot="markdown-editor"
       data-variant={variant ?? 'default'}
@@ -580,13 +589,14 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
       data-disabled={disabled || undefined}
       data-invalid={invalid || undefined}
       data-toolbar={(toolbar && editable) || undefined}
-      className={cn(markdownEditorVariants({ variant, size }), className)}
+      className={cn(markdownEditorVariants({ variant, size }), readOnlyFocus, className)}
       style={{
         ...(minHeight !== undefined ? { '--mde-min-h': len(minHeight) } : {}),
         ...(maxHeight !== undefined ? { '--mde-max-h': len(maxHeight) } : {}),
         ...style,
       } as React.CSSProperties}
       onPointerDown={(e) => {
+        props.onPointerDown?.(e);
         // Clicks on the field's padding focus the end of the document, as a textarea would.
         const t = e.target as HTMLElement;
         if (editable && (t === e.currentTarget || t.matches('.gb-content, .bl-mde-doc'))) {
@@ -625,4 +635,4 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
       {name !== undefined ? <input type="hidden" name={name} value={markdown} disabled={disabled} /> : null}
     </div>
   );
-});
+}

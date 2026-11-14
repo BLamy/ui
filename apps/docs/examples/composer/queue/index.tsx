@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerStop } from '@/components/ui/composer/composer'
 import { ComposerQueue } from '@/components/ui/composer/composer-cards'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 
 interface Message {
   id: number
@@ -66,8 +66,8 @@ function Queue() {
 
 export default function QueueExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <Queue />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

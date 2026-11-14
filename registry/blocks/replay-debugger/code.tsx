@@ -147,10 +147,7 @@ function DebuggerEditor({
       currentLine={current ?? undefined}
       currentColumn={current !== null ? (column ?? undefined) : undefined}
       lineDecoration={lineDecoration}
-      onLineNumberClick={onNumber}
-      lineNumberClickable={isClickable}
-      lineNumberLabel={numberLabel}
-      lineNumberTitle={numberTitle}
+      lineNumbers={{ onClick: onNumber, clickable: isClickable, label: numberLabel, title: numberTitle }}
       lineHeight={19}
     />
   );

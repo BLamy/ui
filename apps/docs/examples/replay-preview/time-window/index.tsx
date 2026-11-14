@@ -1,4 +1,5 @@
-import { ReplayPreview, replayDemoEvents } from '@/components/ui/replay-preview'
+import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo'
+import { ReplayPreview } from '@/components/ui/replay-preview'
 
 // The scrubber highlights 0:06.2–0:08.0, where checkout fails. Play stops at the
 // segment's end (play again to replay it); scrub outside it to play the rest.

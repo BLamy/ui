@@ -1,21 +1,23 @@
 {
   "name": "file-upload",
   "title": "FileUpload",
-  "description": "Pick, drop or paste files on UI SDK's FileInput: a styled drop zone and Browse button, a file list with previews, progress, retry and remove (one Tab stop, Delete removes), rejected files listed with their reasons, folder drops, and a concurrency-limited upload queue with an XHR adapter that reports real progress.",
+  "description": "Pick, drop or paste files on UI SDK's FileInput: a styled dropzone and Browse trigger, a file list with previews, progress, retry and remove (one Tab stop, Delete removes), rejected files listed with their reasons, folder drops, and a concurrency-limited upload queue with an XHR adapter that reports real progress. Put the dropzone in a Field for its invalid state and error.",
   "page": "file-upload",
   "exports": [
     "FileUpload",
-    "FileDropZone",
-    "FileUploadButton",
-    "FileList",
-    "FileItem",
-    "FileThumbnail",
+    "FileUploadDropzone",
+    "FileUploadTrigger",
+    "FileUploadList",
+    "FileUploadItem",
+    "FileUploadThumbnail",
+    "fileUploadDropzoneVariants",
+    "fileUploadItemVariants",
     "useFileUploadContext"
   ],
   "imports": [
     "FileUpload",
-    "FileDropZone",
-    "FileList"
+    "FileUploadDropzone",
+    "FileUploadList"
   ],
   "files": [
     "components/file-upload.tsx"

@@ -1,9 +1,10 @@
 'use client';
 import * as React from 'react';
 import { getStroke } from 'perfect-freehand';
-import { PK_TOOLS, type PencilStroke } from '@/components/ui/pencilkit/constants';
+import { pencilTools, type PencilStroke } from '@/components/ui/pencilkit/constants';
 
-export function outlinePath(pts: number[][]): string {
+/** perfect-freehand's outline polygon as a smooth closed SVG path. */
+function outlinePath(pts: number[][]): string {
   if (!pts || pts.length < 3) return '';
   let d = 'M' + pts[0][0].toFixed(2) + ' ' + pts[0][1].toFixed(2) + 'Q';
   for (let i = 0; i < pts.length; i++) {
@@ -17,34 +18,34 @@ export function outlinePath(pts: number[][]): string {
 }
 
 export interface StrokePathProps {
-  st: PencilStroke;
-  /** Set false to render the plain (non perfect-freehand) fallback path. Default true. */
-  pf?: boolean;
+  stroke: PencilStroke;
+  /** `freehand` (default) fills perfect-freehand's pressure outline; `plain` strokes the raw polyline. */
+  variant?: 'freehand' | 'plain';
 }
 
-export function StrokePath({ st, pf = true }: StrokePathProps) {
-  const T = PK_TOOLS[st.tool];
-  if (pf) {
-    const pts = getStroke(st.points, {
-      ...T.opt,
-      size: T.opt.size * st.w,
-      simulatePressure: !st.pen,
-      last: !!st.done,
+/** One stroke as an SVG `<path>`, for an `<svg>` in the stroke's own coordinates. Memoized: a drawing re-renders
+ *  only the stroke that changed. */
+export const StrokePath = React.memo(function StrokePath({ stroke, variant = 'freehand' }: StrokePathProps) {
+  const tool = pencilTools[stroke.tool];
+  if (variant === 'freehand') {
+    const pts = getStroke(stroke.points, {
+      ...tool.options,
+      size: tool.options.size * stroke.width,
+      simulatePressure: !stroke.pressure,
+      last: stroke.complete,
     });
-    return <path d={outlinePath(pts)} fill={st.color} fillOpacity={T.alpha} />;
+    return <path d={outlinePath(pts)} fill={stroke.color} fillOpacity={tool.opacity} />;
   }
-  const d = st.points.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
+  const d = stroke.points.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
   return (
     <path
       d={d}
       fill="none"
-      stroke={st.color}
-      strokeOpacity={T.alpha}
-      strokeWidth={T.opt.size * st.w}
+      stroke={stroke.color}
+      strokeOpacity={tool.opacity}
+      strokeWidth={tool.options.size * stroke.width}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
   );
-}
-
-export const MemoStroke = React.memo(StrokePath);
+});

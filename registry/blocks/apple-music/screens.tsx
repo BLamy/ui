@@ -1,12 +1,13 @@
 /* Every screen the app pushes: Listen Now, Browse, Radio, Search, the Library and its sections, and the album,
-   artist and playlist pages. `PageView` draws one; the phone's tabs push them as NavigationStack pages
-   (`MusicPage`) and the wide layout's detail column as SplitViewStack pages. Pages read the player and
+   artist and playlist pages. `PageView` draws one; `MusicPage` makes it a NavigationStack page, for a phone tab's
+   stack and for the wide layout's detail column (whose stack is the same component). Pages read the player and
    `open` from `MusicContext`, so a pushed page stays live. Album tiles, playlist tiles, artist rows and the album
    page's artist link preview what they open in a HoverCard (a pointer or keyboard focus; never touch). */
 import { createContext, useContext, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import {
-  NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackPage, NavigationStackTitle,
+  NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackLeading, NavigationStackPage,
+  NavigationStackTitle,
 } from '@/components/ui/navigation-stack';
 import { NowPlayingBars } from '@/components/ui/now-playing-bars';
 import { SearchInput } from '@/components/ui/search-input';
@@ -55,16 +56,18 @@ export const ALBUM_ICON: readonly IconShape[] = [{ r: [4, 4, 16, 16, 2.4] }, { c
 /** A page's key on a phone tab's NavigationStack: the same album can sit twice in one stack. */
 export const stackKey = (p: Page, i: number) => pageKey(p) + ':' + i;
 
-/** One page on a phone tab's NavigationStack: sections get a large title, detail pages (album, artist, playlist)
- *  keep their title in the page and show it in the bar once it scrolls away. */
-export function MusicPage({ value, page }: { value: string; page: Page }) {
+/** One page of a NavigationStack (a phone tab's, or the wide layout's detail column): sections get a large title,
+ *  detail pages (album, artist, playlist) keep their title in the page and show it in the bar once it scrolls
+ *  away. `leading` goes in the bar (the wide layout's sidebar toggle); `maxWidth` centers the content. */
+export function MusicPage({ value, page, leading, maxWidth }: { value: string; page: Page; leading?: ReactNode; maxWidth?: number }) {
   const detail = isDetail(page);
   return (
     <NavigationStackPage value={value}>
       <NavigationStackBar hideOnScroll={false}>
+        {leading ? <NavigationStackLeading>{leading}</NavigationStackLeading> : null}
         <NavigationStackTitle showOnScroll={detail}>{pageTitle(page)}</NavigationStackTitle>
       </NavigationStackBar>
-      <NavigationStackContent>
+      <NavigationStackContent maxWidth={maxWidth}>
         {detail ? null : <NavigationStackLargeTitle />}
         <PageView page={page} />
       </NavigationStackContent>

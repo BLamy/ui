@@ -1,9 +1,12 @@
 /* Freeform's floating chrome: the insert bar (select, hand, draw, shapes, stickies, text, photos, links,
-   connectors), the drawing palette (the core PencilToolbar), the zoom cluster and the bar over a selection. */
+   connectors), the drawing palette (the core PencilToolbar), the zoom cluster and the bar over a selection. Its
+   buttons are the kit Toolbar's icon tools (`toolbarButtonVariants`, `toggleVariants`). */
 import { useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { PK_INKS, PK_W, type PencilTool } from '@/components/ui/pencilkit/constants';
-import { InkPicker, PencilToolbar, PencilToolbarDivider, ToolPicker, WidthPicker, pencilToolButtonVariants } from '@/components/ui/pencilkit/pencil-toolbar';
+import { PencilInkPicker, PencilToolbar, PencilToolPicker, PencilWidthPicker } from '@/components/ui/pencilkit/pencil-toolbar';
+import { Separator } from '@/components/ui/separator';
+import { toggleVariants } from '@/components/ui/toggle';
+import { ToolbarSeparator, toolbarButtonVariants } from '@/components/ui/toolbar';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger, createPopoverController } from '@/components/ui/popover';
@@ -22,24 +25,24 @@ import type { DrawSettings, Tool } from './surface';
 
 /* ── Buttons ── */
 
-/** A 38×34 icon button for the board's chrome. It passes every other prop to its SdkButton, so it can be a
+/** A 36px icon tool for the board's chrome. It passes every other prop to its SdkButton, so it can be a
  *  popover or menu trigger's `render`. */
 export function ToolButton({ icon, shapes, label, children, className, ...rest }: Omit<ComponentProps<typeof SdkButton>, 'children'> & {
   icon?: string; shapes?: readonly IconShape[]; label: string; children?: ReactNode;
 }) {
   return (
-    <SdkButton aria-label={label} title={label} className={cx(pencilToolButtonVariants(), className)} {...rest}>
+    <SdkButton aria-label={label} title={label} className={cx(toolbarButtonVariants({ size: 'icon' }), className)} {...rest}>
       {children ?? <Icon name={icon} shapes={shapes} size={21} sw={1.7} />}
     </SdkButton>
   );
 }
 
-/** The same button as a UI SDK Toggle (`aria-pressed`), filled while pressed: a mode tool, or Lock. */
+/** The same tool as a UI SDK Toggle (`aria-pressed`), tinted while pressed: a mode tool, or Lock. */
 function ToolToggle({ icon, shapes, label, children, className, ...rest }: Omit<ComponentProps<typeof SdkToggle>, 'children'> & {
   icon?: string; shapes?: readonly IconShape[]; label: string; children?: ReactNode;
 }) {
   return (
-    <SdkToggle aria-label={label} title={label} className={cx(pencilToolButtonVariants(), className)} {...rest}>
+    <SdkToggle aria-label={label} title={label} className={cx(cn(toggleVariants({ size: 'icon' }), 'rounded-ctl'), className)} {...rest}>
       {children ?? <Icon name={icon} shapes={shapes} size={21} sw={1.7} />}
     </SdkToggle>
   );
@@ -66,7 +69,7 @@ export function InsertBar({ tool, setTool, inserts }: { tool: Tool; setTool: (t:
       {/* The board's modes: toggles, one pressed at a time; releasing a mode goes back to Select. */}
       <ToolToggle shapes={G_SELECT} label="Select (V)" pressed={tool === 'select'} onPressedChange={() => setTool('select')} />
       <ToolToggle icon="hand" label="Move the board (H)" pressed={tool === 'hand'} onPressedChange={(on) => setTool(on ? 'hand' : 'select')} />
-      <PencilToolbarDivider className="mx-1.5" />
+      <Separator decorative orientation="vertical" className="mx-1.5 h-5" />
       <ToolToggle icon="pencil-tip" label="Draw (P)" pressed={tool === 'draw'} onPressedChange={(on) => setTool(on ? 'draw' : 'select')} />
 
       <Popover>
@@ -123,7 +126,7 @@ export function InsertBar({ tool, setTool, inserts }: { tool: Tool; setTool: (t:
         </PopoverContent>
       </Popover>
 
-      <PencilToolbarDivider className="mx-1.5" />
+      <Separator decorative orientation="vertical" className="mx-1.5 h-5" />
       <ToolToggle shapes={G_CONNECTOR} label="Connector (C)" pressed={tool === 'connector'} onPressedChange={(on) => setTool(on ? 'connector' : 'select')} />
     </div>
   );
@@ -156,21 +159,17 @@ function LinkForm({ onSubmit }: { onSubmit: (url: string, title: string) => void
 
 /* ── The drawing palette ── */
 
-export function DrawBar({ draw, setDraw }: { draw: { tool: PencilTool; ink: number; width: number }; setDraw: (p: Partial<{ tool: PencilTool; ink: number; width: number }>) => void }) {
+/** The drawing palette, above the insert bar. The neutral inks follow the theme. */
+export function DrawBar({ draw, setDraw }: { draw: DrawSettings; setDraw: (p: Partial<DrawSettings>) => void }) {
   return (
-    <PencilToolbar className="bottom-[78px]">
-      <ToolPicker value={draw.tool} onValueChange={(tool) => setDraw({ tool })} />
-      <PencilToolbarDivider />
-      <InkPicker value={draw.ink} onValueChange={(ink) => setDraw({ ink })} inks={PK_INKS} />
-      <PencilToolbarDivider />
-      <WidthPicker value={draw.width} onValueChange={(width) => setDraw({ width })} widths={PK_W} />
+    <PencilToolbar className="absolute inset-x-2.5 bottom-[78px] mx-auto">
+      <PencilToolPicker value={draw.tool} onValueChange={(tool) => setDraw({ tool })} />
+      <ToolbarSeparator />
+      <PencilInkPicker value={draw.ink} onValueChange={(ink) => setDraw({ ink })} />
+      <ToolbarSeparator />
+      <PencilWidthPicker value={draw.width} onValueChange={(width) => setDraw({ width })} />
     </PencilToolbar>
   );
-}
-
-/** What a stroke draws with, from the palette's settings. The two neutral inks follow the theme. */
-export function drawSettings(d: { tool: PencilTool; ink: number; width: number }, autoInk: string): DrawSettings {
-  return { tool: d.tool, ink: d.ink < 2 ? autoInk : PK_INKS[d.ink], width: PK_W[d.width].m };
 }
 
 /* ── Zoom ── */
@@ -183,7 +182,7 @@ export function ZoomCluster({ zoom, onZoom, onFit, onActual }: { zoom: number; o
         {Math.round(zoom * 100)}%
       </SdkButton>
       <ToolButton icon="plus" label="Zoom in (⌘+)" onClick={() => onZoom(1.25)} />
-      <PencilToolbarDivider className="mx-0.5 my-1.5" />
+      <Separator decorative orientation="vertical" className="mx-0.5 h-5" />
       <ToolButton icon="arrows-expand" label="Fit to screen (⌘0)" onClick={onFit} />
     </div>
   );

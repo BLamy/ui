@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react'
-import { IndexBar } from '@/components/ui/index-bar'
+import { IndexBar, alphabetItems } from '@/components/ui/index-bar'
 import { List, ListRow, ListSection } from '@/components/ui/list'
 
 const people = [
@@ -76,7 +76,7 @@ function ContactsList() {
           ))}
         </List>
       </div>
-      <IndexBar avail={new Set(letters)} onLetter={jump} top={8} bottom={8} />
+      <IndexBar items={alphabetItems(letters)} onJump={jump} className="top-2 bottom-2" />
     </div>
   )
 }

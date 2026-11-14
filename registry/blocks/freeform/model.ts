@@ -75,7 +75,7 @@ export interface StrokeItem extends ItemBase, Frame {
   kind: 'stroke';
   tool: PencilDrawTool;
   color: string;
-  /** Width multiplier (PK_W[i].m). */
+  /** Width scale (a `pencilWidths` scale). */
   width: number;
   pen: boolean;
   points: PencilPoint[];

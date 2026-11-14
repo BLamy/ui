@@ -65,7 +65,7 @@ Gotchas, from the source:
 
 ## `useControllableChange`
 
-State that is either controlled (a `value` is given) or held inside the hook, starting at `defaultValue`, with UI SDK-shaped change callbacks: `onChange(next, details)` gets the same `ChangeDetails` UI SDK's `createChange` hands out (`reason`, `event`, `source`, `cancel()`, `canceled`), before anything moves. It is the `value` / `defaultValue` / `onValueChange` pattern of `FloatingChat`, `ArtifactChatContainer`, `FilterBar` and the Composer, for your own components.
+State that is either controlled (a `value` is given) or held inside the hook, starting at `defaultValue`, with UI SDK-shaped change callbacks: `onChange(next, details)` gets the same `ChangeDetails` UI SDK's `createChange` hands out (`reason`, `event`, `source`, `cancel()`, `canceled`), before anything moves. It is the `value` / `defaultValue` / `onValueChange` pattern of `FloatingSheet`, `ArtifactChatContainer`, `FilterBar` and the Composer, for your own components.
 
 - **Export:** public. Registry item `controllable-state` (`@/lib/controllable-state`).
 - **Needs:** nothing.
@@ -122,7 +122,7 @@ function Shell() {
 }
 ```
 
-Keys are written like `mod+k` or `mod+shift+o`; `mod` is Command on Apple platforms and Ctrl elsewhere. The latest `handler` always runs, so it need not be stable. Components that take a shortcut use the same format: a menu item's `shortcut="mod+r"`, `Tooltip shortcut`, `CommandMenuDialogTrigger shortcut="mod+k"`, `Kbd keys="mod+k"`. See [Behaviors](https://blamy.github.io/ui/#/behaviors) for the rest of UI SDK's behaviors you can use beside the kit.
+Keys are written like `mod+k` or `mod+shift+o`; `mod` is Command on Apple platforms and Ctrl elsewhere. The latest `handler` always runs, so it need not be stable. Components that take a shortcut use the same format: a menu item's `shortcut="mod+r"`, `Tooltip shortcut`, `DialogTrigger shortcut="mod+k"` (the ⌘K command menu's), `Kbd keys="mod+k"`. See [Behaviors](https://blamy.github.io/ui/#/behaviors) for the rest of UI SDK's behaviors you can use beside the kit.
 
 ## `usePersistentHost`
 
@@ -171,7 +171,7 @@ Gotchas:
 
 - **A `null` dock does not detach the host.** The host is appended only when both `host` and `dock` exist and the host is not already in the dock. If the dock goes away the host stays where it was, until it is moved or the component unmounts, which removes it.
 - It runs in a layout effect, so the move happens before paint.
-- A portal's React context is the context of where `createPortal` is called, not of the dock: components inside a persistent host see the providers of the component that owns it. That is also why `useFloatingChat` does not work inside an `ArtifactChatContainer` slot (see [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)).
+- A portal's React context is the context of where `createPortal` is called, not of the dock: components inside a persistent host see the providers of the component that owns it. That is why `useArtifactChatContainer()` works inside the container's Chat and Composer wherever they are docked, and why a hook of the layout they are docked in (`useFloatingSheet`) does not reach them.
 
 ## The system back gesture
 

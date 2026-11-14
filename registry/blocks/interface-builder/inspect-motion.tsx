@@ -143,7 +143,7 @@ export function MotionPanel({ ctx, onPlay }: { ctx: NodeCtx; onPlay: () => void 
               aria-label="Trigger"
               value={m.appear.trigger}
               onValueChange={(t) => t && setM({ appear: { ...m.appear!, trigger: t as 'mount' | 'inView' } })}
-              className="[&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption"
+              size="sm"
             >
               <SegmentedItem value="mount">On appear</SegmentedItem>
               <SegmentedItem value="inView">Scrolled into view</SegmentedItem>
@@ -169,7 +169,7 @@ export function MotionPanel({ ctx, onPlay }: { ctx: NodeCtx; onPlay: () => void 
         {m.drag ? (
           <>
             <Field label="Axis">
-              <Segmented aria-label="Axis" value={m.drag.axis} onValueChange={(v) => v && setM({ drag: { ...m.drag!, axis: v as DragSpec['axis'] } })} className="[&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption"><SegmentedItem value="x">X</SegmentedItem><SegmentedItem value="y">Y</SegmentedItem><SegmentedItem value="both">Both</SegmentedItem></Segmented>
+              <Segmented aria-label="Axis" value={m.drag.axis} onValueChange={(v) => v && setM({ drag: { ...m.drag!, axis: v as DragSpec['axis'] } })} size="sm"><SegmentedItem value="x">X</SegmentedItem><SegmentedItem value="y">Y</SegmentedItem><SegmentedItem value="both">Both</SegmentedItem></Segmented>
             </Field>
             <Field label="Keep inside">
               <ChoiceInput label="Constraints" value={m.drag.constraints} onChange={(v) => setM({ drag: { ...m.drag!, constraints: v } })} options={[{ id: 'none', label: 'Anywhere' }, { id: 'parent', label: 'Its parent' }, ...outlets.map((o) => ({ id: o, label: `@${o}` }))]} />
@@ -231,7 +231,7 @@ export function MotionPanel({ ctx, onPlay }: { ctx: NodeCtx; onPlay: () => void 
               <NumberInput label="Each" value={m.stagger.each} min={0} max={2} step={0.01} unit="s" onBegin={ctx.begin} onChange={(v, live) => setM({ stagger: { ...m.stagger!, each: v } }, live)} />
               <NumberInput label="Delay" value={m.stagger.delay} min={0} max={5} step={0.01} unit="s" onBegin={ctx.begin} onChange={(v, live) => setM({ stagger: { ...m.stagger!, delay: v } }, live)} />
               <Field label="From">
-                <Segmented aria-label="Stagger from" value={m.stagger.from} onValueChange={(v) => v && setM({ stagger: { ...m.stagger!, from: v as 'first' | 'last' } })} className="[&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption"><SegmentedItem value="first">First</SegmentedItem><SegmentedItem value="last">Last</SegmentedItem></Segmented>
+                <Segmented aria-label="Stagger from" value={m.stagger.from} onValueChange={(v) => v && setM({ stagger: { ...m.stagger!, from: v as 'first' | 'last' } })} size="sm"><SegmentedItem value="first">First</SegmentedItem><SegmentedItem value="last">Last</SegmentedItem></Segmented>
               </Field>
               <Help>Children with an Appear effect start one after another.</Help>
             </>

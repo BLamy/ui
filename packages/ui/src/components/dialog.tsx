@@ -21,6 +21,15 @@ import { Button as SdkButton } from '@ui-sdk/react/button';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Icon } from '@/lib/icon';
 import { focusRing } from '@/lib/primitives';
+import {
+  closeButtonVariants,
+  sheetGrabberVariants,
+  surfaceBodyVariants,
+  surfaceDescriptionVariants,
+  surfaceFooterVariants,
+  surfaceHeaderVariants,
+  surfaceTitleVariants,
+} from '@/lib/surface';
 import { cn, cx } from '@/lib/utils';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
 import { useMountPresentationKey, usePresentation } from '@/lib/container';
@@ -85,73 +94,16 @@ export type { DialogController } from '@ui-sdk/react/dialog';
 export { AlertDialogTrigger, createAlertDialogController, createConfirm } from '@ui-sdk/react/alert-dialog';
 export type { AlertDialogController } from '@ui-sdk/react/alert-dialog';
 
-/* ── Surface parts: shared by every modal surface ── */
+/* ── Surface parts: shared by every modal surface (defined in lib/surface, hook-free so Card can use them) ── */
 
-/** A surface's header: `default` stacks the title over its description (the × pinned in the corner beside it);
-    `bar` is one row (back · title · close), for flows and for trays. */
-export const surfaceHeaderVariants = cva('flex', {
-  variants: {
-    variant: {
-      default: 'flex-col gap-1 px-5 pt-5 pb-3',
-      // The row keeps the height its buttons give it, so a back chevron or a × can come and go.
-      bar: 'relative z-2 min-h-[54px] shrink-0 items-start gap-2.5 ps-5 pe-4 pt-4 pb-2',
-    },
-  },
-  defaultVariants: { variant: 'default' },
-});
-
-/** A surface's title: `default` for dialogs and sheets, `sm` for alerts and compact cards. */
-export const surfaceTitleVariants = cva('m-0 font-semibold text-foreground', {
-  variants: {
-    size: {
-      sm: 'text-body leading-[22px]',
-      default: 'text-title leading-[25px] tracking-[-.3px]',
-    },
-  },
-  defaultVariants: { size: 'default' },
-});
-
-/** A surface's description, one step down from its title. */
-export const surfaceDescriptionVariants = cva('m-0 text-muted-foreground', {
-  variants: {
-    size: {
-      sm: 'text-footnote leading-[18px]',
-      default: 'text-subhead leading-[20px]',
-    },
-  },
-  defaultVariants: { size: 'default' },
-});
-
-/** The scrolling area between a surface's header and footer. */
-export const surfaceBodyVariants = cva('bl-scroll min-h-0 flex-1 overflow-y-auto px-5 py-2 text-subhead');
-
-/** A surface's actions: a right-aligned row (`horizontal`) or full-width buttons stacked (`vertical`). */
-export const surfaceFooterVariants = cva('flex gap-2 px-5 pt-3 pb-5', {
-  variants: {
-    orientation: {
-      horizontal: 'items-center justify-end',
-      vertical: 'flex-col',
-    },
-  },
-  defaultVariants: { orientation: 'horizontal' },
-});
-
-/** The round × (and ‹) of every surface: 30px, in the header row (`inline`) or pinned to the top-end corner. */
-export const closeButtonVariants = cva(
-  cn(
-    'bl-btn grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-secondary p-0 text-muted-foreground transition-[background-color,color] duration-exit hover:text-foreground active:bg-secondary-strong disabled:cursor-default disabled:opacity-40',
-    focusRing,
-  ),
-  {
-    variants: {
-      layout: {
-        inline: '',
-        pinned: 'absolute top-4 end-4 z-2',
-      },
-    },
-    defaultVariants: { layout: 'inline' },
-  },
-);
+export {
+  surfaceHeaderVariants,
+  surfaceTitleVariants,
+  surfaceDescriptionVariants,
+  surfaceBodyVariants,
+  surfaceFooterVariants,
+  closeButtonVariants,
+} from '@/lib/surface';
 
 /* ── Dialog ── */
 
@@ -195,12 +147,40 @@ export function Dialog({ container, presentation = 'auto', view, dismissible = t
   // "auto" follows the nearest size class around (a sheet when compact), even when the content is portaled.
   const shown = usePresentation(presentation, 'dialog');
   const key = useMountPresentationKey(shown);
+  return (
+    <SurfaceFlow view={view} dismissible={dismissible}>
+      <SdkDialog key={key} container={container === undefined ? host : container} presentation={shown} dismissible={dismissible} {...props} />
+    </SurfaceFlow>
+  );
+}
+
+export interface SurfaceFlowProps {
+  /** Key of the current view; undefined for a surface that isn't a flow. */
+  view?: string;
+  /** Whether the surface can be dismissed (the bare DialogClose × is left out when it can't). Default true. */
+  dismissible?: boolean;
+  children?: ReactNode;
+}
+
+/** The view flow of a modal surface, for a surface root other than Dialog (Sheet's `view`): it works out the
+    direction of each change of `view` and lets DialogView, DialogTitle, DialogBack and SurfaceFlowTitle below follow it. */
+export function SurfaceFlow({ view, dismissible = true, children }: SurfaceFlowProps) {
   const direction = useViewDirection(view);
   const flow = useMemo(() => ({ view, direction, dismissible }), [view, direction, dismissible]);
+  return <DialogFlowContext.Provider value={flow}>{children}</DialogFlowContext.Provider>;
+}
+
+/** A flow title's text: when the surface has a `view`, a new title travels in from the side its view comes from
+    while the old one plays its exit. Outside a flow, the children as they are. DialogTitle uses it; so can the
+    title of another surface (SheetTitle). */
+export function SurfaceFlowTitle({ children }: { children?: ReactNode }) {
+  const { view, direction } = useContext(DialogFlowContext);
+  if (view === undefined) return children;
+  const key = typeof children === 'string' || typeof children === 'number' ? String(children) : view;
   return (
-    <DialogFlowContext.Provider value={flow}>
-      <SdkDialog key={key} container={container === undefined ? host : container} presentation={shown} dismissible={dismissible} {...props} />
-    </DialogFlowContext.Provider>
+    <Swap value={key} direction={direction} distance={18} blur={3} inline className="grid w-full overflow-x-clip [overflow-clip-margin:8px]">
+      <span className="justify-self-start">{children}</span>
+    </Swap>
   );
 }
 
@@ -274,7 +254,7 @@ export function DialogContent<Payload = unknown>({
       {(state) => (
         <>
           {state.presentation === 'sheet' && dismissible ? (
-            <span data-slot="dialog-grabber" aria-hidden="true" className="absolute top-[5px] left-1/2 z-3 h-[5px] w-9 -translate-x-1/2 rounded-full bg-secondary-strong" />
+            <span data-slot="dialog-grabber" aria-hidden="true" className={cn(sheetGrabberVariants(), 'absolute inset-x-0 top-0 z-3')} />
           ) : null}
           {typeof children === 'function' ? children(state) : children}
         </>
@@ -299,21 +279,16 @@ export function DialogHeader({ className, variant = 'default', ...props }: Dialo
     When the root has a `view`, a new title travels in from the side its view comes from (the leaving one plays its
     exit), and long titles wrap rather than run under the ×. */
 export function DialogTitle({ className, children, ...props }: ComponentProps<typeof SdkDialogTitle>) {
-  const { view, direction } = useContext(DialogFlowContext);
+  const { view } = useContext(DialogFlowContext);
   const header = useContext(DialogHeaderContext);
   const bar = header === 'bar';
   const base = cn(surfaceTitleVariants(), bar ? 'min-w-0 flex-1 py-px' : 'pe-8');
   if (view === undefined) {
     return <SdkDialogTitle className={cx(base, className)} {...props}>{children}</SdkDialogTitle>;
   }
-  const key = typeof children === 'string' || typeof children === 'number' ? String(children) : view;
   return (
     <SdkDialogTitle className={cx(base, className)} {...props}>
-      {(state) => (
-        <Swap value={key} direction={direction} distance={18} blur={3} inline className="grid w-full overflow-x-clip [overflow-clip-margin:8px]">
-          <span className="justify-self-start">{typeof children === 'function' ? children(state) : children}</span>
-        </Swap>
-      )}
+      {(state) => <SurfaceFlowTitle>{typeof children === 'function' ? children(state) : children}</SurfaceFlowTitle>}
     </SdkDialogTitle>
   );
 }
@@ -391,7 +366,9 @@ export interface DialogViewProps extends Omit<ComponentProps<typeof AnimatedHeig
 
 /** The current view of a flow. Changing the root's `view` slides to the new one in the direction of travel while the
     card springs to its height. A view taller than the card's room scrolls. When the view that held focus leaves,
-    focus goes to the card (a control in the new view with `autoFocus` takes it as it mounts). */
+    focus goes to the card (a control in the new view with `autoFocus` takes it as it mounts). Without a `view` on the
+    root it still springs the card to its content's height as that changes (an error appearing). Sheet's SheetView is
+    this part under a Sheet with a `view`. */
 export function DialogView({ children, className, ...props }: DialogViewProps) {
   const { view, direction } = useContext(DialogFlowContext);
   const key = view ?? '';
@@ -399,7 +376,7 @@ export function DialogView({ children, className, ...props }: DialogViewProps) {
   const bind = useCallback(
     (el: HTMLDivElement | null) => {
       if (!el) return;
-      return recovery.bind(el, { key: el.dataset.view ?? '', props: { card: el.closest<HTMLElement>('[data-slot=dialog-content]') } });
+      return recovery.bind(el, { key: el.dataset.view ?? '', props: { card: el.closest<HTMLElement>('[data-slot=dialog-content],[data-slot=drawer-content]') } });
     },
     [recovery],
   );

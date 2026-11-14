@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PlaybackControls, VideoPreview } from '@/components/ui/video-preview'
+import { VideoPreviewControls, VideoPreview } from '@/components/ui/video-preview'
 import { VideoTimeline } from '@/components/ui/video-timeline'
 import { usePlaybackClock } from '@/lib/playback'
 import { layoutTrack, timelineDuration, type Timeline } from '@/lib/video-timeline-model'
@@ -54,7 +54,7 @@ export default function Composition() {
         className="min-h-0 flex-1 p-3"
         timeline={TIMELINE}
         media={MEDIA}
-        clock={clock}
+        playback={clock}
         format={{ width: 1280, height: 720 }}
         renderClip={(clip) =>
           clip.media === 'title' ? (
@@ -68,13 +68,13 @@ export default function Composition() {
         }
       />
       <div className="flex justify-center border-y border-border bg-background py-1">
-        <PlaybackControls clock={clock} />
+        <VideoPreviewControls playback={clock} />
       </div>
       <VideoTimeline
         className="h-40 shrink-0"
         value={TIMELINE}
         readOnly
-        clock={clock}
+        playback={clock}
         media={{ dawn: { duration: Infinity, kind: 'image', name: 'Dawn' }, noon: { duration: Infinity, kind: 'image', name: 'Noon' },
           dusk: { duration: Infinity, kind: 'image', name: 'Dusk' }, inset: { duration: Infinity, kind: 'image', name: 'Inset' },
           title: { duration: Infinity, kind: 'image', name: 'Title' } }}

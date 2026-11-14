@@ -1,0 +1,111 @@
+'use client';
+import { useId, type ComponentType, type ReactNode } from 'react';
+import type { ListData } from '@ui-sdk/react/listbox';
+import { Icon } from '@/lib/icon';
+import { sectionLabelVariants } from '@/lib/primitives';
+import { cn } from '@/lib/utils';
+
+/* ══ Option rows — what Listbox, Select and Combobox draw their options, groups and data with ══
+   Their options are three UI SDK primitives (listbox, select, combobox), so each passes its own indicator and icon
+   parts in; the row, the group classes and the data walker are shared, so the three lists look and read the same. */
+
+/** The parts a list draws its `items` data with. */
+export interface ListDataParts {
+  Item: ComponentType<{ value: never; label?: string; disabled?: boolean; keywords?: string[]; children?: ReactNode }>;
+  Group: ComponentType<{ children?: ReactNode }>;
+  GroupLabel: ComponentType<{ children?: ReactNode }>;
+  Separator: ComponentType<object>;
+}
+
+const dataKey = (value: unknown, index: number) => {
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  const id = value && typeof value === 'object' ? ((value as { id?: unknown }).id ?? (value as { value?: unknown }).value) : undefined;
+  return typeof id === 'string' || typeof id === 'number' ? String(id) : String(index);
+};
+
+/** Draws UI SDK list data (strings, `{ value, label }`, groups, separators) with a list's own styled parts. */
+export function ListDataItems({ items, parts }: { items: ListData<unknown>; parts: ListDataParts }): ReactNode {
+  const { Item, Group, GroupLabel, Separator } = parts;
+  return items.map((entry, index) => {
+    if (typeof entry === 'string') return <Item key={entry} value={entry as never}>{entry}</Item>;
+    if ('type' in entry && entry.type === 'separator') return <Separator key={`separator-${index}`} />;
+    if ('type' in entry && entry.type === 'group') {
+      return (
+        <Group key={`group-${entry.label ?? index}`}>
+          {entry.label ? <GroupLabel>{entry.label}</GroupLabel> : null}
+          <ListDataItems items={entry.items} parts={parts} />
+        </Group>
+      );
+    }
+    const { value, label, disabled, keywords } = entry as { value: unknown; label: string; disabled?: boolean; keywords?: string[] };
+    return (
+      <Item key={dataKey(value, index)} value={value as never} label={label} disabled={disabled} {...(keywords ? { keywords } : null)}>
+        {label}
+      </Item>
+    );
+  });
+}
+
+/** What the kit's rows add to a UI SDK option. */
+export interface OptionRowProps {
+  /** Leading icon or avatar. Screen readers, typeahead and filtering skip it. */
+  icon?: ReactNode;
+  /** A second line under the label. Screen readers hear it as the option's description, not as part of its name. */
+  description?: ReactNode;
+  children?: ReactNode;
+}
+
+/** An option's own text is its label: what a trigger shows and typing finds should not include the description. */
+export const optionLabel = (label: string | undefined, children: ReactNode) => label ?? (typeof children === 'string' ? children : undefined);
+
+/** The id an option's description gets, and the `aria-describedby` the option points at it with: the description
+    then stays out of the option's name (which comes from its content) and is read after it. */
+export function useOptionDescription(description: ReactNode) {
+  const id = useId();
+  return { id, describedBy: description == null || description === false ? undefined : id };
+}
+
+/** The inside of an option: `popup` leads with the checkmark's column, `inset` trails with the checkmark. */
+export function OptionRow({
+  variant, icon, description, descriptionId, children, Indicator, ItemIcon,
+}: OptionRowProps & {
+  variant: 'inset' | 'popup';
+  /** From `useOptionDescription`. */
+  descriptionId?: string;
+  Indicator: ComponentType<{ children?: ReactNode }>;
+  ItemIcon: ComponentType<{ className?: string; children?: ReactNode }>;
+}) {
+  const check = <Indicator><Icon name="check" size={18} sw={2.4} className="shrink-0 text-primary" /></Indicator>;
+  const label = (
+    <span className="flex min-w-0 flex-1 flex-col">
+      <span className="truncate">{children}</span>
+      {description ? (
+        <span id={descriptionId} aria-hidden="true" className="truncate text-footnote leading-[18px] text-muted-foreground">{description}</span>
+      ) : null}
+    </span>
+  );
+  return variant === 'popup' ? (
+    <>
+      <span className="grid w-[18px] shrink-0 place-items-center">{check}</span>
+      {icon ? <ItemIcon className="grid shrink-0 place-items-center text-muted-foreground">{icon}</ItemIcon> : null}
+      {label}
+    </>
+  ) : (
+    <>
+      {icon ? <ItemIcon className="grid shrink-0 place-items-center text-primary">{icon}</ItemIcon> : null}
+      {label}
+      {check}
+    </>
+  );
+}
+
+/** A group after the first one starts under a hairline. */
+export const optionGroupClass = 'not-first:mt-1.5 not-first:pt-1.5 not-first:shadow-hairline-t';
+/** A group's name: the kit's menu section label. */
+export const optionGroupLabelClass = cn(sectionLabelVariants({ variant: 'menu' }), 'px-2 pt-1 pb-1');
+export const optionSeparatorClass = 'my-1.5 h-px bg-border';
+/** A list's popup presented as a sheet, shaped like the kit's bottom Sheet: the full width of its host, square at the
+    bottom edge. It sets the sheet's `--sheet-backdrop`, which only dims the page when the popup is in the top layer: in
+    a layer host (BLProvider is one) the sheet has no scrim behind it. */
+export const optionSheetClass =
+  'data-[presentation=sheet]:max-h-[calc(100%-48px)] data-[presentation=sheet]:w-full data-[presentation=sheet]:min-w-0 data-[presentation=sheet]:rounded-t-card data-[presentation=sheet]:rounded-b-none data-[presentation=sheet]:pb-[max(16px,env(safe-area-inset-bottom))] data-[presentation=sheet]:[--sheet-backdrop:var(--overlay,color-mix(in_oklab,black_40%,transparent))]';

@@ -4,16 +4,15 @@ Join a tailnet from a browser tab: a "Sign in with Tailscale" button and the par
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/tailscale-controls.json https://blamy.github.io/ui/r/tailscale.json https://blamy.github.io/ui/r/tailscale-connect.json{% endcommand %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/tailscale-controls.json{% endcommand %}
 
 Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import { TailscaleProvider } from '@/lib/tailscale-react'
 import {
-  TailscaleLoginButton, TailscaleStatusBadge, TailscaleSummary, TailscaleExitNodes,
+  TailscaleLoginButton, TailscaleStatusBadge, TailscaleSummary,
+  TailscaleExitNodes,
 } from '@/components/ui/tailscale-controls'
-import { createTailscaleConnectClient } from '@/lib/tailscale-connect'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -25,8 +24,8 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  TailscaleProvider, TailscaleLoginButton, TailscaleStatusBadge, TailscaleSummary, TailscaleExitNodes,
-  createTailscaleConnectClient,
+  TailscaleLoginButton, TailscaleStatusBadge, TailscaleSummary,
+  TailscaleExitNodes,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
@@ -123,7 +122,7 @@ The demo is real: it runs Tailscale's client and needs a Tailscale account; appr
 
 ### TailscaleExitNodes
 
-The exit node chooser, read like a Wi-Fi menu: which device carries your traffic to the public internet. A [Listbox](https://blamy.github.io/ui/#/list-box) under an "Exit node" heading that names it: **None** first, a leading check on the node in use, each device's name and a trailing glyph, offline devices dimmed, marked "Offline" and not selectable. The arrow keys move without switching (`activation="manual"`); a press, Space or Enter switches. While a switch runs its row says **Connecting…** with a spinner and the list ignores further presses; if it fails, the message shows under the list in the error colour. With no exit node on the tailnet it says how to offer one instead.
+The exit node chooser, read like a Wi-Fi menu: which device carries your traffic to the public internet. A [Listbox](https://blamy.github.io/ui/#/listbox) under an "Exit node" heading that names it: **None** first, a leading check on the node in use, each device's name and a trailing glyph, offline devices dimmed, marked "Offline" and not selectable. The arrow keys move without switching (`activation="manual"`); a press, Space or Enter switches. While a switch runs its row says **Connecting…** with a spinner and the list ignores further presses; if it fails, the message shows under the list in the error colour. With no exit node on the tailnet it says how to offer one instead.
 
 | Prop | Default | Effect |
 | --- | --- | --- |

@@ -4,11 +4,10 @@ import { Resizable, ResizableHandle, ResizablePanel } from '@ui-sdk/react/resiza
 import { Toggle as ToggleButton, ToggleGroup, type ToggleGroupValueChangeReason } from '@ui-sdk/react/toggle';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { AdaptivePane, type AdaptivePanePresentation } from '@/components/ui/adaptive-pane';
-import { FloatingSheet } from '@/components/ui/floating-sheet';
-import { useWorkbenchAppearance, WorkbenchAppearanceProvider } from '@/components/ui/workbench-theme';
+import { FloatingSheet, FloatingSheetBody } from '@/components/ui/floating-sheet';
 import { SizeClassProvider, useSizeClass, type SizeClass } from '@/lib/container';
 import { Icon, type IconName } from '@/lib/icon';
-import { type Appearance, themeScopeProps, ThemeScope } from '@/lib/theme';
+import { type Appearance, ThemeScope, useScopeAppearance } from '@/lib/theme';
 import { cn, pressable } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
@@ -101,7 +100,7 @@ export function WorkbenchShell({
   style,
 }: WorkbenchShellProps) {
   const [rootRef, sizeClass] = useSizeClass({ breakpoints: workbenchBreakpoints });
-  const appearance = useWorkbenchAppearance(appearanceProp);
+  const appearance = useScopeAppearance('workbench', appearanceProp);
   const compact = sizeClass === 'compact';
   // Wide and compact presentations keep separate state, so crossing the breakpoint never pops a drawer open.
   const [sideColumn, setSideColumn] = useState(defaultSidebarOpen);
@@ -139,30 +138,29 @@ export function WorkbenchShell({
     panelFullscreen,
     setPanelFullscreen,
   };
-  const scope = themeScopeProps({ scope: 'workbench', appearance, tint });
   return (
-    <WorkbenchAppearanceProvider value={appearance}>
-      <WorkbenchShellContext.Provider value={ctx}>
-        <div
-          ref={rootRef}
-          data-slot="workbench-shell"
-          data-theme-scope={scope['data-theme-scope']}
-          // A layer host (in the markup, with `contain: layout`): the palette, drawers and menus opened in the shell
-          // stay in its box, so in a framed page their scrim covers the shell, not the page.
-          data-layer-host=""
-          className={cn(
-            // An inline-size container, so the panel column can size itself from the shell (`cqw`).
-            '@container relative grid [contain:layout] h-full w-full grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-background font-sans text-foreground antialiased',
-            scope.className,
-            className,
-          )}
-          style={{ ...scope.style, ...style }}
-        >
-          {/* A size-class scope: popups inside resolve `presentation="auto"` from the shell's own box. */}
-          <SizeClassProvider value={sizeClass}>{children}</SizeClassProvider>
-        </div>
-      </WorkbenchShellContext.Provider>
-    </WorkbenchAppearanceProvider>
+    <WorkbenchShellContext.Provider value={ctx}>
+      {/* A `workbench` theme scope: popups opened in the shell wear its palette, appearance and tint too. */}
+      <ThemeScope
+        ref={rootRef}
+        scope="workbench"
+        appearance={appearance}
+        tint={tint}
+        data-slot="workbench-shell"
+        // A layer host (in the markup, with `contain: layout`): the palette, drawers and menus opened in the shell
+        // stay in its box, so in a framed page their scrim covers the shell, not the page.
+        data-layer-host=""
+        className={cn(
+          // An inline-size container, so the panel column can size itself from the shell (`cqw`).
+          '@container relative grid [contain:layout] h-full w-full grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-background font-sans text-foreground antialiased',
+          className,
+        )}
+        style={style}
+      >
+        {/* A size-class scope: popups inside resolve `presentation="auto"` from the shell's own box. */}
+        <SizeClassProvider value={sizeClass}>{children}</SizeClassProvider>
+      </ThemeScope>
+    </WorkbenchShellContext.Provider>
   );
 }
 
@@ -371,7 +369,7 @@ export interface WorkbenchDockProps {
 /**
  * The bottom dock (a terminal, logs, a console). Inline and resizable from its top edge at regular and
  * medium widths (a UI SDK ResizablePanel after `WorkbenchContent`, `minHeight`–`maxHeight` px); at compact width
- * the same children move into a dismissible FloatingSheet over the whole shell. Place it last inside
+ * the same children move into a FloatingSheet (`collapse="hide"`) over the whole shell. Place it last inside
  * `WorkbenchMain`. Outside one it renders inline with its own height.
  */
 export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight = 520, className, style, children }: WorkbenchDockProps) {
@@ -386,27 +384,27 @@ export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight
       // The dock is a `terminal` theme scope: dark in both appearances. Its shadow still follows the shell.
       <ThemeScope scope="terminal" className="contents text-foreground">
         <FloatingSheet
-          appearance="sheet"
+          variant="sheet"
           gutter={0}
           radius={16}
-          dismissible
+          collapse="hide"
           visible={shell.dockOpen}
           onVisibleChange={(visible) => {
             if (!visible) shell.setDockOpen(false);
           }}
           peek={`${lowest * 100}%`}
-          detents={middle.map((f) => `${f * 100}%` as const)}
+          snapPoints={middle.map((f) => `${f * 100}%` as const)}
           topGap={`${(1 - highest) * 100}%`}
           hideOnScroll={false}
           scrim={false}
-          label="Dock"
+          aria-label="Dock"
           className={cn('z-70', className)}
           surfaceClassName="bg-background"
           style={style}
         >
-          <FloatingSheet.Body>
+          <FloatingSheetBody>
             <div className="flex h-full min-h-0 flex-col">{children}</div>
-          </FloatingSheet.Body>
+          </FloatingSheetBody>
         </FloatingSheet>
       </ThemeScope>
     );

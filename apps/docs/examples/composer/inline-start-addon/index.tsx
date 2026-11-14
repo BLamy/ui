@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { Composer, ComposerAddon, ComposerButton, ComposerCard, ComposerInput, ComposerSelect, ComposerSend } from '@/components/ui/composer/composer'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { Button } from '@/components/ui/button'
+import { Composer, ComposerAddon, ComposerCard, ComposerInput, ComposerSelect, ComposerSend } from '@/components/ui/composer/composer'
+import { ThemeScope } from '@/lib/theme'
 import { Icon } from '@/lib/icon'
 
 const tones = [
-  { id: 'neutral', label: 'Neutral' },
-  { id: 'friendly', label: 'Friendly' },
-  { id: 'concise', label: 'Concise' },
+  { value: 'neutral', label: 'Neutral' },
+  { value: 'friendly', label: 'Friendly' },
+  { value: 'concise', label: 'Concise' },
 ]
 
 /**
@@ -50,13 +51,13 @@ function Messenger() {
       >
         <ComposerCard size="lg" className="flex-nowrap">
           <ComposerAddon align="inline-start" className="self-center pt-0 pl-2">
-            <ComposerButton aria-label="Add" className="rounded-[50%]">
+            <Button variant="quiet" size="icon-sm" aria-label="Add" className="rounded-full">
               <Icon name="plus" size={16} sw={2.2} />
-            </ComposerButton>
+            </Button>
           </ComposerAddon>
           <ComposerInput placeholder="Reply to #design" slashMenu={false} />
           <ComposerAddon align="inline-end" className="self-center pt-0 pr-2">
-            <ComposerSelect aria-label="Tone" options={tones} />
+            <ComposerSelect aria-label="Tone" items={tones} />
             <ComposerSend stopVariant="solid" />
           </ComposerAddon>
         </ComposerCard>
@@ -65,12 +66,11 @@ function Messenger() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function MessengerExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <Messenger />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

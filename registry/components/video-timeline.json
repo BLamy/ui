@@ -1,7 +1,7 @@
 {
   "name": "video-timeline",
   "title": "VideoTimeline",
-  "description": "A video editor's timeline on UI SDK: clips are spans (createSpans) you drag along a track, among a magnetic track's clips (which make room) or to another track, with trim handles on both edges, frame-accurate edits snapping to edges and the playhead, keyboard moves and trims with one Tab stop for the clips and announcements; a ruler that is UI SDK's Slider for the playhead; lane headers (hide, mute, lock); pinch or ⌘-wheel zoom and drops from a media library. value / onValueChange(value, details) once per gesture or key, so each edit is one undo step.",
+  "description": "A video editor's timeline on UI SDK: clips are spans (createSpans) you drag along a track, among a magnetic track's clips (which make room) or to another track, with trim handles on both edges, frame-accurate edits snapping to edges and the playhead, keyboard moves and trims with one Tab stop for the clips and announcements; a ruler that is UI SDK's Slider for the playhead; lane headers (hide, mute, lock), which fold into a menu in a compact container; pinch or ⌘-wheel zoom and drops from a media library. value / onValueChange(value, details) once per gesture or key, so each edit is one undo step.",
   "page": "video-timeline",
   "files": [
     "components/video-timeline.tsx"
@@ -10,8 +10,7 @@
     "VideoTimeline",
     "timelineMediaType",
     "fitTimelineZoom",
-    "timelineZoomRange",
-    "rulerSteps"
+    "timelineZoomRange"
   ],
   "imports": [
     "VideoTimeline",

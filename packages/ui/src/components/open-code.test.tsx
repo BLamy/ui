@@ -7,9 +7,11 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 
 import { OpenCode } from './open-code';
+import { AppearanceProvider, ThemeScope } from '@/lib/theme';
 import type {
   OpenCodeHostBridge,
   OpenCodeCredentialStore,
@@ -479,4 +481,38 @@ it('stacks the preview under the terminal by its own width, not the viewport', a
   } finally {
     if (width) Object.defineProperty(HTMLElement.prototype, 'clientWidth', width);
   }
+});
+
+it('takes its appearance from the prop, else the nearest ThemeScope, else the ambient appearance, else dark', async () => {
+  for (const [wrap, want] of [
+    [(c: ReactNode) => c, 'dark'],
+    [(c: ReactNode) => <AppearanceProvider value="light">{c}</AppearanceProvider>, 'light'],
+    [(c: ReactNode) => <ThemeScope scope="sheet" appearance="light">{c}</ThemeScope>, 'light'],
+  ] as const) {
+    const f = fixture();
+    const view = render(wrap(<OpenCode host={f.host} loadRuntime={f.loadRuntime} browserTools={false} />));
+    await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(1));
+    expect(f.mount.mock.calls[0]?.[0]).toMatchObject({ themeMode: want });
+    view.unmount();
+  }
+  const f = fixture();
+  render(
+    <AppearanceProvider value="light">
+      <OpenCode host={f.host} loadRuntime={f.loadRuntime} browserTools={false} appearance="dark" />
+    </AppearanceProvider>,
+  );
+  await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(1));
+  expect(f.mount.mock.calls[0]?.[0]).toMatchObject({ themeMode: 'dark' });
+});
+
+it('is a card by default and plain on request, and passes ref and root props through', () => {
+  const f = fixture();
+  const ref = { current: null as HTMLElement | null };
+  const view = render(<OpenCode host={f.host} loadRuntime={f.loadRuntime} autoStart={false} data-testid="oc" ref={ref} />);
+  const root = screen.getByRole('region', { name: 'OpenCode' });
+  expect(root.getAttribute('data-testid')).toBe('oc');
+  expect(ref.current).toBe(root);
+  expect(root.className).toContain('rounded-card');
+  view.rerender(<OpenCode host={f.host} loadRuntime={f.loadRuntime} autoStart={false} variant="plain" />);
+  expect(screen.getByRole('region', { name: 'OpenCode' }).className).not.toContain('rounded-card');
 });

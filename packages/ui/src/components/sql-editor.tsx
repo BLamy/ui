@@ -1,19 +1,19 @@
 'use client';
 import {
-  useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState,
-  type ComponentProps, type KeyboardEvent, type ReactNode, type Ref,
+  createContext, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState,
+  type ComponentProps, type CSSProperties, type KeyboardEvent, type ReactNode, type Ref,
 } from 'react';
 import { createInputHistory, createLocalStorage } from '@ui-sdk/core';
 import { Textarea, createInputController, type TextareaOptions } from '@ui-sdk/react/textarea';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { Button } from '@/components/ui/button';
+import { Button, type ButtonProps } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { selectableText } from '@/lib/primitives';
 import { cn } from '@/lib/utils';
 import { sqlSpans, type SqlSpan } from '@/lib/sql-lex';
 import type { SqlError } from '@/lib/pglite-core';
 
-/* ══ SqlEditor — a SQL box on UI SDK's Textarea ══
+/* ══ SqlEditor — the SQL console's editor: a SQL box on UI SDK's Textarea ══
+   A part of the SQL console's registry item (`SqlConsoleEditor` is this, wired to the console), usable on its own.
    A native <textarea> sits over a highlighted copy of its own text, so selection, IME, undo, spell-check off,
    accessibility and mobile keyboards are the browser's and nothing heavy (no CodeMirror / Monaco, ~1 MB) ships.
    Highlighting is lib/sql-lex: keywords, types, functions, strings (incl. $$ bodies), numbers and comments, computed
@@ -23,21 +23,14 @@ import type { SqlError } from '@/lib/pglite-core';
    everything when nothing is selected. ↑ on the first line and ↓ on the last step through `history` with UI SDK's
    `createInputHistory`, like a terminal: ↓ past the newest brings your draft back. Tab keeps its job of moving
    focus (indenting would trap keyboard users).
-   `ref` exposes `focus()` and `insert(text)` (at the cursor), which is how the SQL console's schema tree pastes a table name in. */
+   `ref` exposes `focus()` and `insert(text)` (at the cursor), which is how the SQL console's schema tree pastes a table name in.
 
-export const sqlEditorVariants = cva(
-  'flex min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground shadow-hairline transition-shadow duration-spring-snappy ease-spring-snappy focus-within:ring-2 focus-within:ring-primary focus-within:ring-inset',
-  {
-    variants: {
-      size: {
-        default: '[--editor-rows:8]',
-        sm: '[--editor-rows:4]',
-        lg: '[--editor-rows:14]',
-      },
-    },
-    defaultVariants: { size: 'default' },
-  },
-);
+   The footer is a part: with no children the editor shows `<SqlEditorFooter />` (the shortcut hint and Run); give it
+   children to put your own controls there (`<SqlEditorFooter><Button>Format</Button></SqlEditorFooter>`), or
+   `{false}` for none. `SqlEditorRun` is the Run button on its own. */
+
+const editorClass =
+  'flex min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground shadow-hairline transition-shadow duration-spring-snappy ease-spring-snappy focus-within:ring-2 focus-within:ring-primary focus-within:ring-inset';
 
 /** Same metrics on the textarea and its highlighted copy, or the two drift apart. */
 const metrics = 'box-border m-0 border-0 px-3 py-2.5 font-mono text-footnote leading-5 [tab-size:2] whitespace-pre';
@@ -48,7 +41,7 @@ export interface SqlEditorHandle {
   insert: (text: string) => void;
 }
 
-export interface SqlEditorProps extends Omit<ComponentProps<'div'>, 'children' | 'defaultValue' | 'ref'>, VariantProps<typeof sqlEditorVariants> {
+export interface SqlEditorProps extends Omit<ComponentProps<'div'>, 'children' | 'defaultValue' | 'ref'> {
   value?: string;
   defaultValue?: string;
   /** Every change to the text, with the Textarea's `details`: typing is `input-change`; a history step and
@@ -56,8 +49,10 @@ export interface SqlEditorProps extends Omit<ComponentProps<'div'>, 'children' |
   onValueChange?: TextareaOptions['onValueChange'];
   /** ⌘/Ctrl + Enter, or the Run button. Receives the selection, or the whole text. */
   onRun?: (sql: string) => void;
-  /** A statement is running: Run is disabled and reads "Running…". */
-  running?: boolean;
+  /** A statement is running: Run is disabled and reads "Running…" (`data-pending` on the root). */
+  pending?: boolean;
+  /** How many lines show before the text scrolls (default 8). */
+  rows?: number;
   /** Earlier statements, newest first (see `useSqlHistory`); ↑ on the first line and ↓ on the last step through them. */
   history?: readonly string[];
   /** Underlines `error.position` in the text. */
@@ -68,11 +63,8 @@ export interface SqlEditorProps extends Omit<ComponentProps<'div'>, 'children' |
   disabled?: boolean;
   readOnly?: boolean;
   autoFocus?: boolean;
-  /** Extra controls in the footer, before Run. */
-  actions?: ReactNode;
-  /** `false` hides the footer (Run button and shortcut hint). */
-  footer?: boolean;
-  runLabel?: string;
+  /** The footer. Default `<SqlEditorFooter />`; `false` or `null` for none. */
+  children?: ReactNode;
   'aria-label'?: string;
   ref?: Ref<SqlEditorHandle>;
 }
@@ -115,10 +107,65 @@ function segmentsOf(code: string, spans: readonly SqlSpan[], errorAt: number | n
   return out;
 }
 
+interface EditorContext {
+  run: () => void;
+  pending: boolean;
+  disabled: boolean;
+  empty: boolean;
+  hasHistory: boolean;
+}
+
+const SqlEditorContext = createContext<EditorContext | null>(null);
+
+function useSqlEditor(part: string): EditorContext {
+  const context = useContext(SqlEditorContext);
+  if (!context) throw new Error(`${part} must be inside a SqlEditor`);
+  return context;
+}
+
+export type SqlEditorRunProps = Omit<ButtonProps, 'onClick' | 'disabled'>;
+
+/** The Run button: runs the selection, or everything. Disabled with nothing to run, while a run is pending, and when
+ *  the editor is disabled. Ink on paper (`contrast`) rather than white on the accent blue, which is 3.7:1 at this size. */
+export function SqlEditorRun({ children, variant = 'contrast', size = 'sm', ...props }: SqlEditorRunProps) {
+  const { run, pending, disabled, empty } = useSqlEditor('SqlEditorRun');
+  return (
+    <Button variant={variant} size={size} disabled={disabled || pending || empty} onClick={run} {...props}>
+      {pending ? 'Running…' : (children ?? 'Run')}
+    </Button>
+  );
+}
+
+export interface SqlEditorFooterProps extends ComponentProps<'div'> {
+  /** Controls before Run. */
+  children?: ReactNode;
+}
+
+/** The footer: the shortcut hint (shown once the editor, not the window, has room for it), your controls, and Run. */
+export function SqlEditorFooter({ children, className, ...props }: SqlEditorFooterProps) {
+  const { hasHistory } = useSqlEditor('SqlEditorFooter');
+  return (
+    <div data-slot="sql-editor-footer" className={cn('@container/sql-footer flex shrink-0 items-center gap-2 px-2 py-1.5 shadow-hairline-t', className)} {...props}>
+      <KbdGroup className="hidden min-w-0 flex-1 text-caption text-foreground/65 @md/sql-footer:inline-flex">
+        <Kbd keys="mod+enter" />
+        <span className="truncate">runs the selection, or everything</span>
+        {hasHistory ? (
+          <>
+            <Kbd keys="arrowup" />
+            <span className="truncate">history</span>
+          </>
+        ) : null}
+      </KbdGroup>
+      <span className="flex-1 @md/sql-footer:hidden" />
+      {children}
+      <SqlEditorRun />
+    </div>
+  );
+}
+
 export function SqlEditor({
-  value: valueProp, defaultValue = '', onValueChange, onRun, running = false, history, error, highlight = true, placeholder,
-  disabled, readOnly, autoFocus, actions, footer = true, runLabel = 'Run', size, className, style, ref,
-  'aria-label': ariaLabel = 'SQL', ...props
+  value: valueProp, defaultValue = '', onValueChange, onRun, pending = false, history, error, highlight = true, placeholder,
+  disabled, readOnly, autoFocus, rows = 8, children, className, style, ref, 'aria-label': ariaLabel = 'SQL', ...props
 }: SqlEditorProps) {
   const [inner, setInner] = useState(defaultValue);
   const controlled = valueProp !== undefined;
@@ -166,7 +213,7 @@ export function SqlEditor({
 
   const run = () => {
     const a = areaRef.current;
-    if (!a || running || !onRun) return;
+    if (!a || pending || !onRun) return;
     const selected = a.selectionStart !== a.selectionEnd ? a.value.slice(a.selectionStart, a.selectionEnd) : '';
     const sql = (selected || a.value).trim();
     if (sql) onRun(sql);
@@ -180,78 +227,63 @@ export function SqlEditor({
   const errorAt = error?.position ? error.position - 1 : null;
   const segments = useMemo(() => segmentsOf(value, spans, errorAt), [value, spans, errorAt]);
 
+  const context: EditorContext = {
+    run, pending, disabled: !!disabled || !onRun, empty: !value.trim(), hasHistory: !!history?.length,
+  };
   return (
-    <div
-      data-slot="sql-editor"
-      data-disabled={disabled || undefined}
-      data-running={running || undefined}
-      className={cn(sqlEditorVariants({ size }), className)}
-      style={style}
-      {...props}
-    >
-      <div className="relative min-h-0 flex-1 overflow-hidden">
-        {/* The highlighted copy: decoration, not content (the textarea is what assistive tech reads). */}
-        <pre
-          ref={layerRef}
-          aria-hidden="true"
-          data-slot="sql-editor-highlight"
-          className={cn(metrics, 'pointer-events-none absolute top-0 left-0 min-w-full text-card-foreground')}
-        >
-          {segments.map((s, i) => (s.className ? <span key={i} className={s.className}>{s.text}</span> : s.text))}
-          {'\n'}
-        </pre>
-        <Textarea
-          ref={areaRef}
-          controller={input}
-          aria-label={ariaLabel}
-          value={value}
-          onValueChange={(next, details) => {
-            onValueChange?.(next, details);
-            if (details.canceled) return;
-            if (!controlled) setInner(next);
-          }}
-          submitShortcut="mod+enter"
-          onSubmit={run}
-          onKeyDown={onKeyDown}
-          onScroll={syncScroll}
-          placeholder={placeholder}
-          disabled={disabled}
-          readOnly={readOnly}
-          autoFocus={autoFocus}
-          spellCheck={false}
-          autoCapitalize="off"
-          autoCorrect="off"
-          wrap="off"
-          className={cn(
-            metrics,
-            'bl-scroll relative block h-[calc(var(--editor-rows)*1.25rem+1.25rem)] w-full resize-none overflow-auto bg-transparent text-transparent caret-foreground outline-none selection:bg-primary/25 placeholder:text-foreground/65',
-            selectableText,
-          )}
-        />
-      </div>
-
-      {footer ? (
-        // The footer is its own container: the hint shows once the editor (not the window) has room for it.
-        <div data-slot="sql-editor-footer" className="@container/sql-footer flex shrink-0 items-center gap-2 px-2 py-1.5 shadow-hairline-t">
-          <KbdGroup className="hidden min-w-0 flex-1 text-caption text-foreground/65 @md/sql-footer:inline-flex">
-            <Kbd keys="mod+enter" />
-            <span className="truncate">runs the selection, or everything</span>
-            {history?.length ? (
-              <>
-                <Kbd keys="arrowup" />
-                <span className="truncate">history</span>
-              </>
-            ) : null}
-          </KbdGroup>
-          <span className="flex-1 @md/sql-footer:hidden" />
-          {actions}
-          {/* Ink on paper rather than white on the accent blue: 3.7:1 fails WCAG AA for a button this size. */}
-          <Button size="sm" className="bg-foreground text-background" disabled={disabled || running || !onRun || !value.trim()} onClick={run}>
-            {running ? 'Running…' : runLabel}
-          </Button>
+    <SqlEditorContext.Provider value={context}>
+      <div
+        data-slot="sql-editor"
+        data-disabled={disabled || undefined}
+        data-pending={pending || undefined}
+        className={cn(editorClass, className)}
+        style={{ '--editor-rows': rows, ...style } as CSSProperties}
+        {...props}
+      >
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          {/* The highlighted copy: decoration, not content (the textarea is what assistive tech reads). */}
+          <pre
+            ref={layerRef}
+            aria-hidden="true"
+            data-slot="sql-editor-highlight"
+            className={cn(metrics, 'pointer-events-none absolute top-0 left-0 min-w-full text-card-foreground')}
+          >
+            {segments.map((s, i) => (s.className ? <span key={i} className={s.className}>{s.text}</span> : s.text))}
+            {'\n'}
+          </pre>
+          <Textarea
+            ref={areaRef}
+            controller={input}
+            aria-label={ariaLabel}
+            value={value}
+            onValueChange={(next, details) => {
+              onValueChange?.(next, details);
+              if (details.canceled) return;
+              if (!controlled) setInner(next);
+            }}
+            submitShortcut="mod+enter"
+            onSubmit={run}
+            onKeyDown={onKeyDown}
+            onScroll={syncScroll}
+            placeholder={placeholder}
+            disabled={disabled}
+            readOnly={readOnly}
+            autoFocus={autoFocus}
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            wrap="off"
+            className={cn(
+              metrics,
+              'bl-scroll relative block h-[calc(var(--editor-rows)*1.25rem+1.25rem)] w-full resize-none overflow-auto bg-transparent text-transparent caret-foreground outline-none selection:bg-primary/25 placeholder:text-foreground/65',
+              selectableText,
+            )}
+          />
         </div>
-      ) : null}
-    </div>
+
+        {children === undefined ? <SqlEditorFooter /> : children}
+      </div>
+    </SqlEditorContext.Provider>
   );
 }
 

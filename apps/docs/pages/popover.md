@@ -99,7 +99,7 @@ When the trigger sits on a surface that CSS paints rather than a ThemeScope (a h
 
 ## Accessibility
 
-`PopoverContent` has the `dialog` role: focus moves into it when it opens (the first focusable element, or the content itself), Esc or a press outside closes it and focus returns to the trigger, which carries `aria-expanded` and `aria-controls`. By default it is not modal: the page stays usable and focus leaving the popover closes it; `modal` traps focus and makes the rest of the host inert, `modal="trap-focus"` only traps focus. Name it with a `PopoverTitle` (visually hidden if need be); without one it takes its trigger's name, and an `aria-label` on the content doesn't change that. Content that is only a list of choices belongs in a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) or [Listbox](https://blamy.github.io/ui/#/list-box), which have their own roles.
+`PopoverContent` has the `dialog` role: focus moves into it when it opens (the first focusable element, or the content itself), Esc or a press outside closes it and focus returns to the trigger, which carries `aria-expanded` and `aria-controls`. By default it is not modal: the page stays usable and focus leaving the popover closes it; `modal` traps focus and makes the rest of the host inert, `modal="trap-focus"` only traps focus. Name it with a `PopoverTitle` (visually hidden if need be); without one it takes its trigger's name, and an `aria-label` on the content doesn't change that. Content that is only a list of choices belongs in a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) or [Listbox](https://blamy.github.io/ui/#/listbox), which have their own roles.
 
 ## Props
 
@@ -151,7 +151,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/popover`. Base classes:
 
 ```text
-[ popoverSurface, popoverMotion, 'box-border data-[presentation=sheet]:max-h-[calc(100%-48px)] data-[presentation=sheet]:w-full data-[presentation=sheet]:min-w-0 data-[presentation=sheet]:rounded-t-card data-[presentation=sheet]:rounded-b-none data-[presentation=sheet]:pb-[max(16px,env(safe-area-inset-bottom))] data-[presentation=sheet]:[--sheet-backdrop:var(--overlay,color-mix(in_oklab,black_40%,transparent))]', ]
+[popoverSurface, popoverMotion, popoverSheet, 'box-border [--avatar-ring:var(--popover)]']
 ```
 
 **`variant`** — default `panel`

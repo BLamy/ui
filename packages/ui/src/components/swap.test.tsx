@@ -90,6 +90,30 @@ describe('Swap effect="slide"', () => {
     expect(root.style.getPropertyValue('--swap-scale')).toBe('0.96');
   });
 
+  it('hides the leaving view from assistive technology and focus while it exits', async () => {
+    const { rerender, container } = render(
+      <Swap value="menu">
+        <h2>Menu</h2>
+        <button type="button">Open</button>
+      </Swap>,
+    );
+    const root = container.querySelector<HTMLElement>('[data-slot="swap"]')!;
+    expect(views(root)[0].hasAttribute('aria-hidden')).toBe(false);
+    expect(views(root)[0].hasAttribute('inert')).toBe(false);
+    rerender(
+      <Swap value="done">
+        <h2>Done</h2>
+      </Swap>,
+    );
+    const [leaving, arriving] = views(root);
+    expect(leaving.getAttribute('aria-hidden')).toBe('true');
+    expect(leaving.hasAttribute('inert')).toBe(true);
+    expect(arriving.hasAttribute('aria-hidden')).toBe(false);
+    expect(arriving.hasAttribute('inert')).toBe(false);
+    await frames();
+    expect(views(root).map((v) => v.textContent)).toEqual(['Done']);
+  });
+
   it('renders an inline slide as a span', () => {
     const { container } = render(<Swap value="a" inline>A</Swap>);
     expect(container.querySelector('[data-slot="swap"]')!.tagName).toBe('SPAN');

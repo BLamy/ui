@@ -6,36 +6,47 @@ import {
   ColorPickerArea as SdkColorPickerArea,
   ColorPickerAreaCanvas as SdkColorPickerAreaCanvas,
   ColorPickerAreaThumb as SdkColorPickerAreaThumb,
+  ColorPickerChannelInput as SdkColorPickerChannelInput,
   ColorPickerEyeDropper as SdkColorPickerEyeDropper,
+  ColorPickerInput as SdkColorPickerInput,
   ColorPickerSlider as SdkColorPickerSlider,
   ColorPickerSliderThumb as SdkColorPickerSliderThumb,
+  ColorPickerSwatch as SdkColorPickerSwatch,
   ColorPickerSwatches as SdkColorPickerSwatches,
   ColorPickerSwatchItem as SdkColorPickerSwatchItem,
   type ColorPickerSliderState,
   type ColorPickerState,
 } from '@ui-sdk/react/color-picker';
 import { renderElement } from '@ui-sdk/react/primitive';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { buttonVariants } from '@/components/ui/button';
-import { ColorFieldGroup, ColorFieldInput, ColorFieldSwatch } from '@/components/ui/color-field';
+import { fieldSurfaceVariants } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger, type PopoverProps } from '@/components/ui/popover';
 import { Icon } from '@/lib/icon';
-import { cx } from '@/lib/utils';
+import { selectableText } from '@/lib/primitives';
+import { cn, cx } from '@/lib/utils';
 
-/* ══ ColorPicker — UI SDK's ColorPicker, drawn as iOS ══
+/* ══ ColorPicker / ColorInput — UI SDK's ColorPicker, drawn as iOS ══
    ColorPicker is a group that holds the color, a CSS color string (`value` / `defaultValue` /
    `onValueChange(value, details)` on every step of a drag, `onValueCommit` once it ends; `details.color` is the
    same color as data for `@ui-sdk/core/color`). `space` picks the channels the parts edit ("hsv" by default, "hsl",
    "srgb", "oklch") and `format` how the value is written (hex by default). Every part inside edits that color:
-   a ColorPickerArea (two channels at once), ColorPickerSliders (one channel), ColorPickerSwatches (presets), the
-   ColorFieldGroup / ColorFieldInput text field, a ColorPickerEyeDropper, and the ColorFieldSwatch that shows it.
-   Thumbs take arrows, Shift+arrows, Page Up/Down and Home/End. In a popover:
+   a ColorPickerArea (two channels at once), ColorPickerSliders (one channel), ColorPickerSwatches (presets), a
+   ColorPickerField holding a ColorPickerInput (any CSS color, typed) or ColorPickerChannelInputs (one channel as a
+   number), a ColorPickerEyeDropper, and the ColorPickerSwatch that shows it. Thumbs take arrows, Shift+arrows,
+   Page Up/Down and Home/End. The root also holds a popover's open state, so a trigger and a popup go straight in:
    <ColorPicker defaultValue="hsl(262 83% 66%)">
-     <Popover>
-       <ColorPickerTrigger />
-       <ColorPickerContent swatches={['hsl(4 100% 61%)', 'hsl(135 70% 50%)']} />
-     </Popover>
-   </ColorPicker> ══ */
+     <ColorPickerTrigger />
+     <ColorPickerContent swatches={['hsl(4 100% 61%)', 'hsl(135 70% 50%)']} />
+   </ColorPicker>
+   ColorInput is the one-line typed field: the picker's root drawn as the kit's filled field, with a swatch and a
+   text box. Put it in a Field for its label, description and error:
+   <Field>
+     <FieldLabel>Accent</FieldLabel>
+     <ColorInput defaultValue="hsl(262 83% 66%)" />
+   </Field>
+   ColorSwatch is a color chip on its own. ══ */
 
 /* The picker's state for the kit's parts that are not UI SDK parts of it (the trigger's value). */
 const ColorPickerStateContext = createContext<ColorPickerState | null>(null);
@@ -45,12 +56,18 @@ const ColorPickerStateContext = createContext<ColorPickerState | null>(null);
 interface ColorPickerName {
   labelledBy?: string;
   label?: string;
+  /** How the value is written, which the trigger shows it in. */
+  format?: ColorPickerProps['format'];
 }
 const ColorPickerNameContext = createContext<ColorPickerName>({});
 
-export type ColorPickerProps = ComponentProps<typeof SdkColorPicker>;
+export type ColorPickerProps = ComponentProps<typeof SdkColorPicker> &
+  Pick<PopoverProps, 'open' | 'defaultOpen' | 'onOpenChange' | 'presentation'>;
 
-export function ColorPicker({ children, ref, ...props }: ColorPickerProps) {
+/** The root: it holds the color, and the open state of a ColorPickerTrigger's popup (`open` / `defaultOpen` /
+    `onOpenChange`, and `presentation`, `"auto"` for a sheet in a compact container), so the trigger and the
+    ColorPickerContent can be its direct children. */
+export function ColorPicker({ children, ref, open, defaultOpen, onOpenChange, presentation, ...props }: ColorPickerProps) {
   const root = useRef<HTMLDivElement>(null);
   const [labelledBy, setLabelledBy] = useState<string>();
   // The group's `aria-labelledby` is written by UI SDK (from the Field's label), so read it from the element.
@@ -59,7 +76,7 @@ export function ColorPicker({ children, ref, ...props }: ColorPickerProps) {
     if (next !== labelledBy) setLabelledBy(next);
   });
   return (
-    <ColorPickerNameContext.Provider value={{ labelledBy, label: props['aria-label'] }}>
+    <ColorPickerNameContext.Provider value={{ labelledBy, label: props['aria-label'], format: props.format }}>
       <SdkColorPicker
         ref={(el: HTMLDivElement | null) => {
           root.current = el;
@@ -70,7 +87,9 @@ export function ColorPicker({ children, ref, ...props }: ColorPickerProps) {
       >
         {(state) => (
           <ColorPickerStateContext.Provider value={state}>
-            {typeof children === 'function' ? children(state) : children}
+            <Popover open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange} presentation={presentation}>
+              {typeof children === 'function' ? children(state) : children}
+            </Popover>
           </ColorPickerStateContext.Provider>
         )}
       </SdkColorPicker>
@@ -81,11 +100,16 @@ export function ColorPicker({ children, ref, ...props }: ColorPickerProps) {
 export { createColorPickerController, type ColorPickerController } from '@ui-sdk/react/color-picker';
 
 /* A thumb is centered on its point and filled with the color it sits on. It grows while its track is held and
-   under keyboard focus. */
+   under keyboard focus. Its ring is white in both appearances, as iOS draws it: it sits on any color, and white
+   reads on every hue (a background-colored ring would vanish on black in dark mode). */
 const thumb = [
-  'box-border size-6 -translate-1/2 rounded-full border-2 border-white bg-(--color-picker-color) shadow-md outline-none forced-color-adjust-none transition-[width,height] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none rtl:translate-x-1/2',
+  'box-border size-6 -translate-1/2 rounded-full border-2 border-white bg-(--color-picker-color) shadow-raised outline-none forced-color-adjust-none transition-[width,height] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none rtl:translate-x-1/2',
   'group-active/track:size-7 focus-visible:size-7 focus-visible:ring-2 focus-visible:ring-ring',
 ];
+
+/* UI SDK places a thumb at its value's percent of the track. Inside this layer, half a thumb in from every edge, the
+   thumb stays on the area and the track at both ends rather than hanging half past them. */
+const thumbTravel = 'pointer-events-none absolute inset-3 [&>*]:pointer-events-auto';
 
 type StyleProp<State> = CSSProperties | ((state: State) => CSSProperties | undefined) | undefined;
 
@@ -115,7 +139,11 @@ export function ColorPickerArea({ className, children, ...props }: ComponentProp
 
 /** The area's handle: a slider screen readers hear as both channels. */
 export function ColorPickerAreaThumb({ className, style, ...props }: ComponentProps<typeof SdkColorPickerAreaThumb>) {
-  return <SdkColorPickerAreaThumb className={cx(thumb, className)} style={thumbStyle(style)} {...props} />;
+  return (
+    <span className={thumbTravel}>
+      <SdkColorPickerAreaThumb className={cx(thumb, className)} style={thumbStyle(style)} {...props} />
+    </span>
+  );
 }
 
 /** Paints the area pixel by pixel, for channels no gradient draws. Colors outside the gamut stay clear. */
@@ -129,9 +157,13 @@ const track = [
   'data-[channel=alpha]:[background:var(--color-slider-background),repeating-conic-gradient(var(--secondary-strong)_0%_25%,var(--background)_0%_50%)_50%/12px_12px]',
 ];
 
+/** The unit a channel is read in: degrees for a hue, none for red, green, blue and chroma, else a percentage. */
+const channelUnit = (channel: string) =>
+  channel === 'hue' ? '°' : channel === 'red' || channel === 'green' || channel === 'blue' || channel === 'chroma' ? '' : '%';
+
 /** A channel's value as people read it: degrees for a hue, a percentage, or the bare number. */
 function channelText({ channel, channelValue, space }: ColorPickerSliderState) {
-  const unit = channel === 'hue' ? '°' : channel === 'red' || channel === 'green' || channel === 'blue' || channel === 'chroma' ? '' : '%';
+  const unit = channelUnit(channel);
   const digits = channel === 'chroma' ? 3 : space === 'oklch' && channel === 'lightness' ? 1 : 0;
   return `${Number(channelValue.toFixed(digits))}${unit}`;
 }
@@ -181,14 +213,16 @@ export function ColorPickerSlider({ className, label, showValue, children, id, r
 /** A slider's handle. */
 export function ColorPickerSliderThumb({ className, style, ...props }: ComponentProps<typeof SdkColorPickerSliderThumb>) {
   return (
-    <SdkColorPickerSliderThumb
-      className={cx(
-        [thumb, 'data-[orientation=horizontal]:top-1/2 data-[orientation=vertical]:start-1/2 data-[orientation=vertical]:translate-y-1/2'],
-        className,
-      )}
-      style={thumbStyle(style, (state) => state.channel === 'alpha')}
-      {...props}
-    />
+    <span className={cn(thumbTravel, 'inset-y-0 in-data-[orientation=vertical]:inset-x-0 in-data-[orientation=vertical]:inset-y-3')}>
+      <SdkColorPickerSliderThumb
+        className={cx(
+          [thumb, 'data-[orientation=horizontal]:top-1/2 data-[orientation=vertical]:start-1/2 data-[orientation=vertical]:translate-y-1/2'],
+          className,
+        )}
+        style={thumbStyle(style, (state) => state.channel === 'alpha')}
+        {...props}
+      />
+    </span>
   );
 }
 
@@ -228,37 +262,149 @@ export function ColorPickerEyeDropper({ className, children, ...props }: Compone
   );
 }
 
-export type ColorPickerTriggerProps = Omit<ComponentProps<typeof PopoverTrigger>, 'children'> & {
-  size?: 'sm' | 'default' | 'lg';
-  /** Show the hex value beside the swatch. Default: true. */
+/* ── The field ── */
+
+/** The text boxes have no fill or outline of their own: the field around them draws both. */
+const fieldInput = cn(
+  'h-full min-w-0 flex-1 border-0 bg-transparent p-0 [font-family:inherit] [font-size:inherit] text-foreground outline-none placeholder:text-tertiary-foreground',
+  selectableText,
+);
+
+/** The color's text box, inside a ColorPickerField: any CSS color, read on Enter or when it loses focus (text that is
+    not a color goes back to the value, and Escape puts it back at once). It is named "Color" unless you name it, with
+    `aria-label`, `aria-labelledby`, or a label pointed at its `id`. */
+export function ColorPickerInput({ className, ...props }: ComponentProps<typeof SdkColorPickerInput>) {
+  const named = props['aria-label'] !== undefined || props['aria-labelledby'] !== undefined || props.id !== undefined;
+  return <SdkColorPickerInput aria-label={named ? undefined : 'Color'} className={cx(fieldInput, className)} {...props} />;
+}
+
+/** A number box for one `channel` of the picker's `space` ("hue", "alpha", "red" …), in the units people read it in,
+    with the unit after it (° for a hue, % for saturation, lightness and opacity). Enter, leaving it or its arrow
+    keys set the channel. It is named after the channel. */
+export function ColorPickerChannelInput({ className, ...props }: ComponentProps<typeof SdkColorPickerChannelInput>) {
+  const unit = channelUnit(String(props.channel));
+  return (
+    <>
+      <SdkColorPickerChannelInput
+        className={cx(
+          [fieldInput, 'tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'],
+          className,
+        )}
+        {...props}
+      />
+      {unit ? <span aria-hidden="true" className="shrink-0 text-muted-foreground">{unit}</span> : null}
+    </>
+  );
+}
+
+/* A chip is filled with `--color-picker-color`, which UI SDK's swatch part writes and ColorSwatch sets itself. It is
+   24px, and 20px in a small field (its `data-size`), so a 32px field keeps a margin around it. */
+const swatch = 'size-6 shrink-0 rounded-full bg-(--color-picker-color) shadow-hairline forced-color-adjust-none in-data-[size=sm]:size-5';
+
+/** A chip of the color the picker holds, named for screen readers ("vivid blue"). */
+export function ColorPickerSwatch({ className, ...props }: ComponentProps<typeof SdkColorPickerSwatch>) {
+  return <SdkColorPickerSwatch className={cx(swatch, className)} {...props} />;
+}
+
+export interface ColorPickerFieldProps extends ComponentProps<'div'>, VariantProps<typeof fieldSurfaceVariants> {}
+
+/** The kit's filled field box around a picker's ColorPickerSwatch, ColorPickerInput or ColorPickerChannelInputs (the
+    picker holds the color, so it is a plain box). It dims with the picker. */
+export function ColorPickerField({ className, size, ...props }: ColorPickerFieldProps) {
+  return (
+    <div
+      data-slot="color-picker-field"
+      data-size={size ?? 'default'}
+      className={cn(fieldSurfaceVariants({ size }), 'w-full in-data-disabled:cursor-not-allowed in-data-disabled:opacity-50', className)}
+      {...props}
+    />
+  );
+}
+
+export type ColorInputProps = ComponentProps<typeof SdkColorPicker> & VariantProps<typeof fieldSurfaceVariants>;
+
+/** The typed color field on one line: the picker's root as the kit's filled field, holding a ColorPickerSwatch and a
+    ColorPickerInput (or the parts you pass). It is a group that submits the color under `name`; its Field's label
+    names it, and a press on that label focuses the text box. */
+export function ColorInput({ className, size, children, ...props }: ColorInputProps) {
+  return (
+    <SdkColorPicker data-size={size ?? 'default'} className={cx([fieldSurfaceVariants({ size }), 'w-full'], className)} {...props}>
+      {children ?? (
+        <>
+          <ColorPickerSwatch />
+          <ColorPickerInput />
+        </>
+      )}
+    </SdkColorPicker>
+  );
+}
+
+export interface ColorSwatchProps extends Omit<ComponentProps<'div'>, 'color'> {
+  /** The color it shows: any CSS color. */
+  color: string;
+}
+
+/** A color chip on its own: an image named by its CSS value, or by `aria-label`. Inside a picker, use
+    ColorPickerSwatch, which follows the color being edited. */
+export function ColorSwatch({ color, className, style, ...props }: ColorSwatchProps) {
+  return (
+    <div
+      data-slot="color-swatch"
+      role="img"
+      aria-label={color}
+      className={cn(swatch, className)}
+      // The color is a runtime value, fed in as the variable the chip is filled with.
+      style={{ '--color-picker-color': color, ...style } as CSSProperties}
+      {...props}
+    />
+  );
+}
+
+/* ── In a popover ── */
+
+/** The trigger: the kit's filled field box as a button, showing the picker's color and its value, with the up-down
+    glyph of a pop-up button. It keeps the field's edge while its popup is open. */
+export const colorPickerTriggerVariants = cva(
+  'bl-btn w-full cursor-pointer justify-start text-left active:not-data-disabled:bg-secondary-strong aria-expanded:bg-transparent aria-expanded:shadow-[inset_0_0_0_1.5px_var(--primary)]',
+  {
+    variants: {
+      size: {
+        sm: fieldSurfaceVariants({ size: 'sm' }),
+        default: fieldSurfaceVariants({ size: 'default' }),
+        lg: fieldSurfaceVariants({ size: 'lg' }),
+      },
+    },
+    defaultVariants: { size: 'default' },
+  },
+);
+
+export type ColorPickerTriggerProps = Omit<ComponentProps<typeof PopoverTrigger>, 'children'> & VariantProps<typeof colorPickerTriggerVariants> & {
+  /** Show the value beside the swatch, in the picker's `format` (hex by default). Default: true. */
   showValue?: boolean;
 };
 
-const triggerSize = { sm: 'h-8 rounded-lg text-subhead', default: 'h-11 rounded-ctl text-body', lg: 'h-[50px] rounded-xl text-body' } as const;
-
-/** The Popover's trigger as a filled button showing the picker's color and its hex (eight digits once the opacity
-    is below 1). */
-export function ColorPickerTrigger({ className, size = 'default', showValue = true, ...props }: ColorPickerTriggerProps) {
+/** The popup's trigger: the picker's color and its value (in the picker's `format`; hex shows eight digits once
+    the opacity is below 1). */
+export function ColorPickerTrigger({ className, size, showValue = true, ...props }: ColorPickerTriggerProps) {
   const state = useContext(ColorPickerStateContext);
   const name = useContext(ColorPickerNameContext);
   const valueId = useId();
-  const hex = state ? formatColor(state.color, 'hex') : '';
-  // Named by the field, then the color it shows ("Accent, " and the hex).
+  const text = state ? formatColor(state.color, name.format ?? 'hex') : '';
+  // Named by the field, then the color it shows ("Accent, " and the value).
   const named = name.labelledBy ? { 'aria-labelledby': `${name.labelledBy} ${valueId}` }
-    : name.label ? { 'aria-label': `${name.label}, ${hex}` } : {};
+    : name.label ? { 'aria-label': `${name.label}, ${text}` } : {};
   return (
     <PopoverTrigger
       {...named}
-      className={cx(
-        [buttonVariants({ variant: 'secondary' }), 'w-full justify-start bg-input px-3 font-normal text-foreground hover:bg-secondary aria-expanded:ring-[1.5px] aria-expanded:ring-primary aria-expanded:ring-inset', triggerSize[size]],
-        className,
-      )}
+      data-size={size ?? 'default'}
+      className={cx(colorPickerTriggerVariants({ size }), className)}
       {...props}
     >
       <span id={valueId} className="contents">
-        <ColorFieldSwatch />
-        {showValue && state ? <span className="tabular-nums">{hex}</span> : null}
+        <ColorPickerSwatch />
+        {showValue && state ? <span className="min-w-0 flex-1 truncate tabular-nums">{text}</span> : null}
       </span>
+      <Icon name="chevron-up-down" size={16} sw={2.2} className="ms-auto shrink-0 text-muted-foreground" />
     </PopoverTrigger>
   );
 }
@@ -292,10 +438,10 @@ export function ColorPickerContent({
               <ColorPickerSliderThumb aria-label="Opacity" />
             </ColorPickerSlider>
           ) : null}
-          <ColorFieldGroup size="sm">
-            <ColorFieldSwatch className="size-5" />
-            <ColorFieldInput />
-          </ColorFieldGroup>
+          <ColorPickerField size="sm">
+            <ColorPickerSwatch />
+            <ColorPickerInput />
+          </ColorPickerField>
           {swatches?.length ? (
             <ColorPickerSwatches aria-label="Preset colors">
               {swatches.map((color) => <ColorPickerSwatchItem key={color} value={color} />)}

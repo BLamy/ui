@@ -12,7 +12,8 @@ import {
 import type { VariantProps } from 'class-variance-authority';
 import { labelVariants } from '@/components/ui/label';
 import { Icon } from '@/lib/icon';
-import { cx } from '@/lib/utils';
+import { sectionLabelVariants } from '@/lib/primitives';
+import { cn, cx } from '@/lib/utils';
 
 /* ══ Field — UI SDK's Field: a control wired to its label, description and error ══
    <Field name="email">
@@ -75,7 +76,7 @@ export function FieldSet({ className, ...props }: ComponentProps<typeof SdkField
 export function FieldLegend({ className, ...props }: ComponentProps<typeof SdkFieldLegend>) {
   return (
     <SdkFieldLegend
-      className={cx('mb-2 p-0 px-1 text-footnote leading-[18px] font-normal tracking-[.02em] text-foreground/70 uppercase', className)}
+      className={cx(cn(sectionLabelVariants({ variant: 'grouped' }), 'mb-2 p-0 px-1'), className)}
       {...props}
     />
   );

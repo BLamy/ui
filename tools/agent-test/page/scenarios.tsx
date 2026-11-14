@@ -4,7 +4,7 @@
    ../scenarios.mjs. */
 import { useState, type ComponentType } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Combobox, ComboboxContent, ComboboxInput } from '@/components/ui/combobox';
+import { Combobox, ComboboxContent, ComboboxField, ComboboxInput, ComboboxTrigger } from '@/components/ui/combobox';
 import { DatePicker, DatePickerContent, DatePickerField } from '@/components/ui/date-picker';
 import {
   AlertDialog, AlertDialogBackdrop, AlertDialogClose, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -173,7 +173,10 @@ function Assignee() {
       <Field>
         <FieldLabel>Assignee</FieldLabel>
         <Combobox items={people} value={assignee} onValueChange={setAssignee}>
-          <ComboboxInput placeholder="Search the team" />
+          <ComboboxField>
+            <ComboboxInput placeholder="Search the team" />
+            <ComboboxTrigger />
+          </ComboboxField>
           <ComboboxContent />
         </Combobox>
       </Field>

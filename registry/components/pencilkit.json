@@ -1,19 +1,21 @@
 {
   "name": "pencilkit",
   "title": "PencilKit",
-  "description": "Pressure-aware drawing (perfect-freehand) with the PencilKit tool picker, and the Composer image annotator.",
+  "description": "Pressure-aware freehand drawing (perfect-freehand): PencilCanvas on its own or as a Canvas's drawing layer, the PencilKit tool palette (tools, inks, widths, undo/redo) on the kit Toolbar, snapshot undo history, and the image annotator.",
   "page": "pencilkit",
   "exports": [
     "PencilCanvas",
     "PencilToolbar",
-    "PencilToolbarDivider",
-    "PencilToolButton",
-    "ToolPicker",
-    "InkPicker",
-    "WidthPicker",
+    "PencilToolbarPinned",
+    "PencilToolPicker",
+    "PencilInkPicker",
+    "PencilWidthPicker",
     "PencilActions",
+    "StrokePath",
     "usePencilHistory",
-    "PencilKitAnnotator"
+    "PencilKitAnnotator",
+    "ImageAnnotator",
+    "ImageAnnotatorProvider"
   ],
   "imports": [
     "PencilCanvas",
@@ -22,6 +24,11 @@
   ],
   "types": [
     "PencilTool",
-    "PencilStroke"
+    "PencilDrawTool",
+    "PencilPoint",
+    "PencilStroke",
+    "PencilInk",
+    "PencilWidth",
+    "PencilHistory"
   ]
 }

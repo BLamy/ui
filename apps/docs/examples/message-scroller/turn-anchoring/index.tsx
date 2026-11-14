@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import { MessageScroller } from '@/components/ui/message-scroller'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { MessageScroller, MessageScrollerItem } from '@/components/ui/message-scroller'
+import { ThemeScope } from '@/lib/theme'
 
 function TurnAnchoring() {
   const [msgs, setMsgs] = useState([
@@ -87,7 +87,13 @@ function TurnAnchoring() {
         border: '1px solid var(--border)',
       }}
     >
-      <MessageScroller items={items} streaming={false} threadKey="live" />
+      <MessageScroller streaming={false} threadKey="live">
+        {items.map((it) => (
+          <MessageScrollerItem key={it.id} value={it.id} anchor={it.anchor}>
+            {it.node}
+          </MessageScrollerItem>
+        ))}
+      </MessageScroller>
       <div
         style={{
           padding: 10,
@@ -117,12 +123,11 @@ function TurnAnchoring() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function TurnAnchoringExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <TurnAnchoring />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

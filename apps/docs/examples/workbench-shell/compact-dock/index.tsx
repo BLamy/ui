@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { FloatingSheet } from '@/components/ui/floating-sheet'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { FloatingSheet, FloatingSheetBody } from '@/components/ui/floating-sheet'
 import { ThemeScope } from '@/lib/theme'
 import { TerminalAction, TerminalBody, TerminalHeader } from '@/components/blocks/t3-clone/components/workbench/terminal'
 
@@ -9,7 +8,7 @@ import { TerminalAction, TerminalBody, TerminalHeader } from '@/components/block
 function TerminalSheet() {
   const [open, setOpen] = useState(false)
   return (
-    <WorkbenchTheme
+    <ThemeScope scope="workbench"
       style={{
         position: 'relative',
         width: 390,
@@ -52,21 +51,21 @@ function TerminalSheet() {
       {/* A `terminal` theme scope: the terminal's own background and ink. */}
       <ThemeScope scope="terminal" style={{ display: 'contents' }}>
       <FloatingSheet
-        appearance="sheet"
+        variant="sheet"
         gutter={0}
         radius={16}
-        dismissible
+        collapse="hide"
         visible={open}
         onVisibleChange={setOpen}
         peek="50%"
         topGap="8%"
         hideOnScroll={false}
         scrim={false}
-        label="Terminal"
+        aria-label="Terminal"
         className="z-70"
         surfaceClassName="bg-background"
       >
-        <FloatingSheet.Body>
+        <FloatingSheetBody>
           <div className="flex h-full min-h-0 flex-col">
             <TerminalHeader title="zsh — cookbook">
               <TerminalAction
@@ -82,19 +81,18 @@ function TerminalSheet() {
               ]}
             />
           </div>
-        </FloatingSheet.Body>
+        </FloatingSheetBody>
       </FloatingSheet>
       </ThemeScope>
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function TerminalSheetExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <TerminalSheet />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

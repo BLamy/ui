@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { ArtifactChatContainer, type ArtifactChatContainerProps } from '@/components/ui/artifact-chat-container';
+import {
+  ArtifactChatContainer,
+  ArtifactChatContainerChat,
+  ArtifactChatContainerComposer,
+  ArtifactChatContainerContent,
+  type ArtifactChatContainerProps,
+} from '@/components/ui/artifact-chat-container';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Button } from '@ui-sdk/react/button';
 import { Composer, ComposerAddon, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer';
@@ -426,11 +432,11 @@ export function MapChatDemo({
       working={working != null}
       workingLabel={working ?? undefined}
       hideOnScroll={false}
-      tone={light ? 'light' : 'dark'}
+      appearance={light ? 'light' : 'dark'}
       className={cn('ck-map-chat group/map-chat bg-(--map-backdrop) [&_[data-slot=artifact-chat-content]]:overflow-hidden [&_[data-slot=artifact-chat-content]]:bg-(--map-backdrop)', className)}
       style={{ '--map-backdrop': MAP_BACKDROP[light ? 'light' : 'dark'], ...style } as CSSProperties}
     >
-      <ArtifactChatContainer.Content>
+      <ArtifactChatContainerContent>
         <TileMap
           className="absolute inset-0"
           view={view}
@@ -481,9 +487,9 @@ export function MapChatDemo({
             </div>
           )}
         </TileMap>
-      </ArtifactChatContainer.Content>
+      </ArtifactChatContainerContent>
 
-      <ArtifactChatContainer.Chat>
+      <ArtifactChatContainerChat>
         <div
           ref={scrollerRef}
           data-slot="map-chat-transcript"
@@ -519,9 +525,9 @@ export function MapChatDemo({
             ),
           )}
         </div>
-      </ArtifactChatContainer.Chat>
+      </ArtifactChatContainerChat>
 
-      <ArtifactChatContainer.Composer>
+      <ArtifactChatContainerComposer>
         <Composer streaming={busy} onStop={stop} onSubmit={(markdown) => void send(markdown)}>
           <ComposerCard>
             {/* Starter prompts ride in the card, above the editor. */}
@@ -558,7 +564,7 @@ export function MapChatDemo({
             </ComposerFooter>
           </ComposerCard>
         </Composer>
-      </ArtifactChatContainer.Composer>
+      </ArtifactChatContainerComposer>
     </ArtifactChatContainer>
   );
 }

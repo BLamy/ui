@@ -1,16 +1,22 @@
 {
   "name": "toggle",
   "title": "Toggle",
-  "description": "UI SDK's Toggle, a button that stays pressed: tinted when on, in default, filled and outline variants, with ToggleIcon and a controller.",
+  "description": "UI SDK's Toggle, a button that stays pressed: tinted when on, in default, filled, outline and quiet (toolbar) variants with Button's sizes, with ToggleIcon and a controller; and ToggleGroup, toggles that share one value, single or multiple, one tab stop with arrow keys between them.",
   "page": "toggle",
   "exports": [
     "Toggle",
     "ToggleIcon",
+    "ToggleGroup",
+    "ToggleGroupItem",
     "toggleVariants",
-    "createToggleController"
+    "toggleGroupVariants",
+    "createToggleController",
+    "createToggleGroupController"
   ],
   "imports": [
-    "Toggle"
+    "Toggle",
+    "ToggleGroup",
+    "ToggleGroupItem"
   ],
   "types": [
     "ToggleProps"

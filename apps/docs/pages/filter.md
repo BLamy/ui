@@ -276,32 +276,12 @@ Inside a `FilterBar`, its `fields`, filters, `match`, edits, `announce(message)`
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
 
-### `filterBarVariants`
-
-Defined in `@/components/ui/filter`. Base classes:
-
-```text
-flex min-w-0 flex-col gap-2
-```
-
-No variants.
-
-### `filterToolbarVariants`
-
-Defined in `@/components/ui/filter`. Base classes:
-
-```text
-flex min-w-0 flex-wrap items-center gap-1.5
-```
-
-No variants.
-
 ### `filterChipVariants`
 
 Defined in `@/components/ui/filter`. Base classes:
 
 ```text
-box-border inline-flex max-w-full min-w-0 items-stretch overflow-hidden rounded-lg text-foreground
+box-border inline-flex max-w-full min-w-0 items-stretch rounded-lg text-foreground
 ```
 
 **`size`** — default `default`
@@ -311,7 +291,7 @@ box-border inline-flex max-w-full min-w-0 items-stretch overflow-hidden rounded-
 | `default` (default) | `h-7 text-footnote` |
 | `sm` | `h-6 text-caption` |
 
-**`tone`** — default `default`
+**`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |

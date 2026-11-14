@@ -1,6 +1,6 @@
 /* Freeform's geometry: where a connector runs, item bounds and hit testing. The frame math underneath (rotated
    frames, corners, distances) is the canvas toolkit's, in @/lib/canvas-math. All in board units. */
-import { PK_TOOLS } from '@/components/ui/pencilkit/constants';
+import { pencilTools } from '@/components/ui/pencilkit/constants';
 import { centerOf, cornersOf, dist, distToPolyline, inFrame, rectOf, rotatePt, type Pt, type Rect } from '@/lib/canvas-math';
 import { isAttached, isBox, type BoxItem, type ConnectorEnd, type ConnectorItem, type Item, type Side, type StrokeItem } from './model';
 
@@ -100,7 +100,7 @@ export function connectorGeometry(c: ConnectorItem, byId: Map<string, Item>): Co
 
 /** Where a stroke's ink reaches, padded by half its widest nib. */
 export function strokeFrame(points: StrokeItem['points'], tool: StrokeItem['tool'], width: number): Rect {
-  const pad = (PK_TOOLS[tool].opt.size * width) / 2 + 1;
+  const pad = (pencilTools[tool].options.size * width) / 2 + 1;
   const r = rectOf(points.map(([x, y]) => ({ x, y })));
   return { x: r.x - pad, y: r.y - pad, w: r.w + pad * 2, h: r.h + pad * 2 };
 }
@@ -116,7 +116,7 @@ export function hitItem(p: Pt, item: Item, byId: Map<string, Item>, tol: number)
   if (item.kind === 'connector') return distToPolyline(p, connectorGeometry(item, byId).pts) <= tol + item.width / 2;
   if (item.kind === 'stroke') {
     if (!inFrame(p, item, tol)) return false;
-    const r = (PK_TOOLS[item.tool].opt.size * item.width) / 2 + tol;
+    const r = (pencilTools[item.tool].options.size * item.width) / 2 + tol;
     return distToPolyline(p, item.points.map(([x, y]) => ({ x, y }))) <= r;
   }
   // An unfilled shape with no text is hit on its outline, not its empty middle, so a frame drawn around other

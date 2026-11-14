@@ -1,6 +1,6 @@
 # VideoPreview
 
-Plays a video timeline live in the page, with nothing rendered ahead of time. Every clip near the playhead is a `<video>`, `<audio>` or `<img>` of its media, laid out in its frame, with its look as a CSS filter and its fades and dissolves as opacity and volume, bottom track first. A **playback clock** owns the time and the elements follow it. They play along while it runs, re-sync when they drift, and seek as it scrubs; the next clip on each track loads ahead so a cut doesn't stall. A preview and a [VideoTimeline](https://blamy.github.io/ui/#/video-timeline) on the same clock move together.
+Plays a video timeline live in the page, with nothing rendered ahead of time. Every clip near the playhead is a `<video>`, `<audio>` or `<img>` of its media, laid out in its frame, with its look as a CSS filter and its fades and dissolves as opacity and volume, bottom track first. A **playback clock** owns the time and the elements follow it. They play along while it runs, re-sync when they drift, and seek as it scrubs; the next clip on each track loads ahead so a cut doesn't stall. A preview and a [VideoTimeline](https://blamy.github.io/ui/#/video-timeline) on the same clock move together. Use it to preview an edit while it is being made; to play one finished file, a plain `<video controls>` is enough, and to export the edit, render it with [FFmpeg](https://blamy.github.io/ui/#/ffmpeg).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -10,7 +10,7 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  VideoPreview, PlaybackControls,
+  VideoPreview, VideoPreviewControls,
 } from '@/components/ui/video-preview'
 import { usePlaybackClock } from '@/lib/playback'
 ```
@@ -24,7 +24,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  VideoPreview, PlaybackControls, usePlaybackClock,
+  VideoPreview, VideoPreviewControls, usePlaybackClock,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
@@ -37,27 +37,60 @@ import {
 {% demo src="video-preview/composition" %}
 
 ```tsx
-import { PlaybackControls, VideoPreview } from '@/components/ui/video-preview'
+import { VideoPreviewControls, VideoPreview } from '@/components/ui/video-preview'
 import { usePlaybackClock } from '@/lib/playback'
 
-const clock = usePlaybackClock()
-useEffect(() => clock.setDuration(timelineDuration(timeline)), [clock, timeline])
+const playback = usePlaybackClock()
+useEffect(() => playback.setDuration(timelineDuration(timeline)), [playback, timeline])
 
 <VideoPreview
   timeline={timeline}
   media={{ beach: { url: URL.createObjectURL(file), kind: 'video' } }}
-  clock={clock}
+  playback={playback}
   format={{ width: 1280, height: 720 }}
   renderClip={(clip) => (clip.media === 'title' ? <Title clip={clip} /> : undefined)}
 />
-<PlaybackControls clock={clock} fps={30} />
+<VideoPreviewControls playback={playback} fps={30} />
 ```
 
 ## The playback clock
 
 `usePlaybackClock()` makes a clock that lives as long as the component, and `createPlayback()` makes one outside React. It has `play`, `pause`, `toggle`, `seek(t)`, `step(seconds)`, `setDuration`, `setRate`, `setLoop` and `setScrubbing`. While playing it advances on animation frames and stops at the end, or loops. It is a small external store: `subscribe` hears every tick, which is how a playhead moves without re-rendering, and `usePlaybackState(clock, (s) => s.playing)` re-renders a component only when the part it selects changes. Its methods work detached (`onClick={clock.toggle}`).
 
-`PlaybackControls` has go to start, previous frame, play/pause, next frame, go to end and the timecode. It is a UI SDK Toolbar named "Playback": one Tab stop, ←/→ between the buttons, Home/End to the first and last. `PlaybackTimecode` is the timecode alone: `HH:MM:SS:FF` with `fps`, else `M:SS.t`.
+`VideoPreviewControls` has go to start, previous frame, play/pause, next frame, go to end and the timecode. It is the kit's [Toolbar](https://blamy.github.io/ui/#/toolbar) (`variant="plain"`, `size="sm"`) named "Playback": one Tab stop, ←/→ between the buttons, Home/End to the first and last. `VideoPreviewTimecode` is the timecode alone: `HH:MM:SS:FF` with `fps`, else `M:SS.t`.
+
+## API
+
+### `<VideoPreview>`
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `timeline` | required | The `Timeline` to play. |
+| `media` | required | Each media id's `url` and `kind` (`video`, `audio`, `image`). |
+| `playback` | required | The shared clock (`usePlaybackClock`) the picture follows. |
+| `format` | required | The output's `width` and `height`; only the aspect matters here. |
+| `renderClip(clip, track)` | — | Draws a clip that isn't a file (a title); return undefined for the rest. |
+| `preload` | `2` | Seconds ahead a clip starts loading. |
+| `children` | — | Over the picture: guides, a play button. |
+| `aria-label` | "Preview" | Names the preview's group, to tell a source monitor from a program monitor. |
+| `className`, `style`, other `div` props | — | On the root. |
+
+### `<VideoPreviewControls>`
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `playback` | required | The clock the buttons drive. |
+| `fps` | `30` | Frames per second, for the frame steps and the timecode. |
+| `timecode` | `true` | Show the timecode after the buttons. |
+| Toolbar props | `size="sm"`, `aria-label="Playback"` | `variant`, `size`, `className`… |
+
+### `<VideoPreviewTimecode>`
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `playback` | required | The clock it shows. |
+| `fps` | — | Show `HH:MM:SS:FF` instead of `M:SS.t`. |
+| `showDuration` | `false` | Also show the length. |
 
 ## How close is it to the render
 

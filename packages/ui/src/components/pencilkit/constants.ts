@@ -6,45 +6,75 @@ import type { StrokeOptions } from 'perfect-freehand';
 export type PencilDrawTool = 'pen' | 'marker' | 'pencil';
 export type PencilTool = PencilDrawTool | 'eraser';
 
+/** How a drawing tool lays ink: perfect-freehand's options (`size` is the nib at width 1) and the ink's opacity. */
 export interface PencilToolDef {
-  opt: StrokeOptions & { size: number };
-  alpha: number;
+  options: StrokeOptions & { size: number };
+  opacity: number;
 }
 
-export const PK_TOOLS: Record<PencilDrawTool, PencilToolDef> = {
-  pen: { opt: { size: 7, thinning: 0.62, smoothing: 0.5, streamline: 0.42 }, alpha: 1 },
-  marker: { opt: { size: 20, thinning: 0.06, smoothing: 0.55, streamline: 0.5 }, alpha: 0.5 },
+export const pencilTools: Record<PencilDrawTool, PencilToolDef> = {
+  pen: { options: { size: 7, thinning: 0.62, smoothing: 0.5, streamline: 0.42 }, opacity: 1 },
+  marker: { options: { size: 20, thinning: 0.06, smoothing: 0.55, streamline: 0.5 }, opacity: 0.5 },
   pencil: {
-    opt: { size: 4.5, thinning: 0.72, smoothing: 0.42, streamline: 0.34, start: { taper: 22 }, end: { taper: 22 } },
-    alpha: 0.92,
+    options: { size: 4.5, thinning: 0.72, smoothing: 0.42, streamline: 0.34, start: { taper: 22 }, end: { taper: 22 } },
+    opacity: 0.92,
   },
 };
 
-/** The ink swatches (content colors: they are drawn into the strokes, so they don't follow the theme). */
-export const PK_INKS = ['#1C1C1E', '#F2F2F7', '#0A84FF', '#30D158', '#FFD60A', '#FF375F'];
+/** The tools' names, for their buttons and tooltips. */
+export const pencilToolLabels: Record<PencilTool, string> = { pen: 'Pen', marker: 'Marker', pencil: 'Pencil', eraser: 'Eraser' };
 
-export const PK_W: { m: number; d: number }[] = [
-  { m: 0.6, d: 3 },
-  { m: 1, d: 5 },
-  { m: 1.7, d: 8 },
-  { m: 2.6, d: 11 },
-];
-
-export type PencilPoint = [number, number, number];
-
-export interface PencilStroke {
-  tool: PencilDrawTool;
-  color: string;
-  w: number;
-  pen: boolean;
-  points: PencilPoint[];
-  done: boolean;
-}
-
-/** The Icon each tool draws (the former PencilKit icon set now lives in `Icon`). */
-export const PK_TOOL_ICONS = {
+/** The Icon each tool draws. */
+export const pencilToolIcons = {
   pen: 'pencil-tip',
   marker: 'highlighter',
   pencil: 'pencil-sketch',
   eraser: 'eraser',
 } as const satisfies Record<PencilTool, string>;
+
+/** An ink swatch: the color strokes are drawn with (any CSS color) and its name. */
+export interface PencilInk {
+  value: string;
+  label: string;
+}
+
+/** The ink swatches. Black and white follow the theme, as PencilKit's do (black ink reads as white on dark paper);
+ *  the hues are Apple's system colors. */
+export const pencilInks: readonly PencilInk[] = [
+  { value: 'var(--foreground)', label: 'Black' },
+  { value: 'var(--background)', label: 'White' },
+  { value: '#0A84FF', label: 'Blue' },
+  { value: '#30D158', label: 'Green' },
+  { value: '#FFD60A', label: 'Yellow' },
+  { value: '#FF375F', label: 'Pink' },
+];
+
+/** A stroke width: `scale` multiplies the tool's nib, `dot` is the swatch's diameter in px. */
+export interface PencilWidth {
+  scale: number;
+  dot: number;
+  label: string;
+}
+
+export const pencilWidths: readonly PencilWidth[] = [
+  { scale: 0.6, dot: 3, label: 'Fine' },
+  { scale: 1, dot: 5, label: 'Regular' },
+  { scale: 1.7, dot: 8, label: 'Bold' },
+  { scale: 2.6, dot: 11, label: 'Heavy' },
+];
+
+/** A pointer sample: x, y and pressure (0–1). */
+export type PencilPoint = [number, number, number];
+
+export interface PencilStroke {
+  tool: PencilDrawTool;
+  /** Any CSS color. */
+  color: string;
+  /** Multiplies the tool's nib (a `pencilWidths` scale). */
+  width: number;
+  /** The points carry real pressure (a stylus); otherwise perfect-freehand simulates it from speed. */
+  pressure: boolean;
+  points: PencilPoint[];
+  /** The pointer has lifted: the stroke's end is drawn with its final taper. */
+  complete: boolean;
+}

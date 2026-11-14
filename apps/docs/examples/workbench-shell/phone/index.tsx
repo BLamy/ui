@@ -1,8 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, MessageMarkdown, UserMessage } from '@/components/ui/conversation'
 import { SidebarContent, SidebarHeader, SidebarItem, SidebarSection, SidebarWorkspace } from '@/components/ui/sidebar'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
-import { Icon } from '@/lib/icon'
+import { ThemeScope } from '@/lib/theme'
 import { TerminalBody, TerminalHeader } from '@/components/blocks/t3-clone/components/workbench/terminal'
 import { useWorkbenchShell, WorkbenchActions, WorkbenchContent, WorkbenchDock, WorkbenchDockClose, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarClose, WorkbenchSidebarTrigger, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
 import { WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
@@ -48,10 +47,10 @@ function Threads() {
   const [current, setCurrent] = useState('ship the build')
   const item = (title: string, meta: string) => (
     <SidebarItem
-      icon={<Icon name="bubble-left" size={15} sw={1.8} />}
-      label={title}
-      badge={meta}
-      active={title === current}
+      icon="bubble-left"
+      title={title}
+      trailing={meta}
+      current={title === current}
       onClick={() => {
         setCurrent(title)
         shell.setSidebarOpen(false)
@@ -59,22 +58,22 @@ function Threads() {
     />
   )
   return (
-    <nav aria-label="Threads" className="flex h-full flex-col bg-sidebar">
+    <div className="flex h-full flex-col bg-sidebar">
       <SidebarHeader>
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
-            <SidebarWorkspace name="Workbench" />
+            <SidebarWorkspace title="Workbench" />
           </div>
           <WorkbenchSidebarClose />
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent aria-label="Threads">
         <SidebarSection title="Active">
           {item('ship the build', 'now')}
           {item('triage flaky tests', '4m')}
         </SidebarSection>
       </SidebarContent>
-    </nav>
+    </div>
   )
 }
 
@@ -117,7 +116,7 @@ function PhoneWorkbench() {
               </ConversationComposer>
             </Conversation>
           </WorkbenchContent>
-          {/* compact width: the dock is a dismissible FloatingSheet over the whole shell */}
+          {/* compact width: the dock is a FloatingSheet (`collapse="hide"`) over the whole shell */}
           <WorkbenchDock>
             <TerminalHeader title="zsh — web">
               <WorkbenchDockClose />
@@ -130,12 +129,11 @@ function PhoneWorkbench() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function PhoneWorkbenchExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <PhoneWorkbench />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

@@ -37,7 +37,7 @@ function Thumbnail({ strokes }: { strokes: PencilStroke[] }) {
         style={{ display: 'block' }}
       >
         {strokes.map((s, i) => (
-          <StrokePath key={i} st={s} />
+          <StrokePath key={i} stroke={s} />
         ))}
       </svg>
     </div>
@@ -67,7 +67,7 @@ export default function SketchGallery() {
           ink="#0A84FF"
           strokes={history.strokes}
           onStrokesChange={history.onStrokesChange}
-          hint="Draw something, then save it"
+          emptyState="Draw something, then save it"
         />
         <Button
           size="sm"

@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Composer, ComposerButton, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer'
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer'
 import { ComposerCards, ComposerMorphCard } from '@/components/ui/composer/composer-cards'
 import { Icon } from '@/lib/icon'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 
 // Cards grow out of the composer like a drop of liquid: they start inside the
 // card, blurred, slide out with their outline necking in, and pinch off. Remove
@@ -33,9 +33,9 @@ function MorphCards() {
         <ComposerCard>
           <ComposerInput placeholder="Ask anything…" />
           <ComposerFooter>
-            <ComposerButton aria-label={context ? 'Hide context' : 'Show context'} onClick={() => setContext((c) => !c)}>
+            <Button variant="quiet" size="icon-sm" aria-label={context ? 'Hide context' : 'Show context'} onClick={() => setContext((c) => !c)}>
               <Icon name="sparkle" size={15} />
-            </ComposerButton>
+            </Button>
             <ComposerSpacer />
             <ComposerSend />
           </ComposerFooter>
@@ -61,8 +61,8 @@ function MorphCards() {
 
 export default function MorphCardsExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <MorphCards />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

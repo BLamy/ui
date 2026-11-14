@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createAgent } from '@ui-sdk/react/agent';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Spreadsheet, columnName, createSpreadsheetController, type SpreadsheetProps } from '@/components/ui/spreadsheet';
+import { Spreadsheet, createSpreadsheetController, type SpreadsheetProps } from '@/components/ui/spreadsheet';
+import { spreadsheetColumnLetter } from '@/lib/spreadsheet-primitive';
 
 declare global {
   var __UI_SDK_STRICT__: boolean | undefined;
@@ -36,7 +37,7 @@ const enter = async () => {
 
 describe('Spreadsheet', () => {
   it('names columns like other spreadsheets', () => {
-    expect([0, 25, 26, 701, 702].map(columnName)).toEqual(['A', 'Z', 'AA', 'ZZ', 'AAA']);
+    expect([0, 25, 26, 701, 702].map(spreadsheetColumnLetter)).toEqual(['A', 'Z', 'AA', 'ZZ', 'AAA']);
   });
 
   it('is an ARIA grid with titles, row numbers and counts, and one tab stop', () => {
@@ -181,10 +182,12 @@ describe('Spreadsheet', () => {
 
   it('sorts a number column as a view, empty cells last, and clears the sort', async () => {
     const onSort = vi.fn();
+    const onSortChange = vi.fn();
     const onRows = vi.fn();
-    render(<Harness onSort={onSort} onRows={onRows} />);
+    render(<Harness onSorted={onSort} onSortChange={onSortChange} onRows={onRows} />);
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Sort by Qty' })); });
     await waitFor(() => expect(column(1)).toEqual(['3', '10', '']));
+    expect(onSortChange).toHaveBeenLastCalledWith({ column: 1, direction: 'ascending' }, expect.objectContaining({ reason: 'trigger-press' }));
     expect(onSort).toHaveBeenLastCalledWith(expect.objectContaining({ column: 1, direction: 'ascending', ranOn: 'cpu', rows: 3 }));
     expect(screen.getAllByRole('columnheader')[2].getAttribute('aria-sort')).toBe('ascending');
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Sort by Qty, descending' })); });
@@ -201,6 +204,32 @@ describe('Spreadsheet', () => {
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Sort by Qty, clear sort' })); });
     expect(onSort).toHaveBeenLastCalledWith(null);
     expect(column(1)).toEqual(['3', '11', '']);
+  });
+
+  it('takes a controlled sort: a press asks, the host decides, and a default sort runs at the start', async () => {
+    const onSortChange = vi.fn();
+    const { rerender } = render(<Harness sort={null} onSortChange={onSortChange} />);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Sort by Qty' })); });
+    expect(onSortChange).toHaveBeenLastCalledWith({ column: 1, direction: 'ascending' }, expect.objectContaining({ reason: 'trigger-press' }));
+    // Not until the host says so.
+    expect(column(1)).toEqual(['3', '10', '']);
+    rerender(<Harness sort={{ column: 1, direction: 'descending' }} onSortChange={onSortChange} />);
+    await waitFor(() => expect(column(1)).toEqual(['10', '3', '']));
+    expect(screen.getAllByRole('columnheader')[2].getAttribute('aria-sort')).toBe('descending');
+    cleanup();
+    render(<Harness defaultSort={{ column: 1, direction: 'ascending' }} onSortChange={(_sort, details) => details.cancel()} />);
+    await waitFor(() => expect(column(1)).toEqual(['3', '10', '']));
+    // A canceled press keeps the sort.
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Sort by Qty, descending' })); });
+    expect(column(1)).toEqual(['3', '10', '']);
+  });
+
+  it('shows an EmptyState over the body at the grid\'s width, or the one it is given', () => {
+    const { rerender } = render(<Spreadsheet aria-label="Empty" defaultValue={[['Name', 'Qty']]} />);
+    expect(document.querySelector('[data-slot=spreadsheet-empty]')?.textContent).toBe('No rowsPaste cells or add a row.');
+    rerender(<Spreadsheet aria-label="Empty" defaultValue={[['Name', 'Qty']]} emptyState="Nothing yet" statusBar={false} />);
+    expect(document.querySelector('[data-slot=spreadsheet-empty]')?.textContent).toBe('Nothing yet');
+    expect(document.querySelector('[data-slot=spreadsheet-footer]')).toBeNull();
   });
 
   it('keeps the sort buttons out of the Tab order, and Add Row adds a row and moves to it', async () => {

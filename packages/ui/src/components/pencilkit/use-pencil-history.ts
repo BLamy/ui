@@ -5,39 +5,44 @@ import type { PencilStrokesChangeDetails } from '@/components/ui/pencilkit/penci
 
 export interface PencilHistory {
   strokes: PencilStroke[];
-  /** Wire to PencilCanvas `onStrokesChange`. A drawn stroke (`details.reason === 'draw'`) clears the redo stack. */
+  /** Wire to PencilCanvas `onStrokesChange`: every change (a stroke drawn, strokes erased) is one undo step. */
   onStrokesChange: (next: PencilStroke[], details: PencilStrokesChangeDetails) => void;
+  /** Reverses the last change: a drawn stroke goes, erased strokes come back, a clear is restored. */
   undo: () => void;
   redo: () => void;
+  /** Removes every stroke, as one undoable step. */
   clear: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  canClear: boolean;
 }
 
-/** Undo / redo / clear stack for PencilCanvas strokes. */
+interface Snapshots {
+  past: PencilStroke[][];
+  present: PencilStroke[];
+  future: PencilStroke[][];
+}
+
+/** Undo / redo / clear for PencilCanvas strokes, as snapshots: each step keeps the strokes as they were before it. */
 export function usePencilHistory(initial: PencilStroke[] = []): PencilHistory {
-  const [strokes, setStrokes] = useState<PencilStroke[]>(initial);
-  const [redoStack, setRedoStack] = useState<PencilStroke[]>([]);
+  const [h, setH] = useState<Snapshots>(() => ({ past: [], present: initial, future: [] }));
 
-  const onStrokesChange = (next: PencilStroke[], details: PencilStrokesChangeDetails) => {
-    setStrokes(next);
-    if (details.reason === 'draw') setRedoStack([]);
-  };
-  const undo = () => {
-    if (!strokes.length) return;
-    setRedoStack([...redoStack, strokes[strokes.length - 1]]);
-    setStrokes(strokes.slice(0, -1));
-  };
-  const redo = () => {
-    if (!redoStack.length) return;
-    setStrokes([...strokes, redoStack[redoStack.length - 1]]);
-    setRedoStack(redoStack.slice(0, -1));
-  };
-  const clear = () => {
-    if (!strokes.length) return;
-    setStrokes([]);
-    setRedoStack([]);
-  };
+  const push = (next: PencilStroke[]) =>
+    setH((s) => (next === s.present ? s : { past: [...s.past, s.present], present: next, future: [] }));
+  const undo = () =>
+    setH((s) => (s.past.length ? { past: s.past.slice(0, -1), present: s.past[s.past.length - 1], future: [s.present, ...s.future] } : s));
+  const redo = () =>
+    setH((s) => (s.future.length ? { past: [...s.past, s.present], present: s.future[0], future: s.future.slice(1) } : s));
+  const clear = () => setH((s) => (s.present.length ? { past: [...s.past, s.present], present: [], future: [] } : s));
 
-  return { strokes, onStrokesChange, undo, redo, clear, canUndo: strokes.length > 0, canRedo: redoStack.length > 0 };
+  return {
+    strokes: h.present,
+    onStrokesChange: (next) => push(next),
+    undo,
+    redo,
+    clear,
+    canUndo: h.past.length > 0,
+    canRedo: h.future.length > 0,
+    canClear: h.present.length > 0,
+  };
 }

@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Segmented, SegmentedItem, createSegmentedControlController } from '@/components/ui/segmented';
+import {
+  Segmented, SegmentedItem, createSegmentedControlController, segmentIndicatorVariants, segmentItemVariants, segmentTrackVariants,
+} from '@/components/ui/segmented';
+import { Tabs, TabsList, TabsTab } from '@/components/ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
 globalThis.__UI_SDK_STRICT__ = true;
@@ -97,5 +101,53 @@ describe('Segmented', () => {
   it('submits its value with a form', () => {
     render(<form data-testid="form"><Range name="range" defaultValue="week" /></form>);
     expect(new FormData(screen.getByTestId('form') as HTMLFormElement).get('range')).toBe('week');
+  });
+
+  it('takes a size, down to its segments and card', () => {
+    const { container } = render(<Range size="sm" defaultValue="week" />);
+    const group = screen.getByRole('radiogroup');
+    expect(group.getAttribute('data-size')).toBe('sm');
+    expect(group.className).toContain('rounded-lg');
+    expect(screen.getByRole('radio', { name: 'Day' }).className).toContain('h-7');
+    expect(container.querySelector('[data-slot="segmented-control-indicator"]')!.className).toContain('rounded-[calc(var(--radius-lg)-2px)]');
+    cleanup();
+    render(<Range defaultValue="week" />);
+    expect(screen.getByRole('radio', { name: 'Day' }).className).toContain('h-8');
+  });
+});
+
+/** Tabs `segmented` and ToggleGroup `filled` are drawn by the same recipes, so the three are pixel-alike. */
+describe('the segment track', () => {
+  const has = (el: Element, recipe: string) => recipe.split(' ').every((c) => el.className.split(' ').includes(c));
+
+  it('draws Segmented, segmented Tabs and a filled ToggleGroup with the same track, segments and card', () => {
+    const { container } = render(
+      <>
+        <Range defaultValue="week" />
+        <Tabs defaultValue="week">
+          <TabsList aria-label="Range tabs">
+            <TabsTab value="day">Day</TabsTab>
+            <TabsTab value="week">Week</TabsTab>
+          </TabsList>
+        </Tabs>
+        <ToggleGroup variant="filled" aria-label="Range toggles" defaultValue={['week']}>
+          <ToggleGroupItem value="day">Day</ToggleGroupItem>
+          <ToggleGroupItem value="week">Week</ToggleGroupItem>
+        </ToggleGroup>
+      </>,
+    );
+    const track = segmentTrackVariants();
+    expect(has(screen.getByRole('radiogroup'), track)).toBe(true);
+    expect(has(screen.getByRole('tablist'), track)).toBe(true);
+    expect(has(screen.getByRole('group', { name: 'Range toggles' }), track)).toBe(true);
+    // Ignore the background: a pressed toggle's merged classes drop `bg-transparent` for nothing else.
+    const item = segmentItemVariants().replace('bg-transparent ', '');
+    expect(has(screen.getByRole('radio', { name: 'Day' }), item)).toBe(true);
+    expect(has(screen.getByRole('tab', { name: 'Day' }), item)).toBe(true);
+    expect(has(screen.getByRole('button', { name: 'Day' }), item)).toBe(true);
+    const card = segmentIndicatorVariants();
+    expect(has(container.querySelector('[data-slot="segmented-control-indicator"]')!, card)).toBe(true);
+    expect(has(container.querySelector('[data-slot="tabs-indicator"] > span')!, card)).toBe(true);
+    expect(has(container.querySelector('[data-slot="selection-indicator"]')!, card)).toBe(true);
   });
 });

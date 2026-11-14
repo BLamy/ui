@@ -1,7 +1,7 @@
 {
   "name": "celebrate",
   "title": "Celebrate",
-  "description": "A confetti burst and pulsing ring for rare moments, fired each time a value changes.",
+  "description": "A confetti burst and pulsing ring around its child for rare moments, fired each time a value changes.",
   "page": "celebrate",
   "exports": [
     "Celebrate"

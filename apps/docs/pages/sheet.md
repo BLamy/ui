@@ -86,13 +86,25 @@ The bottom sheet is full width with rounded top corners (the kit's modal radius,
 
 ## A flow in a tray
 
-`animateHeight` wraps the content in [AnimatedHeight](https://blamy.github.io/ui/#/motion): when the content changes — a step forward, an error appearing — the sheet springs to the new height instead of jumping. Use it for short, content-sized trays. A sheet with a scrolling body should leave it off. The demo also opens the sheet inside a `ThemeScope` with its own tint: popups wear the scope they are opened in, so the sheet's primary button is teal though the page's is not (`Dialog`, `Popover` and the rest do the same — see [Popover](https://blamy.github.io/ui/#/popover)).
+Give the root a `view` and put the content in a `SheetView`: each new `view` springs the sheet to its height, and the step and its `SheetTitle` slide in from the right (a view seen before comes back from the left), as a [Dialog](https://blamy.github.io/ui/#/dialog) flow does. Keep the `SheetHeader` outside the `SheetView`, as Dialog keeps its header bar outside `DialogView`: the title travels on its own and goes on naming the sheet. Without a `view`, `SheetView` still springs the sheet when its content changes in place (an error appearing). Use it for short, content-sized trays; a sheet with a scrolling body leaves it out.
+
+```tsx
+<Sheet view={step}>
+  <SheetBackdrop />
+  <SheetContent>
+    <SheetClose />
+    <SheetHeader><SheetTitle>{step === 'pick' ? 'Choose a plan' : 'Confirm'}</SheetTitle></SheetHeader>
+    <SheetView>{step === 'pick' ? <PickPlan /> : <Confirm />}</SheetView>
+  </SheetContent>
+</Sheet>
+```
+ The demo also opens the sheet inside a `ThemeScope` with its own tint: popups wear the scope they are opened in, so the sheet's primary button is teal though the page's is not (`Dialog`, `Popover` and the rest do the same — see [Popover](https://blamy.github.io/ui/#/popover)).
 
 {% demo src="sheet/flow" %}
 
 ## Accessibility
 
-Like Dialog: focus is trapped, the rest of the host is inert, Esc closes, focus returns to the trigger. The content has the `dialog` role and `aria-modal`, named by a `SheetTitle` (`aria-labelledby`) or `aria-label` — provide one. Always include a visible way to close (`SheetClose`) since the scrim, Esc and the swipe are not discoverable to everyone. The `SheetHandle` is a named button (`aria-label="Resize"` by default) that controls the sheet. A contained sheet makes only its own box inert. A flow that steps through states with `animateHeight` should keep the title in step with the content.
+Like Dialog: focus is trapped, the rest of the host is inert, Esc closes, focus returns to the trigger. The content has the `dialog` role and `aria-modal`, named by a `SheetTitle` (`aria-labelledby`) or `aria-label` — provide one. Always include a visible way to close (`SheetClose`) since the scrim, Esc and the swipe are not discoverable to everyone. The `SheetHandle` is a named button (`aria-label="Resize"` by default) that controls the sheet. A contained sheet makes only its own box inert. In a flow, each view has its own `SheetTitle`, so the sheet's name follows the step; the leaving view is hidden from assistive technology and focus while it slides out, and focus stays in the sheet when the focused control leaves.
 
 ## Props
 
@@ -103,6 +115,7 @@ Like Dialog: focus is trapped, the rest of the host is inert, Esc closes, focus 
 | `side` | `bottom` | `bottom` · `top` · `left` · `right` · `start` · `end`. |
 | `open` / `defaultOpen` / `onOpenChange(open, details)` | closed | Control visibility; `details.reason` (`swipe` among them), `details.returnValue`, `details.cancel()`. |
 | `contained` | `false` | Render inside the positioned parent, in a layer host of its own, instead of BLProvider's root. |
+| `view` | — | Key of the current view of a flow: a new one springs the sheet to its `SheetView` and slides it in. |
 | `dismissible` | `true` | `false` refuses the scrim, Esc and the swipe (`onDismissAttempt` runs). |
 | `modal` | `true` | `"trap-focus"` leaves the page usable; `false` puts the sheet beside the page. |
 | `snapPoints` / `snapPoint` / `defaultSnapPoint` / `onSnapPointChange` | `["content"]` | Where it rests. |
@@ -117,7 +130,6 @@ Like Dialog: focus is trapped, the rest of the host is inert, Esc closes, focus 
 | `variant` | `card` | `card`: the modal sheet. `panel`: a full-length edge panel whose children are the whole panel. |
 | `grabber` | `true` | The grabber on bottom cards (a `SheetHandle` with snap points). |
 | `swipe` | `true` | Whether a drag toward its edge closes it (`false` writes UI SDK's `data-drawer-no-drag`). |
-| `animateHeight` | `false` | Spring the sheet's height when its content changes. |
 | `keepMounted` | `false` | Keep the panel rendered while closed. |
 | `initialFocus` / `finalFocus` | first focusable / the trigger | Where focus goes as it opens and closes (`"content"` for the panel itself). |
 | `aria-label` | — | Name when there is no `SheetTitle`. |
@@ -126,7 +138,7 @@ Like Dialog: focus is trapped, the rest of the host is inert, Esc closes, focus 
 
 ### Parts
 
-`SheetTitle`, `SheetDescription` and `SheetClose` are the Drawer's parts in the shared surface look (`surfaceTitleVariants`, `surfaceDescriptionVariants`, `closeButtonVariants` from Dialog); `SheetHeader` and `SheetBody` are Dialog's header and body under their own slots. `SheetFooter` is its own: a column of actions at the foot with 20px side padding. `SheetHandle` is the grabber as a control, for placing your own with `grabber={false}`; `sheetGrabberVariants({ handle })` is its look.
+`SheetTitle`, `SheetDescription` and `SheetClose` are the Drawer's parts in the shared surface look (`surfaceTitleVariants`, `surfaceDescriptionVariants`, `closeButtonVariants` from `@/lib/surface`, also exported by Dialog); `SheetHeader` and `SheetBody` are Dialog's header and body under their own slots. `SheetFooter` is its own: a column of actions at the foot with 20px side padding. `SheetHandle` is the grabber as a control, for placing your own with `grabber={false}`; `sheetGrabberVariants({ handle })` is its look. `SheetView` is Dialog's `DialogView` in a sheet (the springing, sliding view of a flow; slot `dialog-view`).
 
 ## Styling
 
@@ -141,14 +153,23 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/sheet`. Base classes:
 
 ```text
-relative box-border flex flex-col bg-card text-card-foreground shadow-[0_0_40px_black] shadow-black/22 outline-none after:absolute after:bg-inherit after:content-[''] data-dragging:select-none
+pointer-events-auto relative box-border flex flex-col shadow-[0_0_40px_black] shadow-black/22 outline-none after:absolute after:bg-inherit after:content-[''] data-dragging:select-none
 ```
+
+**`variant`** — default `card`
+
+| Value | Adds |
+| --- | --- |
+| `card` (default) | `bg-card text-card-foreground` |
+| `panel` | `bg-background text-foreground` |
 
 **`side`** — default `bottom`
 
 | Value | Adds |
 | --- | --- |
-| `bottom` (default) | `max-h-[calc(100%-48px)] w-full rounded-t-card pb-[max(12px,env(safe-area-inset-bottom))] after:inset-x-0 after:top-full after:h-24` |
-| `top` | `max-h-[calc(100%-48px)] w-full rounded-b-card pt-(--bl-safe-top) after:inset-x-0 after:bottom-full after:h-24` |
-| `left` | `mr-auto h-full w-[85%] max-w-[360px] rounded-r-card after:inset-y-0 after:right-full after:w-24` |
-| `right` | `ml-auto h-full w-[85%] max-w-[360px] rounded-l-card after:inset-y-0 after:left-full after:w-24` |
+| `bottom` (default) | `max-h-[calc(100%-48px)] w-full pb-[max(12px,env(safe-area-inset-bottom))] after:inset-x-0 after:top-full after:h-24` |
+| `top` | `max-h-[calc(100%-48px)] w-full pt-(--bl-safe-top) after:inset-x-0 after:bottom-full after:h-24` |
+| `left` | `mr-auto h-full w-[85%] max-w-[360px] after:inset-y-0 after:right-full after:w-24` |
+| `right` | `ml-auto h-full w-[85%] max-w-[360px] after:inset-y-0 after:left-full after:w-24` |
+
+8 compound variants — see the source.

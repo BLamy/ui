@@ -1,0 +1,15 @@
+{
+  "name": "tui-preview",
+  "title": "TuiPreview",
+  "description": "An OpenTUI terminal program run on demand in a sandboxed, opaque-origin frame by OpenTUI's WebAssembly renderer: Run / Stop, keyboard input, visible start-up and render errors, and the same runtime Docstream uses for `tui` code fences.",
+  "page": "tui-preview",
+  "exports": [
+    "TuiPreview"
+  ],
+  "types": [
+    "TuiPreviewProps",
+    "TuiPreviewOptions",
+    "TuiPreviewState",
+    "TuiTheme"
+  ]
+}

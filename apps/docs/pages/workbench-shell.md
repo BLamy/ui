@@ -78,7 +78,7 @@ Triggers take an optional `onClick` that replaces their default action. Every pa
 | Region | Regular ≥ 1120px | Medium 760–1119px | Compact < 760px |
 | --- | --- | --- | --- |
 | `WorkbenchSidebar` | Column, toggled | Column, toggled | Drawer over the whole shell |
-| `WorkbenchDock` | Inline, open by default | Inline, closed by default | dismissible `FloatingSheet` (52% / 93% stops) |
+| `WorkbenchDock` | Inline, open by default | Inline, closed by default | `FloatingSheet` with `collapse="hide"` (52% / 93% stops) |
 | `WorkbenchPanel` | Column (`clamp(300px, 32%, 420px)`), open by default | Right drawer over a scrim | A page covering everything above the tab bar |
 | Panel full screen | Covers the whole shell | Covers the whole shell | — |
 | `WorkbenchTabBar` | Not rendered | Not rendered | Bottom bar |
@@ -109,14 +109,13 @@ Library parts (`@/components/ui/conversation`), used by the block and by any cha
 | Part | Role |
 | --- | --- |
 | `Conversation` | Root; `empty` switches to the empty state. Keep the children in this order. |
-| `ConversationEmpty` · `ConversationGreeting` | Above the composer while empty; leaves upward when the thread starts. |
-| `ConversationMessages` | Keyed messages in a `MessageScroller`: each `UserMessage` anchors near the top, replies grow below. `threadKey`, `streaming`, `peek`. |
+| `ConversationEmpty` | Above the composer while empty (`title`, `description`, `icon`: the kit's EmptyState); leaves upward when the thread starts. |
+| `ConversationMessages` | The messages, in a `MessageScroller`: each `UserMessage` anchors near the top, replies grow below. `threadKey`, `streaming`, `peek`, `aria-label`. |
 | `ConversationComposer` | Docks the composer: centred while empty, at the bottom after — the same element, so it flies between the two. |
 | `ConversationSuggestions` · `Suggestion` | Chips under the empty composer. |
-| `UserMessage` | Right-aligned bubble, with `images` above it. |
+| `UserMessage` | Right-aligned bubble, with its `attachments` above it. |
 | `AssistantMessage` · `MessageMarkdown` · `ConversationTyping` | The reply: streaming Markdown, with the typing dots until the first token. |
 | `WorkLog` · `ToolCall` | "Worked for 42s", expanding into the steps behind the reply — a title, a `detail`, a `code` well, and a `status`. |
-| `SettledBanner` | Above the composer of a settled thread. |
 
 ## Terminal and surface parts
 
@@ -148,7 +147,7 @@ No sidebar; the panel is an inspector showing the agent's change. At this width 
 
 ### Phone
 
-At compact width the header's sidebar toggle becomes a hamburger, and the dock is a dismissible [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet): it rises on a spring, follows the finger (rubber-banding past the top), and its release velocity picks a stop or dismisses it.
+At compact width the header's sidebar toggle becomes a hamburger, and the dock is a [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet) that hides when put away (`collapse="hide"`): it rises on a spring, follows the finger (rubber-banding past the top), and its release velocity picks a stop or dismisses it.
 
 {% demo src="workbench-shell/phone" %}
 
@@ -166,7 +165,7 @@ A new thread is a `Conversation` with `empty`: the greeting, the composer centre
 
 ### The compact terminal on its own
 
-`FloatingSheet` is also usable directly (`dismissible`, with `peek`, `detents` and `topGap` as shares of the host). A slow drag settles at the nearest stop; a flick carries on to the next — or down past the lowest to put it away.
+`FloatingSheet` is also usable directly (`collapse="hide"`, with `peek`, `snapPoints` and `topGap` as shares of the host). A slow drag settles at the nearest stop; a flick carries on to the next — or down past the lowest to put it away.
 
 {% demo src="workbench-shell/compact-dock" %}
 

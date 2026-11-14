@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Composer, ComposerBump, ComposerBumpHandle, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerStop, ComposerText } from '@/components/ui/composer/composer'
 import { Progress } from '@/components/ui/progress'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 
 const STEP = 10
 const COST = 12 // credits a reply uses
@@ -29,8 +29,9 @@ function CreditLimit() {
       <Composer
         defaultValue="Refactor the billing page to read the new usage endpoint."
         streaming={streaming}
+        // Out of credits: nothing can be typed or sent until the limit goes up.
+        disabled={exhausted && !streaming}
         onSubmit={() => {
-          if (exhausted) return
           setStreaming(true)
           setUsed((u) => Math.min(limit, u + COST))
           clearTimeout(timer.current)
@@ -83,8 +84,8 @@ function CreditLimit() {
 
 export default function CreditLimitExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <CreditLimit />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

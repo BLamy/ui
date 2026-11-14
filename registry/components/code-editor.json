@@ -3,10 +3,6 @@
   "title": "CodeEditor",
   "description": "Code you can edit, and read-only code of any shape, with one API and two renderers: in the page for a snippet or inline code, and windowed for an editor or a source view, smooth on a megabyte line and on half a million lines, with gutters, a current line, markers, undo and input methods.",
   "page": "code-editor",
-  "files": [
-    "components/code-editor.tsx",
-    "components/code-editor-window.tsx"
-  ],
   "exports": [
     "CodeEditor",
     "CodeEditorHeader",
@@ -28,6 +24,7 @@
     "CodeEditorContentProps",
     "CodeEditorCopyButtonProps",
     "CodeEditorDisplayProps",
+    "CodeEditorLineNumbers",
     "CodeEditorHandle",
     "CodeEditorChangeReason",
     "CodeEditorEdit",

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { parseStl, type StlMesh } from '@/components/ui/stl-viewer'
+import { parseStl, type StlMesh } from '@brett_lamy/docstream/stl'
 
 // parseStl on its own: the triangles, normals and bounds of a model, for your own renderer or checks.
 export default function Mesh() {

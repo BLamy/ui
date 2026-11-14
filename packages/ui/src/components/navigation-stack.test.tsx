@@ -11,6 +11,7 @@ import {
   NavigationStackTitle,
   NavigationStackTrailing,
   createNavigationStackController,
+  useNavigationStack,
   type NavigationStackChangeDetails,
 } from './navigation-stack';
 import { useSizeClassScope } from '@/lib/container';
@@ -29,7 +30,7 @@ function Settings({ onChange }: { onChange?: (pages: string[], details: Navigati
   const [pages, setPages] = useState(['settings']);
   return (
     <NavigationStack pages={pages} onPagesChange={(p, d) => { onChange?.(p, d); setPages(p); }}>
-      <NavigationStackPage value="settings" grouped>
+      <NavigationStackPage value="settings" variant="grouped">
         <NavigationStackBar><NavigationStackTitle>Settings</NavigationStackTitle></NavigationStackBar>
         <NavigationStackContent>
           <NavigationStackLargeTitle />
@@ -330,7 +331,7 @@ it('right to left, the swipe starts on the right edge and moves the pages the wa
   // The pages move by `--stack-progress` times `--stack-dir`, which is -1 right to left: leftward, with the finger.
   for (const page of [top, under]) expect(page.className).toContain('rtl:[--stack-dir:-1]');
   expect(top.className).toContain('data-swiping:not-data-covered:[transform:translateX(calc(var(--stack-progress,0)*100%*var(--stack-dir,1)))]');
-  expect(top.className).toContain('data-starting-style:[transform:translateX(calc(103%*var(--stack-dir,1)))]');
+  expect(top.className).toContain('data-starting-style:[transform:translateX(calc((100%_+_24px)*var(--stack-dir,1)))]');
   act(() => void document.dispatchEvent(at('pointerup', 190)));
   expect(onChange).toHaveBeenLastCalledWith(['settings'], expect.objectContaining({ reason: 'swipe' }));
 });
@@ -473,4 +474,98 @@ it('a pull refreshes the page and holds the spinner for a moment at least, howev
   expect(content.hasAttribute('data-pending')).toBe(true);
   await act(() => new Promise<void>((resolve) => setTimeout(resolve, 600)));
   expect(content.hasAttribute('data-pending')).toBe(false);
+});
+
+it('names the page once: the large title is its heading, and the faded-out inline title is out of the tree', async () => {
+  render(<Settings />);
+  await settle();
+  const heading = screen.getByRole('heading', { level: 1 });
+  expect(heading.textContent).toBe('Settings');
+  const inline = document.querySelector<HTMLElement>('[data-slot=navigation-stack-title]')!;
+  expect(inline.querySelector('[aria-hidden=true]')?.textContent).toBe('Settings');
+  // The grouped page is a variant of the page's background.
+  expect(pageEls()[0].className).toContain('bg-muted');
+});
+
+it('names a back button "Back to" the page behind, whatever its label shows', async () => {
+  render(<Settings />);
+  await settle();
+  fireEvent.click(screen.getByRole('button', { name: 'General' }));
+  await settle();
+  expect(screen.getByRole('button', { name: 'Back to Settings' }).getAttribute('data-slot')).toBe('navigation-stack-back');
+});
+
+function Library({ resetKey, onChange, pages: initial = ['library'] }: { resetKey?: string; onChange?: (pages: string[]) => void; pages?: string[] }) {
+  return (
+    <NavigationStack defaultPages={initial} resetKey={resetKey} onPagesChange={(p) => onChange?.(p)}
+      renderPage={(page) => page.startsWith('album:') ? (
+        <NavigationStackPage value={page}>
+          <NavigationStackBar><NavigationStackTitle>{page.slice(6)}</NavigationStackTitle></NavigationStackBar>
+          <NavigationStackContent><p>Tracks of {page.slice(6)}</p></NavigationStackContent>
+        </NavigationStackPage>
+      ) : null}>
+      <NavigationStackPage value="library">
+        <NavigationStackBar><NavigationStackTitle>Library</NavigationStackTitle></NavigationStackBar>
+        <NavigationStackContent><Push /></NavigationStackContent>
+      </NavigationStackPage>
+    </NavigationStack>
+  );
+}
+function Push() {
+  const stack = useNavigationStack();
+  return <button type="button" onClick={() => stack.push('album:Tidewater', { reason: 'trigger-press' })}>Tidewater</button>;
+}
+
+it('renderPage draws the keys no child is for: a deep link, and a key pushed from a row', async () => {
+  const onChange = vi.fn();
+  const { unmount } = render(<Library pages={['library', 'album:Fernweh']} />);
+  await settle();
+  expect(keys()).toEqual(['library', 'album:Fernweh']);
+  expect(screen.getByText('Tracks of Fernweh')).toBeTruthy();
+  unmount();
+  render(<Library onChange={onChange} />);
+  await settle();
+  fireEvent.click(screen.getByRole('button', { name: 'Tidewater' }));
+  await settle();
+  expect(onChange).toHaveBeenLastCalledWith(['library', 'album:Tidewater']);
+  expect(screen.getByText('Tracks of Tidewater')).toBeTruthy();
+});
+
+it('a new resetKey pops to the first page; the first render pops nothing', async () => {
+  const onChange = vi.fn();
+  const { rerender } = render(<Library resetKey="recent" pages={['library', 'album:Fernweh']} onChange={onChange} />);
+  await settle();
+  expect(keys()).toEqual(['library', 'album:Fernweh']);
+  rerender(<Library resetKey="recent" pages={['library', 'album:Fernweh']} onChange={onChange} />);
+  await settle();
+  expect(onChange).not.toHaveBeenCalled();
+  rerender(<Library resetKey="songs" pages={['library', 'album:Fernweh']} onChange={onChange} />);
+  await settle();
+  expect(onChange).toHaveBeenLastCalledWith(['library']);
+});
+
+it('useNavigationStack throws outside a stack', () => {
+  const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    expect(() => render(<Push />)).toThrow(/inside a NavigationStack/);
+  } finally {
+    error.mockRestore();
+  }
+});
+
+it('with neither pages nor defaultPages, starts on its first page child', async () => {
+  render(
+    <NavigationStack>
+      <NavigationStackPage value="home">
+        <NavigationStackBar><NavigationStackTitle>Home</NavigationStackTitle></NavigationStackBar>
+        <NavigationStackContent><p>Welcome</p></NavigationStackContent>
+      </NavigationStackPage>
+      <NavigationStackPage value="later">
+        <NavigationStackContent><p>Later</p></NavigationStackContent>
+      </NavigationStackPage>
+    </NavigationStack>,
+  );
+  await settle();
+  expect(keys()).toEqual(['home']);
+  expect(screen.getByText('Welcome')).toBeTruthy();
 });

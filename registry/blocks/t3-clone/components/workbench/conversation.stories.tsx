@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Conversation, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationComposer, ConversationSuggestions, Suggestion, UserMessage, AssistantMessage, MessageMarkdown, WorkLog, ToolCall, SettledBanner } from '@/components/ui/conversation';
-import { WorkbenchTheme } from '@/components/ui/workbench-theme';
+import { Conversation, ConversationEmpty, ConversationMessages, ConversationComposer, ConversationSuggestions, Suggestion, UserMessage, AssistantMessage, MessageMarkdown, WorkLog, ToolCall } from '@/components/ui/conversation';
+import { SettledBanner } from '../settled-banner';
+import { ThemeScope } from '@/lib/theme';
 import { WorkbenchComposer } from './workbench-composer';
 import { SUGGESTIONS, THREADS, type Thread as ThreadData } from './fixtures';
 
@@ -15,11 +16,11 @@ type Story = StoryObj<typeof Conversation>;
 
 function Frame({ children, height = 640 }: { children: React.ReactNode; height?: number }) {
   return (
-    <WorkbenchTheme style={{ padding: 24, display: 'grid', placeItems: 'center', minHeight: height + 48 }}>
+    <ThemeScope scope="workbench" style={{ padding: 24, display: 'grid', placeItems: 'center', minHeight: height + 48 }}>
       <div style={{ width: 720, maxWidth: '100%', height, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', background: 'var(--background)' }}>
         {children}
       </div>
-    </WorkbenchTheme>
+    </ThemeScope>
   );
 }
 
@@ -27,9 +28,7 @@ function Frame({ children, height = 640 }: { children: React.ReactNode; height?:
 function ThreadDemo({ thread, streaming, onUnsettle }: { thread: ThreadData | null; streaming?: boolean; onUnsettle?: () => void }) {
   return (
     <Conversation empty={!thread}>
-      <ConversationEmpty>
-        <ConversationGreeting title="What are we building?" description="Start a thread — ask anything about this workspace." />
-      </ConversationEmpty>
+      <ConversationEmpty title="What are we building?" description="Start a thread — ask anything about this workspace." />
       <ConversationMessages threadKey={thread?.id} streaming={streaming}>
         {thread?.messages.map((m) =>
           m.role === 'user' ? (
@@ -92,13 +91,13 @@ export const Streaming: Story = {
 /* the standalone SettledBanner + WorkLog rows (static, and with tool calls behind it) */
 export const BannerAndTrace: Story = {
   render: () => (
-    <WorkbenchTheme style={{ minHeight: 320, padding: 24, display: 'grid', placeItems: 'center' }}>
+    <ThemeScope scope="workbench" style={{ minHeight: 320, padding: 24, display: 'grid', placeItems: 'center' }}>
       <div style={{ width: 560, maxWidth: '100%', display: 'grid', gap: 18 }}>
         <SettledBanner onUnsettle={() => {}} />
         <WorkLog summary="Worked for 1m 4s">{THREADS[0].messages[1].steps?.map((s, i) => <ToolCall key={i} {...s} />)}</WorkLog>
         <WorkLog summary="Stopped" />
       </div>
-    </WorkbenchTheme>
+    </ThemeScope>
   ),
 };
 
@@ -107,9 +106,7 @@ export const EmptyThreadStreaming: Story = {
   render: () => (
     <Frame height={520}>
       <Conversation empty>
-        <ConversationEmpty>
-          <ConversationGreeting title="What are we building?" description="Start a thread — ask anything about this workspace." />
-        </ConversationEmpty>
+        <ConversationEmpty title="What are we building?" description="Start a thread — ask anything about this workspace." />
         <ConversationComposer>
           <WorkbenchComposer onSubmit={() => {}} streaming onStop={() => {}} />
         </ConversationComposer>
@@ -126,14 +123,14 @@ export const EmptyThreadStreaming: Story = {
 /* WorkLog expanded: the tool calls behind a reply — titles, details, and command wells */
 export const WorkLogOpen: Story = {
   render: () => (
-    <WorkbenchTheme style={{ minHeight: 420, padding: 24, display: 'grid', placeItems: 'center' }}>
+    <ThemeScope scope="workbench" style={{ minHeight: 420, padding: 24, display: 'grid', placeItems: 'center' }}>
       <div style={{ width: 560, maxWidth: '100%' }}>
         <WorkLog summary="Worked for 1m 4s" defaultOpen>
           {THREADS[0].messages[1].steps?.map((s, i) => <ToolCall key={i} {...s} />)}
-          <ToolCall icon="network" title="Opened the browser surface" detail="localhost:3000" status="running" />
-          <ToolCall title="Ran the e2e suite" detail="2 failed" status="error" />
+          <ToolCall icon="network" title="Opened the browser surface" description="localhost:3000" status="running" />
+          <ToolCall title="Ran the e2e suite" description="2 failed" status="error" />
         </WorkLog>
       </div>
-    </WorkbenchTheme>
+    </ThemeScope>
   ),
 };

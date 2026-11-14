@@ -1,7 +1,9 @@
 /* Small pre-seeded stroke fixture so stories can demonstrate each tool and the
    stroke eraser without drawing first. Generated point paths (pressure 0.5,
-   simulatePressure kicks in since pen:false). */
-import { PK_INKS, type PencilPoint, type PencilStroke } from '@/components/ui/pencilkit/constants';
+   simulatePressure kicks in since pressure:false). */
+import { pencilInks, type PencilPoint, type PencilStroke } from '@/components/ui/pencilkit/constants';
+
+const ink = (label: string) => pencilInks.find((i) => i.label === label)!.value;
 
 function wave(x0: number, y0: number, len: number, amp: number, cycles: number, n = 48): PencilPoint[] {
   const pts: PencilPoint[] = [];
@@ -24,8 +26,8 @@ function loop(cx: number, cy: number, rx: number, ry: number, n = 56): PencilPoi
 /** Three strokes — one per drawing tool — sized for a ~640×420 canvas. */
 export function demoStrokes(): PencilStroke[] {
   return [
-    { tool: 'pen', color: PK_INKS[2], w: 1, pen: false, done: true, points: wave(70, 110, 300, 34, 1.5) },
-    { tool: 'marker', color: PK_INKS[4], w: 1, pen: false, done: true, points: wave(90, 200, 320, 10, 0.5) },
-    { tool: 'pencil', color: PK_INKS[5], w: 1.7, pen: false, done: true, points: loop(460, 150, 90, 55) },
+    { tool: 'pen', color: ink('Blue'), width: 1, pressure: false, complete: true, points: wave(70, 110, 300, 34, 1.5) },
+    { tool: 'marker', color: ink('Yellow'), width: 1, pressure: false, complete: true, points: wave(90, 200, 320, 10, 0.5) },
+    { tool: 'pencil', color: ink('Pink'), width: 1.7, pressure: false, complete: true, points: loop(460, 150, 90, 55) },
   ];
 }

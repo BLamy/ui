@@ -1,5 +1,5 @@
 import { MarkdownView } from '@/components/ui/markdown-view'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 
 const turns = [
   { role: 'user', text: 'How do I keep a panel’s state while it is hidden?' },
@@ -56,12 +56,12 @@ function ChatTranscript() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// Workbench parts read the `workbench` ThemeScope's palette; it follows the
 // app's light / dark appearance.
 export default function ChatTranscriptExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <ChatTranscript />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

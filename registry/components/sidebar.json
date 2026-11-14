@@ -1,7 +1,7 @@
 {
   "name": "sidebar",
   "title": "Sidebar",
-  "description": "Docked, rail, floating or overlay navigation that becomes a contained drawer in a compact provider, with workspace, search, sections and items.",
+  "description": "An app's navigation column, docked, as a collapsible icon rail or as a floating card, that becomes a drawer while its provider is compact: workspace, search with a shortcut, labelled sections and rows with icons, counts and a current page.",
   "page": "sidebar",
   "exports": [
     "Sidebar",
@@ -15,9 +15,24 @@
     "SidebarItem",
     "SidebarTrigger",
     "SidebarInset",
-    "SidebarNav",
+    "sidebarItemVariants",
     "useSidebar",
     "useSidebarCollapsed",
     "createSidebarController"
+  ],
+  "imports": [
+    "SidebarProvider",
+    "Sidebar",
+    "SidebarContent",
+    "SidebarSection",
+    "SidebarItem",
+    "SidebarTrigger",
+    "SidebarInset"
+  ],
+  "types": [
+    "SidebarContextValue",
+    "SidebarOpenChangeDetails",
+    "SidebarOpenChangeReason",
+    "SidebarController"
   ]
 }

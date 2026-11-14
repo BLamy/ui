@@ -625,7 +625,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 @keyframes bl-ld-kt-shake{0%,40%,100%{rotate:0deg}10%{rotate:-2.5deg}20%{rotate:2.5deg}30%{rotate:-1.5deg}}
 @keyframes bl-ld-kt-lid{0%,55%,100%{translate:0 0;rotate:0deg}15%{translate:0 -1.6px;rotate:-4deg}30%{translate:0 -.4px;rotate:3deg}42%{translate:0 -1.4px;rotate:-3deg}}
 
-/* ══ Chat (ChatShell, FloatingSheet, FloatingChat, ArtifactChatContainer, chat demos) — --ck-* tokens ══ */
+/* ══ Chat (ChatShell, FloatingSheet, ArtifactChatContainer, chat demos) — --ck-* tokens ══ */
 /* The light chat scope: the users' role colors (content) are pastels picked for a dark background, so deepen them. */
 [data-theme-scope="chat"].light .ck-role{color:color-mix(in srgb,var(--ck-role) 58%,#000)}
 
@@ -639,7 +639,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 @keyframes ck-typing{0%,60%,100%{opacity:.35;transform:none}30%{opacity:1;transform:translateY(-2px)}}
 
 /* ── FloatingSheet ─────────────────────────────────────────────────────────────────────────
-   Geometry, surface and tone live on the component (utilities; a `tone` is the bl-theme's `sheet` scope). What
+   Geometry, surface and material live on the component (utilities; an `appearance` is the bl-theme's `sheet` scope). What
    stays here: the rules for whatever the host puts in the body, and the peek masks. */
 .ck-floating-sheet__body>*{box-sizing:border-box;width:100%;min-height:100%;background:transparent!important}
 /* Bottom-anchored bodies let short content sit against the foot so the newest lines peek out. */
@@ -648,16 +648,12 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
    crop: the top edge for a bottom-pinned transcript, the bottom edge for a top-pinned card. */
 .ck-floating-sheet[data-body-align="end"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 34px);mask-image:linear-gradient(to bottom,transparent,#000 34px)}
 .ck-floating-sheet[data-body-align="start"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal{-webkit-mask-image:linear-gradient(to top,transparent,#000 28px);mask-image:linear-gradient(to top,transparent,#000 28px)}
-.ck-floating-sheet[data-body-align="start"][data-appearance="sheet"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal{-webkit-mask-image:none;mask-image:none}
+.ck-floating-sheet[data-body-align="start"][data-variant="sheet"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal{-webkit-mask-image:none;mask-image:none}
 
-/* ── FloatingChat / ArtifactChatContainer ──────────────────────────────────────────────────
-   The embedded Workbench Composer is a `glass` theme scope, and the transcript rides on the Composer's top bump —
-   inside that scope. The layer records the palette around it (the host's, or its `sheet` tone) before the glass
-   takes over, and the transcript (and an opaque sheet's bump and card) takes it back. Plumbing only: no values. */
-.ck-floating-chat{--ck-host-background:var(--background);--ck-host-foreground:var(--foreground);--ck-host-card:var(--card);--ck-host-card-foreground:var(--card-foreground);--ck-host-popover:var(--popover);--ck-host-popover-foreground:var(--popover-foreground);--ck-host-secondary:var(--secondary);--ck-host-secondary-foreground:var(--secondary-foreground);--ck-host-muted:var(--muted);--ck-host-muted-foreground:var(--muted-foreground);--ck-host-accent:var(--accent);--ck-host-accent-foreground:var(--accent-foreground);--ck-host-destructive:var(--destructive);--ck-host-border:var(--border);--ck-host-input:var(--input);--ck-host-success:var(--success, oklch(0.723 0.191 149.6));--ck-host-tertiary-foreground:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent));--ck-host-secondary-strong:var(--secondary-strong, var(--accent));--ck-host-handle:var(--handle, var(--secondary-strong, var(--accent)));--ck-host-code:var(--code, var(--muted));--ck-host-code-foreground:var(--code-foreground, var(--foreground));--ck-host-link:var(--link, var(--primary))}
-.ck-floating-chat__transcript{--background:var(--ck-host-background);--foreground:var(--ck-host-foreground);--card:var(--ck-host-card);--card-foreground:var(--ck-host-card-foreground);--popover:var(--ck-host-popover);--popover-foreground:var(--ck-host-popover-foreground);--secondary:var(--ck-host-secondary);--secondary-foreground:var(--ck-host-secondary-foreground);--muted:var(--ck-host-muted);--muted-foreground:var(--ck-host-muted-foreground);--accent:var(--ck-host-accent);--accent-foreground:var(--ck-host-accent-foreground);--destructive:var(--ck-host-destructive);--border:var(--ck-host-border);--input:var(--ck-host-input);--success:var(--ck-host-success);--tertiary-foreground:var(--ck-host-tertiary-foreground);--secondary-strong:var(--ck-host-secondary-strong);--handle:var(--ck-host-handle);--code:var(--ck-host-code);--code-foreground:var(--ck-host-code-foreground);--link:var(--ck-host-link)}
-/* A transcript sits on the glass: its own background goes. */
-.ck-floating-chat__bump [data-slot="composer-bump-body"]>*,.ck-floating-chat__transcript.contents>*,.ck-floating-chat__bump [data-slot="floating-chat-transcript"]>[data-slot="artifact-chat-transcript"]>*{box-sizing:border-box;width:100%;min-height:0;max-height:100%;background:transparent!important}
+/* ── ArtifactChatContainer ─────────────────────────────────────────────────────────────────
+   The floating chat is a FloatingSheet: the transcript (rendered once, in a display:contents host) rides its body
+   and sits on the glass, so its own background goes. The working status pulses its sparkle. */
+.ck-floating-sheet__body [data-slot="artifact-chat-transcript"]>*{box-sizing:border-box;width:100%;min-height:0;max-height:100%;background:transparent!important}
 @keyframes ck-floating-working{0%,100%{opacity:.55;transform:scale(.92)}50%{opacity:1;transform:scale(1)}}
 
 /* ── TileMap ───────────────────────────────────────────────────────────────────────────────
@@ -948,4 +944,9 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 @layer components{
 [data-slot="now-playing-bars"][data-playing]>.bl-eq-bar{animation:blEq var(--bl-eq-dur,.7s) ease-in-out var(--bl-eq-delay,0s) infinite alternate}
 @media (prefers-reduced-motion:reduce){[data-slot="now-playing-bars"][data-playing]>.bl-eq-bar{animation:none}}
+}
+
+/* MarkdownEditor's toolbar buttons reach the 44px touch target on a touch screen. */
+@layer components.bl-mde{
+@media (pointer:coarse){.bl-mde .bl-mde-doc .gb-tool{width:44px;height:44px}}
 }

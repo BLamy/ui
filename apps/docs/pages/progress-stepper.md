@@ -10,7 +10,7 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  ProgressStepper, ProgressStep, ProgressStepIcon, ProgressStepTrack, ProgressStepLabel, ProgressStepDescription,
+  ProgressStepper, ProgressStep,
 } from '@/components/ui/progress-stepper'
 ```
 {% endtab %}

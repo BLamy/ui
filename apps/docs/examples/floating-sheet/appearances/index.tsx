@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { FloatingSheet, type FloatingSheetAppearance } from '@/components/ui/floating-sheet'
+import {
+  FloatingSheet,
+  FloatingSheetBody,
+  FloatingSheetFoot,
+  type FloatingSheetCollapse,
+  type FloatingSheetVariant,
+} from '@/components/ui/floating-sheet'
 import { ProgressStepper } from '@/components/ui/progress-stepper'
 import { useAppearance } from '@/lib/theme'
 
@@ -12,11 +18,11 @@ const steps = [
 ]
 
 interface Preset {
-  appearance: FloatingSheetAppearance
+  look: FloatingSheetVariant
   gutter: number
   radius: number
   peek: number
-  minimizable: boolean
+  collapse: FloatingSheetCollapse
   foot: boolean
   defaultOpen?: boolean
   note: string
@@ -24,53 +30,53 @@ interface Preset {
 
 const presets: Record<string, Preset> = {
   glass: {
-    appearance: 'glass',
+    look: 'glass',
     gutter: 20,
     radius: 28,
     peek: 0,
-    minimizable: true,
+    collapse: 'fab',
     foot: true,
     note:
       'Rests on its foot. Drag the cap up to grow it, or down to fold it ' +
       'into a FAB.',
   },
   peeking: {
-    appearance: 'glass',
+    look: 'glass',
     gutter: 20,
     radius: 28,
     peek: 190,
-    minimizable: true,
+    collapse: 'fab',
     foot: true,
     note:
       'peek keeps the top of the body visible above the foot ' +
       'while resting.',
   },
   card: {
-    appearance: 'sheet',
+    look: 'sheet',
     gutter: 14,
     radius: 26,
     peek: 150,
-    minimizable: true,
+    collapse: 'fab',
     foot: true,
     note: 'An opaque card that floats inside a gutter.',
   },
   docked: {
-    appearance: 'sheet',
+    look: 'sheet',
     gutter: 0,
     radius: 20,
     peek: 250,
-    minimizable: false,
+    collapse: 'none',
     foot: false,
     note:
-      'gutter={0} docks it edge to edge like a system sheet; it cannot be ' +
-      'folded away.',
+      'gutter={0} docks it edge to edge like a system sheet; with ' +
+      'collapse="none" it cannot be folded away.',
   },
   open: {
-    appearance: 'glass',
+    look: 'glass',
     gutter: 20,
     radius: 28,
     peek: 0,
-    minimizable: true,
+    collapse: 'fab',
     foot: true,
     defaultOpen: true,
     note:
@@ -223,16 +229,16 @@ export default function Appearances({
       {/* key: each preset starts fresh from its own resting state */}
       <FloatingSheet
         key={variant}
-        appearance={p.appearance}
+        variant={p.look}
         gutter={p.gutter}
         radius={p.radius}
         peek={p.peek}
-        minimizable={p.minimizable}
+        collapse={p.collapse}
         defaultOpen={p.defaultOpen}
-        label="Order"
+        aria-label="Order"
         hideOnScroll={false}
       >
-        <FloatingSheet.Body>
+        <FloatingSheetBody>
           <div
             style={{
               padding: '2px 20px 24px',
@@ -254,13 +260,13 @@ export default function Appearances({
               />
             ))}
           </div>
-        </FloatingSheet.Body>
+        </FloatingSheetBody>
         {p.foot ? (
-          <FloatingSheet.Foot>
+          <FloatingSheetFoot>
             <div style={{ padding: '8px 16px 16px' }}>
               <Button size="pill">Continue</Button>
             </div>
-          </FloatingSheet.Foot>
+          </FloatingSheetFoot>
         ) : null}
       </FloatingSheet>
     </Host>

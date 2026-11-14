@@ -3,7 +3,7 @@
    the active tool, the drawing settings, and which item's text is being edited. */
 import { useLayoutEffect, useRef, useState, type DragEvent } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import type { PencilTool } from '@/components/ui/pencilkit/constants';
+import { pencilInks } from '@/components/ui/pencilkit/constants';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useContainerSize } from '@/lib/container';
@@ -11,14 +11,14 @@ import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { createCanvasController } from '@/components/ui/canvas';
 import { toBoard, type Viewport } from '@/lib/canvas-math';
-import { BoardSurface, type Tool } from './surface';
+import { BoardSurface, type DrawSettings, type Tool } from './surface';
 import { boundsOf } from './geometry';
 import { unionRect } from '@/lib/canvas-math';
 import { FormatPanel } from './inspector';
 import { makeImage, makeLink, makeShape, makeSticky, makeText, type ShapeKind } from './model';
-import { AUTO_INK, SHAPE_FILLS } from './palette';
+import { SHAPE_FILLS } from './palette';
 import { useFreeform } from './store';
-import { DrawBar, InsertBar, SelectionBar, ToolButton, ZoomCluster, drawSettings, type Inserts } from './toolbar';
+import { DrawBar, InsertBar, SelectionBar, ToolButton, ZoomCluster, type Inserts } from './toolbar';
 
 export function BoardEditor({ compact, onBack }: { compact: boolean; onBack: () => void }) {
   const f = useFreeform();
@@ -28,7 +28,7 @@ export function BoardEditor({ compact, onBack }: { compact: boolean; onBack: () 
   // The zoom buttons and menu drive the canvas's own fit and zoom.
   const [canvas] = useState(() => createCanvasController());
   const [tool, setTool] = useState<Tool>('select');
-  const [draw, setDrawState] = useState<{ tool: PencilTool; ink: number; width: number }>({ tool: 'pen', ink: 0, width: 1 });
+  const [draw, setDrawState] = useState<DrawSettings>({ tool: 'pen', ink: pencilInks[0].value, width: 1 });
   const [editing, setEditing] = useState<string | null>(null);
   const inserted = useRef(0);
 
@@ -135,7 +135,7 @@ export function BoardEditor({ compact, onBack }: { compact: boolean; onBack: () 
       </header>
 
       <div ref={vref} className="relative min-h-0 flex-1" onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) e.preventDefault(); }} onDrop={onDrop}>
-        <BoardSurface viewport={viewport} onViewportChange={setViewport} controller={canvas} tool={tool} setTool={setTool} draw={drawSettings(draw, AUTO_INK)} editing={editing} setEditing={setEditing} />
+        <BoardSurface viewport={viewport} onViewportChange={setViewport} controller={canvas} tool={tool} setTool={setTool} draw={draw} editing={editing} setEditing={setEditing} />
         {tool === 'select' && !editing && f.selection.length ? (
           <SelectionBar viewport={viewport} size={size} onEdit={() => { f.begin(); setEditing(f.selection[0]); }} />
         ) : null}

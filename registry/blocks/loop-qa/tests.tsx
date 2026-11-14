@@ -2,7 +2,9 @@
    (CodeEditor) beside it — or, in a narrow container, on its own pushed page. */
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
+import {
+  NavigationStackBar, NavigationStackContent, NavigationStackPage, NavigationStackTitle, NavigationStackTrailing,
+} from '@/components/ui/navigation-stack';
 import { CodeEditor, CodeEditorContent, CodeEditorCopyButton, CodeEditorHeader, CodeEditorTitle } from '@/components/ui/code-editor';
 import { useContainerWidth } from '@/lib/container';
 import { Icon } from '@/lib/icon';
@@ -78,7 +80,7 @@ export function TestSource({ test: t }: { test: PlaywrightTest }) {
       <CodeEditor readOnly value={t.code} language="ts" className="overflow-hidden rounded-card border border-border">
         <CodeEditorHeader>
           <CodeEditorTitle>{t.file}</CodeEditorTitle>
-          <CodeEditorCopyButton label={`Copy ${t.file}`} />
+          <CodeEditorCopyButton aria-label={`Copy ${t.file}`} />
         </CodeEditorHeader>
         <CodeEditorContent lineNumbers />
       </CodeEditor>
@@ -87,17 +89,20 @@ export function TestSource({ test: t }: { test: PlaywrightTest }) {
 }
 
 /** The pushed page for a test (narrow containers). */
-export function TestPage({ id }: { id: string }) {
+export function TestPage({ value, id }: { value: string; id: string }) {
   const t = PLAYWRIGHT_TESTS.find((x) => x.id === id);
   return (
-    <>
-      <SplitViewHeader title={t?.name ?? 'Test'} titleOnScroll trailing={<PageActions run={false} />} />
-      <SplitViewContent className="@container">
+    <NavigationStackPage value={value}>
+      <NavigationStackBar hideOnScroll={false}>
+        <NavigationStackTitle showOnScroll>{t?.name ?? 'Test'}</NavigationStackTitle>
+        <NavigationStackTrailing><PageActions run={false} /></NavigationStackTrailing>
+      </NavigationStackBar>
+      <NavigationStackContent className="@container">
         <div className="mx-auto w-full max-w-[980px] px-5 py-4">
           <h2 className="m-0 mb-3 text-title leading-6 font-semibold tracking-[-.02em]">{t?.name}</h2>
           {t ? <TestSource test={t} /> : null}
         </div>
-      </SplitViewContent>
-    </>
+      </NavigationStackContent>
+    </NavigationStackPage>
   );
 }

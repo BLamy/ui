@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MarkdownEditor, type MarkdownEditorAttachment } from '@/components/ui/markdown-editor';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Panel, Caption } from '../stories/primitive-frame';
 
 const meta: Meta<typeof MarkdownEditor> = {
@@ -47,7 +48,11 @@ const states = (
     <MarkdownEditor aria-label="Ghost" variant="ghost" minHeight={0} defaultValue={'No chrome — text on the surface it sits on.'} />
     <Caption>Disabled · invalid</Caption>
     <MarkdownEditor aria-label="Disabled" disabled minHeight={0} defaultValue="Disabled" />
-    <MarkdownEditor aria-label="Invalid" invalid minHeight={0} defaultValue="Too short" />
+    <Field invalid>
+      <FieldLabel>Invalid</FieldLabel>
+      <MarkdownEditor minHeight={0} defaultValue="Too short" />
+      <FieldError match>Describe the steps to reproduce.</FieldError>
+    </Field>
   </>
 );
 

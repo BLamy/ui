@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FontList, FontPicker, FontStackPicker } from '@/components/ui/font-picker';
+import { FontList, FontPicker, FontPickerContent, FontPickerTrigger, FontStackPicker } from '@/components/ui/font-picker';
 import { GOOGLE_FONTS } from '@/lib/google-fonts';
 
 (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
@@ -30,7 +30,8 @@ describe('FontList', () => {
 
   it('keeps the scrolling list reachable from the keyboard: the search, then the list itself', () => {
     render(<FontList value={null} onValueChange={() => {}} fonts={fonts} />);
-    const scroller = screen.getByRole('listbox').parentElement!;
+    // The list is named (by its search, as UI SDK's Command names it), and is its own scroller.
+    const scroller = screen.getByRole('listbox', { name: 'Search fonts' });
     expect(scroller.classList.contains('overflow-y-auto')).toBe(true);
     expect(scroller.tabIndex).toBe(0);
   });
@@ -52,6 +53,19 @@ describe('FontList', () => {
     expect(onPreview).toHaveBeenLastCalledWith('Lobster');
     fireEvent.pointerLeave(lobster.closest('.bl-scroll')!, { pointerType: 'mouse' });
     expect(onPreview).toHaveBeenLastCalledWith(undefined);
+  });
+
+  it('names each family by itself, and describes it by its category', () => {
+    render(<FontList value="Inter" onValueChange={() => {}} fonts={fonts} />);
+    const lobster = screen.getByRole('option', { name: 'Lobster' });
+    expect(document.getElementById(lobster.getAttribute('aria-describedby')!)?.textContent).toBe('Display');
+    expect(screen.getByRole('option', { name: 'Inter (in use)' })).toBeTruthy();
+  });
+
+  it('shows the kit\'s empty state when nothing matches', () => {
+    render(<FontList value={null} onValueChange={() => {}} fonts={fonts} />);
+    fireEvent.input(screen.getByRole('combobox', { name: 'Search fonts' }), { target: { value: 'q' } });
+    expect(document.querySelector('[data-slot=empty-state]')?.textContent).toBe('No fonts');
   });
 
   it('marks the family in use and chooses another', () => {
@@ -93,6 +107,20 @@ describe('FontPicker', () => {
     await act(async () => { fireEvent.click(within(dialog).getAllByRole('option').find((o) => o.textContent?.startsWith('Inter'))!); });
     expect(onChange).toHaveBeenCalledWith('Inter', expect.objectContaining({ reason: 'item-press' }));
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});
+
+describe('FontPicker parts', () => {
+  it('composes a sized trigger and a content placed where asked, and opens from the root\'s defaultOpen', async () => {
+    render(
+      <FontPicker aria-label="Body font" defaultValue="Inter" defaultOpen fonts={fonts}>
+        <FontPickerTrigger size="sm" />
+        <FontPickerContent side="left" />
+      </FontPicker>,
+    );
+    await act(async () => {});
+    expect(screen.getByRole('button', { name: 'Body font: Inter' }).className).toContain('h-8');
+    expect(screen.getByRole('dialog', { name: 'Body font' })).toBeTruthy();
   });
 });
 

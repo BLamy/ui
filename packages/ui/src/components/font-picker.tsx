@@ -1,21 +1,22 @@
 'use client';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from 'react';
-import {
-  Command, CommandEmpty, CommandInput, CommandItem, CommandList, createCommandController,
-  type CommandValueChangeReason,
-} from '@ui-sdk/react/command';
+import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from 'react';
+import { createCommandController, type CommandValueChangeReason } from '@ui-sdk/react/command';
 import { createParts } from '@ui-sdk/react/primitive';
-import { Toggle, ToggleGroup } from '@ui-sdk/react/toggle';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { listboxItemVariants } from '@/components/ui/list-box';
-import { Popover, PopoverContent, PopoverTitle, PopoverTrigger, createPopoverController } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { CommandMenu, CommandMenuEmpty, CommandMenuInput, CommandMenuItem, CommandMenuList } from '@/components/ui/command-menu';
+import { fieldSurfaceVariants } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger, createPopoverController, type PopoverProps } from '@/components/ui/popover';
+import { selectTriggerVariants } from '@/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle';
 import { changeDetails, type ChangeGiven } from '@/lib/change-details';
 import { fontStackList, type FontStackReason } from '@/lib/font-stack-primitive';
 import {
   FONT_CATEGORIES, GOOGLE_FONTS, fontStack, useGoogleFontStatus, type FontCategory, type GoogleFont, type GoogleFontStatus,
 } from '@/lib/google-fonts';
 import { Icon } from '@/lib/icon';
+import { valueChip } from '@/lib/primitives';
 import { useVirtualRows } from '@/lib/use-virtual-rows';
 import { cn, cx } from '@/lib/utils';
 
@@ -25,16 +26,19 @@ import { cn, cx } from '@/lib/utils';
    `undefined` when the preview ends, so the text it's for wears each font as you go down the list, the way
    Photoshop's font menu does. A family typed into the search that the list doesn't have can be used anyway: anything
    on Google Fonts loads.
-   - FontPicker: one family (null: the system font), behind a trigger that shows it in its own face.
+   - FontPicker: one family (null: the system font), behind a trigger that shows it in its own face. It is compound
+     like Select: the root holds the value and the popover's open state, FontPickerTrigger is the pop-up button and
+     FontPickerContent the popup with the FontList; with no children it renders both.
    - FontStackPicker: a font stack (the first family that loads wins, the rest are its fallbacks), as chips you drag
      by their handle (or move with Space and the arrows) to reorder, or remove; a family you add goes in front, and
      the preview puts the hovered one in front of the rest.
    - FontList: the list alone, for a panel or a sheet.
    <FontPicker value={font} onValueChange={setFont} onPreview={setPreview} />
    <p style={{ fontFamily: fontStack(preview === undefined ? font : preview) }}>…</p>
-   Built on UI SDK: the list is a Command (the search keeps focus while the arrows move the highlight; Enter or a
-   press picks) whose rows are virtualized with `createVirtualizer` (lib/use-virtual-rows), the category filter a
-   ToggleGroup, the pickers Popovers, and the stack's chips lib/font-stack-primitive (`createReorder`). ══ */
+   Built on UI SDK: the list is the kit's CommandMenu (the search keeps focus while the arrows move the highlight;
+   Enter or a press picks), its rows CommandMenuItems virtualized with `createVirtualizer` (lib/use-virtual-rows), the
+   category filter the kit's ToggleGroup, the pickers Popovers, and the stack's chips lib/font-stack-primitive
+   (`createReorder`). ══ */
 
 /** Why a family was chosen, or a stack changed. */
 export type FontPickerReason = 'item-press' | 'enter-key' | FontStackReason;
@@ -55,7 +59,8 @@ interface Row {
   custom?: boolean;
 }
 
-export const fontListItemVariants = cva('h-10 min-h-0 scroll-my-1.5 py-0 hover:bg-accent');
+/* A row: 40px (the virtualizer's ROW), inset by the list's padding, the mark's column first. */
+const fontRow = 'absolute inset-x-1.5 h-10 min-h-0 scroll-my-1.5 gap-2.5 rounded-lg py-0 ps-2 pe-3 hover:bg-accent';
 
 interface ListCoreProps {
   /** A row's mark (a check, a place in the stack), or null when it isn't in use. */
@@ -77,9 +82,6 @@ interface ListCoreProps {
 }
 
 const ROW = 40, PAD = 6;
-
-const categoryToggle =
-  'bl-btn h-7 shrink-0 cursor-pointer rounded-full border-0 bg-transparent px-2.5 [font-family:inherit] text-footnote font-medium whitespace-nowrap text-foreground/70 outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-secondary data-pressed:bg-foreground data-pressed:text-background';
 
 /** The search, the category filter and the families: what both pickers open. */
 function FontListCore({
@@ -145,7 +147,7 @@ function FontListCore({
   useEffect(() => () => report.current(undefined), []);
 
   return (
-    <Command
+    <CommandMenu
       items={items}
       filter={false}
       autoHighlight={false}
@@ -161,66 +163,57 @@ function FontListCore({
         const row = byId.get(value);
         if (row) onPick(row.family, { reason: details.event instanceof KeyboardEvent ? 'enter-key' : 'item-press', event: details.event });
       }}
-      className={cn('flex min-h-0 flex-col', className)}
+      // The popover (or the panel around a bare FontList) is the surface.
+      className={cn('min-h-0 rounded-none bg-transparent shadow-none [--command-surface:transparent]', className)}
     >
-      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border px-3">
-        <Icon name="search" size={16} sw={2.2} className="shrink-0 text-foreground/70" />
-        <CommandInput
-          aria-label="Search fonts"
-          placeholder="Search fonts"
-          autoFocus={autoFocus}
-          className="min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-foreground outline-none select-text placeholder:text-tertiary-foreground [&::-webkit-search-cancel-button]:appearance-none"
-        />
-      </div>
+      <CommandMenuInput aria-label="Search fonts" placeholder="Search fonts" autoFocus={!!autoFocus} className="text-subhead" />
       <ToggleGroup<string>
         aria-label="Category"
+        size="sm"
         value={[category]}
         deselectable={false}
         onValueChange={(value) => { if (value[0]) setCategory(value[0] as FontCategory | 'all'); }}
-        className="flex shrink-0 gap-1 overflow-x-auto border-b border-border px-2 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        // Wraps rather than scrolling sideways, so every category shows in a 320px popover.
+        className="flex w-full shrink-0 flex-wrap gap-1 border-y border-border px-2 py-1.5"
       >
         {[{ id: 'all', label: 'All' }, ...FONT_CATEGORIES].map((c) => (
-          <Toggle key={c.id} value={c.id} className={categoryToggle}>{c.label}</Toggle>
+          <ToggleGroupItem key={c.id} value={c.id} className="h-7 font-medium">{c.label}</ToggleGroupItem>
         ))}
       </ToggleGroup>
-      <div
+      <CommandMenuList
         ref={listRef}
+        stickyHeadings={false}
         // A preview by the pointer ends when the pointer leaves; one by the arrow keys stays.
         onPointerLeave={() => { if (activeBy.current === 'item-hover') command.setValue(null); }}
         // The search field's arrow keys move through the fonts; the list is also a tab stop of its own, so the keys
         // can scroll it without a pointer (as Chrome already makes a scroller with nothing focusable in it).
         tabIndex={0}
-        className="bl-scroll h-72 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        className={cn('max-h-none px-0 pb-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset', rows.length ? 'h-72' : 'h-0')}
       >
-        <CommandList className="relative outline-none" style={{ height: virtual.size + 2 * PAD }}>
-          {() => virtual.items.map((v) => {
-            const row = rows[v.index];
-            if (!row) return null;
-            return (
-              <CommandItem
-                key={row.id}
-                value={row.id}
-                label={row.family ?? systemLabel}
-                disabled={disabled(row)}
-                index={v.index}
-                // The list's padding (PAD) on every side, as in a popup list.
-                className={cn(listboxItemVariants({ variant: 'popup' }), fontListItemVariants(), 'absolute inset-x-1.5')}
-                style={{ top: PAD + v.start }}
-              >
+        {() => (
+          <div className="relative" style={{ height: virtual.size + 2 * PAD }}>
+            {virtual.items.map((v) => {
+              const row = rows[v.index];
+              if (!row) return null;
+              return (
                 <FontRow
+                  key={row.id}
                   row={row}
+                  index={v.index}
+                  top={PAD + v.start}
+                  disabled={disabled(row)}
                   mark={row.custom ? null : mark(row.family)}
                   systemLabel={systemLabel}
                   lookup={row.custom ? (row.family === typed ? typedStatus : 'loading') : undefined}
                 />
-              </CommandItem>
-            );
-          })}
-        </CommandList>
-        <CommandEmpty className="px-3 py-8 text-center text-footnote text-foreground/70 not-data-empty:hidden">No fonts</CommandEmpty>
-      </div>
+              );
+            })}
+          </div>
+        )}
+      </CommandMenuList>
+      <CommandMenuEmpty title="No fonts" />
       {footer}
-    </Command>
+    </CommandMenu>
   );
 }
 
@@ -237,26 +230,38 @@ function useSettled<T>(value: T, ms: number): T {
 const CATEGORY_LABEL = Object.fromEntries(FONT_CATEGORIES.map((c) => [c.id, c.label])) as Record<FontCategory, string>;
 
 /** A family drawn in itself (fetching only its name's glyphs), with its mark when it's in use. A typed family is
-    looked up by the list (`lookup`), not by the row. */
-function FontRow({ row, mark, systemLabel, lookup }: { row: Row; mark: ReactNode; systemLabel: string; lookup?: GoogleFontStatus }) {
+    looked up by the list (`lookup`), not by the row. The category after it describes the option rather than being
+    part of its name. */
+function FontRow({ row, index, top, disabled, mark, systemLabel, lookup }: {
+  row: Row; index: number; top: number; disabled: boolean; mark: ReactNode; systemLabel: string; lookup?: GoogleFontStatus;
+}) {
   const own = useGoogleFontStatus(row.custom ? null : row.family, { text: row.family ?? undefined });
   const status = lookup ?? own;
+  const detailId = useId();
+  const detail = row.custom ? (status === 'missing' ? 'Not on Google Fonts' : status === 'ready' ? 'Google Fonts' : 'Looking…') : row.font ? CATEGORY_LABEL[row.font.category] : row.family ? '' : 'Default';
   return (
-    <>
-      <span className="grid w-[18px] shrink-0 place-items-center text-primary">{mark}</span>
-      <span className="flex min-w-0 flex-1 items-baseline gap-2">
-        <span
-          className={cn('truncate text-body leading-6 transition-opacity duration-200', row.family && status !== 'ready' && 'opacity-45')}
-          style={{ fontFamily: status === 'ready' ? fontStack(row.family, row.font?.category) : undefined }}
-        >
-          {row.custom ? `Use “${row.family}”` : row.family ?? systemLabel}
-        </span>
-        {mark ? <span className="sr-only">(in use)</span> : null}
-      </span>
-      <span className="shrink-0 text-caption text-foreground/70">
-        {row.custom ? (status === 'missing' ? 'Not on Google Fonts' : status === 'ready' ? 'Google Fonts' : 'Looking…') : row.font ? CATEGORY_LABEL[row.font.category] : row.family ? '' : 'Default'}
-      </span>
-    </>
+    <CommandMenuItem
+      value={row.id}
+      label={row.family ?? systemLabel}
+      disabled={disabled}
+      index={index}
+      aria-describedby={detail ? detailId : undefined}
+      className={fontRow}
+      style={{ top }}
+      icon={<span className="grid w-[18px] place-items-center text-primary">{mark}</span>}
+      title={(
+        <>
+          <span
+            className={cn('text-body leading-6 transition-opacity duration-200', row.family && status !== 'ready' && 'opacity-45')}
+            style={{ fontFamily: status === 'ready' ? fontStack(row.family, row.font?.category) : undefined }}
+          >
+            {row.custom ? `Use “${row.family}”` : row.family ?? systemLabel}
+          </span>
+          {mark ? <span className="sr-only"> (in use)</span> : null}
+        </>
+      )}
+      trailing={detail ? <span id={detailId} aria-hidden="true" className="ms-auto shrink-0 text-caption text-muted-foreground">{detail}</span> : null}
+    />
   );
 }
 
@@ -326,24 +331,6 @@ export function FontList({
   );
 }
 
-export const fontPickerTriggerVariants = cva(
-  [
-    'bl-btn box-border flex w-full cursor-pointer items-center justify-between gap-2 border-0 bg-input px-3 text-left text-foreground outline-none',
-    'transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy active:bg-secondary-strong',
-    'focus-visible:ring-[3px] focus-visible:ring-ring/45 aria-expanded:shadow-[inset_0_0_0_1.5px_var(--primary)]',
-    'data-disabled:cursor-default data-disabled:opacity-50',
-  ],
-  {
-    variants: {
-      size: {
-        sm: 'h-8 rounded-lg text-subhead',
-        default: 'h-11 rounded-ctl text-body',
-      },
-    },
-    defaultVariants: { size: 'default' },
-  },
-);
-
 /** A family's name, drawn in it once it has loaded. */
 function FamilyName({ family, systemLabel, className }: { family: string | null; systemLabel?: string; className?: string }) {
   const status = useGoogleFontStatus(family, { text: family ?? undefined });
@@ -354,71 +341,139 @@ function FamilyName({ family, systemLabel, className }: { family: string | null;
   );
 }
 
-type PopoverPlacement = Pick<ComponentProps<typeof PopoverContent>, 'side' | 'align'>;
-
-export interface FontPickerProps extends Omit<FontListProps, 'autoFocus' | 'className'>, VariantProps<typeof fontPickerTriggerVariants>, PopoverPlacement {
-  'aria-label'?: string;
+/** What the root shares with its trigger and popup. */
+interface FontPickerContextValue {
+  value: string | null;
+  /** Moves the value (unless the change was canceled) and closes the popup; false when canceled. */
+  choose: (family: string | null, details: FontPickerChangeDetails) => boolean;
+  label: string;
+  systemLabel: string;
   disabled?: boolean;
-  className?: string;
-  /** More props for the trigger button. */
-  triggerProps?: Omit<ComponentProps<typeof PopoverTrigger>, 'children' | 'className' | 'disabled'>;
+  list: Pick<FontListProps, 'fonts' | 'allowSystem' | 'defaultCategory' | 'onPreview'>;
+}
+const FontPickerContext = createContext<FontPickerContextValue | null>(null);
+
+function usePicker(part: string): FontPickerContextValue {
+  const picker = useContext(FontPickerContext);
+  if (!picker) throw new Error(`<${part}> must be used within <FontPicker>`);
+  return picker;
 }
 
-/** A trigger showing the family in its own face, opening the FontList in a popover. */
+export interface FontPickerProps extends Omit<FontListProps, 'autoFocus' | 'className'>,
+  Pick<PopoverProps, 'open' | 'defaultOpen' | 'onOpenChange' | 'presentation'> {
+  /** What the font is for ("Headline font"): the trigger says it with the family, and it names the popup. Default "Font". */
+  'aria-label'?: string;
+  disabled?: boolean;
+  /** A FontPickerTrigger and a FontPickerContent, by default. */
+  children?: ReactNode;
+}
+
+/** One family behind a pop-up button: the root holds the family (`value` / `defaultValue` / `onValueChange`), the
+    preview (`onPreview`) and the popup's open state (`open` / `defaultOpen` / `onOpenChange`, `presentation`). */
 export function FontPicker({
-  value: valueProp, defaultValue = null, onValueChange, onPreview, size, disabled, side = 'bottom', align = 'start', className, triggerProps,
-  'aria-label': ariaLabel = 'Font', systemLabel = 'System', ...list
+  value: valueProp, defaultValue = null, onValueChange, onPreview, disabled, fonts, allowSystem, defaultCategory,
+  'aria-label': label = 'Font', systemLabel = 'System', open, defaultOpen, onOpenChange, presentation, children,
 }: FontPickerProps) {
   const [popover] = useState(() => createPopoverController());
   const [value, setValue] = useValue(valueProp, defaultValue, onValueChange);
+  const picker: FontPickerContextValue = {
+    value,
+    // A choice closes the list, unless the consumer canceled it.
+    choose: (family, details) => {
+      const done = setValue(family, details);
+      if (done) popover.close();
+      return done;
+    },
+    label,
+    systemLabel,
+    disabled,
+    list: { fonts, allowSystem, defaultCategory, onPreview },
+  };
   return (
-    <Popover controller={popover}>
-      <PopoverTrigger
-        data-font-picker=""
-        aria-label={`${ariaLabel}: ${value ?? systemLabel}`}
-        disabled={disabled}
-        className={cx(fontPickerTriggerVariants({ size }), className)}
-        {...triggerProps}
-      >
-        <FamilyName family={value} systemLabel={systemLabel} className="flex-1" />
-        <Icon name="chevron-up-down" size={14} sw={2.2} className="shrink-0 text-muted-foreground" />
-      </PopoverTrigger>
-      <PopoverContent variant="surface" side={side} align={align} className="w-80 overflow-hidden outline-none">
-        <PopoverTitle className="sr-only">{ariaLabel}</PopoverTitle>
+    <FontPickerContext.Provider value={picker}>
+      <Popover controller={popover} open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange} presentation={presentation}>
+        {children ?? (
+          <>
+            <FontPickerTrigger />
+            <FontPickerContent />
+          </>
+        )}
+      </Popover>
+    </FontPickerContext.Provider>
+  );
+}
+
+export type FontPickerTriggerProps = Omit<ComponentProps<typeof PopoverTrigger>, 'children'> & {
+  /** The field's size: `sm` 32px, `default` 44px, `lg` 50px. */
+  size?: 'sm' | 'default' | 'lg';
+};
+
+/** The pop-up button, Select's trigger (the kit's filled field box) showing the family in its own face. It is named
+    by what the font is for and the family ("Headline font: Inter"). */
+export function FontPickerTrigger({ className, size, ...props }: FontPickerTriggerProps) {
+  const picker = usePicker('FontPickerTrigger');
+  return (
+    <PopoverTrigger
+      data-font-picker=""
+      aria-label={`${picker.label}: ${picker.value ?? picker.systemLabel}`}
+      disabled={picker.disabled}
+      className={cx(
+        [selectTriggerVariants({ size }), 'aria-expanded:bg-transparent aria-expanded:shadow-[inset_0_0_0_1.5px_var(--primary)]'],
+        className,
+      )}
+      {...props}
+    >
+      <FamilyName family={picker.value} systemLabel={picker.systemLabel} className="flex-1" />
+      <Icon name="chevron-up-down" size={16} sw={2.2} className="shrink-0 opacity-70" />
+    </PopoverTrigger>
+  );
+}
+
+export type FontPickerContentProps = Omit<ComponentProps<typeof PopoverContent>, 'children' | 'variant'> & {
+  /** The list, by default a FontList of the root's family. */
+  children?: ReactNode;
+};
+
+/** The popup: 320px wide, under the trigger by default (`side`, `align`), holding the FontList. */
+export function FontPickerContent({ className, side = 'bottom', align = 'start', children, ...props }: FontPickerContentProps) {
+  const picker = usePicker('FontPickerContent');
+  return (
+    <PopoverContent variant="surface" side={side} align={align} className={cx('w-80 overflow-hidden outline-none', className)} {...props}>
+      <PopoverTitle className="sr-only">{picker.label}</PopoverTitle>
+      {children ?? (
         <FontList
-          {...list}
-          value={value}
-          systemLabel={systemLabel}
+          {...picker.list}
+          value={picker.value}
+          systemLabel={picker.systemLabel}
           autoFocus
-          onPreview={onPreview}
-          // A choice closes the list, unless the consumer canceled it.
-          onValueChange={(family, details) => { if (setValue(family, details)) popover.close(); }}
+          onValueChange={(family, details) => { picker.choose(family, details); }}
         />
-      </PopoverContent>
-    </Popover>
+      )}
+    </PopoverContent>
   );
 }
 
 /* ── A font stack ── */
 
-export const fontStackPickerVariants = cva(
-  'flex w-full flex-wrap items-center gap-1.5 rounded-ctl bg-input p-1.5 data-disabled:opacity-50',
-  {
-    variants: {
-      size: {
-        sm: 'min-h-8 rounded-lg p-1 text-footnote',
-        default: 'min-h-11 text-subhead',
-      },
+/** The stack's field: the kit's filled field box, growing a line at a time as chips wrap. */
+export const fontStackPickerVariants = cva('h-auto w-full flex-wrap gap-1.5', {
+  variants: {
+    size: {
+      sm: [fieldSurfaceVariants({ size: 'sm' }), 'min-h-8 p-1 text-footnote'],
+      default: [fieldSurfaceVariants({ size: 'default' }), 'min-h-11 p-1.5 text-subhead'],
+      lg: [fieldSurfaceVariants({ size: 'lg' }), 'min-h-[50px] p-2 text-subhead'],
     },
-    defaultVariants: { size: 'default' },
   },
-);
+  defaultVariants: { size: 'default' },
+});
 
 const { Root: StackChips, Item: StackChip, Handle: StackChipHandle, Remove: StackChipRemove } = createParts(fontStackList, {
   root: 'div', item: 'div', handle: 'button', remove: 'button',
 });
 
-export interface FontStackPickerProps extends VariantProps<typeof fontStackPickerVariants>, PopoverPlacement {
+export interface FontStackPickerProps extends VariantProps<typeof fontStackPickerVariants>,
+  Pick<ComponentProps<typeof PopoverContent>, 'side' | 'align'>,
+  Pick<PopoverProps, 'open' | 'defaultOpen' | 'onOpenChange' | 'presentation'> {
   /** The families, the one to use first: fontStack(value) is the CSS font-family. Pass it to control them. */
   value?: readonly string[];
   /** The families at first, when uncontrolled. */
@@ -447,6 +502,7 @@ const noFamilies: readonly string[] = [];
 export function FontStackPicker({
   value: valueProp, defaultValue = noFamilies, onValueChange, onPreview, maxCount = 3, fonts = GOOGLE_FONTS, defaultCategory,
   placeholder = 'Add a font', 'aria-label': ariaLabel = 'Font stack', disabled, side = 'bottom', align = 'start', size, className,
+  open, defaultOpen, onOpenChange, presentation,
 }: FontStackPickerProps) {
   const [value, setValue] = useValue<readonly string[]>(valueProp, defaultValue, (next, details) => onValueChange?.([...next], details));
   const [field, setField] = useState<HTMLDivElement | null>(null);
@@ -476,12 +532,16 @@ export function FontStackPicker({
             <StackChip
               key={family}
               value={family}
-              className="bl-btn relative flex h-7 max-w-full items-center gap-0.5 rounded-lg bg-card pr-0.5 pl-0.5 text-foreground shadow-hairline outline-none data-dragging:z-1 data-dragging:translate-x-(--drag-x) data-dragging:translate-y-(--drag-y) data-dragging:opacity-50 data-grabbed:ring-2 data-grabbed:ring-ring"
+              className={cn(
+                valueChip,
+                'bl-btn relative ps-0.5 data-dragging:z-1 data-dragging:translate-x-(--drag-x) data-dragging:translate-y-(--drag-y) data-dragging:opacity-50 data-grabbed:ring-2 data-grabbed:ring-ring',
+              )}
             >
+              {/* 24px targets at least (the handle's hit area reaches past its glyph); 44px in a compact container. */}
               <StackChipHandle
                 value={family}
                 aria-label={`Move ${family}`}
-                className="grid h-6 w-4 shrink-0 cursor-grab place-items-center rounded border-0 bg-transparent p-0 text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="relative grid h-6 w-5 shrink-0 cursor-grab place-items-center rounded-full border-0 bg-transparent p-0 text-muted-foreground outline-none before:absolute before:-inset-x-0.5 before:-inset-y-1 before:content-[''] focus-visible:ring-2 focus-visible:ring-ring in-data-[size-class=compact]:before:-inset-2.5"
               >
                 <Icon name="grip-dots" size={12} sw={2.2} />
               </StackChipHandle>
@@ -489,7 +549,7 @@ export function FontStackPicker({
               <StackChipRemove
                 value={family}
                 aria-label={`Remove ${family}`}
-                className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                className="relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-muted-foreground outline-none before:absolute before:content-[''] hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring in-data-[size-class=compact]:before:-inset-2.5"
               >
                 <Icon name="xmark" size={10} sw={2.6} />
               </StackChipRemove>
@@ -497,7 +557,7 @@ export function FontStackPicker({
           ))}
         </StackChips>
       ) : null}
-      <Popover>
+      <Popover open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange} presentation={presentation}>
         <PopoverTrigger
           ref={addRef}
           aria-label={value.length ? `Add a font to ${ariaLabel}` : placeholder}
@@ -521,7 +581,7 @@ export function FontStackPicker({
             autoFocus
             mark={(f) => {
               const at = f ? value.indexOf(f) : -1;
-              return at < 0 ? null : <span className="grid size-[18px] place-items-center rounded-full bg-primary text-caption2 font-semibold text-primary-foreground tabular-nums">{at + 1}</span>;
+              return at < 0 ? null : <Badge size="sm">{at + 1}</Badge>;
             }}
             isRowDisabled={(f) => full && !!f && !value.includes(f)}
             onPick={toggle}

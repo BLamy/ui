@@ -85,5 +85,5 @@ inline-flex items-center group-data-disabled:opacity-50
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `gap-1.5 text-subhead font-medium text-foreground` |
-| `field` | `gap-1.5 px-1 text-footnote font-medium text-muted-foreground` |
+| `field` | `gap-1.5 px-1 text-footnote font-medium text-foreground/70` |
 | `control` | `cursor-pointer gap-3 text-body text-foreground has-data-disabled:cursor-default has-data-disabled:text-foreground/40` |

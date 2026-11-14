@@ -106,4 +106,13 @@ describe('RadioGroup', () => {
     expect(screen.getByRole('radiogroup', { name: 'Plan' })).toBeTruthy();
     expect(new FormData(screen.getByTestId('form') as HTMLFormElement).get('plan')).toBe('pro');
   });
+
+  it('writes its orientation for selectors', () => {
+    render(<RadioGroup aria-label="Size" orientation="horizontal"><Radio value="s" aria-label="S" /></RadioGroup>);
+    expect(screen.getByRole('radiogroup').getAttribute('data-orientation')).toBe('horizontal');
+    cleanup();
+    render(<RadioGroup aria-label="Size"><Radio value="s" aria-label="S" /></RadioGroup>);
+    expect(screen.getByRole('radiogroup').getAttribute('data-orientation')).toBe('vertical');
+  });
 });
+

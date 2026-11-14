@@ -31,6 +31,15 @@ export const Comfortable: Story = { args: { ...base, density: 'comfortable' } };
 export const NoHeader: Story = { args: { ...base, header: false, histograms: false, defaultValue: parts.slice(1) } };
 export const ReadOnly: Story = { args: { ...base, readOnly: true } };
 export const Empty: Story = { args: { ...base, defaultValue: [['Name', 'Amount']] } };
+/** Sorted from the start by Stock, highest first (`defaultSort`): the header's arrow, and the status bar says what ran it. */
+export const Sorted: Story = { args: { ...base, defaultSort: { column: 2, direction: 'descending' } } };
+/** No status bar, for a sheet that is only part of a screen. */
+export const NoStatusBar: Story = { args: { ...base, statusBar: false } };
+/** In a phone-sized frame: the grid scrolls both ways under its sticky titles and row numbers. */
+export const Phone: Story = {
+  args: { ...base, density: 'comfortable', className: 'h-[600px]' },
+  decorators: [(Story) => <Panel w={390}><Story /></Panel>],
+};
 export const Dark: Story = {
   args: base,
   decorators: [(Story) => <Panel w={760} dark><Story /></Panel>],

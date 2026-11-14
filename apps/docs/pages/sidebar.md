@@ -1,6 +1,16 @@
 # Sidebar
 
-One compositional API over every sidebar behavior — a **higher-level primitive than shadcn's sidebar**: the same children render as any variant, and every variant knows how to become a hamburger overlay on its own.
+An app's navigation column: a workspace at the top, a search, labelled sections of rows with icons, counts and the current page, and an account at the bottom. It shows as a docked column, as an icon rail that expands, or as a floating card, and it becomes a drawer behind a button when its container gets narrow. Use it for the main navigation of a web or desktop app shell.
+
+Reach for a sibling instead when:
+
+| You need | Use |
+| --- | --- |
+| Columns that become a push stack on a phone (Mail, Notes, Settings) | [SplitView](https://blamy.github.io/ui/#/split-view) |
+| A push/pop stack of pages, also inside a SplitView column | [NavigationStack](https://blamy.github.io/ui/#/navigation-stack) |
+| A side panel that is not navigation (an inspector, activity) | [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) |
+| Dockable, user-arranged tabsets | [Workspace](https://blamy.github.io/ui/#/workspace) |
+| A short list of grouped rows inside a page | [List](https://blamy.github.io/ui/#/lists) |
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -10,7 +20,8 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  Sidebar, SidebarProvider, SidebarHeader, SidebarContent,
+  SidebarProvider, Sidebar, SidebarContent, SidebarSection,
+  SidebarItem, SidebarTrigger, SidebarInset,
 } from '@/components/ui/sidebar'
 ```
 {% endtab %}
@@ -23,75 +34,163 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  Sidebar, SidebarProvider, SidebarHeader, SidebarContent,
+  SidebarProvider, Sidebar, SidebarContent, SidebarSection,
+  SidebarItem, SidebarTrigger, SidebarInset,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
 
-```tsx
-import {
-  SidebarProvider, Sidebar, SidebarTrigger, SidebarInset,
-} from '@brett_lamy/ui'
-```
-
 {% demo src="sidebar/variant-playground" %}
 
-## Examples
+## Anatomy
 
-### Docked with a footer
+```tsx
+import {
+  SidebarProvider, Sidebar, SidebarHeader, SidebarWorkspace, SidebarContent, SidebarSearch,
+  SidebarSection, SidebarItem, SidebarFooter, SidebarInset, SidebarTrigger,
+} from '@/components/ui/sidebar'
 
-A CRM: workspace in the header, search, grouped items with a badge, and the signed-in account in `Sidebar.Footer`. Any `ReactNode` works as an item icon.
+<SidebarProvider>                                  {/* open state; measures its own width */}
+  <Sidebar variant="rail" presentation="auto">     {/* the look, and column or drawer */}
+    <SidebarHeader>
+      <SidebarWorkspace title="Northwind" description="Sales" />
+    </SidebarHeader>
+    <SidebarContent aria-label="Northwind">        {/* a nav landmark; scrolls */}
+      <SidebarSearch shortcut="/" onClick={openSearch} />
+      <SidebarSection title="Pipeline">           {/* role="group", named by its title */}
+        <SidebarItem icon="tray" title="Inbox" trailing={6} current />
+        <SidebarItem icon="calendar" title="Meetings" render={<a href="/meetings" />} />
+      </SidebarSection>
+    </SidebarContent>
+    <SidebarFooter>
+      <SidebarItem icon={<Avatar name="Ada Lovelace" size={20} />} title="Ada Lovelace" />
+    </SidebarFooter>
+  </Sidebar>
+  <SidebarInset>
+    <SidebarTrigger shortcut="mod+b" />
+    …
+  </SidebarInset>
+</SidebarProvider>
+```
+
+## Docked, with a footer
+
+A CRM: the workspace in the header, a search with its `/` shortcut, two sections with a count, and the signed-in account in `SidebarFooter`. A row's `icon` is an [Icon](https://blamy.github.io/ui/#/icons) name or any node; a number or a string in `trailing` is drawn as a count badge, anything else as it is.
 
 {% demo src="sidebar/crm-docked" %}
 
-### Collapsible icon rail
+## Collapsible icon rail
 
-`variant="rail"` with `defaultOpen={false}` starts as icons with tooltips. The trigger expands it to full width without moving the content under it.
+`variant="rail"`: closed, it keeps a 52px column of the same rows cut to their icons (each row keeps its name, and a tooltip shows it on hover or focus), and section titles become hairlines. Open, it is a full column. The trigger, or its `shortcut`, switches between the two without moving the page under it. This one sits in a `workbench` theme scope, which gives it the Workbench palette; elsewhere it follows the surrounding theme.
 
 {% demo src="sidebar/editor-rail" %}
 
-### Floating card
+## Floating card
 
-`variant="float"` insets the sidebar as a rounded card, which suits documentation and settings.
+`variant="float"` insets the sidebar as a rounded card with its own border, which suits documentation and settings. Rows are links here: `render={<a href="…" />}` renders a row as the element you pass, and `current` writes `aria-current="page"`.
 
 {% demo src="sidebar/docs-float" %}
 
-### Narrow container
+## Narrow containers: the drawer
 
-Below `breakpoint` every variant becomes an overlay drawer behind the hamburger: UI SDK's Drawer, contained in the provider, so Escape, a press on the scrim and a swipe toward its edge close it (it comes from the start: the left, or the right under `dir="rtl"`), and focus stays inside while it is open. The breakpoint is measured on the provider's own width (its size class), so this happens inside a 380px pane on a wide screen too, and a new `breakpoint` is measured against at once. The sidebar's children stay mounted when it switches: a filter field keeps what was typed.
+`presentation="auto"` (the default) is a column while the provider is wider than its `breakpoint` and a drawer while it is narrower (its size class is `compact`). The drawer is [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane)'s, a [Sheet](https://blamy.github.io/ui/#/sheet) contained in the provider: it comes from the start (the right under `dir="rtl"`), keeps focus inside while open, and Escape, a press on the scrim, a swipe toward its edge and a press on one of its rows close it. Rows grow to 44px for touch. The width is measured on the provider, never the viewport, so the same happens inside a 380px pane on a wide screen. The children are rendered once and only move between the column and the drawer: a filter field keeps what was typed.
+
+`presentation="column"` keeps a column at every width; `presentation="drawer"` is always a drawer (an overlay sidebar over a full-width page).
 
 {% demo src="sidebar/mobile-menu" %}
 
-## The three layers
+## Open state
 
-1. `<SidebarProvider defaultOpen breakpoint>` — owns open state (`open` / `defaultOpen` / `onOpenChange(open, details)`, or a `controller` from `createSidebarController()`) and measures its **own** width with the kit's size classes (`data-size-class` on its element, `compact` below `breakpoint`; it is also the size-class scope of what it renders), not the viewport, so it works inside any panel.
-2. `<Sidebar variant width railWidth>` — renders its children in the chosen behavior.
-3. `<SidebarTrigger>` + `<SidebarInset>` — the hamburger (toggles whatever is mounted, with `aria-expanded` and `aria-controls` naming the panel, `data-slot="sidebar-panel"`) and the main column.
+`SidebarProvider` owns it: `open` / `defaultOpen` / `onOpenChange(open, details)`, or a `controller` from `createSidebarController()` for code outside it. `details.reason` says why: `trigger-press` and `shortcut` from the trigger, the drawer's `escape-key`, `outside-press`, `swipe` and `action` (a row was pressed in it), `content-resize` when the provider crosses its breakpoint (it closes when it becomes compact and goes back to `defaultOpen` when it grows; its first measurement is where it starts, not a change), or `imperative` from `useSidebar().setOpen` and the controller. `details.cancel()` refuses the change.
 
-`onOpenChange` hears every change with its reason: `trigger-press`, the overlay's `escape-key`, `outside-press` and `swipe`, `content-resize` when the provider crosses its breakpoint (closed when compact, back to `defaultOpen` when not; its first measurement is where it starts, not a change, so an uncontrolled sidebar mounted compact starts closed and a controlled parent hears nothing at mount), or `imperative` from `useSidebar().setOpen` and the controller. `details.cancel()` refuses it.
+What closed means depends on the look: a `docked` or `float` column slides away toward the start, a `rail` collapses to its icons, a drawer hides. A press on a row in a drawer closes it after `onClick`, unless `onClick` calls `event.preventDefault()`.
 
-## Variants
+## Accessibility
 
-| Variant | Open | Closed | Below breakpoint |
-| --- | --- | --- | --- |
-| `docked` | Fixed column | Slides away | Overlay drawer |
-| `rail` | Fixed column | Icon rail (labels hide) | Overlay drawer |
-| `float` | Inset floating card | Slides away | Overlay drawer |
-| `overlay` | Drawer + scrim | Hidden | Overlay drawer |
+- `SidebarContent` is a `nav` landmark; name it with `aria-label` when the page has more than one. Each `SidebarSection` with a `title` is a `role="group"` named by it.
+- Rows and the search are buttons (UI SDK's Button), or links through `render`. The current row has `aria-current="page"`. Every row is named by its `title`, also in a collapsed rail, where the shared tooltip shows it.
+- `SidebarTrigger` has `aria-expanded` and `aria-controls` (the panel, `data-slot="sidebar-panel"`). A `shortcut` on the trigger or the search writes `aria-keyshortcuts`; the keycap is hidden from screen readers.
+- A closed column is `inert`: its rows leave the tab order. The drawer is a named dialog (`aria-label` on `Sidebar`, default "Sidebar").
+- Focus shows as a ring inside each row. In a compact provider rows and the trigger are 44px tall.
 
-## Slots & parts
+## Props
 
-| Part | Role |
-| --- | --- |
-| `Sidebar.Header / .Content / .Footer` | Layout slots — Content scrolls |
-| `Sidebar.Workspace name detail` | Identity block; avatar-only when collapsed |
-| `Sidebar.Search placeholder onClick` | Quick-search button (`data-sidebar-search`); icon-only when collapsed. `onClick(event, details)` is UI SDK Button's |
-| `Sidebar.Section title` | Group label; divider when collapsed |
-| `Sidebar.Item icon label badge active onClick` | Nav row (`data-sidebar-item`); icon-only + tooltip when collapsed (named by its label). `onClick(event, details)` is UI SDK Button's |
+### SidebarProvider
 
-Every part reads collapsed state from context (`useSidebarCollapsed()` for your own) — compose any content and the rail variant still works. `SidebarNav` is a pre-composed example built from these parts.
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `open` / `defaultOpen` / `onOpenChange` | `true` (closed when it mounts compact) | Open state; `onOpenChange(open, details)`. |
+| `breakpoint` | `560` | The provider's own width, px, below which it is `compact`. |
+| `controller` | — | `createSidebarController()`: `isOpen`, `setOpen`, `toggle` from anywhere. |
+| `className` / `style` / DOM props | — | The provider's box (`relative flex h-full`, `data-size-class`). |
+
+### Sidebar
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `variant` | `docked` | The look: `docked` column on a hairline, `rail` that collapses to its icons, `float` inset card. |
+| `presentation` | `auto` | `column`, `drawer`, or `auto`: a drawer while the provider is compact. |
+| `width` | `228` | Open width, px, of the column and the drawer (a drawer takes at most 85% of the provider). |
+| `railWidth` | `52` | Width of a collapsed rail, px. |
+| `aria-label` | `"Sidebar"` | The drawer's name. |
+| `className` / `style` | — | The column's box or the drawer's panel; a function gets `{ variant, presentation, open, collapsed }`. |
+
+### Parts
+
+| Part | Props | Notes |
+| --- | --- | --- |
+| `SidebarHeader` · `SidebarFooter` | `div` props | Don't scroll; the footer sits on a hairline. |
+| `SidebarContent` | `nav` props | Scrolls. `aria-label` defaults to "Sidebar". |
+| `SidebarWorkspace` | `title`, `description`, `icon` | A 28px tile (default: the title's first letter on the brand gradient), a name and a second line. The tile alone in a collapsed rail. |
+| `SidebarSearch` | `placeholder` ("Search"), `shortcut`, UI SDK Button props | A button shaped like a search field that opens your search ([CommandMenu](https://blamy.github.io/ui/#/command-menu), a Dialog). `shortcut` presses it from anywhere and shows a keycap. |
+| `SidebarSection` | `title`, `div` props | A labelled group; the title turns into a hairline in a collapsed rail. |
+| `SidebarItem` | `icon`, `title`, `description`, `trailing`, `current`, `tint`, `disabled`, `render`, `onClick(event, details)` | A navigation row. `tint` is a CSS colour for an action row ("New task"). |
+| `SidebarTrigger` | `shortcut`, button props | Toggles the sidebar in whichever presentation shows. Default icon `sidebar-left`, name "Toggle sidebar". |
+| `SidebarInset` | `div` props | The main column beside the sidebar. |
+
+The rows, sections, search and workspace also work outside a `Sidebar` (a shell's own side panel, such as [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell)'s), where there is no collapsed state to follow.
+
+### Hooks
+
+- `useSidebar()`: `{ open, setOpen, toggle, sizeClass, compact }` of the nearest provider (it throws outside one).
+- `useSidebarCollapsed()`: whether the sidebar around is a collapsed rail, for your own parts that hide their text (`false` outside a `Sidebar`).
 
 ## Built from
 
-A `sidebar` primitive (`lib/sidebar-primitive.ts`, UI SDK's `definePrimitive`) holds the open state and binds the provider's size class (the kit's `bindSizeClass`, and the provider is the size-class scope of what it renders); the trigger is its button part. The overlay is UI SDK's Drawer over the provider, the same one [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) uses in its `drawer` presentation, and the items are UI SDK Buttons. Colours read the workbench `--wb-*` tokens with dark fallbacks, so it drops into a `WorkbenchShell` unchanged.
+A `sidebar` primitive (`lib/sidebar-primitive.ts`, UI SDK's `definePrimitive`) holds the open state and measures the provider (`bindSizeClass`); the provider is the size-class scope of what it renders, popups included. The column and the drawer are [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane)'s presentations, so the children stay mounted through a change. Rows are UI SDK Buttons sharing one [Tooltip](https://blamy.github.io/ui/#/tooltip) through a controller; counts are [Badge](https://blamy.github.io/ui/#/badge) `size="sm" variant="tinted"`; keycaps are [Kbd](https://blamy.github.io/ui/#/kbd); shortcuts go through UI SDK's shortcut manager; section titles use `sectionLabelVariants({ variant: 'sidebar' })` from `@/lib/primitives`.
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `sidebarItemVariants`
+
+Defined in `@/components/ui/sidebar`. Base classes:
+
+```text
+[ 'relative flex w-full min-w-0 shrink-0 cursor-pointer items-center gap-2.5 overflow-hidden rounded-lg border-0 bg-transparent px-2.5 py-1.5 text-start font-sans select-none', 'outline-none transition-colors duration-150 hover:bg-secondary active:bg-secondary-strong', 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset', 'data-disabled:cursor-default data-disabled:opacity-40 data-disabled:hover:bg-transparent', ]
+```
+
+**`current`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `bg-secondary-strong font-medium [&_[data-slot=sidebar-icon]]:text-primary` |
+| `false` (default) | — |
+
+**`compact`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `min-h-11 text-subhead` |
+| `false` (default) | `min-h-8 text-footnote` |
+
+**`tinted`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `font-semibold text-(color:--sidebar-tint) [&_[data-slot=sidebar-icon]]:text-(color:--sidebar-tint)` |
+| `false` (default) | — |
+
+2 compound variants — see the source.

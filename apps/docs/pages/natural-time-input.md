@@ -2,7 +2,7 @@
 
 A text field that reads a date, a time or a repeating schedule written in English ("every weekday at 9am", "Sat Sun 1pm-8pm", "3rd friday of the month") and shows what it understood as you type: the words it recognised, the occurrences it resolved in a time zone, a **Repeats** chip for recurrences and the parser's own notes. It is built on [gpu-time](https://www.npmjs.com/package/gpu-time), a small neural parser (about 53 KB gzipped, English only, MIT) that runs on the CPU, or on the GPU for big batches, so the field works with or without WebGPU.
 
-Use it when people describe *when* in words (a reminder, a meeting, a schedule). For a date or time typed part by part, use the segmented date and time inputs ([DateField](https://blamy.github.io/ui/#/date-field), UI SDK's `DateInput` and `TimeInput`); for a date picked from a month, [DatePicker](https://blamy.github.io/ui/#/date-picker); for a cron expression, [CronEditor](https://blamy.github.io/ui/#/cron-editor). It is a control, like an [Input](https://blamy.github.io/ui/#/input): its label, help text and error come from the [Field](https://blamy.github.io/ui/#/field) around it.
+Use it when people describe *when* in words (a reminder, a meeting, a schedule). For a date or time typed part by part, use [DateInput and TimeInput](https://blamy.github.io/ui/#/date-input), the segmented inputs; for a date picked from a month, [DatePicker](https://blamy.github.io/ui/#/date-picker); for a cron expression, [CronEditor](https://blamy.github.io/ui/#/cron-editor). It is a control, like an [Input](https://blamy.github.io/ui/#/input): its label, help text and error come from the [Field](https://blamy.github.io/ui/#/field) around it.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -52,7 +52,7 @@ import { NaturalTimeInput } from '@brett_lamy/ui'
 </Field>
 ```
 
-Everything is optional. Without `timeZone` the browser's zone is used, and without `reference` "now" is read each time the text is parsed. Outside a Field the box names itself "Date or time"; pass `aria-label` to say more. The segmented time control, the one UI SDK calls `TimeInput`, is a different component: see [DateField](https://blamy.github.io/ui/#/date-field).
+Everything is optional. Without `timeZone` the browser's zone is used, and without `reference` "now" is read each time the text is parsed. Outside a Field the box names itself "Date or time"; pass `aria-label` to say more. The segmented time control is `TimeInput`, a different component: see [DateInput](https://blamy.github.io/ui/#/date-input).
 
 {% demo src="natural-time-input/basic" %}
 

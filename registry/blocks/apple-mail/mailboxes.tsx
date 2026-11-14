@@ -26,8 +26,8 @@ export function MailboxesSidebar({ mail }: { mail: MailState }) {
           {SECTIONS.map((sec) => (
             <SplitViewSection key={sec.title} title={sec.title} collapsible>
               {sec.boxes.map((b) => (
-                <SplitViewItem key={b.id} id={b.id} title={b.title} icon={<Icon name={b.icon} size={21} />}
-                  badge={<Count n={mail.count(b)} />} />
+                <SplitViewItem key={b.id} value={b.id} title={b.title} icon={<Icon name={b.icon} size={21} />}
+                  trailing={<Count n={mail.count(b)} />} />
               ))}
             </SplitViewSection>
           ))}

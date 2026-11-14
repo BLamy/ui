@@ -1,7 +1,14 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import { ArtifactChatContainer, useArtifactChatContainer, type ArtifactChatContainerProps } from '@/components/ui/artifact-chat-container';
+import {
+  ArtifactChatContainer,
+  ArtifactChatContainerChat,
+  ArtifactChatContainerComposer,
+  ArtifactChatContainerContent,
+  useArtifactChatContainer,
+  type ArtifactChatContainerProps,
+} from '@/components/ui/artifact-chat-container';
 import { BLProvider } from '@/lib/theme';
 import { useSizeClassScope } from '@/lib/container';
 
@@ -49,15 +56,15 @@ function App(props: Partial<ArtifactChatContainerProps>) {
   return (
     <BLProvider>
       <ArtifactChatContainer {...props}>
-        <ArtifactChatContainer.Content>
+        <ArtifactChatContainerContent>
           <Probe />
-        </ArtifactChatContainer.Content>
-        <ArtifactChatContainer.Chat>
+        </ArtifactChatContainerContent>
+        <ArtifactChatContainerChat>
           <p>Transcript</p>
-        </ArtifactChatContainer.Chat>
-        <ArtifactChatContainer.Composer>
+        </ArtifactChatContainerChat>
+        <ArtifactChatContainerComposer>
           <textarea aria-label="Message" />
-        </ArtifactChatContainer.Composer>
+        </ArtifactChatContainerComposer>
       </ArtifactChatContainer>
     </BLProvider>
   );
@@ -71,9 +78,10 @@ describe('ArtifactChatContainer', () => {
     expect(root().getAttribute('data-layout')).toBe('split');
     expect(scope).toBe('medium');
     expect(screen.getByText('Layout split')).toBeTruthy();
-    // The shared composer and transcript live in the column's docks.
+    // The shared composer and transcript live in the column's docks, in a named landmark.
     expect(column()?.contains(screen.getByRole('textbox', { name: 'Message' }))).toBe(true);
     expect(column()?.contains(screen.getByText('Transcript'))).toBe(true);
+    expect(screen.getByRole('complementary', { name: 'Chat' }).contains(screen.getByText('Transcript'))).toBe(true);
   });
 
   it('switches to the floating chat below its breakpoint without remounting the composer or the content', async () => {
@@ -86,14 +94,15 @@ describe('ArtifactChatContainer', () => {
     rerender(<App breakpoint={760} />);
     await settle();
     expect(root().getAttribute('data-size-class')).toBe('compact');
-    expect(root().getAttribute('data-layout')).toBe('compact');
+    expect(root().getAttribute('data-layout')).toBe('floating');
     expect(scope).toBe('compact');
-    expect(document.querySelector('[data-slot=floating-chat]')).not.toBeNull();
-    // Same elements, same draft: only the dock changed.
-    expect(screen.getByRole('textbox', { name: 'Message' })).toBe(message);
+    expect(document.querySelector('[data-slot=floating-sheet]')).not.toBeNull();
+    // Same elements, same draft: only the dock changed (the sheet has no host height to rest on here, so it is
+    // rendered but closed).
+    expect(screen.getByRole('textbox', { name: 'Message', hidden: true })).toBe(message);
     expect(message.value).toBe('half a thought');
     expect(document.querySelector('[data-slot=artifact-chat-content]')).toBe(content);
-    expect(document.querySelector('[data-slot=floating-chat]')?.contains(message)).toBe(true);
+    expect(document.querySelector('[data-slot=floating-sheet-foot]')?.contains(message)).toBe(true);
     // The column played its exit and went.
     expect(column()).toBeNull();
     // And back: the column slides in (it didn't on first paint) and takes the composer again.
@@ -116,21 +125,28 @@ describe('ArtifactChatContainer', () => {
       // No scope around it, so it starts out regular until it has measured its own box.
       render(
         <ArtifactChatContainer>
-          <ArtifactChatContainer.Content><p>Doc</p></ArtifactChatContainer.Content>
-          <ArtifactChatContainer.Chat><p>Transcript</p></ArtifactChatContainer.Chat>
-          <ArtifactChatContainer.Composer><textarea aria-label="Message" /></ArtifactChatContainer.Composer>
+          <ArtifactChatContainerContent><p>Doc</p></ArtifactChatContainerContent>
+          <ArtifactChatContainerChat><p>Transcript</p></ArtifactChatContainerChat>
+          <ArtifactChatContainerComposer><textarea aria-label="Message" /></ArtifactChatContainerComposer>
         </ArtifactChatContainer>,
       );
       await settle();
-      expect(root().getAttribute('data-layout')).toBe('compact');
+      expect(root().getAttribute('data-layout')).toBe('floating');
       expect(column()).toBeNull();
       expect(ending).toEqual([]);
       // The composer is where the floating chat put it, not flying in from the column.
-      const composer = screen.getByRole('textbox', { name: 'Message' }).closest<HTMLElement>('[data-slot=composer]');
+      const composer = screen.getByRole('textbox', { name: 'Message', hidden: true }).closest<HTMLElement>('[data-slot=composer]');
       expect(composer?.style.transform ?? '').toBe('');
     } finally {
       observer.disconnect();
     }
+  });
+
+  it('docks the column on the end edge and names it', () => {
+    render(<App breakpoint={600} chatSide="end" chatLabel="Ask QA" />);
+    expect(root().getAttribute('data-chat-side')).toBe('end');
+    expect(column()?.className).toContain('col-start-2');
+    expect(screen.getByRole('complementary', { name: 'Ask QA' })).toBeTruthy();
   });
 
   it("doesn't animate the column in on first paint", () => {
@@ -140,7 +156,7 @@ describe('ArtifactChatContainer', () => {
 
   it('reports the floating chat opening with its details, and a canceled change keeps it as it is', async () => {
     width = 390;
-    const onChatOpenChange = vi.fn((_open: boolean, details: { cancel: () => void }) => details.cancel());
+    const onOpenChange = vi.fn((_open: boolean, details: { cancel: () => void }) => details.cancel());
     let api: ReturnType<typeof useArtifactChatContainer> | undefined;
     function Opener() {
       api = useArtifactChatContainer();
@@ -148,21 +164,21 @@ describe('ArtifactChatContainer', () => {
     }
     render(
       <BLProvider>
-        <ArtifactChatContainer onChatOpenChange={onChatOpenChange}>
-          <ArtifactChatContainer.Content><Opener /></ArtifactChatContainer.Content>
-          <ArtifactChatContainer.Composer><textarea aria-label="Message" /></ArtifactChatContainer.Composer>
+        <ArtifactChatContainer onOpenChange={onOpenChange}>
+          <ArtifactChatContainerContent><Opener /></ArtifactChatContainerContent>
+          <ArtifactChatContainerComposer><textarea aria-label="Message" /></ArtifactChatContainerComposer>
         </ArtifactChatContainer>
       </BLProvider>,
     );
     expect(api?.layout).toBe('floating');
-    act(() => api!.setChatOpen(true));
-    expect(onChatOpenChange).toHaveBeenCalledTimes(1);
-    expect(onChatOpenChange.mock.calls[0][0]).toBe(true);
-    expect(onChatOpenChange.mock.calls[0][1]).toMatchObject({ reason: 'imperative', source: 'programmatic', canceled: true });
-    expect(api?.chatOpen).toBe(false);
-    onChatOpenChange.mockImplementation(() => undefined);
-    act(() => api!.setChatOpen(true));
-    expect(api?.chatOpen).toBe(true);
+    act(() => api!.setOpen(true));
+    expect(onOpenChange).toHaveBeenCalledTimes(1);
+    expect(onOpenChange.mock.calls[0][0]).toBe(true);
+    expect(onOpenChange.mock.calls[0][1]).toMatchObject({ reason: 'imperative', source: 'programmatic', canceled: true });
+    expect(api?.open).toBe(false);
+    onOpenChange.mockImplementation(() => undefined);
+    act(() => api!.setOpen(true));
+    expect(api?.open).toBe(true);
     await settle();
   });
 });

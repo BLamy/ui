@@ -70,7 +70,7 @@ export default function MiniPlayer() {
               <div className="text-callout text-white/60">The Weekend Ensemble</div>
             </Morph>
             <Morph layoutId="controls" fade className="mt-4.5 grid gap-4">
-              <Slider aria-label="Position" data-no-drag tone="onDark" size="sm" defaultValue={32} />
+              <Slider aria-label="Position" data-no-drag variant="on-dark" size="sm" defaultValue={32} />
               <div className="flex items-center justify-center gap-11">
                 <Icon name="backward" size={32} />
                 <Icon name="pause" size={40} />

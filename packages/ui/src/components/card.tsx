@@ -1,5 +1,6 @@
 import { renderElement, type PartProps } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { surfaceDescriptionVariants, surfaceTitleVariants } from '@/lib/surface';
 import { cx } from '@/lib/utils';
 
 /* ══ Card — shadcn's card as an iOS inset-grouped panel ══
@@ -48,11 +49,12 @@ export function CardHeader({ className, render, ...props }: PartProps<'div'>) {
   );
 }
 
-/** An `h3` by default: `render={<h2 />}` for another level. */
+/** An `h3` by default: `render={<h2 />}` for another level. The small surface title Popover, HoverCard and
+    AlertDialog use (`surfaceTitleVariants({ size: 'sm' })`). */
 export function CardTitle({ className, render, ...props }: PartProps<'h3'>) {
   return renderElement(
     'h3',
-    { 'data-slot': 'card-title', ...props, className: cx('m-0 text-body leading-[22px] font-semibold tracking-[-.2px] text-foreground', className) },
+    { 'data-slot': 'card-title', ...props, className: cx(surfaceTitleVariants({ size: 'sm' }), className) },
     render,
   );
 }
@@ -60,7 +62,7 @@ export function CardTitle({ className, render, ...props }: PartProps<'h3'>) {
 export function CardDescription({ className, render, ...props }: PartProps<'p'>) {
   return renderElement(
     'p',
-    { 'data-slot': 'card-description', ...props, className: cx('m-0 text-footnote leading-[18px] text-muted-foreground', className) },
+    { 'data-slot': 'card-description', ...props, className: cx(surfaceDescriptionVariants({ size: 'sm' }), className) },
     render,
   );
 }

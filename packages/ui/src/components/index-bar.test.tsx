@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
-import { IndexBar } from './index-bar';
+import { IndexBar, alphabetItems } from './index-bar';
 
 beforeAll(() => {
   (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
@@ -16,10 +16,12 @@ const items = [
 
 describe('IndexBar', () => {
   it('is a named listbox of stops that keeps focus', () => {
-    const { getByRole, getAllByRole } = render(<IndexBar items={items} label="Jump to turn" />);
+    const { getByRole, getAllByRole } = render(<IndexBar items={items} aria-label="Jump to turn" id="rail" data-testid="rail" />);
     const rail = getByRole('listbox', { name: 'Jump to turn' });
     expect(rail.getAttribute('tabindex')).toBe('0');
     expect(rail.getAttribute('aria-orientation')).toBe('vertical');
+    expect(rail.id).toBe('rail');
+    expect(rail.getAttribute('data-testid')).toBe('rail');
     expect(getAllByRole('option').map((o) => o.getAttribute('aria-label'))).toEqual(['Alpha', 'Bravo', 'Charlie']);
   });
 
@@ -32,14 +34,14 @@ describe('IndexBar', () => {
     const options = getAllByRole('option');
     expect(rail.getAttribute('aria-activedescendant')).toBe(options[0].id);
     expect(options[0].getAttribute('aria-selected')).toBe('true');
-    expect(onJump).toHaveBeenLastCalledWith('a', expect.objectContaining({ key: 'a' }), 0, expect.objectContaining({ reason: 'list-navigation' }));
+    expect(onJump).toHaveBeenLastCalledWith('a', expect.objectContaining({ index: 0, item: items[0], reason: 'list-navigation' }));
     fireEvent.keyDown(rail, { key: 'ArrowDown' });
-    expect(onJump).toHaveBeenLastCalledWith('b', expect.anything(), 1, expect.anything());
+    expect(onJump).toHaveBeenLastCalledWith('b', expect.objectContaining({ index: 1 }));
     fireEvent.keyDown(rail, { key: 'End' });
     expect(rail.getAttribute('aria-activedescendant')).toBe(options[2].id);
-    expect(onJump).toHaveBeenLastCalledWith('c', expect.anything(), 2, expect.anything());
+    expect(onJump).toHaveBeenLastCalledWith('c', expect.objectContaining({ index: 2 }));
     fireEvent.keyDown(rail, { key: 'Home' });
-    expect(onJump).toHaveBeenLastCalledWith('a', expect.anything(), 0, expect.anything());
+    expect(onJump).toHaveBeenLastCalledWith('a', expect.objectContaining({ index: 0 }));
     // It doesn't wrap past either end.
     const calls = onJump.mock.calls.length;
     fireEvent.keyDown(rail, { key: 'ArrowUp' });
@@ -48,14 +50,44 @@ describe('IndexBar', () => {
     expect(rail.getAttribute('aria-activedescendant')).toBeNull();
   });
 
-  it('falls back to the A–Z rail and reports letters', () => {
-    const onLetter = vi.fn();
-    const { getByRole, getAllByRole } = render(<IndexBar avail={new Set(['A'])} onLetter={onLetter} />);
-    expect(getAllByRole('option')).toHaveLength(26);
+  it('alphabetItems: the A–Z rail, letters not in use disabled but still reachable', () => {
+    const onJump = vi.fn();
+    const { getByRole, getAllByRole } = render(<IndexBar items={alphabetItems(['a', 'C'])} onJump={onJump} />);
+    const options = getAllByRole('option');
+    expect(options).toHaveLength(26);
+    expect(options.filter((o) => o.getAttribute('aria-disabled') === 'true').map((o) => o.getAttribute('aria-label')).join('')).toBe('BDEFGHIJKLMNOPQRSTUVWXYZ');
     const rail = getByRole('listbox', { name: 'Jump to section' });
     act(() => rail.focus());
     fireEvent.keyDown(rail, { key: 'End' });
-    expect(onLetter).toHaveBeenLastCalledWith('Z', expect.objectContaining({ reason: 'list-navigation' }));
+    expect(onJump).toHaveBeenLastCalledWith('Z', expect.objectContaining({ index: 25, reason: 'list-navigation', item: expect.objectContaining({ disabled: true }) }));
+    expect(alphabetItems().every((i) => !i.disabled)).toBe(true);
+  });
+
+  it('marks the current stop and sits on the start or end side', () => {
+    const { getByRole, getAllByRole, rerender } = render(<IndexBar items={items} current="b" variant="wave" side="start" />);
+    expect(getAllByRole('option').map((o) => o.getAttribute('aria-current'))).toEqual([null, 'true', null]);
+    const rail = getByRole('listbox');
+    expect(rail.getAttribute('data-side')).toBe('start');
+    expect(rail.className).toContain('start-0');
+    rerender(<IndexBar items={items} className="top-14 bottom-2" />);
+    expect(rail.getAttribute('data-side')).toBe('end');
+    expect(rail.className).toContain('end-0');
+    expect(rail.className).toContain('top-14');
+    expect(rail.className).not.toContain('top-0');
+  });
+
+  it('publishes the row inset on its parent from the end side only, and clears it', () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const { rerender, unmount } = render(<IndexBar items={items} />, { container: host });
+    expect(host.style.getPropertyValue('--bl-index-bar-inset')).not.toBe('');
+    rerender(<IndexBar items={items} side="start" />);
+    return new Promise<void>((resolve) => requestAnimationFrame(() => {
+      expect(host.style.getPropertyValue('--bl-index-bar-inset')).toBe('');
+      unmount();
+      host.remove();
+      resolve();
+    }));
   });
 
   it('jumps to the stop under a press', () => {
@@ -67,7 +99,7 @@ describe('IndexBar', () => {
     rail.getBoundingClientRect = () => box as DOMRect;
     track.getBoundingClientRect = () => box as DOMRect;
     fireEvent.pointerDown(rail, { button: 0, clientX: 10, clientY: 25, pointerId: 1, isPrimary: true });
-    expect(onJump).toHaveBeenLastCalledWith('c', expect.anything(), 2, expect.objectContaining({ reason: 'drag' }));
+    expect(onJump).toHaveBeenLastCalledWith('c', expect.objectContaining({ index: 2, reason: 'drag' }));
     fireEvent.pointerUp(rail, { pointerId: 1 });
   });
 

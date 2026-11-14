@@ -2,15 +2,14 @@ import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Composer, ComposerBump, ComposerBumpHandle, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer';
 import { ComposerCards, ComposerMorphCard, ComposerQueue, type ComposerQueueItem } from '@/components/ui/composer/composer-cards';
-import { WorkbenchTheme } from '@/components/ui/workbench-theme';
-import { AppearanceProvider, type Appearance } from '@/lib/theme';
+import { AppearanceProvider, type Appearance, ThemeScope } from '@/lib/theme';
 
 function Frame({ appearance = 'light', children }: { appearance?: Appearance; children: ReactNode }) {
   return (
     <AppearanceProvider value={appearance}>
-      <WorkbenchTheme style={{ minHeight: 360, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <ThemeScope scope="workbench" style={{ minHeight: 360, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div style={{ maxWidth: 520, width: '100%', margin: '0 auto' }}>{children}</div>
-      </WorkbenchTheme>
+      </ThemeScope>
     </AppearanceProvider>
   );
 }

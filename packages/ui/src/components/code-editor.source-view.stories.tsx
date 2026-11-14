@@ -266,7 +266,7 @@ function DebuggerDemo({ wide = true }: { wide?: boolean }) {
           </div>
         ) : null}
         <DebugToolbar
-          size={wide ? 'default' : 'compact'}
+          size={wide ? 'default' : 'sm'}
           onAction={onDebugAction}
           disabledActions={sessionStopped ? ['continue', 'step-over', 'step-into', 'step-out', 'step-back', 'reverse-continue', 'stop'] : []}
           className={wide ? 'ml-auto' : undefined}
@@ -284,9 +284,7 @@ function DebuggerDemo({ wide = true }: { wide?: boolean }) {
           currentColumn={position.column}
           lineDecoration={lineDecoration}
           markers={markers}
-          onLineNumberClick={(_event, { line }) => jump(line)}
-          lineNumberClickable={ranAtLeastOnce}
-          lineNumberLabel={jumpLabel}
+          lineNumbers={{ onClick: (_event, { line }) => jump(line), clickable: ranAtLeastOnce, label: jumpLabel }}
         />
       </div>
     </div>
@@ -316,7 +314,7 @@ function MegabyteLineDemo({ column, phone, ...props }: { column?: number; phone?
   return (
     <Size>
       <Pane title="bundle.js" detail="1,048,576 characters on line 3">
-        <CodeEditor readOnly variant="ghost" lines={lines} aria-label="bundle.js" scrollToLine={scrollTo} {...props} />
+        <CodeEditor readOnly variant="ghost" lines={lines} aria-label="bundle.js" revealLine={scrollTo} {...props} />
       </Pane>
     </Size>
   );
@@ -338,7 +336,7 @@ function HalfMillionDemo({ line, phone }: { line?: number; phone?: boolean }) {
           getLine={generatedLine}
           maxLineLength={GENERATED_MAX_LINE}
           aria-label="generated.js"
-          scrollToLine={line}
+          revealLine={line}
           currentLine={line}
         />
       </Pane>
@@ -395,7 +393,7 @@ function ScrollingDemo() {
             getLine={generatedLine}
             maxLineLength={GENERATED_MAX_LINE}
             aria-label="generated.js"
-            scrollToLine={target}
+            revealLine={target}
             onCopyText={({ text, truncated }) => setCopied(`copied ${text.length.toLocaleString('en-US')} characters${truncated ? ', cut short' : ''}`)}
           />
         </div>
@@ -426,7 +424,7 @@ export const TwoMillionLines: Story = {
   render: () => (
     <WindowFrame>
       <Pane title="generated.js" detail="2,000,000 lines">
-        <CodeEditor readOnly variant="ghost" lineCount={2_000_000} getLine={generatedLine} maxLineLength={GENERATED_MAX_LINE} aria-label="generated.js" scrollToLine={1_900_000} currentLine={1_900_000} />
+        <CodeEditor readOnly variant="ghost" lineCount={2_000_000} getLine={generatedLine} maxLineLength={GENERATED_MAX_LINE} aria-label="generated.js" revealLine={1_900_000} currentLine={1_900_000} />
       </Pane>
     </WindowFrame>
   ),

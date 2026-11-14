@@ -111,8 +111,9 @@ describe('ScrollArea', () => {
     const jump = slot('scroll-area-scroll-to-end');
     expect(jump.tagName).toBe('BUTTON');
     expect(jump.textContent).toBe('Jump to latest');
-    // It wears the kit's secondary button, and steps aside while the view is at the end.
-    expect(jump.className).toContain('bg-secondary');
+    // A small button on the popover surface (it reads over any content), and steps aside while the view is at the end.
+    expect(jump.className).toContain('bg-popover');
+    expect(jump.className).toContain('shadow-popover');
     expect(jump.hasAttribute('data-visible')).toBe(false);
     expect(jump.hasAttribute('inert')).toBe(true);
   });

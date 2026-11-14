@@ -3,8 +3,8 @@ import type { ComponentProps } from 'react';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  Combobox, ComboboxChip, ComboboxContent, ComboboxEmpty, ComboboxGroup, ComboboxGroupLabel, ComboboxInput, ComboboxItem, ComboboxLabel,
-  ComboboxList, ComboboxStatus, createComboboxController,
+  Combobox, ComboboxChip, ComboboxChips, ComboboxClear, ComboboxContent, ComboboxEmpty, ComboboxField, ComboboxGroup, ComboboxGroupLabel,
+  ComboboxInput, ComboboxItem, ComboboxLabel, ComboboxList, ComboboxStatus, ComboboxTrigger, createComboboxController,
 } from '@/components/ui/combobox';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 
@@ -24,7 +24,10 @@ function City(props: Partial<ComponentProps<typeof Combobox<string>>>) {
   return (
     <Combobox {...props}>
       <ComboboxLabel variant="field">City</ComboboxLabel>
-      <ComboboxInput placeholder="Search cities" />
+      <ComboboxField>
+        <ComboboxInput placeholder="Search cities" />
+        <ComboboxTrigger />
+      </ComboboxField>
       <ComboboxContent>
         <ComboboxEmpty>No cities found.</ComboboxEmpty>
         <ComboboxList>
@@ -125,7 +128,7 @@ describe('Combobox', () => {
       <Field name="assignee">
         <FieldLabel>Assignee</FieldLabel>
         <Combobox defaultValue="kim">
-          <ComboboxInput />
+          <ComboboxField />
           <ComboboxContent>
             <ComboboxList>
               <ComboboxItem value="kim" description="kim@example.com">Kim Park</ComboboxItem>
@@ -145,6 +148,35 @@ describe('Combobox', () => {
     expect(form.value).toBe('kim');
   });
 
+  it('names an option by its label and describes it by its description', async () => {
+    render(
+      <Combobox defaultOpen>
+        <ComboboxField aria-label="Assignee" />
+        <ComboboxContent>
+          <ComboboxList>
+            <ComboboxItem value="kim" description="kim@example.com">Kim Park</ComboboxItem>
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>,
+    );
+    await settle();
+    const option = screen.getByRole('option', { name: 'Kim Park' });
+    expect(document.getElementById(option.getAttribute('aria-describedby')!)?.textContent).toBe('kim@example.com');
+  });
+
+  it('draws the field box in three sizes, with the input and its button by default', () => {
+    render(
+      <Combobox>
+        <ComboboxField size="sm" />
+      </Combobox>,
+    );
+    const field = document.querySelector<HTMLElement>('[data-slot=combobox-field]')!;
+    expect(field.dataset.size).toBe('sm');
+    expect(field.className).toContain('h-8');
+    expect(field.querySelector('[data-slot=combobox-input]')).toBeTruthy();
+    expect(within(field).getByRole('button', { name: 'Show options' })).toBeTruthy();
+  });
+
   it('draws data items with the same rows, filtered, with groups that hide when empty', async () => {
     const onValueChange = vi.fn();
     render(
@@ -156,7 +188,10 @@ describe('Combobox', () => {
           { type: 'group', label: 'Asia', items: [{ value: 'tyo', label: 'Tokyo' }] },
         ]}
       >
-        <ComboboxInput aria-label="City" />
+        <ComboboxField>
+          <ComboboxInput aria-label="City" />
+          <ComboboxTrigger />
+        </ComboboxField>
         <ComboboxContent />
       </Combobox>,
     );
@@ -177,7 +212,10 @@ describe('Combobox', () => {
   it('composes groups by hand', async () => {
     render(
       <Combobox defaultOpen>
-        <ComboboxInput aria-label="City" />
+        <ComboboxField>
+          <ComboboxInput aria-label="City" />
+          <ComboboxTrigger />
+        </ComboboxField>
         <ComboboxContent>
           <ComboboxList>
             <ComboboxGroup>
@@ -207,7 +245,10 @@ describe('Combobox', () => {
     render(
       <Combobox multiple defaultValue={['Berlin', 'Lisbon']} onValueChange={onValueChange}>
         <ComboboxLabel variant="field">Cities</ComboboxLabel>
-        <ComboboxInput chips placeholder="Add a city" />
+        <ComboboxField>
+          <ComboboxChips><ComboboxInput placeholder="Add a city" /></ComboboxChips>
+          <ComboboxTrigger />
+        </ComboboxField>
         <ComboboxContent>
           <ComboboxList>{cities.map((city) => <ComboboxItem key={city} value={city}>{city}</ComboboxItem>)}</ComboboxList>
         </ComboboxContent>
@@ -235,11 +276,13 @@ describe('Combobox', () => {
     render(
       <Combobox multiple defaultValue={['Berlin']} onValueChange={onValueChange}>
         <ComboboxLabel variant="field">Cities</ComboboxLabel>
-        <ComboboxInput
-          clearable
-          clearLabel="Clear cities"
-          chips={(state) => (state.value as string[]).map((value) => <ComboboxChip key={value} value={value} removeLabel={`Drop ${value}`}>{value.toUpperCase()}</ComboboxChip>)}
-        />
+        <ComboboxField>
+          <ComboboxChips
+            renderChips={(state) => (state.value as string[]).map((value) => <ComboboxChip key={value} value={value} removeLabel={`Drop ${value}`}>{value.toUpperCase()}</ComboboxChip>)}
+          />
+          <ComboboxClear aria-label="Clear cities" />
+          <ComboboxTrigger />
+        </ComboboxField>
         <ComboboxContent>
           <ComboboxList>{cities.map((city) => <ComboboxItem key={city} value={city}>{city}</ComboboxItem>)}</ComboboxList>
         </ComboboxContent>
@@ -257,7 +300,7 @@ describe('Combobox', () => {
     render(
       <Combobox items={[]} status="loading" defaultOpen filter={false}>
         <ComboboxLabel variant="field">Movie</ComboboxLabel>
-        <ComboboxInput />
+        <ComboboxField />
         <ComboboxContent>
           <ComboboxStatus>{(state) => (state.loading ? 'Searching…' : null)}</ComboboxStatus>
           <ComboboxList />

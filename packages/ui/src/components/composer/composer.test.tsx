@@ -17,10 +17,13 @@ import {
   ComposerSend,
   ComposerSeparator,
   ComposerStop,
-  AnnotateLightbox,
   type ComposerAttachment,
 } from './composer';
 import { ComposerQueue } from './composer-cards';
+import { ImageAnnotator, type ImageAnnotatorEngine } from '@/components/ui/pencilkit/image-annotator';
+
+/** An engine that lays a bare surface over the image (no PencilKit). */
+const StubEngine: ImageAnnotatorEngine = ({ children }) => children({ canvas: <div /> });
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
 globalThis.__UI_SDK_STRICT__ = true;
@@ -212,9 +215,9 @@ describe('Composer', () => {
           <ComposerFooter>
             <ComposerSelect
               aria-label="Effort"
-              options={[
-                { id: 'low', label: 'Low' },
-                { id: 'high', label: 'High', description: 'Thinks longer' },
+              items={[
+                { value: 'low', label: 'Low' },
+                { value: 'high', label: 'High', description: 'Thinks longer' },
               ]}
               onValueChange={onValueChange}
             />
@@ -259,7 +262,7 @@ describe('Composer', () => {
       <Composer>
         <ComposerCard>
           <ComposerFooter>
-            <ComposerSelect aria-label="Effort" options={[{ id: 'low', label: 'Low' }, { id: 'high', label: 'High' }]} onValueChange={onValueChange} />
+            <ComposerSelect aria-label="Effort" items={[{ value: 'low', label: 'Low' }, { value: 'high', label: 'High' }]} onValueChange={onValueChange} />
           </ComposerFooter>
         </ComposerCard>
       </Composer>,
@@ -549,6 +552,35 @@ function fakeScroller() {
   return el;
 }
 
+describe('Composer disabled', () => {
+  it('disables every control and says so on the root', () => {
+    render(
+      <Composer disabled defaultValue="draft">
+        <ComposerCard>
+          <ComposerFooter>
+            <ComposerSelect aria-label="Effort" items={[{ value: 'low', label: 'Low' }]} />
+            <ComposerAdd />
+            <ComposerSend />
+          </ComposerFooter>
+        </ComposerCard>
+      </Composer>,
+    );
+    expect(document.querySelector('[data-slot=composer]')?.hasAttribute('data-disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('data-disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Effort: Low' }).hasAttribute('data-disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Add files' }).hasAttribute('data-disabled')).toBe(true);
+  });
+
+  it('names a select pill by what it shows', () => {
+    render(
+      <Composer>
+        <ComposerSelect aria-label="Effort" items={[{ value: 'medium', label: 'Medium', short: 'Medium · 1M' }]} />
+      </Composer>,
+    );
+    expect(screen.getByRole('button', { name: 'Effort: Medium · 1M' })).toBeTruthy();
+  });
+});
+
 describe('Composer collapse on scroll', () => {
   let now = 0;
   let restoreNow: () => void = () => {};
@@ -650,13 +682,13 @@ describe('Composer collapse on scroll', () => {
   });
 });
 
-describe('AnnotateLightbox', () => {
+describe('ImageAnnotator', () => {
   const SRC = 'data:image/png;base64,AAAA';
 
   it('opens and closes through UI SDK\'s open API, reporting why', async () => {
     const onOpenChange = vi.fn();
     const onOpenChangeComplete = vi.fn();
-    render(<AnnotateLightbox src={SRC} canvas={<div />} defaultOpen onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete} />);
+    render(<ImageAnnotator src={SRC} canvas={<div />} defaultOpen onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete} />);
     const dialog = await screen.findByRole('dialog', { name: 'Annotate image' });
     expect(dialog.getAttribute('data-slot')).toBe('dialog-content');
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Cancel' })); });
@@ -669,7 +701,7 @@ describe('AnnotateLightbox', () => {
     const onOpenChange = vi.fn((open: boolean, details: { cancel: () => void }) => {
       if (!open) details.cancel();
     });
-    render(<AnnotateLightbox src={SRC} defaultOpen annotator={null} onOpenChange={onOpenChange} />);
+    render(<ImageAnnotator src={SRC} defaultOpen engine={null} onOpenChange={onOpenChange} />);
     await screen.findByRole('dialog', { name: 'Preview image' });
     await key('Escape');
     expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'escape-key' }));
@@ -682,7 +714,7 @@ describe('AnnotateLightbox', () => {
     const toDataURL = vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/png;base64,SAVED');
     const onSave = vi.fn();
     const onOpenChange = vi.fn();
-    render(<AnnotateLightbox src={SRC} canvas={<div />} defaultOpen onSave={onSave} onOpenChange={onOpenChange} />);
+    render(<ImageAnnotator src={SRC} canvas={<div />} defaultOpen onSave={onSave} onOpenChange={onOpenChange} />);
     await screen.findByRole('dialog', { name: 'Annotate image' });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save annotation' })); });
     await waitFor(() => expect(onSave).toHaveBeenCalledWith('data:image/png;base64,SAVED', expect.objectContaining({ source: expect.any(String) })));
@@ -696,7 +728,7 @@ describe('AnnotateLightbox', () => {
     const toDataURL = vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/png;base64,SAVED');
     const onAttachmentsChange = vi.fn();
     render(
-      <Composer annotateCanvas={<div />} defaultAttachments={[{ id: 'img', name: 'shot.png', type: 'image/png', src: SRC }]} onAttachmentsChange={onAttachmentsChange}>
+      <Composer annotator={StubEngine} defaultAttachments={[{ id: 'img', name: 'shot.png', type: 'image/png', src: SRC }]} onAttachmentsChange={onAttachmentsChange}>
         <ComposerCard>
           <ComposerAttachments />
         </ComposerCard>

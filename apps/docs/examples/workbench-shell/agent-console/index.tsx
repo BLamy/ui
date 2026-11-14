@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, MessageMarkdown, ToolCall, WorkLog } from '@/components/ui/conversation'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 import { SurfaceAgents } from '@/components/blocks/t3-clone/components/workbench/surfaces'
 import { TerminalBody, TerminalHeader } from '@/components/blocks/t3-clone/components/workbench/terminal'
 import { WorkbenchAction, WorkbenchActions, WorkbenchContent, WorkbenchDock, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchPanel, WorkbenchPanelClose, WorkbenchPanelHeader, WorkbenchPanelTitle, WorkbenchPanelTrigger, WorkbenchShell, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
@@ -84,14 +84,14 @@ function AgentConsole() {
                   <WorkLog summary="Running for 1m 2s" defaultOpen>
                     <ToolCall
                       title="Applied database migrations"
-                      detail="3 files"
+                      description="3 files"
                     />
                     <ToolCall
                       title="Deploying the API"
-                      detail="2 of 4 pods"
+                      description="2 of 4 pods"
                       status="running"
                     />
-                    <ToolCall icon="clock-dial" title="Smoke tests" detail="queued" />
+                    <ToolCall icon="clock-dial" title="Smoke tests" description="queued" />
                   </WorkLog>
                   <MessageMarkdown
                     markdown={
@@ -138,12 +138,11 @@ function AgentConsole() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function AgentConsoleExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <AgentConsole />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

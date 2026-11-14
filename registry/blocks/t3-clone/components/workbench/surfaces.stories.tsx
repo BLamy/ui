@@ -21,7 +21,7 @@ import {
   WorkbenchTabBar,
   WorkbenchTab,
 } from './workbench-shell';
-import { WorkbenchTheme } from '@/components/ui/workbench-theme';
+import { ThemeScope } from '@/lib/theme';
 import { AGENTS, DIFF, FILES } from './fixtures';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/lib/icon';
@@ -36,9 +36,9 @@ type Story = StoryObj<typeof WorkbenchPanel>;
 
 function Frame({ children }: { children: React.ReactNode }) {
   return (
-    <WorkbenchTheme style={{ minHeight: 520, padding: 24, display: 'grid', placeItems: 'center' }}>
+    <ThemeScope scope="workbench" style={{ minHeight: 520, padding: 24, display: 'grid', placeItems: 'center' }}>
       <div style={{ width: 380, height: 460, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}>{children}</div>
-    </WorkbenchTheme>
+    </ThemeScope>
   );
 }
 
@@ -101,7 +101,7 @@ export const Compact: Story = { render: () => <Frame><PanelDemo initial="diff" c
 function TabBarDemo() {
   const [active, setActive] = useState('chat');
   return (
-    <WorkbenchTheme style={{ minHeight: 200, display: 'grid', placeItems: 'center' }}>
+    <ThemeScope scope="workbench" style={{ minHeight: 200, display: 'grid', placeItems: 'center' }}>
       <div style={{ width: 390, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         <WorkbenchTabBar value={active} onValueChange={setActive}>
           <WorkbenchTab value="chat" icon="bubble-left">
@@ -114,7 +114,7 @@ function TabBarDemo() {
           ))}
         </WorkbenchTabBar>
       </div>
-    </WorkbenchTheme>
+    </ThemeScope>
   );
 }
 export const TabBar: Story = { render: () => <TabBarDemo /> };

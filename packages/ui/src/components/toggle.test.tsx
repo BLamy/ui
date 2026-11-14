@@ -237,7 +237,7 @@ describe('ToggleGroup', () => {
     await tick();
     expect(indicator.style.getPropertyValue('--selection-indicator-width')).toBe('0px');
     // The pressed item draws no card of its own: the indicator is it.
-    expect(screen.getByRole('button', { name: 'Grid' }).className).toContain('data-pressed:bg-transparent');
+    expect(screen.getByRole('button', { name: 'Grid' }).className).not.toContain('bg-segment');
     fireEvent.click(screen.getByRole('button', { name: 'Grid' }));
     await tick();
     expect(indicator.style.getPropertyValue('--selection-indicator-width')).toBe('');
@@ -246,7 +246,9 @@ describe('ToggleGroup', () => {
   it('has no sliding card where several can be pressed, or in the other variants', () => {
     const many = render(<Views variant="filled" multiple defaultValue={['grid']} />);
     expect(many.container.querySelector('[data-slot="selection-indicator"]')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Grid' }).className).toContain('data-pressed:bg-card');
+    // Each pressed item wears Segmented's card; the others stay bare.
+    expect(screen.getByRole('button', { name: 'Grid' }).className).toContain('bg-segment');
+    expect(screen.getByRole('button', { name: 'List' }).className).not.toContain('bg-segment');
     many.unmount();
     const outline = render(<Views variant="outline" defaultValue={['grid']} />);
     expect(outline.container.querySelector('[data-slot="selection-indicator"]')).toBeNull();

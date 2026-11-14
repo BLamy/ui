@@ -100,7 +100,18 @@
   --segment: #636366;
 }
 
-/* ── Workbench scope (WorkbenchShell, WorkbenchTheme, Composer surfaces): dark-first IDE palette ── */
+/* ── Workbench scope (`<ThemeScope scope="workbench">`, WorkbenchShell, Composer surfaces): dark-first IDE palette ──
+   A workbench ThemeScope root also paints itself (the overlays that copy the scope draw their own surface). In the
+   base layer, so a caller's classes on the scope win. */
+@layer base {
+  [data-slot="theme-scope"][data-theme-scope="workbench"] {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
 [data-theme-scope="workbench"] {
   color-scheme: light;
   --background: #FFFFFF;
@@ -181,7 +192,7 @@
   --handle: rgba(255, 255, 255, .22);
 }
 
-/* ── Sheet scope (FloatingSheet, FloatingChat, ArtifactChatContainer given a `tone`): the surface's text,
+/* ── Sheet scope (FloatingSheet and ArtifactChatContainer given an `appearance`): the surface's text,
    cards, fills and hairlines take the tone; the page's background and accent stay the host's ── */
 [data-theme-scope="sheet"].dark {
   color-scheme: dark;
@@ -217,8 +228,8 @@
   --secondary-strong: rgba(120, 120, 128, .22);
 }
 
-/* ── Glass scope: the Workbench palette as translucent glass over content — the Composer that FloatingChat and
-   ArtifactChatContainer embed. Dark unless the chat's tone is light. ── */
+/* ── Glass scope: the Workbench palette as translucent glass over content — the Composer that
+   ArtifactChatContainer embeds, in the chat's appearance. ── */
 [data-theme-scope="glass"] {
   color-scheme: dark;
   --background: #111116;

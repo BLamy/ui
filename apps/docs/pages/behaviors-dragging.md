@@ -16,7 +16,7 @@ import {
 | Need | Use |
 | --- | --- |
 | Resizable panes | UI SDK's Resizable, as in [`Workspace`](https://blamy.github.io/ui/#/workspace). |
-| Resizable table columns | [`ResultTable`](https://blamy.github.io/ui/#/result-table) and [`RequestTable`](https://blamy.github.io/ui/#/request-table): `createResize` on the header's column handles, through `createColumnResize` in `lib/grid-behaviors.ts`. |
+| Resizable table columns | [`DataTable`](https://blamy.github.io/ui/#/data-table) (and so [`RequestTable`](https://blamy.github.io/ui/#/request-table)): `createResize` on the header's column handles, through `createColumnResize` in `lib/grid-behaviors.ts`. |
 | A slider, a 2D color pad | [`Slider`](https://blamy.github.io/ui/#/slider) and [`ColorPicker`](https://blamy.github.io/ui/#/color-picker), on UI SDK's own parts. |
 
 Each behavior keeps a **draft** while the pointer moves and commits once, on release, through the `set` you connect to `createChange`, so `on…Change(value, details)` fires once with `details.reason` (`drag` for the pointer, `move-key` or `resize-key` for the keyboard, `imperative` from code). Put the draft key in the primitive's `live` list: the behavior's live binding then writes the offset (`translate`, CSS variables) without a React render per pointer move.

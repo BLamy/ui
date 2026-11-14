@@ -2,6 +2,10 @@
 
 A real terminal emulator: [wterm](https://github.com/vercel-labs/wterm), which renders to the DOM, so text can be selected, found with ⌘F and read by a screen reader. It wears the theme in light and dark and fills its container, refitting as the container resizes. Connect it to something with a PTY, or give it a function that takes a whole line and it brings the line editing itself.
 
+{% hint style="info" %}
+**Which terminal?** `Terminal` is the emulator for a process you run (a shell, a REPL, a log stream). To run one small OpenTUI program from source, such as a code fence in an AI reply, use [TuiPreview](https://blamy.github.io/ui/#/tui-preview). For a whole coding agent with a workspace and app previews, use [OpenCode](https://blamy.github.io/ui/#/open-code).
+{% endhint %}
+
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/terminal.json{% endcommand %}
@@ -112,14 +116,14 @@ Keys go to the terminal while it has focus, Tab included, because Tab means some
 | `onData` | — | What the terminal sends: keys, and its replies to programs' queries. |
 | `readOnly` | `false` | Shows output and ignores what's typed. |
 | `autoFocus` | `false` | Takes the keyboard when ready. |
-| `size` | `'md'` | `'sm'` (12px) or `'md'` (13px). |
+| `size` | `'default'` | `'sm'` (the caption size, 12px) or `'default'` (the footnote size, 13px). |
 | `core` | `'ghostty'` | See above. |
 | `onReady` | — | `(instance) => …` once it's up, fitted to its container. |
 | `onResize` | — | `(cols, rows) => …` |
 | `onTitle`, `onBell`, `onClipboardWrite`, `onWorkingDirectory`, `onShellIntegration` | — | What programs ask for. wterm only passes these on: a clipboard write, say, is a request you can refuse. |
 | `cursorBlink`, `renderingPaused`, `announceOutput`, `webmcp` | — | Passed to [wterm](https://wterm.dev). |
 
-`className` and `style` go on the root last, and it takes any other `div` prop. `terminalVariants` is the recipe. `aria-label` names the input.
+`className` and `style` go on the root last, and it takes any other `div` prop. `terminalVariants` is the recipe. `aria-label` names the input (wterm copies it there, and calls it "Terminal" without one); with `readOnly` the input is `aria-readonly`.
 
 The ref is a `TerminalHandle`:
 
@@ -145,12 +149,12 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/terminal`. Base classes:
 
 ```text
-[ 'bl-scroll size-full min-h-0 min-w-0 rounded-none p-2 font-mono shadow-none', '[--term-bg:var(--background)] [--term-fg:var(--foreground)] [--term-cursor:var(--primary)]', '[--term-selection-bg:color-mix(in_oklab,var(--primary)_30%,transparent)] selection:bg-primary/30', '[--term-search-match:color-mix(in_oklab,var(--term-yellow)_30%,transparent)] [--term-search-active:color-mix(in_oklab,var(--term-yellow)_55%,transparent)] [--term-search-border:var(--term-yellow)]', '[--term-red:var(--destructive)] [--term-green:var(--success,oklch(0.723_0.191_149.6))] [--term-yellow:var(--warning,oklch(0.769_0.165_70.1))] [--term-blue:var(--link,var(--primary))]', '[--term-magenta:color-mix(in_oklch,var(--term-red),var(--term-blue))] [--term-cyan:color-mix(in_oklch,var(--term-blue),var(--term-green))]', '[--term-color-0:var(--foreground)] [--term-color-7:color-mix(in_oklab,var(--foreground)_55%,var(--background))] [--term-color-8:color-mix(in_oklab,var(--foreground)_55%,var(--background))] [--term-color-15:color-mix(in_oklab,var(--foreground)_70%,var(--background))]', '[--term-color-1:color-mix(in_oklab,var(--term-red)_85%,black)] [--term-color-2:color-mix(in_oklab,var(--term-green)_65%,black)] [--term-color-3:color-mix(in_oklab,var(--term-yellow)_55%,black)]', '[--term-color-4:color-mix(in_oklab,var(--term-blue)_85%,black)] [--term-color-5:color-mix(in_oklab,var(--term-magenta)_80%,black)] [--term-color-6:color-mix(in_oklab,var(--term-cyan)_65%,black)]', '[--term-color-9:var(--term-red)] [--term-color-10:color-mix(in_oklab,var(--term-green)_80%,black)] [--term-color-11:color-mix(in_oklab,var(--term-yellow)_70%,black)]', '[--term-color-12:var(--term-blue)] [--term-color-13:var(--term-magenta)] [--term-color-14:color-mix(in_oklab,var(--term-cyan)_80%,black)]', 'dark:[--term-color-0:color-mix(in_oklab,var(--foreground)_18%,var(--background))] dark:[--term-color-7:color-mix(in_oklab,var(--foreground)_80%,var(--background))] dark:[--term-color-15:var(--foreground)]', 'dark:[--term-color-1:var(--term-red)] dark:[--term-color-2:var(--term-green)] dark:[--term-color-3:var(--term-yellow)] dark:[--term-color-4:var(--term-blue)] dark:[--term-color-5:var(--term-magenta)] dark:[--term-color-6:var(--term-cyan)]', 'dark:[--term-color-9:color-mix(in_oklab,var(--term-red)_75%,white)] dark:[--term-color-10:color-mix(in_oklab,var(--term-green)_75%,white)] dark:[--term-color-11:color-mix(in_oklab,var(--term-yellow)_75%,white)]', 'dark:[--term-color-12:color-mix(in_oklab,var(--term-blue)_75%,white)] dark:[--term-color-13:color-mix(in_oklab,var(--term-magenta)_75%,white)] dark:[--term-color-14:color-mix(in_oklab,var(--term-cyan)_75%,white)]', ]
+[ 'bl-scroll size-full min-h-0 min-w-0 rounded-none px-3 py-2.5 font-mono shadow-none', '[--term-bg:var(--background)] [--term-fg:var(--foreground)] [--term-cursor:var(--primary)]', '[--term-selection-bg:color-mix(in_oklab,var(--primary)_30%,transparent)] selection:bg-primary/30', '[--term-search-match:color-mix(in_oklab,var(--term-yellow)_30%,transparent)] [--term-search-active:color-mix(in_oklab,var(--term-yellow)_55%,transparent)] [--term-search-border:var(--term-yellow)]', '[--term-red:var(--destructive)] [--term-green:var(--success)] [--term-yellow:var(--warning)] [--term-blue:var(--link,var(--primary))]', '[--term-magenta:color-mix(in_oklch,var(--term-red),var(--term-blue))] [--term-cyan:color-mix(in_oklch,var(--term-blue),var(--term-green))]', '[--term-color-0:var(--foreground)] [--term-color-7:color-mix(in_oklab,var(--foreground)_55%,var(--background))] [--term-color-8:color-mix(in_oklab,var(--foreground)_55%,var(--background))] [--term-color-15:color-mix(in_oklab,var(--foreground)_70%,var(--background))]', '[--term-color-1:color-mix(in_oklab,var(--term-red)_85%,black)] [--term-color-2:color-mix(in_oklab,var(--term-green)_65%,black)] [--term-color-3:color-mix(in_oklab,var(--term-yellow)_55%,black)]', '[--term-color-4:color-mix(in_oklab,var(--term-blue)_85%,black)] [--term-color-5:color-mix(in_oklab,var(--term-magenta)_80%,black)] [--term-color-6:color-mix(in_oklab,var(--term-cyan)_65%,black)]', '[--term-color-9:var(--term-red)] [--term-color-10:color-mix(in_oklab,var(--term-green)_80%,black)] [--term-color-11:color-mix(in_oklab,var(--term-yellow)_70%,black)]', '[--term-color-12:var(--term-blue)] [--term-color-13:var(--term-magenta)] [--term-color-14:color-mix(in_oklab,var(--term-cyan)_80%,black)]', 'dark:[--term-color-0:color-mix(in_oklab,var(--foreground)_18%,var(--background))] dark:[--term-color-7:color-mix(in_oklab,var(--foreground)_80%,var(--background))] dark:[--term-color-15:var(--foreground)]', 'dark:[--term-color-1:var(--term-red)] dark:[--term-color-2:var(--term-green)] dark:[--term-color-3:var(--term-yellow)] dark:[--term-color-4:var(--term-blue)] dark:[--term-color-5:var(--term-magenta)] dark:[--term-color-6:var(--term-cyan)]', 'dark:[--term-color-9:color-mix(in_oklab,var(--term-red)_75%,white)] dark:[--term-color-10:color-mix(in_oklab,var(--term-green)_75%,white)] dark:[--term-color-11:color-mix(in_oklab,var(--term-yellow)_75%,white)]', 'dark:[--term-color-12:color-mix(in_oklab,var(--term-blue)_75%,white)] dark:[--term-color-13:color-mix(in_oklab,var(--term-magenta)_75%,white)] dark:[--term-color-14:color-mix(in_oklab,var(--term-cyan)_75%,white)]', ]
 ```
 
-**`size`** — default `md`
+**`size`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `sm` | `[--term-font-size:12px] [--term-row-height:16px]` |
-| `md` (default) | `[--term-font-size:13px] [--term-row-height:18px]` |
+| `sm` | `[--term-font-size:var(--text-caption)] [--term-row-height:16px]` |
+| `default` (default) | `[--term-font-size:var(--text-footnote)] [--term-row-height:18px]` |

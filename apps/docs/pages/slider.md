@@ -37,9 +37,13 @@ import { Slider } from '@brett_lamy/ui'
 <Slider label="Budget" showValue value={range} onValueChange={setRange} thumbLabels={['Lowest', 'Highest']} />   {/* range = [20, 80] */}
 ```
 
-## Tones and the scrubber
+## Variants, colors and the scrubber
 
-`tone="onDark"` (translucent white) and `tone="onLight"` (translucent black) make the track readable over artwork, dark glass or light imagery. `size="sm"` is the scrubber: a 12px thumb on a 20px hit area that grows while dragging. `trackColor`, `fillColor` and `thumbColor` take any CSS color and work with every tone.
+`variant="on-dark"` (translucent white) and `variant="on-light"` (translucent black) make the track readable over artwork, dark glass or light imagery. `size="sm"` is the scrubber: a 12px thumb on a 20px hit area that grows while dragging. Any other color is a CSS variable the parts read, set with `className` and working with every variant: `--bl-slider-track`, `--bl-slider-fill`, `--bl-slider-thumb`.
+
+```tsx
+<Slider aria-label="Exposure" className="[--bl-slider-fill:var(--success)]" defaultValue={62} />
+```
 
 {% demo src="slider/media" %}
 
@@ -77,9 +81,8 @@ Every UI SDK `Slider` prop applies (`value`, `defaultValue`, `onValueChange`, `o
 | `label` | — | Caption above the track. |
 | `showValue` | `false` | The formatted value on the right of the label row. |
 | `thumbLabels` | `['Minimum', 'Maximum']` | Names of a range's thumbs, in order. |
-| `tone` | `default` | `default` · `onDark` · `onLight`. |
+| `variant` | `default` | `default` (tint fill) · `on-dark` · `on-light`. |
 | `size` | `default` | `default` 26px thumb · `sm` 12px scrubber thumb. |
-| `trackColor` / `fillColor` / `thumbColor` | — | Any CSS color; set the `--bl-slider-*` variables. |
 | `children` | — | Replaces the default label, value and track. |
 
 `details.reason` on `onValueChange` says what moved it (a pointer, a key, the controller); `details.cancel()` keeps the old value.
@@ -90,7 +93,7 @@ Every UI SDK `Slider` prop applies (`value`, `defaultValue`, `onValueChange`, `o
 
 ## Styling
 
-UI SDK writes `data-slot` on every part (`slider`, `slider-value`, `slider-control`, `slider-track`, `slider-indicator`, `slider-thumb`) and the state attributes `data-orientation`, `data-disabled`, `data-readonly` and `data-dragging` (a thumb, while it is dragged); the root also has `data-tone` and `data-size` when not default. The focus ring is drawn on the thumb with `has-focus-visible:`. A disabled slider is dimmed to 40%. `sliderVariants({ tone, size })` returns the root classes.
+UI SDK writes `data-slot` on every part (`slider`, `slider-value`, `slider-control`, `slider-track`, `slider-indicator`, `slider-thumb`) and the state attributes `data-orientation`, `data-disabled`, `data-readonly` and `data-dragging` (a thumb, while it is dragged); the root also has `data-variant` and `data-size` when not default. The focus ring is the kit's solid ring, drawn on the thumb with `has-focus-visible:`. A disabled slider is dimmed to 40%. `sliderVariants({ variant })` returns the root classes (layout and the variant's `--bl-slider-*` colors); `size` is read by the parts from `data-size`.
 
 ## cva recipes
 
@@ -104,17 +107,10 @@ Defined in `@/components/ui/slider`. Base classes:
 group grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 data-disabled:opacity-40
 ```
 
-**`tone`** — default `default`
+**`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
 | `default` (default) | — |
-| `onDark` | `[--bl-slider-track:--alpha(white/22%)] [--bl-slider-fill:--alpha(white/88%)]` |
-| `onLight` | `[--bl-slider-track:--alpha(black/14%)] [--bl-slider-fill:--alpha(black/72%)]` |
-
-**`size`** — default `default`
-
-| Value | Adds |
-| --- | --- |
-| `default` (default) | — |
-| `sm` | — |
+| `on-dark` | `[--bl-slider-track:--alpha(white/22%)] [--bl-slider-fill:--alpha(white/88%)]` |
+| `on-light` | `[--bl-slider-track:--alpha(black/14%)] [--bl-slider-fill:--alpha(black/72%)]` |

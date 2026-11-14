@@ -1,4 +1,5 @@
-import { AssistantMessage, Conversation, ConversationComposer, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationSuggestions, MessageMarkdown, SettledBanner, Suggestion, ToolCall, UserMessage, WorkLog } from '@/components/ui/conversation';
+import { AssistantMessage, Conversation, ConversationComposer, ConversationEmpty, ConversationMessages, ConversationSuggestions, MessageMarkdown, Suggestion, ToolCall, UserMessage, WorkLog } from '@/components/ui/conversation';
+import { SettledBanner } from './settled-banner';
 import { WorkbenchComposer, stripAttachmentRefs } from './workbench/workbench-composer';
 import { SUGGESTIONS } from '../lib/data';
 import type { ThreadsState } from '../lib/use-threads';
@@ -8,14 +9,12 @@ export function ThreadView({ state }: { state: ThreadsState }) {
   const thread = state.current;
   return (
     <Conversation empty={!thread}>
-      <ConversationEmpty>
-        <ConversationGreeting title="What are we building?" description="Start a thread — ask anything about this workspace." />
-      </ConversationEmpty>
+      <ConversationEmpty title="What are we building?" description="Start a thread — ask anything about this workspace." />
 
       <ConversationMessages threadKey={thread?.id} streaming={state.streaming}>
         {thread?.messages.map((m) =>
           m.role === 'user' ? (
-            <UserMessage key={m.id} images={m.images}>
+            <UserMessage key={m.id} attachments={m.images?.map((src, i) => ({ id: `${m.id}-${i}`, name: `Image ${i + 1}`, src, kind: 'image' }))}>
               {m.text}
             </UserMessage>
           ) : (

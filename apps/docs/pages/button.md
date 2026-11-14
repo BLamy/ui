@@ -9,7 +9,7 @@ The action button: UI SDK's `Button` dressed in BL UI's look, with eight variant
 Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -20,7 +20,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Button, buttonVariants } from '@brett_lamy/ui'
+import { Button } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
@@ -157,7 +157,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/button`. Base classes:
 
 ```text
-bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap [&_svg]:shrink-0 transition-[scale,background-color,opacity] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress
+[ 'bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap [&_svg]:shrink-0', 'transition-[scale,background-color,opacity] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, 'data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress', ]
 ```
 
 **`variant`** — default `default`

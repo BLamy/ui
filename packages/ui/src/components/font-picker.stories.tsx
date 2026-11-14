@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { FontList, FontPicker, FontStackPicker } from '@/components/ui/font-picker';
+import { FontList, FontPicker, FontPickerContent, FontPickerTrigger, FontStackPicker } from '@/components/ui/font-picker';
 import { fontStack, useGoogleFont } from '@/lib/google-fonts';
 import { Caption, Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof FontPicker> = {
   title: 'Molecules/FontPicker',
   component: FontPicker,
-  decorators: [(Story) => <Panel w={360}><div className="h-[460px]"><Story /></div></Panel>],
+  decorators: [(Story, { parameters }) => <Panel w={360} dark={parameters.dark}><div className="h-[460px]"><Story /></div></Panel>],
 };
 export default meta;
 type Story = StoryObj<typeof FontPicker>;
@@ -54,4 +54,44 @@ export const MonospaceStack: Story = {
     const [stack, setStack] = useState<string[]>([]);
     return <FontStackPicker aria-label="Code fonts" value={stack} onValueChange={setStack} defaultCategory="monospace" placeholder="System monospace" />;
   },
+};
+
+export const Open: Story = {
+  render: () => <FontPicker aria-label="Headline font" defaultValue="Inter" defaultOpen />,
+};
+
+export const Sizes: Story = {
+  render: () => (
+    <div className="grid gap-3">
+      {(['sm', 'default', 'lg'] as const).map((size) => (
+        <FontPicker key={size} aria-label={`Font, ${size}`} defaultValue="Merriweather">
+          <FontPickerTrigger size={size} />
+          <FontPickerContent />
+        </FontPicker>
+      ))}
+      {(['sm', 'default', 'lg'] as const).map((size) => (
+        <FontStackPicker key={`stack-${size}`} aria-label={`Stack, ${size}`} size={size} defaultValue={['Inter', 'Roboto']} />
+      ))}
+    </div>
+  ),
+};
+
+export const Disabled: Story = {
+  render: () => (
+    <div className="grid gap-3">
+      <FontPicker aria-label="Headline font" defaultValue="Fraunces" disabled />
+      <FontStackPicker aria-label="Text fonts" defaultValue={['Inter', 'Roboto']} disabled />
+    </div>
+  ),
+};
+
+export const Dark: Story = {
+  parameters: { dark: true },
+  render: () => <FontStackPicker aria-label="Text fonts" defaultValue={['Inter', 'Roboto']} defaultOpen />,
+};
+
+export const DarkPicker: Story = {
+  name: 'Dark · one family',
+  parameters: { dark: true },
+  render: () => <FontPicker aria-label="Headline font" defaultValue="Fraunces" defaultOpen />,
 };

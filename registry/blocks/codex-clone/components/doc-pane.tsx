@@ -10,7 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MarkdownEditor, type MarkdownEditorClassNames, type MarkdownEditorHandle } from '@/components/ui/markdown-editor';
-import { SplitViewEmpty, SplitViewHeader, useSplitView } from '@/components/ui/split-view';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SplitViewHeader, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import type { Doc } from '../lib/data';
 import type { CodexState } from '../lib/use-codex';
@@ -213,7 +214,7 @@ export function DocContent({ codex }: { codex: CodexState }) {
       {doc ? (
         <DocPage key={`${codex.current.id}:${doc.id}`} codex={codex} doc={doc} editorRef={editorRef} format={format} />
       ) : (
-        <SplitViewEmpty icon={<Icon name="doc" size={48} sw={1.2} />} title="No document yet" description="Ask dot to write something up and it lands here." />
+        <EmptyState icon={<Icon name="doc" size={48} sw={1.2} />} title="No document yet" description="Ask dot to write something up and it lands here." />
       )}
     </>
   );

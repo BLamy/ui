@@ -4,12 +4,16 @@ import {
   type ComponentProps, type CSSProperties, type ReactElement, type ReactNode,
 } from 'react';
 import { createParts, usePart, usePrimitive } from '@ui-sdk/react/primitive';
-import { Icon } from '@/lib/icon';
 import { chromeStore, BLSafeCtx, BLStickyCtx } from '@/lib/theme';
 import { cn, BARH } from '@/lib/utils';
 import { SizeClassProvider } from '@/lib/container';
+import { barSurface } from '@/lib/primitives';
+import { StackParentContext } from '@/lib/stack-parent';
+import {
+  BackLabel, backName, barBackButton, barTitle, barTitleFade, barTitleHidden, largeTitleText, useBackFit,
+} from '@/lib/nav-bar';
 import type { SizeClass } from '@/lib/size-class';
-import type { Stack } from '@/lib/stack';
+import type { Stack, StackExit } from '@/lib/stack';
 import {
   createNavigationStackController,
   navigationStack,
@@ -23,7 +27,6 @@ import {
 } from '@/lib/navigation-stack-primitive';
 import { backLabel, createTitleFlight, pushedTitle, shownTitle, type TitleParts } from '@/lib/title-flight';
 import { Spinner } from '@/components/ui/spinner';
-import { useSplitViewBack } from '@/components/ui/split-view';
 
 export { createNavigationStackController };
 export type {
@@ -33,12 +36,12 @@ export type {
 
 /* ══ NavigationStack — iOS's navigation controller ══
    A stack of pages in its own box: push slides a page in from the trailing edge over the one under it, which
-   parallaxes back under a shade; pop reverses it. The back button names the page behind (the previous title when it
-   fits beside the centered title, "Back" when only a sliver is left, else the chevron alone) and its title flies
-   into it on a push, and back on a pop. Escape, the platform back and a swipe from the leading edge pop the
-   innermost stack first; focus goes into a pushed page and back to what pushed it. Large titles collapse into the bar
-   on scroll, the bar rides away as the content scrolls down (with any `Tabs` bar, through the shared chrome state), and
-   a page can pull to refresh. Built on the `navigationStack` primitive (lib/navigation-stack-primitive.ts).
+   parallaxes back 30% under a 10% shade; pop reverses it. The back button names the page behind (the previous title
+   when it fits beside the centered title, "Back" when only a sliver is left, else the chevron alone) and its title
+   flies into it on a push, and back on a pop. Escape, the platform back and a swipe from the leading edge pop the
+   innermost stack first; focus goes into a pushed page and back to what pushed it. Large titles collapse into the
+   bar on scroll, the bar rides away as the content scrolls down (with any `Tabs` bar, through the shared chrome
+   state), and a page can pull to refresh. Built on the `navigationStack` primitive (lib/navigation-stack-primitive.ts).
 
    <NavigationStack pages={pages} onPagesChange={setPages}>
      <NavigationStackPage value="list">
@@ -48,8 +51,13 @@ export type {
      {sel && <NavigationStackPage value="detail">…</NavigationStackPage>}
    </NavigationStack>
 
-   Pages are the stack's direct children (or in fragments and arrays), each with a `value`. Render every page that is
-   in `pages`; a page dropped from the children while it pops is kept on screen until it has slid out. ══ */
+   Pages are the stack's direct children (or in fragments and arrays), each with a `value`, and `renderPage(key)`
+   draws the keys in `pages` no child is for (a deep link, a key pushed from a row). A page dropped while it pops is
+   kept on screen until it has slid out.
+
+   In a SplitView column the column is the stack's parent (lib/stack-parent): collapsed, the first page gets the back
+   button to the column before; Escape and the swipe pop this stack's pages before the columns move. `resetKey`
+   pops to the first page when it changes (the sidebar selection the stack belongs to). ══ */
 
 const {
   Page, Bar, Title, Back, Leading, Trailing, Content, LargeTitle, Subheader, RefreshIndicator, Shade,
@@ -64,7 +72,7 @@ const classOf = <S,>(c: ClassProp<S>, s: S) => (typeof c === 'function' ? c(s) :
 const styleOf = <S,>(c: StyleProp<S>, s: S) => (typeof c === 'function' ? c(s) : c);
 
 /* ── Titles: each page's NavigationStackTitle publishes what it shows, for the large title, the back label of the
-   page above it and a SplitView's back label. ── */
+   page above it and the parent's (a SplitView column's) back label. ── */
 function createTitles() {
   const map = new Map<string, ReactNode>();
   const listeners = new Set<() => void>();
@@ -120,16 +128,16 @@ function useTitle(titles: Titles, key: string | null | undefined): ReactNode {
 }
 
 /** The stack around: its `push`, `pop`, `popTo`, `replace`, `refresh` and `getPages`, for a row that pushes or a
- *  button that pops. Null outside a NavigationStack. */
-export function useNavigationStack(): NavigationStackController | null {
-  return use(StackCtx)?.api ?? null;
+ *  button that pops. Throws outside a NavigationStack (as `useSplitView` does outside a SplitView). */
+export function useNavigationStack(): NavigationStackController {
+  return useStack('useNavigationStack').api;
 }
 
 /* ── Root ── */
 
 type SwipeSource = { onSwipe: (fn: (swipe: NavigationStackSwipe) => void) => () => void };
 
-type RootState = { pages: string[]; exiting: { key: string; covered: boolean }[]; sizeClass: SizeClass | undefined };
+type RootState = { pages: string[]; exiting: StackExit[]; sizeClass: SizeClass | undefined };
 
 export interface NavigationStackProps
   extends Omit<ComponentProps<'div'>, 'className' | 'style' | 'children'>,
@@ -137,25 +145,31 @@ export interface NavigationStackProps
   className?: string | ((state: RootState) => string | undefined);
   style?: CSSProperties | ((state: RootState) => CSSProperties | undefined);
   children?: ReactNode;
+  /** Draws a page for a key in `pages` that no child is for: a deep link, a stack restored after a reload, a key
+   *  pushed from a row (`useNavigationStack().push(key)`). Return a `NavigationStackPage` with that `value`. */
+  renderPage?: (page: string) => ReactNode;
+  /** Changing it pops every page above the first at once (the sidebar selection the stack belongs to). */
+  resetKey?: unknown;
   /** A back button on the first page, for a stack that sits under something else to go back to. Inside a
-   *  collapsed SplitView column it defaults to the previous column (the sidebar), labelled with its title;
-   *  `false` turns that off. */
+   *  collapsed SplitView column it defaults to the previous column, labelled with its title; `false` turns that
+   *  off. */
   rootBack?: NavigationStackRootBack | false;
-  /** Safe-area top for this stack (px). Usually inherited from BLProvider instead. */
-  safeTop?: number | string;
+  /** Safe-area top for this stack, px. Usually inherited from BLProvider instead. */
+  safeTop?: number;
   /** Room kept under every page's content for bars that ride over it (px), unless a page's content sets its own. */
   bottomInset?: number;
 }
 
 /** The stack root. `pages` / `defaultPages` / `onPagesChange(pages, details)` hold its pages by key, bottom to top
- *  (`details.reason`: `trigger-press`, `escape-key`, `back`, `swipe` or `imperative`); `controller` drives it. */
+ *  (`details.reason`: `trigger-press`, `escape-key`, `back`, `swipe` or `imperative`); `controller` drives it. With
+ *  neither `pages` nor `defaultPages` it starts on its first page child. */
 export function NavigationStack({
-  pages, defaultPages, onPagesChange, controller, onBarHiddenChange,
+  pages, defaultPages, onPagesChange, controller, onBarHiddenChange, renderPage, resetKey,
   rootBack, safeTop, bottomInset = 0, className, children, ...props
 }: NavigationStackProps) {
   const [titles] = useState(createTitles);
   const inheritedSafeTop = use(BLSafeCtx);
-  const safe = safeTop != null ? parseFloat(String(safeTop)) || 0 : inheritedSafeTop;
+  const safe = safeTop ?? inheritedSafeTop;
   const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
   const rootBackRef = useRef<NavigationStackRootBack | null>(null);
   const onRootBack = useCallback(() => rootBackRef.current?.onClick(), []);
@@ -169,19 +183,32 @@ export function NavigationStack({
     if (typeof userRef === 'function') userRef(el);
     else if (userRef) userRef.current = el;
   }, [userRef]);
+  // Uncontrolled with no `defaultPages`, the stack starts on its first page child.
+  const [firstPage] = useState(() => (pages === undefined && defaultPages === undefined
+    ? flatten(children).map(valueOf).find((v): v is string => v !== null) : undefined));
   const handle = usePrimitive(navigationStack, {
-    pages, defaultPages, controller, onPagesChange, onRootBack, onBarHiddenChange: onHidden,
+    pages, defaultPages: defaultPages ?? (firstPage === undefined ? undefined : [firstPage]), controller, onPagesChange, onRootBack, onBarHiddenChange: onHidden,
   });
   const api = handle.api as unknown as NavigationStackController;
   const { stack, internal } = handle.api as unknown as { stack: Stack; internal: SwipeSource };
+
+  // A new resetKey pops to the first page (compared with the last one seen, so a remount pops nothing).
+  const lastReset = useRef(resetKey);
+  useLayoutEffect(() => {
+    if (Object.is(lastReset.current, resetKey)) return;
+    lastReset.current = resetKey;
+    const now = api.getPages();
+    if (now.length > 1) api.popTo(now[0]);
+  }, [resetKey, api]);
+
   const root = usePart(handle, 'root', {}, {
     ...props,
     ref: setRef,
     className: (s: RootState) => cn('absolute inset-0 touch-pan-y overflow-hidden', classOf(className, s)),
     children: (state: RootState) => (
       <SizeClassProvider value={state.sizeClass}>
-        <Pages pages={state.pages} present={(page) => stack.present(state, page)} api={api} titles={titles} rootEl={rootEl}
-          rootBackProp={rootBack} rootBackRef={rootBackRef} swipes={internal} bottomInset={bottomInset}>
+        <Pages pages={state.pages} exiting={state.exiting} present={(page) => stack.present(state, page)} api={api} titles={titles} rootEl={rootEl}
+          rootBackProp={rootBack} rootBackRef={rootBackRef} swipes={internal} bottomInset={bottomInset} renderPage={renderPage}>
           {children}
         </Pages>
       </SizeClassProvider>
@@ -221,6 +248,7 @@ const valueOf = (c: ReactNode) => (isValidElement(c) && typeof (c.props as { val
 interface PagesProps {
   api: NavigationStackController;
   pages: string[];
+  exiting: StackExit[];
   /** Whether a page renders: in the stack, or leaving (`createStack`'s `present`). */
   present: (page: string) => boolean;
   titles: Titles;
@@ -230,13 +258,20 @@ interface PagesProps {
   /** The stack's edge swipe, for the title flight to follow. */
   swipes: SwipeSource;
   bottomInset: number;
+  renderPage: ((page: string) => ReactNode) | undefined;
   children: ReactNode;
 }
 
-function Pages({ api, pages, present, titles, rootEl, rootBackProp, rootBackRef, swipes, bottomInset, children }: PagesProps) {
+function Pages({ api, pages, exiting, present, titles, rootEl, rootBackProp, rootBackRef, swipes, bottomInset, renderPage, children }: PagesProps) {
+  // The container around (a SplitView column): the first page names it, and its way back is the first page's.
+  const parent = use(StackParentContext);
   const rootTitle = useTitle(titles, pages[0]);
-  const split = useSplitViewBack(typeof rootTitle === 'string' ? rootTitle : undefined);
-  const rootBack = rootBackProp === false ? null : rootBackProp ?? (split ? { title: split.title, onClick: split.back } : null);
+  const rootName = typeof rootTitle === 'string' ? rootTitle : undefined;
+  const nameParent = parent?.setTitle;
+  useLayoutEffect(() => {
+    if (nameParent && rootName !== undefined) nameParent(rootName);
+  }, [nameParent, rootName]);
+  const rootBack = rootBackProp === false ? null : rootBackProp ?? (parent?.back ? { title: parent.back.title, onClick: parent.back.onClick } : null);
   rootBackRef.current = rootBack;
 
   // The stack says which pages render: those in it and those leaving. A page the children drop while it is still
@@ -253,6 +288,17 @@ function Pages({ api, pages, present, titles, rootEl, rootBackProp, rootBackRef,
     shown.add(v);
     if (present(v)) out.push({ key: 'p:' + v, node: c });
   });
+  // The keys no child is for, from `renderPage`, in stack order.
+  if (renderPage) {
+    for (const v of [...pages, ...exiting.map((e) => e.key)]) {
+      if (shown.has(v) || !present(v)) continue;
+      const node = renderPage(v);
+      if (node == null) continue;
+      kept.current.set(v, node as ReactElement);
+      shown.add(v);
+      out.push({ key: 'p:' + v, node });
+    }
+  }
   order.current.forEach((v, i) => {
     if (shown.has(v)) return;
     const el = kept.current.get(v);
@@ -289,7 +335,14 @@ function Pages({ api, pages, present, titles, rootEl, rootBackProp, rootBackRef,
   }, [pages, rootEl]);
 
   const ctx = { api, titles, rootBack, bottomInset };
-  return <StackCtx value={ctx}>{out.map((o) => <Fragment key={o.key}>{o.node}</Fragment>)}</StackCtx>;
+  // Inside its pages the way back is the stack's own: a stack nested in a page gets no parent.
+  return (
+    <StackCtx value={ctx}>
+      <StackParentContext value={null}>
+        {out.map((o) => <Fragment key={o.key}>{o.node}</Fragment>)}
+      </StackParentContext>
+    </StackCtx>
+  );
 }
 
 /* ── Page ── */
@@ -297,26 +350,26 @@ function Pages({ api, pages, present, titles, rootEl, rootBackProp, rootBackRef,
 export interface NavigationStackPageProps extends Omit<ComponentProps<typeof Page>, 'value'> {
   /** The page's key in `pages`. */
   value: string;
-  /** The inset-grouped background (`bg-muted`), for pages of grouped lists. */
-  grouped?: boolean;
+  /** The page's background: `plain` (default, `bg-background`) or `grouped` (`bg-muted`, for inset-grouped lists). */
+  variant?: 'plain' | 'grouped';
 }
 
 /** One page: its bar, its content, and anything else that floats over it (an index bar, a tab bar). */
-export function NavigationStackPage({ value, grouped, className, style, children, ...props }: NavigationStackPageProps) {
+export function NavigationStackPage({ value, variant = 'plain', className, style, children, ...props }: NavigationStackPageProps) {
   const safeTop = use(BLSafeCtx);
   return (
-    // Position is CSS: at rest, waiting off the trailing edge to enter or leave, parallaxed under the page on top,
-    // following `--stack-progress` while an edge swipe moves it, and settling on the tray spring once it lets go.
-    // Every offset is times `--stack-dir` (-1 right to left), so the trailing and leading edges follow the reading
-    // direction, as the swipe's edge does.
+    // Position is CSS: at rest, waiting off the trailing edge to enter or leave, parallaxed 30% under the page on
+    // top, following `--stack-progress` while an edge swipe moves it, and settling on the tray spring once it lets
+    // go. Every offset is times `--stack-dir` (-1 right to left), so the trailing and leading edges follow the
+    // reading direction, as the swipe's edge does. The same tuning as a compact SplitView's columns.
     <Page {...props} value={value}
       className={(s) => cn(
         'group/page absolute inset-0 z-(--page-z) overflow-hidden outline-none will-change-transform rtl:[--stack-dir:-1]',
-        '[transform:translateX(0)] data-covered:[transform:translateX(calc(-28%*var(--stack-dir,1)))] data-starting-style:[transform:translateX(calc(103%*var(--stack-dir,1)))] data-ending-style:not-data-covered:[transform:translateX(calc(103%*var(--stack-dir,1)))]',
-        'data-swiping:not-data-covered:[transform:translateX(calc(var(--stack-progress,0)*100%*var(--stack-dir,1)))] data-swiping:data-covered:[transform:translateX(calc((-28%_+_var(--stack-progress,0)*28%)*var(--stack-dir,1)))]',
+        '[transform:translateX(0)] data-covered:[transform:translateX(calc(-30%*var(--stack-dir,1)))] data-starting-style:[transform:translateX(calc((100%_+_24px)*var(--stack-dir,1)))] data-ending-style:not-data-covered:[transform:translateX(calc((100%_+_24px)*var(--stack-dir,1)))]',
+        'data-swiping:not-data-covered:[transform:translateX(calc(var(--stack-progress,0)*100%*var(--stack-dir,1)))] data-swiping:data-covered:[transform:translateX(calc((-30%_+_var(--stack-progress,0)*30%)*var(--stack-dir,1)))]',
         'transition-transform duration-spring-smooth ease-spring-smooth data-swiping:transition-none data-swipe-settling:duration-spring-tray data-swipe-settling:ease-spring-tray motion-reduce:transition-none',
-        grouped ? 'bg-muted' : 'bg-background',
-        s.depth > 0 && 'shadow-[-10px_0_30px_black] shadow-black/16 rtl:shadow-[10px_0_30px_black]',
+        variant === 'grouped' ? 'bg-muted' : 'bg-background',
+        s.depth > 0 && 'shadow-edge-left rtl:shadow-edge-right',
         s.leaving ? 'pointer-events-none' : 'pointer-events-auto',
         classOf(className, s),
       )}
@@ -329,7 +382,7 @@ export function NavigationStackPage({ value, grouped, className, style, children
       <PageCtx value={value}>
         {children as ReactNode}
         <Shade value={value}
-          className="pointer-events-none absolute inset-0 z-200 bg-black opacity-0 transition-opacity duration-spring-smooth ease-spring-smooth [[data-covered]>&]:opacity-12 [[data-swiping][data-covered]>&]:opacity-[calc(.12*(1-var(--stack-progress,0)))] [[data-swiping]>&]:transition-none" />
+          className="pointer-events-none absolute inset-0 z-200 bg-black opacity-0 transition-opacity duration-spring-smooth ease-spring-smooth [[data-covered]>&]:opacity-10 [[data-swiping][data-covered]>&]:opacity-[calc(.1*(1-var(--stack-progress,0)))] [[data-swiping]>&]:transition-none" />
       </PageCtx>
     </Page>
   );
@@ -344,7 +397,7 @@ export interface NavigationStackBarProps extends Omit<ComponentProps<typeof Bar>
 }
 
 /** The navigation bar: a back button when there is a page to go back to, then its leading items, title and
- *  trailing items. Its background fades in once the content scrolls under it. */
+ *  trailing items. Its background (the iOS bar surface, `barSurface`) fades in once the content scrolls under it. */
 export function NavigationStackBar({ hideOnScroll = true, className, children, ...props }: NavigationStackBarProps) {
   const value = usePageKey('NavigationStackBar');
   const { rootBack } = useStack('NavigationStackBar');
@@ -361,14 +414,14 @@ export function NavigationStackBar({ hideOnScroll = true, className, children, .
         const back = s.previous !== null || (s.depth === 0 && !s.leaving && !!rootBack);
         return (
           <>
-            <div className={cn(
-              'absolute inset-0 [border-bottom:1px_solid_var(--border)] bg-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-opacity duration-spring-snappy ease-spring-snappy',
+            <div data-side="top" className={cn(
+              barSurface, 'absolute inset-0 h-auto transition-opacity duration-spring-snappy ease-spring-snappy',
               s.scrolled ? 'opacity-100' : 'opacity-0',
             )} />
             {/* Under-island strip: stays put while the bar slides away, so content never runs under the camera. */}
             {safeTop ? (
               <div className={cn(
-                'absolute inset-x-0 top-0 h-(--screen-safe-top) bg-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
+                'absolute inset-x-0 top-0 h-(--screen-safe-top) bg-bar backdrop-blur-[20px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
                 s.scrolled || s.hidden ? 'opacity-100' : 'opacity-0',
                 s.hidden ? '[transform:translateY(calc(var(--screen-bar-h)-var(--screen-safe-top)))]' : '[transform:none]',
               )} />
@@ -384,54 +437,20 @@ export function NavigationStackBar({ hideOnScroll = true, className, children, .
   );
 }
 
-/** Back label: the previous title (ellipsized when tight), "Back" when even that has no room, else nothing. */
-type BackMode = 'title' | 'back' | 'none';
-
-/** The bar's own back button, its label measured against what the centered title leaves on its side. */
+/** The bar's own back button, its label measured against what the centered title leaves on its side
+ *  (lib/nav-bar, shared with SplitViewHeader). */
 function AutoBack({ row, state }: { row: { current: HTMLDivElement | null }; state: NavigationStackPageState }) {
-  const value = usePageKey('NavigationStackBack');
   const { titles, rootBack } = useStack('NavigationStackBack');
   const previous = useTitle(titles, state.previous);
-  const own = useTitle(titles, value);
-  const backTitle = state.previous === null && rootBack ? rootBack.title ?? 'Back' : previous;
-  const measFull = useRef<HTMLSpanElement | null>(null);
-  const measBack = useRef<HTMLSpanElement | null>(null);
-  const [bk, setBk] = useState<{ mode: BackMode; w: number }>({ mode: 'title', w: 160 });
-  useLayoutEffect(() => {
-    const r = row.current, f = measFull.current, b = measBack.current;
-    if (!r || !f || !b) return undefined;
-    const title = () => [...r.children].find((e): e is HTMLElement => e instanceof HTMLElement && e.dataset.slot === 'navigation-stack-title');
-    const m = () => {
-      const t = title();
-      const tw = t ? t.offsetWidth : 0;
-      // Half the row beside the title, less the chevron (24), the button's end padding (8) and a gap (8).
-      const avail = Math.floor((r.clientWidth - tw) / 2 - 40);
-      const fw = f.offsetWidth, bw = b.offsetWidth;
-      const mode: BackMode = fw > 0 && (avail >= fw || avail >= bw + 14) ? 'title' : avail >= bw ? 'back' : 'none';
-      setBk((o) => (o.mode === mode && o.w === avail ? o : { mode, w: Math.max(0, avail) }));
-    };
-    m();
-    if (typeof ResizeObserver === 'undefined') return undefined;
-    const ro = new ResizeObserver(m);
-    [r, f, b].forEach((e) => ro.observe(e));
-    const t = title();
-    if (t) ro.observe(t);
-    return () => ro.disconnect();
-  }, [row, backTitle, own]);
+  const label = state.previous === null && rootBack ? rootBack.title ?? 'Back' : previous;
+  const fit = useBackFit(row, label, () =>
+    [...(row.current?.children ?? [])].find((e): e is HTMLElement => e instanceof HTMLElement && e.dataset.slot === 'navigation-stack-title'));
   return (
     <div className="relative z-1 flex min-w-[44px] items-center">
-      <NavigationStackBack aria-label={bk.mode === 'none' ? 'Back' : undefined}>
-        <Icon name="chevL" size={24} sw={2.4} className="rtl:-scale-x-100" />
-        {bk.mode !== 'none' ? (
-          <span data-mode={bk.mode} className="max-w-(--back-w) truncate" style={{ '--back-w': bk.w + 'px' } as CSSProperties}>
-            {bk.mode === 'title' ? backTitle : 'Back'}
-          </span>
-        ) : null}
+      <NavigationStackBack aria-label={backName(label)}>
+        <BackLabel fit={fit} label={label} />
       </NavigationStackBack>
-      {/* Off-screen rulers for the full previous title and for "Back". */}
-      <span aria-hidden="true" className="pointer-events-none invisible absolute top-0 left-0 flex text-body whitespace-nowrap">
-        <span ref={measFull}>{backTitle}</span><span ref={measBack}>Back</span>
-      </span>
+      {fit.rulers}
     </div>
   );
 }
@@ -442,10 +461,7 @@ export type NavigationStackBackProps = Omit<ComponentProps<typeof Back>, 'value'
  *  bar draws one by itself; use this for a back button of your own. */
 export function NavigationStackBack({ className, ...props }: NavigationStackBackProps) {
   const value = usePageKey('NavigationStackBack');
-  return (
-    <Back {...props} value={value}
-      className={(s) => cn('bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-body text-primary', classOf(className, s))} />
-  );
+  return <Back {...props} value={value} className={(s) => cn(barBackButton, classOf(className, s))} />;
 }
 
 export type NavigationStackTitleProps = Omit<ComponentProps<typeof Title>, 'value' | 'children'> & {
@@ -455,7 +471,8 @@ export type NavigationStackTitleProps = Omit<ComponentProps<typeof Title>, 'valu
   children?: ReactNode;
 };
 
-/** The bar's centered title. It names the page: the next page's back label, and the large title by default. */
+/** The bar's centered title. It names the page: the next page's back label, and the large title by default.
+ *  While it is faded out it is out of the accessibility tree too (the large title is the page's heading). */
 export function NavigationStackTitle({ showOnScroll, className, children, ...props }: NavigationStackTitleProps) {
   const value = usePageKey('NavigationStackTitle');
   const { titles } = useStack('NavigationStackTitle');
@@ -465,12 +482,8 @@ export function NavigationStackTitle({ showOnScroll, className, children, ...pro
   }, [titles, value, children]);
   return (
     <Title {...props} value={value} showOnScroll={showOnScroll}
-      className={(s) => cn(
-        'pointer-events-none absolute left-1/2 max-w-[52%] -translate-x-1/2 truncate text-body font-semibold text-foreground transition-opacity duration-spring-snappy ease-spring-snappy',
-        (showOnScroll || s.large) && !s.scrolled ? 'opacity-0' : 'opacity-100',
-        classOf(className, s),
-      )}>
-      {children}
+      className={(s) => cn(barTitle, barTitleFade, (showOnScroll || s.large) && !s.scrolled && barTitleHidden, classOf(className, s))}>
+      {(s) => <span aria-hidden={(showOnScroll || s.large) && !s.scrolled ? true : undefined}>{children}</span>}
     </Title>
   );
 }
@@ -544,14 +557,16 @@ export type NavigationStackLargeTitleProps = Omit<ComponentProps<typeof LargeTit
   children?: ReactNode;
 };
 
-/** iOS's large title, at the top of the content: it scrolls under the bar, where the inline title takes over. */
+/** iOS's large title, at the top of the content and the page's heading: it scrolls under the bar, where the inline
+ *  title takes over. */
 export function NavigationStackLargeTitle({ className, children, ...props }: NavigationStackLargeTitleProps) {
   const value = usePageKey('NavigationStackLargeTitle');
   const { titles } = useStack('NavigationStackLargeTitle');
   const title = useTitle(titles, value);
   return (
-    <LargeTitle {...props} value={value} className={(s) => cn('px-4 pt-0.5 pb-1.5', classOf(className, s))}>
-      <div className="text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]"><span>{children ?? title}</span></div>
+    <LargeTitle {...props} value={value} className={(s) => cn('px-4 pt-1 pb-2', classOf(className, s))}>
+      {/* A heading role, not an <h1>: host prose styles (a docs page's `.markdown h1`) would otherwise restyle it. */}
+      <div role="heading" aria-level={1} className={largeTitleText}><span>{children ?? title}</span></div>
     </LargeTitle>
   );
 }

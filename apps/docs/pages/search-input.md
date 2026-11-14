@@ -107,3 +107,22 @@ There is no label, description or validation here: put it in a `Field` for those
 ## Styling
 
 The root is `data-slot="search-input"`, `searchInputVariants({ size })`: a `bg-secondary` row (11px radius at `default`, 8px at `sm`) with the glyph, an `input` (`data-slot="input"`) with no chrome (the browser's own search cancel button is hidden) and, when the query is not empty, an `xcirc` clear button (`data-slot="input-clear"`). Focus draws the same 1.5px inset primary ring as Input. The `input-group` between the root and its children has no box of its own (`display: contents`). Because `className` merges last you can change the background (`bg-card` on a secondary surface) or the radius, and reach the input with `[&_input]:`. To hold it above a list, pass it as the `header` of a `List`.
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `searchInputVariants`
+
+Defined in `@/components/ui/search-input`. Base classes:
+
+```text
+[ 'box-border flex min-w-0 items-center bg-secondary text-foreground transition-[box-shadow] duration-spring-snappy ease-spring-snappy', 'focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] has-[input:disabled]:opacity-50', ]
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `h-8 gap-1.5 rounded-lg px-2 text-footnote` |
+| `default` (default) | `h-9 gap-[7px] rounded-[11px] px-[9px] text-body` |

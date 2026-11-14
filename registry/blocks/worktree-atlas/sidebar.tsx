@@ -98,13 +98,13 @@ function WorktreeItem({ atlas, p, w }: { atlas: AtlasState; p: Project; w: Workt
       else if (value === 'delete') atlas.requestDelete([w]);
     }}>
       <DropdownMenuContextTrigger className="flex w-full">
-        <SplitViewItem id={w.id} className="min-h-[34px] w-full py-1 pl-10" preview={<WorktreeCard p={p} w={w} />}>
+        <SplitViewItem value={w.id} className="min-h-[34px] w-full py-1 pl-10" preview={<WorktreeCard p={p} w={w} />}>
           <span className="flex min-w-0 flex-1 items-center gap-2">
             <span className={cn('min-w-0 flex-1 truncate text-subhead leading-[1.3]', !w.branch && 'italic', (w.missing || w.unreachable) && 'opacity-55')}>
               {branchLabel(w)}
             </span>
-            {w.locked ? <Icon name="lock" size={13} className="shrink-0 text-muted-foreground group-data-selected/item:text-primary-foreground/80" /> : null}
-            <span className="shrink-0 text-caption text-muted-foreground tabular-nums group-data-selected/item:text-primary-foreground/80">
+            {w.locked ? <Icon name="lock" size={13} className="shrink-0 text-muted-foreground group-data-current/item:text-primary-foreground/80" /> : null}
+            <span className="shrink-0 text-caption text-muted-foreground tabular-nums group-data-current/item:text-primary-foreground/80">
               {w.primary ? 'Primary' : relativeTime(w.modified)}
             </span>
           </span>
@@ -183,7 +183,7 @@ export function ProjectsSidebar({ atlas, footer }: { atlas: AtlasState; footer?:
     <SplitViewSidebar aria-label="Projects" width={300} minWidth={250} className="flex-row">
       <Rail atlas={atlas} />
       <div className="relative flex min-w-0 flex-1 flex-col">
-        <SplitViewHeader title="Projects" titleAlign="leading" largeTitle={s.collapsed} trailing={<>
+        <SplitViewHeader title="Projects" titleAlign="start" largeTitle={s.collapsed} trailing={<>
           <BarButton label="Scan again" disabled={atlas.scanning} onClick={() => void atlas.scan()}><Icon name="arrow-clockwise" size={20} /></BarButton>
           {canAdd ? <BarButton label="Add folder" onClick={() => void atlas.addLocation()}><Icon name="folder-badge-plus" size={22} /></BarButton> : null}
         </>} />

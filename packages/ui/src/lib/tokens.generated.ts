@@ -19,6 +19,7 @@ export const COLOR_TOKENS = [
   'accent-foreground',
   'destructive',
   'destructive-foreground',
+  'playhead',
   'border',
   'input',
   'ring',
@@ -39,6 +40,7 @@ export const COLOR_TOKENS = [
   'warning',
   'tertiary-foreground',
   'secondary-strong',
+  'control-border',
   'segment',
   'overlay',
   'bar',
@@ -52,6 +54,9 @@ export const COLOR_TOKENS = [
   'git-renamed',
   'git-deleted',
   'git-ignored',
+  'kind-video',
+  'kind-audio',
+  'kind-archive',
   'hud',
   'hud-foreground',
 ] as const;
@@ -66,6 +71,7 @@ export const TEXT_TOKENS = [
   'callout',
   'body',
   'title',
+  'large-title',
 ] as const;
 
 /** Radius utilities (rounded-*): `--radius-<name>`, all derived from the `--radius` variable. */
@@ -84,6 +90,8 @@ export const SHADOW_TOKENS = [
   'popover',
   'tooltip',
   'hud',
+  'edge-left',
+  'edge-right',
   'raised',
 ] as const;
 
@@ -91,6 +99,7 @@ export const SHADOW_TOKENS = [
 export const SPACING_TOKENS = [
   'toolbar',
   'row',
+  'bar',
 ] as const;
 
 /** Font-family utilities (font-*): `--font-<name>`. */
@@ -117,6 +126,7 @@ export const THEME_VARS = [
   'accent-foreground',
   'destructive',
   'destructive-foreground',
+  'playhead',
   'border',
   'input',
   'ring',
@@ -137,6 +147,7 @@ export const THEME_VARS = [
   'warning',
   'tertiary-foreground',
   'secondary-strong',
+  'control-border',
   'segment',
   'overlay',
   'bar',
@@ -150,6 +161,9 @@ export const THEME_VARS = [
   'git-renamed',
   'git-deleted',
   'git-ignored',
+  'kind-video',
+  'kind-audio',
+  'kind-archive',
   'hud',
   'hud-foreground',
   'radius',

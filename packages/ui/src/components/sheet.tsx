@@ -12,11 +12,10 @@ import {
 import { cva } from 'class-variance-authority';
 import { Icon } from '@/lib/icon';
 import { springs } from '@/lib/motion';
-import { focusRing } from '@/lib/primitives';
 import { cn, cx } from '@/lib/utils';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
-import { AnimatedHeight } from '@/components/ui/animated-height';
-import { DialogBody, DialogHeader, closeButtonVariants, surfaceDescriptionVariants, surfaceTitleVariants } from '@/components/ui/dialog';
+import { DialogBody, DialogHeader, DialogView, SurfaceFlow, SurfaceFlowTitle, type DialogViewProps } from '@/components/ui/dialog';
+import { closeButtonVariants, sheetGrabberVariants, surfaceDescriptionVariants, surfaceFooterVariants, surfaceTitleVariants } from '@/lib/surface';
 
 /* ══ Sheet — UI SDK's Drawer as the kit's edge-pinned modal ══
    Bottom is the iOS card sheet with a grabber; left and right are side panels; top drops down. UI SDK owns the
@@ -49,24 +48,29 @@ export type SheetProps = ComponentProps<typeof SdkDrawer> & {
    *  (`absolute inset-0`, `contain: layout`, `z-index: var(--sheet-z, 30)`) that its scrim, panel and focus trap
    *  stay in, so the rest of the page outside that box stays usable. Default false. */
   contained?: boolean;
+  /** Key of the current view of a flow (pick a plan → confirm): a new key springs the sheet to its SheetView's height
+   *  and slides the view in from the right, with its SheetTitle; a key seen before comes back from the left. */
+  view?: string;
 };
 
 /** The root: `side` (bottom by default), `snapPoints`, `contained`, and a dialog's `open` / `onOpenChange` /
     `dismissible` / `modal`. */
-export function Sheet({ container, physics, snapPoints, contained = false, ...props }: SheetProps) {
+export function Sheet({ container, physics, snapPoints, contained = false, view, ...props }: SheetProps) {
   const host = useLayerHost();
   const sheet = (
-    <SheetResizableContext.Provider value={(snapPoints?.length ?? 0) > 1}>
-      <SdkDrawer
-        // Contained, the sheet renders in place: the host below is its box. A contained panel sits on an edge of
-        // the page, where iOS Safari's back swipe would otherwise start.
-        container={contained ? null : container === undefined ? host : container}
-        preventEdgeSwipe={contained || undefined}
-        physics={{ ...trayPhysics, ...physics }}
-        snapPoints={snapPoints}
-        {...props}
-      />
-    </SheetResizableContext.Provider>
+    <SurfaceFlow view={view} dismissible={props.dismissible !== false}>
+      <SheetResizableContext.Provider value={(snapPoints?.length ?? 0) > 1}>
+        <SdkDrawer
+          // Contained, the sheet renders in place: the host below is its box. A contained panel sits on an edge of
+          // the page, where iOS Safari's back swipe would otherwise start.
+          container={contained ? null : container === undefined ? host : container}
+          preventEdgeSwipe={contained || undefined}
+          physics={{ ...trayPhysics, ...physics }}
+          snapPoints={snapPoints}
+          {...props}
+        />
+      </SheetResizableContext.Provider>
+    </SurfaceFlow>
   );
   if (!contained) return sheet;
   // A layer host (UI SDK's `data-layer-host`, with the `contain: layout` it needs), marked in the markup, so a
@@ -125,16 +129,9 @@ export const sheetVariants = cva(
   },
 );
 
-/** The grabber's look: a pill centred at the top of a bottom sheet. `handle` adds a press target around it. */
-export const sheetGrabberVariants = cva('mx-auto mt-[5px] mb-px block h-[5px] w-9 shrink-0 rounded-full bg-secondary-strong', {
-  variants: {
-    handle: {
-      true: cn('relative cursor-grab border-0 p-0 after:absolute after:-inset-x-4 after:-inset-y-3 active:cursor-grabbing', focusRing),
-      false: '',
-    },
-  },
-  defaultVariants: { handle: false },
-});
+/* The grabber's look (`sheetGrabberVariants`) lives with the other surface parts in lib/surface: Dialog's sheet
+   presentation draws the same pill. */
+export { sheetGrabberVariants } from '@/lib/surface';
 
 export type SheetContentProps<Payload = unknown> = Parameters<typeof SdkDrawerContent<Payload>>[0] & {
   /** `card` (default): the modal sheet. `panel`: a full-length edge panel whose children are the whole panel. */
@@ -144,14 +141,11 @@ export type SheetContentProps<Payload = unknown> = Parameters<typeof SdkDrawerCo
   /** Whether a drag of the sheet toward its edge closes it (default true). `false` keeps Escape and the scrim,
    *  and the sheet no longer follows the finger (UI SDK's `data-drawer-no-drag`). */
   swipe?: boolean;
-  /** Spring the sheet's height when its content changes (a tray stepping through a flow). Use for short,
-      content-sized trays; a sheet that scrolls its body should leave this off. */
-  animateHeight?: boolean;
 };
 
 /** The sheet. Name it with a SheetTitle, or `aria-label`. */
 export function SheetContent<Payload = unknown>({
-  className, style, children, variant = 'card', grabber = true, swipe = true, animateHeight, ...props
+  className, style, children, variant = 'card', grabber = true, swipe = true, ...props
 }: SheetContentProps<Payload>) {
   const scope = useThemeScopeProps();
   const resizable = useContext(SheetResizableContext);
@@ -173,7 +167,7 @@ export function SheetContent<Payload = unknown>({
           <>
             {showGrabber && !resizable ? <span data-slot="sheet-grabber" aria-hidden="true" className={sheetGrabberVariants()} /> : null}
             <div className="relative flex min-h-0 flex-1 flex-col">
-              {animateHeight ? <AnimatedHeight>{content}</AnimatedHeight> : content}
+              {content}
             </div>
             {/* After the content in the tab order (focus lands on the sheet's own controls first), first on screen. */}
             {showGrabber && resizable ? <SheetHandle className="order-first" /> : null}
@@ -190,8 +184,23 @@ export function SheetHandle({ className, 'aria-label': label = 'Resize', ...prop
   return <SdkDrawerHandle aria-label={label} className={cx(sheetGrabberVariants({ handle: true }), className)} {...props} />;
 }
 
-export function SheetTitle({ className, ...props }: ComponentProps<typeof SdkDrawerTitle>) {
-  return <SdkDrawerTitle className={cx(cn(surfaceTitleVariants(), 'pe-8'), className)} {...props} />;
+/** Names the sheet. Under a Sheet with a `view`, a new title travels in with its view. */
+export function SheetTitle({ className, children, ...props }: ComponentProps<typeof SdkDrawerTitle>) {
+  return (
+    <SdkDrawerTitle className={cx(cn(surfaceTitleVariants(), 'pe-8'), className)} {...props}>
+      {typeof children === 'function' ? children : <SurfaceFlowTitle>{children}</SurfaceFlowTitle>}
+    </SdkDrawerTitle>
+  );
+}
+
+export type SheetViewProps = DialogViewProps;
+
+/** The content of a short, content-sized sheet that springs to its height as it changes: the current view of a
+    Sheet with a `view` (it slides in the direction of the flow, and focus stays in the sheet when the focused view
+    leaves), or, without one, content that grows in place (an error appearing). A sheet with a scrolling body
+    doesn't need it. Dialog's DialogView, in a sheet. */
+export function SheetView(props: SheetViewProps) {
+  return <DialogView {...props} />;
 }
 
 export function SheetDescription({ className, ...props }: ComponentProps<typeof SdkDrawerDescription>) {
@@ -223,5 +232,5 @@ export function SheetBody(props: ComponentProps<'div'>) {
 
 /** Pinned bottom area for a sheet's actions. */
 export function SheetFooter({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="sheet-footer" className={cn('mt-auto flex flex-col gap-2 px-5 pt-3 pb-2', className)} {...props} />;
+  return <div data-slot="sheet-footer" className={cn(surfaceFooterVariants({ orientation: 'vertical' }), 'mt-auto pb-2', className)} {...props} />;
 }

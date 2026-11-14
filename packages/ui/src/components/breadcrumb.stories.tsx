@@ -51,11 +51,11 @@ export const CustomSeparator: Story = {
 };
 
 const siblings = (current: string, ...labels: string[]) => ({
-  items: labels.map((label) => ({ id: label, label, icon: 'doc', onClick: go(label) })),
-  selectedId: current,
+  siblings: labels.map((label) => ({ id: label, label, icon: 'doc', onClick: go(label) })),
+  currentSibling: current,
 });
 
-/** Like VS Code's: an item with `items` opens the other entries of its parent. The checked one is the current. */
+/** Like VS Code's: an item with `siblings` opens the other entries of its parent. The checked one is the current. */
 export const WithSiblingMenus: Story = {
   args: {
     items: [
@@ -97,4 +97,18 @@ export const CurrentPagePressable: Story = {
 export const Dark: Story = {
   decorators: [(Story) => <Panel w={560} dark className="min-h-72"><Story /></Panel>],
   args: { items: PATH },
+};
+
+/** A narrow trail whose hidden middle items are pickers: they open their siblings as submenus of `…`. */
+export const CollapsingWithPickers: Story = {
+  decorators: [(Story) => <Panel w={300} className="min-h-96"><Story /></Panel>],
+  args: {
+    items: [
+      { id: 'home', label: 'Home', icon: 'house', href: '#home' },
+      { id: 'ui', label: 'ui', icon: 'folder', ...siblings('ui', 'ui', 'docs', 'catalog', 'registry') },
+      { id: 'packages', label: 'packages', icon: 'folder', ...siblings('packages', 'apps', 'packages', 'tools') },
+      { id: 'components', label: 'components', icon: 'folder', ...siblings('components', 'components', 'lib', 'stories') },
+      { id: 'breadcrumb.tsx', label: 'breadcrumb.tsx', icon: 'doc', ...siblings('breadcrumb.tsx', 'avatar.tsx', 'breadcrumb.tsx', 'button.tsx') },
+    ],
+  },
 };

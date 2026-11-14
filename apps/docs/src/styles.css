@@ -394,7 +394,7 @@ a:hover {
 
 /* Every demo renders on a BL UI surface: demos.ts wraps each one in a ThemeScope for the docs' appearance (the
    bl-theme's light / dark variables), the system font, and a padded block layout (bleed demos bring their own frame;
-   Workbench demos root themselves in WorkbenchTheme). The canvas is the grouped background (--dk-demo). */
+   Workbench demos root themselves in a workbench ThemeScope). The canvas is the grouped background (--dk-demo). */
 :root .docs-demo-canvas {
   position: relative;
   overflow: hidden;

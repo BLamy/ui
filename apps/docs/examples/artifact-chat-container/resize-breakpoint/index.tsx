@@ -1,6 +1,11 @@
 import { useState, type ReactNode } from 'react'
-import { ArtifactChatContainer } from '@/components/ui/artifact-chat-container'
-import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import {
+  ArtifactChatContainer,
+  ArtifactChatContainerChat,
+  ArtifactChatContainerComposer,
+  ArtifactChatContainerContent,
+} from '@/components/ui/artifact-chat-container'
+import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
 
 const messages = [
   ['You', 'Compare conversion by region.'],
@@ -103,19 +108,17 @@ function ChatComposer({
   onSubmit?: () => void
 }) {
   return (
-    <div style={{ padding: 8 }}>
-      <Composer onSubmit={onSubmit}>
-        <ComposerCard>
-          <ComposerAttachments />
-          <ComposerInput placeholder={placeholder} />
-          <ComposerFooter>
-            <ComposerAttach />
-            <ComposerSpacer />
-            <ComposerSend />
-          </ComposerFooter>
-        </ComposerCard>
-      </Composer>
-    </div>
+    <Composer onSubmit={onSubmit}>
+      <ComposerCard>
+        <ComposerAttachments />
+        <ComposerInput placeholder={placeholder} />
+        <ComposerFooter>
+          <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
+          <ComposerSpacer />
+          <ComposerSend />
+        </ComposerFooter>
+      </ComposerCard>
+    </Composer>
   )
 }
 
@@ -179,15 +182,15 @@ export default function ResizeBreakpoint() {
       </div>
       <Frame width={width}>
         <ArtifactChatContainer breakpoint={620} chatWidth={280}>
-          <ArtifactChatContainer.Chat>
+          <ArtifactChatContainerChat>
             <Transcript />
-          </ArtifactChatContainer.Chat>
-          <ArtifactChatContainer.Composer>
+          </ArtifactChatContainerChat>
+          <ArtifactChatContainerComposer>
             <ChatComposer placeholder="Type a draft, then drag the slider" />
-          </ArtifactChatContainer.Composer>
-          <ArtifactChatContainer.Content>
+          </ArtifactChatContainerComposer>
+          <ArtifactChatContainerContent>
             <Artifact />
-          </ArtifactChatContainer.Content>
+          </ArtifactChatContainerContent>
         </ArtifactChatContainer>
       </Frame>
     </div>

@@ -43,10 +43,10 @@ function IosItem({ row }: { row: Extract<Row, { t: 'link' }> }) {
   const value = valueOf(row, s.values);
   return (
     <div className="relative flex w-full after:absolute after:right-0 after:bottom-0 after:left-[57px] after:h-px after:bg-border last:after:hidden has-data-selected:after:hidden">
-      <SplitViewItem id={row.to} className="min-h-row gap-3 rounded-ctl px-4 text-body" preview={<PanePreview pane={p} value={value} />}>
+      <SplitViewItem value={row.to} className="min-h-row gap-3 rounded-ctl px-4 text-body" preview={<PanePreview pane={p} value={value} />}>
         <Tile glyph={p.glyph} color={p.color} />
         <span className="min-w-0 flex-1 truncate">{p.title}</span>
-        <span className="max-w-[45%] truncate text-callout text-muted-foreground group-data-selected/item:text-white/80">{value}</span>
+        <span className="max-w-[45%] truncate text-callout text-muted-foreground group-data-current/item:text-white/80">{value}</span>
         <Disclosure />
       </SplitViewItem>
     </div>
@@ -58,7 +58,7 @@ function MacItem({ row }: { row: Extract<Row, { t: 'link' }> }) {
   const p = getPane(row.to);
   if (!p?.glyph || !p.color) return null;
   return (
-    <SplitViewItem id={row.to} className="min-h-[30px] gap-2 rounded-[7px] px-2 py-[3px] text-footnote"
+    <SplitViewItem value={row.to} className="min-h-[30px] gap-2 rounded-[7px] px-2 py-[3px] text-footnote"
       preview={<PanePreview pane={p} value={valueOf(row, s.values)} />}>
       <Tile glyph={p.glyph} color={p.color} size={20} />
       <span className="min-w-0 flex-1 truncate">{p.title}</span>
@@ -101,11 +101,11 @@ export function SettingsSidebar() {
         <SplitViewContent className="px-2.5 pb-4">
           {s.query ? <div className="pt-1">{results}</div> : (
             <>
-              <SplitViewItem id="account" className="min-h-row gap-2.5 rounded-[7px] px-2 py-1.5" preview={ACCOUNT_CARD}>
+              <SplitViewItem value="account" className="min-h-row gap-2.5 rounded-[7px] px-2 py-1.5" preview={ACCOUNT_CARD}>
                 <Avatar name={`${ACCOUNT.first} ${ACCOUNT.last}`} size={32} />
                 <span className="min-w-0 flex-1 leading-tight">
                   <span className="block truncate text-footnote font-semibold">{ACCOUNT.first} {ACCOUNT.last}</span>
-                  <span className="block truncate text-caption2 text-muted-foreground group-data-selected/item:text-white/80">Apple Account</span>
+                  <span className="block truncate text-caption2 text-muted-foreground group-data-current/item:text-white/80">Apple Account</span>
                 </span>
               </SplitViewItem>
               {GROUPS.map((g, i) => (
@@ -126,11 +126,11 @@ export function SettingsSidebar() {
           {s.query ? results : (
             <>
               <div className="mb-5 overflow-hidden rounded-panel bg-card">
-                <SplitViewItem id="account" className="min-h-[76px] gap-3.5 rounded-panel px-3 py-2.5" preview={ACCOUNT_CARD}>
+                <SplitViewItem value="account" className="min-h-[76px] gap-3.5 rounded-panel px-3 py-2.5" preview={ACCOUNT_CARD}>
                   <Avatar name={`${ACCOUNT.first} ${ACCOUNT.last}`} size={56} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-title leading-tight font-semibold">{ACCOUNT.first} {ACCOUNT.last}</span>
-                    <span className="mt-0.5 block truncate text-detail text-muted-foreground group-data-selected/item:text-white/80">Apple Account, iCloud, and more</span>
+                    <span className="mt-0.5 block truncate text-detail text-muted-foreground group-data-current/item:text-white/80">Apple Account, iCloud, and more</span>
                   </span>
                   <Disclosure />
                 </SplitViewItem>

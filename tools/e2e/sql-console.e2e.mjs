@@ -11,6 +11,11 @@ const AXE = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.mi
 const READY = '[data-slot=sql-console][data-status=ready]';
 const editor = (page) => page.locator('[data-slot=sql-editor] textarea');
 const results = (page) => page.locator('[data-slot=sql-console-results]');
+/** Opens the header's Database menu and returns one of its items, to click while waiting for what it starts. */
+async function databaseItem(page, name) {
+  await page.getByRole('button', { name: 'Database' }).click();
+  return page.getByRole('menuitem', { name });
+}
 const setSql = async (page, sql) => {
   await editor(page).fill(sql);
 };
@@ -33,7 +38,7 @@ test.describe('queries', () => {
     const table = results(page).getByRole('grid');
     await expect(table.getByRole('row')).toHaveCount(1 + 4); // header + four authors
     await expect(table).toContainText('Ursula K. Le Guin');
-    await expect(results(page).locator('[data-slot=result-table-summary]')).toHaveText(/4 rows · (<1|\d+) ms/);
+    await expect(results(page).locator('[data-slot=sql-console-summary]')).toHaveText(/4 rows · (<1|\d+) ms/);
   });
 
   test('a script of several statements gets one result each, formatted by type', async ({ page }) => {
@@ -100,7 +105,7 @@ test.describe('queries', () => {
     await books.click();
     await expect(editor(page)).toHaveValue('select * from books limit 100;');
     await run(page);
-    await expect(results(page).locator('[data-slot=result-table-summary]')).toHaveText(/8 rows/);
+    await expect(results(page).locator('[data-slot=sql-console-summary]')).toHaveText(/8 rows/);
     // a second pick appends rather than replacing what you wrote
     await page.getByRole('treeitem', { name: 'authors', exact: true }).click();
     await expect(editor(page)).toHaveValue(/books limit 100;\nselect \* from authors limit 100;/);
@@ -141,13 +146,13 @@ test.describe('queries', () => {
     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain('"note": "a, \\"b\\""');
   });
 
-  test('a long value is cut and expands', async ({ page }) => {
+  test('a long value is cut and shows whole in a popover', async ({ page }) => {
     await setSql(page, "select repeat('x', 300) as long_value");
     await run(page);
     const cell = results(page).locator('[data-kind=text]').first();
     await expect(cell).toBeVisible();
-    await results(page).getByRole('button', { name: 'Expand value' }).click();
-    await expect(results(page).locator('pre')).toHaveText('x'.repeat(300));
+    await results(page).getByRole('button', { name: 'Show all of long_value' }).click();
+    await expect(page.getByRole('dialog', { name: 'long_value' }).locator('pre')).toHaveText('x'.repeat(300));
   });
 
   test('the loaded console has no axe violations, light or dark', async ({ page }) => {
@@ -179,14 +184,14 @@ test.describe('export and import', () => {
     await run(page);
     await expect(results(page)).toContainText('2 rows affected');
 
-    const [sqlDownload] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export SQL' }).click()]);
+    const [sqlDownload] = await Promise.all([page.waitForEvent('download'), (await databaseItem(page, 'Export SQL')).click()]);
     expect(sqlDownload.suggestedFilename()).toMatch(/^database-pg\d+\.sql$/);
     const sqlPath = testInfo.outputPath(sqlDownload.suggestedFilename());
     await sqlDownload.saveAs(sqlPath);
     await expect(page.locator('[data-slot=sql-console-notice]')).toContainText(/Exported database-pg\d+\.sql .* from Postgres \d+\.\d+/);
     expect(readFileSync(sqlPath, 'utf8')).toContain('CREATE TABLE public.kept');
 
-    const [dirDownload] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export data dir' }).click()]);
+    const [dirDownload] = await Promise.all([page.waitForEvent('download'), (await databaseItem(page, 'Export data directory')).click()]);
     expect(dirDownload.suggestedFilename()).toMatch(/^database-pg\d+-pglite[\d.]+\.tar\.gz$/);
     await expect(page.locator('[data-slot=sql-console-notice]')).toContainText(/restores only into Postgres \d+/);
     const dirPath = testInfo.outputPath(dirDownload.suggestedFilename());
@@ -199,14 +204,14 @@ test.describe('export and import', () => {
     await fresh.locator('[data-slot=sql-editor] textarea').press('ControlOrMeta+Enter');
     await expect(fresh.locator('[data-slot=sql-console-error]')).toContainText('relation "kept" does not exist');
     // importing a dump into a database that already holds those objects changes nothing and says why…
-    const [clash] = await Promise.all([fresh.waitForEvent('filechooser'), fresh.getByRole('button', { name: 'Import…' }).click()]);
+    const [clash] = await Promise.all([fresh.waitForEvent('filechooser'), (await databaseItem(fresh, 'Import…')).click()]);
     await clash.setFiles(sqlPath);
     await expect(fresh.locator('[data-slot=sql-console-error]', { hasText: 'Could not finish' })).toContainText('nothing was changed');
     // …so empty the (seeded) database first, as you would a fresh one
     await fresh.locator('[data-slot=sql-editor] textarea').fill('drop schema public cascade; create schema public;');
     await fresh.locator('[data-slot=sql-editor] textarea').press('ControlOrMeta+Enter');
     await expect(fresh.locator('[data-slot=sql-console-results]')).toContainText('CREATE');
-    const [chooser] = await Promise.all([fresh.waitForEvent('filechooser'), fresh.getByRole('button', { name: 'Import…' }).click()]);
+    const [chooser] = await Promise.all([fresh.waitForEvent('filechooser'), (await databaseItem(fresh, 'Import…')).click()]);
     await chooser.setFiles(sqlPath);
     await expect(fresh.locator('[data-slot=sql-console-notice]')).toContainText(/Imported database-pg\d+\.sql \(dumped from Postgres \d+\.\d+\)/);
     await fresh.locator('[data-slot=sql-editor] textarea').fill('select * from kept order by id');
@@ -216,12 +221,12 @@ test.describe('export and import', () => {
     await expect(grid.getByRole('row')).toHaveCount(3);
     // the schema tree shows the imported table; a second import clashes and changes nothing
     await expect(fresh.getByRole('treeitem', { name: 'kept', exact: true })).toBeVisible();
-    const [again] = await Promise.all([fresh.waitForEvent('filechooser'), fresh.getByRole('button', { name: 'Import…' }).click()]);
+    const [again] = await Promise.all([fresh.waitForEvent('filechooser'), (await databaseItem(fresh, 'Import…')).click()]);
     await again.setFiles(sqlPath);
     await expect(fresh.locator('[data-slot=sql-console-error]', { hasText: 'Could not finish' })).toContainText('nothing was changed');
 
     // a data directory only loads into a NEW database: the open console says so instead of overwriting
-    const [dirChooser] = await Promise.all([fresh.waitForEvent('filechooser'), fresh.getByRole('button', { name: 'Import…' }).click()]);
+    const [dirChooser] = await Promise.all([fresh.waitForEvent('filechooser'), (await databaseItem(fresh, 'Import…')).click()]);
     await dirChooser.setFiles(dirPath);
     await expect(fresh.locator('[data-slot=sql-console-error]', { hasText: 'Could not finish' })).toContainText('only be loaded into a new database');
     await fresh.context().close();

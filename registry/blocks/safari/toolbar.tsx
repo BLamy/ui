@@ -1,14 +1,12 @@
 /* Safari's chrome: the toolbar (back, forward, address, reload, Tailscale, tabs), the tab strip and the tab overview. */
 import { useMemo, useState, type FormEvent, type RefObject } from 'react';
 import { Button } from '@/components/ui/button';
-import { Combobox, ComboboxContent, ComboboxItem, ComboboxList } from '@/components/ui/combobox';
+import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from '@/components/ui/combobox';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Toggle } from '@/components/ui/toggle';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
 import { TailscaleExitNodes, TailscaleLoginButton, TailscaleSummary } from '@/components/ui/tailscale-controls';
-// The bare input: the kit's ComboboxInput is a filled field with its own disclosure button, and this one sits in the pill.
-import { ComboboxInput } from '@ui-sdk/react/combobox';
 import { Icon } from '@/lib/icon';
 import type { TailscalePeer, TailscaleSnapshot } from '@/lib/tailscale';
 import { cn } from '@/lib/utils';
@@ -115,7 +113,8 @@ function AddressField({ browser, snapshot, history, inputRef }: { browser: Brows
               // Enter with a suggestion highlighted opens it (the combobox's choice); with none, what was typed.
               else if (e.key === 'Enter' && !e.currentTarget.getAttribute('aria-activedescendant')) { e.preventDefault(); go(e.currentTarget.value); }
             }}
-            className={cn('h-full min-w-0 flex-1 border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-foreground outline-none select-text [-webkit-user-select:text] placeholder:text-foreground/60', !editing && 'text-center')}
+            // The kit's ComboboxInput is bare: the pill around it is this toolbar's own field.
+            className={cn('text-subhead placeholder:text-foreground/60', !editing && 'text-center')}
           />
           {loading ? (
             <Button variant="quiet" size="icon" className="-mr-1 size-6 shrink-0 p-0" aria-label="Stop loading" onClick={browser.stop}>

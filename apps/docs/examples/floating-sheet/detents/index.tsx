@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { FloatingSheet, useFloatingSheet } from '@/components/ui/floating-sheet'
+import { FloatingSheet, FloatingSheetBody, useFloatingSheet } from '@/components/ui/floating-sheet'
 import { useAppearance } from '@/lib/theme'
 
 /** A 430×560 host with colour for the glass to blur; follows the appearance. */
@@ -107,14 +107,14 @@ export default function Detents() {
     >
       <FloatingSheet
         peek={110}
-        detents={[0.5]}
-        appearance="sheet"
+        snapPoints={[0.5]}
+        variant="sheet"
         gutter={12}
         radius={24}
-        label="Places"
+        aria-label="Places"
         hideOnScroll={false}
       >
-        <FloatingSheet.Body>
+        <FloatingSheetBody>
           <div style={{ padding: '2px 18px 24px', display: 'grid', gap: 10 }}>
             <div
               style={{
@@ -137,7 +137,7 @@ export default function Detents() {
               />
             ))}
           </div>
-        </FloatingSheet.Body>
+        </FloatingSheetBody>
       </FloatingSheet>
     </Host>
   )

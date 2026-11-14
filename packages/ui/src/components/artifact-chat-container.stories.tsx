@@ -1,24 +1,23 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { AppearanceProvider, BLProvider, type Appearance } from '@/lib/theme';
-import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer';
+import { BLProvider } from '@/lib/theme';
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer';
 import '../styles.css';
-import { ArtifactChatContainer, type ArtifactChatFabPosition } from '@/components/ui/artifact-chat-container';
-import { ThemeScope } from '@/lib/theme';
+import {
+  ArtifactChatContainer,
+  ArtifactChatContainerChat,
+  ArtifactChatContainerComposer,
+  ArtifactChatContainerContent,
+  type ArtifactChatContainerProps,
+} from '@/components/ui/artifact-chat-container';
 
-/** The assistant's name colour (content). */
-const ASSISTANT_INK = '#68A7FF';
-
-/* The chat composer: the Workbench Composer parts, trimmed to editor + send. */
-function ChatComposer({ placeholder, onSubmit }: { placeholder: string; onSubmit?: () => void }) {
+/* The chat composer: the Composer parts, trimmed to editor + send. */
+function ChatComposer({ onSubmit }: { onSubmit?: () => void }) {
   return (
     <Composer onSubmit={onSubmit}>
       <ComposerCard>
-        <ComposerExpand />
-        <ComposerAttachments />
-        <ComposerInput placeholder={placeholder} />
+        <ComposerInput placeholder="Do anything" />
         <ComposerFooter>
-          <ComposerAttach />
           <ComposerSpacer />
           <ComposerSend />
         </ComposerFooter>
@@ -27,59 +26,57 @@ function ChatComposer({ placeholder, onSubmit }: { placeholder: string; onSubmit
   );
 }
 
-interface DemoProps {
-  width: number;
-  height: number;
-  working?: boolean;
-  defaultChatOpen?: boolean;
-  fabPosition?: ArtifactChatFabPosition;
-}
+const TURNS = [
+  ['You', 'Can you compare the conversion rate by region?'],
+  ['BL UI', 'I added the regional breakdown to the artifact. West is leading at 34%.'],
+  ['You', 'Which region moved the most against last month?'],
+  ['BL UI', 'Northeast — up 6.1 points. I highlighted it in the chart.'],
+  ['You', 'Call out the biggest change from last month.'],
+  ['BL UI', 'Northeast again: conversion rose from 28.0% to 34.1%, driven by the new onboarding flow.'],
+] as const;
 
+/* A token-driven transcript (as a host's would be): the newest turn at the bottom. */
 function Transcript() {
   return (
-    <ThemeScope scope="chat" appearance="dark" className="flex h-full flex-col overflow-auto bg-background px-[18px] pt-[18px] pb-3.5 text-foreground">
-      {[
-        ['You', 'Can you compare the conversion rate by region?'],
-        ['BL UI', 'I added the regional breakdown to the artifact. West is leading at 34%.'],
-        ['You', 'Which region moved the most against last month?'],
-        ['BL UI', 'Northeast — up 6.1 points. I highlighted it in the chart.'],
-        ['You', 'Call out the biggest change from last month.'],
-      ].map(([author, copy], index) => (
-        <div key={copy} style={{ marginBottom: 18, marginTop: index === 0 ? 'auto' : undefined }}>
-          <div className={index % 2 ? 'mb-1 text-[12px] font-bold' : 'mb-1 text-[12px] font-bold text-muted-foreground'} style={index % 2 ? { color: ASSISTANT_INK } : undefined}>{author}</div>
-          <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>{copy}</div>
+    <div className="flex h-full min-h-0 flex-col overflow-auto px-4.5 pt-4.5 pb-3.5 text-foreground">
+      {TURNS.map(([author, copy], index) => (
+        <div key={copy} className={index === 0 ? 'mt-auto mb-4.5' : 'mb-4.5'}>
+          <div className={index % 2 ? 'mb-1 text-caption font-bold text-primary' : 'mb-1 text-caption font-bold text-muted-foreground'}>{author}</div>
+          <div className="text-subhead">{copy}</div>
         </div>
       ))}
-    </ThemeScope>
+    </div>
   );
 }
 
+/* A token-driven artifact, long enough to scroll behind the floating chat. */
 function Artifact() {
   return (
-    <div style={{ minHeight: '100%', padding: 28, boxSizing: 'border-box', background: '#F6F7FA', color: '#15161A' }}>
-      <div style={{ color: '#767A84', fontSize: 12, fontWeight: 700, letterSpacing: '.08em' }}>LIVE ARTIFACT</div>
-      <h1 style={{ fontSize: 28, margin: '8px 0 24px' }}>Quarterly performance</h1>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 12 }}>
-        {['Revenue\n$1.84M', 'Conversion\n28.4%', 'Retention\n91.2%'].map((value) => {
-          const [label, metric] = value.split('\n');
-          return <div key={label} style={{ background: '#fff', border: '1px solid #E1E3E8', borderRadius: 14, padding: 18 }}>
-            <div style={{ color: '#777B84', fontSize: 12 }}>{label}</div><strong style={{ display: 'block', fontSize: 22, marginTop: 8 }}>{metric}</strong>
-          </div>;
-        })}
+    <div className="box-border min-h-full bg-muted p-7 text-foreground">
+      <div className="text-caption font-bold tracking-wider text-muted-foreground uppercase">Live artifact</div>
+      <h1 className="mt-2 mb-6 text-title font-bold">Quarterly performance</h1>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
+        {[['Revenue', '$1.84M'], ['Conversion', '28.4%'], ['Retention', '91.2%']].map(([label, metric]) => (
+          <div key={label} className="rounded-card border border-border bg-card p-4.5">
+            <div className="text-caption text-muted-foreground">{label}</div>
+            <strong className="mt-2 block text-title">{metric}</strong>
+          </div>
+        ))}
       </div>
-      <div style={{ height: 230, marginTop: 16, padding: 18, border: '1px solid #E1E3E8', borderRadius: 14, background: '#fff' }}>
+      <div className="mt-4 h-[230px] rounded-card border border-border bg-card p-4.5">
         <strong>Conversion by region</strong>
-        <div style={{ height: 170, display: 'flex', alignItems: 'end', gap: 18, padding: '14px 10px 0' }}>
-          {[58, 92, 72, 48, 82].map((height, index) => <div key={index} style={{ flex: 1, height: `${height}%`, minWidth: 18, borderRadius: '7px 7px 2px 2px', background: index === 1 ? '#0A84FF' : '#B7D7FF' }} />)}
+        <div className="flex h-[170px] items-end gap-4.5 px-2.5 pt-3.5">
+          {[58, 92, 72, 48, 82].map((height, index) => (
+            <div key={index} className={index === 1 ? 'min-w-4.5 flex-1 rounded-t-md bg-primary' : 'min-w-4.5 flex-1 rounded-t-md bg-primary/30'} style={{ height: `${height}%` }} />
+          ))}
         </div>
       </div>
-      {/* Runs behind the floating overlay so its translucency reads against real content. */}
-      <div style={{ marginTop: 16, border: '1px solid #E1E3E8', borderRadius: 14, background: '#fff', overflow: 'hidden' }}>
-        {[['Northeast', '34.1%', '+6.1'], ['West', '31.8%', '+2.4'], ['Midwest', '27.2%', '-0.8'], ['South', '24.6%', '+1.2'], ['Mountain', '22.9%', '+0.4']].map(([region, rate, delta], index) => (
-          <div key={region} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 18px', borderTop: index ? '1px solid #EEF0F4' : 0, fontSize: 13.5 }}>
-            <span style={{ flex: 1 }}>{region}</span>
+      <div className="mt-4 overflow-hidden rounded-card border border-border bg-card">
+        {[['Northeast', '34.1%', '+6.1'], ['West', '31.8%', '+2.4'], ['Midwest', '27.2%', '-0.8'], ['South', '24.6%', '+1.2'], ['Mountain', '22.9%', '+0.4'], ['Pacific', '21.7%', '+0.9']].map(([region, rate, delta], index) => (
+          <div key={region} className={index ? 'flex items-center gap-3 border-t border-border px-4.5 py-3 text-subhead' : 'flex items-center gap-3 px-4.5 py-3 text-subhead'}>
+            <span className="flex-1">{region}</span>
             <strong>{rate}</strong>
-            <span style={{ width: 46, textAlign: 'right', color: delta.startsWith('-') ? '#C7362F' : '#1B873F' }}>{delta}</span>
+            <span className={delta.startsWith('-') ? 'w-12 text-right text-destructive' : 'w-12 text-right text-success'}>{delta}</span>
           </div>
         ))}
       </div>
@@ -87,27 +84,27 @@ function Artifact() {
   );
 }
 
-function Demo({ width, height, working = false, defaultChatOpen = false, fabPosition = 'bottom-center' }: DemoProps) {
-  const [busy, setBusy] = useState(working);
+type DemoProps = Partial<ArtifactChatContainerProps> & { frame?: 'desktop' | 'phone' };
+
+/* The frame shrinks with the viewport (`w-full max-w-…`), so `--size 390x844` shows the container in a phone box and
+   `layout="auto"` really floats there. */
+function Demo({ frame = 'desktop', working: startWorking = false, ...props }: DemoProps) {
+  const [busy, setBusy] = useState(startWorking);
   return (
-    <div style={{ width, height, overflow: 'hidden' }} className="font-sans">
-      <ArtifactChatContainer
-        breakpoint={760}
-        working={busy}
-        workingLabel="Working on the artifact…"
-        onAdd={() => setBusy(false)}
-        defaultChatOpen={defaultChatOpen}
-        fabPosition={fabPosition}
-      >
-        <ArtifactChatContainer.Chat><Transcript /></ArtifactChatContainer.Chat>
-        <ArtifactChatContainer.Composer>
-          <div style={{ padding: 8, background: 'transparent' }}>
-            <ChatComposer placeholder="Do anything" onSubmit={() => setBusy(true)} />
-          </div>
-        </ArtifactChatContainer.Composer>
-        <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
-      </ArtifactChatContainer>
-    </div>
+    <BLProvider>
+      <div className={frame === 'phone' ? 'h-[min(760px,100dvh)] w-full max-w-[430px] overflow-hidden' : 'h-[min(680px,100dvh)] w-full max-w-[1100px] overflow-hidden'}>
+        <ArtifactChatContainer
+          working={busy}
+          workingLabel="Working on the artifact…"
+          onComposingChange={(composing) => { if (composing) setBusy(false); }}
+          {...props}
+        >
+          <ArtifactChatContainerContent><Artifact /></ArtifactChatContainerContent>
+          <ArtifactChatContainerChat><Transcript /></ArtifactChatContainerChat>
+          <ArtifactChatContainerComposer><ChatComposer onSubmit={() => setBusy(true)} /></ArtifactChatContainerComposer>
+        </ArtifactChatContainer>
+      </div>
+    </BLProvider>
   );
 }
 
@@ -117,139 +114,61 @@ const meta: Meta<DemoProps> = {
   parameters: {
     docs: {
       description: {
-        component: 'Composes the Workbench Composer parts. In compact mode the transcript hangs off a draggable top bump of the composer: drag its handle up to reveal the full chat, down to collapse it or fold it into a FAB.',
+        component:
+          'The one chat shell: a chat column docked beside an artifact on a wide container, a FloatingSheet over it on a compact one (its body the transcript, its foot the composer). Drag the cap up for the whole chat, down past rest to fold it into the FAB.',
       },
     },
   },
   argTypes: {
-    fabPosition: {
-      control: 'select',
-      options: ['top-left', 'top-center', 'top-right', 'center-left', 'center-right', 'bottom-left', 'bottom-center', 'bottom-right'],
-    },
+    layout: { control: 'radio', options: ['auto', 'split', 'floating'] },
+    chatSide: { control: 'radio', options: ['start', 'end'] },
+    variant: { control: 'radio', options: ['glass', 'sheet'] },
+    appearance: { control: 'radio', options: ['auto', 'light', 'dark'] },
+    fabSide: { control: 'radio', options: ['top', 'bottom', 'start', 'end'] },
+    fabAlign: { control: 'radio', options: ['start', 'center', 'end'] },
   },
 };
 export default meta;
 type Story = StoryObj<DemoProps>;
 
-export const Split: Story = { args: { width: 1100, height: 680 } };
-export const FloatingComposer: Story = { args: { width: 430, height: 720 } };
-export const FullChatDrawer: Story = { args: { width: 430, height: 720, defaultChatOpen: true } };
-export const Working: Story = { args: { width: 430, height: 720, working: true } };
-/** Resize across the breakpoint: the chat column becomes the floating chat and back, as the same composer and
-    transcript (type a draft first — it survives the switch). */
+/** Wide: the chat docks beside the artifact (it floats once the frame is under 760px wide). */
+export const Split: Story = {};
+/** Docked on the end edge, the way an assistant sits beside an app's page. */
+export const SplitEnd: Story = { args: { chatSide: 'end', chatLabel: 'Assistant' } };
+/** Compact: the chat floats over the artifact, resting on its composer. */
+export const Floating: Story = { args: { frame: 'phone' } };
+/** Floating with a peek: the newest replies stay readable above the composer. */
+export const FloatingPeek: Story = { args: { frame: 'phone', peek: 180 } };
+/** Grown over the artifact (drag the cap, press it, or Escape and the scrim to bring it back). */
+export const FloatingGrown: Story = { args: { frame: 'phone', defaultOpen: true } };
+/** Folded into its FAB (drag below rest to get here). */
+export const FloatingFolded: Story = { args: { frame: 'phone', defaultMinimized: true } };
+/** The agent is working: the composer is a tappable status until pressed. */
+export const Working: Story = { args: { frame: 'phone', working: true, peek: 120 } };
+/** The opaque `sheet` variant instead of glass. */
+export const FloatingSheetVariant: Story = { name: 'Floating (sheet variant)', args: { frame: 'phone', variant: 'sheet', peek: 180 } };
+/** `layout="floating"` floats the chat even on a wide container (maps, canvases). */
+export const AlwaysFloating: Story = { args: { layout: 'floating', peek: 180 } };
+/** A dark chat over a light page. */
+export const DarkChatOnLightPage: Story = { args: { appearance: 'dark' } };
+
+/** Resize across the breakpoint: the column becomes the floating chat and back, as the same composer and transcript
+    (type a draft first: it survives the switch). */
 function ResponsiveDemo() {
   const [wide, setWide] = useState(true);
   return (
-    <div className="font-sans">
-      <button data-testid="toggle-width" onClick={() => setWide((w) => !w)} style={{ margin: 8, padding: '6px 12px' }}>
+    <BLProvider>
+      <button type="button" data-testid="toggle-width" onClick={() => setWide((w) => !w)} className="m-2 rounded-md border border-border bg-card px-3 py-1.5 text-foreground">
         {wide ? 'Narrow (floating)' : 'Wide (split)'}
       </button>
-      <div style={{ width: wide ? 1100 : 560, height: 640, overflow: 'hidden' }}>
-        <ArtifactChatContainer breakpoint={760}>
-          <ArtifactChatContainer.Chat><Transcript /></ArtifactChatContainer.Chat>
-          <ArtifactChatContainer.Composer>
-            <div style={{ padding: 8, background: 'transparent' }}>
-              <ChatComposer placeholder="Do anything" />
-            </div>
-          </ArtifactChatContainer.Composer>
-          <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
+      <div className={wide ? 'h-[640px] w-full max-w-[1100px] overflow-hidden' : 'h-[640px] w-full max-w-[560px] overflow-hidden'}>
+        <ArtifactChatContainer>
+          <ArtifactChatContainerContent><Artifact /></ArtifactChatContainerContent>
+          <ArtifactChatContainerChat><Transcript /></ArtifactChatContainerChat>
+          <ArtifactChatContainerComposer><ChatComposer /></ArtifactChatContainerComposer>
         </ArtifactChatContainer>
       </div>
-    </div>
+    </BLProvider>
   );
 }
 export const SplitToFloating: Story = { render: () => <ResponsiveDemo /> };
-/** `layout="floating"` with a `peek` keeps the newest replies visible above the composer even in a wide container. */
-export const AlwaysFloatingWithPeek: Story = {
-  args: { width: 1100, height: 680 },
-  render: (args) => (
-    <div style={{ width: args.width, height: args.height, overflow: 'hidden' }} className="font-sans">
-      <ArtifactChatContainer layout="floating" peek={180}>
-        <ArtifactChatContainer.Chat><Transcript /></ArtifactChatContainer.Chat>
-        <ArtifactChatContainer.Composer>
-          <div style={{ padding: 8, background: 'transparent' }}>
-            <ChatComposer placeholder="Do anything" />
-          </div>
-        </ArtifactChatContainer.Composer>
-        <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
-      </ArtifactChatContainer>
-    </div>
-  ),
-};
-
-/* ── Appearance: the container follows an ambient AppearanceProvider. The transcript and artifact below are
-   token-driven (--bl-*), as a host's would be; BLProvider follows the same ambient value. */
-function ThemedTranscript() {
-  return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'auto', padding: '18px 18px 14px', color: 'var(--foreground)' }}>
-      {[
-        ['You', 'Can you compare the conversion rate by region?'],
-        ['BL UI', 'I added the regional breakdown to the artifact. West is leading at 34%.'],
-        ['You', 'Which region moved the most against last month?'],
-        ['BL UI', 'Northeast — up 6.1 points. I highlighted it in the chart.'],
-      ].map(([author, copy], index) => (
-        <div key={copy} style={{ marginBottom: 18, marginTop: index === 0 ? 'auto' : undefined }}>
-          <div style={{ color: index % 2 ? 'var(--primary)' : 'var(--muted-foreground)', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{author}</div>
-          <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>{copy}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ThemedArtifact() {
-  const card = { background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14 };
-  return (
-    <div style={{ minHeight: '100%', padding: 28, boxSizing: 'border-box', background: 'var(--muted)', color: 'var(--foreground)' }}>
-      <div style={{ color: 'var(--muted-foreground)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em' }}>LIVE ARTIFACT</div>
-      <h1 style={{ fontSize: 28, margin: '8px 0 24px' }}>Quarterly performance</h1>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 12 }}>
-        {['Revenue\n$1.84M', 'Conversion\n28.4%', 'Retention\n91.2%'].map((value) => {
-          const [label, metric] = value.split('\n');
-          return <div key={label} style={{ ...card, padding: 18 }}>
-            <div style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>{label}</div><strong style={{ display: 'block', fontSize: 22, marginTop: 8 }}>{metric}</strong>
-          </div>;
-        })}
-      </div>
-      <div style={{ ...card, height: 230, marginTop: 16, padding: 18 }}>
-        <strong>Conversion by region</strong>
-        <div style={{ height: 170, display: 'flex', alignItems: 'end', gap: 18, padding: '14px 10px 0' }}>
-          {[58, 92, 72, 48, 82].map((height, index) => <div key={index} style={{ flex: 1, height: `${height}%`, minWidth: 18, borderRadius: '7px 7px 2px 2px', background: index === 1 ? 'var(--primary)' : 'var(--secondary-strong, var(--accent))' }} />)}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ThemedDemo({ appearance, width, height, layout }: { appearance: Appearance; width: number; height: number; layout?: 'split' | 'floating' }) {
-  return (
-    <AppearanceProvider value={appearance}>
-      <div style={{ width, height, overflow: 'hidden' }} className="font-sans">
-        <BLProvider>
-          <ArtifactChatContainer layout={layout} peek={layout === 'floating' ? 150 : 0}>
-            <ArtifactChatContainer.Chat><ThemedTranscript /></ArtifactChatContainer.Chat>
-            <ArtifactChatContainer.Composer>
-              <div style={{ padding: 8, background: 'transparent' }}>
-                <ChatComposer placeholder="Do anything" />
-              </div>
-            </ArtifactChatContainer.Composer>
-            <ArtifactChatContainer.Content><ThemedArtifact /></ArtifactChatContainer.Content>
-          </ArtifactChatContainer>
-        </BLProvider>
-      </div>
-    </AppearanceProvider>
-  );
-}
-
-export const AppearanceLight: Story = { args: { width: 1100, height: 680 }, render: (a) => <ThemedDemo appearance="light" width={a.width} height={a.height} /> };
-export const AppearanceDark: Story = { args: { width: 1100, height: 680 }, render: (a) => <ThemedDemo appearance="dark" width={a.width} height={a.height} /> };
-/** The floating glass chat in both appearances, side by side. */
-export const AppearanceFloating: Story = {
-  args: { width: 430, height: 720 },
-  render: (a) => (
-    <div style={{ display: 'flex', gap: 16 }}>
-      <ThemedDemo appearance="light" width={a.width} height={a.height} layout="floating" />
-      <ThemedDemo appearance="dark" width={a.width} height={a.height} layout="floating" />
-    </div>
-  ),
-};

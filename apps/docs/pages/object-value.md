@@ -10,7 +10,6 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import { ObjectValue } from '@/components/ui/object-value'
-import { previewFromValue } from '@/lib/object-tree-value'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -21,7 +20,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { ObjectValue, previewFromValue } from '@brett_lamy/ui'
+import { ObjectValue } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}

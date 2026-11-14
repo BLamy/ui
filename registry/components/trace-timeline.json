@@ -8,6 +8,7 @@
   ],
   "exports": [
     "TraceTimeline",
+    "TraceTimelinePreview",
     "traceTimelineVariants"
   ],
   "imports": [

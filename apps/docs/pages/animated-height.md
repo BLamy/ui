@@ -1,6 +1,6 @@
 # AnimatedHeight
 
-A container that changes size instead of cutting. `AnimatedHeight` measures its content and springs its own height to match, so a tray going from a two-line step to a five-line step grows rather than jumps. Use it around content whose height changes in place; to replace one view with another, put a [Swap](https://blamy.github.io/ui/#/swap) inside it (the tray step: `<AnimatedHeight><Swap value={step} direction={dir}>…`). For a panel that opens and closes, use [Disclosure](https://blamy.github.io/ui/#/disclosure), which animates its own height; for a short sheet, `SheetContent animateHeight`.
+A container that changes size instead of cutting. `AnimatedHeight` measures its content and springs its own height to match, so a tray going from a two-line step to a five-line step grows rather than jumps. Use it around content whose height changes in place; to replace one view with another, put a [Swap](https://blamy.github.io/ui/#/swap) inside it (the tray step: `<AnimatedHeight><Swap value={step} direction={dir}>…`). For a panel that opens and closes, use [Disclosure](https://blamy.github.io/ui/#/disclosure), which animates its own height; for a short sheet or a flow in one, `SheetView` (and `DialogView` in a Dialog), which put both together.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}

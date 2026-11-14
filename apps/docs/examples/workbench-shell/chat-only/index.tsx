@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, MessageMarkdown, UserMessage } from '@/components/ui/conversation'
 import { SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSection, SidebarWorkspace } from '@/components/ui/sidebar'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
-import { Icon } from '@/lib/icon'
+import { ThemeScope } from '@/lib/theme'
 import { stripAttachmentRefs, WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 import { useWorkbenchShell, WorkbenchContent, WorkbenchHeader, WorkbenchMain, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarClose, WorkbenchSidebarTrigger, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
 
@@ -73,23 +72,23 @@ function Threads({
 }) {
   const shell = useWorkbenchShell()
   return (
-    <nav aria-label="Threads" className="flex h-full flex-col bg-sidebar">
+    <div className="flex h-full flex-col bg-sidebar">
       <SidebarHeader>
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
-            <SidebarWorkspace name="Assistant" />
+            <SidebarWorkspace title="Assistant" />
           </div>
           <WorkbenchSidebarClose />
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent aria-label="Threads">
         <SidebarSection title="Recent">
           {RECENT.map((t) => (
             <SidebarItem
               key={t}
-              icon={<Icon name="bubble-left" size={15} sw={1.8} />}
-              label={t}
-              active={t === current}
+              icon="bubble-left"
+              title={t}
+              current={t === current}
               onClick={() => {
                 onPick(t)
                 if (shell.compact) shell.setSidebarOpen(false)
@@ -99,9 +98,9 @@ function Threads({
         </SidebarSection>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarWorkspace name="Ada Lovelace" detail="Pro plan" initial="AL" />
+        <SidebarWorkspace title="Ada Lovelace" description="Pro plan" />
       </SidebarFooter>
-    </nav>
+    </div>
   )
 }
 
@@ -171,12 +170,11 @@ function ChatOnly() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function ChatOnlyExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <ChatOnly />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

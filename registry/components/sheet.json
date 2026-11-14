@@ -1,7 +1,7 @@
 {
   "name": "sheet",
   "title": "Sheet",
-  "description": "A modal panel pinned to an edge, on UI SDK's Drawer: the iOS card sheet with a grabber at the bottom, side panels on the left and right, or a drop-down from the top; it follows a drag, rests on snap points and springs away.",
+  "description": "A modal panel pinned to an edge, on UI SDK's Drawer: the iOS card sheet with a grabber at the bottom, side panels on the left and right, or a drop-down from the top; it follows a drag, rests on snap points and springs away, and a short sheet springs to its content (SheetView), through the views of a flow. `contained` keeps it inside its parent box, and the panel variant is the edge drawer of a sidebar or menu.",
   "page": "sheet",
   "exports": [
     "Sheet",
@@ -15,7 +15,9 @@
     "SheetBody",
     "SheetFooter",
     "SheetClose",
+    "SheetView",
     "sheetVariants",
+    "sheetGrabberVariants",
     "createSheetController"
   ],
   "imports": [

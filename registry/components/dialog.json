@@ -1,7 +1,7 @@
 {
   "name": "dialog",
   "title": "Dialog",
-  "description": "Modal dialogs on UI SDK: Dialog, a card with a header, a scrolling body and footer actions that can present as a bottom sheet, and AlertDialog, the centered iOS alert that waits for an answer.",
+  "description": "Modal dialogs on UI SDK: Dialog, a card with a header, a scrolling body and footer actions that becomes a draggable tray in a compact container (presentation=\"auto\"), with views that morph its height and travel in the direction of the flow (view, DialogView, DialogBack); AlertDialog, the centered iOS alert that waits for an answer; and the surface recipes the kit's other modal surfaces share.",
   "page": "dialog",
   "exports": [
     "Dialog",
@@ -14,6 +14,10 @@
     "DialogBody",
     "DialogFooter",
     "DialogClose",
+    "DialogBack",
+    "DialogView",
+    "SurfaceFlow",
+    "SurfaceFlowTitle",
     "dialogVariants",
     "createDialogController",
     "AlertDialog",
@@ -27,7 +31,13 @@
     "AlertDialogClose",
     "alertDialogCloseVariants",
     "createAlertDialogController",
-    "createConfirm"
+    "createConfirm",
+    "surfaceHeaderVariants",
+    "surfaceTitleVariants",
+    "surfaceDescriptionVariants",
+    "surfaceBodyVariants",
+    "surfaceFooterVariants",
+    "closeButtonVariants"
   ],
   "imports": [
     "Dialog",

@@ -216,7 +216,7 @@ interface PageLook { title: ReactNode; largeTitle: boolean; grouped: boolean; ma
 /** One page of a NavigationStack: its bar (title, bar items) and its content under it, a large title first. */
 function StackPage({ value, look, children }: { value: string; look: PageLook; children: ReactNode }) {
   return (
-    <NavigationStackPage value={value} grouped={look.grouped}>
+    <NavigationStackPage value={value} variant={look.grouped ? "grouped" : "plain"}>
       <NavigationStackBar>
         {look.leading ? <NavigationStackLeading>{look.leading}</NavigationStackLeading> : null}
         <NavigationStackTitle>{look.title}</NavigationStackTitle>

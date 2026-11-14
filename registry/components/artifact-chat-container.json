@@ -1,14 +1,26 @@
 {
   "name": "artifact-chat-container",
   "title": "ArtifactChatContainer",
-  "description": "Chat docked beside an artifact when wide; a floating glass Composer over the artifact when narrow.",
+  "description": "The chat shell: a chat column docked beside an artifact on a wide container, a FloatingSheet over it on a compact one that peeks, grows and folds into a FAB, with the transcript and composer kept across the switch.",
   "page": "artifact-chat-container",
   "exports": [
     "ArtifactChatContainer",
-    "useArtifactChatContainer"
+    "ArtifactChatContainerContent",
+    "ArtifactChatContainerChat",
+    "ArtifactChatContainerComposer",
+    "useArtifactChatContainer",
+    "artifactChatContainerVariants"
   ],
   "imports": [
     "ArtifactChatContainer",
-    "useArtifactChatContainer"
+    "ArtifactChatContainerContent",
+    "ArtifactChatContainerChat",
+    "ArtifactChatContainerComposer"
+  ],
+  "types": [
+    "ArtifactChatLayout",
+    "ArtifactChatSide",
+    "ArtifactChatComposingChangeDetails",
+    "ArtifactChatComposingChangeReason"
   ]
 }

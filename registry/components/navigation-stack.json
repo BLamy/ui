@@ -1,7 +1,7 @@
 {
   "name": "navigation-stack",
   "title": "NavigationStack",
-  "description": "iOS's navigation controller as composable parts, on a UI SDK primitive: pages pushed and popped by key, with large titles that collapse into the bar, a back button that names the page behind and a title that flies into it, a bar that rides away on scroll, pull to refresh, and Escape, platform back and edge-swipe pops that go to the innermost stack first.",
+  "description": "iOS's navigation controller as composable parts, on a UI SDK primitive: pages pushed and popped by key (declared as children or drawn by renderPage), with large titles that collapse into the bar, a back button that names the page behind and a title that flies into it, a bar that rides away on scroll, pull to refresh, and Escape, platform back and edge-swipe pops that go to the innermost stack first; the stack of a SplitView column that pushes.",
   "page": "navigation-stack",
   "exports": [
     "NavigationStack",

@@ -1,6 +1,8 @@
 # ArtifactChatContainer
 
-A container-aware chat and artifact composition. At larger widths the full chat docks on the left and the artifact fills the right. Below the breakpoint, the artifact keeps the whole canvas and your Workbench `Composer` floats above it on frosted glass. The transcript hangs off a **draggable top bump** of that composer: pull the bump's handle upward and the conversation tracks the pointer, then snaps fully open or closed on release. Continue dragging below the closed position to fold the chat into a single FAB; tapping that FAB restores only the compact Composer.
+The kit's chat shell: an agent chat beside the thing it works on (a document, a dashboard, a map, an app's page). On a wide container the chat is a **column docked beside the artifact**; on a compact one it **floats over the artifact** as a [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet) whose foot is your `Composer` and whose body is the transcript: it rests on the composer (or peeks the newest replies), grows over the artifact with a drag of its cap, and folds into a FAB when dragged below rest. The transcript and the composer are rendered once and move between the two layouts, so a half-typed draft, the caret and a streaming reply survive the switch.
+
+Use it when a chat and an artifact share a screen. For a chat that *is* the screen, compose [Conversation](https://blamy.github.io/ui/#/conversation) directly; for any other floating card over a page (an order tracker, a map panel, a dock), use [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet); for an inspector beside content, [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -10,7 +12,8 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  ArtifactChatContainer, useArtifactChatContainer,
+  ArtifactChatContainer, ArtifactChatContainerContent,
+  ArtifactChatContainerChat, ArtifactChatContainerComposer,
 } from '@/components/ui/artifact-chat-container'
 ```
 {% endtab %}
@@ -23,206 +26,133 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  ArtifactChatContainer, useArtifactChatContainer,
+  ArtifactChatContainer, ArtifactChatContainerContent,
+  ArtifactChatContainerChat, ArtifactChatContainerComposer,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
 
-The floating half is not special to this container: it is the standalone `FloatingChat`, which adds a `ComposerBump side="top" draggable` (handle + `ComposerBumpContent` holding the transcript) to whatever Composer you put in the slot, through a `ComposerOutlet`. `ArtifactChatContainer` only decides *when* to float it.
-
 ```tsx
-import { ArtifactChatContainer } from '@/components/ui/artifact-chat-container'
 import {
-  Composer, ComposerCard, ComposerInput, ComposerFooter,
-  ComposerSpacer, ComposerSend,
+  ArtifactChatContainer, ArtifactChatContainerContent,
+  ArtifactChatContainerChat, ArtifactChatContainerComposer,
+} from '@/components/ui/artifact-chat-container'
+import {
+  Composer, ComposerCard, ComposerInput, ComposerFooter, ComposerSpacer, ComposerSend,
 } from '@/components/ui/composer/composer'
 
-<ArtifactChatContainer
-  layout="auto"          // 'auto' | 'split' | 'floating'
-  breakpoint={760}
-  chatWidth={400}
-  hideOnScroll
-  fabPosition="bottom-center"
-  working={isWorking}
-  workingLabel="Working on the artifact…"
-  onAdd={() => setIsWorking(false)}
->
-  <ArtifactChatContainer.Chat><Conversation /></ArtifactChatContainer.Chat>
-  <ArtifactChatContainer.Composer>
+<ArtifactChatContainer working={busy} workingLabel="Updating the chart…">
+  <ArtifactChatContainerContent><Artifact /></ArtifactChatContainerContent>
+  <ArtifactChatContainerChat><Conversation /></ArtifactChatContainerChat>
+  <ArtifactChatContainerComposer>
     <Composer onSubmit={send}>
       <ComposerCard>
         <ComposerInput placeholder="Do anything" />
         <ComposerFooter><ComposerSpacer /><ComposerSend /></ComposerFooter>
       </ComposerCard>
     </Composer>
-  </ArtifactChatContainer.Composer>
-  <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
+  </ArtifactChatContainerComposer>
 </ArtifactChatContainer>
 ```
 
-## Built from
+The container fills its parent (`h-full w-full`): give the parent a size.
 
-| Piece | Role |
-| --- | --- |
-| `bindSizeClass` (the kit's, `@/lib/size-class`) | Resolves `layout="auto"` from the container's own size class: `compact` below `breakpoint` floats the chat. The root carries `data-size-class` for CSS, and the container is the size-class scope of what it renders (`SizeClassProvider`), so popups inside with `presentation="auto"` follow it too. |
-| `ChatColumn` | The split layout's docked chat: `ChatColumn.Transcript` scrolls above `ChatColumn.Composer`. |
-| `FloatingChat` | The floating layout: the slot's Composer over the content, with the transcript on a draggable top bump (`ComposerOutlet` + `ComposerBump`). |
+## Layouts
 
-Each piece is a library part (`@/components/ui/chat-column`, `@/components/ui/floating-chat`), so a layout the container does not offer can be composed directly.
+`layout="auto"` (the default) reads the container's **own** width, not the viewport's: at `breakpoint` (760px) and above it docks the chat, below it floats it. The root carries `data-size-class` and `data-layout`, and it is the size-class scope of what it renders, so dialogs and popovers opened inside with `presentation="auto"` follow it too. `layout="split"` always docks; `layout="floating"` always floats, the right choice for maps, canvases and other full-bleed artifacts.
 
-## Responsive slots
-
-| Slot | Split layout | Compact layout |
-| --- | --- | --- |
-| `Chat` | Full left column | Snaps into the full-page chat |
-| `Composer` | Bottom of the chat column | Floating over the content; its top bump carries the transcript |
-| `Content` | Right column | Full canvas scrolling behind the glass |
-
-The breakpoint measures the container, not the viewport. A tap on the bump's handle toggles the two chat states; a drag previews the travel, then release settles fully open or fully closed. The scrim and `Escape` collapse the full chat. Dragging downward past the closed Composer minimizes it. `fabPosition` accepts `top-left`, `top-center`, `top-right`, `center-left`, `center-right`, `bottom-left`, `bottom-center`, or `bottom-right`; the default is `bottom-center`. `chatOpen` / `onChatOpenChange(open, details)` provide controlled chat state (`details.reason` is FloatingChat's: `handle-press`, `swipe`, `escape-key`, `outside-press`, `trigger-press`, or `imperative` for `setChatOpen` from the context; `details.cancel()` keeps the chat as it is), and `useArtifactChatContainer()` exposes the size class (`sizeClass`) and presentation state to descendants.
-
-## Layout, peek, and surface options
-
-| Prop | Default | Effect |
-| --- | --- | --- |
-| `layout` | `auto` | `auto` splits above `breakpoint` and floats below it. `floating` always floats the chat over the content — the right choice for maps, canvases, and other full-bleed artifacts. `split` always docks. |
-| `chatSide` | `left` | The edge the docked column sits on. `right` puts an assistant beside an app's page (the Loop QA block docks Ask QA there); the column slides in from and out toward its own edge. |
-| `minimized` / `onMinimizedChange(minimized, details)` | uncontrolled | Controls the floating chat's fold into its FAB, with FloatingChat's details (`swipe`, `trigger-press`, `imperative`; `details.cancel()` keeps it). A host can switch `layout` to `floating` with `minimized` to hide a docked chat as a FAB; tapping the FAB reports `false` with reason `trigger-press`, and the composer flies back to the column when the host docks it again. |
-| `peek` | `0` | Height of transcript kept visible above the composer while the chat is closed, so the newest reply stays readable over the content. Growth is measured from the peek, so the glass keeps its compact shape until it is dragged past it. |
-| `appearance` | `glass` | `glass` blurs the content behind it; `sheet` is an opaque card. |
-| `tone` | `auto` | `auto` inherits the host's theme variables; `dark` and `light` override them so the surface can disagree with the page. |
-
-## Working and scroll behavior
-
-When `working` is true, the composer card becomes a translucent, tappable **Working…** bar (the outlet wraps the card; the bump stays). Tapping it reveals the real Composer so the user can add another request without leaving the artifact. Use `onAdd` to clear the working state, then set `working` again when the new request begins.
-
-`hideOnScroll` defaults to true. The floating control follows both its own content scroller and the shared BL UI chrome state used by the `Tabs` bar and `NavigationStack`: scrolling down hides it, scrolling up restores it. The artifact no longer reserves a white dock spacer; content continues behind the fixed glass. Expanded chat stays visible while scrolling.
-
-The demo composes a trimmed Composer — editor, expand, attach, and send — without the model, effort, access, or checkout parts.
-
-## Live example
-
-Switch between split and floating layouts, flick the bump's handle to either snap state, then keep dragging downward to minimize the Composer into its FAB.
-
-{% demo src="artifact-chat-container/split-to-floating" %}
-
-## One chat, two layouts
-
-The composer and the transcript are rendered once and moved between the docked column and the floating sheet, so crossing the breakpoint keeps a half-typed draft, the caret and a streaming reply. The composer flies from its old place to its new one; the column slides away (or in) while the artifact grows into the room. Type a draft, then drag the width:
+Drag the width across the breakpoint: the column slides away, the composer flies to the floating sheet's foot and the artifact grows into the room, keeping the draft.
 
 {% demo src="artifact-chat-container/resize-breakpoint" %}
 
-Always floating with a `peek`: the newest replies stay visible above the composer. Send something to see the working pill take the card's place; flick the grip up for the whole chat, or down past rest to fold it into the FAB (the chat shrinks toward where the FAB sits as the FAB grows out of it).
+{% demo src="artifact-chat-container/split-to-floating" %}
+
+### Docked
+
+The column is an `aside` landmark named by `chatLabel` ("Chat"), `chatWidth` wide (400px), on the `chatSide` edge: `start` (default) or `end`, for an assistant beside an app's page. The transcript fills it above the composer.
+
+### Floating
+
+The floating chat is a `FloatingSheet` (`variant="glass"` by default, `bodyAlign="end"` so the transcript grows upward out of the cap):
+
+- **Rest.** With `peek={0}` it rests on the composer alone; a `peek` (px, or `'30%'` of the container) keeps the newest replies readable above it, fading at the top edge.
+- **Grow.** Drag the cap up, press it, or use the arrow keys on it: the transcript grows over the artifact and the container dims. `Escape` and a press on the scrim bring it back to rest. `open` / `defaultOpen` / `onOpenChange(open, details)` control it (`details.reason`: `swipe`, `handle-press`, `handle-key`, `escape-key`, `outside-press`, `imperative`).
+- **Fold.** Drag it below rest and it folds into a FAB on the `fabSide` edge at `fabAlign` (bottom center by default), with `fabIcon` as its face; the FAB, named "Open " + `chatLabel`, brings it back. `minimized` / `defaultMinimized` / `onMinimizedChange(minimized, details)` control it (`swipe`, `trigger-press`, `imperative`).
+- **Scroll.** Resting on the composer alone, it slides away while the artifact scrolls down (or the shared chrome hides) and comes back on a scroll up; `hideOnScroll={false}` keeps it.
 
 {% demo src="artifact-chat-container/floating-peek" %}
 
-## Examples
+## Working
 
-Full compositions built on the container and its floating surface. Each links to a full-screen version.
+While `working` is true, the floating composer's card becomes a tappable status (`workingLabel`, "Working…"): the agent is busy, the artifact stays clear. Pressing the status, or growing the chat, brings the real composer back so the user can queue another request; the card stays mounted underneath, so nothing typed is lost. `composing` / `onComposingChange(composing, details)` control which one shows (`details.reason`: `trigger-press`, `handle-press`, `handle-key`, `swipe`, `imperative`); uncontrolled, work starting hides the composer and work stopping brings it back. Docked, the composer always shows.
 
-### Map chat
+## Appearance
 
-A chat that is always floating over a map and works by calling tools. It is the **map-chat** [block](https://blamy.github.io/ui/#/blocks): the composition is `ArtifactChatContainer layout="floating"` with a `TileMap` in the `Content` slot and a `peek` so the guide's newest reply stays visible above the composer. `TileMap`, the geography, the places and the tool-planning agent are block-local files, not library parts, and `npx shadcn add` copies them into your app.
+`appearance` is the chat's colour scheme: `auto` (default) follows the page; `light` and `dark` put the bl-theme's `sheet` scope on the container so the chat can disagree with the page (a dark chat over a light map). The composer wears the `glass` scope in the same appearance. `variant` is the floating chat's look: `glass` (default) blurs the artifact behind it, `sheet` is an opaque card.
 
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/map-chat.json{% endcommand %} Drag the cap up for the full transcript; drag it below the composer to fold the chat into a FAB and use the map alone.
+## Parts
+
+| Part | Renders | Role |
+| --- | --- | --- |
+| `ArtifactChatContainer` | `div` | The root: the grid (docked) or the positioned box (floating). Takes every `div` prop. |
+| `ArtifactChatContainerContent` | `div` | The artifact. Stays mounted, in place, across layouts; full-bleed and scrolling under the floating chat. Not a landmark: pass `role="main"` (or `role="region"` with an `aria-label`) when it is the page's main content. |
+| `ArtifactChatContainerChat` | nothing in place | The transcript. Rendered once and moved between the column and the floating sheet's body. Make it a full-height flex column with the newest message at the bottom (a `Conversation` or `MessageScroller` is). |
+| `ArtifactChatContainerComposer` | nothing in place | The `Composer`. Rendered once and moved between the bottom of the column and the floating sheet's foot, inside a `glass` theme scope. |
+
+Write the three parts as direct children, in any order. React context reaches the Chat and Composer from where you write them, not from the dock they are shown in.
+
+## Props
+
+| Prop | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `layout` | `'auto' \| 'split' \| 'floating'` | `'auto'` | Docked, floating, or decided by the container's width. |
+| `breakpoint` | `number` | `760` | Container width, px, below which `auto` floats the chat (the container's size class is `compact` under it). |
+| `chatWidth` | `number \| string` | `400` | Width of the docked column. |
+| `chatSide` | `'start' \| 'end'` | `'start'` | The inline edge the docked column sits on. |
+| `chatLabel` | `string` | `'Chat'` | Accessible name of the column, the floating sheet and (with "Open ") its FAB. |
+| `open` / `defaultOpen` / `onOpenChange` | `boolean` / `boolean` / `(open, details) => void` | `false` | The floating chat grown over the artifact. |
+| `minimized` / `defaultMinimized` / `onMinimizedChange` | `boolean` / `boolean` / `(minimized, details) => void` | `false` | The floating chat folded into its FAB. |
+| `working` | `boolean` | `false` | The agent is working: the floating composer becomes a tappable status. |
+| `workingLabel` | `ReactNode` | `'Working…'` | The status's text. |
+| `composing` / `onComposingChange` | `boolean` / `(composing, details) => void` | `!working` | Whether the real composer shows while working. |
+| `peek` | `number \| '${number}%'` | `0` | Transcript kept visible above the resting floating composer. |
+| `gutter` | `number` | `12` | Inset of the floating chat from the container's edges. |
+| `variant` | `'glass' \| 'sheet'` | `'glass'` | The floating chat's look. |
+| `appearance` | `'auto' \| 'light' \| 'dark'` | `'auto'` | The chat's colour scheme. |
+| `fabSide` / `fabAlign` | `'top' \| 'bottom' \| 'start' \| 'end'` / `'start' \| 'center' \| 'end'` | `'bottom'` / `'center'` | Where the FAB rests. |
+| `fabIcon` | `ReactNode` | a sparkle | The FAB's face. |
+| `hideOnScroll` | `boolean` | `true` | Hide the resting floating chat while the artifact scrolls down. |
+
+## Hook
+
+`useArtifactChatContainer()` reads the container from anything inside it (the transcript's own header, for example) and throws outside one: `{ sizeClass, layout, open, setOpen, composing, setComposing, minimized, setMinimized }`. The setters take an optional `{ reason, event }` and go through the same callbacks, so a controlled host hears them; `open` is always false while docked.
 
 ```tsx
-import { ArtifactChatContainer } from '@/components/ui/artifact-chat-container'
-import { TileMap } from '@/components/blocks/map-chat/tile-map'
-import { planTurn } from '@/components/blocks/map-chat/map-agent'
-
-<ArtifactChatContainer
-  layout="floating" peek={236} working={busy} hideOnScroll={false}
->
-  <ArtifactChatContainer.Content>
-    <TileMap
-      view={view} pins={pins} route={route} controls onPinClick={focusPlace}
-    />
-  </ArtifactChatContainer.Content>
-  <ArtifactChatContainer.Chat>
-    <Transcript turns={turns} />
-  </ArtifactChatContainer.Chat>
-  <ArtifactChatContainer.Composer>
-    <Composer onSubmit={send} streaming={busy} onStop={stop}>
-      <ComposerCard>
-        <ComposerInput />
-        <ComposerFooter><ComposerSpacer /><ComposerSend /></ComposerFooter>
-      </ComposerCard>
-    </Composer>
-  </ArtifactChatContainer.Composer>
-</ArtifactChatContainer>
+function TranscriptHeader() {
+  const { layout, setOpen } = useArtifactChatContainer()
+  return layout === 'floating' ? <Button onClick={() => setOpen(false)}>Collapse</Button> : null
+}
 ```
 
-#### The tool loop
+## Accessibility
 
-`planTurn(input, memory, userPosition)` is a scripted stand-in for a model: it reads the request, picks tool calls, and returns `{ steps, reply, memory }`. Each step is one of `search_places`, `show_on_map`, `plan_route`, `save_trip`, or `clear_map`, and runs against a `MapToolHost` the demo implements over its own state — the same interface a real agent backend would drive. Tool rows appear in the transcript as they run, then the reply streams in. Places in the reply are `@place` mention chips (tap to fly the camera), and `#category` / `#area` tags start a new search.
+Docked, the chat is a named `complementary` landmark. Floating, it is a dialog named by `chatLabel`: at rest it is not modal and focus is never moved, so the artifact stays usable beside it; grown, it is modal to the container and `Escape` brings it back. The cap is UI SDK's drawer handle ("Expand" / "Collapse"; Enter, Space, the arrow keys, Home and End). The FAB is out of the tab order and the accessibility tree until the chat folds into it. The working status is one button whose name includes its text and "Add something new".
 
-Try: *Coffee near me*, *Plan an afternoon in SoHo*, *How far is the Empire State Building?*, *Best pizza in the Village*.
+## Styling
 
-#### TileMap
+The root carries `data-slot="artifact-chat-container"`, `data-layout` (`split` / `floating`), `data-size-class`, `data-chat-side` and, for an explicit appearance, `data-appearance` with `data-theme-scope="sheet"`. Docked, `artifact-chat-column` holds the `artifact-chat-chat` aside with its `artifact-chat-transcript-dock` and `artifact-chat-composer-dock`; floating, the FloatingSheet's own slots (`floating-sheet`, `floating-sheet-body`, `floating-sheet-foot`) hold the same docks. The artifact is `artifact-chat-content`. `ck-artifact-chat`, `ck-artifact-chat__chat` and `ck-artifact-chat__content` stay as class hooks. `artifactChatContainerVariants({ layout, chatSide })` is the root's recipe.
 
-`TileMap` (`import { TileMap } from '@/components/blocks/map-chat/tile-map'`) is a dependency-free slippy map: raster tiles at the nearest integer zoom scaled to the fractional camera, with pins and a route projected in an overlay. `view` accepts `{ center, zoom }` or `{ bounds, padding, maxZoom }` and flies to it whenever the object identity changes; gestures (drag, pinch, wheel, double-tap) move the camera without touching the prop. `tileUrl` swaps the tile set — key-free `esriDarkGrayTiles`, `esriLightGrayTiles`, and `osmTiles` are included, with `tileFilter` to deepen a grey basemap — and `scheme="light"` flips label and control colours to match. Pins take an icon, a colour, a numbered `badge`, or a `callout` bubble.
+## Blocks built on it
 
-#### Live example
-
-Tiles load from Esri, so this block needs network. Open it full screen at [`?demo=artifact-chat-container/map-chat`](?demo=artifact-chat-container/map-chat).
+- **[Map chat](https://blamy.github.io/ui/#/blocks/map-chat)**: `layout="floating"` over a `TileMap`, with a `peek` so the guide's newest reply stays over the map, and tool calls that move the camera.
 
 {% demo src="artifact-chat-container/map-chat" %}
 
-### Delivery tracking
-
-An order tracker in the style of a food-delivery app, the **delivery-tracking** [block](https://blamy.github.io/ui/#/blocks). It is composed from the same primitives as the map chat: a light `TileMap` (the map-chat block's, above) underneath and an opaque, edge-docked `FloatingSheet` carrying the order status.
-
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/delivery-tracking.json{% endcommand %} Resting, the sheet shows the headline, a `ProgressStepper`, the pickup instructions, and a promo row; drag the cap and the same surface grows into the full page with gift-card and menu carousels.
-
-```tsx
-import { FloatingSheet } from '@/components/ui/floating-sheet'
-import { ProgressStepper } from '@/components/ui/progress-stepper'
-import {
-  TileMap, esriLightGrayTiles,
-} from '@/components/blocks/map-chat/tile-map'
-
-<div style={{ position: 'relative' }}>
-  <TileMap
-    view={route} pins={[store, car]} route={path}
-    tileUrl={esriLightGrayTiles} scheme="light"
-  />
-  <FloatingSheet
-    appearance="sheet" tone="light" gutter={0} radius={20} peek={344}
-    bodyAlign="start" minimizable={false} scrim={false}
-  >
-    <FloatingSheet.Body>
-      <h2>Preparing your order</h2>
-      <ProgressStepper steps={steps} current={stage} />
-      <PickupInstructions />
-      <Disclosure title="Order details" />
-      <Carousel title="Gift cards" />
-    </FloatingSheet.Body>
-  </FloatingSheet>
-</div>
-```
-
-#### What is configurable
-
-| Knob | Where | Effect |
-| --- | --- | --- |
-| `appearance`, `tone`, `gutter`, `radius` | `FloatingSheet` | Opaque card docked to the edges here; `glass` with a `gutter` turns the same tracker into a floating card over the map. |
-| `peek`, `bodyAlign`, `minimizable` | `FloatingSheet` | How much rests over the map, which end of the body the window anchors to, and whether it can fold away. |
-| `variant`, `animated`, `labels` | `ProgressStepper` | Segment bars or a joined line, a shimmer on the current step, optional labels. Every step exposes `data-state="complete|current|upcoming"`. |
-| `scheme`, `tileUrl`, pin `callout` | `TileMap` | Light chrome over grey Esri tiles, and the ETA bubble on the car. |
-| `stage`, `autoAdvance`, `stageMs`, `accent` | `DeliveryTrackingDemo` (block) | Drive the order stage yourself or let it advance; recolour the stepper, pins, and primary button. |
-
-The sheet body is ordinary content: the stepper, cards, disclosure, and carousels are siblings a host reorders or replaces. Nothing in it knows about the map.
-
-#### Live example
-
-Open it full screen at [`?demo=artifact-chat-container/delivery-tracking`](?demo=artifact-chat-container/delivery-tracking).
+- **[Loop QA](https://blamy.github.io/ui/#/blocks/loop-qa)**: an assistant docked on the `end` edge beside an app's pages, floating on a phone.
+- **[Delivery tracking](https://blamy.github.io/ui/#/blocks/delivery-tracking)** is the same idea without a chat: a docked `FloatingSheet` over a map.
 
 {% demo src="artifact-chat-container/delivery-tracking" %}
-
-## FloatingSheet
-
-The map chat and delivery tracker float on `FloatingSheet`: glass or opaque, peeking or docked, with a drag that snaps open and folds into a FAB. The floating chat here shares the same velocity-aware gesture (`useSpringSheetDrag`) through the Composer's top bump. Its appearances, drag behavior, slots, and full props are documented on the [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet) page.
 
 ## cva recipes
 
@@ -233,7 +163,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/artifact-chat-container`. Base classes:
 
 ```text
-ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden bg-background text-foreground [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)]
+ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden bg-background font-sans text-foreground
 ```
 
 **`layout`** — default `split`
@@ -243,11 +173,11 @@ ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden 
 | `split` (default) | `grid` |
 | `floating` | `block` |
 
-**`chatSide`** — default `left`
+**`chatSide`** — default `start`
 
 | Value | Adds |
 | --- | --- |
-| `left` (default) | — |
-| `right` | — |
+| `start` (default) | — |
+| `end` | — |
 
 2 compound variants — see the source.

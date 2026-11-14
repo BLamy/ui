@@ -4,7 +4,7 @@ import {
 } from '@ui-sdk/core';
 import { RowIdIndex, rowsChange, type RowId, type RowsChange } from '@/lib/log-list-model';
 
-/* ══ Behaviors the data grids share: ResultTable, RequestTable and LogList ══
+/* ══ Behaviors the data grids share: DataTable (and its presets, RequestTable and the SQL console's results) and LogList ══
    Each is shaped like UI SDK's own: call it once in a primitive's `api`, keep it on the api, and wire it from the slots.
 
    - `createTabStop` keeps a grid one tab stop when its rows or cells hold controls of their own (a link, a Copy button).

@@ -1,11 +1,12 @@
 {
   "name": "switch",
   "title": "Switch",
-  "description": "The iOS switch on UI SDK's Switch: a 51 by 31 track, a SwitchThumb that springs across and stretches while pressed, labelled by its ListRow inside one.",
+  "description": "The iOS switch on UI SDK's Switch: a 51 by 31 track (38 by 22 at size sm), a SwitchThumb that springs across and stretches while pressed, labelled by its ListRow inside one.",
   "page": "switch",
   "exports": [
     "Switch",
     "SwitchThumb",
+    "switchVariants",
     "createSwitchController"
   ],
   "imports": [

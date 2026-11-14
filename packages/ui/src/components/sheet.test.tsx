@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { useState } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Sheet, SheetBackdrop, SheetBody, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle,
-  SheetTrigger, createSheetController,
+  SheetTrigger, SheetView, createSheetController,
 } from '@/components/ui/sheet';
 import { BLProvider } from '@/lib/theme';
 
@@ -179,5 +180,34 @@ describe('Sheet', () => {
     act(() => inside.focus());
     act(() => { fireEvent.keyDown(inside, { key: 'Escape' }); });
     expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'escape-key' }));
+  });
+
+  it('view: the SheetView and its title travel with the flow', async () => {
+    function Flow() {
+      const [step, setStep] = useState('pick');
+      return (
+        <Sheet defaultOpen view={step}>
+          <SheetContent>
+            {/* The title stays mounted outside the view and travels by itself. */}
+            <SheetHeader><SheetTitle>{step === 'pick' ? 'Choose a plan' : 'Confirm'}</SheetTitle></SheetHeader>
+            <SheetView>
+              {step === 'pick' ? <Button onClick={() => setStep('confirm')}>Continue</Button> : <p>Billed today.</p>}
+            </SheetView>
+          </SheetContent>
+        </Sheet>
+      );
+    }
+    render(<BLProvider><Flow /></BLProvider>);
+    await settle();
+    expect(screen.getByRole('dialog', { name: 'Choose a plan' })).toBeTruthy();
+    expect(document.querySelector('[data-slot=dialog-view]')?.getAttribute('data-view')).toBe('pick');
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await settle();
+    expect(screen.getByRole('dialog', { name: 'Confirm' })).toBeTruthy();
+    expect(document.querySelector('[data-slot=dialog-view]')?.getAttribute('data-view')).toBe('confirm');
+    // Forward: the new step and the title came from the right (Swap hides the leaving ones; see swap.test).
+    const swap = document.querySelector<HTMLElement>('[data-slot=swap]:has([data-slot=dialog-view])')!;
+    expect(swap.style.getPropertyValue('--swap-enter')).toBe('40px');
+    expect(document.querySelector<HTMLElement>('[data-slot=drawer-title] [data-slot=swap]')!.style.getPropertyValue('--swap-enter')).toBe('18px');
   });
 });

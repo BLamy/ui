@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { MarkdownView } from '@/components/ui/markdown-view'
-import { MessageScroller, type MessageScrollerItem } from '@/components/ui/message-scroller'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { MessageScroller, MessageScrollerItem } from '@/components/ui/message-scroller'
+import { ThemeScope } from '@/lib/theme'
 
 const answer =
   'The scroller anchors each new turn near the top, then **follows the live ' +
@@ -59,7 +59,7 @@ function StreamingJumpPill() {
     return () => clearInterval(id)
   }, [run])
   const done = shown >= answer.length
-  const items: MessageScrollerItem[] = [
+  const items = [
     {
       id: 'u1',
       anchor: true,
@@ -87,10 +87,14 @@ function StreamingJumpPill() {
       }}
     >
       <MessageScroller
-        items={items}
         streaming={!done}
-        threadKey={'stream' + run}
-      />
+        threadKey={'stream' + run}>
+        {items.map((it) => (
+          <MessageScrollerItem key={it.id} value={it.id} anchor={it.anchor}>
+            {it.node}
+          </MessageScrollerItem>
+        ))}
+      </MessageScroller>
       <div
         style={{
           padding: 10,
@@ -127,12 +131,11 @@ function StreamingJumpPill() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function StreamingJumpPillExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <StreamingJumpPill />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

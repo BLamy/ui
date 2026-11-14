@@ -169,17 +169,17 @@ function Row({ s }: { s: SessionInfo }) {
   const span = s.endedAt ? s.endedAt - s.startedAt : s.live ? Date.now() - s.startedAt : null;
   return (
     <li>
-      <SplitViewItem id={s.id} preview={<SessionPeek session={s} />} className="min-h-0 py-2">
-        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary-strong text-muted-foreground group-data-selected/item:bg-white/20 group-data-selected/item:text-inherit">
-          <Icon name={s.live ? 'circle-fill' : 'clock'} size={s.live ? 11 : 17} sw={1.8} className={s.live ? 'animate-pulse text-destructive group-data-selected/item:animate-none group-data-selected/item:text-inherit' : undefined} />
+      <SplitViewItem value={s.id} preview={<SessionPeek session={s} />} className="min-h-0 py-2">
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary-strong text-muted-foreground group-data-current/item:bg-white/20 group-data-current/item:text-inherit">
+          <Icon name={s.live ? 'circle-fill' : 'clock'} size={s.live ? 11 : 17} sw={1.8} className={s.live ? 'animate-pulse text-destructive group-data-current/item:animate-none group-data-current/item:text-inherit' : undefined} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-detail font-semibold">{timeLabel(s.startedAt)}</span>
-          <span className="block truncate text-caption text-muted-foreground group-data-selected/item:text-white/80">
+          <span className="block truncate text-caption text-muted-foreground group-data-current/item:text-white/80">
             {s.live ? 'Recording now' : [span !== null ? duration(span) : null, s.events ? `${count(s.events)} events` : null].filter(Boolean).join(' · ') || 'Session'}
           </span>
         </span>
-        {!s.local ? <Icon name="cloud" size={15} sw={1.8} className="text-muted-foreground group-data-selected/item:text-white/80" /> : null}
+        {!s.local ? <Icon name="cloud" size={15} sw={1.8} className="text-muted-foreground group-data-current/item:text-white/80" /> : null}
       </SplitViewItem>
     </li>
   );

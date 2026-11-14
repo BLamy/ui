@@ -50,7 +50,7 @@ function Clip() {
         {frames.data ? <Filmstrip frames={frames.data} from={0} to={info.data?.duration} /> : null}
       </div>
       <div className="h-12 rounded-ctl bg-secondary px-1">
-        {peaks.data ? <Waveform peaks={peaks.data.peaks} rate={peaks.data.rate} tone="primary" /> : null}
+        {peaks.data ? <Waveform peaks={peaks.data.peaks} rate={peaks.data.rate} className="text-primary" /> : null}
       </div>
     </div>
   )

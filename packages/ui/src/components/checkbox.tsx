@@ -5,6 +5,7 @@ import {
 } from '@ui-sdk/react/checkbox';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn, cx } from '@/lib/utils';
+import { pressableFocusRing } from '@/lib/primitives';
 
 /* ══ Checkbox — UI SDK's Checkbox. Round by default (the iOS selection circle), square like shadcn on request ══
    `checked` / `defaultChecked` / `onCheckedChange(checked, details)`, where checked is `true`, `false` or
@@ -18,11 +19,12 @@ import { cn, cx } from '@/lib/utils';
    gives its `value`, and one with `parent` checks or clears them all. */
 export const checkboxVariants = cva(
   [
-    'box-border grid size-[22px] shrink-0 cursor-pointer place-items-center border-[1.5px] border-tertiary-foreground bg-transparent p-0 text-white outline-none',
+    'box-border grid size-[22px] shrink-0 cursor-pointer place-items-center border-[1.5px] border-control-border bg-transparent p-0 text-primary-foreground',
     'transition-[background-color,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
     'data-checked:border-primary data-checked:bg-primary',
     'data-indeterminate:border-primary data-indeterminate:bg-primary',
-    'active:not-data-disabled:scale-90 focus-visible:ring-[3px] focus-visible:ring-ring/45',
+    'active:not-data-disabled:scale-90',
+    pressableFocusRing,
     // Invalid: the box itself (`aria-invalid`, which a Field writes on its control) or the group around it.
     'aria-invalid:border-destructive group-aria-invalid:border-destructive',
     'aria-invalid:data-checked:border-destructive aria-invalid:data-checked:bg-destructive group-aria-invalid:data-checked:border-destructive group-aria-invalid:data-checked:bg-destructive',

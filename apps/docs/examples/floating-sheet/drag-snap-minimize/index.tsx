@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { FloatingSheet, useFloatingSheet } from '@/components/ui/floating-sheet'
+import {
+  FloatingSheet,
+  FloatingSheetBody,
+  FloatingSheetFoot,
+  useFloatingSheet,
+} from '@/components/ui/floating-sheet'
 import { useAppearance } from '@/lib/theme'
 
 /**
@@ -205,15 +210,15 @@ export default function DragSnapMinimize() {
         open={open}
         onOpenChange={onOpenChange}
         peek={150}
-        label="Status"
+        aria-label="Status"
         hideOnScroll={false}
       >
-        <FloatingSheet.Body>
+        <FloatingSheetBody>
           <Readout />
-        </FloatingSheet.Body>
-        <FloatingSheet.Foot>
+        </FloatingSheetBody>
+        <FloatingSheetFoot>
           <Actions />
-        </FloatingSheet.Foot>
+        </FloatingSheetFoot>
       </FloatingSheet>
     </Host>
   )

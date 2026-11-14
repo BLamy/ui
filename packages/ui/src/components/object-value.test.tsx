@@ -1,10 +1,16 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { MotionGlobalConfig } from 'framer-motion';
 import { ObjectValue } from '@/components/ui/object-value';
 import { STRING_PREVIEW_LENGTH, type ValuePreview } from '@/lib/object-tree-value';
 
 (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
+/* Show more and Copy are kit Buttons, whose text labels morph (TextMorph, framer-motion on WAAPI): "Copy" → "Copied",
+   and a test ends, unmounting, while that morph runs. framer-motion cancels the animation; happy-dom then rejects its
+   `finished` promise as unhandled, where a browser marks it handled (Web Animations: cancel). The morph is not what
+   these tests are about, so it is skipped (as in vault-gate.test). */
+MotionGlobalConfig.skipAnimations = true;
 
 afterEach(() => {
   cleanup();

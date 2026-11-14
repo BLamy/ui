@@ -48,18 +48,18 @@ export function AppSidebar() {
             <KbdGroup><Kbd>⌘</Kbd><Kbd>K</Kbd></KbdGroup>
           </Pressable>
           <div className="flex flex-col gap-px">
-            <SplitViewItem id="projects" tint={SELECTED} title="All projects" icon={<span className="grid text-muted-foreground"><Icon name="grid" size={18} /></span>} badge={<NumberMorph value={total} />} />
+            <SplitViewItem value="projects" tint={SELECTED} title="All projects" icon={<span className="grid text-muted-foreground"><Icon name="grid" size={18} /></span>} trailing={<NumberMorph value={total} />} />
           </div>
           <SplitViewSection title="Projects" collapsible>
             {PROJECTS.map((p) => (
               <SplitViewItem
                 key={p.id}
-                id={p.id}
+                value={p.id}
                 tint={SELECTED}
                 title={<span className={cn('truncate', p.status === 'paused' && 'text-muted-foreground')}>{p.name}</span>}
                 preview={<ProjectCard project={p} />}
                 icon={<span className="grid size-[18px] place-items-center"><span className="size-2.5 rounded-sm bg-(--brand)" style={{ '--brand': p.brand } as CSSProperties} /></span>}
-                badge={live.has(p.id) ? <Spinner size={13} /> : openCount(p.id) ? <NumberMorph value={openCount(p.id)} /> : null}
+                trailing={live.has(p.id) ? <Spinner size={13} /> : openCount(p.id) ? <NumberMorph value={openCount(p.id)} /> : null}
               />
             ))}
           </SplitViewSection>

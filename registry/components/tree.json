@@ -1,7 +1,7 @@
 {
   "name": "tree",
   "title": "Tree",
-  "description": "UI SDK's Tree with the kit's rows: compose it from parts, or hand it nested items and it draws them virtualized, with indent guides, file-type icons, search, Git status, rename in place, a context menu and a hover preview per row, and drag and drop. Fits any hierarchy, not only files.",
+  "description": "UI SDK's Tree with the kit's rows: compose it from parts, or hand it nested items and it draws them virtualized, with indent guides, file-type icons, search, Git status, rename in place, a context menu and a hover preview per row, and drag and drop; a custom row per node (renderRow), loading rows and an empty state. Fits any hierarchy, not only files.",
   "page": "tree",
   "exports": [
     "Tree",
@@ -14,9 +14,7 @@
     "treeRowVariants",
     "createTreeController",
     "treeFromPaths",
-    "visibleTreeRows",
-    "TreeFolderIcon",
-    "TreeFileIcon"
+    "visibleTreeRows"
   ],
   "imports": [
     "Tree"
@@ -32,6 +30,11 @@
     "TreeEditingChangeDetails",
     "TreeController",
     "TreeItemData",
-    "TreeMode"
+    "TreeMode",
+    "TreeDataProps",
+    "TreePartsProps",
+    "TreeDataOptions",
+    "TreeNodeActionDetails",
+    "TreeRowState"
   ]
 }

@@ -1,7 +1,7 @@
 {
   "name": "motion",
   "title": "Motion",
-  "description": "Springs and the motion vocabulary: TextMorph, NumberMorph, IconSwap, Chevron, AnimatedHeight, ContentSwap, Celebrate.",
+  "description": "Springs and the motion vocabulary: TextMorph, NumberMorph, Swap, Chevron, AnimatedHeight, Celebrate.",
   "page": "motion",
   "exports": [
     "springs",
@@ -11,16 +11,15 @@
     "useSpringTransition",
     "TextMorph",
     "NumberMorph",
-    "IconSwap",
+    "Swap",
     "Chevron",
     "AnimatedHeight",
-    "ContentSwap",
     "Celebrate"
   ],
   "imports": [
     "springs",
     "TextMorph",
     "NumberMorph",
-    "IconSwap"
+    "Swap"
   ]
 }

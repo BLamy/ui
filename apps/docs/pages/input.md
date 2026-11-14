@@ -130,18 +130,22 @@ import { fieldSurfaceVariants } from '@/components/ui/input'
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
 
+### `fieldSurfaceVariants`
+
+Defined in `@/components/ui/input`. Base classes:
+
+```text
+[surface, 'flex items-center gap-2']
+```
+
+No variants.
+
 ### `inputVariants`
 
 Defined in `@/components/ui/input`. Base classes:
 
 ```text
-[ 'box-border w-full min-w-0 rounded-ctl border-0 bg-input px-3 [font-family:inherit] text-foreground outline-none', 'transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy placeholder:text-tertiary-foreground', 'focus:bg-transparent focus:shadow-[inset_0_0_0_1.5px_var(--primary)]', 'aria-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] data-disabled:cursor-not-allowed data-disabled:opacity-50', selectableText, ]
+[surface, 'block w-full placeholder:text-tertiary-foreground', selectableText]
 ```
 
-**`size`** — default `default`
-
-| Value | Adds |
-| --- | --- |
-| `sm` | `h-8 text-subhead` |
-| `default` (default) | `h-11 text-body` |
-| `lg` | `h-[50px] rounded-xl text-body` |
+No variants.

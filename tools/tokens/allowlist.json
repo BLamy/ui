@@ -1,25 +1,4 @@
 {
-  "packages/ui/src/components/composer/composer.tsx": {
-    "color": 3,
-    "radius": 0,
-    "text": 0,
-    "shadow": 0,
-    "font": 0
-  },
-  "packages/ui/src/components/floating-chat.tsx": {
-    "color": 5,
-    "radius": 0,
-    "text": 0,
-    "shadow": 0,
-    "font": 0
-  },
-  "packages/ui/src/components/floating-sheet.tsx": {
-    "color": 4,
-    "radius": 0,
-    "text": 0,
-    "shadow": 0,
-    "font": 0
-  },
   "registry/blocks/macos/pages.tsx": {
     "color": 2,
     "radius": 0,
@@ -32,7 +11,8 @@
     "radius": 0,
     "text": 0,
     "shadow": 0,
-    "font": 0
+    "font": 0,
+    "radiusOffScale": 2
   },
   "registry/blocks/apple-mail/page.tsx": {
     "color": 2,
@@ -46,7 +26,8 @@
     "radius": 0,
     "text": 0,
     "shadow": 0,
-    "font": 0
+    "font": 0,
+    "radiusOffScale": 3
   },
   "registry/blocks/apple-passwords/page.tsx": {
     "color": 2,
@@ -74,14 +55,16 @@
     "radius": 0,
     "text": 0,
     "shadow": 0,
-    "font": 0
+    "font": 0,
+    "radiusOffScale": 2
   },
   "registry/blocks/delivery-tracking/delivery-tracking-demo.tsx": {
     "color": 8,
     "radius": 0,
     "text": 0,
     "shadow": 0,
-    "font": 0
+    "font": 0,
+    "radiusOffScale": 3
   },
   "registry/blocks/discord-clone/chat.fixtures.tsx": {
     "color": 10,
@@ -95,48 +78,193 @@
     "radius": 0,
     "text": 0,
     "shadow": 0,
-    "font": 0
+    "font": 0,
+    "radiusOffScale": 3
   },
   "registry/blocks/github-clone/parts.tsx": {
     "color": 65,
     "radius": 0,
     "text": 0,
     "shadow": 0,
-    "font": 0
+    "font": 0,
+    "radiusOffScale": 1
   },
   "registry/blocks/loop-qa/parts.tsx": {
     "color": 41,
     "radius": 0,
     "text": 0,
     "shadow": 0,
-    "font": 0
+    "font": 0,
+    "radiusOffScale": 5
   },
   "registry/blocks/map-chat/tile-map.tsx": {
     "color": 26,
     "radius": 0,
     "text": 0,
     "shadow": 0,
-    "font": 0
+    "font": 0,
+    "radiusOffScale": 1
   },
   "registry/blocks/split-view-demos/demos.tsx": {
     "color": 8,
     "radius": 0,
     "text": 0,
     "shadow": 0,
-    "font": 0
+    "font": 0,
+    "radiusOffScale": 1
   },
   "registry/blocks/t3-clone/components/command-palette.tsx": {
     "color": 5,
     "radius": 0,
     "text": 0,
     "shadow": 0,
-    "font": 0
+    "font": 0,
+    "radiusOffScale": 2
   },
   "registry/blocks/t3-clone/components/thread-sidebar.tsx": {
     "color": 1,
     "radius": 0,
     "text": 0,
     "shadow": 0,
-    "font": 0
+    "font": 0,
+    "radiusOffScale": 1
+  },
+  "packages/ui/src/components/canvas.tsx": {
+    "radiusOffScale": 1
+  },
+  "packages/ui/src/components/celebrate.tsx": {
+    "radiusOffScale": 1
+  },
+  "packages/ui/src/components/conversation.tsx": {
+    "radiusOffScale": 2
+  },
+  "packages/ui/src/components/index-bar.tsx": {
+    "radiusOffScale": 1
+  },
+  "packages/ui/src/components/message-scroller.tsx": {
+    "radiusOffScale": 1
+  },
+  "packages/ui/src/components/now-playing-bars.tsx": {
+    "radiusOffScale": 1
+  },
+  "packages/ui/src/components/pencilkit/pencil-toolbar.tsx": {
+    "radiusOffScale": 1
+  },
+  "packages/ui/src/components/search-input.tsx": {
+    "radiusOffScale": 1
+  },
+  "packages/ui/src/components/segmented.tsx": {
+    "radiusOffScale": 3
+  },
+  "packages/ui/src/components/skeleton.tsx": {
+    "radiusOffScale": 1
+  },
+  "packages/ui/src/components/tabs.tsx": {
+    "radiusOffScale": 5
+  },
+  "packages/ui/src/components/toggle.tsx": {
+    "radiusOffScale": 4
+  },
+  "packages/ui/src/lib/theme.tsx": {
+    "radius": 1
+  },
+  "packages/ui/src/lib/utils.ts": {
+    "color": 1
+  },
+  "registry/blocks/apple-mail/compose.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/apple-notes/item-menu.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/apple-reminders/details.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/apple-settings/sidebar.tsx": {
+    "radiusOffScale": 3
+  },
+  "registry/blocks/discord-clone/components/channel-list.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/discord-clone/components/message.tsx": {
+    "radiusOffScale": 3
+  },
+  "registry/blocks/freeform/glyph-views.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/freeform/items.tsx": {
+    "radiusOffScale": 5
+  },
+  "registry/blocks/freeform/toolbar.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/interface-builder/catalog.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/interface-builder/fields.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/interface-builder/player.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/interface-builder/storyboard.tsx": {
+    "radiusOffScale": 2
+  },
+  "registry/blocks/interface-builder/timeline.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/loop-qa/ask-qa.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/loop-qa/bug-detail.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/loop-qa/bugs.tsx": {
+    "radiusOffScale": 4
+  },
+  "registry/blocks/loop-qa/dialogs.tsx": {
+    "radiusOffScale": 5
+  },
+  "registry/blocks/loop-qa/header.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/loop-qa/projects-home.tsx": {
+    "radiusOffScale": 3
+  },
+  "registry/blocks/loop-qa/run-detail.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/macos/launcher.tsx": {
+    "radiusOffScale": 2
+  },
+  "registry/blocks/macos/phone.tsx": {
+    "radiusOffScale": 2
+  },
+  "registry/blocks/macos/windows.tsx": {
+    "radiusOffScale": 2
+  },
+  "registry/blocks/map-chat/map-chat-demo.tsx": {
+    "radiusOffScale": 4
+  },
+  "registry/blocks/split-view-demos/sidebar-demo.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/strudel-studio/syntax-tree.tsx": {
+    "radiusOffScale": 1
+  },
+  "registry/blocks/t3-clone/components/theme-editor.tsx": {
+    "radiusOffScale": 2
+  },
+  "registry/blocks/t3-clone/components/workbench/model-picker.tsx": {
+    "radiusOffScale": 6
+  },
+  "registry/blocks/t3-clone/components/workbench/surfaces.tsx": {
+    "radiusOffScale": 3
+  },
+  "registry/blocks/vscode/search-panel.tsx": {
+    "radiusOffScale": 2
+  },
+  "registry/blocks/worktree-atlas/parts.tsx": {
+    "radiusOffScale": 1
   }
 }

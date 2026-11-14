@@ -19,8 +19,7 @@ export default function SignaturePad() {
       <div style={{ fontWeight: 650, marginBottom: 10 }}>
         Sign to accept the terms
       </div>
-      {/* ink="currentColor" draws in the label colour, so it flips with light /
-          dark */}
+      {/* The default ink (var(--foreground)) flips with light / dark */}
       <div
         style={{
           position: 'relative',
@@ -32,10 +31,10 @@ export default function SignaturePad() {
       >
         <PencilCanvas
           tool="pen"
-          ink="currentColor"
+          aria-label="Signature"
           strokes={strokes}
           onStrokesChange={setStrokes}
-          hint={<span style={{ fontSize: 14 }}>Sign here</span>}
+          emptyState="Sign here"
         />
         <div
           style={{

@@ -39,18 +39,18 @@ export function DocOutline({
     <div className="@max-[767px]:hidden">
       <IndexBar
         variant="wave"
-        side="left"
+        side="start"
         panel
         panelTitle={title}
-        label="Outline"
+        aria-label="Outline"
         items={items.map((it, i) => ({
           key: i,
           caption: it.text,
           level: it.level - 1,
         }))}
-        value={active}
+        current={active}
         onJump={(i) => onPick(i)}
-        className="top-1/2 left-1 -translate-y-1/2"
+        className="top-1/2 bottom-auto start-1 -translate-y-1/2"
       />
     </div>
   );

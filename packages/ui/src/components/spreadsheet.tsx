@@ -2,15 +2,18 @@
 import { memo, useSyncExternalStore, type ReactNode } from 'react';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { createParts, usePart, usePrimitive, type PartProps, type PrimitiveHandle } from '@ui-sdk/react/primitive';
-import { Button } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/lib/icon';
+import { columnResizerClass } from '@/lib/primitives';
 import { cn, cx } from '@/lib/utils';
-import { GPU_MIN_ROWS, type SpreadsheetEngine, type SpreadsheetHistogram, type SpreadsheetRanOn } from '@/lib/spreadsheet-model';
+import { GPU_MIN_ROWS, type SpreadsheetEngine, type SpreadsheetHistogram, type SpreadsheetRanOn, type SpreadsheetSort } from '@/lib/spreadsheet-model';
 import {
-  HISTOGRAM_HEIGHT, columnName, spreadsheet,
-  type SpreadsheetColumnWidthsChangeReason, type SpreadsheetController, type SpreadsheetOptions, type SpreadsheetSortInfo,
-  type SpreadsheetValueChangeReason, type SpreadsheetView,
+  HISTOGRAM_HEIGHT, spreadsheetColumnLetter, spreadsheet,
+  type SpreadsheetColumnWidthsChangeReason, type SpreadsheetController, type SpreadsheetOptions, type SpreadsheetSortChangeReason,
+  type SpreadsheetSortInfo, type SpreadsheetValueChangeReason, type SpreadsheetView,
 } from '@/lib/spreadsheet-primitive';
 
 /* ══ Spreadsheet — a grid of string cells, with the heavy work on the GPU ══
@@ -24,21 +27,22 @@ import {
    and Page Up/Down too; Enter, F2 or typing edits the cell (Enter and Tab save and move, Esc cancels); Delete clears
    the selection; ⌘C / ⌘X / ⌘V copy, cut and paste tab-separated text; ⌘Z / ⇧⌘Z undo and redo; ⌥← / ⌥→ narrow and
    widen the column. Drag across cells to select, click a title to select its column, a row number its row. Sorting
-   changes the view, not the data: `onValueChange` keeps the file's order. The sort and Add Row buttons are UI SDK's
-   Button. */
+   changes the view, not the data: `onValueChange` keeps the file's order. A column's sort button is UI SDK's Button
+   (out of the Tab order: the header cell is the stop), Add Row the kit's. It shares DataTable's column edge
+   (`columnResizerClass`) and `EmptyState`; it is not a DataTable because its unit is a cell that edits, not a row. */
 
 export const spreadsheetVariants = cva(
   'relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground shadow-hairline',
   {
     variants: {
-      /** Row height: `compact` (default, 28 px) or `comfortable` (36 px, for touch). */
-      density: { compact: '', comfortable: '' },
+      /** Row height: `compact` (default, 28 px), `default` (32 px) or `comfortable` (36 px, for touch). */
+      density: { compact: '', default: '', comfortable: '' },
     },
     defaultVariants: { density: 'compact' },
   },
 );
 
-const ROW_HEIGHT = { compact: 28, comfortable: 36 } as const;
+const ROW_HEIGHT = { compact: 28, default: 32, comfortable: 36 } as const;
 
 export interface SpreadsheetProps
   extends Omit<PartProps<'div'>, 'children' | 'defaultValue'>, VariantProps<typeof spreadsheetVariants> {
@@ -57,12 +61,20 @@ export interface SpreadsheetProps
   gpuMinRows?: number;
   /** A histogram under each number or date column's title (default `true`). */
   histograms?: boolean;
-  /** Called after each sort with what ran it, or with `null` when the sort is cleared. */
-  onSort?: (info: SpreadsheetSortInfo | null) => void;
+  /** The sort, by column index, controlled; `null` for the file's own order. Sorting changes the view, not the rows. */
+  sort?: SpreadsheetSort | null;
+  defaultSort?: SpreadsheetSort | null;
+  /** A sort asked for (a column's sort button, the controller), before it runs: cancel it with `details.cancel()`. */
+  onSortChange?: (sort: SpreadsheetSort | null, details: ChangeDetails<SpreadsheetSortChangeReason>) => void;
+  /** A sort has run, with the engine that ran it and how long it took; `null` when it was cleared. */
+  onSorted?: (info: SpreadsheetSortInfo | null) => void;
   /** `false` hides the status bar (row count, selection sum, sort timing, Add Row). */
-  footer?: boolean;
+  statusBar?: boolean;
   /** Extra controls at the end of the status bar. */
   actions?: ReactNode;
+  /** Shown when there are no rows. Default `<EmptyState size="sm" title="No rows" description="Paste cells or add a row." />`
+   *  (without the description when read-only). */
+  emptyState?: ReactNode;
   /** Width in px of a column with no text to size it from. Other columns start at the widest of their title and first rows (≤ 320). */
   columnWidth?: number;
   /** Widths set so far, in px by column index (`"0"`, `"1"`, …), controlled. A column with none keeps its estimated size. */
@@ -150,30 +162,29 @@ const SpreadsheetRowHeader = memo(function SpreadsheetRowHeader({ row }: { row: 
   );
 });
 
-function SpreadsheetColumn({ col, title, left, width, histogram, bars, header, onSortPress }: {
+function SpreadsheetColumn({ col, title, left, width, histogram, bars, header, numeric, onSortPress }: {
   col: number; title: string; left: number; width: number; histogram: SpreadsheetHistogram | null | undefined; bars: boolean; header: boolean;
-  onSortPress: (col: number) => void;
+  numeric: boolean; onSortPress: (col: number, event?: Event) => void;
 }) {
   return (
     <parts.Column value={String(col)} col={col} className={cn('group absolute top-0 flex h-full flex-col justify-center bg-secondary px-2', lines, 'data-selected:bg-secondary-strong')} style={{ left, width }}>
       {(state) => (
         <>
-          <div className="flex min-w-0 items-center gap-1">
-            {state.editing ? null : <span className="min-w-0 flex-1 truncate text-footnote font-semibold" title={title}>{title}</span>}
-            <Button aria-label={`Sort by ${title}${state.sorted === 'ascending' ? ', descending' : state.sorted === 'descending' ? ', clear sort' : ''}`}
-              tabIndex={-1} onClick={() => onSortPress(col)}
-              className={cn('-mr-1 grid size-5 shrink-0 cursor-default place-items-center rounded-ctl border-0 bg-transparent p-0 text-muted-foreground outline-none hover:bg-secondary-strong hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
-                !state.sorted && 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100', state.sorted && 'text-primary')}>
+          {/* A number column's title lines up with its numbers, at the end; its sort button comes first. */}
+          <div className={cn('flex min-w-0 items-center gap-1', numeric && 'flex-row-reverse')}>
+            {state.editing ? null : <span className={cn('min-w-0 flex-1 truncate text-footnote font-semibold', numeric && 'text-end')} title={title}>{title}</span>}
+            <SdkButton aria-label={`Sort by ${title}${state.sorted === 'ascending' ? ', descending' : state.sorted === 'descending' ? ', clear sort' : ''}`}
+              tabIndex={-1} onClick={(event) => onSortPress(col, event.nativeEvent)}
+              // Always there, quietly: touch can't hover to find it.
+              className={cn('grid size-5 shrink-0 cursor-default place-items-center rounded-ctl border-0 bg-transparent p-0 text-muted-foreground outline-none hover:bg-secondary-strong hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
+                numeric ? '-ml-1' : '-mr-1', state.sorted && 'text-primary')}>
               <Icon name={state.sorted === 'descending' ? 'arrow-down' : state.sorted === 'ascending' ? 'arrow-up' : 'chevron-up-down'} size={13} weight="semibold" />
-            </Button>
+            </SdkButton>
           </div>
           {bars ? <div className="mt-0.5 h-(--hist)">{histogram ? <HistogramBars histogram={histogram} label={`${title} histogram`} /> : null}</div> : null}
-          <parts.Resizer
-            value={String(col)}
-            aria-label={`Resize ${title}`}
-            className="absolute top-0 -right-1 z-10 h-full w-2 cursor-col-resize touch-none hover:bg-primary/40 data-dragging:bg-primary/40"
-          />
-          {state.editing && header ? <SpreadsheetEditor label={`Title of column ${columnName(col)}`} className="h-7.5 font-semibold" /> : null}
+          {/* The grid places columns by `left`, so the edge is on the right in either direction. */}
+          <parts.Resizer value={String(col)} aria-label={`Resize ${title}`} className={cn(columnResizerClass, 'end-auto -right-1 z-10')} />
+          {state.editing && header ? <SpreadsheetEditor label={`Title of column ${spreadsheetColumnLetter(col)}`} className="h-7.5 font-semibold" /> : null}
         </>
       )}
     </parts.Column>
@@ -200,7 +211,8 @@ function SpreadsheetCells({ handle, state }: { handle: Handle; state: Spreadshee
           <SpreadsheetCorner />
           {colItems.map((c) => (
             <SpreadsheetColumn key={c.index} col={c.index} title={title(c.index)} left={gutter + c.start} width={c.size}
-              histogram={numericAt(c.index) ? state.bins.byColumn.get(c.index) : undefined} bars={bars} header={state.header} onSortPress={internal.sortPress} />
+              histogram={numericAt(c.index) ? state.bins.byColumn.get(c.index) : undefined} bars={bars} header={state.header}
+              numeric={numericAt(c.index)} onSortPress={internal.sortPress} />
           ))}
         </SpreadsheetRow>
       </SpreadsheetRowGroup>
@@ -222,18 +234,18 @@ function SpreadsheetCells({ handle, state }: { handle: Handle; state: Spreadshee
           );
         })}
       </SpreadsheetRowGroup>
-      {!model.body ? <div className="px-4 py-8 text-center text-footnote text-muted-foreground">No rows{state.readOnly ? '' : ' — paste cells or add a row'}</div> : null}
     </div>
   );
 }
 
 export function Spreadsheet({
   value, defaultValue, onValueChange, header = true, readOnly = false, engine = 'auto', gpuMinRows = GPU_MIN_ROWS,
-  histograms = true, onSort, footer = true, actions, columnWidth = 120, columnWidths, defaultColumnWidths, onColumnWidthsChange,
-  controller, density, className, style, 'aria-label': ariaLabel = 'Spreadsheet', ...props
+  histograms = true, sort, defaultSort, onSortChange, onSorted, statusBar = true, actions, emptyState, columnWidth = 120,
+  columnWidths, defaultColumnWidths, onColumnWidthsChange, controller, density, className, style, 'aria-label': ariaLabel = 'Spreadsheet',
+  ...props
 }: SpreadsheetProps) {
   const options: SpreadsheetOptions = {
-    value, defaultValue, onValueChange, header, readOnly, engine, gpuMinRows, histograms, onSort, columnWidth,
+    value, defaultValue, onValueChange, header, readOnly, engine, gpuMinRows, histograms, sort, defaultSort, onSortChange, onSorted, columnWidth,
     columnWidths, defaultColumnWidths, onColumnWidthsChange, controller, rowHeight: ROW_HEIGHT[density ?? 'compact'],
   };
   const handle = usePrimitive(spreadsheet, options);
@@ -251,9 +263,17 @@ export function Spreadsheet({
           className="bl-scroll relative min-h-0 flex-1 overflow-auto overscroll-contain text-footnote outline-none select-none has-[[data-slot=spreadsheet-cell]:focus-visible]:ring-2 has-[[data-slot=spreadsheet-cell]:focus-visible]:ring-primary has-[[data-slot=spreadsheet-cell]:focus-visible]:ring-inset"
         >
           <SpreadsheetCells handle={handle} state={state} />
+          {/* Over the body at the scroller's own width, not inside the columns' (two narrow columns would wrap it). */}
+          {!api.internal.modelOf(state).body ? (
+            <div data-slot="spreadsheet-empty" className="absolute inset-x-0 top-(--head)">
+              {emptyState === undefined
+                ? <EmptyState size="sm" title="No rows" description={state.readOnly ? undefined : 'Paste cells or add a row.'} />
+                : emptyState}
+            </div>
+          ) : null}
         </parts.Grid>
-        {footer ? (
-          <parts.Footer className="flex min-h-9 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5 text-caption text-foreground/70 shadow-hairline-t">
+        {statusBar ? (
+          <parts.Footer className="flex min-h-9 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1 text-caption text-foreground/70 shadow-hairline-t">
             {(status) => (
               <>
                 <span className="tabular-nums">{formatNumber(status.rows)} {status.rows === 1 ? 'row' : 'rows'} × {status.columns} {status.columns === 1 ? 'column' : 'columns'}</span>
@@ -268,8 +288,7 @@ export function Spreadsheet({
                 ) : null}
                 {actions}
                 {readOnly ? null : (
-                  <Button onClick={(event) => api.internal.addRow(event.nativeEvent)}
-                    className="inline-flex h-6 cursor-default items-center gap-1 rounded-ctl border-0 bg-transparent px-1.5 [font-family:inherit] text-caption font-medium text-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
+                  <Button variant="ghost" size="sm" className="-me-1.5 gap-1 text-caption" onClick={(event) => api.internal.addRow(event.nativeEvent)}>
                     <Icon name="plus" size={12} weight="semibold" className="text-primary" />Add Row
                   </Button>
                 )}
@@ -282,7 +301,7 @@ export function Spreadsheet({
   }, 'div');
 }
 
-export { columnName, createSpreadsheetController } from '@/lib/spreadsheet-primitive';
+export { createSpreadsheetController } from '@/lib/spreadsheet-primitive';
 export type {
-  SpreadsheetColumnWidthsChangeReason, SpreadsheetController, SpreadsheetSortInfo, SpreadsheetValueChangeReason,
+  SpreadsheetColumnWidthsChangeReason, SpreadsheetController, SpreadsheetSortChangeReason, SpreadsheetSortInfo, SpreadsheetValueChangeReason,
 } from '@/lib/spreadsheet-primitive';

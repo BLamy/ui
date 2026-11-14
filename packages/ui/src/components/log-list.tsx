@@ -6,6 +6,7 @@ import {
 import type { ChangeDetails } from '@ui-sdk/core';
 import { createParts, usePart, usePrimitive, type PartProps, type PrimitiveHandle } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Icon, type IconShape } from '@/lib/icon';
@@ -88,7 +89,8 @@ const CELL_CLASS = 'flex min-w-0 flex-1 items-start';
 const MESSAGE_CLASS = cn('min-w-0 flex-1 font-mono whitespace-pre-wrap [overflow-wrap:anywhere]', selectableText);
 const MESSAGE_CUT_CLASS = cn('min-w-0 flex-1 truncate font-mono', selectableText);
 const META_CLASS = 'flex max-w-full min-w-0 shrink-0 items-baseline gap-2 text-caption2 text-muted-foreground @[480px]:max-w-[40%] @[480px]:justify-end';
-const COUNT_CLASS = 'me-1.5 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-secondary-strong px-1 align-[1px] font-sans text-caption2 leading-none font-semibold tabular-nums';
+// The repeat count is the kit's count Badge, cut to the dense row's 14px line.
+const COUNT_CLASS = cn(badgeVariants({ variant: 'secondary', size: 'sm' }), 'me-1.5 h-3.5 min-w-3.5 bg-secondary-strong px-1 align-[1px] font-sans');
 // The chevron's column reaches out into the row's padding, and is 0 wide in a list with nothing to open.
 const TOGGLE_CLASS = 'invisible ms-[calc(var(--log-toggle)*-0.5)] flex h-[18px] w-(--log-toggle) shrink-0 items-center justify-center text-muted-foreground group-data-clipped/row:visible group-data-expanded/row:visible group-data-has-detail/row:visible';
 const ICON_CLASS = 'me-1.5 flex h-[18px] w-3.5 shrink-0 items-center justify-center';

@@ -198,7 +198,7 @@ export function ItemPreview({ item }: { item: ImageItem | LinkItem }) {
 function Stroke({ item }: { item: StrokeItem }) {
   return (
     <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">
-      <StrokePath st={{ tool: item.tool, color: item.color, w: item.width, pen: item.pen, points: item.points, done: true }} />
+      <StrokePath stroke={{ tool: item.tool, color: item.color, width: item.width, pressure: item.pen, points: item.points, complete: true }} />
     </svg>
   );
 }

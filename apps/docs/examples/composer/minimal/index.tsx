@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 
 /**
  * Replies for a few seconds after each send, so the send ↔ stop morph can be
@@ -55,12 +55,11 @@ function Minimal() {
   )
 }
 
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
+// A `workbench` ThemeScope follows the app's light / dark appearance.
 export default function MinimalExample() {
   return (
-    <WorkbenchTheme style={{ padding: 18 }}>
+    <ThemeScope scope="workbench" style={{ padding: 18 }}>
       <Minimal />
-    </WorkbenchTheme>
+    </ThemeScope>
   )
 }

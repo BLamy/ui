@@ -1,15 +1,18 @@
 'use client';
-
-import { Toolbar, ToolbarButton } from '@ui-sdk/react/toolbar';
-import { buttonVariants } from '@/components/ui/button';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Toolbar, ToolbarButton, useToolbar, type ToolbarButtonProps, type ToolbarProps, type ToolbarSize, type ToolbarTone,
+} from '@/components/ui/toolbar';
+import type { ButtonSize } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { CSSProperties } from 'react';
 
-const DEBUG_STEP_COLOR = 'text-[#75beff]';
-const DEBUG_RESTART_COLOR = 'text-[#89d185]';
-const DEBUG_STOP_COLOR = 'text-[#f48771]';
-const DEBUG_GRIP_COLOR = 'text-[#5c5c5c]';
-const DEBUG_SURFACE = 'border-[#303030] bg-[#181818]';
+/* ══ DebugToolbar — a debugger's stepping controls, as a Toolbar preset ══
+   The vocabulary (eight actions, their Codicon glyphs, their names and colors) on the kit's Toolbar, which owns the
+   look and the keyboard: one tab stop, arrow keys between the actions, an unavailable action reachable with
+   `aria-disabled`. `actions` picks and orders the controls; children compose your own row instead
+   (`DebugToolbarButton`s and any other Toolbar part), for a ninth control or a different label. The glyphs are
+   Microsoft's Codicons (the kit's stylesheet imports the font). ══ */
 
 export type DebugToolbarAction =
   | 'continue'
@@ -21,72 +24,101 @@ export type DebugToolbarAction =
   | 'restart'
   | 'stop';
 
-export interface DebugToolbarProps {
-  /** Called with the action represented by the pressed control. */
-  onAction: (action: DebugToolbarAction) => void;
-  /** The controls to show, in order. Defaults to the standard eight controls. */
-  actions?: readonly DebugToolbarAction[];
-  /** Actions unavailable in the current debugger state. */
-  disabledActions?: readonly DebugToolbarAction[];
-  /** `compact` fits narrow panes while keeping every control visible. */
-  size?: 'default' | 'compact';
-  className?: string;
-  style?: CSSProperties;
-}
+/** Each action's default name, Codicon glyph and tone: the forward and backward runs and Restart are `success`,
+    Stop is `destructive`, the steps are the toolbar's neutral color. */
+export const debugToolbarActions: Readonly<Record<DebugToolbarAction, { label: string; icon: string; tone: ToolbarTone }>> = {
+  'continue': { label: 'Continue', icon: 'debug-continue', tone: 'success' },
+  'step-over': { label: 'Step over', icon: 'debug-step-over', tone: 'default' },
+  'step-into': { label: 'Step into', icon: 'debug-step-into', tone: 'default' },
+  'step-out': { label: 'Step out', icon: 'debug-step-out', tone: 'default' },
+  'step-back': { label: 'Step back', icon: 'debug-step-back', tone: 'default' },
+  'reverse-continue': { label: 'Reverse continue', icon: 'debug-reverse-continue', tone: 'success' },
+  'restart': { label: 'Restart', icon: 'debug-restart', tone: 'success' },
+  'stop': { label: 'Stop', icon: 'debug-stop', tone: 'destructive' },
+};
 
 const DEFAULT_ACTIONS: readonly DebugToolbarAction[] = [
   'continue', 'step-over', 'step-into', 'step-out', 'step-back', 'reverse-continue', 'restart', 'stop',
 ];
 
-const ACTIONS: Record<DebugToolbarAction, { label: string; icon: string; color: string }> = {
-  'continue': { label: 'Continue', icon: 'debug-continue', color: DEBUG_STEP_COLOR },
-  'step-over': { label: 'Step over', icon: 'debug-step-over', color: DEBUG_STEP_COLOR },
-  'step-into': { label: 'Step in', icon: 'debug-step-into', color: DEBUG_STEP_COLOR },
-  'step-out': { label: 'Step out', icon: 'debug-step-out', color: DEBUG_STEP_COLOR },
-  'step-back': { label: 'Step back', icon: 'debug-step-back', color: DEBUG_STEP_COLOR },
-  'reverse-continue': { label: 'Reverse', icon: 'debug-reverse-continue', color: DEBUG_STEP_COLOR },
-  'restart': { label: 'Restart', icon: 'debug-restart', color: DEBUG_RESTART_COLOR },
-  'stop': { label: 'Stop', icon: 'debug-stop', color: DEBUG_STOP_COLOR },
+interface DebugToolbarContextValue {
+  onAction?: (action: DebugToolbarAction) => void;
+  disabledActions: readonly DebugToolbarAction[];
+}
+const DebugToolbarContext = createContext<DebugToolbarContextValue>({ disabledActions: [] });
+
+export type DebugToolbarProps = Omit<ToolbarProps, 'children'> & {
+  /** Called with the action of the pressed control. */
+  onAction?: (action: DebugToolbarAction) => void;
+  /** The controls to show, in order. Default: all eight. Ignored when you pass children. */
+  actions?: readonly DebugToolbarAction[];
+  /** Actions the debugger can't run right now: they stay focusable with `aria-disabled`. */
+  disabledActions?: readonly DebugToolbarAction[];
+  /** Your own row instead of `actions`: `DebugToolbarButton`s, ToolbarSeparators, any other control. */
+  children?: ReactNode;
 };
 
-/** A compact debugger control strip using the VS Code Codicon action glyphs. It is a UI SDK Toolbar: one tab stop,
-    arrow keys between the actions, and an unavailable action stays reachable with `aria-disabled`. */
-export function DebugToolbar({ onAction, actions = DEFAULT_ACTIONS, disabledActions = [], size = 'default', className, style }: DebugToolbarProps) {
+/** The strip. `variant` is Toolbar's (default `floating`, the card VS Code floats over the editor; `plain` sits in a
+    pane's header) and so is `size` (`sm` for a narrow pane: 28px tools). Named "Debugger controls" unless you name it. */
+export function DebugToolbar({
+  onAction,
+  actions = DEFAULT_ACTIONS,
+  disabledActions = [],
+  variant = 'floating',
+  children,
+  ...props
+}: DebugToolbarProps) {
+  const value = useMemo(() => ({ onAction, disabledActions }), [onAction, disabledActions]);
   return (
-    <Toolbar
-      data-size={size}
-      aria-label="Debugger controls"
-      style={style}
-      className={cn(
-        'inline-flex h-[52px] shrink-0 items-center rounded-card border px-3 shadow-md',
-        DEBUG_SURFACE,
-        size === 'compact' && 'h-11 px-2',
-        className,
-      )}
-    >
-      <span aria-hidden="true" className={cn('codicon codicon-gripper mr-4 w-5 shrink-0 text-center text-detail', DEBUG_GRIP_COLOR, size === 'compact' && 'mr-2 w-4 text-footnote')} />
-      <div className={cn('flex items-center gap-4', size === 'compact' && 'gap-1.5')}>
-        {actions.map((action) => {
-          const { label, icon, color } = ACTIONS[action];
-          return (
-            <ToolbarButton
-              key={action}
-              data-action={action}
-              aria-label={label}
-              title={label}
-              disabled={disabledActions.includes(action)}
-              onClick={() => onAction(action)}
-              className={cn(
-                buttonVariants({ variant: 'quiet', size: 'icon' }),
-                'size-9 rounded-md hover:not-data-disabled:bg-white/10 active:not-data-disabled:bg-white/15',
-                size === 'compact' && 'size-[30px]',
-              )}
-            >
-              <span aria-hidden="true" className={cn('codicon', `codicon-${icon}`, color, size === 'compact' ? 'text-title' : 'text-[24px]')} />
-            </ToolbarButton>
-          );
-        })}
-      </div>
-    </Toolbar>
+    <DebugToolbarContext.Provider value={value}>
+      <Toolbar aria-label="Debugger controls" variant={variant} {...props}>
+        {children ?? actions.map((action) => <DebugToolbarButton key={action} action={action} />)}
+      </Toolbar>
+    </DebugToolbarContext.Provider>
+  );
+}
+
+/** A tool follows the toolbar's size: 28, 36 or 44px. */
+const iconSizes: Record<ToolbarSize, ButtonSize> = { sm: 'icon-sm', default: 'icon', lg: 'icon-lg' };
+
+export type DebugToolbarButtonProps = Omit<ToolbarButtonProps, 'children'> & {
+  action: DebugToolbarAction;
+  /** The name in the tooltip and the accessibility tree. Default: the action's (`debugToolbarActions`). */
+  label?: string;
+};
+
+/** One action: its Codicon in an icon tool, its name in a tooltip (the button's name too). Disabled when the
+    DebugToolbar lists it in `disabledActions` or when you pass `disabled`; a press calls the toolbar's `onAction`
+    after your own `onClick`. */
+export function DebugToolbarButton({ action, label, size, tone, disabled, onClick, className, ...props }: DebugToolbarButtonProps) {
+  const toolbar = useContext(DebugToolbarContext);
+  const bar = useToolbar();
+  const meta = debugToolbarActions[action];
+  const iconSize = size ?? iconSizes[bar.size];
+  return (
+    // The tooltip shows the name and is the name (`type="label"`), so it isn't read twice; `aria-label` keeps the
+    // button named wherever the tooltip can't be.
+    <Tooltip type="label">
+      <TooltipTrigger
+        render={
+          <ToolbarButton
+            data-action={action}
+            aria-label={label ?? meta.label}
+            size={iconSize}
+            tone={tone ?? meta.tone}
+            disabled={disabled ?? toolbar.disabledActions.includes(action)}
+            onClick={(event) => {
+              onClick?.(event);
+              toolbar.onAction?.(action);
+            }}
+            className={className}
+            {...props}
+          />
+        }
+      >
+        <span aria-hidden="true" className={cn('codicon', `codicon-${meta.icon}`, iconSize === 'icon-sm' ? 'text-callout' : 'text-title')} />
+      </TooltipTrigger>
+      <TooltipContent>{label ?? meta.label}</TooltipContent>
+    </Tooltip>
   );
 }

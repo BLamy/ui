@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { Calendar, CalendarGrid, CalendarHeader, CalendarHeading, CalendarMonthSelect, CalendarYearSelect, type CalendarValue } from '@/components/ui/calendar';
-import { Caption, Panel } from '../stories/primitive-frame';
+import { SizeClassProvider } from '@/lib/container';
+import { Caption, Panel, Screen } from '../stories/primitive-frame';
 
 /* The locale, the month on show and "today" are pinned (September 2026, with today outside it) so these look the
    same on any day, in any browser. */
@@ -14,7 +15,8 @@ const meta: Meta<typeof Calendar> = {
     months: { control: 'inline-radio', options: [1, 2, 3] },
     mode: { control: 'inline-radio', options: ['single', 'multiple', 'range'] },
   },
-  decorators: [(Story) => <Panel w={340}><Story /></Panel>],
+  // Each story sets its own frame (a single panel, so a wide one isn't clipped by a narrow one around it).
+  decorators: [(Story, { parameters }) => (parameters.bare ? <Story /> : <Panel w={parameters.panelWidth ?? 340} dark={parameters.dark}><Story /></Panel>)],
 };
 export default meta;
 type Story = StoryObj<typeof Calendar>;
@@ -45,7 +47,7 @@ export const OutsideDays: Story = {
 };
 
 export const TwoMonths: Story = {
-  decorators: [(Story) => <Panel w={600}><Story /></Panel>],
+  parameters: { panelWidth: 600 },
   args: { months: 2, defaultValue: '2026-09-30' },
 };
 
@@ -90,11 +92,24 @@ export const RangeOneDay: Story = {
 };
 
 export const RangeTwoMonths: Story = {
-  decorators: [(Story) => <Panel w={600}><Story /></Panel>],
+  parameters: { panelWidth: 600 },
   args: { mode: 'range', months: 2, defaultValue: ['2026-09-24', '2026-10-06'] },
 };
 
 export const Dark: Story = {
-  decorators: [(Story) => <Panel w={340} dark><Story /></Panel>],
+  parameters: { dark: true },
   args: { mode: 'range', defaultValue: stay },
+};
+
+/** Two months in a 340px frame: the second wraps under the first rather than running past the edge. */
+export const TwoMonthsNarrow: Story = {
+  name: 'Two months, narrow',
+  args: { mode: 'range', months: 2, defaultValue: ['2026-09-24', '2026-10-06'] },
+};
+
+/** In a phone-sized (compact) container the days are 44px touch targets. */
+export const Phone: Story = {
+  parameters: { bare: true },
+  decorators: [(Story) => <Screen h={560}><SizeClassProvider value="compact"><Story /></SizeClassProvider></Screen>],
+  args: { defaultValue: '2026-09-09' },
 };

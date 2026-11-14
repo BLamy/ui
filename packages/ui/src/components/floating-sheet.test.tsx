@@ -2,7 +2,8 @@
 import { useRef, useState } from 'react';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { FloatingSheet, useFloatingSheet, useHideOnScroll } from '@/components/ui/floating-sheet';
+import { FloatingSheet, FloatingSheetBody, FloatingSheetFab, FloatingSheetFoot, useFloatingSheet } from '@/components/ui/floating-sheet';
+import { useHideOnScroll } from '@/lib/scroll-edge';
 import { BLProvider } from '@/lib/theme';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
@@ -55,9 +56,13 @@ function Order(props: Parameters<typeof FloatingSheet>[0]) {
     <BLProvider>
       <div style={{ position: 'relative', height: 720 }}>
         <button type="button">Page</button>
-        <FloatingSheet label="Order" peek={120} {...props}>
-          <FloatingSheet.Body><p>Arriving in 12 minutes</p><State /></FloatingSheet.Body>
-          <FloatingSheet.Foot><button type="button">Track</button></FloatingSheet.Foot>
+        <FloatingSheet aria-label="Order" peek={120} {...props}>
+          {props.children ?? (
+            <>
+              <FloatingSheetBody><p>Arriving in 12 minutes</p><State /></FloatingSheetBody>
+              <FloatingSheetFoot><button type="button">Track</button></FloatingSheetFoot>
+            </>
+          )}
         </FloatingSheet>
       </div>
     </BLProvider>
@@ -104,9 +109,10 @@ describe('FloatingSheet', () => {
   it('keeps the FAB folded and out of reach until the sheet is minimized', async () => {
     render(<Order />);
     await settle();
-    const fab = document.querySelector<HTMLElement>('[aria-label=Open]')!;
+    const fab = document.querySelector<HTMLElement>('[aria-label="Open Order"]')!;
     expect(fab.hasAttribute('data-folded')).toBe(true);
     expect(fab.hasAttribute('inert')).toBe(true);
+    expect(fab.getAttribute('aria-hidden')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Minimize' }));
     await settle(600);
     expect(fab.hasAttribute('data-folded')).toBe(false);
@@ -117,10 +123,10 @@ describe('FloatingSheet', () => {
     expect(screen.getByRole('status', { name: 'State' }).textContent).toBe('rest');
   });
 
-  it('has no FAB when it is dismissible, and hides when not visible', async () => {
-    render(<Order dismissible visible={false} />);
+  it('has no FAB when it collapses by hiding, and hides when not visible', async () => {
+    render(<Order collapse="hide" visible={false} />);
     await settle();
-    expect(document.querySelector('[aria-label=Open]')).toBeNull();
+    expect(document.querySelector('[data-floating-sheet-fab]')).toBeNull();
     expect(document.querySelector('[data-slot=floating-sheet]')?.hasAttribute('data-dismissed')).toBe(true);
   });
 
@@ -147,8 +153,8 @@ describe('FloatingSheet', () => {
       hostHeight = 0;
       render(
         <div style={{ position: 'relative', height: 720 }}>
-          <FloatingSheet label="Order" peek={120}>
-            <FloatingSheet.Body><Counter /></FloatingSheet.Body>
+          <FloatingSheet aria-label="Order" peek={120}>
+            <FloatingSheetBody><Counter /></FloatingSheetBody>
           </FloatingSheet>
         </div>,
       );
@@ -173,8 +179,76 @@ describe('FloatingSheet', () => {
     render(<Order />);
     await settle();
     const fab = document.querySelector<HTMLElement>('[data-floating-sheet-fab]')!;
-    expect(fab.getAttribute('aria-label')).toBe('Open');
+    expect(fab.getAttribute('aria-label')).toBe('Open Order');
     expect(fab.getAttribute('data-slot')).toBe('button');
+  });
+
+  it('reports Escape and the scrim with their reason, and a canceled change keeps it grown', async () => {
+    let cancel = true;
+    const onOpenChange = vi.fn((_open: boolean, details: { cancel: () => void }) => {
+      if (cancel) details.cancel();
+    });
+    render(<Order defaultOpen onOpenChange={onOpenChange} />);
+    await settle();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Track' }), { key: 'Escape' });
+    await settle();
+    expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'escape-key' }));
+    expect(screen.getByRole('status', { name: 'State' }).textContent).toBe('open');
+    cancel = false;
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Track' }), { key: 'Escape' });
+    await settle();
+    expect(onOpenChange).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('status', { name: 'State' }).textContent).toBe('rest');
+  });
+
+  it('folds into a FAB that names itself, controlled, with the reason', async () => {
+    const onMinimizedChange = vi.fn();
+    const { rerender } = render(
+      <Order minimized={false} onMinimizedChange={onMinimizedChange}>
+        <FloatingSheetBody><State /></FloatingSheetBody>
+        <FloatingSheetFab aria-label="Show order"><span>bag</span></FloatingSheetFab>
+      </Order>,
+    );
+    await settle();
+    // One FAB: the part replaces the default.
+    expect(document.querySelectorAll('[data-floating-sheet-fab]')).toHaveLength(1);
+    const fab = () => document.querySelector<HTMLElement>('[aria-label="Show order"]')!;
+    expect(fab().hasAttribute('inert')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Minimize' }));
+    expect(onMinimizedChange).toHaveBeenLastCalledWith(true, expect.objectContaining({ reason: 'imperative' }));
+    // Controlled: nothing moved until the parent passes it back.
+    expect(document.querySelector('[data-slot=floating-sheet]')?.hasAttribute('data-minimized')).toBe(false);
+    rerender(
+      <Order minimized onMinimizedChange={onMinimizedChange}>
+        <FloatingSheetFab aria-label="Show order"><span>bag</span></FloatingSheetFab>
+      </Order>,
+    );
+    await settle();
+    expect(fab().hasAttribute('inert')).toBe(false);
+    fireEvent.click(fab());
+    expect(onMinimizedChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'trigger-press' }));
+    expect(onMinimizedChange.mock.calls.at(-1)?.[1].event).toBeInstanceOf(Event);
+  });
+
+  it('places the FAB by side and align, on the inline edges', async () => {
+    render(<Order fabSide="end" fabAlign="end" />);
+    await settle();
+    const fab = document.querySelector<HTMLElement>('[data-floating-sheet-fab]')!;
+    expect(fab.className).toContain('end-(--fs-fab-gutter)');
+    expect(fab.className).toContain('bottom-(--fs-fab-gutter)');
+  });
+
+  it('follows the page unless an appearance is given, then wears the sheet scope', async () => {
+    const { rerender } = render(<Order />);
+    await settle();
+    const root = () => document.querySelector<HTMLElement>('[data-slot=floating-sheet]')!;
+    expect(root().hasAttribute('data-theme-scope')).toBe(false);
+    expect(root().classList.contains('dark')).toBe(false);
+    rerender(<Order appearance="dark" variant="sheet" />);
+    await settle();
+    expect(root().getAttribute('data-theme-scope')).toBe('sheet');
+    expect(root().classList.contains('dark')).toBe(true);
+    expect(root().getAttribute('data-variant')).toBe('sheet');
   });
 });
 

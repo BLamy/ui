@@ -1,6 +1,12 @@
 import { useState } from 'react'
-import { ColorFieldGroup, ColorFieldInput, ColorFieldSwatch } from '@/components/ui/color-field'
-import { ColorPicker, ColorPickerArea, ColorPickerSlider } from '@/components/ui/color-picker'
+import {
+  ColorPicker,
+  ColorPickerArea,
+  ColorPickerField,
+  ColorPickerInput,
+  ColorPickerSlider,
+  ColorPickerSwatch,
+} from '@/components/ui/color-picker'
 import { Label } from '@/components/ui/label'
 
 // Every part edits the color of the ColorPicker around it, so you can lay them
@@ -20,10 +26,10 @@ export default function Composed() {
       <ColorPickerSlider channel="hue" label="Hue" showValue />
       <div className="flex flex-col gap-1.5">
         <Label variant="field" htmlFor="composed-hex">Hex</Label>
-        <ColorFieldGroup size="sm">
-          <ColorFieldSwatch className="size-5" />
-          <ColorFieldInput id="composed-hex" />
-        </ColorFieldGroup>
+        <ColorPickerField size="sm">
+          <ColorPickerSwatch />
+          <ColorPickerInput id="composed-hex" />
+        </ColorPickerField>
       </div>
     </ColorPicker>
   )

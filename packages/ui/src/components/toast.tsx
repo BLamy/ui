@@ -10,7 +10,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn, cx } from '@/lib/utils';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
-import { closeButtonVariants } from '@/components/ui/dialog';
+import { closeButtonVariants } from '@/lib/surface';
 import { Spinner } from '@/components/ui/spinner';
 import { TextMorph } from '@/components/ui/text-morph';
 

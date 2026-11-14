@@ -1,6 +1,6 @@
 # Canvas
 
-An infinite, pannable, zoomable surface, built on UI SDK's `createViewport`. `Canvas` owns navigation: scroll pans, pinch or ⌘-scroll zooms, holding Space (or the middle button) drags the view, + / − / 0 and ⌘ + / − / 0 / 1 zoom in, out, fit and 100%, arrow keys you don't use pan, focus brings a board item into view, find in page pans to its match, and a dotted or ruled background follows the view. Everything else is yours. The canvas hands you the pointer with its position already in board coordinates, so selecting, dragging, drawing and connecting can be one state machine that never thinks about the view. [Freeform](https://blamy.github.io/ui/#/blocks) is built on it.
+An infinite, pannable, zoomable surface, built on UI SDK's `createViewport`. `Canvas` owns navigation: scroll pans, pinch or ⌘-scroll zooms, holding Space (or the middle button) drags the view, + / − / 0 and ⌘ + / − / 0 / 1 zoom in, out, fit and 100%, arrow keys you don't use pan, focus brings a board item into view, find in page pans to its match, and a dotted or ruled background follows the view. Everything else is yours. The canvas hands you the pointer with its position already in board coordinates, so selecting, dragging, drawing and connecting can be one state machine that never thinks about the view. Use it for whiteboards, diagrams and storyboards; [Freeform](https://blamy.github.io/ui/#/blocks) is built on it. For freehand ink use [PencilCanvas](https://blamy.github.io/ui/#/pencilkit): on its own it is a drawing surface, and inside a `Canvas` it becomes the board's drawing layer. To show one image or document that zooms, a plain scroll view is enough.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -90,7 +90,11 @@ The canvas handles these itself and does not pass them on:
 
 Keys typed into a field or an editable element on the board stay with it. Everything else reaches you: `onCanvasPointerDown`, `onCanvasPointerMove` (including hover, with no button down), `onCanvasPointerUp`, `onCanvasDoubleClick` and `onCanvasKeyDown`, each with the DOM event. Each pointer callback also gets `{ screen, board, viewport }`: the pointer in the canvas's own pixels, in board units, and the view it was computed with. An arrow key you handle (`preventDefault()`) doesn't pan, so arrows can nudge a selection and pan when nothing is selected. `onNavigationStart` fires when a second finger turns a press into a pinch, so you can drop a gesture of your own that was in progress.
 
-The canvas is a focusable `role="application"` region (`aria-roledescription="canvas"`): give it an `aria-label`, and set `autoFocus` so keys work before the first click. A press that does not start a pan has the pointer captured on the canvas already. Zoom is clamped to `minZoom`–`maxZoom` (0.02–4 by default: far enough out for a map of a hundred screens).
+The canvas is a focusable `role="application"` region (`aria-roledescription="canvas"`): give it an `aria-label`, and set `autoFocus` so keys work before the first click. Keyboard focus draws a ring inside its edge, above the board.
+
+### Pointer layers
+
+A child can take presses before your handlers: `useCanvas().addPointerLayer({ onPointerDown, onPointerMove, onPointerUp, onCancel })` returns its cleanup. `onPointerDown(event, info)` returns `true` to take the press; that pointer's moves and release then go to the layer instead of `onCanvasPointerMove` / `onCanvasPointerUp`, and `onCancel` runs if a second finger turns it into a pinch. Navigation presses (Space, the middle button, `panning`) never reach a layer. `PencilCanvas` is the layer you will usually want. A press that does not start a pan has the pointer captured on the canvas already. Zoom is clamped to `minZoom`–`maxZoom` (0.02–4 by default: far enough out for a map of a hundred screens).
 
 ## Overlay parts
 
@@ -103,9 +107,11 @@ A selection outline that is 1px at 100% zoom is 0.1px at 10%. These parts divide
 | `CanvasMarquee` | The rubber band of a drag-select. |
 | `CanvasGuides` | Alignment guides from `snapMove`. |
 
+Each takes `className` and `style`, merged after its own, so a locked item's handles or a connector's ends can take another color (`className="border-warning"`); `data-handle` names each handle.
+
 ### MiniMap
 
-`CanvasMiniMap` goes in `overlay` instead: the whole board in a corner, every item a mark and the view an outline. Press or drag on it to move the view there (the map holds its scale while you drag, so it doesn't rescale under the pointer), and press Escape during a drag to put the view back. Pass the items' rects in board units; a `className` per item fills its mark (`fill-primary` for the selection). `position` picks the corner (`bottom-right` by default), `width` and `height` its size (184 × 120).
+`CanvasMiniMap` goes in `overlay` instead: the whole board in a corner, every item a mark and the view an outline. Press or drag on it to move the view there (the map holds its scale while you drag, so it doesn't rescale under the pointer), and press Escape during a drag to put the view back. Pass the items' rects in board units; a `className` per item fills its mark (`fill-primary` for the selection). `side` (`top` or `bottom`, default `bottom`) and `align` (`start` or `end`, default `end`, so the trailing corner in either text direction) place it, `width` and `height` size it (184 × 120).
 
 ```tsx
 <Canvas overlay={<CanvasMiniMap items={cards.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h }))} />}>…</Canvas>
@@ -151,11 +157,11 @@ A frame never resizes below 24 (`MIN_SIZE`).
 | `fit` | — | The rectangle ⌘0 and `fit()` show (your content's bounds). |
 | `minZoom` / `maxZoom` | 0.02 / 4 | How far out and in it zooms. |
 | `message` | "Zoom 150%" | What a screen reader hears after a zoom key: `(zoom) => string`. |
-| `cursor` | `default` | The cursor when not dragging the view. |
 | `autoFocus` | `false` | Focus the canvas on mount. |
 | `overlay` | — | Drawn over the canvas in screen space. |
 | `aria-label` | "Canvas" | The region's name. |
-| `className` / `style` | — | Merged onto the canvas element. |
+| `className` / `style` | — | Merged onto the canvas element. The resting cursor is yours (`cursor-crosshair`, or `style={{ cursor }}` for one that changes); the open and closed hand win while the view is dragged. |
+| `ref` | — | The canvas element. |
 
 The canvas carries `data-slot="canvas"` (with `data-panning` while Space is held and `data-grabbing` while the view is dragged), the scrolling pane find in page uses `canvas-pane`, the board layer `data-slot="canvas-board"` (with the zoom as `--canvas-zoom`), and the overlay parts `canvas-frame`, `canvas-handle`, `canvas-marquee`, `canvas-guide` and `canvas-minimap` (its view outline `canvas-minimap-view`).
 

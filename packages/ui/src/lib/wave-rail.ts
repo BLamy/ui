@@ -38,7 +38,7 @@ export function waveDashTone({ hot, current }: { hot?: boolean; current?: boolea
 
 /** The card beside a rail: the surface, the shadow and the pop it opens with. Place it and give it `origin-*`. */
 export const waveCard =
-  'rounded-card bg-card shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)] animate-[blWaveCard_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:animate-none';
+  'rounded-card bg-card shadow-popover animate-[blWaveCard_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:animate-none';
 
 export interface RowInsetOptions {
   /** Whether to publish now (a right-hand rail that hasn't opted out); read on every sync. */

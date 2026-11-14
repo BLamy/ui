@@ -60,3 +60,10 @@ export const SubRange: Story = { args: { from: 3, to: 7 } };
 
 /** Portrait media: `aspect={9 / 16}` makes the cells narrow and tall, so more of them fit and every second shows. */
 export const Portrait: Story = { args: { frames: PORTRAIT, aspect: 9 / 16, height: 80 } };
+
+/** Before the frames arrive (`frames=[]`): placeholder cells keep the strip's rhythm, shimmering unless the reader
+    prefers reduced motion. */
+export const Loading: Story = { args: { frames: [] } };
+
+/** On a dark lane. */
+export const Dark: Story = { parameters: { dark: true } };

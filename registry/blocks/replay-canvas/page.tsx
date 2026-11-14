@@ -9,7 +9,8 @@
    runs; pressing one loads every journey's recording in it. */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import { useDocstreamEnv } from '@brett_lamy/docstream';
-import { getReplayMeta, type ReplayEvent } from '@/components/ui/replay-preview';
+import { getReplayMeta } from '@brett_lamy/docstream/replay';
+import type { ReplayEvent } from '@/components/ui/replay-preview';
 import { createCanvasController } from '@/components/ui/canvas';
 import { unionRect, type Rect, type Viewport } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';

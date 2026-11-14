@@ -9,14 +9,14 @@ import { WORKBENCH_MODELS, WORKBENCH_PROVIDERS } from './models';
    strip. Everything here is public parts; copy it to build your own. */
 
 export const WORKBENCH_EFFORTS = [
-  { id: 'xhigh', label: 'Extra High' },
-  { id: 'high', label: 'High' },
-  { id: 'medium', label: 'Medium' },
+  { value: 'xhigh', label: 'Extra High' },
+  { value: 'high', label: 'High' },
+  { value: 'medium', label: 'Medium' },
 ];
 export const WORKBENCH_ACCESS = [
-  { id: 'full', label: 'Full access', description: 'Read, write and run commands' },
-  { id: 'read', label: 'Read only', description: 'Browse files, no edits' },
-  { id: 'ask', label: 'Ask first', description: 'Confirm every change' },
+  { value: 'full', label: 'Full access', description: 'Read, write and run commands' },
+  { value: 'read', label: 'Read only', description: 'Browse files, no edits' },
+  { value: 'ask', label: 'Ask first', description: 'Confirm every change' },
 ];
 
 export interface WorkbenchComposerProps extends Omit<ComposerProps, 'children'> {
@@ -55,8 +55,8 @@ export function WorkbenchComposer({
                 defaultValue="claude-opus-4-7"
                 icon={<Icon name="asterisk" size={13.5} sw={2} />}
               />
-              <ComposerSelect aria-label="Effort" options={WORKBENCH_EFFORTS} />
-              <ComposerSelect aria-label="Access" icon="lock-rounded" options={WORKBENCH_ACCESS} />
+              <ComposerSelect aria-label="Effort" items={WORKBENCH_EFFORTS} />
+              <ComposerSelect aria-label="Access" icon="lock-rounded" items={WORKBENCH_ACCESS} />
             </ComposerOptions>
           ) : null}
           <ComposerSpacer />

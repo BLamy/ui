@@ -28,6 +28,9 @@ export type SpreadsheetValueChangeReason = 'cell-edit' | 'paste' | 'cut' | 'clea
 /** Why a column's width changed: its edge was dragged, ⌥← ⌥→ or an arrow on its edge moved it, a double press fit it, or code. */
 export type SpreadsheetColumnWidthsChangeReason = ColumnResizeReason;
 
+/** Why the sort changed: a column's sort button was pressed, or code (the controller, or an agent). */
+export type SpreadsheetSortChangeReason = 'trigger-press' | 'imperative';
+
 /** The last sort: which engine ran it and how long it took. */
 export interface SpreadsheetSortInfo extends SpreadsheetSort {
   ranOn: SpreadsheetRanOn;
@@ -70,7 +73,13 @@ export type SpreadsheetOptions = {
   engine?: SpreadsheetEngine;
   gpuMinRows?: number;
   histograms?: boolean;
-  onSort?: (info: SpreadsheetSortInfo | null) => void;
+  /** The sort, controlled; `null` for the file's own order. */
+  sort?: SpreadsheetSort | null;
+  defaultSort?: SpreadsheetSort | null;
+  /** A sort asked for (a sort button, the controller), before it runs. Cancel it with `details.cancel()`. */
+  onSortChange?: (sort: SpreadsheetSort | null, details: ChangeDetails<SpreadsheetSortChangeReason>) => void;
+  /** A sort has run, with which engine ran it and how long it took; `null` when the sort was cleared. */
+  onSorted?: (info: SpreadsheetSortInfo | null) => void;
   /** Every row's height in px. */
   rowHeight?: number;
   /** Width of an empty column in px. */
@@ -100,13 +109,16 @@ export type SpreadsheetState = {
   columnWidths: Readonly<Record<string, number>>;
   /** Live: a column's edge while a pointer drags it. */
   draft: ResizeDraft | null;
-  sort: SortState | null;
+  /** The sort asked for: the host's when controlled. */
+  sort: SpreadsheetSort | null;
+  /** The sort that ran, with its row order. */
+  order: SortState | null;
   sorting: boolean;
   bins: Bins;
 };
 
 /** What the cells in view render from: the rows, their order, the titles and the histograms. */
-export type SpreadsheetView = Pick<SpreadsheetState, 'value' | 'header' | 'readOnly' | 'rowHeight' | 'histograms' | 'sort' | 'bins'>;
+export type SpreadsheetView = Pick<SpreadsheetState, 'value' | 'header' | 'readOnly' | 'rowHeight' | 'histograms' | 'order' | 'bins'>;
 
 export type SpreadsheetCellState = { active: boolean; selected: boolean; editing: boolean };
 export type SpreadsheetHeaderState = { selected: boolean };
@@ -123,7 +135,7 @@ export type SpreadsheetFooterState = {
 };
 
 /** Column letters: 0 → A, 25 → Z, 26 → AA. */
-export function columnName(index: number): string {
+export function spreadsheetColumnLetter(index: number): string {
   let name = '';
   for (let n = index + 1; n > 0; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(65 + ((n - 1) % 26)) + name;
   return name;
@@ -158,7 +170,7 @@ type Model = { rows: string[][]; header: boolean; base: 0 | 1; body: number; col
 
 const ALL: Record<keyof SpreadsheetState, []> = {
   value: [], header: [], readOnly: [], rowHeight: [], histograms: [], active: [], range: [], editing: [],
-  columnWidths: [], draft: [], sort: [], sorting: [], bins: [],
+  columnWidths: [], draft: [], sort: [], order: [], sorting: [], bins: [],
 };
 /** Every key a slot never reads, as `selects` takes them, but for the ones it reads. */
 const except = (...reads: (keyof SpreadsheetState)[]) => {
@@ -171,10 +183,10 @@ export const spreadsheet = definePrimitive({
   name: 'spreadsheet',
   options: {
     value: 'value', defaultValue: 'value', onValueChange: 'callback', header: 'boolean', readOnly: 'boolean',
-    engine: 'string', gpuMinRows: 'number', histograms: 'boolean', onSort: 'callback', rowHeight: 'number', columnWidth: 'number',
+    engine: 'string', gpuMinRows: 'number', histograms: 'boolean', sort: 'value', defaultSort: 'value', onSortChange: 'callback', onSorted: 'callback', rowHeight: 'number', columnWidth: 'number',
     columnWidths: 'value', defaultColumnWidths: 'value', onColumnWidthsChange: 'callback', controller: 'value',
   },
-  controlled: ['value', 'columnWidths'],
+  controlled: ['value', 'columnWidths', 'sort'],
   live: ['draft'],
   state: (options: SpreadsheetOptions): SpreadsheetState => ({
     value: options.value ?? options.defaultValue ?? [[]],
@@ -188,7 +200,8 @@ export const spreadsheet = definePrimitive({
     editing: null,
     columnWidths: options.columnWidths ?? options.defaultColumnWidths ?? NO_WIDTHS,
     draft: null,
-    sort: null,
+    sort: options.sort ?? options.defaultSort ?? null,
+    order: null,
     sorting: false,
     bins: NO_BINS,
   }),
@@ -199,6 +212,7 @@ export const spreadsheet = definePrimitive({
     histograms: options.histograms ?? true,
     ...(options.value === undefined ? {} : { value: options.value }),
     ...(options.columnWidths === undefined ? {} : { columnWidths: options.columnWidths }),
+    ...(options.sort === undefined ? {} : { sort: options.sort }),
   }),
   api: (context) => {
     const { store } = context;
@@ -219,7 +233,7 @@ export const spreadsheet = definePrimitive({
     };
     const now = () => modelOf(store.get());
     /** The sort's order, while it still fits the rows (rows added after a sort show at the end). */
-    const orderOf = (state: SpreadsheetView) => (state.sort && state.sort.order.length <= modelOf(state).body ? state.sort : null);
+    const orderOf = (state: SpreadsheetView) => (state.order && state.order.order.length <= modelOf(state).body ? state.order : null);
     /** The data row behind a displayed row. */
     const dataRow = (state: SpreadsheetView, view: number) => {
       const sort = orderOf(state);
@@ -227,7 +241,7 @@ export const spreadsheet = definePrimitive({
     };
     const textAt = (state: SpreadsheetView, { row, col }: GridCell) =>
       (row < 0 ? state.value[0]?.[col] : state.value[dataRow(state, row)]?.[col]) ?? '';
-    const title = (state: SpreadsheetView, col: number) => (state.header ? state.value[0]?.[col] || columnName(col) : columnName(col));
+    const title = (state: SpreadsheetView, col: number) => (state.header ? state.value[0]?.[col] || spreadsheetColumnLetter(col) : spreadsheetColumnLetter(col));
 
     /* ── Layout ── */
     let estimates: number[] = [];
@@ -445,31 +459,51 @@ export const spreadsheet = definePrimitive({
       return done;
     };
 
-    /* ── Sorting: a view over the rows, which keep their order ── */
+    /* ── Sorting: a view over the rows, which keep their order ──
+       The sort asked for (`sort`, the host's when controlled) is state; the order it gives is worked out from it, on the
+       GPU or the CPU, and lands a moment later as `order`. */
     let sortSeq = 0;
-    const sort = async (column: number, direction?: SpreadsheetSortDirection | null) => {
-      const state = store.get();
-      const { types, base, cols } = modelOf(state);
-      if (column < 0 || column >= cols) return false;
-      const sorted = orderOf(state);
-      const current = sorted?.column === column ? sorted.direction : null;
-      const next = direction !== undefined ? direction : current === null ? 'ascending' : current === 'ascending' ? 'descending' : null;
+    let applying: Promise<boolean> = Promise.resolve(true);
+    const apply = (target: SpreadsheetSort | null): Promise<boolean> => {
       const seq = ++sortSeq;
-      const options = context.options();
-      if (!next) {
-        store.set({ sort: null, sorting: false });
-        options.onSort?.(null);
-        announce('Sort cleared');
+      const run = async () => {
+        const options = context.options();
+        if (!target) {
+          const had = !!store.get().order;
+          store.set({ order: null, sorting: false });
+          if (had) {
+            options.onSorted?.(null);
+            announce('Sort cleared');
+          }
+          return true;
+        }
+        const state = store.get();
+        const { types, base, cols } = modelOf(state);
+        if (target.column < 0 || target.column >= cols) return false;
+        store.set({ sorting: true });
+        const result = await sortRows(state.value, target, { from: base, type: types[target.column], engine: options.engine, gpuMinRows: options.gpuMinRows ?? GPU_MIN_ROWS });
+        if (seq !== sortSeq) return false;
+        const info: SpreadsheetSortInfo = { ...target, ranOn: result.ranOn, ms: result.ms, rows: result.order.length };
+        store.set({ sorting: false, order: { ...info, order: result.order } });
+        options.onSorted?.(info);
+        announce(`Sorted by ${title(store.get(), target.column)}, ${target.direction}`);
         return true;
-      }
-      store.set({ sorting: true });
-      const result = await sortRows(state.value, { column, direction: next }, { from: base, type: types[column], engine: options.engine, gpuMinRows: options.gpuMinRows ?? GPU_MIN_ROWS });
-      if (seq !== sortSeq) return false;
-      const info: SpreadsheetSortInfo = { column, direction: next, ranOn: result.ranOn, ms: result.ms, rows: result.order.length };
-      store.set({ sorting: false, sort: { ...info, order: result.order } });
-      options.onSort?.(info);
-      announce(`Sorted by ${title(store.get(), column)}, ${next}`);
-      return true;
+      };
+      applying = run();
+      return applying;
+    };
+    /** Asks for a sort by a column: ascending, descending, then none, as its button steps; or the direction given. */
+    const sort = async (column: number, direction?: SpreadsheetSortDirection | null, details: { reason: SpreadsheetSortChangeReason; event?: Event } = { reason: 'imperative' }) => {
+      const { cols } = modelOf(store.get());
+      if (column < 0 || column >= cols) return false;
+      const asked = store.get().sort;
+      const current = asked?.column === column ? asked.direction : null;
+      const next = direction !== undefined ? direction : current === null ? 'ascending' : current === 'ascending' ? 'descending' : null;
+      const target = next ? { column, direction: next } : null;
+      const before = sortSeq;
+      if (!change('sort', target, details)) return false;
+      // Uncontrolled, the store has it now and its sort is running; controlled, it runs when the host passes it back.
+      return sortSeq === before ? true : applying;
     };
 
     /* ── Histograms of the number and date columns in view, a moment after the rows settle ── */
@@ -502,10 +536,17 @@ export const spreadsheet = definePrimitive({
 
     /* ── Following the state ── */
     let seen = store.get();
+    // A sort to start with (`sort` or `defaultSort`) runs once the rows are in.
+    if (seen.sort) {
+      const first = seen.sort;
+      queueMicrotask(() => void apply(first));
+    }
+    const sameSort = (a: SpreadsheetSort | null, b: SpreadsheetSort | null) => a === b || (!!a && !!b && a.column === b.column && a.direction === b.direction);
     context.onDestroy(store.subscribe(() => {
       const state = store.get();
       const before = seen;
       seen = state;
+      if (!sameSort(state.sort, before.sort)) void apply(state.sort);
       if (state.value !== before.value) {
         if (afterWrite) {
           const run = afterWrite;
@@ -525,7 +566,10 @@ export const spreadsheet = definePrimitive({
       history.reset(next);
       estimates = [];
       sortSeq++;
-      store.set({ sort: null, sorting: false });
+      store.set({ order: null, sorting: false });
+      // The sort asked for still holds, on the new rows.
+      const asked = store.get().sort;
+      if (asked) queueMicrotask(() => void apply(asked));
     });
 
     /* ── Presses ── */
@@ -679,8 +723,8 @@ export const spreadsheet = definePrimitive({
           if (!resize.reset(String(col), event)) refresh();
         },
         addRow: (event?: Event) => addRow(event),
-        sortPress: (column: number) => {
-          void sort(column);
+        sortPress: (column: number, event?: Event) => {
+          void sort(column, undefined, { reason: 'trigger-press', event });
         },
         connect(el: HTMLElement) {
           scroller = el;
@@ -700,10 +744,10 @@ export const spreadsheet = definePrimitive({
   },
   slots: (slot) => ({
     root: slot<object, SpreadsheetView>({
-      selects: selects<SpreadsheetState, unknown, object>(except('value', 'header', 'readOnly', 'rowHeight', 'histograms', 'sort', 'bins')),
+      selects: selects<SpreadsheetState, unknown, object>(except('value', 'header', 'readOnly', 'rowHeight', 'histograms', 'order', 'bins')),
       state: (state) => ({
         value: state.value, header: state.header, readOnly: state.readOnly, rowHeight: state.rowHeight,
-        histograms: state.histograms, sort: state.sort, bins: state.bins,
+        histograms: state.histograms, order: state.order, bins: state.bins,
       }),
     }),
 
@@ -758,7 +802,7 @@ export const spreadsheet = definePrimitive({
       role: 'columnheader',
       props: { value: 'string', col: 'number' },
       selects: selects<SpreadsheetState, unknown, { value: string; col: number }>({
-        ...except('active', 'range', 'sort', 'value'),
+        ...except('active', 'range', 'order', 'value'),
         editing: ({ props }) => [cellKey({ row: -1, col: props.col })],
       }),
       state: (state, { props, api }) => {
@@ -876,7 +920,7 @@ export const spreadsheet = definePrimitive({
 
     // The status bar: the table's size, the sort, and the selection's sum and average.
     footer: slot<object, SpreadsheetFooterState>({
-      selects: selects<SpreadsheetState, unknown, object>(except('value', 'header', 'active', 'range', 'sort', 'sorting')),
+      selects: selects<SpreadsheetState, unknown, object>(except('value', 'header', 'active', 'range', 'order', 'sorting')),
       state: (state, { api }) => {
         const { body, cols } = api.internal.modelOf(state);
         const sort = api.internal.orderOf(state);

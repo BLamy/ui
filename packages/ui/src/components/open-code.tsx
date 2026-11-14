@@ -6,9 +6,12 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-  type CSSProperties,
+  type ComponentProps,
 } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
+import { Icon } from '@/lib/icon';
+import { useAppearance, useThemeScope, type Appearance } from '@/lib/theme';
 import { useSizeClass } from '@/lib/container';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle';
@@ -32,7 +35,24 @@ import {
 export type OpenCodeState =
   'idle' | 'starting' | 'running' | 'error' | 'stopped';
 
-export interface OpenCodeProps {
+/** The frame: `card` is a bordered, rounded card for a page; `plain` has no border or radius, for a pane or window
+    that already draws its own edge. Size it with `className` (it is at least 320px tall). */
+export const openCodeVariants = cva(
+  'group/open-code flex min-h-80 min-w-0 flex-col overflow-hidden bg-background font-sans text-foreground',
+  {
+    variants: {
+      variant: {
+        card: 'rounded-card border border-border',
+        plain: '',
+      },
+    },
+    defaultVariants: { variant: 'card' },
+  },
+);
+
+export interface OpenCodeProps
+  extends Omit<ComponentProps<'section'>, 'children' | 'title'>,
+    VariantProps<typeof openCodeVariants> {
   /** Borrow an existing host, or create a fresh one on each Start (disposed on Stop). */
   host?: OpenCodeHostBridge;
   /** Supported encrypted host store. Locking stops the terminal; autoStart restores it after unlocking. */
@@ -45,11 +65,11 @@ export interface OpenCodeProps {
   previewRuntimeUrl?: string;
   /** Supply an application-bundled runtime instead of the hosted module. */
   loadRuntime?: () => Promise<OpenCodeRuntime>;
+  /** The visible title, and the name of the region, its terminal and its preview frames. Default `OpenCode`. */
   title?: string;
-  height?: number;
-  className?: string;
-  style?: CSSProperties;
-  theme?: 'light' | 'dark';
+  /** The terminal's color scheme. Defaults to the nearest ThemeScope's, else the ambient appearance, else dark.
+      Changing it restarts the session. */
+  appearance?: Appearance;
   /** Start when mounted. Set false to require the Start button. */
   autoStart?: boolean;
   /** Attach Agent Browser-compatible MCP tools for the selected app iframe. */
@@ -74,17 +94,29 @@ export function OpenCode({
   previewRuntimeUrl = DEFAULT_OPENCODE_PREVIEW_URL,
   loadRuntime,
   title = 'OpenCode',
-  height = 620,
+  appearance: appearanceProp,
+  variant,
   className,
-  style,
-  theme = 'dark',
   autoStart = true,
   browserTools = true,
   onStateChange,
   onReady,
+  ref,
+  ...props
 }: OpenCodeProps) {
+  const scopeAppearance = useThemeScope()?.appearance;
+  const ambient = useAppearance();
+  const theme = appearanceProp ?? scopeAppearance ?? ambient ?? 'dark';
   const terminal = useRef<HTMLDivElement>(null);
-  const [rootRef] = useSizeClass<HTMLElement>();
+  const [sizeRef] = useSizeClass<HTMLElement>();
+  const rootRef = useMemo(
+    () => (el: HTMLElement | null) => {
+      sizeRef(el);
+      if (typeof ref === 'function') ref(el);
+      else if (ref) ref.current = el;
+    },
+    [sizeRef, ref],
+  );
   const connection = useRef<HTMLDivElement>(null);
   const [started, setStarted] = useState(autoStart);
   const stores = useMemo(
@@ -331,12 +363,9 @@ export function OpenCode({
 
   return (
     <section
+      {...props}
       ref={rootRef}
-      className={cn(
-        'group/open-code flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-background font-sans text-foreground',
-        className,
-      )}
-      style={{ height: Math.max(320, height), ...style }}
+      className={cn(openCodeVariants({ variant }), className)}
       aria-label={title}
       data-state={state}
     >
@@ -360,26 +389,30 @@ export function OpenCode({
                   ? 'Stopped'
                   : 'Ready to start'}
         </span>
-        <div ref={connection} className="ml-auto" />
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            if (started) {
-              setStarted(false);
-              setState('stopped');
-              setPorts([]);
-              setSelected(null);
-              setError('');
-            } else setStarted(true);
-          }}
-        >
-          {started ? 'Stop OpenCode' : 'Start OpenCode'}
-        </Button>
+        {/* The runtime's connection control and Start / Stop stay together at the end, also when the header wraps. */}
+        <div className="ml-auto flex items-center gap-2">
+          <div ref={connection} />
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              if (started) {
+                setStarted(false);
+                setState('stopped');
+                setPorts([]);
+                setSelected(null);
+                setError('');
+              } else setStarted(true);
+            }}
+          >
+            {started ? 'Stop OpenCode' : 'Start OpenCode'}
+          </Button>
+        </div>
       </header>
       {error && (
-        <p role="alert" className="m-3 rounded-lg bg-muted p-3 text-footnote">
-          {error}
+        <p role="alert" className="m-3 flex items-start gap-2 rounded-ctl bg-destructive/10 p-3 text-footnote text-foreground">
+          <Icon name="exclamation-circle" size={16} className="mt-px shrink-0 text-destructive" />
+          <span className="min-w-0 [overflow-wrap:anywhere]">{error}</span>
         </p>
       )}
       <div className="flex min-h-0 flex-1 flex-row group-data-[size-class=compact]/open-code:flex-col">

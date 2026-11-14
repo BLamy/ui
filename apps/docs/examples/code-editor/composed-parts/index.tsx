@@ -15,7 +15,7 @@ export default function ComposedBlock() {
         <span style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>
           JSON · 6 lines
         </span>
-        <CodeEditorCopyButton label="Copy package.json" />
+        <CodeEditorCopyButton aria-label="Copy package.json" />
       </CodeEditorHeader>
       <CodeEditorContent
         lineNumbers

@@ -29,14 +29,16 @@ import { createStack, type StackExit } from '@/lib/stack';
      regular   sidebar · supplementary · detail tiled (the sidebar tiles; closing it slides it away)
      medium    supplementary · detail tiled; the sidebar floats over them (overlay) or pushes them (displace)
      compact   one column at a time: the columns are the pages of a `createStack`, so a pick pushes the next
-               one and back, Escape and a swipe from the leading edge pop, innermost stack first
+               one and back, Escape and a swipe from the leading edge pop, innermost stack first (a NavigationStack
+               in a column is a stack too: it pops its own pages before the columns move)
 
    Dividers are `createResize` handles (the separator pattern: arrows, Shift+arrows, Home, End, Enter or a double
-   click to reset). A floating sidebar is a layer (`bindLayer`): Escape and a press outside close it. The items of
-   each column are one tab stop (`createRovingFocus`, one group per column): Up, Down, Home and End move between
-   them. A pane (a column's header and content, or a nested stack page's) follows its content's scroll in `bind`
-   (`bindScrollEdge`, shared with NavigationStack): `data-scrolled` once it leaves the top, `data-under` once the
-   large title has gone under the header, and the header shows or hides its inline title from them. */
+   click to reset), placed on the trailing edge of their column by `--resizer-left`. A floating sidebar is a layer
+   (`bindLayer`): Escape and a press outside close it. The items of each column are one tab stop
+   (`createRovingFocus`, one group per column): Up, Down, Home and End move between them, past disabled ones. A pane
+   (a column's header and content) follows its content's scroll in `bind` (`bindScrollEdge`, shared with
+   NavigationStack): `data-scrolled` once it leaves the top, `data-under` once the large title has gone under the
+   header, and the header shows or hides its inline title from them. */
 
 export type SplitViewColumn = 'sidebar' | 'supplementary' | 'detail';
 export type SplitViewSizeClass = SizeClass;
@@ -381,10 +383,10 @@ export type SplitViewHeaderState = {
 
 const headerState = (
   pane: PaneScroll | undefined,
-  { largeTitle = false, titleOnScroll = false }: { largeTitle?: boolean; titleOnScroll?: boolean },
+  { largeTitle = false, showOnScroll = false }: { largeTitle?: boolean; showOnScroll?: boolean },
 ): SplitViewHeaderState => {
   const inContent = !!pane;
-  const onScroll = !largeTitle && titleOnScroll && inContent;
+  const onScroll = !largeTitle && showOnScroll && inContent;
   return {
     largeTitle,
     inContent,
@@ -395,9 +397,11 @@ const headerState = (
 
 /** What an item hands `render` functions and state-based class names. */
 export type SplitViewItemState = {
-  selected: boolean;
+  /** Its value is the column's (`aria-current`, `data-current`). Never while collapsed, where rows are navigation. */
+  current: boolean;
   /** Collapsed: pressing it pushes the next column. */
   pushes: boolean;
+  disabled: boolean;
 };
 
 function stateOf(state: Store): SplitViewState {
@@ -552,13 +556,13 @@ export const splitView = definePrimitive({
 
     // One tab stop per column: Up, Down, Home and End move between its items. An item on a covered page of a
     // nested stack can't take focus.
-    type ItemProps = { item: string; column: string };
+    type ItemProps = { item: string; column: string; disabled?: boolean };
     const itemEls = new Map<string, HTMLElement>();
     const roving = (column: SplitViewColumn, key: 'focusedSidebar' | 'focusedSupplementary' | 'focusedDetail') =>
       createRovingFocus<Store, ItemProps>(context, {
         slot: 'item',
         key,
-        focusable: (item) => !itemEls.get(item.key)?.closest('[inert]'),
+        focusable: (item) => !item.props.disabled && !itemEls.get(item.key)?.closest('[inert]'),
         preferred: (item) => store.get().value[column] === item.props.item,
       });
     const rovers: Record<SplitViewColumn, ReturnType<typeof roving>> = {
@@ -773,8 +777,8 @@ export const splitView = definePrimitive({
           const present = presentIn(state);
           return sizeClassIn(state) === 'compact' && present.indexOf(column) < present.length - 1;
         },
-        /** Whether `id` draws selected in `column`: never while collapsed, where rows are navigation. */
-        selected: (state: Store, column: SplitViewColumn, id: string) => sizeClassIn(state) !== 'compact' && state.value[column] === id,
+        /** Whether `value` is current in `column`: never while collapsed, where rows are navigation. */
+        current: (state: Store, column: SplitViewColumn, value: string) => sizeClassIn(state) !== 'compact' && state.value[column] === value,
       },
     };
     return api;
@@ -832,6 +836,8 @@ export const splitView = definePrimitive({
     supplementary: column('supplementary'),
     detail: column('detail'),
 
+    /** A column's divider. The root renders it (outside the column, which clips what it holds) on the column's
+     *  trailing edge: `--resizer-left`. */
     resizer: slot<{ value: string }, { dragging: boolean }>({
       role: 'separator',
       focus: 'tab-stop',
@@ -842,7 +848,11 @@ export const splitView = definePrimitive({
       attrs: (state, { api, id, key }) => {
         const c = key as SplitViewColumn;
         const spec = api.internal.spec(state, c);
+        const l = api.internal.layout(state).columns[c];
+        const handle = api.internal.resize.handleAttrs('e');
         return {
+          ...handle,
+          style: [handle.style, l ? css({ '--resizer-left': `calc(${l.left} + ${l.width})` }) : ''].filter(Boolean).join(';'),
           tabindex: '0',
           'aria-orientation': 'vertical',
           'aria-label': c === 'sidebar' ? 'Resize sidebar' : 'Resize list',
@@ -851,7 +861,6 @@ export const splitView = definePrimitive({
           'aria-valuemin': String(spec.minWidth),
           'aria-valuemax': Number.isFinite(spec.maxWidth) ? String(spec.maxWidth) : undefined,
           'data-dragging': flag(state.resizing?.key === key),
-          ...api.internal.resize.handleAttrs('e'),
         };
       },
       on: {
@@ -887,33 +896,38 @@ export const splitView = definePrimitive({
     }),
 
     // Keyed by a made id: the same value can show in several items (a mailbox under Favorites and its account).
-    item: slot<{ id?: string; item: string; column: string }, SplitViewItemState>({
-      props: { id: 'id', item: 'string', column: 'string' },
+    item: slot<{ id?: string; item: string; column: string; disabled?: boolean }, SplitViewItemState>({
+      props: { id: 'id', item: 'string', column: 'string', disabled: 'boolean' },
       state: (state, { api, props }) => ({
-        selected: api.internal.selected(state, props.column as SplitViewColumn, props.item),
+        current: api.internal.current(state, props.column as SplitViewColumn, props.item),
         pushes: api.internal.pushes(state, props.column as SplitViewColumn),
+        disabled: !!props.disabled,
       }),
       attrs: (state, part) => {
         const { api, props } = part;
-        const selected = api.internal.selected(state, props.column as SplitViewColumn, props.item);
+        const current = api.internal.current(state, props.column as SplitViewColumn, props.item);
         return {
           type: 'button',
           tabindex: api.internal.itemTabIndex(state, part),
-          'data-selected': flag(selected),
-          'aria-current': selected ? 'true' : undefined,
+          disabled: props.disabled ? '' : undefined,
+          'data-disabled': flag(props.disabled),
+          'data-current': flag(current),
+          'aria-current': current ? 'true' : undefined,
         };
       },
       bind: (el, part) => part.api.internal.bindItem(el, part),
       on: {
         keydown: (event, { api, el, props }) => el && api.internal.itemKeydown(event, el, props.column),
       },
-      press: ({ api, props }, event) => void api.select(props.column as SplitViewColumn, props.item, { reason: 'item-press', event }),
+      press: ({ api, props }, event) => {
+        if (!props.disabled) void api.select(props.column as SplitViewColumn, props.item, { reason: 'item-press', event });
+      },
     }),
 
-    /** A column's (or a nested stack page's) bar. Keyed by its pane. With a large title or `titleOnScroll` the
-     *  inline title comes and goes: `data-title-hidden` while it is away. */
-    header: slot<{ value: string; largeTitle?: boolean; titleOnScroll?: boolean }, SplitViewHeaderState>({
-      props: { value: 'string', largeTitle: 'boolean', titleOnScroll: 'boolean' },
+    /** A column's bar. Keyed by its pane. With a large title or `showOnScroll` the inline title comes and goes:
+     *  `data-title-hidden` while it is away. */
+    header: slot<{ value: string; largeTitle?: boolean; showOnScroll?: boolean }, SplitViewHeaderState>({
+      props: { value: 'string', largeTitle: 'boolean', showOnScroll: 'boolean' },
       state: (state, { key, props }) => headerState(state.panes[key], props),
       attrs: (state, { key, props }) => {
         const h = headerState(state.panes[key], props);
@@ -938,111 +952,4 @@ export const splitView = definePrimitive({
   };
   },
   agent: { actions: ['select', 'show', 'back', 'setSidebarOpen', 'toggleSidebar', 'setSupplementaryOpen', 'setColumnWidth'] },
-});
-
-/* ══ SplitViewStack — a push/pop stack inside a column ══
-   Its pages are keys in a `createStack`; the component keeps the element pushed under each key. A pushed page
-   enters from the trailing edge, the one under it slides back a little and dims; back, Escape, the platform's back
-   and a swipe from the leading edge pop the top page, and the innermost stack goes first, so the column stack only
-   moves once this one is at its root. */
-
-/** The root page's key. */
-export const SPLIT_VIEW_STACK_ROOT = 'root';
-
-export type SplitViewStackPagesChangeReason = 'trigger-press' | 'escape-key' | 'back' | 'swipe' | 'imperative';
-export type SplitViewStackPagesChangeDetails = ChangeDetails<SplitViewStackPagesChangeReason>;
-
-export type SplitViewStackOptions = {
-  /** The page keys from the root (`"root"`) to the top, to control the stack. The first key is always `"root"`. */
-  pages?: string[];
-  /** The pages it starts with, when `pages` is left out, from `"root"`. Default `["root"]`. */
-  defaultPages?: string[];
-  /** Every push and pop: the page keys from the root (`"root"`) to the top. */
-  onPagesChange?: (pages: string[], details: SplitViewStackPagesChangeDetails) => void;
-  /** Drives the stack from anywhere. Create one with `createSplitViewStackController()`. */
-  controller?: SplitViewStackController;
-} & PrimitiveOptions;
-
-/** Pushes and pops a split view stack from outside it. Write methods run `onPagesChange` like the user's own
- *  changes and return false when nothing changed or the change was canceled. */
-export type SplitViewStackController = {
-  /** Puts the page with this key on top. False when it is in the stack already. */
-  push: (page: string, options?: Why<SplitViewStackPagesChangeReason>) => boolean;
-  /** Takes the top page off. False at the root. */
-  pop: (options?: Why<SplitViewStackPagesChangeReason>) => boolean;
-  /** Takes off every page above the root. False at the root. */
-  popToRoot: (options?: Why<SplitViewStackPagesChangeReason>) => boolean;
-  /** The pages now, from the root to the top. */
-  getPages: () => string[];
-};
-
-/** A handle for a split view stack: pass it as `controller`, then call it from anywhere. */
-export function createSplitViewStackController() {
-  return createController<SplitViewStackController>();
-}
-
-type StackStore = { pages: string[]; exiting: StackExit[] };
-
-/** What a stack page hands `render` functions and state-based class names. */
-export type SplitViewStackPageState = {
-  /** Where it is in the stack: 0 for the root. */
-  index: number;
-  top: boolean;
-};
-
-export const splitViewStack = definePrimitive({
-  name: 'split-view-stack',
-  options: { pages: 'list', defaultPages: 'list', onPagesChange: 'callback', controller: 'value' },
-  controlled: ['pages'],
-  state: (options: SplitViewStackOptions): StackStore => ({
-    pages: options.pages ?? options.defaultPages ?? [SPLIT_VIEW_STACK_ROOT],
-    exiting: [],
-  }),
-  sync: (options) => (options.pages === undefined ? {} : { pages: options.pages }),
-  api: (context) => {
-    const change = createChange(context);
-    const stack = createStack<StackStore, SplitViewStackPagesChangeReason>(context, {
-      key: 'pages',
-      exiting: 'exiting',
-      set: (pages, details) => change('pages', pages, details),
-      back: bindBack,
-    });
-    const pages = () => context.store.get().pages;
-    return {
-      push: (page: string, o?: Why<SplitViewStackPagesChangeReason>) => stack.push(page, o),
-      pop: (o?: Why<SplitViewStackPagesChangeReason>) => stack.pop(o),
-      popToRoot: (o?: Why<SplitViewStackPagesChangeReason>) => stack.popTo(SPLIT_VIEW_STACK_ROOT, o),
-      getPages: pages,
-      internal: { stack },
-    };
-  },
-  slots: (slot) => ({
-    root: slot<object, { pages: string[]; exiting: string[] }>({
-      state: (state) => ({ pages: state.pages, exiting: state.exiting.map((exit) => exit.key) }),
-      attrs: (state) => ({ 'data-depth': String(state.pages.length), 'data-can-pop': flag(state.pages.length > 1) }),
-      bind: (el, { api }) => bindEdgeSwipe(el, { ...api.internal.stack.swipe, size: 28 }),
-    }),
-    page: slot<{ value: string }, SplitViewStackPageState>({
-      props: { value: 'string' },
-      present: (state, { api, key }) => api.internal.stack.present(state, key),
-      state: (state, { key }) => {
-        const index = state.pages.indexOf(key);
-        return { index: index < 0 ? state.pages.length : index, top: state.pages.at(-1) === key };
-      },
-      attrs: (state, { api, key }) => ({
-        ...api.internal.stack.pageAttrs(state, key),
-        'data-root': flag(key === SPLIT_VIEW_STACK_ROOT),
-      }),
-      bind: (el, { api, key }) =>
-        api.internal.stack.bindPage(el, key, {
-          initialFocus: () => (el.contains(el.ownerDocument.activeElement) ? null : el),
-        }),
-    }),
-    /** A pushed page's back button: pops it. */
-    back: slot({
-      attrs: () => ({ type: 'button' }),
-      press: ({ api }, event) => void api.pop({ reason: 'trigger-press', event }),
-    }),
-  }),
-  agent: { actions: ['push', 'pop', 'popToRoot'] },
 });

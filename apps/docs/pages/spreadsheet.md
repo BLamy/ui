@@ -2,6 +2,8 @@
 
 A grid of cells for CSV files and other tables, from ten rows up to millions. Only the cells in view are in the page, so a million-row file scrolls as smoothly as a short one. You can edit cells in place, select ranges, copy and paste to and from other spreadsheets, undo, and resize columns. Sorting a number or date column runs as a WebGPU compute shader, and each number column's header shows a histogram tallied on the GPU. Without WebGPU, both run on the CPU and give the same answers.
 
+Use [DataTable](https://blamy.github.io/ui/#/data-table) instead when people read and pick rows rather than edit cells: its unit is a row, with typed columns rendered by you. The two share the column edge (`columnResizerClass`) and the empty state.
+
 It's one primitive built from UI SDK behaviors: [`createGridFocus`](https://ui-sdk.dev/docs/core/behaviors/focus) moves the active cell, [`createCellRange`](https://ui-sdk.dev/docs/core/behaviors/selection) selects blocks and reads them as tab-separated text (`cellsToText` / `textToCells`), [`createInlineEdit`](https://ui-sdk.dev/docs/core/behaviors/lists) edits a cell in place, `createUndoStack` keeps the history, [`createResize`](https://ui-sdk.dev/docs/core/behaviors/direct-manipulation) sizes the columns, and two [`createVirtualizer`](https://ui-sdk.dev/docs/core/behaviors/lists)s render only the rows and columns in view.
 
 {% tabs title="Installation" sync="install" %}
@@ -68,10 +70,10 @@ When you sort a number or date column, each value becomes an exact 64-bit key: t
 
 The histograms use one GPU thread per value. Each workgroup tallies its values in shared memory, then adds its tally to the output once. The bin edges are computed in 32-bit floats on both paths.
 
-Sorting is a view: `onValueChange` always gets rows in the file's order, and editing a sorted table doesn't move rows around. Sort again to re-sort.
+Sorting is a view: `onValueChange` always gets rows in the file's order, and editing a sorted table doesn't move rows around. Sort again to re-sort. The sort itself is state you can hold: `sort` / `defaultSort` / `onSortChange(sort, details)`, with `{ column, direction }` by column index (`details.reason` is `trigger-press` for a column's button, `imperative` for the controller, and `details.cancel()` keeps the current sort). New rows from outside keep the sort, sorted again.
 
 {% hint style="info" %}
-**When the GPU runs.** With `engine="auto"` (the default), the GPU handles sorts and histograms of at least `gpuMinRows` rows (20,000 by default) on a hardware adapter. Smaller jobs stay on the CPU, because uploading the data and reading it back costs more than the GPU saves. A software adapter (SwiftShader in headless CI, llvmpipe), no WebGPU at all, or a GPU error also means the CPU. `engine="gpu"` uses any adapter at any size; `engine="fallback"` never touches the GPU. Text columns always sort on the CPU, and so do tables over 8 million rows (the most one 128 MiB buffer holds). The status bar and `onSort` say which engine ran and how long it took, upload and readback included.
+**When the GPU runs.** With `engine="auto"` (the default), the GPU handles sorts and histograms of at least `gpuMinRows` rows (20,000 by default) on a hardware adapter. Smaller jobs stay on the CPU, because uploading the data and reading it back costs more than the GPU saves. A software adapter (SwiftShader in headless CI, llvmpipe), no WebGPU at all, or a GPU error also means the CPU. `engine="gpu"` uses any adapter at any size; `engine="fallback"` never touches the GPU. Text columns always sort on the CPU, and so do tables over 8 million rows (the most one 128 MiB buffer holds). The status bar and `onSorted` say which engine ran and how long it took, upload and readback included.
 {% endhint %}
 
 ## Keyboard
@@ -107,10 +109,12 @@ With the mouse, click a column's title to select the column, a row number to sel
 | `engine` | `auto` | Where sorts and histograms run: `auto`, `gpu` or `fallback` (see above). |
 | `gpuMinRows` | `20000` | The smallest job `auto` sends to the GPU. |
 | `histograms` | `true` | A histogram under each number or date column's title. |
-| `onSort` | — | `{ column, direction, ranOn, ms, rows }` after each sort; `null` when the sort is cleared. |
-| `density` | `compact` | Row height: `compact` (28 px) or `comfortable` (36 px). |
-| `footer` | `true` | The status bar: size, sort timing, the selection's sum and average, Add Row. |
+| `sort` / `defaultSort` / `onSortChange` | none | The sort asked for, `{ column, direction }` by column index, or `null` for the file's order. `onSortChange` hears it before it runs. |
+| `onSorted` | — | `{ column, direction, ranOn, ms, rows }` once a sort has run; `null` when the sort is cleared. |
+| `density` | `compact` | Row height: `compact` (28 px), `default` (32 px) or `comfortable` (36 px, for touch). |
+| `statusBar` | `true` | The status bar: size, sort timing, the selection's sum and average, Add Row. |
 | `actions` | — | Extra controls at the end of the status bar. |
+| `emptyState` | "No rows" | Shown over the body with no rows: an [EmptyState](https://blamy.github.io/ui/#/empty-state) that says to paste cells or add a row (not when read-only). |
 | `columnWidth` | `120` | Width of an empty column. Other columns start sized to their title and first rows (up to 320 px). |
 | `columnWidths` / `defaultColumnWidths` | — | Widths set so far, in px by column index (`{ "0": 180 }`). A column with none keeps its estimated size. |
 | `onColumnWidthsChange` | — | `(widths, details)` after a drag ends (`drag`), a key moves an edge (`resize-key`), a double-click fits a column (`handle-press`), or code sets them (`imperative`). |
@@ -141,7 +145,7 @@ It also has `focus()`, `clear()`, `redo()`, `addRow()` and `setColumnWidths(widt
 
 ## Parts and attributes
 
-The root is `data-slot="spreadsheet"`, and inside it `spreadsheet-grid` (`role="grid"`), two `spreadsheet-rowgroup`s, `spreadsheet-row`s, `spreadsheet-corner`, `spreadsheet-column` (a title, with `data-selected` when the selection covers it, and its `spreadsheet-resizer`, with `data-dragging`), `spreadsheet-rowheader` (`data-selected`), `spreadsheet-cell`, `spreadsheet-editor` and `spreadsheet-footer`. A cell has `data-active` while it is the active cell, `data-editing`, and from the cell range `aria-selected`, `data-selected` and `data-range-edge` (`top`, `right`, `bottom`, `left`), which draws the selection's outline.
+The root is `data-slot="spreadsheet"`, and inside it `spreadsheet-grid` (`role="grid"`), two `spreadsheet-rowgroup`s, `spreadsheet-row`s, `spreadsheet-corner`, `spreadsheet-column` (a title, with `data-selected` when the selection covers it, and its `spreadsheet-resizer`, with `data-dragging`), `spreadsheet-rowheader` (`data-selected`), `spreadsheet-cell`, `spreadsheet-editor`, `spreadsheet-empty` and `spreadsheet-footer` (the status bar). A cell has `data-active` while it is the active cell, `data-editing`, and from the cell range `aria-selected`, `data-selected` and `data-range-edge` (`top`, `right`, `bottom`, `left`), which draws the selection's outline.
 
 ## The model
 
@@ -176,4 +180,5 @@ relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card tex
 | Value | Adds |
 | --- | --- |
 | `compact` (default) | — |
+| `default` | — |
 | `comfortable` | — |

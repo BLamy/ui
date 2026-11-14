@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Canvas, CanvasFrame, CanvasHandles, CanvasMarquee, CanvasMiniMap, createCanvasController, useCanvas, type CanvasViewportChangeDetails, type Viewport } from '@/components/ui/canvas';
+import { Canvas, CanvasFrame, CanvasGuides, CanvasHandles, CanvasMarquee, CanvasMiniMap, createCanvasController, useCanvas, type CanvasViewportChangeDetails, type Viewport } from '@/components/ui/canvas';
 
 /* happy-dom has no layout: the canvas is 400 × 300 at the page's origin, the minimap 184 × 120 at (200, 160), and a
    board item reports where the view puts it. */
@@ -139,7 +139,8 @@ describe('Canvas', () => {
 
     fireEvent.keyDown(board(), { key: ' ' });
     expect(board().hasAttribute('data-panning')).toBe(true);
-    expect(board().style.cursor).toBe('grab');
+    // The hand wins over any resting cursor the caller set.
+    expect(board().className).toContain('cursor-grab!');
     fireEvent.pointerDown(board(), { pointerId: 2, pointerType: 'mouse', button: 0, clientX: 140, clientY: 90 });
     expect(board().hasAttribute('data-grabbing')).toBe(true);
     fireEvent.pointerMove(board(), { pointerId: 2, pointerType: 'mouse', clientX: 170, clientY: 100 });
@@ -268,7 +269,65 @@ describe('Canvas', () => {
   });
 });
 
+describe('Canvas API', () => {
+  it('passes its ref, takes a resting cursor from the caller, and draws a focus ring over the board', () => {
+    let el: HTMLDivElement | null = null;
+    render(<Canvas aria-label="Board" ref={(node) => { el = node; }} className="cursor-crosshair" />);
+    expect(el).toBe(board());
+    expect(board().className).toContain('cursor-crosshair');
+    expect(board().className).toContain('focus-visible:after:ring-2');
+  });
+
+  it('puts the minimap on a side and an end, in either text direction', () => {
+    render(<Harness overlay={<CanvasMiniMap side="top" align="start" className="opacity-90" items={[]} />} />);
+    const map = board().querySelector<HTMLElement>('[data-slot="canvas-minimap"]')!;
+    expect(map.className).toMatch(/\btop-3\b/);
+    expect(map.className).toMatch(/\bstart-3\b/);
+    expect(map.className).toContain('opacity-90');
+  });
+
+  it('lets a pointer layer take a press before the host, and gives the host the rest', () => {
+    const onCanvasPointerDown = vi.fn();
+    const onCanvasPointerUp = vi.fn();
+    const layer = { onPointerDown: vi.fn((e: PointerEvent) => e.button === 0 && e.shiftKey), onPointerMove: vi.fn(), onPointerUp: vi.fn() };
+    function Layer() {
+      const { addPointerLayer } = useCanvas();
+      useEffect(() => addPointerLayer(layer), [addPointerLayer]);
+      return null;
+    }
+    render(<Canvas aria-label="Board" onCanvasPointerDown={onCanvasPointerDown} onCanvasPointerUp={onCanvasPointerUp}><Layer /></Canvas>);
+    fireEvent.pointerDown(board(), { pointerId: 1, pointerType: 'mouse', button: 0, shiftKey: true, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(board(), { pointerId: 1, pointerType: 'mouse', clientX: 20, clientY: 10 });
+    fireEvent.pointerUp(board(), { pointerId: 1, pointerType: 'mouse', clientX: 20, clientY: 10 });
+    expect(layer.onPointerMove).toHaveBeenCalledTimes(1);
+    expect(layer.onPointerUp).toHaveBeenCalledTimes(1);
+    expect(onCanvasPointerDown).not.toHaveBeenCalled();
+    expect(onCanvasPointerUp).not.toHaveBeenCalled();
+    fireEvent.pointerDown(board(), { pointerId: 2, pointerType: 'mouse', button: 0, clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(board(), { pointerId: 2, pointerType: 'mouse', clientX: 10, clientY: 10 });
+    expect(onCanvasPointerDown).toHaveBeenCalledTimes(1);
+    expect(onCanvasPointerUp).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('Canvas overlay parts', () => {
+  it('take className and style after their own', () => {
+    render(
+      <Canvas aria-label="Board">
+        <CanvasFrame frame={{ x: 0, y: 0, w: 10, h: 10 }} className="outline-warning" style={{ opacity: 0.5 }} />
+        <CanvasHandles handles={[{ id: 'nw', pt: { x: 0, y: 0 } }]} className="border-warning" />
+        <CanvasMarquee rect={{ x: 0, y: 0, w: 5, h: 5 }} className="border-dashed" />
+        <CanvasGuides guides={[{ x1: 0, y1: 0, x2: 10, y2: 0 }]} className="bg-warning" />
+      </Canvas>,
+    );
+    const q = (slot: string) => board().querySelector<HTMLElement>(`[data-slot="${slot}"]`)!;
+    expect(q('canvas-frame').className).toContain('outline-warning');
+    expect(q('canvas-frame').style.opacity).toBe('0.5');
+    expect(q('canvas-handle').className).toContain('border-warning');
+    expect(q('canvas-marquee').className).toContain('border-dashed');
+    expect(q('canvas-guide').className).toContain('bg-warning');
+  });
+
   it('scale their lines in CSS from the board\'s --canvas-zoom, so a zoom does not render them again', () => {
     const controller = createCanvasController();
     let renders = 0;

@@ -22,8 +22,6 @@ import { useReminders } from './store';
 const DAYS = [{ value: '0', label: 'Today' }, { value: '1', label: 'Tomorrow' }, { value: '5', label: 'Weekend' }, { value: '7', label: 'Next Week' }];
 const TIMES = ['9:00 AM', '12:00 PM', '5:00 PM', '8:00 PM'].map((t) => ({ value: t, label: t.replace(':00', '') }));
 const PRIORITIES = ['None', 'Low', 'Medium', 'High'].map((p, i) => ({ value: String(i), label: p }));
-/** The quick picks under Date and Time: a little tighter than the priority row. */
-const tight = '[&>[data-slot=segmented-control-item]]:px-1.5';
 
 const Tile = ({ glyph, color }: { glyph: IconName; color: string }) => (
   <span className="grid size-[29px] shrink-0 place-items-center rounded-[7px] text-white" style={{ background: color }}><Icon name={glyph} size={18} weight="semibold" /></span>
@@ -134,14 +132,14 @@ function LocalBody({ r }: { r: Reminder }) {
         <ListRow icon={<Tile glyph="calendar" color={SYSTEM.red} />} title="Date" description={r.due != null ? <span className="text-primary">{dueLabel({ due: r.due })}</span> : undefined}
           accessory={<Switch checked={r.due != null} onCheckedChange={(v) => up(v ? { due: 0 } : { due: undefined, time: undefined })} />} divider={r.due != null} />
         <Reveal open={r.due != null}>
-          <Segmented aria-label="Due date" className={tight} value={r.due != null ? String(r.due) : null} onValueChange={(d) => { if (d) up({ due: Number(d) }); }}>
+          <Segmented aria-label="Due date" size="sm" value={r.due != null ? String(r.due) : null} onValueChange={(d) => { if (d) up({ due: Number(d) }); }}>
             {DAYS.map((d) => <SegmentedItem key={d.value} value={d.value}>{d.label}</SegmentedItem>)}
           </Segmented>
         </Reveal>
         <ListRow icon={<Tile glyph="clock" color={SYSTEM.blue} />} title="Time" description={r.time ? <span className="text-primary">{r.time}</span> : undefined}
           accessory={<Switch checked={!!r.time} onCheckedChange={(v) => up(v ? { time: '9:00 AM', due: r.due ?? 0 } : { time: undefined })} />} divider={!!r.time} />
         <Reveal open={!!r.time}>
-          <Segmented aria-label="Due time" className={tight} value={r.time ?? null} onValueChange={(t) => { if (t) up({ time: t }); }}>
+          <Segmented aria-label="Due time" size="sm" value={r.time ?? null} onValueChange={(t) => { if (t) up({ time: t }); }}>
             {TIMES.map((t) => <SegmentedItem key={t.value} value={t.value}>{t.label}</SegmentedItem>)}
           </Segmented>
         </Reveal>

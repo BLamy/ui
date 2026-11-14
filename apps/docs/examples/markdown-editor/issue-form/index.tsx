@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 
 export default function IssueForm() {
@@ -35,34 +34,18 @@ export default function IssueForm() {
         <FieldLabel>Title</FieldLabel>
         <Input required defaultValue="Tray snaps back on slow drags" />
       </Field>
-      <div style={{ display: 'grid', gap: 6 }}>
-        <Label variant="field" id="issue-body-label">
-          Description
-        </Label>
-        {/* name= submits the Markdown with the form */}
+      {/* The Field names the editor, describes it and makes it invalid; name= submits the Markdown with the form */}
+      <Field name="body" invalid={invalid}>
+        <FieldLabel>Description</FieldLabel>
         <MarkdownEditor
-          name="body"
-          aria-labelledby="issue-body-label"
-          aria-describedby="issue-body-help"
           placeholder="Steps to reproduce, expected, actual…"
           size="sm"
-          invalid={invalid}
           value={body}
           onValueChange={setBody}
         />
-        <span
-          id="issue-body-help"
-          style={{
-            padding: '0 4px',
-            fontSize: 13,
-            color: invalid ? 'var(--destructive)' : 'var(--muted-foreground)',
-          }}
-        >
-          {invalid
-            ? 'Describe the issue.'
-            : 'Markdown works — lists, links, code blocks.'}
-        </span>
-      </div>
+        <FieldDescription>Markdown works — lists, links, code blocks.</FieldDescription>
+        <FieldError match={invalid}>Describe the issue.</FieldError>
+      </Field>
       <Button type="submit" style={{ alignSelf: 'flex-start' }}>
         File issue
       </Button>

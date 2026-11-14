@@ -1,6 +1,6 @@
 # Calendar
 
-A month grid for picking a day, several days, or a start and an end. It is UI SDK's `Calendar` drawn as iOS: round day cells, a tint-filled selection and, for a range, a soft band joining its two ends. Use a calendar when the date is the whole interface (booking, scheduling); put it behind a button with [DatePicker](https://blamy.github.io/ui/#/date-picker) when it is one field among others, and use a [DateField](https://blamy.github.io/ui/#/date-field) when people know the date and only need to type it.
+A month grid for picking a day, several days, or a start and an end. It is UI SDK's `Calendar` drawn as iOS: round day cells, a tint-filled selection and, for a range, a soft band joining its two ends. Use a calendar when the date is the whole interface (booking, scheduling); put it behind a button with [DatePicker](https://blamy.github.io/ui/#/date-picker) when it is one field among others, and use a [DateInput](https://blamy.github.io/ui/#/date-input) when people know the date and only need to type it.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -25,7 +25,7 @@ import { Calendar } from '@brett_lamy/ui'
 {% endtab %}
 {% endtabs %}
 
-The parts a calendar is built from come from the same module (`@/components/ui/calendar`, or the package root): `CalendarHeader`, `CalendarHeading`, `CalendarPrevious`, `CalendarNext`, `CalendarMonthSelect`, `CalendarYearSelect`, `CalendarGrid`, `CalendarWeekdays`, `CalendarWeekday`, `CalendarWeeks` and `CalendarDay`, with `createCalendarController`.
+The parts a calendar is built from come from the same module (`@/components/ui/calendar`, or the package root): `CalendarHeader`, `CalendarHeading`, `CalendarPrevious`, `CalendarNext`, `CalendarMonthSelect`, `CalendarYearSelect`, `CalendarMonths`, `CalendarGrid`, `CalendarWeekdays`, `CalendarWeekday`, `CalendarWeeks` and `CalendarDay`, with `createCalendarController`.
 
 ## Dates are ISO strings
 
@@ -56,7 +56,7 @@ No date library is needed. For arithmetic and labels use the helpers in `@ui-sdk
 </Calendar>
 ```
 
-`CalendarHeader` holds `CalendarPrevious`, `CalendarHeading` and `CalendarNext`; `CalendarGrid` holds `CalendarWeekdays` (a `CalendarWeekday` per column) and `CalendarWeeks` (a `CalendarDay` per date). Each grid is named by its month, so the calendar needs no label of its own.
+`CalendarHeader` holds `CalendarPrevious`, `CalendarHeading` and `CalendarNext`; `CalendarMonths` holds a `CalendarGrid` per month on show (it is what a Calendar renders under its header); `CalendarGrid` holds `CalendarWeekdays` (a `CalendarWeekday` per column) and `CalendarWeeks` (a `CalendarDay` per date). Each grid is named by its month, so the calendar needs no label of its own.
 
 ## A single day
 
@@ -82,13 +82,13 @@ No date library is needed. For arithmetic and labels use the helpers in `@ui-sdk
 
 ## More than one month
 
-`months` shows that many months side by side, each in its own grid, and the arrow keys cross from one to the next. The previous and next buttons move by one month; `pageBy="page"` moves by all the months on show. The grids sit in a row, so give the calendar room or let it scroll. `fixedWeeks` gives every month six rows so the height never changes, and `showOutsideDays` fills the edges with the days of the months around (hidden by default here: each grid shows its own month only).
+`months` shows that many months side by side, each in its own grid, and the arrow keys cross from one to the next. The previous and next buttons move by one month; `pageBy="page"` moves by all the months on show. The grids sit in a row while they fit and wrap one under the other in a narrow container (a phone, a sidebar), with the header's buttons kept at its edges. `fixedWeeks` gives every month six rows so the height never changes, and `showOutsideDays` fills the edges with the days of the months around (hidden by default here: each grid shows its own month only).
 
 {% demo src="calendar/two-months" %}
 
 ## Month and year selects
 
-For a date far from today (a birthday), put `CalendarMonthSelect` and `CalendarYearSelect` in the header. They are native selects that jump straight to a month; the years run from `min` to `max`, or ten either side of the year on show. Keep a `CalendarHeading` in the header, visually hidden if you like, so the grids stay named.
+For a date far from today (a birthday), put `CalendarMonthSelect` and `CalendarYearSelect` in the header. They are native selects, drawn as iOS header pop-up buttons (as wide as their text, with the up-down glyph), that jump straight to a month; the years run from `min` to `max`, or ten either side of the year on show. Keep a `CalendarHeading` in the header, visually hidden if you like, so the grids stay named.
 
 ```tsx
 <Calendar min="1950-01-01" max="2026-12-31">
@@ -171,7 +171,8 @@ The root is UI SDK's `Calendar`; every prop passes through, with `className` (a 
 | `CalendarPrevious` / `CalendarNext` | The step buttons. Disabled at the month of `min` / `max`. |
 | `CalendarHeading` | The months on show ("September 2026", "September – October 2026"). |
 | `CalendarMonthSelect` / `CalendarYearSelect` | Native selects that jump to a month or a year. |
-| `CalendarGrid` | One month: the weekday row and its days. `offset={1}` shows the following month (what `months` does for you). |
+| `CalendarMonths` | The grids on show, one per month, wrapping in a narrow container. `months` defaults to the Calendar's (pass the DatePicker's inside a `DatePickerContent`). |
+| `CalendarGrid` | One month: the weekday row and its days. `offset={1}` shows the following month (what `CalendarMonths` does for you). |
 | `CalendarWeekdays` / `CalendarWeekday` | The header row and one column header. `CalendarWeekdays` takes a function of the column's index as children. |
 | `CalendarWeeks` / `CalendarDay` | The week rows and one day, given its date as `value`. `CalendarWeeks` takes a function of the cell as children; a day's children replace its number and can be a function of its state. |
 
@@ -179,7 +180,7 @@ Every part takes `className` (a string or a function of its state) and `render` 
 
 ## Styling
 
-Slots: `calendar`, `calendar-header`, `calendar-heading`, `calendar-previous`, `calendar-next`, `calendar-month-select`, `calendar-year-select`, `calendar-grid`, `calendar-weekdays`, `calendar-weekday`, `calendar-week`, `calendar-day`. The root carries `data-mode`, `data-disabled` and `data-readonly`. A day carries `data-value`, `data-selected`, `data-today`, `data-outside`, `data-disabled`, `data-unavailable` and, in a range, `data-range-start`, `data-range-middle`, `data-range-end` and `data-preview` (a range still being picked); hover and keyboard focus are the native `:hover` and `:focus-visible`. The circle inside a day reads them through a `group/day` (and the fill and today's tint from the day's state), so changing a state's look is a class edit. Inside a popup the calendar sits on the popup's surface; inside a [ThemeScope](https://blamy.github.io/ui/#/theming) it follows the scope.
+Slots: `calendar`, `calendar-header`, `calendar-heading`, `calendar-previous`, `calendar-next`, `calendar-month-select`, `calendar-year-select`, `calendar-grid`, `calendar-weekdays`, `calendar-weekday`, `calendar-week`, `calendar-day`. The root carries `data-mode`, `data-disabled`, `data-readonly` and `data-size-class` (the size class it sits in): in a `compact` one the days are 44px touch targets instead of 36px. A day carries `data-value`, `data-selected`, `data-today`, `data-outside`, `data-disabled`, `data-unavailable` and, in a range, `data-range-start`, `data-range-middle`, `data-range-end` and `data-preview` (a range still being picked); hover and keyboard focus are the native `:hover` and `:focus-visible`. The circle inside a day reads them through a `group/day` (and the fill and today's tint from the day's state), so changing a state's look is a class edit. A range's band is rounded where a week row cuts it. Inside a popup the calendar sits on the popup's surface; inside a [ThemeScope](https://blamy.github.io/ui/#/theming) it follows the scope.
 
 ## cva recipes
 

@@ -89,7 +89,7 @@ describe('Terminal', () => {
     expect(terminal).not.toBeNull();
     expect(terminal?.className).toContain('my-class');
     expect(terminal?.className).toContain('p-5');
-    expect(terminal?.className).not.toContain(' p-2');
+    expect(terminal?.className).not.toContain(' px-3');
     expect(terminal?.style.opacity).toBe('0.5');
   });
 
@@ -155,6 +155,21 @@ describe('Terminal', () => {
     (props.onData as (data: string) => void)('a');
     expect(onData).not.toHaveBeenCalled();
     expect(instance.written).toContain('\x1b[?25l');
+  });
+
+  it('readOnly marks wterm\'s input read-only for assistive tech', async () => {
+    const el = await render(<Terminal core="builtin" readOnly />);
+    const input = document.createElement('textarea');
+    el.querySelector('[data-slot=terminal]')?.append(input);
+    await ready();
+    expect(input.getAttribute('aria-readonly')).toBe('true');
+  });
+
+  it('sizes from the text scale: sm is the caption size, default the footnote size', async () => {
+    const el = await render(<Terminal core="builtin" size="sm" />);
+    expect(el.querySelector('[data-slot=terminal]')?.className).toContain('[--term-font-size:var(--text-caption)]');
+    await act(async () => { root?.render(<Terminal core="builtin" />); });
+    expect(el.querySelector('[data-slot=terminal]')?.className).toContain('[--term-font-size:var(--text-footnote)]');
   });
 
   it('gives focus back after wterm takes it, unless it should keep it', async () => {

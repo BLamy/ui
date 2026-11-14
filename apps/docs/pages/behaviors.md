@@ -30,7 +30,7 @@ Reach for a behavior when a component would be the wrong shape, not before.
 
 | You want | Use | Not |
 | --- | --- | --- |
-| A button, a toggle, a toolbar | `Button`, `Toggle`, `ToggleGroup`, `DebugToolbar` | `createRovingFocus` on your own buttons |
+| A button, a toggle, a toolbar | `Button`, `Toggle`, `ToggleGroup`, `Toolbar` | `createRovingFocus` on your own buttons |
 | A list you pick from, or sort | `Listbox`, `Tree`, `Lists` | `createSelection` and `createReorder` by hand |
 | A file drop area | `FileUpload` | native drag events by hand |
 | A right-click menu | `DropdownMenu` with a `DropdownMenuContextTrigger` | a `contextmenu` handler and `bindLayer` |

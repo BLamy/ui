@@ -4,11 +4,12 @@
    starts runs that report live. ⌘K jumps anywhere and runs any command.
 
    One SplitView at every size: the sidebar tiles beside the page on a desktop, floats over it on a tablet, and is
-   the root of a stack on a phone; each project's pages push onto the detail column's stack. Ask QA docks as a
+   the root of a stack on a phone; each project's pages push onto the detail column's NavigationStack. Ask QA docks as a
    column when there's room and slides over the page when there isn't. */
-import { useEffect, useRef, type ReactNode } from 'react';
-import { ArtifactChatContainer } from '@/components/ui/artifact-chat-container';
-import { SplitView, SplitViewDetail, SplitViewStack, useSplitView, useSplitViewStack } from '@/components/ui/split-view';
+import { useEffect } from 'react';
+import { ArtifactChatContainer, ArtifactChatContainerChat, ArtifactChatContainerComposer, ArtifactChatContainerContent } from '@/components/ui/artifact-chat-container';
+import { NavigationStack, useNavigationStack } from '@/components/ui/navigation-stack';
+import { SplitView, SplitViewDetail, useSplitView } from '@/components/ui/split-view';
 import { ToastRegion } from '@/components/ui/toast';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
@@ -70,17 +71,18 @@ export default function LoopQA({ appearance, initialProject, initialTab, initial
             <SizeClassProvider value={sizeClass}>
               <ArtifactChatContainer
                 layout={dock && qa.askOpen ? 'split' : 'floating'}
-                chatSide="right"
+                chatSide="end"
+                chatLabel="Ask QA"
                 chatWidth={384}
-                chatOpen={!dock && qa.askOpen && qa.chatOpen}
-                onChatOpenChange={qa.setChatOpen}
+                open={!dock && qa.askOpen && qa.chatOpen}
+                onOpenChange={qa.setChatOpen}
                 minimized={!qa.askOpen}
                 onMinimizedChange={(m) => qa.setAskPref(!m)}
                 peek={phone ? 0 : 168}
-                fabPosition="bottom-right"
+                fabAlign="end"
                 className="min-w-0 flex-1"
               >
-                <ArtifactChatContainer.Content>
+                <ArtifactChatContainerContent>
                   <div className="relative h-full min-h-0">
                     <SplitView
                       aria-label="Loop QA"
@@ -91,15 +93,16 @@ export default function LoopQA({ appearance, initialProject, initialTab, initial
                       <SplitBridge />
                       <AppSidebar />
                       <SplitViewDetail aria-label="Page">
-                        <SplitViewStack resetKey={qa.section}>
-                          <StackBridge>{qa.project ? <ProjectPage project={qa.project} /> : <ProjectsHome />}</StackBridge>
-                        </SplitViewStack>
+                        <NavigationStack resetKey={qa.section} renderPage={(page) => <Pushed page={page} />}>
+                          <PendingPush />
+                          {qa.project ? <ProjectPage value="root" project={qa.project} /> : <ProjectsHome value="root" />}
+                        </NavigationStack>
                       </SplitViewDetail>
                     </SplitView>
                   </div>
-                </ArtifactChatContainer.Content>
-                <ArtifactChatContainer.Chat><AskQA /></ArtifactChatContainer.Chat>
-                <ArtifactChatContainer.Composer><AskComposer /></ArtifactChatContainer.Composer>
+                </ArtifactChatContainerContent>
+                <ArtifactChatContainerChat><AskQA /></ArtifactChatContainerChat>
+                <ArtifactChatContainerComposer><AskComposer /></ArtifactChatContainerComposer>
               </ArtifactChatContainer>
               <Commands />
               <Dialogs />
@@ -121,27 +124,27 @@ function SplitBridge() {
   return null;
 }
 
-/** The stack's root page, plus the pending push (a bug / run / test someone asked for) once its project is up. */
-function StackBridge({ children }: { children: ReactNode }) {
+/** The pending push (a bug / run / test someone asked for from ⌘K or a card), once its project is up: its key goes
+    on the detail column's stack, unless it is on top already. */
+function PendingPush() {
   const qa = useLoopQA();
-  const stack = useSplitViewStack();
-  const top = useRef<string | null>(null);
+  const stack = useNavigationStack();
   const { pending, section, consumePending } = qa;
   useEffect(() => {
     if (!pending || pending.section !== section) return;
     const key = `${pending.kind}:${pending.id}`;
-    if (!(stack.depth > 1 && top.current === key)) {
-      stack.push(<Pushed target={pending} />, { key });
-      top.current = key;
-    }
+    if (stack.getPages().at(-1) !== key) stack.push(key);
     consumePending();
   }, [pending, section, stack, consumePending]);
-  useEffect(() => { if (stack.depth === 1) top.current = null; }, [stack.depth]);
-  return <>{children}</>;
+  return null;
 }
 
-function Pushed({ target }: { target: PushTarget }) {
-  if (target.kind === 'bug') return <BugPage id={target.id} />;
-  if (target.kind === 'run') return <RunPage id={target.id} />;
-  return <TestPage id={target.id} />;
+/** A pushed page, from its key: `bug:<id>`, `run:<id>` or `test:<id>`. */
+function Pushed({ page }: { page: string }) {
+  const at = page.indexOf(':');
+  const kind = page.slice(0, at), id = page.slice(at + 1);
+  if (kind === 'bug') return <BugPage value={page} id={id} />;
+  if (kind === 'run') return <RunPage value={page} id={id} />;
+  if (kind === 'test') return <TestPage value={page} id={id} />;
+  return null;
 }

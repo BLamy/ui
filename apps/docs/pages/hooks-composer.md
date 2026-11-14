@@ -1,16 +1,15 @@
 # Composer hooks
 
-Hooks for building parts that live inside a [Composer](https://blamy.github.io/ui/#/composer): reading the draft and sending it, reading a draggable bump's progress, choosing the image annotator, and undo and redo for [PencilKit](https://blamy.github.io/ui/#/pencilkit) strokes. The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
+Hooks for building parts that live inside a [Composer](https://blamy.github.io/ui/#/composer): reading the draft and sending it, reading a draggable bump's progress, and undo and redo for [PencilKit](https://blamy.github.io/ui/#/pencilkit) strokes. The image annotator's engine is chosen with props and a provider, not a hook (see [ImageAnnotator](https://blamy.github.io/ui/#/pencilkit)). The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
-All four are public.
+All three are public.
 
 ```tsx
 // npm
-import { useComposer, useComposerBump, useComposerAnnotator, usePencilHistory } from '@brett_lamy/ui'
+import { useComposer, useComposerBump, usePencilHistory } from '@brett_lamy/ui'
 
 // shadcn registry (aliases)
 import { useComposer, useComposerBump } from '@/components/ui/composer/composer'              // …/r/composer.json
-import { useComposerAnnotator } from '@/components/ui/composer/annotator'                     // …/r/composer.json
 import { usePencilHistory } from '@/components/ui/pencilkit/use-pencil-history'               // …/r/pencilkit.json
 ```
 
@@ -27,21 +26,23 @@ function useComposer(): ComposerContextValue
 
 | Member | Meaning |
 | --- | --- |
-| `value`, `setValue(markdown)` | The draft as GitBook-flavored Markdown (attachment chips serialize as `![name](attachment:id)`). |
-| `attachments`, `addAttachment(a)`, `removeAttachment(id)`, `updateAttachment(id, patch)` | The attachments. `removeAttachment` also removes the chip in the editor. |
-| `attachFiles(files, { source?, point? })` | Adds files after the `acceptedFileTypes`, `maxFileSize` and `maxFiles` checks and the `onDropFiles` hook. Images chip into the editor (at `point` when it is over the editor, else at the caret); other files become tiles. |
+| `value`, `setValue(markdown, given?)` | The draft as GitBook-flavored Markdown (attachment chips serialize as `![name](attachment:id)`). |
+| `attachments`, `addAttachment(a, given?)`, `removeAttachment(id, given?)`, `updateAttachment(id, patch, given?)` | The attachments. `removeAttachment` also removes the chip in the editor. Each setter returns `false` when the change was canceled. |
+| `attachFiles(files, { source?, point?, event? })` | Adds files after the `acceptedFileTypes`, `maxFileSize` and `maxFiles` checks and the `onDropFiles` hook. Images chip into the editor (at `point` when it is over the editor, else at the caret); other files become tiles. |
 | `acceptedFileTypes` | The Composer's own setting. |
-| `expanded`, `setExpanded(expanded)` | Whether the editor is expanded. |
+| `expanded`, `setExpanded(expanded, given?)` | Whether the editor is expanded. |
 | `streaming` | The Composer's `streaming` prop. |
 | `canSend` | Whether there is anything to send. |
 | `send(event?)` | Sends the draft. Pass the click or key behind it, so the `send` changes' details carry it. |
 | `stop()` | Calls the Composer's `onStop`. |
-| `annotate(id)`, `canAnnotate` | Opens the annotator for an attachment (a plain preview when the annotator is opted out), and whether an annotator is in effect. |
+| `submit(markdown, attachments)`, `canQueue` | Hands a message to `onSubmit` without touching the draft (a queue feeding one in), and whether a `ComposerQueue` is mounted. |
+| `annotate(id)`, `canAnnotate` | Opens the ImageAnnotator for an image attachment (a plain preview when the annotator is opted out), and whether an engine is in effect. |
+| `disabled` | The Composer's `disabled`: a part of your own should not act while it is set. |
 | `editor` | The editor instance, or `null` until it is ready. |
 | `rootRef` | The Composer's root element; bumps measure against it. |
-| `collapsed`, `setCollapsed(collapsed)` | How far the Composer is collapsed: `'none'` (the full card), `'compact'` (one row, options in the bottom bump) or `'fab'` (a floating button). |
+| `collapsed`, `setCollapsed(collapsed, given?)` | How far the Composer is collapsed: `'none'` (the full card), `'compact'` (one row, options in the bottom bump) or `'fab'` (a floating button). |
 
-`setEditor`, `renderCard`, `optionsOutlet`, `setOptionsOutlet` and `fab` are in the type but marked `@internal`: they are wiring between the Composer's own parts, not an API.
+`given` is an optional `{ reason, event }` for the change's details (reason `imperative` when left out).
 
 ```tsx
 function SendButton() {
@@ -88,16 +89,7 @@ function useComposerBump(): ComposerBumpContextValue
 | `settling` | The bump's own CSS transition is carrying the body to rest (after a release, a tap or Escape). |
 | `contentId` | The id of the bump's content element. |
 
-`startDrag`, `toggle` and `windowRef` are marked `@internal`. A handle of your own starts the drag from its `onPointerDown` and toggles on click:
-
-```tsx
-function MyHandle() {
-  const bump = useComposerBump()
-  return <div className="touch-none" onPointerDown={(e) => bump.startDrag?.(e)} onClick={() => bump.toggle()}>…</div>
-}
-```
-
-`startDrag` is `null` unless the bump is draggable; moves and the release are followed by UI SDK's `bindDrag`, so the handle needs nothing else.
+The drag itself belongs to `ComposerBumpHandle`: style it, or put your own content in it, rather than building a second handle.
 
 ```tsx
 function BumpHint() {
@@ -108,48 +100,9 @@ function BumpHint() {
 
 The gesture is UI SDK's `bindDrag` (with `createVelocityTracker` and `rubberBand`), so `reveal` and `progress` change every frame while dragging. On release they jump to the rest value and the body gets there with a CSS transition on the `tray` spring, while `settling` is `true`. Something that follows the bump should transition too while it settles, and only turn its transition off while `dragging`. To follow the motion from outside the bump, use its `onProgressChange` prop, which reports `{ progress, reveal, minimize, dragging, settling }`.
 
-## `useComposerAnnotator`
-
-The annotator in effect: the nearest `ComposerAnnotatorProvider`'s, else the default `PencilKitAnnotator`; `null` if a provider opted out (pressing an attachment then opens a plain preview). It is how the Composer and its lightbox choose what draws on an image.
-
-- **Export:** public, with `ComposerAnnotatorProvider`. Registry item `composer`.
-- **Needs:** nothing. **Outside a provider:** returns `PencilKitAnnotator`, so it never throws and is `null` only when something opted out.
-
-```ts
-function useComposerAnnotator(): ComposerAnnotator | null
-type ComposerAnnotator = React.ComponentType<{ children: (surface: ComposerAnnotatorSurface) => React.ReactNode }>
-```
-
-An annotator is a component that hands the lightbox a drawing surface and optional tools through its render-prop child: `{ canvas, toolbar?, title? }`. Save flattens the surface's first `<svg>` into the image as one PNG.
-
-```tsx
-<ComposerAnnotatorProvider annotator={MyAnnotator}>
-  <Composer>…</Composer>
-</ComposerAnnotatorProvider>
-
-<Composer annotator={null}>…</Composer>   // opt out for one composer
-
-function PreviewWithAnnotator({ src }: { src: string }) {
-  const Annotator = useComposerAnnotator()
-  if (!Annotator) return <img src={src} alt="" />        // opted out: a plain preview
-  return (
-    <Annotator>
-      {({ canvas, toolbar }) => (
-        <div>
-          <div className="relative"><img src={src} alt="" />{canvas}</div>
-          {toolbar}
-        </div>
-      )}
-    </Annotator>
-  )
-}
-```
-
-`Composer` also takes an `annotator` prop that overrides the provider for that one Composer; `useComposer().canAnnotate` already combines the prop, a provider and `annotateCanvas`, so prefer it when you only need to know whether to show an Annotate action.
-
 ## `usePencilHistory`
 
-Undo, redo and clear for a `PencilCanvas`'s strokes. It keeps the strokes in state and a redo stack beside them.
+Undo, redo and clear for a `PencilCanvas`'s strokes. It keeps the strokes in state, with a snapshot of them before each change.
 
 - **Export:** public. Registry item `pencilkit` (`@/components/ui/pencilkit/use-pencil-history`).
 - **Needs:** nothing.
@@ -165,6 +118,7 @@ interface PencilHistory {
   clear: () => void
   canUndo: boolean
   canRedo: boolean
+  canClear: boolean
 }
 ```
 
@@ -176,7 +130,7 @@ function Sketch() {
       <PencilCanvas strokes={history.strokes} onStrokesChange={history.onStrokesChange} />
       <Button disabled={!history.canUndo} onClick={history.undo}>Undo</Button>
       <Button disabled={!history.canRedo} onClick={history.redo}>Redo</Button>
-      <Button disabled={!history.canUndo} onClick={history.clear}>Clear</Button>
+      <Button disabled={!history.canClear} onClick={history.clear}>Clear</Button>
     </>
   )
 }
@@ -185,7 +139,7 @@ function Sketch() {
 Behaviors to know:
 
 - `initial` is read once, on the first render.
-- A **draw** (`details.reason === 'draw'`) clears the redo stack; an **erase** replaces the strokes and leaves the redo stack as it was.
-- `undo` moves the last stroke to the redo stack. `redo` moves it back. `clear` empties both, so a clear cannot be undone.
+- Every change is one step: a **draw**, an **erase** (`details.reason`), and a `clear`. Each clears the redo stack.
+- `undo` restores the strokes as they were before the last step, so undoing an erase brings the erased strokes back. `redo` reapplies it. A clear can be undone.
 - There is no limit on history length.
-- `undo`, `redo`, `clear` and `onStrokesChange` are rebuilt each render and close over the current state.
+- `undo`, `redo`, `clear` and `onStrokesChange` are rebuilt each render; they update state from its latest value.

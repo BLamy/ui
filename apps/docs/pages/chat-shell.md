@@ -32,7 +32,6 @@ import {
 import {
   SidebarHeader, SidebarContent, SidebarSection, SidebarItem,
 } from '@/components/ui/sidebar'
-import { Icon } from '@/lib/icon'
 import {
   Composer, ComposerCard, ComposerInput, ComposerFooter, ComposerSpacer, ComposerSend,
 } from '@/components/ui/composer/composer'
@@ -54,10 +53,10 @@ export function Chat() {
         </Tabs>
         <ChatShellSidebar>
           <SidebarHeader>HQ</SidebarHeader>
-          <SidebarContent>
+          <SidebarContent aria-label="Channels">
             <SidebarSection title="Team">
-              <SidebarItem icon={<Icon name="number" size={13} />} label="general"
-                active={channel === 'general'} onClick={() => setChannel('general')} />
+              <SidebarItem icon="number" title="general"
+                current={channel === 'general'} onClick={() => setChannel('general')} />
             </SidebarSection>
           </SidebarContent>
         </ChatShellSidebar>

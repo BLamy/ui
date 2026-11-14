@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ArtifactChatContainer } from '@/components/ui/artifact-chat-container'
-import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import {
+  ArtifactChatContainer,
+  ArtifactChatContainerChat,
+  ArtifactChatContainerComposer,
+  ArtifactChatContainerContent,
+} from '@/components/ui/artifact-chat-container'
+import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
 
 const messages = [
   ['You', 'Compare conversion by region.'],
@@ -265,30 +270,30 @@ export default function SplitToFloating({
             breakpoint={760}
             working={working}
             workingLabel="Working on the artifact…"
-            onAdd={() => setWorking(false)}
+            onComposingChange={(composing) => {
+            if (composing) setWorking(false)
+          }}
           >
-            <ArtifactChatContainer.Chat>
+            <ArtifactChatContainerChat>
               <Transcript />
-            </ArtifactChatContainer.Chat>
-            <ArtifactChatContainer.Composer>
-              <div style={{ padding: 8, background: 'transparent' }}>
-                <Composer onSubmit={() => setWorking(true)}>
+            </ArtifactChatContainerChat>
+            <ArtifactChatContainerComposer>
+              <Composer onSubmit={() => setWorking(true)}>
                   <ComposerCard>
                     <ComposerExpand />
                     <ComposerAttachments />
                     <ComposerInput placeholder="Do anything" />
                     <ComposerFooter>
-                      <ComposerAttach />
+                      <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
                       <ComposerSpacer />
                       <ComposerSend />
                     </ComposerFooter>
                   </ComposerCard>
                 </Composer>
-              </div>
-            </ArtifactChatContainer.Composer>
-            <ArtifactChatContainer.Content>
+            </ArtifactChatContainerComposer>
+            <ArtifactChatContainerContent>
               <Artifact compact={compact} />
-            </ArtifactChatContainer.Content>
+            </ArtifactChatContainerContent>
           </ArtifactChatContainer>
         </div>
       </Scaled>

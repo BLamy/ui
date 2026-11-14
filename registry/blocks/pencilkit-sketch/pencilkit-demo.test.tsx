@@ -37,8 +37,8 @@ async function mount() {
 it('resting on a tool previews its brush; the next tool previews at once; touch never opens it', async () => {
   await mount();
   const tools = document.querySelector('[aria-label=Tool]')!;
-  const marker = button('marker');
-  const pencil = button('pencil');
+  const marker = button('Marker');
+  const pencil = button('Pencil');
   // The buttons are still the picker's toggles, now the card's triggers too.
   expect(tools.contains(marker)).toBe(true);
   expect(marker.hasAttribute('title')).toBe(false);
@@ -67,11 +67,11 @@ it('resting on a tool previews its brush; the next tool previews at once; touch 
 
 it('a width previews the tool in hand at that width, and pressing it still picks it', async () => {
   await mount();
-  const width = button('Width 3');
+  const width = button('Bold');
   enter(width);
   wait(800);
   expect(card()!.textContent).toContain('Pen');
-  expect(card()!.textContent).toContain('Width 3');
+  expect(card()!.textContent).toContain('Bold');
   act(() => { width.click(); });
   expect(width.getAttribute('aria-pressed')).toBe('true');
 });

@@ -220,7 +220,9 @@ UI SDK traps focus inside the dialog, makes the rest of its host inert, closes o
 
 ## Surface parts
 
-The header, title, description, body, footer and round buttons are shared by the kit's modal surfaces ([Sheet](https://blamy.github.io/ui/#/sheet) builds its parts from them). Use them to make a surface of your own look like one of ours: `surfaceHeaderVariants({ variant: 'default' | 'bar' })`, `surfaceTitleVariants({ size: 'sm' | 'default' })`, `surfaceDescriptionVariants({ size })`, `surfaceBodyVariants()`, `surfaceFooterVariants({ orientation })` and `closeButtonVariants({ layout: 'inline' | 'pinned' })` (30px, `pinned` at the top-end corner).
+The header, title, description, body, footer and round buttons are shared by the kit's surfaces ([Sheet](https://blamy.github.io/ui/#/sheet) and [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) build their parts from them; [Card](https://blamy.github.io/ui/#/card), [Popover](https://blamy.github.io/ui/#/popover) and [HoverCard](https://blamy.github.io/ui/#/hover-card) take the `sm` title and description). Use them to make a surface of your own look like one of ours: `surfaceHeaderVariants({ variant: 'default' | 'bar' })`, `surfaceTitleVariants({ size: 'sm' | 'default' })`, `surfaceDescriptionVariants({ size })`, `surfaceBodyVariants()`, `surfaceFooterVariants({ orientation })`, `closeButtonVariants({ layout: 'inline' | 'pinned' })` (30px, `pinned` at the top-end corner) and `sheetGrabberVariants({ handle })`. They live in `@/lib/surface`, a module without hooks, so a Server Component can call them too; `@/components/ui/dialog` re-exports them (`@brett_lamy/ui` exports them from the root).
+
+For a surface root of your own with a flow (Sheet's `view` is built this way), `SurfaceFlow` (`view`, `dismissible`) gives `DialogView`, `DialogBack` and `SurfaceFlowTitle` (a flow title's travelling text) the direction of each change of `view`.
 
 ## Styling
 
@@ -228,4 +230,42 @@ Slots (from UI SDK): `dialog-trigger`, `dialog-backdrop`, `dialog-viewport` (a s
 
 ## cva recipes
 
-Generated from the source by `node tools/docs/variants-md.mjs`. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `dialogVariants`
+
+Defined in `@/components/ui/dialog`. Base classes:
+
+```text
+cn( modalCard, 'group/dialog w-[calc(100%-48px)] duration-spring-snappy ease-spring-snappy', 'not-data-[presentation=sheet]:data-starting-style:opacity-0 not-data-[presentation=sheet]:data-ending-style:opacity-0 motion-safe:not-data-[presentation=sheet]:data-starting-style:scale-90 motion-safe:not-data-[presentation=sheet]:data-ending-style:scale-96', 'data-[presentation=sheet]:relative data-[presentation=sheet]:inset-auto data-[presentation=sheet]:max-w-none data-[presentation=sheet]:transition-none', )
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `max-w-[400px]` |
+| `lg` | `max-w-[560px]` |
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `data-[presentation=sheet]:m-0 data-[presentation=sheet]:w-full data-[presentation=sheet]:rounded-b-none data-[presentation=sheet]:pb-[max(12px,env(safe-area-in…` |
+| `tray` | `data-[presentation=sheet]:mx-2.5 data-[presentation=sheet]:mt-0 data-[presentation=sheet]:mb-[max(10px,env(safe-area-inset-bottom))] data-[presentation=sheet]:…` |
+
+### `alertDialogCloseVariants`
+
+Defined in `@/components/ui/dialog`. Base classes:
+
+```text
+cn( 'bl-btn box-border flex h-11 cursor-pointer items-center justify-center border-0 bg-transparent px-3 [font-family:inherit] text-body whitespace-nowrap text-primary transition-[background-color] duration-exit active:bg-accent disabled:cursor-default disabled:opacity-40 data-pending:cursor-progress', focusRing, 'focus-visible:ring-inset', )
+```
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `font-normal` |
+| `cancel` | `font-semibold` |
+| `destructive` | `font-normal text-destructive` |

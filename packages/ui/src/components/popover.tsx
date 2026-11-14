@@ -10,7 +10,7 @@ import {
 import { cva, type VariantProps } from 'class-variance-authority';
 import { popoverArrow, popoverArrowGlyph, popoverMotion, popoverSheet, popoverSurface } from '@/lib/primitives';
 import { cx } from '@/lib/utils';
-import { surfaceDescriptionVariants, surfaceTitleVariants } from '@/components/ui/dialog';
+import { surfaceDescriptionVariants, surfaceTitleVariants } from '@/lib/surface';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
 import { useTriggerPalette, type PopupPalette } from '@/lib/trigger-palette';
 import { usePresentation } from '@/lib/container';
@@ -43,7 +43,7 @@ export function Popover({ container, presentation, ...props }: PopoverProps) {
 
 /* The kit's floating surface. As a sheet it is shaped like the kit's bottom Sheet, grabber included (`popoverSheet`). */
 export const popoverContentVariants = cva(
-  [popoverSurface, popoverMotion, popoverSheet, 'box-border'],
+  [popoverSurface, popoverMotion, popoverSheet, 'box-border [--avatar-ring:var(--popover)]'],
   {
     variants: {
       variant: {

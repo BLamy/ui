@@ -4,14 +4,13 @@ import {
   type CSSProperties, type ComponentProps, type HTMLAttributes, type KeyboardEvent, type MouseEvent, type ReactNode, type Ref, type RefObject,
 } from 'react';
 import { announce } from '@ui-sdk/core';
-import { Button as SdkButton } from '@ui-sdk/react/button';
 import { cva, type VariantProps } from 'class-variance-authority';
 import {
   CodeEditorWindow, codeEditorGutterCellVariants, codeEditorLineVariants,
   type CodeEditorCopy, type CodeEditorGutter, type CodeEditorGutterClickDetails, type CodeEditorHandle, type CodeEditorLineDecoration, type CodeEditorMarker,
   type CodeEditorPosition, type CodeEditorScrollOptions, type CodeEditorScrollTarget, type CodeEditorSelection, type CodeEditorSelectionChangeDetails,
   type CodeEditorValueChangeDetails,
-} from '@/components/ui/code-editor-window';
+} from '@/lib/code-editor-window';
 import { CodeDocument, CodeHistory, caretAt } from '@/lib/code-document';
 import { lineSet, tooBigForPage, type CodeHighlight, type CodeLineRange, type CodeSelection } from '@/lib/code-editor-model';
 import {
@@ -19,6 +18,8 @@ import {
   type CodeToken, type SyntaxEngine, type SyntaxHighlighter, type SyntaxResult,
 } from '@/lib/syntax';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/lib/icon';
 import { useAppearance } from '@/lib/theme';
 import { cn, cx } from '@/lib/utils';
 
@@ -27,7 +28,7 @@ import { cn, cx } from '@/lib/utils';
    find, and rendered on a server. Plain text first in its exact layout; token colors swap in when the shared GPU lexer answers.
    Docs, Markdown and chat are this.
 
-   Windowed (code-editor-window.tsx): only what's on screen is there, so it stays smooth on a megabyte line or half a million
+   Windowed (lib/code-editor-window.tsx): only what's on screen is there, so it stays smooth on a megabyte line or half a million
    lines, with gutters, a current line, markers, and editing. It has its own selection, and find only sees what's rendered.
 
    Windowed when it's editable, when a prop only that renderer can honor is used, or when the text is too big for the page
@@ -38,7 +39,7 @@ export type {
   CodeEditorChangeReason, CodeEditorCopy, CodeEditorEdit, CodeEditorGutter, CodeEditorGutterClickDetails, CodeEditorHandle, CodeEditorLineDecoration,
   CodeEditorMarker, CodeEditorMarkerClickDetails, CodeEditorPosition, CodeEditorScrollOptions, CodeEditorScrollTarget, CodeEditorSelection,
   CodeEditorSelectionChangeDetails, CodeEditorSelectionChangeReason, CodeEditorValueChangeDetails,
-} from '@/components/ui/code-editor-window';
+} from '@/lib/code-editor-window';
 export { codeEditorGutterCellVariants, codeEditorLineVariants };
 export type { CodeEditorAlign, CodeHighlight, CodeHighlightContext, CodeLineRange } from '@/lib/code-editor-model';
 export type { CodeToken, CodeTokenType } from '@/lib/syntax';
@@ -447,31 +448,39 @@ async function writeClipboard(text: string) {
   }
 }
 
-export interface CodeEditorCopyButtonProps extends Omit<ComponentProps<typeof SdkButton>, 'children' | 'onCopy'> {
+export interface CodeEditorCopyButtonProps extends Omit<ComponentProps<typeof Button>, 'children' | 'onCopy'> {
   /** Text to copy. Defaults to the enclosing CodeEditor's text, as it is when it's pressed. */
   value?: string;
-  /** Accessible name. */
-  label?: string;
-  onCopy?: (value: string) => void;
+  /** The text went to the clipboard. */
+  onValueCopy?: (value: string) => void;
+  /** In place of the copy / check glyph. */
   children?: ReactNode;
 }
 
-export function CodeEditorCopyButton({ value, label = 'Copy code', onCopy, className, children, ...props }: CodeEditorCopyButtonProps) {
+/** The kit's quiet 28px icon Button (44px to a finger) that copies the editor's text, and says so: a check, "Copied", and the
+    announcer. Named "Copy code" unless you pass an `aria-label`. */
+export function CodeEditorCopyButton({ value, onValueCopy, variant = 'quiet', size = 'icon-sm', className, children, 'aria-label': ariaLabel = 'Copy code', ...props }: CodeEditorCopyButtonProps) {
   const ctx = useContext(CodeEditorContext);
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
   return (
-    <SdkButton
+    <Button
+      data-slot="code-editor-copy-button"
       data-copied={copied || undefined}
-      aria-label={copied ? 'Copied' : label}
+      aria-label={copied ? 'Copied' : ariaLabel}
+      variant={variant}
+      size={size}
       {...props}
-      className={cx('bl-syntax-copy', className)}
+      className={cx(
+        "relative flex-none data-copied:text-success pointer-coarse:after:absolute pointer-coarse:after:-inset-2 pointer-coarse:after:content-['']",
+        className,
+      )}
       onClick={async (e, details) => {
         props.onClick?.(e, details);
         const text = value ?? ctx?.getValue() ?? '';
         if (await writeClipboard(text)) {
-          onCopy?.(text);
+          onValueCopy?.(text);
           announce('Copied to clipboard');
           setCopied(true);
           clearTimeout(timer.current);
@@ -479,25 +488,28 @@ export function CodeEditorCopyButton({ value, label = 'Copy code', onCopy, class
         }
       }}
     >
-      {children ?? (
-        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          {copied ? (
-            <path d="m3 8.5 3.2 3.2L13 4.8" />
-          ) : (
-            <>
-              <rect x="5.2" y="5.2" width="8.6" height="8.6" rx="1.6" />
-              <path d="M10.8 5.2V3.6c0-1-.8-1.8-1.8-1.8H3.6c-1 0-1.8.8-1.8 1.8V9c0 1 .8 1.8 1.8 1.8h1.6" />
-            </>
-          )}
-        </svg>
-      )}
-    </SdkButton>
+      {children ?? <Icon name={copied ? 'check' : 'copy'} size={15} />}
+    </Button>
   );
 }
 
 /* ── Root ── */
 
-interface CodeEditorCommonProps extends CodeEditorDisplayProps, Omit<ComponentProps<'div'>, 'children' | 'ref' | 'onChange' | 'defaultValue' | 'title' | 'onCopy' | 'onSelect'> {
+/** Line numbers you can press, like a debugger's "run to here". */
+export interface CodeEditorLineNumbers {
+  /** Which side of the code the gutter is on (windowed). Default `end`: next to the code. */
+  side?: 'start' | 'end';
+  /** Makes the numbers buttons. `details.line` is the line pressed. */
+  onClick?: (event: MouseEvent<HTMLElement>, details: CodeEditorGutterClickDetails) => void;
+  /** The lines whose number can be pressed (default: all, once `onClick` is set). */
+  clickable?: (lineNumber: number) => boolean;
+  /** A number's accessible name (default `Line N`). */
+  label?: (lineNumber: number) => string;
+  /** A number's tooltip. */
+  title?: (lineNumber: number) => string | undefined;
+}
+
+interface CodeEditorCommonProps extends Omit<CodeEditorDisplayProps, 'lineNumbers'>, Omit<ComponentProps<'div'>, 'children' | 'ref' | 'onChange' | 'defaultValue' | 'title' | 'onCopy' | 'onSelect'> {
   ref?: Ref<CodeEditorHandle>;
   /** With children it is a root for the parts: `CodeEditorHeader`, `CodeEditorTitle`, `CodeEditorCopyButton`, `CodeEditorContent`. */
   children?: ReactNode;
@@ -506,18 +518,16 @@ interface CodeEditorCommonProps extends CodeEditorDisplayProps, Omit<ComponentPr
   language?: string;
   /** Header title, usually a filename. */
   title?: ReactNode;
-  /** Show a copy button (in the header, or floating top-right when there is no title). */
+  /** The one shorthand for a part: a `CodeEditorCopyButton` in the header, or floating top-right when there is no title. Compose
+      the parts yourself for anything else. */
   showCopy?: boolean;
   /** Force the token palette to light or dark. Defaults to the ambient AppearanceProvider, else the color scheme. */
   appearance?: 'light' | 'dark';
-  /** Class for the inner `<pre>` or windowed view. */
-  contentClassName?: string;
+  /** A line-number gutter: `true`, a side (`start` / `end`, windowed), or an object whose `onClick` makes the numbers buttons
+      (windowed). Shown by default in an editor and for `lines` or `getLine`, and not for a read-only text. */
+  lineNumbers?: boolean | 'start' | 'end' | CodeEditorLineNumbers;
   /** Beside the code, in this order. They stay put when the code scrolls sideways. */
   gutters?: readonly CodeEditorGutter[];
-  onLineNumberClick?: (event: MouseEvent<HTMLElement>, details: CodeEditorGutterClickDetails) => void;
-  lineNumberClickable?: (lineNumber: number) => boolean;
-  lineNumberLabel?: (lineNumber: number) => string;
-  lineNumberTitle?: (lineNumber: number) => string | undefined;
   /** The line execution is on: a band, and with `currentColumn`, a mark in the line. */
   currentLine?: number | null;
   currentColumn?: number | null;
@@ -528,8 +538,8 @@ interface CodeEditorCommonProps extends CodeEditorDisplayProps, Omit<ComponentPr
   /** Things to press at a column of a line, like a column-level breakpoint. An array, or a function for a line's markers
       when there are many of them. Only those in the part of the line that's rendered are in the DOM. */
   markers?: readonly CodeEditorMarker[] | ((lineNumber: number) => readonly CodeEditorMarker[] | null | undefined);
-  /** Scrolls here when this changes. A line, or a line with options. */
-  scrollToLine?: number | CodeEditorScrollTarget | null;
+  /** Brings this line into view when it changes: a line, or a line with options. (The ref's `scrollToLine()` does it once.) */
+  revealLine?: number | CodeEditorScrollTarget | null;
   /** The widest line in cells, if you know it: saves a pass over the file to find the scrollable width. */
   maxLineLength?: number;
   /** Copying a selection, with the text that's going on the clipboard. */
@@ -681,12 +691,15 @@ const withoutLastLineEnd = (text: string) => (text.endsWith('\r\n') ? text.slice
     a debugger with gutters and markers. See the file's header for which renderer you get. */
 export function CodeEditor(props: CodeEditorProps) {
   const {
-    ref, value, defaultValue, readOnly: readOnlyProp, onValueChange, onEdit, variant, windowed, children, language, title, showCopy = false, appearance, contentClassName,
-    className, style, lineNumbers, startLine, highlightLines, addedLines, removedLines, wrap, maxHeight, lineProps, highlight, engine, tabSize, lineHeight,
-    lines, lineCount, getLine, contentKey, gutters, onLineNumberClick, lineNumberClickable, lineNumberLabel, lineNumberTitle, currentLine, currentColumn, revealCurrentLine,
-    lineDecoration, markers, scrollToLine, maxLineLength, onCopyText, onSelectionChange, onKeyDown, onContextMenu, 'aria-label': ariaLabel,
+    ref, value, defaultValue, readOnly: readOnlyProp, onValueChange, onEdit, variant, windowed, children, language, title, showCopy = false, appearance,
+    className, style, lineNumbers: lineNumbersProp, startLine, highlightLines, addedLines, removedLines, wrap, maxHeight, lineProps, highlight, engine, tabSize, lineHeight,
+    lines, lineCount, getLine, contentKey, gutters, currentLine, currentColumn, revealCurrentLine,
+    lineDecoration, markers, revealLine, maxLineLength, onCopyText, onSelectionChange, onKeyDown, onContextMenu, 'aria-label': ariaLabel,
     ...rest
   } = props as LooseProps;
+  const pressable = typeof lineNumbersProp === 'object' && lineNumbersProp ? lineNumbersProp : null;
+  const lineNumbers = pressable ? (pressable.side ?? true) : (lineNumbersProp as Exclude<typeof lineNumbersProp, CodeEditorLineNumbers>);
+  const onLineNumberClick = pressable?.onClick;
 
   const ambient = useAppearance();
   const scheme = appearance ?? ambient;
@@ -708,7 +721,7 @@ export function CodeEditor(props: CodeEditorProps) {
     ? (value ?? (session.current ? session.current.document.getText() : firstDefault.current ?? ''))
     : '';
 
-  const viewerOnly = lineSource || !!gutters || currentLine != null || !!markers || !!lineDecoration || scrollToLine != null || typeof highlight === 'function'
+  const viewerOnly = lineSource || !!gutters || currentLine != null || !!markers || !!lineDecoration || revealLine != null || typeof highlight === 'function'
     || !!onLineNumberClick || !!onCopyText || !!onSelectionChange || maxLineLength !== undefined;
   const tooBig = useMemo(() => readOnly && !lineSource && v !== 'inline' && windowed === undefined && !viewerOnly && tooBigForPage(text), [readOnly, lineSource, v, windowed, viewerOnly, text]);
   const useWindow = v !== 'inline' && (!readOnly || lineSource || (windowed ?? (viewerOnly || tooBig)));
@@ -762,8 +775,9 @@ export function CodeEditor(props: CodeEditorProps) {
       value: readOnly ? undefined : value,
       onValueChange: readOnly ? undefined : onValueChange,
       onEdit: readOnly ? undefined : onEdit,
-      gutters, onLineNumberClick, lineNumberClickable, lineNumberLabel, lineNumberTitle, currentLine, currentColumn, revealCurrentLine,
-      lineDecoration, markers, scrollToLine, maxLineLength, onCopyText, onSelectionChange,
+      gutters, onLineNumberClick, lineNumberClickable: pressable?.clickable, lineNumberLabel: pressable?.label, lineNumberTitle: pressable?.title,
+      currentLine, currentColumn, revealCurrentLine,
+      lineDecoration, markers, scrollToLine: revealLine, maxLineLength, onCopyText, onSelectionChange,
       paddingY: v === 'ghost' ? 0 : CARD_PADDING,
       onKeyDown: onKeyDown as ((event: KeyboardEvent<HTMLDivElement>) => void) | undefined,
       onContextMenu: onContextMenu as ((event: MouseEvent<HTMLDivElement>) => void) | undefined,
@@ -812,7 +826,7 @@ export function CodeEditor(props: CodeEditorProps) {
             ) : showCopy ? (
               <CodeEditorCopyButton className="bl-syntax-copy-float" />
             ) : null}
-            <CodeEditorContent className={contentClassName} />
+            <CodeEditorContent />
           </>
         )}
       </div>

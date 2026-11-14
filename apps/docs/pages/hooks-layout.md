@@ -1,6 +1,6 @@
 # Layout hooks
 
-Hooks for sizing from a container instead of the viewport (a size class first, pixels when you really need them), the size-class scope that `presentation="auto"` popups follow, and for reading the state of the layout containers: `SplitView`, `SidebarProvider`, `Tabs`, `FloatingSheet`, `FloatingChat` and `ArtifactChatContainer`. They are all listed with their siblings in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
+Hooks for sizing from a container instead of the viewport (a size class first, pixels when you really need them), the size-class scope that `presentation="auto"` popups follow, and for reading the state of the layout containers: `SplitView`, `SidebarProvider`, `Tabs`, `FloatingSheet` and `ArtifactChatContainer`. They are all listed with their siblings in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
 Each hook below is public: import it from the package root, or from the alias path a registry copy creates.
 
@@ -16,8 +16,8 @@ import { useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation, us
 import { useSplitView } from '@/components/ui/split-view'                    // …/r/split-view.json
 import { useSidebar } from '@/components/ui/sidebar'                         // …/r/sidebar.json
 import { useTabs, useTabsTab } from '@/components/ui/tabs'                 // …/r/tabs.json
-import { useFloatingSheet, useHideOnScroll } from '@/components/ui/floating-sheet' // …/r/floating-sheet.json
-import { useFloatingChat } from '@/components/ui/floating-chat'              // …/r/floating-chat.json
+import { useFloatingSheet } from '@/components/ui/floating-sheet'          // …/r/floating-sheet.json
+import { useHideOnScroll } from '@/lib/scroll-edge'                       // …/r/scroll-edge.json
 import { useArtifactChatContainer } from '@/components/ui/artifact-chat-container' // …/r/artifact-chat-container.json
 ```
 
@@ -199,7 +199,7 @@ function useSplitView(): SplitViewContextValue   // SplitViewState plus the acti
 | `columns` | The columns that are shown, in order (a closed supplementary is left out). |
 | `sidebarOpen`, `setSidebarOpen(open)`, `toggleSidebar()` | Whether the sidebar is open. |
 | `sidebarBehavior` | The resolved behavior for this size class: `tile`, `overlay` or `displace`. |
-| `value`, `select(column, id \| null)`, `isSelected(column, id)` | The value per column. `select` shows the next column (a push when collapsed); `null` clears. `isSelected` is always `false` while collapsed, where rows are navigation. |
+| `value`, `select(column, value \| null)`, `isCurrent(column, value)` | The value per column. `select` shows the next column (a push when collapsed); `null` clears. `isCurrent` (what an item draws as current) is always `false` while collapsed, where rows are navigation. |
 | `compactColumn`, `show(column)`, `back()`, `canGoBack` | Which column is on top of the compact stack, and how to move between them. `canGoBack` is true only while collapsed and not on the first column. |
 | `columnWidths`, `setColumnWidth(column, width)` | Resized column widths in px. |
 | `supplementaryOpen`, `setSupplementaryOpen(open)` | Whether the middle column is showing, or has slid away so the detail takes its space. |
@@ -247,7 +247,7 @@ function EmptyHint() {
 For a container that draws its own bar at the root of a split view column. While the split view is collapsed and a column comes before this one, it returns that column's title and the way back to it.
 
 - **Export:** public. Registry item `split-view`.
-- **Needs:** nothing; it is meant for a `NavigationStack` at the root of a column, and `NavigationStack` already calls it for you. **Outside a SplitView:** returns `null`.
+- **Needs:** nothing; it is for a bar of your own at the root of a column (a `NavigationStack` in a column does the same by itself, through `lib/stack-parent`). **Outside a column, or inside a NavigationStack's pages:** returns `null`.
 
 ```ts
 function useSplitViewBack(title?: string): { title: string; back: () => void } | null
@@ -257,7 +257,7 @@ function useSplitViewBack(title?: string): { title: string; back: () => void } |
 | --- | --- |
 | `title` | Registers this column's own title (in a layout effect, only when it is not `undefined`) so the column after it can use it as its back label. This is what a `SplitViewHeader` does. |
 
-It returns `null` unless the split view is collapsed, the caller is in a column that is not the first, and it sits on the root page of any `SplitViewStack` in that column. The returned `title` is the previous column's registered title, or `'Back'` when it registered none.
+It returns `null` unless the split view is collapsed, the caller is in a column that is not the first, and it is not inside a page of a `NavigationStack` (whose way back is the stack's own). The returned `title` is the previous column's registered title, or `'Back'` when it registered none.
 
 ```tsx
 function InboxScreen() {
@@ -266,34 +266,6 @@ function InboxScreen() {
   return back ? <Button onClick={back.back}>‹ {back.title}</Button> : null
 }
 ```
-
-## `useSplitViewStack`
-
-The nearest `SplitViewStack`'s push and pop. A column given the `stack` prop has one.
-
-- **Export:** public. Registry item `split-view`.
-- **Needs:** a `SplitViewStack` ancestor (or a column with `stack`). **Outside it:** throws `useSplitViewStack must be used inside <SplitViewStack> (or a column with \`stack\`)`.
-
-```ts
-function useSplitViewStack(): SplitViewStackApi
-
-interface SplitViewStackApi {
-  push: (page: ReactNode, options?: { key?: string }) => void
-  pop: () => void               // no-op at the root
-  popToRoot: () => void
-  depth: number                 // pages including the root: 1 at the root
-  canPop: boolean
-}
-```
-
-```tsx
-function ThreadRow({ thread }: { thread: Thread }) {
-  const stack = useSplitViewStack()
-  return <Button onClick={() => stack.push(<ThreadPage id={thread.id} />, { key: thread.id })}>{thread.title}</Button>
-}
-```
-
-Pages are kept as elements, so a pushed page does not re-render with the component that pushed it. Read live data from hooks or context inside the page.
 
 ## `useSidebar`
 
@@ -325,7 +297,8 @@ Gotchas:
 
 - `open` is reset whenever the provider crosses into or out of `compact`: closed when it becomes compact, and back to `defaultOpen` when it grows again, reported to `onOpenChange` with `reason: 'content-resize'` (cancel it to keep the state). The first measurement is where it starts, not a change: an uncontrolled sidebar mounted compact starts closed, and a controlled parent hears nothing at mount.
 - `setOpen` and `toggle` go through `onOpenChange` like the user's own changes and return `false` when nothing changed or the change was canceled. For code outside the provider, pass a `createSidebarController()` as its `controller`.
-- `useSidebarCollapsed()` says whether the sidebar around is a collapsed rail, for custom items that hide their labels.
+- `useSidebarCollapsed()` says whether the sidebar around is a collapsed rail, for custom parts that hide their text (`false` outside a `Sidebar`).
+- A `Sidebar` with `presentation="auto"` (its default) is a drawer while `compact`; a press on one of its rows closes the drawer by itself, so `setOpen(false)` after a pick is only needed for your own controls.
 
 ## `useTabs`
 
@@ -376,18 +349,18 @@ Hover, press and keyboard focus are not part of the state: style them with the p
 State of the enclosing [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet).
 
 - **Export:** public. Registry item `floating-sheet`.
-- **Needs:** a `FloatingSheet` ancestor (its `Body`, `Foot` and `Fab` slots count). **Outside it:** throws `useFloatingSheet must be used within <FloatingSheet>`.
+- **Needs:** a `FloatingSheet` ancestor (anything inside `FloatingSheetBody`, `FloatingSheetFoot` or `FloatingSheetFab` counts). **Outside it:** throws `useFloatingSheet must be used within <FloatingSheet>`.
 
 ```ts
 function useFloatingSheet(): FloatingSheetContextValue
 
 interface FloatingSheetContextValue {
   open: boolean                      // grown to full height
-  setOpen: (open: boolean) => void
-  progress: number                   // the resting stop: 0 at the peek, 1 fully grown, a detent in between
-  peek: number                       // body height visible while closed, px
+  setOpen: (open: boolean, given?: { reason; event? }) => void
+  progress: number                   // the resting stop: 0 at the peek, 1 fully grown, a snap point in between
+  peek: number                       // body height visible while resting, px
   minimized: boolean                 // folded into its FAB
-  setMinimized: (minimized: boolean) => void
+  setMinimized: (minimized: boolean, given?: { reason; event? }) => void
 }
 ```
 
@@ -402,13 +375,13 @@ function SheetTitle() {
 }
 ```
 
-`progress` is where the sheet rests, not where the finger is: it changes when a drag settles, not per frame. For styling that follows the drag, read the `--fs-grown` CSS variable on the surface (0 to 1, inherited by everything inside it). `setOpen` goes through the component's controllable state: when you control `open`, it calls `onOpenChange` and your state decides.
+`progress` is where the sheet rests, not where the finger is: it changes when a drag settles, not per frame. For styling that follows the drag, read the `--fs-grown` CSS variable on the surface (0 to 1, inherited by everything inside it). `setOpen` and `setMinimized` go through the component's controllable state: they call `onOpenChange` / `onMinimizedChange` (reason `imperative` unless you pass one) and, when you control the value, your state decides.
 
 ## `useHideOnScroll`
 
-Whether floating chrome should hide: the shared chrome state says the bars are hidden (`useChromeHidden()`), or the scroller you pass was scrolled down. It shows again on a scroll up and at the top. `FloatingSheet` and `FloatingChat` use it for their `hideOnScroll` prop; use it for chrome of your own that should behave the same.
+Whether floating chrome should hide: the shared chrome state says the bars are hidden (`useChromeHidden()`), or the scroller you pass was scrolled down. It shows again on a scroll up and at the top. `FloatingSheet` and `ArtifactChatContainer` use it for their `hideOnScroll` prop; use it for chrome of your own that should behave the same.
 
-- **Export:** public. Registry item `floating-sheet`.
+- **Export:** public, from `@/lib/scroll-edge` (beside `bindScrollEdge`, the framework-free scroll follower it is built on). Registry item `scroll-edge`.
 - **Needs:** nothing.
 
 ```ts
@@ -417,68 +390,34 @@ function useHideOnScroll(hideOnScroll: boolean, scrollRef?: RefObject<HTMLElemen
 
 It is always `false` when `hideOnScroll` is `false`. The scroller is read from `scrollRef` in an effect, so it must be mounted when the component commits.
 
-## `useFloatingChat`
-
-State of the enclosing [FloatingChat](https://blamy.github.io/ui/#/floating-chat).
-
-- **Export:** public. Registry item `floating-chat`.
-- **Needs:** a `FloatingChat` ancestor. **Outside it:** throws `useFloatingChat must be used within <FloatingChat>`.
-
-```ts
-function useFloatingChat(): FloatingChatContextValue
-
-interface FloatingChatContextValue {
-  open: boolean                             // the full transcript is revealed
-  setOpen: (open: boolean) => void
-  progress: number                          // 0 when only the composer floats, 1 when the transcript reaches the top
-  composing: boolean                        // the real composer is showing, not the tappable working status
-  setComposing: (composing: boolean) => void
-  minimized: boolean                        // folded into its FAB
-  setMinimized: (minimized: boolean) => void
-}
-```
-
-```tsx
-<FloatingChat working={busy}>
-  <FloatingChat.Chat><Transcript /></FloatingChat.Chat>
-  <FloatingChat.Composer><MyComposer /></FloatingChat.Composer>
-</FloatingChat>
-
-function Transcript() {
-  const { open, progress } = useFloatingChat()
-  return <div data-open={open} style={{ opacity: progress }}>…</div>
-}
-```
-
-**Not inside `ArtifactChatContainer`.** There, the container renders the `Chat` and `Composer` slots itself, in portals created in its own tree and outside the `FloatingChat` it shows when compact. React context follows the tree, not the DOM, so `useFloatingChat()` throws in those slots even though the chat is on screen. Use `useArtifactChatContainer()` below instead.
-
 ## `useArtifactChatContainer`
 
-State of the enclosing [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container): which layout is showing, and the chat's open and composing state.
+State of the enclosing [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container): which layout is showing, and the floating chat's open, folded and composing state.
 
 - **Export:** public. Registry item `artifact-chat-container`.
-- **Needs:** an `ArtifactChatContainer` ancestor; its `Content`, `Chat` and `Composer` slots are all inside it. **Outside it:** throws `useArtifactChatContainer must be used within <ArtifactChatContainer>`. The same hook is `ArtifactChatContainer.useContainer`, and the context itself is `ArtifactChatContainer.Context`.
+- **Needs:** an `ArtifactChatContainer` ancestor; anything inside `ArtifactChatContainerContent`, `ArtifactChatContainerChat` and `ArtifactChatContainerComposer` counts (the Chat and Composer are portalled into the current layout's docks, but React context follows where you wrote them). **Outside it:** throws `useArtifactChatContainer must be used within <ArtifactChatContainer>`.
 
 ```ts
 function useArtifactChatContainer(): ArtifactChatContainerContextValue
 
 interface ArtifactChatContainerContextValue {
-  width: number                  // the container's measured width
-  layout: 'split' | 'floating'   // the resolved presentation
-  compact: boolean               // true when the floating layout is active
-  chatOpen: boolean
-  setChatOpen: (open: boolean) => void
-  composing: boolean
-  setComposing: (composing: boolean) => void
+  sizeClass: 'compact' | 'medium' | 'regular'   // the container's own size class
+  layout: 'split' | 'floating'                  // the resolved presentation
+  open: boolean                                 // the floating chat is grown (always false while docked)
+  setOpen: (open: boolean, given?: { reason; event? }) => void
+  composing: boolean                            // the real composer shows, not the working status
+  setComposing: (composing: boolean, given?: { reason; event? }) => void
+  minimized: boolean                            // the floating chat is folded into its FAB
+  setMinimized: (minimized: boolean, given?: { reason; event? }) => void
 }
 ```
 
 ```tsx
 function ChatToggle() {
-  const { compact, chatOpen, setChatOpen } = useArtifactChatContainer()
-  if (!compact) return null            // docked: the transcript is always visible
-  return <Button onClick={() => setChatOpen(!chatOpen)}>{chatOpen ? 'Hide chat' : 'Show chat'}</Button>
+  const { layout, open, setOpen } = useArtifactChatContainer()
+  if (layout === 'split') return null   // docked: the transcript is always visible
+  return <Button onClick={() => setOpen(!open)}>{open ? 'Hide chat' : 'Show chat'}</Button>
 }
 ```
 
-The value is rebuilt each render and `chatOpen` follows the component's controllable-state rules (controlled by `chatOpen` and `onChatOpenChange`). The same composer and transcript elements move between the docked column and the floating sheet, so React state inside them survives a layout change; see [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container).
+The setters go through the container's controllable state (`onOpenChange`, `onComposingChange`, `onMinimizedChange`, reason `imperative` unless you pass one). The same composer and transcript elements move between the docked column and the floating sheet, so React state inside them survives a layout change; see [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container).

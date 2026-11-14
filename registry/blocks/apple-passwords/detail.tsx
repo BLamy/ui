@@ -8,7 +8,8 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { Input } from '@/components/ui/input';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { QRCode } from '@/components/ui/qr-code';
-import { SplitViewContent, SplitViewEmpty, SplitViewHeader } from '@/components/ui/split-view';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
 import { Textarea } from '@/components/ui/textarea';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -29,7 +30,7 @@ export function Detail({ entry, vault, now, editing, onEditing }: {
     return (
       <>
         <SplitViewHeader />
-        <SplitViewEmpty icon={<Icon name="key" size={40} />} title="No Selection" description="Choose an item to see its details." />
+        <EmptyState icon={<Icon name="key" size={40} />} title="No Selection" description="Choose an item to see its details." />
       </>
     );
   }

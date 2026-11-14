@@ -17,7 +17,7 @@ export default function WaveformVariants() {
         <Waveform peaks={PEAKS} rate={40} gain={gain} />
       </div>
       <div className="grid grid-cols-3 gap-3">
-        <div className="h-12 rounded-ctl bg-primary/12 px-1"><Waveform peaks={PEAKS} rate={40} gain={gain} tone="primary" variant="bottom" /></div>
+        <div className="h-12 rounded-ctl bg-primary/12 px-1"><Waveform peaks={PEAKS} rate={40} gain={gain} className="text-primary" variant="bottom" /></div>
         <div className="h-12 rounded-ctl bg-success/12 px-1"><Waveform peaks={PEAKS} rate={40} gain={gain} tone="success" from={5} to={10} /></div>
         <div className="h-12 rounded-ctl bg-secondary px-1"><Waveform peaks={PEAKS} rate={40} gain={gain} tone="muted" from={0} to={2} /></div>
       </div>

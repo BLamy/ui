@@ -41,17 +41,10 @@ export default function Me() {
               BL UI HQ
             </div>
           </SidebarHeader>
-          <SidebarContent>
+          <SidebarContent aria-label="Channels">
             <SidebarSection title="Channels">
-              <SidebarItem
-                icon={<Icon name="number" size={13} sw={2} />}
-                label="general"
-                active
-              />
-              <SidebarItem
-                icon={<Icon name="number" size={13} sw={2} />}
-                label="design"
-              />
+              <SidebarItem icon="number" title="general" current />
+              <SidebarItem icon="number" title="design" />
             </SidebarSection>
           </SidebarContent>
           <SidebarFooter>

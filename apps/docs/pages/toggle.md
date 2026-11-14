@@ -10,7 +10,7 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  Toggle, ToggleIcon, ToggleGroup, ToggleGroupItem,
+  Toggle, ToggleGroup, ToggleGroupItem,
 } from '@/components/ui/toggle'
 ```
 {% endtab %}
@@ -22,7 +22,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Toggle, ToggleIcon, ToggleGroup, ToggleGroupItem } from '@brett_lamy/ui'
+import { Toggle, ToggleGroup, ToggleGroupItem } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
@@ -137,10 +137,10 @@ Defined in `@/components/ui/toggle`. Base classes:
 
 | Value | Adds |
 | --- | --- |
-| `default` (default) | `bg-transparent text-foreground`, an accent hover, tinted while pressed |
-| `filled` | `bg-secondary text-foreground`, tinted while pressed |
-| `outline` | `bg-transparent text-foreground shadow-hairline`, tinted and frameless while pressed |
-| `quiet` | `bg-transparent text-muted-foreground`, a secondary hover, `data-pressed:bg-secondary data-pressed:text-foreground` |
+| `default` (default) | `[ 'bg-transparent text-foreground hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong', 'data-pressed:bg-primary…` |
+| `filled` | `[ 'bg-secondary text-foreground hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong', 'data-pressed:bg-primary/1…` |
+| `outline` | `[ 'bg-transparent text-foreground shadow-hairline hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong', 'data-pr…` |
+| `quiet` | `[ 'bg-transparent text-muted-foreground hover:not-data-disabled:bg-secondary hover:not-data-disabled:text-foreground', 'data-pressed:bg-sec…` |
 
 **`size`** — default `default`
 
@@ -167,5 +167,5 @@ relative isolate inline-flex w-fit items-center
 | --- | --- |
 | `default` (default) | `gap-1` |
 | `quiet` | `gap-1` |
-| `filled` | `gap-0.5 rounded-[11px] bg-secondary p-0.5` |
+| `filled` | — |
 | `outline` | `gap-0 rounded-ctl shadow-hairline` |

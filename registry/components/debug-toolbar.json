@@ -1,0 +1,17 @@
+{
+  "name": "debug-toolbar",
+  "title": "DebugToolbar",
+  "description": "A paused debugger's stepping controls with Codicons, as a preset of Toolbar: pick the actions, or compose your own row.",
+  "page": "debug-toolbar",
+  "exports": [
+    "DebugToolbar",
+    "DebugToolbarButton",
+    "debugToolbarActions"
+  ],
+  "imports": [
+    "DebugToolbar"
+  ],
+  "types": [
+    "DebugToolbarAction"
+  ]
+}

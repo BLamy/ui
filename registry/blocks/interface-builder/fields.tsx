@@ -5,8 +5,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { bindDrag, dragThreshold, type BindDragOptions } from '@ui-sdk/core';
 import { formatColor, parseColor } from '@ui-sdk/core/color';
-import { ColorPicker, ColorPickerArea, ColorPickerSlider } from '@/components/ui/color-picker';
-import { ColorFieldGroup, ColorFieldInput, ColorFieldSwatch } from '@/components/ui/color-field';
+import { ColorPicker, ColorPickerArea, ColorPickerField, ColorPickerInput, ColorPickerSlider, ColorPickerSwatch } from '@/components/ui/color-picker';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -290,7 +289,7 @@ export function ExprInput({ value, onCommit, names, scope, label, placeholder, s
 /* ── Choices ── */
 
 export function SwitchInput({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) {
-  return <Switch checked={value} onCheckedChange={onChange} aria-label={label} className="scale-[.8] origin-left" />;
+  return <Switch checked={value} onCheckedChange={onChange} aria-label={label} size="sm" />;
 }
 
 /** Segmented for a few short options, a menu for more. */
@@ -298,7 +297,7 @@ export function ChoiceInput({ value, options, onChange, label }: { value: string
   const short = options.length <= 3 && options.every((o) => o.label.length <= 9);
   if (short) {
     return (
-      <Segmented aria-label={label} value={value} onValueChange={(v) => v != null && onChange(v)} className="[&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption">
+      <Segmented aria-label={label} value={value} onValueChange={(v) => v != null && onChange(v)} size="sm">
         {options.map((o) => <SegmentedItem key={o.id} value={o.id}>{o.label}</SegmentedItem>)}
       </Segmented>
     );
@@ -374,10 +373,10 @@ function CustomColor({ value, onChange }: { value: string; onChange: (v: string)
       <div className="text-caption2 font-semibold tracking-wide text-muted-foreground uppercase">Custom</div>
       <ColorPickerArea className="h-28 w-full" />
       <ColorPickerSlider channel="hue" aria-label="Hue" />
-      <ColorFieldGroup size="sm">
-        <ColorFieldSwatch className="size-5" />
-        <ColorFieldInput aria-label="Hex color" />
-      </ColorFieldGroup>
+      <ColorPickerField size="sm">
+        <ColorPickerSwatch />
+        <ColorPickerInput aria-label="Hex color" />
+      </ColorPickerField>
     </ColorPicker>
   );
 }

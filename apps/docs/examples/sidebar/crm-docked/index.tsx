@@ -1,127 +1,77 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Avatar } from '@/components/ui/avatar'
-import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarInset,
+  SidebarItem,
+  SidebarProvider,
+  SidebarSearch,
+  SidebarSection,
+  SidebarTrigger,
+  SidebarWorkspace,
+} from '@/components/ui/sidebar'
 
-const deals = [
-  { name: 'Northwind renewal', stage: 'Negotiation', value: '$48k' },
-  { name: 'Acme expansion', stage: 'Proposal', value: '$120k' },
-  { name: 'Globex pilot', stage: 'Discovery', value: '$18k' },
+const pipeline = [
+  { icon: 'house', title: 'Overview' },
+  { icon: 'briefcase', title: 'Deals', trailing: 3 },
+  { icon: 'person-bust', title: 'Contacts' },
+  { icon: 'calendar', title: 'Meetings' },
+]
+const reports = [
+  { icon: 'chart-bar', title: 'Forecast' },
+  { icon: 'globe', title: 'Regions' },
 ]
 
-function CrmSidebar() {
+// A CRM: the workspace in the header, a search with its shortcut, two sections
+// with a count, and the signed-in account in the footer. Rows take an Icon name
+// or any node (the Avatar); a number in `trailing` is drawn as a count badge.
+export default function DockedCrm() {
   const [page, setPage] = useState('Deals')
-  const item = (icon: string, label: string, badge?: number) => (
-    <Sidebar.Item
-      icon={icon}
-      label={label}
-      badge={badge}
-      active={page === label}
-      onClick={() => setPage(label)}
+  const row = (p: { icon: string; title: string; trailing?: number }) => (
+    <SidebarItem
+      key={p.title}
+      icon={p.icon}
+      title={p.title}
+      trailing={p.trailing}
+      current={page === p.title}
+      onClick={() => setPage(p.title)}
     />
   )
   return (
-    <div style={{ height: 380 }}>
-      <SidebarProvider breakpoint={520}>
-        <Sidebar variant="docked" width={220}>
-          <Sidebar.Header>
-            <Sidebar.Workspace name="Northwind" detail="Sales · Pro plan" />
-          </Sidebar.Header>
-          <Sidebar.Content>
-            <Sidebar.Search placeholder="Search deals" />
-            <Sidebar.Section title="Pipeline">
-              {item('home', 'Overview')}
-              {item('box', 'Deals', 3)}
-              {item('user', 'Contacts')}
-              {item('cal', 'Meetings')}
-            </Sidebar.Section>
-            <Sidebar.Section title="Reports">
-              {item('doc', 'Forecast')}
-              {item('globe', 'Regions')}
-            </Sidebar.Section>
-          </Sidebar.Content>
-          <Sidebar.Footer>
-            <Sidebar.Item
-              icon={<Avatar name="Ada Lovelace" size={20} />}
-              label="Ada Lovelace"
-            />
-          </Sidebar.Footer>
-        </Sidebar>
-        <SidebarInset>
-          <header
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '9px 12px',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <SidebarTrigger />
-            <strong style={{ fontSize: 14, color: 'var(--foreground)' }}>
-              {page}
-            </strong>
-          </header>
-          <div style={{ padding: 12 }}>
-            {deals.map((d) => (
-              <div
-                key={d.name}
-                style={{
-                  display: 'flex',
-                  padding: '10px 6px',
-                  fontSize: 13,
-                  borderBottom: '1px solid var(--border)',
-                  color: 'var(--foreground)',
-                }}
-              >
-                <span style={{ flex: 1 }}>{d.name}</span>
-                <span style={{ width: 110, color: 'var(--muted-foreground)' }}>
-                  {d.stage}
-                </span>
-                <strong>{d.value}</strong>
-              </div>
-            ))}
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+    <div className="p-4">
+      <div className="mx-auto h-[400px] overflow-hidden rounded-card shadow-hairline">
+        <SidebarProvider breakpoint={520}>
+          <Sidebar width={220}>
+            <SidebarHeader>
+              <SidebarWorkspace title="Northwind" description="Sales · Pro plan" />
+            </SidebarHeader>
+            <SidebarContent aria-label="Northwind">
+              <SidebarSearch placeholder="Search deals" shortcut="/" />
+              <SidebarSection title="Pipeline">{pipeline.map(row)}</SidebarSection>
+              <SidebarSection title="Reports">{reports.map(row)}</SidebarSection>
+            </SidebarContent>
+            <SidebarFooter>
+              <SidebarItem
+                icon={<Avatar name="Ada Lovelace" size={20} />}
+                title="Ada Lovelace"
+                description="ada@northwind.dev"
+              />
+            </SidebarFooter>
+          </Sidebar>
+          <SidebarInset>
+            <header className="flex items-center gap-2 border-b border-border px-2 py-1.5">
+              <SidebarTrigger />
+              <strong className="text-subhead text-foreground">{page}</strong>
+            </header>
+            <p className="m-0 p-4 text-footnote text-muted-foreground">
+              Press / to focus the search button, or pick a page.
+            </p>
+          </SidebarInset>
+        </SidebarProvider>
+      </div>
     </div>
-  )
-}
-
-function DockedCrm() {
-  return (
-    <Window>
-      <CrmSidebar />
-    </Window>
-  )
-}
-
-/**
- * A rounded window with a hairline border; `width` caps it (phone-sized
- * examples), centered.
- */
-function Window({ width, children }: { width?: number; children?: ReactNode }) {
-  return (
-    <div
-      style={{
-        maxWidth: width,
-        margin: '0 auto',
-        borderRadius: 14,
-        overflow: 'hidden',
-        boxShadow: '0 0 0 1px var(--border)',
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
-// appearance.
-export default function DockedCrmExample() {
-  return (
-    <WorkbenchTheme style={{ padding: 18 }}>
-      <DockedCrm />
-    </WorkbenchTheme>
   )
 }

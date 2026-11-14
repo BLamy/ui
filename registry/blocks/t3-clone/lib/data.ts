@@ -5,7 +5,7 @@ import type { TermLine } from '../components/workbench/terminal';
 
 export interface Step {
   title: string;
-  detail?: string;
+  description?: string;
   code?: string;
 }
 export interface Message {
@@ -97,9 +97,9 @@ export const THREADS: Thread[] = [
         summary: 'Worked for 1m 4s',
         steps: [
           { title: 'Read package.json scripts in both apps' },
-          { title: 'Started app-builder on :3000', detail: 'pid 5229', code: 'nohup npm run dev --prefix app-builder > app-builder.log 2>&1 &' },
-          { title: 'Started agent-kanban on :3001', detail: 'pid 7099', code: 'nohup npm run dev --prefix agent-kanban > agent-kanban.log 2>&1 &' },
-          { title: 'Health-checked both URLs', detail: '200 OK', code: 'curl -sf localhost:3000 && curl -sf localhost:3001' },
+          { title: 'Started app-builder on :3000', description: 'pid 5229', code: 'nohup npm run dev --prefix app-builder > app-builder.log 2>&1 &' },
+          { title: 'Started agent-kanban on :3001', description: 'pid 7099', code: 'nohup npm run dev --prefix agent-kanban > agent-kanban.log 2>&1 &' },
+          { title: 'Health-checked both URLs', description: '200 OK', code: 'curl -sf localhost:3000 && curl -sf localhost:3001' },
         ],
       },
     ],
@@ -138,7 +138,7 @@ export const THREADS: Thread[] = [
         summary: 'Worked for 58s',
         steps: [
           { title: 'Reproduced the jump between share states' },
-          { title: 'Searched', detail: 'vaul height morph · github.com/emilkowalski' },
+          { title: 'Searched', description: 'vaul height morph · github.com/emilkowalski' },
           { title: 'Springed height via transform, not layout', code: 'const h = ref.current.offsetHeight\nsetSpring({ height: h })' },
         ],
       },

@@ -1,7 +1,7 @@
 {
   "name": "badge",
   "title": "Badge",
-  "description": "A small iOS capsule for a status, count or tag, in default, secondary, tinted, outline, destructive and success variants.",
+  "description": "A small iOS capsule for a status, count or tag, in default, secondary, tinted, outline, destructive, success and warning variants, at two sizes (a single digit is a circle).",
   "page": "badge",
   "exports": [
     "Badge",

@@ -100,6 +100,17 @@ In React, `<FfmpegProvider>` makes one runner for its subtree, which ends when t
 
 {% demo src="ffmpeg/media" %}
 
+## Rendering a timeline
+
+A [VideoTimeline](https://blamy.github.io/ui/#/video-timeline)'s value renders here. `renderTimeline(ffmpeg, timeline, media, { width, height, fps }, { container, quality })` renders it to a file and returns a Blob, reporting progress as it goes. `buildRender` returns the command without running it. Each clip is an input, seeked to its in point and cut to its length. Each picture is fitted into its frame, given its look and fades, and laid over the background at its time, bottom track first, so a transition is the incoming clip's fade-in over the outgoing one. Each sound is retimed (`atempo`), levelled, faded, delayed to its start and mixed.
+
+| `container` | Holds | Plays |
+| --- | --- | --- |
+| `webm` | VP8 and Opus | in every browser |
+| `mp4` | MPEG-4 Part 2 and AAC | in QuickTime, VLC, phones and editors, but not in Chrome or Firefox (H.264 needs an encoder this LGPL build doesn't have) |
+| `gif` | A palette per render, up to 480 px wide at 15 fps | everywhere, without sound |
+| `mp3`, `wav` | The soundtrack | everywhere |
+
 ## Threads and memory
 
 Every FFmpeg thread is a Web Worker, and a decoder starts one thread per core by default. A command with ten inputs would start a hundred workers. So the helpers here give each input's decoder one or two threads (`-threads 1` before `-i`); do the same in your own commands with many inputs. Inputs are mounted with WORKERFS: FFmpeg reads a File in place, however big. Outputs are written to memory and copied out when the run ends, so a long 4K render needs the room. The wasm heap tops out at 2 GB.

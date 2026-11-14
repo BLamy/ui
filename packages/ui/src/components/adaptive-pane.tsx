@@ -5,7 +5,7 @@ import {
 } from 'react';
 import { createParts, usePart, usePrimitive } from '@ui-sdk/react/primitive';
 import { Sheet, SheetBackdrop, SheetContent, type SheetProps } from '@/components/ui/sheet';
-import { closeButtonVariants, surfaceHeaderVariants, surfaceTitleVariants } from '@/components/ui/dialog';
+import { closeButtonVariants, surfaceHeaderVariants, surfaceTitleVariants } from '@/lib/surface';
 import {
   adaptivePane,
   type AdaptivePaneApi,

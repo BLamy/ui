@@ -4,7 +4,7 @@ iOS's table view: rows grouped into sections, plain (edge to edge, with sticky l
 
 Reach for a sibling instead when:
 
-- the rows are **chosen** (a picker, a multi-select, an option list): [Listbox](https://blamy.github.io/ui/#/list-box) (`listbox` / `option`, selection state, typeahead);
+- the rows are **chosen** (a picker, a multi-select, an option list): [Listbox](https://blamy.github.io/ui/#/listbox) (`listbox` / `option`, selection state, typeahead);
 - the data is a **hierarchy**: [Tree](https://blamy.github.io/ui/#/tree);
 - it is a **log or a grid of data** with columns, virtualized rows and a moving marker: [LogList](https://blamy.github.io/ui/#/log-list);
 - it is an app's **sidebar** navigation: [Sidebar](https://blamy.github.io/ui/#/sidebar) or a SplitView column.
@@ -241,7 +241,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/list`. Base classes:
 
 ```text
-(none)
+[--avatar-ring:var(--card)]
 ```
 
 **`variant`** — default `plain`

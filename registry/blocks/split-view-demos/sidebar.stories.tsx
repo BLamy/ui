@@ -1,15 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Sidebar } from '@/components/ui/sidebar';
 import { SidebarDemo } from './sidebar-demo';
 
-const meta: Meta<typeof Sidebar> = {
-  title: 'Organisms/Sidebar',
-  component: Sidebar,
+/* The interactive playground. The component's own stories (each look and presentation, light and dark, a phone
+   frame) are `Organisms/Sidebar` in packages/ui. */
+const meta: Meta<typeof SidebarDemo> = {
+  title: 'Blocks/SplitViewDemos/Sidebar playground',
+  component: SidebarDemo,
+  args: { variant: 'docked', presentation: 'auto', dark: true },
+  argTypes: {
+    variant: { control: 'inline-radio', options: ['docked', 'rail', 'float'] },
+    presentation: { control: 'inline-radio', options: ['auto', 'column', 'drawer'] },
+  },
 };
 export default meta;
-type Story = StoryObj<typeof Sidebar>;
+type Story = StoryObj<typeof SidebarDemo>;
 
-export const Docked: Story = { render: () => <SidebarDemo variant="docked" /> };
-export const Rail: Story = { render: () => <SidebarDemo variant="rail" /> };
-export const Float: Story = { render: () => <SidebarDemo variant="float" /> };
-export const Overlay: Story = { render: () => <SidebarDemo variant="overlay" /> };
+export const Playground: Story = { render: (args) => <SidebarDemo key={`${args.variant}${args.presentation}${args.dark}`} {...args} /> };

@@ -2,7 +2,9 @@
 
 A session replay in a browser window. `ReplayPreview` plays an [rrweb](https://github.com/rrweb-io/rrweb) recording with docstream's headless `ReplayStage` and wraps it in browser chrome: a URL bar that follows the recording's navigations, play/pause, a plain seek bar (with `markers`, the recording's moments on a rail above it), a speed control, fullscreen, and a drawn cursor whose clicks ripple. Until the player is ready, a page-shaped skeleton holds the frame at the recording's aspect ratio, so nothing jumps when the page appears.
 
-`ReplayPreview` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (since 1.7.0, `@brett_lamy/docstream/replay`), next to the rrweb stage and the marker helpers it is built on. BL UI keeps a thin re-export, so `@/components/ui/replay-preview` (and the package root) resolves like every other part. The registry item adds `@brett_lamy/docstream` as its one npm dependency.
+`ReplayPreview` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (since 1.7.0, `@brett_lamy/docstream/replay`), next to the rrweb stage and the marker helpers it is built on. BL UI keeps a thin re-export, so `@/components/ui/replay-preview` (and the package root) resolves like every other part: the component, the types of its props and handle (`ReplayPreviewProps`, `ReplayPreviewHandle`, `ReplayEvent`, `ReplayMarker`, `ReplayInspection`, …) and `formatReplayTime`. Everything else, the headless `ReplayStage`, the readers (`getReplayMeta`, `getReplayMarkers`, `getReplayDevtools`, …) and the demo recording, you import from `@brett_lamy/docstream/replay` and `@brett_lamy/docstream/replay/demo`. The registry item adds `@brett_lamy/docstream` as its one npm dependency.
+
+Use a sibling for a different job: [VideoPreview](https://blamy.github.io/ui/#/video-preview) plays a video file, and the [Replay Canvas block](https://blamy.github.io/ui/#/blocks/replay-canvas) lays many recordings out as one map of the app.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -58,7 +60,7 @@ The top bar's Console and Network buttons show what had happened by the playhead
 <ReplayPreview events={events} initialTime={8000} defaultDevtoolsTab="network" />
 ```
 
-The panel reads rrweb's console and network plugins (`rrweb/console@1`, `rrweb/network@1`) and custom events: `network` with `{ method, url, status, … }`, `error` with `{ label, message, stack? }`, and `console` with `{ level, message }`. The buttons show only when the recording has messages, requests or inspections, and `disableDevtools` removes them. `getReplayDevtools(events)` and `replayDevtoolsAt(tools, ms)` give you the same lists and counts for your own UI.
+The panel reads rrweb's console and network plugins (`rrweb/console@1`, `rrweb/network@1`) and custom events: `network` with `{ method, url, status, … }`, `error` with `{ label, message, stack? }`, and `console` with `{ level, message }`. The buttons show only when the recording has messages, requests or inspections, and `disableDevtools` removes them. `getReplayDevtools(events)` and `replayDevtoolsAt(tools, ms)` (from `@brett_lamy/docstream/replay`) give you the same lists and counts for your own UI.
 
 ## Inspections
 
@@ -148,7 +150,7 @@ Pass `markers` to put your own moments on the rail (an agent's findings, a test'
 
 ## Recordings
 
-Record with rrweb (`record({ emit })`) and pass the events. To embed instead of hold the recording, pass `source`: a public Loop QA URL, `{ kind: 'events-url', url }` for an events endpoint, or an event array. `events` and `source` are alternatives; both render the same player. Local and private-network assets in a recording (`localhost`, `10.x`, `192.168.x`…) are swapped for blanks before playback, so a replay never makes the viewer's browser fetch from their own network. Custom events become markers by tag (`record.addCustomEvent(tag, payload)`): `error` and `network` map to those kinds, `navigation` to a navigation, anything else is a checkpoint labelled by `payload.label`. The helpers read a recording without loading rrweb:
+Record with rrweb (`record({ emit })`) and pass the events. To embed instead of hold the recording, pass `source`: a public Loop QA URL, `{ kind: 'events-url', url }` for an events endpoint, or an event array. `events` and `source` are alternatives; both render the same player. Local and private-network assets in a recording (`localhost`, `10.x`, `192.168.x`…) are swapped for blanks before playback, so a replay never makes the viewer's browser fetch from their own network. Custom events become markers by tag (`record.addCustomEvent(tag, payload)`): `error` and `network` map to those kinds, `navigation` to a navigation, anything else is a checkpoint labelled by `payload.label`. The helpers, from `@brett_lamy/docstream/replay` (`formatReplayTime` also from `@/components/ui/replay-preview`), read a recording without loading rrweb:
 
 | Helper | Returns |
 | --- | --- |
@@ -157,7 +159,7 @@ Record with rrweb (`record({ emit })`) and pass the events. To embed instead of 
 | `getReplayPointerTrack(events)` · `replayPointerAt(track, ms)` | The recorded pointer path and clicks; the pointer's position at a time |
 | `formatReplayTime(ms)` | `m:ss` |
 
-`replayDemoEvents`, from `@brett_lamy/docstream/replay/demo` (also re-exported by `@/components/ui/replay-preview`), is a small synthetic recording (58 events, 20 KB): a shopper on a mock storefront whose checkout fails with a promo code.
+`replayDemoEvents`, from `@brett_lamy/docstream/replay/demo`, is a small synthetic recording (58 events, 20 KB): a shopper on a mock storefront whose checkout fails with a promo code.
 
 ## Drop a recording
 
@@ -178,7 +180,7 @@ rrweb doesn't fix a file format, so the example takes an event array, `{ events:
 
 ## Many recordings, one map
 
-The [Replay Canvas](https://blamy.github.io/ui/#/blocks/replay-canvas) block lays recordings out instead of playing them one at a time. It reads every recording for its pages, the dialogs, menus and sheets opened over them, and the clicks between them, then draws each one as a paused `ReplayStage` (the headless player under `ReplayPreview`, also exported here) on a canvas, with segues from each click to what it opened.
+The [Replay Canvas](https://blamy.github.io/ui/#/blocks/replay-canvas) block lays recordings out instead of playing them one at a time. It reads every recording for its pages, the dialogs, menus and sheets opened over them, and the clicks between them, then draws each one as a paused `ReplayStage` (the headless player under `ReplayPreview`, from `@brett_lamy/docstream/replay`) on a canvas, with segues from each click to what it opened.
 
 ## Props
 

@@ -12,6 +12,7 @@ import {
   CalendarYearSelect,
   createCalendarController,
 } from '@/components/ui/calendar';
+import { SizeClassProvider } from '@/lib/container';
 
 declare global {
   var __UI_SDK_STRICT__: boolean | undefined;
@@ -153,6 +154,21 @@ describe('Calendar', () => {
     expect(screen.getAllByRole('grid').map((grid) => grid.getAttribute('aria-label'))).toEqual(['September 2026', 'October 2026']);
     expect(heading()).toBe('September – October 2026');
     expect(screen.getByRole('gridcell', { name: 'Thursday, October 1, 2026' })).toBeTruthy();
+    // The grids sit in one row that wraps in a narrow container.
+    const months = document.querySelector('[data-slot=calendar-months]')!;
+    expect(months.className).toContain('flex-wrap');
+    expect(months.querySelectorAll('[data-slot=calendar-grid]')).toHaveLength(2);
+  });
+
+  it('grows its days to touch size in a compact container', async () => {
+    render(
+      <SizeClassProvider value="compact">
+        <Calendar {...en} />
+      </SizeClassProvider>,
+    );
+    await settle();
+    expect(document.querySelector('[data-slot=calendar]')?.getAttribute('data-size-class')).toBe('compact');
+    expect(cell('2026-09-09').className).toContain('in-data-[size-class=compact]:size-11');
   });
 
   it('cannot be focused or picked while disabled', async () => {

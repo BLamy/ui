@@ -66,13 +66,26 @@ A `ScrollAreaScrollbar` (one per axis, `orientation="vertical"` by default) repl
 
 ## Stick to the end
 
-`stickToEnd` starts at the bottom and keeps the end in view while the content grows, like a chat or streamed output; scrolling up lets go, and scrolling back down sticks again. `ScrollAreaScrollToEnd` is the "Jump to latest" button for it — a small secondary button over the bottom edge, shown only while the view is away from the end. `createScrollAreaController()` scrolls from outside (`scrollToEnd()`, `scrollToStart()`, `isAtEnd()`).
+`stickToEnd` starts at the bottom and keeps the end in view while the content grows, like a chat or streamed output; scrolling up lets go, and scrolling back down sticks again. `ScrollAreaScrollToEnd` is the "Jump to latest" button for it: a small floating button (the popover surface, so it reads over any content) over the bottom edge that fades and rises in while the view is away from the end, and is inert while it is at the end. `createScrollAreaController()` scrolls from outside (`scrollToEnd()`, `scrollToStart()`, `isAtEnd()`).
 
 ```tsx
 <ScrollArea className="h-80" stickToEnd>
   <ScrollAreaViewport role="log" aria-label="Build output"><ScrollAreaContent>{lines}</ScrollAreaContent></ScrollAreaViewport>
   <ScrollAreaScrollToEnd>Jump to latest</ScrollAreaScrollToEnd>
 </ScrollArea>
+```
+
+{% demo src="scroll-area/stick-to-end" %}
+
+## Edge fades
+
+The viewport carries UI SDK's state attributes too, so a fade can show at an edge only while there is more past it: mask the viewport and open each end of the mask on `data-overflow-y` without `data-at-y-start` / `data-at-y-end`. The demo above does this.
+
+```tsx
+<ScrollAreaViewport className={[
+  'data-overflow-y:[mask-image:linear-gradient(to_bottom,transparent,black_var(--fade-top,0px),black_calc(100%-var(--fade-bottom,0px)),transparent)]',
+  'data-overflow-y:not-data-at-y-start:[--fade-top:24px] data-overflow-y:not-data-at-y-end:[--fade-bottom:24px]',
+].join(' ')}>…</ScrollAreaViewport>
 ```
 
 ## Accessibility
@@ -97,10 +110,10 @@ The viewport is a native scroller: once focus is inside it, the arrow keys, Page
 | Part | Notes |
 | --- | --- |
 | `ScrollAreaViewport` | The scroller. Name it here (`aria-label`, `role`). |
-| `ScrollAreaContent` | What scrolls; it sizes to its content. |
+| `ScrollAreaContent` | What scrolls; it sizes to its content (`ScrollAreaContentProps`). |
 | `ScrollAreaScrollbar` | `orientation` (`vertical` or `horizontal`). Draws a `ScrollAreaThumb` unless given children. |
 | `ScrollAreaThumb` | The thumb; sizes and moves itself. |
-| `ScrollAreaCorner` | The square where two overlay scrollbars meet. |
+| `ScrollAreaCorner` | The square where two overlay scrollbars meet (`ScrollAreaCornerProps`). |
 | `ScrollAreaScrollToEnd` | A button that scrolls to the end, shown while away from it. Name it with its content. |
 
 All parts accept `className` (merged last; a string or a function of state), `style` and `render`.

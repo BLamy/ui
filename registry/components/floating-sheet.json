@@ -5,11 +5,18 @@
   "page": "floating-sheet",
   "exports": [
     "FloatingSheet",
+    "FloatingSheetBody",
+    "FloatingSheetFoot",
+    "FloatingSheetFab",
     "useFloatingSheet",
-    "useHideOnScroll"
+    "floatingSheetVariants",
+    "floatingSheetSurfaceVariants",
+    "floatingSheetFabVariants"
   ],
   "imports": [
     "FloatingSheet",
-    "useFloatingSheet"
+    "FloatingSheetBody",
+    "FloatingSheetFoot",
+    "FloatingSheetFab"
   ]
 }

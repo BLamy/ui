@@ -328,7 +328,8 @@ export function MotionPreview({ clock, kind, onKind }: { clock: ReturnType<typeo
           aria-label="Preview"
           value={kind}
           onValueChange={(k) => k && onKind(k)}
-          className="flex-1 [&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption"
+          size="sm"
+          className="flex-1"
         >
           <SegmentedItem value="move">Move</SegmentedItem>
           <SegmentedItem value="scale">Scale</SegmentedItem>
@@ -392,7 +393,8 @@ export function TransitionEditor({ spec, onChange, onBegin, preview = true, allo
               aria-label="Spring by"
               value={spec.mode}
               onValueChange={(m) => m && onChange(syncSpring({ ...spec, mode: m }), false)}
-              className="flex-1 [&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption"
+              size="sm"
+              className="flex-1"
             >
               <SegmentedItem value="time">Time</SegmentedItem>
               <SegmentedItem value="physics">Physics</SegmentedItem>
@@ -507,7 +509,8 @@ function RepeatFields({ spec, onChange, onBegin }: { spec: TweenSpec; onChange: 
           aria-label="Repeat"
           value={repeat < 0 ? 'inf' : String(Math.min(repeat, 3))}
           onValueChange={(v) => v && onChange({ ...spec, repeat: v === 'inf' ? -1 : Number(v), repeatType: spec.repeatType ?? 'loop' }, false)}
-          className="flex-1 [&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption"
+          size="sm"
+          className="flex-1"
         >
           <SegmentedItem value="0">Once</SegmentedItem>
           <SegmentedItem value="1">2×</SegmentedItem>
@@ -523,7 +526,8 @@ function RepeatFields({ spec, onChange, onBegin }: { spec: TweenSpec; onChange: 
               aria-label="Repeat type"
               value={spec.repeatType ?? 'loop'}
               onValueChange={(v) => v && onChange({ ...spec, repeatType: v }, false)}
-              className="flex-1 [&_[role=radio]]:py-[3px] [&_[role=radio]]:text-caption"
+              size="sm"
+              className="flex-1"
             >
               <SegmentedItem value="loop">Loop</SegmentedItem>
               <SegmentedItem value="reverse">Reverse</SegmentedItem>

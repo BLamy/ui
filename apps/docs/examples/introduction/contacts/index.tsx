@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Avatar } from '@/components/ui/avatar'
-import { IndexBar } from '@/components/ui/index-bar'
+import { IndexBar, alphabetItems } from '@/components/ui/index-bar'
 import { List, ListRow, ListSection } from '@/components/ui/list'
 import {
   NavigationStack,
@@ -67,7 +67,7 @@ export default function Contacts() {
                   if (pages.length === 1) setSel(null)
                 }}
               >
-                <NavigationStackPage value="list" grouped>
+                <NavigationStackPage value="list" variant="grouped">
                   <NavigationStackBar>
                     <NavigationStackTitle>Contacts</NavigationStackTitle>
                   </NavigationStackBar>
@@ -108,16 +108,15 @@ export default function Contacts() {
                     </List>
                   </NavigationStackContent>
                   <IndexBar
-                    avail={new Set(letters)}
-                    top={118}
-                    bottom={70}
-                    onLetter={(L) =>
+                    items={alphabetItems(letters)}
+                    className="top-[118px] bottom-[70px]"
+                    onJump={(L) =>
                       sections.current[L]?.scrollIntoView({ block: 'start' })
                     }
                   />
                 </NavigationStackPage>
                 {sel ? (
-                  <NavigationStackPage value="detail" grouped>
+                  <NavigationStackPage value="detail" variant="grouped">
                     <NavigationStackBar>
                       <NavigationStackTitle>
                         {sel.f + ' ' + sel.l}

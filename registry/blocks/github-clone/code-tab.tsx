@@ -279,13 +279,13 @@ export function FileViewer({ ui, node }: { ui: Layout; node: FileNode }) {
   return (
     <Box header={
       <div className="flex w-full items-center gap-3">
-        <Segmented aria-label="View" value={view} onValueChange={(next) => { if (next) setView(next); }} className="w-[150px] rounded-md">
+        <Segmented aria-label="View" value={view} onValueChange={(next) => { if (next) setView(next); }} size="sm" className="w-[150px]">
           {(isMd ? [['preview', 'Preview'], ['code', 'Code']] : [['code', 'Code'], ['blame', 'Blame']]).map(([id, label]) => <SegmentedItem key={id} value={id}>{label}</SegmentedItem>)}
         </Segmented>
         {!ui.phone && file.data != null ? <span className="text-caption text-muted-foreground">{lines} lines · {(code.length / 1024).toFixed(1)} KB</span> : null}
         <span className="flex-1" />
         <Button className={cn(ghButton(), 'h-7 px-2.5 text-caption')} onClick={raw ? () => window.open(raw, '_blank', 'noopener') : undefined}>Raw</Button>
-        <CodeEditorCopyButton value={code} label="Copy raw file" className={cn(ghButton(), 'h-7 w-7 px-0')} />
+        <CodeEditorCopyButton value={code} aria-label="Copy raw file" className={cn(ghButton(), 'h-7 w-7 px-0')} />
       </div>
     }>
       {tooLarge ? (

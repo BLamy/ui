@@ -1,7 +1,7 @@
 {
   "name": "request-table-model",
   "title": "RequestTable logic",
-  "description": "RequestTable's logic as plain functions: names, sizes, status text, tones, sorting and the time range rows cover.",
+  "description": "RequestTable's logic as plain functions: names, sizes, status text, tones, each built-in column's sort value and the time range rows cover.",
   "files": [
     "lib/request-table-model.ts"
   ],
@@ -13,16 +13,10 @@
     "requestSizeText",
     "requestStatusText",
     "requestTimeRange",
-    "requestTone",
-    "sortRequests"
+    "requestTone"
   ],
   "types": [
     "RequestRow",
-    "RequestSort",
-    "RequestSortDirection",
-    "RequestSortValue",
-    "RequestColumnSize",
-    "RequestTimeRange",
     "RequestTone"
   ]
 }

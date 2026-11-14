@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { PlaybackControls, VideoPreview, type PreviewMedia } from '@/components/ui/video-preview';
+import { VideoPreviewControls, VideoPreview, type PreviewMedia } from '@/components/ui/video-preview';
 import { usePlaybackClock, type Playback } from '@/lib/playback';
 import {
   layoutTrack, timelineDuration, timelineLooks,
@@ -135,10 +135,10 @@ function PreviewDemo({ timeline, format, time, fps }: Args & { timeline: Timelin
   const clock = useParkedClock(timeline, time);
   return (
     <div className="flex h-full flex-col bg-muted">
-      <VideoPreview className="min-h-0 flex-1 p-3" timeline={timeline} media={MEDIA} clock={clock} format={format}
+      <VideoPreview className="min-h-0 flex-1 p-3" timeline={timeline} media={MEDIA} playback={clock} format={format}
         renderClip={(clip) => titleClip(clip, format)} />
       <div className="flex shrink-0 items-center justify-center border-t border-border bg-background px-2 py-1">
-        <PlaybackControls clock={clock} fps={fps} />
+        <VideoPreviewControls playback={clock} fps={fps} />
       </div>
     </div>
   );
@@ -177,7 +177,7 @@ function LooksDemo({ time }: Args) {
       {LOOKS.map((look) => (
         <figure key={look.id} className="m-0 flex min-w-0 flex-col gap-1.5">
           <div className="aspect-video overflow-hidden rounded-md ring-1 ring-border">
-            <VideoPreview timeline={look.timeline} media={MEDIA} clock={clock} format={LANDSCAPE} />
+            <VideoPreview timeline={look.timeline} media={MEDIA} playback={clock} format={LANDSCAPE} />
           </div>
           <figcaption className="text-center text-caption text-muted-foreground">{look.label}</figcaption>
         </figure>
@@ -196,4 +196,10 @@ export const Looks: Story = {
 export const Portrait: Story = {
   parameters: { frame: { w: 420, h: 760 } },
   render: (args) => <PreviewDemo {...args} timeline={TALL} format={PORTRAIT} />,
+};
+
+/** The viewer and its transport on a dark surface. */
+export const Dark: Story = {
+  parameters: { dark: true },
+  render: (args) => <PreviewDemo {...args} timeline={TIMELINE} format={LANDSCAPE} />,
 };

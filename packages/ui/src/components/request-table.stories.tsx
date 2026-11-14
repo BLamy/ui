@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
-import { RequestLink, RequestTable, createRequestTableController, type RequestColumn, type RequestTableController } from '@/components/ui/request-table';
+import { createDataTableController, type DataTableColumn, type DataTableController } from '@/components/ui/data-table';
+import { RequestLink, RequestTable } from '@/components/ui/request-table';
 import { Slider } from '@/components/ui/slider';
 import { Icon } from '@/lib/icon';
 import { formatLogTime, type RowId } from '@/lib/log-list-model';
@@ -127,7 +128,7 @@ export const SidePanel: Story = {
   ),
 };
 
-function Transport({ rows, controller, rate }: { rows: readonly RequestRow[]; controller: RequestTableController; rate: number }) {
+function Transport({ rows, controller, rate }: { rows: readonly RequestRow[]; controller: DataTableController; rate: number }) {
   const duration = requestTimeRange(rows)[1] / 1000;
   const clock = usePlaybackClock({ duration, time: duration * 0.4, rate });
   const playing = usePlaybackState(clock, (s) => s.playing);
@@ -149,7 +150,7 @@ function Transport({ rows, controller, rate }: { rows: readonly RequestRow[]; co
 }
 
 function PlayheadDemo({ rows, rate }: { rows: readonly RequestRow[]; rate: number }) {
-  const [controller] = useState(createRequestTableController);
+  const [controller] = useState(createDataTableController);
   return (
     <>
       <Transport rows={rows} controller={controller} rate={rate} />
@@ -247,7 +248,7 @@ const IPC: (RequestRow & { from: string; to: string })[] = [
   { id: 4, url: 'files:read', method: 'invoke', status: 'threw', failed: true, type: 'ipc', time: 130, duration: 22, from: 'renderer-2', to: 'main', error: 'ENOENT: no such file', tone: 'accent' },
   { id: 5, url: 'updates:check', method: 'invoke', pending: true, type: 'ipc', time: 180, from: 'renderer', to: 'main', tone: 'accent' },
 ];
-const IPC_COLUMNS: (RequestColumn<(typeof IPC)[number]> | 'status' | 'duration' | 'waterfall')[] = [
+const IPC_COLUMNS: (DataTableColumn<(typeof IPC)[number]> | 'status' | 'duration' | 'waterfall')[] = [
   { id: 'url', title: 'Channel', flex: 2, minWidth: 140 },
   { id: 'from', title: 'From', width: 90 },
   { id: 'to', title: 'To', width: 70 },

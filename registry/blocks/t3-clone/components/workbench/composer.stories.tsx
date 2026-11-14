@@ -2,10 +2,11 @@ import * as React from 'react';
 import { useRef, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { userEvent, within, expect, waitFor, screen } from 'storybook/test';
-import { AnnotateLightbox, Composer, ComposerAdd, ComposerAddon, ComposerAttach, ComposerAttachments, ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerButton, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop, ComposerText, type ComposerAttachment, type ComposerCollapse } from '@/components/ui/composer/composer';
-import { WorkbenchTheme } from '@/components/ui/workbench-theme';
+import { Composer, ComposerAdd, ComposerAddon, ComposerAttachments, ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerOptions, ComposerOptionsOutlet, ComposerPill, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop, ComposerText, type ComposerAttachment, type ComposerCollapse } from '@/components/ui/composer/composer';
+import { Button } from '@/components/ui/button';
+import { ImageAnnotator } from '@/components/ui/pencilkit/image-annotator';
 import { Icon } from '@/lib/icon';
-import { AppearanceProvider, type Appearance } from '@/lib/theme';
+import { AppearanceProvider, type Appearance, ThemeScope } from '@/lib/theme';
 import { ModelPicker } from './model-picker';
 import { WORKBENCH_MODELS, WORKBENCH_PROVIDERS } from './models';
 import { WorkbenchComposer } from './workbench-composer';
@@ -14,9 +15,9 @@ import { WorkbenchComposer } from './workbench-composer';
 function Frame({ appearance = 'dark', width = 560, height = 420, children }: { appearance?: Appearance; width?: number; height?: number; children: ReactNode }) {
   return (
     <AppearanceProvider value={appearance}>
-      <WorkbenchTheme style={{ minHeight: height, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <ThemeScope scope="workbench" style={{ minHeight: height, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div style={{ maxWidth: width, width: '100%', margin: '0 auto' }}>{children}</div>
-      </WorkbenchTheme>
+      </ThemeScope>
     </AppearanceProvider>
   );
 }
@@ -52,13 +53,13 @@ const SEED_ATTACHMENTS: ComposerAttachment[] = [{ id: 'att-1', name: 'image.png'
 const SEED_MARKDOWN = 'The header overlaps the sidebar here ![image.png](attachment:att-1) — can you fix the z-index?';
 
 const EFFORTS = [
-  { id: 'low', label: 'Low' },
-  { id: 'medium', label: 'Medium', short: 'Medium · 1M' },
-  { id: 'high', label: 'High' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium', short: 'Medium · 1M' },
+  { value: 'high', label: 'High' },
 ];
 const ACCESS = [
-  { id: 'full', label: 'Full access', description: 'Read, write and run commands' },
-  { id: 'read', label: 'Read only', description: 'Browse files, no edits' },
+  { value: 'full', label: 'Full access', description: 'Read, write and run commands' },
+  { value: 'read', label: 'Read only', description: 'Browse files, no edits' },
 ];
 
 /* ── The Workbench default composition (WorkbenchComposer) ── */
@@ -127,7 +128,7 @@ function T3Composer({ open, defaultOpen, attachments = true, streaming = true, c
         <ComposerBumpHandle>
           <span className="size-[7px] shrink-0 animate-[wbPulse_1.6s_infinite] rounded-full bg-success" />
           <ComposerText className="flex-1 text-foreground">Monitoring <span className="text-tertiary-foreground">· pnpm storybook</span></ComposerText>
-          <ComposerButton variant="pill" className="py-[3px] text-[12px]">Stop</ComposerButton>
+          <Button variant="quiet" size="sm" className="h-auto rounded-md px-[7px] py-[3px] text-caption">Stop</Button>
         </ComposerBumpHandle>
       </ComposerBump> : null}
       <ComposerCard size="lg">
@@ -138,12 +139,12 @@ function T3Composer({ open, defaultOpen, attachments = true, streaming = true, c
           <ComposerOptions>
             <ModelPicker models={WORKBENCH_MODELS} providers={WORKBENCH_PROVIDERS} defaultValue="claude-opus-5-5" tint={false} className="text-foreground" />
             <ComposerSeparator />
-            <ComposerSelect aria-label="Effort" options={EFFORTS} defaultValue="medium" />
+            <ComposerSelect aria-label="Effort" items={EFFORTS} defaultValue="medium" />
             <ComposerSeparator />
-            <ComposerSelect aria-label="Access" icon="lock-rounded" options={ACCESS} />
+            <ComposerSelect aria-label="Access" icon="lock-rounded" items={ACCESS} />
           </ComposerOptions>
           <ComposerSpacer />
-          <ComposerAttach />
+          <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
           <ComposerStop variant="solid" />
           <ComposerSend morph={false} />
         </ComposerFooter>
@@ -153,11 +154,9 @@ function T3Composer({ open, defaultOpen, attachments = true, streaming = true, c
           <ComposerText icon="folder-closed" className="shrink-0">Local checkout</ComposerText>
           <ComposerOptionsOutlet />
           <ComposerSpacer />
-          <ComposerButton variant="pill" className="gap-1 py-0.5 font-normal text-[12px]">
-            <Icon name="branch" size={13} sw={1.9} />
-            <span className="font-mono text-[11.5px]">main</span>
-            <Icon name="chevron-down-wide" size={11} sw={2.4} className="opacity-60" />
-          </ComposerButton>
+          <ComposerPill icon={<Icon name="branch" size={13} sw={1.9} />} className="gap-1 py-0.5 font-normal">
+            <span className="font-mono text-caption2">main</span>
+          </ComposerPill>
         </ComposerBumpHandle>
       </ComposerBump>
     </Composer>
@@ -226,14 +225,14 @@ function ScrollPage({ appearance = 'dark' }: { appearance?: Appearance }) {
   const scroller = useRef<HTMLDivElement>(null);
   return (
     <AppearanceProvider value={appearance}>
-      <WorkbenchTheme style={{ position: 'relative', height: 640, overflow: 'hidden' }}>
+      <ThemeScope scope="workbench" style={{ position: 'relative', height: 640, overflow: 'hidden' }}>
         <ChatThread scroller={scroller} />
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 16, padding: '0 24px' }}>
           <div style={{ maxWidth: 720, margin: '0 auto' }}>
             <T3Composer collapseOnScroll={scroller} collapseTo="fab" topBump={false} attachments={false} streaming={false} />
           </div>
         </div>
-      </WorkbenchTheme>
+      </ThemeScope>
     </AppearanceProvider>
   );
 }
@@ -266,7 +265,7 @@ export const Addons: Story = {
             <ComposerText icon="doc-corner">block-start · composer.tsx</ComposerText>
           </ComposerAddon>
           <ComposerAddon align="inline-start">
-            <ComposerAttach />
+            <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
           </ComposerAddon>
           <ComposerInput />
           <ComposerAddon align="inline-end">
@@ -286,9 +285,9 @@ export const Buttons: Story = {
     <Frame>
       <Composer defaultValue="x" streaming={false}>
         <div className="flex flex-wrap items-center gap-2">
-          <ComposerButton aria-label="Ghost icon"><Icon name="paperclip-diagonal" size={15.5} sw={2} /></ComposerButton>
-          <ComposerButton variant="pill"><Icon name="lock-rounded" size={13.5} sw={2} />Pill<Icon name="chevron-down-wide" size={11} sw={2.4} className="opacity-60" /></ComposerButton>
-          <ComposerButton variant="pill" tint><Icon name="asterisk" size={13.5} sw={2} />Tint pill</ComposerButton>
+          <Button variant="quiet" size="icon-sm" aria-label="Quiet icon"><Icon name="paperclip-diagonal" size={15.5} sw={2} /></Button>
+          <ComposerPill icon="lock-rounded">Pill</ComposerPill>
+          <ComposerPill icon="asterisk" className="text-primary">Tinted pill</ComposerPill>
           <ComposerSeparator />
           <ComposerSend />
           <ComposerStop variant="solid" forceMount />
@@ -339,7 +338,7 @@ export const SelectOpen: Story = {
         <ComposerCard>
           <ComposerInput />
           <ComposerFooter>
-            <ComposerSelect aria-label="Access" icon="lock-rounded" options={ACCESS} />
+            <ComposerSelect aria-label="Access" icon="lock-rounded" items={ACCESS} />
             <ComposerSpacer />
             <ComposerSend />
           </ComposerFooter>
@@ -372,7 +371,7 @@ export const ModelPickerOpenLight: Story = { render: () => <PickerFrame appearan
 
 /* the annotate lightbox that opens when an attachment is clicked (PencilKitAnnotator, the default) */
 export const Annotate: Story = {
-  render: () => <Frame><AnnotateLightbox src={SAMPLE_IMG} defaultOpen /></Frame>,
+  render: () => <Frame><ImageAnnotator src={SAMPLE_IMG} defaultOpen /></Frame>,
 };
 
 /* ── Files: the "+" button, the drop zone, and tiles for every kind of file ── */

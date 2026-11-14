@@ -1,11 +1,12 @@
 {
   "name": "markdown-view",
   "title": "MarkdownView",
-  "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
+  "description": "Read-only GitBook-flavored Markdown rendered by Docstream: headings, lists, tables, hints, tabs, highlighted code, live demos and reference chips, whole or streamed.",
   "page": "docstream",
   "exports": [
-    "MarkdownView",
-    "HlPre",
-    "DocstreamRefContext"
+    "MarkdownView"
+  ],
+  "types": [
+    "ReferenceNode"
   ]
 }

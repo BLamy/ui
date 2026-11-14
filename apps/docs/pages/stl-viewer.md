@@ -1,6 +1,6 @@
 # StlViewer
 
-A 3D preview of an `.stl` model — the format 3D printers and CAD tools export. Binary and ASCII files both work. It draws with WebGL and has no dependencies: drag to orbit, pinch or ⌘-scroll to zoom (or `+` / `−`), arrow keys to turn, double-click or `0` to reset. The triangle count and the model's size sit under it. The model takes the theme's primary color (any CSS `color` on it or above it), and turns slowly until someone touches it, unless the reader prefers reduced motion.
+A 3D preview of an `.stl` model, the format 3D printers and CAD tools export. Use it wherever a file list or a note shows a model, so the reader can turn it before printing. Binary and ASCII files both work. It draws with WebGL, with no 3D library: drag to orbit, pinch or ⌘-scroll to zoom (or `+` / `−`), arrow keys to turn, double-click or `0` to reset. The triangle count and the model's size sit under it. The model takes the theme's primary color (any CSS `color` on it or above it), and turns slowly until someone touches it, unless the reader prefers reduced motion.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -25,7 +25,9 @@ import { StlViewer } from '@brett_lamy/ui'
 {% endtab %}
 {% endtabs %}
 
-`StlViewer` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (`@brett_lamy/docstream/stl`, 1.10 and later), where `{% embed url="part.stl" %}` renders it. BL UI keeps a thin re-export, so `@/components/ui/stl-viewer` resolves like every other part.
+{% hint style="info" %}
+`StlViewer` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (`@brett_lamy/docstream/stl`), where `{% embed url="part.stl" %}` renders it. The registry item adds that package and a one-line module that re-exports the viewer and its props type. The mesh reader below comes straight from `@brett_lamy/docstream/stl`.
+{% endhint %}
 
 ## A model by URL
 
@@ -69,7 +71,7 @@ import { AssetResolverProvider } from '@brett_lamy/docstream'
 {% demo src="stl-viewer/mesh" %}
 
 ```tsx
-import { parseStl, isStlUrl } from '@/components/ui/stl-viewer'
+import { parseStl, isStlUrl } from '@brett_lamy/docstream/stl'
 
 const mesh = parseStl(await (await fetch(url)).arrayBuffer())
 mesh.triangles        // 5040

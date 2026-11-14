@@ -483,6 +483,9 @@ describe('Dialog views', () => {
     const [leaving, arriving] = texts();
     expect([leaving.textContent, arriving.textContent]).toEqual(['Payment', 'Verify']);
     expect(leaving.hasAttribute('data-ending-style')).toBe(true);
+    // The leaving title is out of the accessibility tree, so the dialog is named by the arriving one alone.
+    expect(leaving.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.getByRole('dialog', { name: 'Verify' })).toBeTruthy();
     // Forward: the new title comes from the right, the old leaves to the left.
     const vars = leaving.parentElement!.style;
     expect([vars.getPropertyValue('--swap-enter'), vars.getPropertyValue('--swap-exit')]).toEqual(['18px', '-18px']);
