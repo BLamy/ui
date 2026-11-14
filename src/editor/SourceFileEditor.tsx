@@ -1,3 +1,5 @@
+"use client"
+
 import { useCallback, useEffect, useRef, useState } from "react"
 import { FileCode2, Save } from "lucide-react"
 import { Button } from "@ui-sdk/react/button"

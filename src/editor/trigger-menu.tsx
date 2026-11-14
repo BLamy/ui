@@ -1,5 +1,3 @@
-"use client"
-
 import { useMemo, type ReactNode } from "react"
 import type { Editor } from "@tiptap/core"
 import { Plugin, PluginKey } from "@tiptap/pm/state"

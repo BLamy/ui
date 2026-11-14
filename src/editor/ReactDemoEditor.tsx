@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from "react"
 import { FileCode2, Play } from "lucide-react"
 import { Button } from "@ui-sdk/react/button"
