@@ -2,6 +2,7 @@ import type { Editor } from "@tiptap/core"
 import type { Node as PMNodeType } from "@tiptap/pm/model"
 import { closeHistory } from "@tiptap/pm/history"
 import { TextSelection, type Transaction } from "@tiptap/pm/state"
+import { Mapping } from "@tiptap/pm/transform"
 import type { EditorChange, TextEditorAdapter, TextRange, TokenInsert } from "@ui-sdk/core/trigger-menu"
 
 /** What a token becomes in the document. */
@@ -36,6 +37,80 @@ export function tiptapTriggerAdapter(editor: Editor, { token }: TiptapTriggerAda
   const focused = () => {
     const v = view()
     return !!v && (v.hasFocus() || v.dom.ownerDocument.activeElement === v.dom)
+  }
+
+  // Every subscriber hears the same changes, from one set of editor and DOM listeners.
+  const listeners = new Set<(change: EditorChange) => void>()
+  const emit = (change: EditorChange) => {
+    for (const listener of [...listeners]) listener(change)
+  }
+  // The edits since compositionstart, while an input method composes.
+  let composition: Composition | null = null
+  // Bumped when a composition ends, so a queued end that's been overtaken does nothing.
+  let ending = 0
+
+  // An input method's text arrives as transactions while ProseMirror is composing. Like UI SDK's own
+  // text adapters, the menu hears none of it until composition ends, and then one input change
+  // covering all of it, so the composed text is the query at once.
+  const onTransaction = ({ transaction }: { transaction: Transaction }) => {
+    if (composition) {
+      if (transaction.docChanged) {
+        composition.mapping.appendMapping(transaction.mapping)
+        composition.user &&= isUser(transaction)
+      }
+      return
+    }
+    if (transaction.docChanged) emit(inputChange(transaction.mapping, transaction.doc, transaction.selection.from, isUser(transaction)))
+    else if (transaction.selectionSet) emit({ type: "selection" })
+  }
+  const finish = () => {
+    const done = composition
+    composition = null
+    ending++
+    if (!done) return
+    emit({ type: "compositionend" })
+    if (done.mapping.maps.length) emit(inputChange(done.mapping, editor.state.doc, editor.state.selection.from, done.user))
+    else emit({ type: "selection" })
+  }
+  const onFocus = () => emit({ type: "selection" })
+  const onBlur = () => {
+    // A composition cut short by leaving the editor may get no compositionend.
+    finish()
+    emit({ type: "selection" })
+  }
+  const onCompositionStart = () => {
+    // ProseMirror's own listener ran first and flushed what came before, so this starts clean.
+    // One that starts before the last one's end was reported carries on from it.
+    if (composition) ending++
+    else composition = { mapping: new Mapping(), user: true }
+    emit({ type: "compositionstart" })
+  }
+  const onCompositionEnd = () => {
+    if (!composition) return
+    // ProseMirror has cleared `composing`, and flushes its last DOM changes in a microtask it queued
+    // before this one: report once those are in.
+    const at = ending
+    queueMicrotask(() => {
+      if (at === ending) finish()
+    })
+  }
+  let detach: (() => void) | null = null
+  const attach = () => {
+    const dom = view()?.dom
+    editor.on("transaction", onTransaction)
+    editor.on("focus", onFocus)
+    editor.on("blur", onBlur)
+    dom?.addEventListener("compositionstart", onCompositionStart)
+    dom?.addEventListener("compositionend", onCompositionEnd)
+    return () => {
+      composition = null
+      ending++
+      editor.off("transaction", onTransaction)
+      editor.off("focus", onFocus)
+      editor.off("blur", onBlur)
+      dom?.removeEventListener("compositionstart", onCompositionStart)
+      dom?.removeEventListener("compositionend", onCompositionEnd)
+    }
   }
 
   return {
@@ -94,43 +169,40 @@ export function tiptapTriggerAdapter(editor: Editor, { token }: TiptapTriggerAda
       v.dispatch(closeHistory(tr).scrollIntoView())
     },
     subscribe(listener) {
-      const onTransaction = ({ transaction }: { transaction: Transaction }) => {
-        if (transaction.docChanged) listener(inputChange(transaction))
-        else if (transaction.selectionSet) listener({ type: "selection" })
-      }
-      const onFocus = () => listener({ type: "selection" })
-      const dom = view()?.dom
-      const onCompositionStart = () => listener({ type: "compositionstart" })
-      const onCompositionEnd = () => listener({ type: "compositionend" })
-      editor.on("transaction", onTransaction)
-      editor.on("focus", onFocus)
-      editor.on("blur", onFocus)
-      dom?.addEventListener("compositionstart", onCompositionStart)
-      dom?.addEventListener("compositionend", onCompositionEnd)
+      // Its own entry, so the same function subscribed twice is two subscriptions.
+      const entry = (change: EditorChange) => listener(change)
+      listeners.add(entry)
+      detach ??= attach()
       return () => {
-        editor.off("transaction", onTransaction)
-        editor.off("focus", onFocus)
-        editor.off("blur", onFocus)
-        dom?.removeEventListener("compositionstart", onCompositionStart)
-        dom?.removeEventListener("compositionend", onCompositionEnd)
+        listeners.delete(entry)
+        if (!listeners.size && detach) {
+          detach()
+          detach = null
+        }
       }
     },
-    composing: () => !!view()?.composing,
+    composing: () => !!composition || !!view()?.composing,
     tokens: !!token,
   }
 }
 
-// The range a transaction replaced, in the old document's positions, and what now stands there.
-function inputChange(tr: Transaction): EditorChange {
+type Composition = { mapping: Mapping; user: boolean }
+
+// A collaborator's change, content set by the host, or a change kept out of history isn't typing.
+function isUser(tr: Transaction): boolean {
+  return !tr.getMeta("y-sync$") && !tr.getMeta("preventUpdate") && tr.getMeta("addToHistory") !== false
+}
+
+// The range a mapping's steps replaced, in the old document's positions, and what now stands there in `doc`.
+function inputChange(mapping: Mapping, doc: PMNodeType, caret: number, user: boolean): EditorChange {
   let start = Infinity
   let end = -Infinity
   let newStart = Infinity
   let newEnd = -Infinity
-  const maps = tr.mapping.maps
-  maps.forEach((map, index) => {
+  mapping.maps.forEach((map, index) => {
     map.forEach((oldStart, oldEnd, nextStart, nextEnd) => {
-      const back = tr.mapping.slice(0, index).invert()
-      const ahead = tr.mapping.slice(index + 1)
+      const back = mapping.slice(0, index).invert()
+      const ahead = mapping.slice(index + 1)
       start = Math.min(start, back.map(oldStart, -1))
       end = Math.max(end, back.map(oldEnd, 1))
       newStart = Math.min(newStart, ahead.map(nextStart, -1))
@@ -138,14 +210,12 @@ function inputChange(tr: Transaction): EditorChange {
     })
   })
   if (start === Infinity) {
-    start = end = newStart = newEnd = tr.selection.from
+    start = end = newStart = newEnd = caret
   }
   const size = Math.max(0, newEnd - newStart)
-  let inserted = tr.doc.textBetween(newStart, newEnd, "\n", LEAF)
+  let inserted = doc.textBetween(newStart, newEnd, "\n", LEAF)
   // One character per position, so offsets after the edit line up.
   if (inserted.length !== size) inserted = inserted.padEnd(size, LEAF).slice(0, size)
   const range: TextRange = { start, end: Math.max(start, end) }
-  // A collaborator's change, content set by the host, or a change kept out of history isn't typing.
-  const user = !tr.getMeta("y-sync$") && !tr.getMeta("preventUpdate") && tr.getMeta("addToHistory") !== false
   return { type: "input", inserted, range, user }
 }

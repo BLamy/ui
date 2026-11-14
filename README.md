@@ -518,7 +518,9 @@ keywords. Pass `slashMenu={{ items }}` (default list: `SLASH_ITEMS`) for your ow
 
 The slash and reference menus are one UI SDK `TriggerMenu` per editor. `tiptapTriggerAdapter(editor)`
 is the editor adapter it uses (text offsets are ProseMirror positions within the caret's textblock;
-a leaf reads as U+FFFC; each replacement is its own undo step), exported for menus of your own:
+a leaf reads as U+FFFC; each replacement is its own undo step; text an input method composes is
+the query once composition ends, as one input change, and nothing matches or is chosen while it
+composes), exported for menus of your own:
 
 ```tsx
 import { TriggerMenu, TriggerMenuContent, TriggerMenuList } from "@ui-sdk/react/trigger-menu"
@@ -533,6 +535,10 @@ const adapter = useMemo(() => tiptapTriggerAdapter(editor), [editor])
 Keys reach the menu before ProseMirror: add a plugin whose `handleDOMEvents.keydown` returns
 `event.defaultPrevented`, so Enter or Tab that chose an item doesn't also run the editor's keymap
 (the built-in menus add it).
+
+Known limit: offsets are positions in the whole document, so an edit made by a collaborator or by
+the host (a change kept out of history) *above* the caret moves an open match, and the menu closes
+until the next key. The same edit below the caret leaves it open.
 
 ## Conversion Helpers
 

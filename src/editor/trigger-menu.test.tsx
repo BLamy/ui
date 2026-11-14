@@ -256,3 +256,64 @@ describe("reference menus", () => {
     expect(markdown()).toContain("#design")
   })
 })
+
+describe("input method composition", () => {
+  const references = {
+    mentions: [
+      { id: "luna", label: "Luna" },
+      { id: "hollis", label: "Hollis" },
+    ],
+  }
+  const fire = async (editor: TiptapEditor, type: "compositionstart" | "compositionend", data = "") => {
+    await act(async () => { editor.view.dom.dispatchEvent(new CompositionEvent(type, { bubbles: true, data })) })
+  }
+  // An input method's text: ProseMirror dispatches it while composing, one transaction per update.
+  async function compose(editor: TiptapEditor, text: string) {
+    await fire(editor, "compositionstart")
+    expect(editor.view.composing).toBe(true)
+    for (const char of text) await act(async () => { editor.commands.insertContent(char) })
+    await loaded()
+  }
+  const chips = (editor: TiptapEditor) => {
+    let count = 0
+    editor.state.doc.descendants((node) => { if (node.isLeaf && !node.isText) count++ })
+    return count
+  }
+
+  it("matches nothing and inserts nothing mid-composition, then the composed text is the query at once", async () => {
+    const { editor, markdown } = await mount({ references })
+    await type(editor, " @")
+    await loaded()
+    const unfiltered = options(listbox("Mentions")!).map((option) => option.textContent)
+    expect(unfiltered).toEqual(["@lunaLuna", "@hollisHollis"])
+
+    await compose(editor, "hol")
+    // Mid-composition the list is what it was before it, and the Enter that commits the IME is its own.
+    expect(options(listbox("Mentions")!).map((option) => option.textContent)).toEqual(unfiltered)
+    const commit = await press(editor, "Enter", { isComposing: true, keyCode: 229 })
+    expect(commit.defaultPrevented).toBe(false)
+    expect(chips(editor)).toBe(0)
+    expect(editor.state.doc.textContent).toBe("Start @hol")
+
+    // Composition ends: with no further key, the composed text is the query.
+    await fire(editor, "compositionend", "hol")
+    await loaded()
+    const list = listbox("Mentions")!
+    expect(options(list).map((option) => option.textContent)).toEqual(["@hollisHollis", "@hol"])
+    expect(highlighted(list)[0]?.textContent).toBe("@hollisHollis")
+    await press(editor, "Enter")
+    expect(listbox("Mentions")).toBeNull()
+    expect(chips(editor)).toBe(1)
+    expect(markdown()).toContain("@hollis")
+  })
+
+  it("opens for a trigger typed inside a composition once it ends", async () => {
+    const { editor } = await mount({ references })
+    await type(editor, " ")
+    await compose(editor, "@ho")
+    expect(listbox("Mentions")).toBeNull()
+    await fire(editor, "compositionend", "@ho")
+    await loaded()
+    expect(options(listbox("Mentions")!).map((option) => option.textContent)).toEqual(["@hollisHollis", "@ho"])
+  })
+})
