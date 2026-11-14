@@ -61,6 +61,8 @@
     "@tiptap/react": "3.30.5",
     "@tiptap/starter-kit": "3.30.5",
     "@tiptap/suggestion": "3.30.5",
+    "@ui-sdk/core": "workspace:@brett_lamy/ui-sdk-core@*",
+    "@ui-sdk/react": "workspace:@brett_lamy/ui-sdk-react@*",
     "@vscode/codicons": "0.0.46-24",
     "@wterm/dom": "0.5.8",
     "@wterm/ghostty": "0.5.8",

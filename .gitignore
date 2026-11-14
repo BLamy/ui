@@ -39,3 +39,4 @@ apps/docs/public/llms.txt
 
 # The FFmpeg wasm build the docs serve (node tools/ffmpeg-wasm/build.mjs); ffmpeg-worker.js comes from packages/ui.
 apps/docs/public/ffmpeg/
+packages/ui-sdk-*/docs/

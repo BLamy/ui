@@ -20,6 +20,12 @@ importers:
       '@pierre/trees':
         specifier: 1.0.0-beta.6
         version: 1.0.0-beta.6(@pierre/theme@2.0.0)(@shikijs/themes@4.4.3)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(shiki@4.4.3)
+      '@ui-sdk/core':
+        specifier: workspace:@brett_lamy/ui-sdk-core@*
+        version: link:packages/ui-sdk-core
+      '@ui-sdk/react':
+        specifier: workspace:@brett_lamy/ui-sdk-react@*
+        version: link:packages/ui-sdk-react
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -326,6 +332,12 @@ importers:
       '@tiptap/suggestion':
         specifier: 3.30.5
         version: 3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@ui-sdk/core':
+        specifier: workspace:@brett_lamy/ui-sdk-core@*
+        version: link:../ui-sdk-core
+      '@ui-sdk/react':
+        specifier: workspace:@brett_lamy/ui-sdk-react@*
+        version: link:../ui-sdk-react
       '@vscode/codicons':
         specifier: 0.0.46-24
         version: 0.0.46-24
@@ -405,6 +417,23 @@ importers:
       happy-dom:
         specifier: ^20.14.5
         version: 20.14.5
+
+  packages/ui-sdk-core: {}
+
+  packages/ui-sdk-react:
+    dependencies:
+      '@types/react':
+        specifier: '>=19.2.10'
+        version: 19.3.0
+      '@ui-sdk/core':
+        specifier: workspace:@brett_lamy/ui-sdk-core@*
+        version: link:../ui-sdk-core
+      react:
+        specifier: '>=19'
+        version: 19.0.0
+      react-dom:
+        specifier: '>=19'
+        version: 19.0.0(react@19.0.0)
 
   registry:
     dependencies:
@@ -3537,6 +3566,9 @@ packages:
 
   '@types/react@19.0.0':
     resolution: {integrity: sha512-MY3oPudxvMYyesqs/kW1Bh8y9VqSmf+tzqw3ae8a9DZW68pUe3zAdHeI1jc6iAysuRdACnVknHP8AhwD4/dxtg==}
+
+  '@types/react@19.3.0':
+    resolution: {integrity: sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==}
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
@@ -12588,6 +12620,10 @@ snapshots:
       '@types/react': 19.0.0
 
   '@types/react@19.0.0':
+    dependencies:
+      csstype: 3.2.3
+
+  '@types/react@19.3.0':
     dependencies:
       csstype: 3.2.3
 

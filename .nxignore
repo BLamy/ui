@@ -1,0 +1,2 @@
+# The UI SDK fork is a submodule with its own workspace and tooling; nx only sees the two wrapper packages built from it.
+vendor/

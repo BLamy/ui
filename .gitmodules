@@ -1,0 +1,3 @@
+[submodule "vendor/ui-sdk"]
+	path = vendor/ui-sdk
+	url = https://github.com/BLamy/ui-sdk.git
