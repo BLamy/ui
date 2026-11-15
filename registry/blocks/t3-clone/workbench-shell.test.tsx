@@ -149,7 +149,7 @@ describe('WorkbenchDock', () => {
 });
 
 describe('Header toggles', () => {
-  it('expose their state with aria-pressed and change the shell', async () => {
+  it('expose their state (aria-pressed, or aria-expanded for a pane) and change the shell', async () => {
     render(<Shell />);
     await settle();
     const terminal = screen.getByRole('button', { name: 'Terminal' });
@@ -159,11 +159,13 @@ describe('Header toggles', () => {
     expect(terminal.getAttribute('aria-pressed')).toBe('false');
     expect(document.querySelector('[data-slot="workbench-dock"]')).toBeNull();
 
-    const sidebar = screen.getByRole('button', { name: 'Hide sidebar' });
-    expect(sidebar.getAttribute('aria-pressed')).toBe('false');
+    // A pane's trigger says whether its pane shows (AdaptivePaneTrigger).
+    const sidebar = screen.getByRole('button', { name: 'Sidebar' });
+    expect(sidebar.getAttribute('aria-expanded')).toBe('true');
+    expect(sidebar.getAttribute('aria-controls')).toBeTruthy();
     fireEvent.click(sidebar);
     await settle();
-    expect(sidebar.getAttribute('aria-pressed')).toBe('true');
+    expect(sidebar.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('full screen is a toggle with one name, on its own too', () => {

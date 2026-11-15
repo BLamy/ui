@@ -31,7 +31,7 @@ const MemberCardsContext = createContext<HoverCardController<ChatUser> | null>(n
 function MemberCard({ controller }: { controller?: HoverCardController<ChatUser> }) {
   return (
     <HoverCard controller={controller}>
-      <HoverCardContent<ChatUser> side="left" align="start" sideOffset={14}>
+      <HoverCardContent<ChatUser> side="start" align="start" sideOffset={14}>
         {({ payload }) => (payload ? <UserCard user={payload} /> : null)}
       </HoverCardContent>
     </HoverCard>

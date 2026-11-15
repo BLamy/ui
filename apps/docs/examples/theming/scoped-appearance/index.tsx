@@ -12,7 +12,7 @@ export default function NowPlaying() {
       {[false, true].map((dark) => (
         <BLProvider
           key={String(dark)}
-          dark={dark}
+          appearance={dark ? 'dark' : 'light'}
           tint="#FF375F"
           style={{ height: 'auto', borderRadius: 18 }}
         >

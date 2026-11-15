@@ -86,7 +86,7 @@ function Palette(props: Partial<CommandMenuProps>) {
   );
 }
 
-const frame = (node: ReactNode, dark = false) => <Pad w={620} dark={dark}>{node}</Pad>;
+const frame = (node: ReactNode, dark = false) => <Pad w={620} appearance={dark ? 'dark' : 'light'}>{node}</Pad>;
 
 export const Inline: Story = { render: () => frame(<Palette />) };
 export const InlineDark: Story = { render: () => frame(<Palette />, true) };

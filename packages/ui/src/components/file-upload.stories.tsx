@@ -54,7 +54,7 @@ const seedFiles = {
 function Seeded({ seed, dark, children, ...props }: { seed: () => UploadFile[]; dark?: boolean } & Omit<FileUploadProps, 'defaultValue'>) {
   const [files] = useState(seed);
   return (
-    <Pad w={440} dark={dark}>
+    <Pad w={440} appearance={dark ? 'dark' : 'light'}>
       <FileUpload defaultValue={files} {...props}>{children}</FileUpload>
     </Pad>
   );

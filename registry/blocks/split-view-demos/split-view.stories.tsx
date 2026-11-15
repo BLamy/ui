@@ -1,7 +1,13 @@
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackPage, NavigationStackTitle } from '@/components/ui/navigation-stack';
-import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar } from '@/components/ui/split-view';
+import {
+  NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackLeading, NavigationStackPage,
+  NavigationStackTitle,
+} from '@/components/ui/navigation-stack';
+import {
+  SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, SplitViewSidebarTrigger,
+  type SplitViewProps,
+} from '@/components/ui/split-view';
 import { BLProvider } from '@/lib/theme';
 
 import {
@@ -10,10 +16,10 @@ import {
 } from './demos';
 
 /** A sized, rounded frame around BLProvider (BL UI containers are absolutely positioned in their host). */
-function Phone({ children, w = 390, h = 720, dark }: { children?: ReactNode; w?: number; h?: number; dark?: boolean }) {
+function Phone({ children, w = 390, h = 720, appearance }: { children?: ReactNode; w?: number; h?: number; appearance?: 'light' | 'dark' }) {
   return (
     <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, boxShadow: '0 12px 40px color-mix(in srgb, black 18%, transparent)', width: w, height: h }}>
-      <BLProvider dark={dark}>{children}</BLProvider>
+      <BLProvider appearance={appearance}>{children}</BLProvider>
     </div>
   );
 }
@@ -31,7 +37,7 @@ export const Mail: Story = {
 };
 
 export const MailDark: Story = {
-  render: () => <Phone w={1180} h={700} dark><SplitViewMailDemo /></Phone>,
+  render: () => <Phone w={1180} h={700} appearance="dark"><SplitViewMailDemo /></Phone>,
 };
 
 /** Two columns: the note list is the sidebar; hide it for a full-width editor. */
@@ -41,7 +47,7 @@ export const Notes: Story = {
 
 /** Sidebar + grouped detail. */
 export const Settings: Story = {
-  render: () => <Phone w={1060} h={660} dark><SplitViewSettingsDemo /></Phone>,
+  render: () => <Phone w={1060} h={660} appearance="dark"><SplitViewSettingsDemo /></Phone>,
 };
 
 /** Compact: one column at a time. Rows push the next column; back, Esc or an edge swipe pops. */
@@ -51,7 +57,7 @@ export const CompactStack: Story = {
 
 /** Compact, landed on the message: the same state a regular split collapses into. */
 export const CompactPushed: Story = {
-  render: () => <Phone w={390} h={760} dark><SplitViewMailDemo defaultCompactColumn="detail" /></Phone>,
+  render: () => <Phone w={390} h={760} appearance="dark"><SplitViewMailDemo defaultCompactColumn="detail" /></Phone>,
 };
 
 /** Medium: list and message tile; the sidebar floats over them. Tap the scrim or press Esc to dismiss. */
@@ -110,7 +116,7 @@ export const TintedItems: Story = {
 };
 
 export const TintedItemsDark: Story = {
-  render: () => <Phone w={1080} h={640} dark><SplitViewRemindersDemo defaultValue={{ sidebar: 'work' }} /></Phone>,
+  render: () => <Phone w={1080} h={640} appearance="dark"><SplitViewRemindersDemo defaultValue={{ sidebar: 'work' }} /></Phone>,
 };
 
 /** Large title after scrolling: the big title has gone under the bar, so the inline title and the hairline
@@ -132,7 +138,7 @@ export const NestedStack: Story = {
 };
 
 export const NestedStackDark: Story = {
-  render: () => <Phone w={1080} h={640} dark><SplitViewLibraryDemo initialAlbum="static" /></Phone>,
+  render: () => <Phone w={1080} h={640} appearance="dark"><SplitViewLibraryDemo initialAlbum="static" /></Phone>,
 };
 
 /** At tablet width the sidebar floats over the stack (the toggle on the stack's first page opens it). */
@@ -145,7 +151,7 @@ export const NestedStackMedium: Story = {
  *  pops the album page first; only at the stack's first page does it pop the column, whose back button that
  *  page shows. */
 export const NestedStackCompact: Story = {
-  render: () => <Phone w={390} h={760} dark><SplitViewLibraryDemo defaultCompactColumn="detail" initialAlbum="tidewater" /></Phone>,
+  render: () => <Phone w={390} h={760} appearance="dark"><SplitViewLibraryDemo defaultCompactColumn="detail" initialAlbum="tidewater" /></Phone>,
 };
 
 /** Compact, at the stack's first page: the back button goes to the sidebar column, named by its title. */
@@ -160,7 +166,7 @@ export const Gallery: Story = {
 };
 
 export const GalleryDark: Story = {
-  render: () => <Phone w={1180} h={660} dark><SplitViewGalleryDemo /></Phone>,
+  render: () => <Phone w={1180} h={660} appearance="dark"><SplitViewGalleryDemo /></Phone>,
 };
 
 /** A NavigationStack nested in the compact detail column: the edge swipe (and Esc) pop the NavigationStack's
@@ -271,7 +277,7 @@ export const ItemStates: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 24 }}>
       {[false, true].map((dark) => (
-        <Phone key={String(dark)} w={560} h={360} dark={dark}>
+        <Phone key={String(dark)} w={560} h={360} appearance={dark ? 'dark' : 'light'}>
           <SplitView aria-label="Items" sizeClass="regular" defaultValue={{ sidebar: 'inbox', detail: 'two' }}>
             <SplitViewSidebar aria-label="Mailboxes" width={260} resizable={false}>
               <SplitViewHeader title="Mailboxes" />
@@ -301,10 +307,10 @@ export const ItemStates: Story = {
 
 const PODCAST_TITLES: Record<string, string> = { home: 'Home', new: 'New', search: 'Search', library: 'Library', shows: 'Shows', saved: 'Saved', downloads: 'Downloaded' };
 
-function PodcastsDemo() {
-  const [section, setSection] = useState('shows');
+function PodcastsDemo({ initial = 'shows', defaultSidebarOpen }: { initial?: string; defaultSidebarOpen?: SplitViewProps['defaultSidebarOpen'] }) {
+  const [section, setSection] = useState(initial);
   return (
-    <SplitView aria-label="Podcasts" value={{ sidebar: section }} onValueChange={(v) => { if (v.sidebar) setSection(v.sidebar); }}>
+    <SplitView aria-label="Podcasts" value={{ sidebar: section }} onValueChange={(v) => { if (v.sidebar) setSection(v.sidebar); }} defaultSidebarOpen={defaultSidebarOpen}>
       <SplitViewSidebar compactPresentation="tabs" aria-label="Podcasts">
         <SplitViewHeader title="Podcasts" />
         <SplitViewContent className="px-2.5">
@@ -323,7 +329,10 @@ function PodcastsDemo() {
       <SplitViewDetail>
         <NavigationStack defaultPages={['root']} resetKey={section}>
           <NavigationStackPage value="root">
-            <NavigationStackBar><NavigationStackTitle>{PODCAST_TITLES[section]}</NavigationStackTitle></NavigationStackBar>
+            <NavigationStackBar>
+              <NavigationStackLeading><SplitViewSidebarTrigger /></NavigationStackLeading>
+              <NavigationStackTitle>{PODCAST_TITLES[section]}</NavigationStackTitle>
+            </NavigationStackBar>
             <NavigationStackContent>
               <NavigationStackLargeTitle />
               <div className="flex flex-col gap-2 px-4">
@@ -339,17 +348,24 @@ function PodcastsDemo() {
   );
 }
 
-/** Compact: the sidebar is the iOS tab bar over the detail. Library is one tab for its section (Shows is selected),
-    and the content keeps room for the bar. */
+/** Compact: the sidebar is the iOS tab bar over the detail. Library is one tab for its section: Shows is selected,
+    so its page is on top of the Library tab's first page (the sidebar showing Shows, Saved and Downloaded), with
+    "‹ Library" to go back to it. Pressing Library again goes back there too. The content keeps room for the bar. */
 export const SidebarTabBar: Story = {
   render: () => <Phone w={390} h={760}><PodcastsDemo /></Phone>,
 };
 
 export const SidebarTabBarDark: Story = {
-  render: () => <Phone w={390} h={760} dark><PodcastsDemo /></Phone>,
+  render: () => <Phone w={390} h={760} appearance="dark"><PodcastsDemo /></Phone>,
 };
 
-/** The same tree on a tablet: a sidebar, no tab bar. */
+/** The Library tab's first page: the sidebar showing the section's rows under a large "Library". */
+export const SidebarTabBarLibrary: Story = {
+  render: () => <Phone w={390} h={760}><PodcastsDemo initial="library" /></Phone>,
+};
+
+/** The same tree on a tablet: no tab bar; the sidebar floats over the detail, open here (`defaultSidebarOpen`
+    `{ medium: true }`), and the button in the bar shows and hides it. */
 export const SidebarTabBarTablet: Story = {
-  render: () => <Phone w={834} h={700}><PodcastsDemo /></Phone>,
+  render: () => <Phone w={834} h={700}><PodcastsDemo defaultSidebarOpen={{ medium: true }} /></Phone>,
 };

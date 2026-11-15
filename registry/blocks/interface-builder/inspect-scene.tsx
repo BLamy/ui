@@ -98,7 +98,7 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
             <div className="flex items-center gap-1.5">
               <Icon name={p.callback ? 'phone-fill' : 'arrow-down-to-line'} size={13} sw={2} className={cn('shrink-0', p.callback ? 'text-warning' : 'text-primary')} />
               <div className="min-w-0 flex-1"><NameInput label="Prop name" value={p.name} taken={taken(scene, p.name)} onCommit={(v) => rename(p.name, v)} /></div>
-              <IconAction icon="trash" label={`Remove ${p.name}`} tone="danger" onClick={() => upd((s) => ({ ...s, props: s.props.filter((_, k) => k !== i) }))} />
+              <IconAction icon="trash" label={`Remove ${p.name}`} tone="destructive" onClick={() => upd((s) => ({ ...s, props: s.props.filter((_, k) => k !== i) }))} />
             </div>
             {p.callback ? (
               <Field label="Parameters">
@@ -127,7 +127,7 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
             <div className="flex items-center gap-1.5">
               <div className="min-w-0 flex-1"><NameInput label="State name" value={v.name} taken={taken(scene, v.name)} onCommit={(to) => rename(v.name, to)} /></div>
               <div className="w-24 shrink-0"><ChoiceInput label="Type" value={v.type} options={TYPES} onChange={(t) => setState(i, { type: t as ValueType, initial: v.initial === BLANK[v.type] ? BLANK[t as ValueType] : v.initial })} /></div>
-              <IconAction icon="trash" label={`Remove ${v.name}`} tone="danger" onClick={() => upd((s) => ({ ...s, state: s.state.filter((_, k) => k !== i) }))} />
+              <IconAction icon="trash" label={`Remove ${v.name}`} tone="destructive" onClick={() => upd((s) => ({ ...s, state: s.state.filter((_, k) => k !== i) }))} />
             </div>
             <ExprInput label={`${v.name} initial value`} value={v.initial} multiline={v.type === 'list' || v.type === 'object'} names={new Set([...doc.contexts.map((c) => c.alias), ...scene.props.map((p) => p.name)])} scope={scope} onCommit={(x) => setState(i, { initial: x })} />
             <CodeLine>{`const [${v.name}, set${v.name.charAt(0).toUpperCase()}${v.name.slice(1)}] = useState<${TS[v.type]}>(…)`}</CodeLine>
@@ -143,7 +143,7 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
             <div key={i} className="flex flex-col gap-1.5 rounded-lg border border-border p-2">
               <div className="flex items-center gap-1.5">
                 <div className="min-w-0 flex-1"><NameInput label="Memo name" value={m.name} taken={taken(scene, m.name)} onCommit={(to) => rename(m.name, to)} /></div>
-                <IconAction icon="trash" label={`Remove ${m.name}`} tone="danger" onClick={() => upd((s) => ({ ...s, memos: s.memos.filter((_, k) => k !== i) }))} />
+                <IconAction icon="trash" label={`Remove ${m.name}`} tone="destructive" onClick={() => upd((s) => ({ ...s, memos: s.memos.filter((_, k) => k !== i) }))} />
               </div>
               <ExprInput label={`${m.name} expression`} value={m.expr} names={before} scope={scope} onCommit={(x) => upd((s) => ({ ...s, memos: s.memos.map((y, k) => (k === i ? { ...y, expr: x } : y)) }))} />
               <CodeLine>{`const ${m.name} = useMemo(() => …, [${[...freeNames(m.expr).keys()].join(', ')}])`}</CodeLine>
@@ -160,7 +160,7 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
               <div className="min-w-0 flex-1">
                 <ChoiceInput label="When" value={e.on} onChange={(v) => setEffect(e.id, { on: v as EffectDef['on'] })} options={[{ id: 'appear', label: 'Appear' }, { id: 'change', label: 'Change' }, { id: 'disappear', label: 'Disappear' }]} />
               </div>
-              <IconAction icon="trash" label="Remove effect" tone="danger" onClick={() => upd((s) => ({ ...s, effects: s.effects.filter((x) => x.id !== e.id) }))} />
+              <IconAction icon="trash" label="Remove effect" tone="destructive" onClick={() => upd((s) => ({ ...s, effects: s.effects.filter((x) => x.id !== e.id) }))} />
             </div>
             {e.on === 'change' ? (
               <Field label="Watches">

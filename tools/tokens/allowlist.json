@@ -168,7 +168,7 @@
   "packages/ui/src/lib/theme.tsx": {
     "radius": 1
   },
-  "packages/ui/src/lib/utils.ts": {
+  "packages/ui/src/lib/primitives.ts": {
     "color": 1
   },
   "registry/blocks/apple-mail/compose.tsx": {

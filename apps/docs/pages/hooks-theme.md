@@ -6,7 +6,7 @@ All five are public. 6.0 removed `useScrollHidden`: floating chrome of your own 
 
 ```tsx
 // npm
-import { useAppearance, useThemeScope, useScopeAppearance, useThemeScopeProps, useChromeHidden } from '@brett_lamy/ui'
+import { useAppearance, useThemeScope, useScopeAppearance, useThemeScopeProps, useChromeHidden } from '@brett_lamy/ui/lib/theme'
 
 // shadcn registry (aliases)
 import { useAppearance, useThemeScope, useScopeAppearance, useThemeScopeProps, useChromeHidden } from '@/lib/theme' // …/r/theme.json
@@ -24,7 +24,7 @@ function useAppearance(): 'light' | 'dark' | undefined
 ```
 
 ```tsx
-import { AppearanceProvider, useAppearance } from '@brett_lamy/ui'
+import { AppearanceProvider, useAppearance } from '@brett_lamy/ui/lib/theme'
 
 // once, near the root: your app's own setting
 <AppearanceProvider value={settings.dark ? 'dark' : 'light'}>
@@ -37,7 +37,7 @@ function CodeTheme() {
 }
 ```
 
-`BLProvider`, `ThemeScope`, the chat shell and the Workbench all read it, so setting it once themes the surfaces below it. An explicit `appearance` or `dark` prop on one of them wins.
+`BLProvider`, `ThemeScope`, the chat shell and the Workbench all read it, so setting it once themes the surfaces below it. An explicit `appearance` (`'light'` or `'dark'`) on one of them wins; `'auto'` follows the provider.
 
 {% demo src="hooks-theme/appearance" %}
 
@@ -62,7 +62,8 @@ The result carries the nearest scope's `data-theme-scope`, its appearance class 
 
 ```tsx
 import { createPortal } from 'react-dom'
-import { cn, useThemeScopeProps } from '@brett_lamy/ui'
+import { cn } from '@brett_lamy/ui/lib/utils'
+import { useThemeScopeProps } from '@brett_lamy/ui/lib/theme'
 
 function Callout({ children }: { children: React.ReactNode }) {
   const scope = useThemeScopeProps()
@@ -88,7 +89,7 @@ Gotchas:
 
 Whether the shared "chrome" (the navigation bar and the tab bar) is hidden. A scrolling screen hides both when you scroll down and brings them back when you scroll up, and everything that follows reads this one flag, wherever it is in the tree.
 
-- **Export:** public, from the package root. The store behind it, `chromeStore`, and `chromeOffset` come from its module: `@/lib/theme`, or `@brett_lamy/ui/lib/theme` on npm. Registry item `theme`.
+- **Export:** public, from the package root, with `setChromeHidden(hidden)`, which publishes the flag from a scroller of your own (as a NavigationStack page does). Registry item `theme`.
 - **Needs:** nothing: it is a module-level store, not a context, so there is no provider to wrap. **Default:** `false`.
 
 ```ts
@@ -102,14 +103,14 @@ function FloatingAction() {
 }
 ```
 
-`NavigationStack` publishes it while its top page scrolls: the bar hides after a downward scroll of more than 5px once the scroll position is past about 70% of the bar height, and shows again on an upward scroll of more than 5px or near the top. A page opts out with `<NavigationStackBar hideOnScroll={false}>`, and the stack's `onBarHiddenChange(hidden)` reports the same change. the `Tabs` bar (`TabsBar hideOnScroll`), `List`'s sticky headers, and `useHideOnScroll` (behind `FloatingSheet` and `ArtifactChatContainer`) read it. To drive it from a scroller of your own, set the store: `chromeStore.set(true)` hides, `chromeStore.set(false)` shows.
+`NavigationStack` publishes it while its top page scrolls: the bar hides after a downward scroll of more than 5px once the scroll position is past about 70% of the bar height, and shows again on an upward scroll of more than 5px or near the top. A page opts out with `<NavigationStackBar hideOnScroll={false}>`, and the stack's `onBarHiddenChange(hidden)` reports the same change. the `Tabs` bar (`TabsBar hideOnScroll`), `List`'s sticky headers, and `useHideOnScroll` (behind `FloatingSheet` and `ArtifactChatContainer`) read it. To drive it from a scroller of your own, call `setChromeHidden(true)` to hide and `setChromeHidden(false)` to show.
 
 Gotchas:
 
 - **It is global.** Two navigation stacks on one page share one flag, and any scroller that sets it hides every tab bar.
 - A fresh subscriber starts from the store's current value and syncs again in an effect, so a component mounted while the chrome is hidden is correct after the first commit.
 - Nothing is published on the server; it is `false` there.
-- `chromeOffset(top, hidden)` turns a bar height into the offset sticky headers stop at: while hidden it moves up by one bar height (`BARH`, 52px), never below zero.
+- Sticky list headers follow it too: while the chrome is hidden the offset they stop at moves up by one bar height (52px), never below zero.
 
 ## `useThemeScope` and `useScopeAppearance`
 
@@ -120,10 +121,10 @@ The nearest `ThemeScope`'s resolved state, and the appearance a scope of a given
 
 ```ts
 function useThemeScope(): { scope?: string; appearance?: 'light' | 'dark'; tint?: string; vars?: ThemeVars } | null
-function useScopeAppearance(scope?: ThemeScopeName, appearance?: 'light' | 'dark'): 'light' | 'dark' | undefined
+function useScopeAppearance(scope?: ThemeScopeName, appearance?: 'auto' | 'light' | 'dark'): 'light' | 'dark' | undefined
 ```
 
-`useScopeAppearance` is the rule `ThemeScope` itself applies: the terminal scope is always dark; otherwise the explicit `appearance`, else an enclosing scope of the same name, else the ambient `AppearanceProvider` value (or `<html class="dark">`), else the scope's default (`'dark'` for `workbench`, `'light'` for the other named scopes, `undefined` for a plain scope). A `BLProvider` resets the scope for what it contains, as it does for overlays.
+`useScopeAppearance` is the rule `ThemeScope` itself applies: the terminal scope is always dark; otherwise the explicit `appearance` (`'auto'` counts as none), else an enclosing scope of the same name, else the ambient `AppearanceProvider` value (or `<html class="dark">`), else the scope's default (`'dark'` for `workbench`, `'light'` for the other named scopes, `undefined` for a plain scope). A `BLProvider` resets the scope for what it contains, as it does for overlays.
 
 ```tsx
 function FileDiff({ patch }: { patch: string }) {

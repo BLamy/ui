@@ -3,8 +3,7 @@
   "title": "Trigger palette",
   "description": "Lets a popup take its colors from the element that opened it (palette=\"trigger\"): copies the trigger's theme scope and light or dark surface onto the popup.",
   "exports": [
-    "useTriggerPalette",
-    "isLightSurface"
+    "useTriggerPalette"
   ],
   "types": [
     "PopupPalette",

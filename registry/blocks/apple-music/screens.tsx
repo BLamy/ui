@@ -1,4 +1,4 @@
-/* Every screen the app pushes: Listen Now, Browse, Radio, Search, the Library and its sections, and the album,
+/* Every screen the app pushes: Listen Now, Browse, Radio, Search, the Library's sections, and the album,
    artist and playlist pages. `PageView` draws one; `MusicPage` makes it a NavigationStack page, for a phone tab's
    stack and for the wide layout's detail column (whose stack is the same component). Pages read the player and
    `open` from `MusicContext`, so a pushed page stays live. Album tiles, playlist tiles, artist rows and the album
@@ -13,7 +13,7 @@ import {
 import { NowPlayingBars } from '@/components/ui/now-playing-bars';
 import { SearchInput } from '@/components/ui/search-input';
 import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Icon, type IconName, type IconShape } from '@/lib/icon';
+import { Icon, type IconShape } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { ArtistArt, Artwork, PlaylistArt } from './artwork';
 import {
@@ -22,7 +22,7 @@ import {
 import type { Player } from './player';
 
 export type Page =
-  | { kind: 'listen' } | { kind: 'browse' } | { kind: 'radio' } | { kind: 'search' } | { kind: 'library' }
+  | { kind: 'listen' } | { kind: 'browse' } | { kind: 'radio' } | { kind: 'search' }
   | { kind: 'recent' } | { kind: 'artists' } | { kind: 'albums' } | { kind: 'songs' }
   | { kind: 'album'; id: string } | { kind: 'artist'; name: string } | { kind: 'playlist'; id: string };
 
@@ -36,7 +36,7 @@ export function pageOfKey(key: string): Page {
 }
 
 const TITLES: Record<string, string> = {
-  listen: 'Listen Now', browse: 'Browse', radio: 'Radio', search: 'Search', library: 'Library', recent: 'Recently Added',
+  listen: 'Listen Now', browse: 'Browse', radio: 'Radio', search: 'Search', recent: 'Recently Added',
   artists: 'Artists', albums: 'Albums', songs: 'Songs',
 };
 export function pageTitle(p: Page) {
@@ -46,7 +46,7 @@ export function pageTitle(p: Page) {
   return TITLES[p.kind];
 }
 
-export interface Ctx { player: Player; open: (p: Page) => void; wide: boolean; dark: boolean }
+export interface Ctx { player: Player; open: (p: Page) => void; dark: boolean }
 export const MusicContext = createContext<Ctx | null>(null);
 
 export const isDetail = (p: Page) => p.kind === 'album' || p.kind === 'artist' || p.kind === 'playlist';
@@ -87,7 +87,6 @@ function PageBody({ page, ctx }: { page: Page; ctx: Ctx }) {
     case 'browse': return <Browse ctx={ctx} />;
     case 'radio': return <Radio ctx={ctx} />;
     case 'search': return <Search ctx={ctx} />;
-    case 'library': return <LibraryHome ctx={ctx} />;
     case 'recent': return <AlbumGrid albums={[...ALBUMS].sort((a, b) => a.added - b.added)} ctx={ctx} />;
     case 'albums': return <AlbumGrid albums={[...ALBUMS].sort((a, b) => a.title.localeCompare(b.title))} ctx={ctx} />;
     case 'artists': return <ArtistList ctx={ctx} />;
@@ -406,38 +405,9 @@ function Search({ ctx }: { ctx: Ctx }) {
   );
 }
 
-/* ── Library ── */
-
-type Sym = { name?: IconName; shapes?: readonly IconShape[] };
-const LIBRARY_LINKS: [Page, Sym][] = [
-  [{ kind: 'artists' }, { name: 'mic' }], [{ kind: 'albums' }, { shapes: ALBUM_ICON }], [{ kind: 'songs' }, { name: 'music-notes' }],
-  ...PLAYLISTS.slice(0, 2).map((p): [Page, Sym] => [{ kind: 'playlist', id: p.id }, { name: 'music-note-list' }]),
-];
-
-function LibraryHome({ ctx }: { ctx: Ctx }) {
-  return (
-    <div className="pb-4">
-      <div className="pl-4">
-        {LIBRARY_LINKS.map(([page, icon]) => (
-          <SdkButton key={pageKey(page)} onClick={() => ctx.open(page)}
-            className="bl-btn flex w-full cursor-pointer items-center gap-3.5 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground">
-            <Icon {...icon} size={24} className="text-primary" />
-            <span className="flex flex-1 items-center py-3 text-title shadow-hairline-b">
-              <span className="flex-1">{pageTitle(page)}</span>
-              <Icon name="chevron-right" size={16} weight="bold" className="text-tertiary-foreground" />
-            </span>
-          </SdkButton>
-        ))}
-      </div>
-      <div className="px-4 pt-6 pb-2.5 text-[21px] font-bold tracking-[-.3px]">Recently Added</div>
-      <AlbumGrid albums={[...ALBUMS].sort((a, b) => a.added - b.added).slice(0, 6)} ctx={ctx} />
-    </div>
-  );
-}
-
 function AlbumGrid({ albums, ctx }: { albums: Album[]; ctx: Ctx }) {
   return (
-    <div className="grid gap-x-4 gap-y-5 px-4 pt-1 pb-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${ctx.wide ? 170 : 150}px, 1fr))` }}>
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-4 gap-y-5 px-4 pt-1 pb-4 @[840px]:grid-cols-[repeat(auto-fill,minmax(170px,1fr))]">
       {albums.map((a) => (
         <Previewed key={a.id} card={<AlbumCard album={a} />}
           render={<SdkButton onClick={() => ctx.open({ kind: 'album', id: a.id })}
@@ -484,14 +454,18 @@ function tintFor(a: Album, dark: boolean) {
   return ok.sort((x, y) => Math.abs(lum(x) - (dark ? 0.35 : 0.12)) - Math.abs(lum(y) - (dark ? 0.35 : 0.12)))[0] ?? FALLBACK_TINT[dark ? 'dark' : 'light'];
 }
 
+/** An album's or a playlist's head: the art over the title, centered; beside it once the page is wide. */
+const HERO = 'flex flex-col items-center gap-6 px-4 pt-2 pb-5 text-center @[840px]:flex-row @[840px]:items-end @[840px]:px-6 @[840px]:text-start';
+const HERO_TEXT = 'flex min-w-0 flex-col items-center gap-1 @[840px]:items-start';
+
 function AlbumPage({ album: a, ctx }: { album: Album; ctx: Ctx }) {
   const songs = albumSongs(a);
   const more = ALBUMS.filter((x) => x.artist === a.artist && x.id !== a.id);
   return (
     <div className="pb-6" style={{ '--primary': tintFor(a, ctx.dark) } as CSSProperties}>
-      <div className={cn('flex gap-6 px-4 pt-2 pb-5', ctx.wide ? 'items-end px-6' : 'flex-col items-center text-center')}>
-        <Artwork album={a} size={ctx.wide ? 250 : 260} rounded={10} className="shadow-[0_10px_30px_black] shadow-black/18" />
-        <div className={cn('flex min-w-0 flex-col gap-1', ctx.wide ? 'items-start pb-1' : 'items-center')}>
+      <div className={HERO}>
+        <Artwork album={a} size={256} rounded={10} className="shadow-[0_10px_30px_black] shadow-black/18" />
+        <div className={cn(HERO_TEXT, '@[840px]:pb-1')}>
           <h2 className="m-0 text-[24px] leading-tight font-bold tracking-[-.3px]">{a.title}</h2>
           <Previewed card={<ArtistCard name={a.artist} />}
             render={<SdkButton onClick={() => ctx.open({ kind: 'artist', name: a.artist })}
@@ -535,9 +509,9 @@ function PlaylistPage({ id, ctx }: { id: string; ctx: Ctx }) {
   const songs = playlistSongs(p);
   return (
     <div className="pb-6">
-      <div className={cn('flex gap-6 px-4 pt-2 pb-5', ctx.wide ? 'items-end px-6' : 'flex-col items-center text-center')}>
-        <PlaylistArt playlist={p} size={ctx.wide ? 250 : 260} rounded={10} />
-        <div className={cn('flex min-w-0 flex-col gap-1', ctx.wide ? 'items-start' : 'items-center')}>
+      <div className={HERO}>
+        <PlaylistArt playlist={p} size={256} rounded={10} />
+        <div className={HERO_TEXT}>
           <h2 className="m-0 text-[24px] leading-tight font-bold">{p.title}</h2>
           <div className="text-[18px] text-primary">{p.curator}</div>
           <div className="text-detail text-muted-foreground">{p.description}</div>

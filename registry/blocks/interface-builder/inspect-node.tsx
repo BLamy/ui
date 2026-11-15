@@ -439,7 +439,7 @@ export function CommandBlock({ cmd, actions, c, onChange, onRename, onRemove }: 
       <div className="flex items-center gap-1.5">
         <Icon name="bolt-fill" size={13} sw={2} className="shrink-0 text-warning" />
         <div className="min-w-0 flex-1"><NameInput label="Command" value={cmd} onCommit={onRename} /></div>
-        <IconAction icon="trash" label={`Stop handling ${cmd}`} tone="danger" onClick={onRemove} />
+        <IconAction icon="trash" label={`Stop handling ${cmd}`} tone="destructive" onClick={onRemove} />
       </div>
       <ActionList actions={actions} onChange={onChange} c={c} />
       <CodeLine>{`useResponder('${cmd}', () => { … })`}</CodeLine>

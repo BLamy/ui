@@ -166,7 +166,7 @@ export function Toolbar({ browser, snapshot, history, totals, inputRef, overview
         <PopoverContent align="end" className="w-80">
           <PopoverTitle className="sr-only">Tailscale connection</PopoverTitle>
           <div className="flex flex-col gap-3">
-            <TailscaleSummary detail={`${totals.pages} pages and ${totals.requests} requests this session, all through Tailscale.`} />
+            <TailscaleSummary description={`${totals.pages} pages and ${totals.requests} requests this session, all through Tailscale.`} />
             <TailscaleExitNodes onAction={onExitNode} />
             <TailscaleLoginButton size="sm" variant="outline" />
           </div>

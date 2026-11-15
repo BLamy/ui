@@ -64,7 +64,7 @@ export default function DropARecording() {
         multiple={false}
         rules={{ accept: ACCEPT }}
         title="Drop an rrweb recording"
-        hint=".rrweb or .json, gzipped or not"
+        description=".rrweb or .json, gzipped or not"
         icon="video"
         browseLabel="Choose a recording"
         className={recording ? 'block min-h-0 border-0 p-0' : 'min-h-72'}

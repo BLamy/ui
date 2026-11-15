@@ -14,7 +14,9 @@
      compact   one column at a time: picking pushes the next column; back, Escape and a swipe from the leading
                edge pop. A sidebar with `compactPresentation="tabs"` becomes the iOS tab bar over the other
                columns instead of the stack's first page: its `tab` items (and `tab` sections, as one tab each) are
-               the tabs, and picking one selects it as at any other width
+               the tabs, and picking one selects it as at any other width. A `tab` section's tab opens on the
+               sidebar itself showing that section's rows (Music's Library), and they push as in the stack.
+               Pressing the selected tab again goes back to its first page, then to the top
 
    A column that pushes pages of its own holds a <NavigationStack>. The column is the stack's parent
    (lib/stack-parent): collapsed, the stack's first page gets the back button to the column before, labelled with
@@ -47,7 +49,7 @@ import { Tabs, TabsBar, TabsList, TabsTab } from '@/components/ui/tabs';
 import { cn, cx } from '@/lib/utils';
 import { SizeClassProvider } from '@/lib/container';
 import { barBottomHeight, sectionLabelVariants } from '@/lib/primitives';
-import { StackParentContext, type StackParent } from '@/lib/stack-parent';
+import { StackParentContext, scrollToTop, type StackParent } from '@/lib/stack-parent';
 import {
   BackLabel, backName, barBackButton, barTitle, barTitleFade, barTitleHidden, centeredRoom, largeTitleText, useBackFit,
 } from '@/lib/nav-bar';
@@ -108,11 +110,30 @@ function useMergedRef<T>(own: { current: T | null }, theirs: Ref<T> | undefined)
 }
 
 /* ── Context ── */
+/** Tells a column's stack (or content) that its place was picked again: a tab bar's selected tab, pressed. */
+interface Reselect {
+  emit: (column: SplitViewColumn) => void;
+  on: (column: SplitViewColumn, listener: () => void) => () => void;
+}
+function createReselect(): Reselect {
+  const listeners = new Map<SplitViewColumn, Set<() => void>>();
+  return {
+    emit: (column) => listeners.get(column)?.forEach((l) => l()),
+    on(column, listener) {
+      const set = listeners.get(column) ?? new Set();
+      listeners.set(column, set);
+      set.add(listener);
+      return () => { set.delete(listener); };
+    },
+  };
+}
+
 interface RootContext {
   handle: Handle;
   state: SplitViewState;
   titles: Partial<Record<SplitViewColumn, string>>;
   setTitle: (column: SplitViewColumn, title: string | undefined) => void;
+  reselect: Reselect;
 }
 const Ctx = createContext<RootContext | null>(null);
 const ColumnCtx = createContext<SplitViewColumn | null>(null);
@@ -205,6 +226,7 @@ export function SplitView({
   const setTitle = useCallback((c: SplitViewColumn, t: string | undefined) => {
     setTitles((s) => (s[c] === t ? s : { ...s, [c]: t }));
   }, []);
+  const [reselect] = useState(createReselect);
   return usePart(handle, 'root', {}, {
     ...props,
     className: cx('group/split relative isolate h-full w-full touch-pan-y overflow-hidden bg-background', className),
@@ -212,7 +234,7 @@ export function SplitView({
     // under a Tabs `bar`).
     style: (state: SplitViewState) => ({ ...(state.sidebarTabs ? { '--tabs-bar-h': barBottomHeight } : null), ...apply(style, state) }) as CSSProperties,
     children: (state) => (
-      <RootProvider handle={handle} state={state} titles={titles} setTitle={setTitle}>
+      <RootProvider handle={handle} state={state} titles={titles} setTitle={setTitle} reselect={reselect}>
         {children}
         <Resizer handle={handle} column="sidebar" />
         <Resizer handle={handle} column="supplementary" />
@@ -222,15 +244,16 @@ export function SplitView({
   }, 'div');
 }
 
-function RootProvider({ handle, state, titles, setTitle, children }: RootContext & { children: ReactNode }) {
-  const { sizeClass, collapsed, columns, sidebarOpen, sidebarBehavior, value, compactColumn, canGoBack, columnWidths, supplementaryOpen, sidebarTabs } = state;
+function RootProvider({ handle, state, titles, setTitle, reselect, children }: RootContext & { children: ReactNode }) {
+  const { sizeClass, collapsed, columns, sidebarOpen, sidebarBehavior, value, compactColumn, canGoBack, columnWidths, supplementaryOpen, sidebarTabs, tabGroup } = state;
   const key = columns.join();
   const ctx = useMemo<RootContext>(() => ({
     handle,
-    state: { sizeClass, collapsed, columns: key ? (key.split(',') as SplitViewColumn[]) : [], sidebarOpen, sidebarBehavior, value, compactColumn, canGoBack, columnWidths, supplementaryOpen, sidebarTabs },
+    state: { sizeClass, collapsed, columns: key ? (key.split(',') as SplitViewColumn[]) : [], sidebarOpen, sidebarBehavior, value, compactColumn, canGoBack, columnWidths, supplementaryOpen, sidebarTabs, tabGroup },
     titles,
     setTitle,
-  }), [handle, sizeClass, collapsed, key, sidebarOpen, sidebarBehavior, value, compactColumn, canGoBack, columnWidths, supplementaryOpen, sidebarTabs, titles, setTitle]);
+    reselect,
+  }), [handle, sizeClass, collapsed, key, sidebarOpen, sidebarBehavior, value, compactColumn, canGoBack, columnWidths, supplementaryOpen, sidebarTabs, tabGroup, titles, setTitle, reselect]);
   // The view's size class is the scope of everything in it, popups included (`presentation="auto"`).
   return (
     <Ctx.Provider value={ctx}>
@@ -293,7 +316,7 @@ const DIM = cn(
 );
 
 function ColumnPart({ column, width, minWidth, maxWidth, resizable, tabs = false, children, className, ...props }: SplitViewColumnProps & { column: SplitViewColumn; tabs?: boolean }) {
-  const { handle, state, titles, setTitle } = useRoot(`SplitView${column[0].toUpperCase()}${column.slice(1)}`);
+  const { handle, state, titles, setTitle, reselect } = useRoot(`SplitView${column[0].toUpperCase()}${column.slice(1)}`);
   const d = SPLIT_VIEW_COLUMN_DEFAULTS[column];
   const w = width ?? d.width, min = minWidth ?? d.minWidth, max = maxWidth ?? d.maxWidth, res = resizable ?? d.resizable;
   const { register } = handle.api.internal;
@@ -309,7 +332,8 @@ function ColumnPart({ column, width, minWidth, maxWidth, resizable, tabs = false
   const back = useMemo(() => (prevTitle == null ? null : { title: prevTitle, onClick: () => void api.back({ reason: 'trigger-press' }) }),
     [prevTitle, api]);
   const nameColumn = useCallback((t: string | undefined) => setTitle(column, t), [setTitle, column]);
-  const parent = useMemo<StackParent>(() => ({ back, setTitle: nameColumn }), [back, nameColumn]);
+  const onReselect = useCallback((listener: () => void) => reselect.on(column, listener), [reselect, column]);
+  const parent = useMemo<StackParent>(() => ({ back, setTitle: nameColumn, onReselect }), [back, nameColumn, onReselect]);
 
   const el = usePart(handle, column, {}, {
     ...props,
@@ -328,13 +352,17 @@ export interface SplitViewSidebarProps extends SplitViewColumnProps {
   /** What the sidebar becomes in a compact split view. `stack` (default): the compact stack's first page, so picking
    *  an item pushes the column after it (Mail, Settings). `tabs`: the iOS tab bar, pinned over the bottom of the other
    *  columns (Music, Podcasts): its `tab` items and `tab` sections are the tabs, and picking one selects it, as at
-   *  any other width, and goes back to the first page of the stack beside it. The columns are the same elements at
-   *  every size, so a NavigationStack in the detail (with `resetKey={value.sidebar}`) stays mounted. */
+   *  any other width, and goes back to the first page of the stack beside it. A `tab` section's tab is the sidebar
+   *  itself showing that section's rows (the header takes the section's title), and its rows push the column after
+   *  it; pressing the selected tab again goes back to its first page, then scrolls it to the top. The columns are
+   *  the same elements at every size, so a NavigationStack in the detail (with `resetKey={value.sidebar}`) stays
+   *  mounted. */
   compactPresentation?: 'stack' | 'tabs';
 }
 
 /** Primary column: navigation (mailboxes, folders, settings sections). */
 export function SplitViewSidebar({ compactPresentation = 'stack', children, ...props }: SplitViewSidebarProps) {
+  const { handle, state } = useRoot('SplitViewSidebar');
   const tabs = compactPresentation === 'tabs';
   const [entries, setEntries] = useState<ReadonlyMap<string, { current: TabEntry | null }>>(() => new Map());
   const registry = useMemo<TabRegistry | null>(() => (tabs ? {
@@ -344,23 +372,40 @@ export function SplitViewSidebar({ compactPresentation = 'stack', children, ...p
       return next;
     }),
   } : null), [tabs]);
+  // The tab groups the primitive needs to know which tab a value is in: each member's group, and each group's own.
+  const all = [...entries.values()].map((e) => e.current).filter((e): e is TabEntry => e != null);
+  const groupsKey = JSON.stringify(all.flatMap((e) => (e.kind === 'member' ? [[e.value, e.group]] : e.group ? [[e.value, e.value]] : [])));
+  const setTabGroups = handle.api.internal.setTabGroups;
+  useLayoutEffect(() => { setTabGroups(Object.fromEntries(JSON.parse(groupsKey) as [string, string][])); }, [setTabGroups, groupsKey]);
+  // Showing a tab group's rows (its tab's first page): the section's title heads the column.
+  const groupTitle = state.tabGroup == null ? null
+    : all.find((e): e is TabItem => e.kind === 'tab' && !!e.group && e.value === state.tabGroup)?.title ?? null;
+  const page = useMemo<TabPage | null>(() => (state.tabGroup == null ? null : { group: state.tabGroup, title: groupTitle }), [state.tabGroup, groupTitle]);
   return (
     <>
       <TabRegistryContext.Provider value={registry}>
-        <ColumnPart column="sidebar" aria-label="Sidebar" tabs={tabs} {...props}>{children}</ColumnPart>
+        <TabPageContext.Provider value={page}>
+          {/* A tab's page sits on the page background, as the other tabs' columns do, not the sidebar's grey. */}
+          <ColumnPart column="sidebar" aria-label="Sidebar" tabs={tabs} {...props}
+            className={cx(page ? 'bg-background [--avatar-ring:var(--background)]' : '', props.className)}>{children}</ColumnPart>
+        </TabPageContext.Provider>
       </TabRegistryContext.Provider>
-      {tabs ? <SidebarTabBar entries={entries} label={props['aria-label'] ?? 'Sidebar'} /> : null}
+      {tabs ? <SidebarTabBar entries={all} label={props['aria-label'] ?? 'Sidebar'} /> : null}
     </>
   );
 }
 
 /* ── The sidebar as a tab bar (compact, `compactPresentation="tabs"`) ──
    The tabs are the sidebar's own items and sections that say `tab`, in the order they appear in it: an item is a
-   tab for its value; a section with a `value` is one tab (UIKit's tab group) that is current while any item in it
-   is. They register here as they render; the bar is the kit's Tabs `bar`. */
+   tab for its value; a section is one tab (UIKit's tab group) that is current while any item in it is, and whose
+   first page is the sidebar showing only that section's rows. They register here as they render; the bar is the
+   kit's Tabs `bar`, and the column on top is its tabpanel. */
 type TabEntry =
-  | { kind: 'tab'; value: string; title: ReactNode; icon: ReactNode; disabled?: boolean; el: () => Element | null }
+  | { kind: 'tab'; value: string; title: ReactNode; icon: ReactNode; disabled?: boolean; group?: boolean; el: () => Element | null }
   | { kind: 'member'; value: string; group: string };
+/** The tab group whose rows the sidebar shows as its tab's first page, and its title (the column's heading). */
+interface TabPage { group: string; title: ReactNode }
+const TabPageContext = createContext<TabPage | null>(null);
 /** Each entry is the latest render's (a ref), so a title or icon that changes shows without registering again. */
 interface TabRegistry { set: (key: string, entry: { current: TabEntry | null } | null) => void }
 const TabRegistryContext = createContext<TabRegistry | null>(null);
@@ -372,7 +417,7 @@ function useTabEntry(entry: TabEntry | null) {
   const registry = useContext(TabRegistryContext);
   const key = useId();
   const set = registry?.set;
-  const sig = entry ? JSON.stringify([entry.kind, entry.value, entry.kind === 'member' ? entry.group : entry.disabled]) : '';
+  const sig = entry ? JSON.stringify([entry.kind, entry.value, entry.group, entry.kind === 'tab' ? entry.disabled : null]) : '';
   const latest = useRef(entry);
   latest.current = entry;
   useLayoutEffect(() => {
@@ -385,30 +430,42 @@ function useTabEntry(entry: TabEntry | null) {
 }
 
 type TabItem = Extract<TabEntry, { kind: 'tab' }>;
-type TabMember = Extract<TabEntry, { kind: 'member' }>;
 
-function SidebarTabBar({ entries, label }: { entries: ReadonlyMap<string, { current: TabEntry | null }>; label: string }) {
-  const { handle, state } = useRoot('SplitViewSidebar');
+function SidebarTabBar({ entries, label }: { entries: TabEntry[]; label: string }) {
+  const { handle, state, reselect } = useRoot('SplitViewSidebar');
   if (!state.sidebarTabs) return null;
-  const all = [...entries.values()].map((e) => e.current).filter((e): e is TabEntry => e != null);
   // In the sidebar's order, once per value (an item can show in two sections).
-  const tabs = all.filter((e): e is TabItem => e.kind === 'tab')
+  const tabs = entries.filter((e): e is TabItem => e.kind === 'tab')
     .sort((a, b) => {
       const x = a.el(), y = b.el();
       return x && y && x !== y ? (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1) : 0;
     })
     .filter((t, i, list) => list.findIndex((u) => u.value === t.value) === i);
   const selected = state.value.sidebar ?? null;
-  const group = all.find((e): e is TabMember => e.kind === 'member' && e.value === selected)?.group;
-  const current = selected == null ? null : tabs.some((t) => t.value === selected) ? selected : group ?? null;
+  const current = selected == null ? null : tabs.some((t) => t.value === selected) ? selected : state.tabGroup;
+  const { internal } = handle.api;
+  // The selected tab pressed again, as on iOS: back to the tab's first page (a group's rows, or the first column
+  // after the sidebar), and there, its stack back to its first page, then to the top.
+  const again = (event: Event) => {
+    const group = state.tabGroup;
+    const root = group != null ? 'sidebar' : state.columns[0];
+    if (state.compactColumn !== root) {
+      if (group != null) handle.api.select('sidebar', group, { reason: 'item-press', event });
+      else handle.api.show(root, { reason: 'trigger-press', event });
+    } else reselect.emit(root);
+  };
   return (
     <Tabs variant="bar" value={current} activation="manual"
-      onValueChange={(value, details) => { if (value != null) handle.api.select('sidebar', value, { reason: 'item-press', event: details.event }); }}
+      onValueChange={(value, details) => { if (value != null) internal.selectTab(value, { reason: 'item-press', event: details.event }); }}
       className="absolute inset-x-0 bottom-0 z-60">
       <TabsBar>
         <TabsList aria-label={label}>
           {tabs.map((t) => (
-            <TabsTab key={t.value} value={t.value} icon={t.icon} disabled={t.disabled}>{t.title}</TabsTab>
+            // The selected tab controls the column on top (its tabpanel, labelled by it).
+            <TabsTab key={t.value} value={t.value} icon={t.icon} disabled={t.disabled}
+              {...(t.value === current ? { id: internal.tabId, 'aria-controls': internal.columnId(state.compactColumn), onClick: (e) => again(e.nativeEvent) } : null)}>
+              {t.title}
+            </TabsTab>
           ))}
         </TabsList>
       </TabsBar>
@@ -532,12 +589,16 @@ function HeaderBack({ handle, row, title, label, align }: {
  *  to the column before. It is the same bar as NavigationStackBar, as one component: a column that pushes holds a
  *  NavigationStack, whose pages use NavigationStackBar's parts. */
 export function SplitViewHeader({
-  title, titleAlign = 'center', largeTitle, largeTitleTrailing, largeTitleClassName, showOnScroll, scrollEdge = true, leading, trailing, backLabel,
-  className, ref, ...props
+  title: titleProp, titleAlign = 'center', largeTitle: largeTitleProp, largeTitleTrailing, largeTitleClassName, showOnScroll, scrollEdge = true,
+  leading, trailing, backLabel, className, ref, ...props
 }: SplitViewHeaderProps) {
   const s = useRoot('SplitViewHeader');
   const parent = useContext(StackParentContext);
   const pane = useContext(PaneCtx);
+  // A sidebar showing a tab group's rows (its tab's first page) is headed by the group, as a large title.
+  const tabPage = useContext(TabPageContext);
+  const title = tabPage ? tabPage.title : titleProp;
+  const largeTitle = tabPage ? true : largeTitleProp;
   // A string title names the column, for the back button of the column after it.
   const t = typeof title === 'string' ? title : undefined;
   const setColumnTitle = parent?.setTitle;
@@ -595,7 +656,7 @@ export function SplitViewHeader({
 export type SplitViewContentProps = Omit<PartProps<'div'>, 'children'> & { children?: ReactNode };
 
 /** Scrolling body of a column. Draws the header's large title, if it has one, at the top of the scroll. */
-export function SplitViewContent({ children, className, ...props }: SplitViewContentProps) {
+export function SplitViewContent({ children, className, ref, ...props }: SplitViewContentProps) {
   const { handle } = useRoot('SplitViewContent');
   const pane = useContext(PaneCtx);
   const ownKey = useId();
@@ -603,8 +664,14 @@ export function SplitViewContent({ children, className, ...props }: SplitViewCon
   const add = pane?.addContent;
   useLayoutEffect(() => add?.(), [add]);
   const large = pane?.large;
+  // Its column's tab pressed again while it is at the tab's first page: back to the top.
+  const own = useRef<HTMLDivElement | null>(null);
+  const setRef = useMergedRef(own, ref);
+  const onReselect = useContext(StackParentContext)?.onReselect;
+  useLayoutEffect(() => onReselect?.(() => scrollToTop(own.current)), [onReselect]);
   return usePart(handle, 'content', { value: key }, {
     ...props,
+    ref: setRef,
     className: cx('bl-scroll relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain', className),
     children: (
       <>
@@ -676,7 +743,7 @@ export const splitViewItemVariants = cva(
   },
 );
 
-export interface SplitViewItemProps
+interface SplitViewItemBaseProps
   extends Omit<PartProps<'button', SplitViewItemState>, 'value' | 'title' | 'children'>,
     Pick<VariantProps<typeof splitViewItemVariants>, 'variant'> {
   /** The item's value in its column. Several items may share one (the same mailbox under Favorites and under its
@@ -685,9 +752,6 @@ export interface SplitViewItemProps
   title?: ReactNode;
   /** The secondary line under the title. */
   description?: ReactNode;
-  /** The leading glyph, in the tint: an `Icon` name (drawn at 21px; in a compact tab bar, the tab's 25px glyph that
-   *  thickens when selected) or any node. */
-  icon?: IconName | ReactNode;
   /** Trailing detail: a count, a time… */
   trailing?: ReactNode;
   /** Replaces the icon / title / description / trailing layout entirely. */
@@ -701,10 +765,23 @@ export interface SplitViewItemProps
   preview?: ReactNode;
   /** Can't be picked, and the arrow keys pass over it. */
   disabled?: boolean;
-  /** In a sidebar with `compactPresentation="tabs"`: this item is one of the compact tab bar's tabs (its `icon`
-   *  over its `title`). */
-  tab?: boolean;
 }
+
+export type SplitViewItemProps = SplitViewItemBaseProps & (
+  | {
+    /** In a sidebar with `compactPresentation="tabs"`: this item is one of the compact tab bar's tabs (its `icon`
+     *  over its `title`). A tab needs its `icon`. */
+    tab: true;
+    /** The leading glyph, in the tint: an `Icon` name (drawn at 21px; in a compact tab bar, the tab's 25px glyph
+     *  that thickens when selected) or any node. */
+    icon: IconName | ReactNode;
+  }
+  | {
+    tab?: false;
+    /** The leading glyph, in the tint: an `Icon` name (drawn at 21px) or any node. */
+    icon?: IconName | ReactNode;
+  }
+);
 
 /** A row bound to its column's value: pressing it selects `value` and shows the next column (a push while
  *  collapsed). `onClick` runs first; `event.preventDefault()` keeps it from selecting. */
@@ -718,6 +795,9 @@ export function SplitViewItem({
   const setRef = useMergedRef(own, ref);
   const group = useContext(TabGroupContext);
   useTabEntry(tab ? { kind: 'tab', value, title, icon, disabled, el: () => own.current } : group != null ? { kind: 'member', value, group } : null);
+  // A sidebar showing a tab group's rows hides every other row (the other tabs are in the bar).
+  const page = useContext(TabPageContext);
+  const off = page != null && group !== page.group;
   const v = variant ?? (column === 'sidebar' ? 'pill' : 'row');
   const current = !s.state.collapsed && s.state.value[column] === value;
   const pushes = s.state.collapsed && s.state.columns.indexOf(column) < s.state.columns.length - 1;
@@ -732,6 +812,7 @@ export function SplitViewItem({
   const ink = (rest: string, onTint: string, onPrimary: string) => (on ? (tinted ? onTint : onPrimary) : rest);
   const part: PartProps<'button', SplitViewItemState> = {
     ...props,
+    ...(off ? { hidden: true } : null),
     ref: setRef,
     ...({ 'data-tinted': tinted || undefined } as object),
     className: cx(splitViewItemVariants({ variant: v, current, tinted }), className),
@@ -775,7 +856,7 @@ const SECTION_LABEL = {
   prominent: 'm-0 min-w-0 px-1 pt-6 pb-2 text-title font-bold tracking-[-.2px] text-foreground',
 };
 
-export interface SplitViewSectionProps extends Omit<ComponentProps<'div'>, 'title'> {
+interface SplitViewSectionBaseProps extends Omit<ComponentProps<'div'>, 'title'> {
   /** Section label ("Favorites", "iCloud"). Names the group. */
   title?: ReactNode;
   /** `default`, the small grey group label; `prominent`, the bold heading over a list group. */
@@ -788,15 +869,22 @@ export interface SplitViewSectionProps extends Omit<ComponentProps<'div'>, 'titl
   /** Default true. */
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean, details: ChangeDetails) => void;
-  /** In a sidebar with `compactPresentation="tabs"`: the whole section is one tab of the compact tab bar (UIKit's tab
-   *  group, Music's Library), named by its `title`, with this `icon`. Picking it selects `value`; while any item in
-   *  the section is the selection, it is the current tab. */
-  tab?: boolean;
-  /** The section's tab: the value it selects. */
-  value?: string;
-  /** The section's tab: its glyph, an `Icon` name or a node. */
-  icon?: IconName | ReactNode;
 }
+
+export type SplitViewSectionProps = SplitViewSectionBaseProps & (
+  | {
+    /** In a sidebar with `compactPresentation="tabs"`: the whole section is one tab of the compact tab bar (UIKit's
+     *  tab group, Music's Library), named by its `title`, with this `icon`. Picking it selects `value` and shows the
+     *  sidebar with only this section's rows (the header takes its title), which push as in the stack; while any
+     *  item in the section is the selection, it is the current tab. A section nested inside belongs to the group. */
+    tab: true;
+    /** The section's tab: the value it selects. */
+    value: string;
+    /** The section's tab: its glyph, an `Icon` name or a node. */
+    icon: IconName | ReactNode;
+  }
+  | { tab?: false; value?: never; icon?: never }
+);
 /** A titled group of SplitViewItems in a column (`role="group"`, named by its label). A value may appear in more
  *  than one section; each copy draws current. */
 export function SplitViewSection({
@@ -805,13 +893,24 @@ export function SplitViewSection({
   const uid = useId();
   const own = useRef<HTMLDivElement | null>(null);
   const setRef = useMergedRef(own, ref);
-  const group = tab && value != null ? value : null;
-  useTabEntry(group != null ? { kind: 'tab', value: group, title, icon, el: () => own.current } : null);
+  // A section inside a tab group belongs to it.
+  const outer = useContext(TabGroupContext);
+  const group = tab ? value : outer;
+  useTabEntry(tab ? { kind: 'tab', value, title, icon, group: true, el: () => own.current } : null);
+  // A sidebar showing a tab group's rows: the group's own label is the column's title, other sections hide.
+  const page = useContext(TabPageContext);
+  const off = page != null && group !== page.group;
+  const root = page != null && tab && value === page.group;
   const labelCls = cn(SECTION_LABEL[variant], labelClassName);
   const items = <div className="flex flex-col gap-px"><TabGroupContext.Provider value={group}>{children}</TabGroupContext.Provider></div>;
   return (
-    <div ref={setRef} data-slot="split-view-section" role="group" aria-labelledby={title != null ? uid : undefined} {...props}>
-      {collapsible && title != null ? (
+    <div ref={setRef} data-slot="split-view-section" role="group" aria-labelledby={title != null ? uid : undefined} hidden={off || undefined} {...props}>
+      {root ? (
+        <>
+          {title != null ? <div id={uid} hidden>{title}</div> : null}
+          {items}
+        </>
+      ) : collapsible && title != null ? (
         <SdkCollapsible open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
           <SdkCollapsibleTrigger id={uid}
             className={cn('bl-btn group/section flex w-full cursor-pointer items-center border-0 bg-transparent text-start [font-family:inherit] outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-ring', labelCls)}>

@@ -10,7 +10,7 @@ import { Pad } from '../stories/frame';
 const meta: Meta<typeof Swap> = {
   title: 'Atoms/Swap',
   component: Swap,
-  decorators: [(Story, { parameters }) => <Pad w={400} dark={!!parameters.dark}><Story /></Pad>],
+  decorators: [(Story, { parameters }) => <Pad w={400} appearance={parameters.dark ? 'dark' : 'light'}><Story /></Pad>],
 };
 export default meta;
 type Story = StoryObj<typeof Swap>;

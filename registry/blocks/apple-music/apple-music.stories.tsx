@@ -48,13 +48,15 @@ export const Tablet: Story = { render: (args) => <Frame width={834} height={800}
 
 export const Phone: Story = { render: (args) => <Frame width={390} height={844}><AppleMusic {...args} /></Frame> };
 
+/** The Library tab's first page: the sidebar's Library section (its playlists included) under a large title. */
 export const PhoneDark: Story = {
   args: { initialSection: 'library' },
   render: (args) => dark(<Frame width={390} height={844}><AppleMusic {...args} /></Frame>),
 };
 
+/** An album pushed from Albums under the Library tab: "‹ Albums", then "‹ Library" back to the Library rows. */
 export const PhoneAlbum: Story = {
-  args: { initialSection: 'library', initialAlbum: 'copperline' },
+  args: { initialSection: 'albums', initialAlbum: 'copperline' },
   render: (args) => <Frame width={390} height={844}><AppleMusic {...args} /></Frame>,
 };
 

@@ -6,7 +6,7 @@ import type { TerminalHandle } from '@/components/ui/terminal';
 import type { OpenCodeHostBridge } from '@/lib/open-code-host';
 import {
   createWorkspaceController, workspaceTabsets,
-  type TabNode, type WorkspaceController, type WorkspaceLayout, type WorkspaceLayoutCommitDetails, type WorkspaceLayoutInput, type WorkspaceNode,
+  type WorkspaceTabNode, type WorkspaceController, type WorkspaceLayout, type WorkspaceLayoutCommitDetails, type WorkspaceLayoutInput, type WorkspaceNode,
 } from '@/components/ui/workspace';
 import { ancestors, basename, buildTree, dirname, isSearchable, isValidName, resolvePath } from './files';
 import type { FileContent, RuntimeEntryKind, RuntimeFileEvent, RuntimeScriptList, RuntimeStatus, RuntimeTerminal, Unsubscribe, VSCodeRuntime } from './runtime';
@@ -394,7 +394,7 @@ export class VSCodeStore {
     if (this.listed && !this.fileTabs.size) this.openInitialFile();
   }
 
-  private fileTab(path: string): TabNode<TabData> {
+  private fileTab(path: string): WorkspaceTabNode<TabData> {
     let id = this.fileTabs.get(path);
     if (!id) {
       id = `file-${this.nextFileTab}`;
@@ -404,7 +404,7 @@ export class VSCodeStore {
     return { id, title: basename(path), data: { kind: 'file', path } };
   }
 
-  private terminalTab(terminal: TerminalRecord): TabNode<TabData> {
+  private terminalTab(terminal: TerminalRecord): WorkspaceTabNode<TabData> {
     return { id: terminal.id, title: terminal.title, data: { kind: 'terminal', id: terminal.id } };
   }
 
@@ -480,7 +480,7 @@ export class VSCodeStore {
     }
     if (details.action === 'select') {
       const tabsets = workspaceTabsets(layout);
-      const active = tabsets.find((t) => t.id === this.ws?.getActiveTabsetId());
+      const active = tabsets.find((t) => t.id === this.ws?.getCurrentTabsetId());
       const selected = active?.tabs.find((tab) => tab.id === active.selectedId);
       if (selected?.data.kind === 'file') {
         this.activePath = selected.data.path;
@@ -498,7 +498,7 @@ export class VSCodeStore {
     if (!layout) return;
     const tabset = workspaceTabsets(layout).find((t) => t.id === tabsetId);
     const selected = tabset?.selectedId;
-    if (tabset && selected && tabset.tabs.length > 1) this.ws?.moveTab(selected, { tabsetId, region: 'right' });
+    if (tabset && selected && tabset.tabs.length > 1) this.ws?.moveTab(selected, { tabsetId, region: 'end' });
   }
 
   /* ── Editors ── */

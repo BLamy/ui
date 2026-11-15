@@ -102,11 +102,11 @@ Focus is on a cell, as in [APG's grid](https://www.w3.org/WAI/ARIA/apg/patterns/
 | `Tab` | Go through the cell's own controls, then out of the table. |
 | `Esc` | From a control, back to its cell. On the headers, back to the rows. |
 
-`focus="row"` keeps focus on whole rows instead, for a table whose rows are things more than values (RequestTable does this): `↑` `↓` `Home` `End` move rows, `←` `→` scroll sideways, and `Tab` goes through the row's controls. Stacked rows always work this way.
+`navigation="row"` keeps focus on whole rows instead, for a table whose rows are things more than values (RequestTable does this): `↑` `↓` `Home` `End` move rows, `←` `→` scroll sideways, and `Tab` goes through the row's controls. Stacked rows always work this way.
 
 ## Accessibility
 
-It's an ARIA grid with one tab stop, built on [UI SDK](https://ui-sdk.dev)'s virtualizer, grid focus and resize: focus is on the active cell (or row, with `focus="row"`) or header itself, and the active row stays rendered while it has focus, so it can't be lost when the rows around it scroll out and unmount. A key that moves to a row that isn't rendered yet scrolls it in first. `aria-rowcount` gives the full length, each row has `aria-rowindex`, and a sortable column has `aria-sort`. The stacked sort menu is a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu), and a column's edge is a `separator` you can drag with a mouse or a finger, or move with `←` `→` once it has focus. A press on a row is the row's own click, so touch, mouse and a screen reader's click all reach it, and a cell focused by a press or a screen reader's cursor becomes the active one. A column header's name is its header text alone. While `loading`, the grid is `aria-busy` and the placeholder rows are hidden from screen readers. Name the table with `aria-label` (default "Rows").
+It's an ARIA grid with one tab stop, built on [UI SDK](https://ui-sdk.dev)'s virtualizer, grid focus and resize: focus is on the active cell (or row, with `navigation="row"`) or header itself, and the active row stays rendered while it has focus, so it can't be lost when the rows around it scroll out and unmount. A key that moves to a row that isn't rendered yet scrolls it in first. `aria-rowcount` gives the full length, each row has `aria-rowindex`, and a sortable column has `aria-sort`. The stacked sort menu is a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu), and a column's edge is a `separator` you can drag with a mouse or a finger, or move with `←` `→` once it has focus. A press on a row is the row's own click, so touch, mouse and a screen reader's click all reach it, and a cell focused by a press or a screen reader's cursor becomes the active one. A column header's name is its header text alone. While `loading`, the grid is `aria-busy` and the placeholder rows are hidden from screen readers. Name the table with `aria-label` (default "Rows").
 
 ## Props
 
@@ -117,14 +117,14 @@ It's an ARIA grid with one tab stop, built on [UI SDK](https://ui-sdk.dev)'s vir
 | `rows` | required | The rows, each with an `id`. Keep the array stable between renders when nothing changed. |
 | `columns` | required | The columns, in order. Keep it stable. |
 | `mode` | `single` | `single` or `none`. |
-| `focus` | `cell` | `cell`: the arrows move between cells. `row`: between whole rows. |
+| `navigation` | `cell` | `cell`: the arrows move between cells. `row`: between whole rows. |
 | `loading` | `false` | The rows aren't here yet: placeholder rows while there are none, and `aria-busy`. |
 | `value` / `defaultValue` / `onValueChange` | none | The selected row's id, or `null`. `details.reason` is `item-press` or `imperative`. |
 | `onAction` | none | `(id, details)`: a press, or Enter or Space on the active row, with `details.row` and `details.index`. |
 | `sort` / `defaultSort` / `onSortChange` | none | `{ column, direction }`, or `null` for the rows' own order. |
 | `columnWidths` / `defaultColumnWidths` / `onColumnWidthsChange` | their own sizes | Widths set so far, by column id. |
 | `density` | `default` | `compact` (26 px rows, caption text), `default` (30 px) or `comfortable` (34 px, for touch). |
-| `layout` | `auto` | `auto`, `table` or `stacked`. |
+| `presentation` | `auto` | `auto`, `table` or `stacked`. |
 | `breakpoints` | `{ medium: 480, regular: 760 }` | Where the table's own size classes start, in px. |
 | `renderStackedRow` / `countLabel` | first column over the rest / "12 rows" | The stacked layout's row and header. |
 | `rowProps` | none | `data-*` attributes for a row, from its data. |
@@ -162,7 +162,7 @@ It's an ARIA grid with one tab stop, built on [UI SDK](https://ui-sdk.dev)'s vir
 
 ## Styling
 
-The root is `data-slot="data-table"`, with `data-layout` (`table` or `stacked`), `data-density` and `data-size-class`; inside it `data-table-toolbar`, then `data-table-grid` (with `data-current-time` while the current time is on the range, and `aria-busy` while loading), `data-table-loading`, `data-table-overlay`, `data-table-head` around `data-table-header`, `data-table-rows`, `data-table-empty` and `data-table-footer`. A header is `data-table-column`, with `data-active`, and `data-table-resizer` (`data-dragging` while it drags); the stacked header has `data-table-heading`s. A row is `data-table-row`, with `data-selected`, `data-active`, `data-future` and whatever `rowProps` adds, and its cells are `data-table-cell` with `data-column` (and `data-active` on the active one). Rows take the kit's data-row layers (`dataRowLayers`: hover, press, selection and the hairline under each row), the header cells `tableHeaderCellClass` and the edges `columnResizerClass`, which [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet) shares.
+The root is `data-slot="data-table"`, with `data-presentation` (`table` or `stacked`), `data-density` and `data-size-class`; inside it `data-table-toolbar`, then `data-table-grid` (with `data-current-time` while the current time is on the range, and `aria-busy` while loading), `data-table-loading`, `data-table-overlay`, `data-table-head` around `data-table-header`, `data-table-rows`, `data-table-empty` and `data-table-footer`. A header is `data-table-column`, with `data-active`, and `data-table-resizer` (`data-dragging` while it drags); the stacked header has `data-table-heading`s. A row is `data-table-row`, with `data-selected`, `data-active`, `data-future` and whatever `rowProps` adds, and its cells are `data-table-cell` with `data-column` (and `data-active` on the active one). Rows take the kit's data-row layers (`dataRowLayers`: hover, press, selection and the hairline under each row), the header cells `tableHeaderCellClass` and the edges `columnResizerClass`, which [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet) shares.
 
 ## cva recipes
 

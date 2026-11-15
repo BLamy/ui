@@ -3,6 +3,7 @@
    appear, the timeline), the scenes' appearance, undo and redo, the library (⇧⌘L), zoom and the inspector toggle. */
 import { useRef, useState, type ReactNode } from 'react';
 import { useShortcut } from '@ui-sdk/react/shortcuts';
+import { AdaptivePaneTrigger, type AdaptivePaneController } from '@/components/ui/adaptive-pane';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
@@ -20,7 +21,7 @@ import { useBuilder } from './store';
 export const toolButtonClass = (active?: boolean, className?: string) => cn(
   'grid h-8 min-w-8 shrink-0 cursor-pointer place-items-center rounded-lg border-0 px-1.5 text-muted-foreground outline-none',
   'hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-disabled:cursor-default data-disabled:opacity-35',
-  'data-pressed:bg-secondary data-pressed:text-primary',
+  'data-pressed:bg-secondary data-pressed:text-primary data-open:bg-secondary data-open:text-primary',
   active && 'bg-secondary text-primary',
   className,
 );
@@ -44,11 +45,19 @@ export function ToolToggle({ icon, label, pressed, onPressedChange }: { icon: st
   );
 }
 
+/** A toolbar button that shows and hides a pane: an AdaptivePaneTrigger, so it says whether the pane shows and which
+    element it controls (`aria-expanded`, `aria-controls`). */
+export function PaneToggle({ icon, label, controller }: { icon: string; label: string; controller: AdaptivePaneController }) {
+  return (
+    <AdaptivePaneTrigger controller={controller} aria-label={label} title={label} className={toolButtonClass()}>
+      <Icon name={icon} size={18} sw={1.9} />
+    </AdaptivePaneTrigger>
+  );
+}
+
 export interface ToolbarProps {
-  navOpen: boolean;
-  onToggleNav: () => void;
-  inspectorOpen: boolean;
-  onToggleInspector: () => void;
+  navPane: AdaptivePaneController;
+  inspectorPane: AdaptivePaneController;
   running: boolean;
   onRun: (event: Event) => void;
   onStop: (event: Event) => void;
@@ -79,7 +88,7 @@ export function Toolbar(p: ToolbarProps) {
   const device = DEVICES[b.doc.device];
   return (
     <header ref={bar} data-slot="ib-toolbar" className="flex h-toolbar shrink-0 items-center gap-1 border-b border-border bg-card px-2">
-      <ToolToggle icon="sidebar-left" label="Navigator" pressed={p.navOpen} onPressedChange={p.onToggleNav} />
+      <PaneToggle icon="sidebar-left" label="Navigator" controller={p.navPane} />
       {/* One button that runs and stops, so focus comes back to it when the preview closes. */}
       <SdkButton
         aria-label={p.running ? 'Stop' : 'Run'}
@@ -154,7 +163,7 @@ export function Toolbar(p: ToolbarProps) {
           <DropdownMenuItem value="actual" shortcut="mod+1">Actual Size</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ToolToggle icon="sidebar-right" label="Inspector" pressed={p.inspectorOpen} onPressedChange={p.onToggleInspector} />
+      <PaneToggle icon="sidebar-right" label="Inspector" controller={p.inspectorPane} />
     </header>
   );
 }

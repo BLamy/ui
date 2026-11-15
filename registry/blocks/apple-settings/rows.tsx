@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { TextMorph } from '@/components/ui/text-morph';
 import { Collapsible, CollapsiblePanel } from '@ui-sdk/react/collapsible';
 import { Radio } from '@ui-sdk/react/radio';
-import { IC, Icon, type IconProps } from '@/lib/icon';
+import { Icon, isIconName, type IconProps } from '@/lib/icon';
 import { type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { LOGINS, MARKS, SEARCH, getPane, iconFor, notifSummary, pathTo, type Glyph, type Pane, type Row, type Section, type Values } from './data';
@@ -80,7 +80,7 @@ function Shell({ last, preview, ...p }: ShellProps) {
   return preview ? (
     <HoverCard>
       <HoverCardTrigger render={<div className={cn('relative flex w-full', macSep)} />}>{row}</HoverCardTrigger>
-      <HoverCardContent side="right" align="start">{preview}</HoverCardContent>
+      <HoverCardContent side="end" align="start">{preview}</HoverCardContent>
     </HoverCard>
   ) : row;
 }
@@ -192,7 +192,7 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
 /* ── Controls that fill a row ── */
 function SliderRow({ row }: { row: Extract<Row, { t: 'slider' }> }) {
   const s = useSettings();
-  const end = (e: string, big: boolean) => IC[e]
+  const end = (e: string, big: boolean) => isIconName(e)
     ? <Icon name={e} size={big ? 24 : 18} className="text-muted-foreground" />
     : <span className={cn('w-5 text-center text-muted-foreground', big ? 'text-[22px]' : 'text-footnote')}>{e}</span>;
   return (

@@ -177,13 +177,14 @@ type MenuSize = 'sm' | 'default';
 const SizeContext = createContext<MenuSize>('default');
 
 /** The floating surface of a menu. As a sheet it is shaped like the kit's bottom Sheet, grabber included. */
-export const dropdownMenuContentVariants = cva([popoverSurface, popoverMotion, popoverSheet, 'bl-scroll box-border overflow-y-auto py-1'], {
+export const dropdownMenuContentVariants = cva([popoverSurface, popoverMotion, popoverSheet, 'bl-scroll box-border overflow-y-auto'], {
   variants: {
     size: {
-      /** The iOS pull-down menu: 44px rows of body text, at least 230px wide. */
+      /** The iOS pull-down menu: 44px full-bleed rows of body text, at least 230px wide; the end rows' highlight
+          reaches the card's corners. */
       default: 'min-w-[230px]',
-      /** The dense desktop menu: 32px rounded rows of footnote text, at least 190px wide (a composer's option pills). */
-      sm: 'min-w-[190px] px-1',
+      /** The dense desktop menu: 32px rounded rows of footnote text, inset 4px, at least 190px wide (a composer's option pills). */
+      sm: 'min-w-[190px] p-1',
     },
   },
   defaultVariants: { size: 'default' },
@@ -234,7 +235,8 @@ export function DropdownMenuContent({
 
 export const dropdownMenuItemVariants = cva(
   [
-    'bl-btn relative box-border flex cursor-pointer items-center text-foreground outline-none',
+    // A row rendered as a link (`render={<a href/>}`) looks like every other row: no underline.
+    'bl-btn relative box-border flex cursor-pointer items-center text-foreground no-underline outline-none',
     'data-highlighted:bg-accent data-highlighted:not-data-disabled:active:bg-secondary-strong data-open:bg-accent data-disabled:cursor-default data-disabled:opacity-40 data-destructive:text-destructive data-pending:cursor-progress',
   ],
   {

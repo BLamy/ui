@@ -22,6 +22,8 @@ import {
 } from './data';
 import { EnvBadge, KindLabel, RunStatusBadge, SEVERITY_COLOR, STATUS_DOT, SeverityBadge, StatusBadge } from './parts';
 import { useLoopQA } from './state';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Icon } from '@/lib/icon';
 
 export function Commands() {
   const qa = useLoopQA();
@@ -236,7 +238,7 @@ function BugPreview({ wide }: { wide: boolean }) {
                 <dt className="text-muted-foreground">Journey</dt><dd className="m-0 truncate">{b.journey}</dd>
               </dl>
             </div>
-          ) : <div className="grid h-full place-items-center text-footnote text-tertiary-foreground">No bug selected</div>}
+          ) : <EmptyState icon={<Icon name="warning" />} title="No bug selected" description="Pick a bug in the list to see what was found." />}
         </Swap>
       </div>
     </aside>

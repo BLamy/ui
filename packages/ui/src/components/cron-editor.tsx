@@ -9,6 +9,7 @@ import { Toggle, ToggleGroup } from '@/components/ui/toggle';
 import { CRON_FIELDS, cronProblems, describeCron, isValidTimeZone, localTimeZone, nextCronRuns, validateCron } from '@/lib/cron';
 import { describeCronError, useCronParse } from '@/lib/gpu-cron';
 import { OccurrenceList, ZoneNote, previewPanelVariants, previewSubtle } from '@/lib/schedule-preview';
+import { changeDetails } from '@/lib/change-details';
 import { cn } from '@/lib/utils';
 
 /* ══ CronEditor — edit a 5-field cron expression with its meaning in view.
@@ -244,7 +245,7 @@ export function CronEditor({
             value={presets.some((p) => p.value === expression.trim()) ? [expression.trim()] : []}
             onValueChange={(next, details) => { if (next[0] !== undefined) set(next[0], details); }}>
             {presets.map((p) => (
-              <Toggle key={p.value} value={p.value} variant="filled" size="sm" className="data-pressed:text-foreground">
+              <Toggle key={p.value} value={p.value} variant="secondary" size="sm" className="data-pressed:text-foreground">
                 {p.label}
               </Toggle>
             ))}
@@ -257,8 +258,10 @@ export function CronEditor({
   return (
     <div data-slot="cron-editor" className={cn('flex min-w-0 flex-col gap-3 text-footnote', className)} {...rest}>
       {name !== undefined ? <input type="hidden" name={name} value={expression} disabled={disabled} /> : null}
-      {naturalLanguage && support !== false ? (
-        <NaturalLanguage label={naturalLanguageLabel} current={expression} onUse={set} onSupport={setSupport} onPending={setAnswering} debounceMs={parse?.debounceMs} disabled={disabled} />
+      {/* The same condition as the layout: disabled, the raw editor alone shows the expression. The support check
+          runs again once it is enabled. */}
+      {plainEnglish ? (
+        <NaturalLanguage label={naturalLanguageLabel} current={expression} onUse={set} onSupport={setSupport} onPending={setAnswering} debounceMs={parse?.debounceMs} />
       ) : null}
 
       {plainEnglish ? (
@@ -312,28 +315,15 @@ interface NaturalLanguageProps {
   /** Reports whether a newer answer is pending. */
   onPending: (pending: boolean) => void;
   debounceMs?: number;
-  disabled?: boolean;
-}
-
-/** The details of a change the plain-English box's answer makes: an `input-change`, from the typing it answers. */
-function answerDetails({ event, source }: { event?: Event; source: ChangeSource }): CronEditorChangeDetails {
-  let canceled = false;
-  return {
-    reason: 'input-change',
-    event,
-    source,
-    cancel: () => { canceled = true; },
-    get canceled() { return canceled; },
-  };
 }
 
 /** The plain-English box: each answer gpu-cron gives for the text becomes the value. Rendered only while gpu-cron may
     run; where it cannot, the raw field's description says why. */
-function NaturalLanguage({ label, current, onUse, onSupport, onPending, debounceMs = 0, disabled }: NaturalLanguageProps) {
+function NaturalLanguage({ label, current, onUse, onSupport, onPending, debounceMs = 0 }: NaturalLanguageProps) {
   const [text, setText] = useState('');
   // How the text being answered was typed: an answer reports it as its own change.
   const typed = useRef<{ event?: Event; source: ChangeSource }>({ source: 'keyboard' });
-  const { result, error, supported, parsedText, pending } = useCronParse(text, { debounceMs, enabled: !disabled });
+  const { result, error, supported, parsedText, pending } = useCronParse(text, { debounceMs });
   useEffect(() => onPending(pending), [pending, onPending]);
   useEffect(() => () => onPending(false), [onPending]);
   const answer = result && parsedText === text ? result.expression : null;
@@ -341,16 +331,16 @@ function NaturalLanguage({ label, current, onUse, onSupport, onPending, debounce
   useEffect(() => onSupport(supported), [supported, onSupport]);
   // The newest answer is the value (only answers to what the box says now, so a slow one never lands late).
   useEffect(() => {
-    if (answer !== null && answer !== current.trim()) onUse(answer, answerDetails(typed.current));
+    if (answer !== null && answer !== current.trim()) onUse(answer, changeDetails<CronEditorChangeReason>({ reason: 'input-change', ...typed.current }));
   }, [answer]);
 
   if (supported === false) return null;
 
   return (
     <div data-slot="cron-editor-natural" data-supported={supported ?? undefined} className="flex flex-col gap-2">
-      <Field disabled={disabled || supported === null} invalid={error !== null ? true : undefined}>
+      <Field disabled={supported === null} invalid={error !== null ? true : undefined}>
         <FieldLabel>{label}</FieldLabel>
-        <Input value={text} onValueChange={(next, d) => { typed.current = { event: d.event, source: d.source }; setText(next); }} placeholder={supported === null && !disabled ? 'Checking for WebGPU…' : 'e.g. every weekday at 9am'} autoComplete="off" spellCheck={false} />
+        <Input value={text} onValueChange={(next, d) => { typed.current = { event: d.event, source: d.source }; setText(next); }} placeholder={supported === null ? 'Checking for WebGPU…' : 'e.g. every weekday at 9am'} autoComplete="off" spellCheck={false} />
         <FieldError>{error ? describeCronError(error) : undefined}</FieldError>
       </Field>
     </div>

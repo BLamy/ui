@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { createRef } from 'react';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -190,6 +191,22 @@ describe('Listbox parts', () => {
 });
 
 describe('Listbox emptyState', () => {
+  it('keeps the list\'s name, id, ref, style, data attributes and a function className while it is empty', () => {
+    const ref = createRef<HTMLDivElement>();
+    const { container } = render(
+      <Listbox ref={ref} id="files" aria-label="Files" items={[]} style={{ maxHeight: 200 }} data-testid="files" className={() => 'custom'} />,
+    );
+    const empty = container.querySelector<HTMLElement>('[data-slot=listbox-empty]')!;
+    expect(empty.getAttribute('role')).toBe('group');
+    expect(empty.getAttribute('aria-label')).toBe('Files');
+    expect(empty.id).toBe('files');
+    expect(ref.current).toBe(empty);
+    expect(empty.style.maxHeight).toBe('200px');
+    expect(empty.dataset.testid).toBe('files');
+    expect(empty.classList.contains('custom')).toBe(true);
+    expect(empty.hasAttribute('items')).toBe(false);
+  });
+
   it('shows the default empty state as a status when there are no options, and the list once there are', async () => {
     const { rerender } = render(<Listbox aria-label="Files" items={[]} />);
     expect(screen.queryByRole('listbox')).toBeNull();

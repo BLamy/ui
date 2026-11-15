@@ -1,8 +1,7 @@
 import { useRef, useState } from 'react';
-import { DialogContent } from '@ui-sdk/react/dialog';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Morph, MorphGroup, MorphPresence } from '@/components/ui/morph';
 import { NowPlayingBars } from '@/components/ui/now-playing-bars';
 import { Slider } from '@/components/ui/slider';
@@ -28,7 +27,7 @@ function Player({ initial = false, dark }: { initial?: boolean; dark?: boolean }
   const bar = useRef<HTMLElement>(null);
   const transport = 'text-white hover:not-data-disabled:bg-white/15 hover:not-data-disabled:text-white';
   return (
-    <Phone w={390} h={700} dark={dark}>
+    <Phone w={390} h={700} appearance={dark ? 'dark' : 'light'}>
       <div className="absolute inset-0 overflow-hidden [contain:layout]" data-layer-host="">
         <div className="absolute inset-0 bg-background p-5 text-foreground">
           <div className="text-[30px] font-bold tracking-[-.4px]">Listen Now</div>
@@ -52,6 +51,7 @@ function Player({ initial = false, dark }: { initial?: boolean; dark?: boolean }
           </MorphPresence>
           <Dialog open={open} onOpenChange={setOpen} presentation="dialog">
             <DialogContent
+              variant="plain"
               render={<Morph layoutId="player" radius={0} dragToDismiss onDismiss={() => setOpen(false)} />}
               finalFocus={() => bar.current}
               className="absolute inset-0 z-10 flex flex-col overflow-hidden px-7 pt-3 pb-8 text-white outline-none"
@@ -94,30 +94,48 @@ export const Expanded: Story = { render: () => <Player initial /> };
 
 export const Dark: Story = { render: () => <Player dark /> };
 
+/* The same composition as the player: the open card is a Dialog's content rendered as a Morph, so it is named,
+   takes focus, closes on Escape, keeps the other cards out of the tab order, and hands focus back to its cell. */
 function Cards() {
   const [sel, setSel] = useState<number | null>(null);
+  const [shown, setShown] = useState(0);
+  const cells = useRef<(HTMLElement | null)[]>([]);
   const colors = ['#FF9F0A', '#30D158', '#0A84FF', '#BF5AF2'];
+  const open = (i: number) => { setShown(i); setSel(i); };
   return (
     <Phone w={390} h={520}>
-      <MorphGroup spring="tray">
-        <div className="absolute inset-0 grid grid-cols-2 content-start gap-3 bg-background p-5">
-          {colors.map((c, i) => (sel === i ? <div key={i} className="aspect-square" /> : (
-            <Morph key={i} layoutId={`card-${i}`} radius={18} render={<button type="button" />} onClick={() => setSel(i)} aria-label={`Open card ${i + 1}`}
-              className="bl-btn aspect-square cursor-pointer border-0" style={{ background: c }} />
-          )))}
-        </div>
-        {sel != null ? (
-          <Morph layoutId={`card-${sel}`} radius={28} dragToDismiss onDismiss={() => setSel(null)}
-            className="absolute inset-x-4 top-16 bottom-16 z-10 flex items-end p-6 text-[24px] font-bold text-white" style={{ background: colors[sel] }}>
-            <button type="button" onClick={() => setSel(null)} className="bl-btn cursor-pointer border-0 bg-white/25 px-4 py-2 text-[15px] font-semibold text-white" style={{ borderRadius: 99 }}>
-              Close
-            </button>
-          </Morph>
-        ) : null}
-      </MorphGroup>
+      <div className="absolute inset-0 overflow-hidden [contain:layout]" data-layer-host="">
+        <MorphGroup spring="tray">
+          <div className="absolute inset-0 grid grid-cols-2 content-start gap-3 bg-background p-5">
+            {colors.map((c, i) => (
+              <div key={i} className="aspect-square">
+                <MorphPresence>
+                  {sel === i ? null : (
+                    <Morph key="cell" ref={(el: HTMLElement | null) => { cells.current[i] = el; }} layoutId={`card-${i}`} radius={18}
+                      render={<button type="button" />} onClick={() => open(i)} aria-label={`Open card ${i + 1}`}
+                      className="bl-btn size-full cursor-pointer border-0" style={{ background: c }} />
+                  )}
+                </MorphPresence>
+              </div>
+            ))}
+          </div>
+          <Dialog open={sel != null} onOpenChange={(o) => { if (!o) setSel(null); }} presentation="dialog">
+            <DialogContent
+              variant="plain"
+              render={<Morph layoutId={`card-${shown}`} radius={28} dragToDismiss onDismiss={() => setSel(null)} />}
+              finalFocus={() => cells.current[shown]}
+              className="absolute inset-x-4 top-16 bottom-16 z-10 flex flex-col justify-between p-6 text-white"
+              style={{ background: colors[shown] }}
+            >
+              <DialogTitle className="text-[24px] font-bold text-white">Card {shown + 1}</DialogTitle>
+              <DialogClose render={<Button variant="secondary" className="self-start rounded-full bg-white/25 text-white hover:bg-white/35" />}>Close</DialogClose>
+            </DialogContent>
+          </Dialog>
+        </MorphGroup>
+      </div>
     </Phone>
   );
 }
 
-/** A grid of cards; each opens into a sheet and closes back into its cell. */
+/** A grid of cards; each opens into a modal card (a Dialog) and closes back into its cell, focus included. */
 export const CardToSheet: Story = { render: () => <Cards /> };

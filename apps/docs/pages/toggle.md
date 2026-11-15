@@ -42,7 +42,7 @@ import {
 | `variant` | At rest | On |
 | --- | --- | --- |
 | `default` | transparent | tinted (`bg-primary/15`, primary text), like an iOS toolbar toggle |
-| `filled` | a secondary fill, for a toggle standing alone on a card | tinted |
+| `secondary` | Button's `secondary` fill, for a toggle standing alone on a card | tinted |
 | `outline` | a hairline frame | tinted, the frame gone |
 | `quiet` | muted text, a fill on hover: Button's `quiet` | a grey fill: the toolbar tool that is switched on |
 
@@ -54,7 +54,7 @@ import {
 <Toggle variant="quiet" size="icon-sm" aria-label="Bookmark" pressed={saved} onPressedChange={setSaved}>
   <Icon name="bookmark" size={18} sw={1.7} />
 </Toggle>
-<Toggle variant="filled">
+<Toggle variant="secondary">
   <ToggleIcon><Icon name="bell" size={16} /></ToggleIcon>
   Mute
 </Toggle>
@@ -82,7 +82,7 @@ A row of toggles on UI SDK's `ToggleGroup`: one tab stop, arrow keys between the
 </ToggleGroup>
 ```
 
-The group's `variant` is a Toggle variant (`default`, `filled`, `quiet`: each item is that toggle, a little apart from the next) or one of two group looks. `segmented` is [Segmented](https://blamy.github.io/ui/#/segmented)'s track, spelled as on [Tabs](https://blamy.github.io/ui/#/tabs): in a single group one card slides between the items, in a `multiple` group each pressed item wears the card. `outline` joins the items in one hairline frame. The pressed items show in every look. `orientation="vertical"` stacks the items in every look too, and an `outline` group then joins them top to bottom. `details.reason` is `item-press` or `imperative` (a write from a controller made with `createToggleGroupController()` and passed as `controller`); `details.cancel()` keeps the current value.
+The group's `variant` is a Toggle variant (`default`, `secondary`, `quiet`: each item is that toggle, a little apart from the next) or one of two group looks. `segmented` is [Segmented](https://blamy.github.io/ui/#/segmented)'s track, spelled as on [Tabs](https://blamy.github.io/ui/#/tabs): in a single group one card slides between the items, in a `multiple` group each pressed item wears the card. `outline` joins the items in one hairline frame. The pressed items show in every look. `orientation="vertical"` stacks the items in every look too, and an `outline` group then joins them top to bottom. `details.reason` is `item-press` or `imperative` (a write from a controller made with `createToggleGroupController()` and passed as `controller`); `details.cancel()` keeps the current value.
 
 ## Accessibility
 
@@ -98,7 +98,7 @@ Every UI SDK `Toggle` prop applies (`pressed`, `defaultPressed`, `onPressedChang
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `default` | `default` · `filled` · `outline` · `quiet`. |
+| `variant` | `default` | `default` · `secondary` · `outline` · `quiet`. |
 | `size` | `default` | `sm` · `default` · `lg` · `icon-sm` · `icon` · `icon-lg`. |
 
 ### ToggleGroup
@@ -107,7 +107,7 @@ Every UI SDK `ToggleGroup` prop applies, plus:
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `default` | `default` (a gap, tinted when on) · `filled` (a gap, filled toggles) · `quiet` (a gap, the quiet look) · `segmented` (Segmented's tray, with a sliding card) · `outline` (joined in a hairline frame). |
+| `variant` | `default` | `default` (a gap, tinted when on) · `secondary` (a gap, filled toggles) · `quiet` (a gap, the quiet look) · `segmented` (Segmented's tray, with a sliding card) · `outline` (joined in a hairline frame). |
 | `size` | `default` | Any Toggle size; passed to every item. |
 | `multiple` | `false` | Let several items stay pressed. |
 | `value` / `defaultValue` / `onValueChange` | — | The pressed items' values, as an array. |
@@ -140,7 +140,7 @@ Defined in `@/components/ui/toggle`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `[ 'bg-transparent text-foreground hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong', 'data-pressed:bg-primary…` |
-| `filled` | `[ 'bg-secondary text-foreground hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong', 'data-pressed:bg-primary/1…` |
+| `secondary` | `[ 'bg-secondary text-foreground hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong', 'data-pressed:bg-primary/1…` |
 | `outline` | `[ 'bg-transparent text-foreground shadow-hairline hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong', 'data-pr…` |
 | `quiet` | `[ 'bg-transparent text-muted-foreground hover:not-data-disabled:bg-secondary hover:not-data-disabled:text-foreground', 'data-pressed:bg-sec…` |
 
@@ -168,7 +168,7 @@ group/toggle-group relative isolate inline-flex w-fit items-center data-[orienta
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `gap-1` |
-| `filled` | `gap-1` |
+| `secondary` | `gap-1` |
 | `quiet` | `gap-1` |
 | `outline` | `gap-0 rounded-ctl shadow-hairline` |
 | `segmented` | — |

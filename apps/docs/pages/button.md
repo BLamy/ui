@@ -132,7 +132,7 @@ A plain-text child is wrapped in `TextMorph`: the letters two labels share slide
 
 {% demo src="button/label-morph" %}
 
-Return a Promise from `onClick` and the button is pending until it settles: it keeps focus and its look, ignores further presses and gets `data-pending`; after a second it announces `pendingAnnouncement` ("Loading" by default) to screen readers. Button draws no spinner for it, so change the label (as above) or show your own with Tailwind's `in-data-pending:` variant.
+Return a Promise from `onClick` and the button is pending until it settles: it keeps focus, ignores further presses, gets `data-pending` and dims to 70% (disabled is 40%), so the wait shows on touch too; after a second it announces `pendingAnnouncement` ("Loading" by default) to screen readers. Button draws no spinner for it, so change the label (as above) or show your own with Tailwind's `in-data-pending:` variant.
 
 ```tsx
 <Button onClick={() => save()} pendingAnnouncement="Saving">
@@ -175,7 +175,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/button`. Base classes:
 
 ```text
-[ 'bl-btn box-border inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap [&_svg]:shrink-0', 'transition-[scale,background-color,opacity,filter] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, 'data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress', ]
+[ 'bl-btn box-border inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap [&_svg]:shrink-0', 'transition-[scale,background-color,opacity,filter] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, // Pending dims a little (not as far as disabled), so the wait shows without a pointer; a spinner is yours to add. 'data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress data-pending:opacity-70', ]
 ```
 
 **`variant`** — default `default`

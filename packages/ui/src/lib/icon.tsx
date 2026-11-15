@@ -1,5 +1,5 @@
 'use client';
-import { useId, useRef, type CSSProperties, type HTMLAttributes, type Ref } from 'react';
+import { useId, useRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { springs } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -475,6 +475,9 @@ export const ICON_ALIASES = {
 export type IconCanonicalName = keyof typeof SHAPES;
 /** Every name `Icon` draws: canonical names plus the legacy keys and aliases. */
 export type IconName = IconCanonicalName | keyof typeof LEGACY | keyof typeof ICON_ALIASES;
+/** What an `icon` prop takes: an `Icon` name, checked (`'square-pencil'`), or any node that isn't a string (an
+    `<Icon>`, a monogram, an image). `IconName | ReactNode` would collapse to `ReactNode` and accept any string. */
+export type IconProp = IconName | Exclude<ReactNode, string>;
 
 /* ══ Icons ══ Every name (canonical, legacy, alias) → its shapes. Indexable by any string, as before (unknown → undefined). */
 const IC_MAP = {
@@ -484,7 +487,13 @@ const IC_MAP = {
     [K in keyof typeof ICON_ALIASES]: (typeof SHAPES)[(typeof ICON_ALIASES)[K]];
   }),
 } satisfies Record<IconName, readonly IconShape[]>;
-export const IC: Readonly<Record<IconName, readonly IconShape[]>> & { readonly [name: string]: readonly IconShape[] | undefined } = IC_MAP;
+const IC: Readonly<Record<IconName, readonly IconShape[]>> & { readonly [name: string]: readonly IconShape[] | undefined } = IC_MAP;
+
+/** Whether a string names an icon of the set (a canonical name or an alias), for a prop that takes either an icon
+    name or other text. */
+export function isIconName(name: string): name is IconName {
+  return IC[name] !== undefined;
+}
 
 /** Canonical names, sorted. */
 export const ICON_NAMES = (Object.keys(SHAPES) as IconCanonicalName[]).sort();

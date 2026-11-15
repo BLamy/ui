@@ -25,7 +25,7 @@ describe('Separator', () => {
     expect(rule.getAttribute('aria-orientation')).toBe('vertical');
     expect(rule.className).toContain('w-px');
     rerender(<Separator inset className="my-2" />);
-    expect(screen.getByRole('separator').className).toContain('ml-4');
+    expect(screen.getByRole('separator').className).toContain('ms-4');
     expect(screen.getByRole('separator').className).toContain('my-2');
   });
 

@@ -26,7 +26,7 @@ export default function Dismissible() {
         <Button onClick={() => setVisible(true)}>Nearby places</Button>
       </div>
       <FloatingSheet
-        variant="sheet"
+        variant="card"
         gutter={0}
         radius={16}
         collapse="hide"

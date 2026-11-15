@@ -127,9 +127,9 @@ function DebuggerEditor({
   const lineDecoration = useCallback(
     (line: number) => {
       if (line === frameLine)
-        return { tint: 'info' as const, className: 'debugger-frame-line' };
+        return { tone: 'info' as const, className: 'debugger-frame-line' };
       if (line === ran)
-        return { tint: 'muted' as const, className: 'debugger-last-ran' };
+        return { tone: 'muted' as const, className: 'debugger-last-ran' };
       if (breakable.has(line) && !hitsOn(line))
         return { textClassName: 'debugger-unexecuted' };
       return null;

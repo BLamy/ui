@@ -30,15 +30,3 @@ export type ClassProp<State> = string | ((state: State) => string | undefined) |
 export function cx<State>(base: ClassValue, className: ClassProp<State>): string | ((state: State) => string) {
   return typeof className === 'function' ? (state) => cn(base, className(state)) : cn(base, className);
 }
-
-export const FONT =
-  "-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',sans-serif";
-export const BARH = 52;
-
-/** Pressables: no tap flash, the host font, and a brightness nudge on hover (dimmer on light surfaces, brighter on
-    dark ones — the terminal scope is dark in both appearances). */
-export const pressable =
-  '[-webkit-tap-highlight-color:transparent] [font-family:inherit] hover:brightness-[.97] dark:hover:brightness-[1.12]';
-
-/** A brand tile: the accent into iOS indigo (#5E5CE6, a fixed brand color). */
-export const brandTile = 'bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]';

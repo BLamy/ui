@@ -6,7 +6,7 @@
    that leave it usable, and the toolbar drops its labels when compact. */
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useShortcut } from '@ui-sdk/react/shortcuts';
-import { AdaptivePane } from '@/components/ui/adaptive-pane';
+import { AdaptivePane, createAdaptivePaneController } from '@/components/ui/adaptive-pane';
 import { createCanvasController } from '@/components/ui/canvas';
 import { createDialogController } from '@/components/ui/dialog';
 import { unionRect, type Viewport } from '@/lib/canvas-math';
@@ -41,6 +41,9 @@ export function Editor({ appearance, initialRunning }: { appearance: 'light' | '
   const narrow = sizeClass !== 'regular';
   const [navOpen, setNavOpen] = useState(!narrow);
   const [inspectorOpen, setInspectorOpen] = useState(!narrow);
+  // The toolbar's pane toggles reach the panes through their controllers (AdaptivePaneTrigger).
+  const [navPane] = useState(createAdaptivePaneController);
+  const [inspectorPane] = useState(createAdaptivePaneController);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [running, setRunning] = useState(initialRunning);
   const [player] = useState(() => createDialogController());
@@ -96,14 +99,12 @@ export function Editor({ appearance, initialRunning }: { appearance: 'light' | '
   const replay = () => { setFrameAt(null); setPlay((n) => n + 1); };
 
   return (
-    <BLProvider dark={appearance === 'dark'} tint={appearance === 'dark' ? IB_TINT.dark : IB_TINT.light} className="bg-background">
+    <BLProvider appearance={appearance} tint={appearance === 'dark' ? IB_TINT.dark : IB_TINT.light} className="bg-background">
       <SizeClassProvider value={sizeClass}>
         <div ref={setRoot} data-slot="interface-builder" className="relative flex h-full w-full flex-col overflow-hidden text-foreground">
           <Toolbar
-            navOpen={navOpen}
-            onToggleNav={() => { touched.current = true; setNavOpen((o) => !o); }}
-            inspectorOpen={inspectorOpen}
-            onToggleInspector={() => { touched.current = true; setInspectorOpen((o) => !o); }}
+            navPane={navPane}
+            inspectorPane={inspectorPane}
             running={running}
             onRun={(event) => player.setOpen(true, { reason: 'trigger-press', event })}
             onStop={(event) => player.close({ reason: 'trigger-press', event })}
@@ -117,6 +118,7 @@ export function Editor({ appearance, initialRunning }: { appearance: 'light' | '
           />
           <div className="relative flex min-h-0 flex-1">
             <AdaptivePane
+              controller={navPane}
               presentation={narrow ? 'drawer' : 'column'}
               side="start"
               aria-label="Navigator"
@@ -149,6 +151,7 @@ export function Editor({ appearance, initialRunning }: { appearance: 'light' | '
             </main>
 
             <AdaptivePane
+              controller={inspectorPane}
               presentation={narrow ? 'drawer' : 'column'}
               side="end"
               aria-label="Inspector"

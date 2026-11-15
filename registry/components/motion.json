@@ -6,9 +6,12 @@
   "exports": [
     "springs",
     "springCss",
-    "fades",
+    "motionFades",
     "useReducedMotion",
     "useSpringTransition",
+    "prefersReducedMotion",
+    "useDirection",
+    "motionDirection",
     "TextMorph",
     "NumberMorph",
     "Swap",

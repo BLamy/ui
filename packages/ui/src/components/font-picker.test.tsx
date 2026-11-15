@@ -125,6 +125,40 @@ describe('FontPicker parts', () => {
     expect(screen.getByRole('button', { name: 'Body font: Inter' }).className).toContain('h-8');
     expect(screen.getByRole('dialog', { name: 'Body font' })).toBeTruthy();
   });
+
+  it('binds a bare FontList inside a content part to the root, beside the caller\'s own rows', async () => {
+    const onChange = vi.fn();
+    render(
+      <FontPicker aria-label="Body font" value="Inter" onValueChange={onChange} defaultOpen fonts={fonts}>
+        <FontPickerTrigger />
+        <FontPickerContent>
+          <FontList />
+          <p>Manage fonts</p>
+        </FontPickerContent>
+      </FontPicker>,
+    );
+    await act(async () => {});
+    const dialog = screen.getByRole('dialog', { name: 'Body font' });
+    expect(within(dialog).getByText('Manage fonts')).toBeTruthy();
+    await act(async () => { fireEvent.click(within(dialog).getAllByRole('option').find((o) => o.textContent?.startsWith('Caveat'))!); });
+    expect(onChange).toHaveBeenCalledWith('Caveat', expect.objectContaining({ reason: 'item-press' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('gives a bare FontList inside the stack\'s content the stack\'s places and footer', async () => {
+    render(
+      <FontStackPicker aria-label="Text fonts" defaultValue={['Inter', 'Caveat']} defaultOpen fonts={fonts}>
+        <FontStackPickerInputGroup />
+        <FontStackPickerContent>
+          <FontList />
+        </FontStackPickerContent>
+      </FontStackPicker>,
+    );
+    await act(async () => {});
+    const dialog = screen.getByRole('dialog', { name: 'Text fonts' });
+    expect(within(dialog).getByText(/Up to 3/)).toBeTruthy();
+    expect(within(dialog).getAllByRole('option').find((o) => o.textContent?.includes('Caveat'))!.textContent).toMatch(/^2/);
+  });
 });
 
 describe('FontStackPicker', () => {
@@ -264,7 +298,7 @@ describe('FontPicker and FontStackPicker in a Field and a form', () => {
         <FontStackPickerContent side="start" />
       </FontStackPicker>,
     );
-    expect(container.querySelector('[data-slot=font-stack-picker]')!.className).toContain('min-h-8');
+    expect(container.querySelector('[data-slot=font-stack-picker-input-group]')!.className).toContain('min-h-8');
     expect(screen.getByRole('group', { name: 'Code fonts' })).toBeTruthy();
   });
 });

@@ -24,7 +24,8 @@ export const buttonVariants = cva(
     'bl-btn box-border inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap [&_svg]:shrink-0',
     'transition-[scale,background-color,opacity,filter] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none',
     pressableFocusRing,
-    'data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress',
+    // Pending dims a little (not as far as disabled), so the wait shows without a pointer; a spinner is yours to add.
+    'data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress data-pending:opacity-70',
   ],
   {
     variants: {

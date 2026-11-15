@@ -21,6 +21,7 @@ import { formatBytes, relativeTime } from './data';
 import { BarButton, BranchIcon, ChangesIcon, FolderIcon, WorktreeChips, branchLabel, shortPath } from './parts';
 import type { Project, Worktree } from './types';
 import type { AtlasState, AtlasView } from './use-atlas';
+import { EmptyState } from '@/components/ui/empty-state';
 
 /** Worktrees a project shows before Show more, then after the first one; each later press adds `MORE`. */
 const FIRST = 5, SECOND = 20, MORE = 20;
@@ -194,7 +195,7 @@ export function ProjectsSidebar({ atlas, footer }: { atlas: AtlasState; footer?:
                 where={(named.get(p.name) ?? 0) > 1 ? shortPath(p.path.slice(0, p.path.lastIndexOf('/')) || p.path) : undefined} />
             ))}
             {atlas.scanned && !atlas.projects.length ? (
-              <div className="px-2.5 py-3 text-footnote text-muted-foreground">No repositories found in the opened folders.</div>
+              <EmptyState size="sm" title="No repositories found in the opened folders." className="py-3" />
             ) : null}
             {atlas.locations.length ? (
               <SplitViewSection title="Folders" collapsible className="mt-2">

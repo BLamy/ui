@@ -17,6 +17,7 @@ import { CommitMessage, UserAvatar, UserCard, UserName } from './cards';
 import type { Check, FileNode, PullDetail, TimelineItem, User } from './data';
 import { Box, DiffStat, DiffView, FileTree, FlowPanel, LabelChip, Oct, StatePill, UnderlineIndicator, UnderlineTab, ghButton, githubMarkdown, Branch, PR_STATE, type OctName, type Layout, type Nav } from './parts';
 import { Loaded, useLoad, useRepo } from './repo-context';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export type PullRequestTab = 'conversation' | 'commits' | 'checks' | 'files';
 
@@ -502,7 +503,7 @@ export function FilesChanged({ ui, number }: { ui: Layout; number: number }) {
               ) : null}
               <div className="min-w-0 flex-1 space-y-4">
                 {list.map((f) => <DiffView key={f.path} path={f.path} patch={f.patch} add={f.additions} del={f.deletions} note={f.note} />)}
-                {!list.length ? <Box className="px-6 py-12 text-center text-muted-foreground">No files changed.</Box> : null}
+                {!list.length ? <Box><EmptyState size="sm" title="No files changed." className="py-12" /></Box> : null}
               </div>
             </div>
           </div>

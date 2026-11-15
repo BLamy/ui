@@ -6,13 +6,13 @@ import {
   Tabs, TabsAction, TabsBar, TabsFooter, TabsIndicator, TabsList, TabsPanel, TabsPanels, TabsPill, TabsSeparator, TabsTab,
   createTabsController, useTabs, useTabsTab, type TabsProps,
 } from '@/components/ui/tabs';
-import { chromeStore } from '@/lib/theme';
+import { setChromeHidden } from '@/lib/theme';
 import { SizeClassProvider } from '@/lib/container';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
 globalThis.__UI_SDK_STRICT__ = true;
 
-afterEach(() => { cleanup(); chromeStore.set(false); });
+afterEach(() => { cleanup(); setChromeHidden(false); });
 const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 0)); });
 const key = (k: string) => fireEvent.keyDown(document.activeElement!, { key: k });
 /** Enter or Space on a native button, as a browser delivers it: the key, then the click it activates. */
@@ -461,7 +461,7 @@ describe('Tabs on a bar', () => {
     );
     await settle();
     expect(slot('tabs-bar').className).not.toContain('translate-y-full');
-    act(() => chromeStore.set(true));
+    act(() => setChromeHidden(true));
     expect(slot('tabs-bar').className).toContain('translate-y-full');
     expect(slot('tabs-bar').hasAttribute('data-hidden')).toBe(true);
     rerender(

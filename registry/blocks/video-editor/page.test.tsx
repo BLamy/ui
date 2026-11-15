@@ -68,16 +68,17 @@ describe('VideoEditor side panels', () => {
   it('opens the media library as a drawer from its toggle, and Escape closes it', async () => {
     await act(async () => root.render(<VideoEditor samples={false} />));
     const toggle = button('Media');
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
     const drawer = () => document.querySelector<HTMLElement>('[role="dialog"][aria-label="Media"]')!;
     expect(drawer().hidden).toBe(true);
     await act(async () => toggle.click());
     expect(drawer().hidden).toBe(false);
-    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(document.getElementById(toggle.getAttribute('aria-controls') ?? '')).not.toBeNull();
     await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
     press('Escape');
     await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(drawer().hasAttribute('data-open')).toBe(false);
   });
 });

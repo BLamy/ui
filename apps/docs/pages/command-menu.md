@@ -37,8 +37,10 @@ import {
 import {
   CommandMenu, CommandMenuInput, CommandMenuEmpty, CommandMenuList, CommandMenuPage,
   CommandMenuGroup, CommandMenuGroupLabel, CommandMenuItem, CommandMenuFooter,
-  CommandMenuDialog, CommandMenuDialogContent, DialogTrigger, Button,
-} from '@brett_lamy/ui'
+  CommandMenuDialog, CommandMenuDialogContent,
+} from '@brett_lamy/ui/command-menu'
+import { DialogTrigger } from '@brett_lamy/ui/dialog'
+import { Button } from '@brett_lamy/ui/button'
 
 <CommandMenuDialog>
   <DialogTrigger shortcut="mod+k" render={<Button variant="secondary" />}>

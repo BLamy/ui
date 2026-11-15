@@ -42,12 +42,12 @@ The `dark:` variant is redefined as `(&:where(.dark, .dark *))`, so the element 
 
 ## Light and dark
 
-Dark mode is shadcn's: the `.dark` class. `BLProvider` and `ThemeScope` put `light` or `dark` on their root, so a subtree can differ from the page. They follow the ambient `AppearanceProvider` unless given an explicit `dark` / `appearance`. Without a provider, the `dark` class on `<html>` counts as the ambient appearance.
+Dark mode is shadcn's: the `.dark` class. `BLProvider` and `ThemeScope` put `light` or `dark` on their root, so a subtree can differ from the page. Both take `appearance: 'auto' | 'light' | 'dark'`; `'auto'`, the default, follows the ambient `AppearanceProvider`. Without a provider, the `dark` class on `<html>` counts as the ambient appearance.
 
 ```tsx
 <AppearanceProvider value="dark">
-  <BLProvider>…</BLProvider>              {/* dark */}
-  <BLProvider dark={false}>…</BLProvider> {/* light, whatever the page does */}
+  <BLProvider>…</BLProvider>                    {/* dark */}
+  <BLProvider appearance="light">…</BLProvider> {/* light, whatever the page does */}
 </AppearanceProvider>
 ```
 
@@ -352,7 +352,7 @@ Swap appearance and tint on the fly. The components just re-read their nearest v
 
 ### One tint per subtree
 
-`BLProvider` takes a `tint` and sets `--primary` for everything below it. Nest providers to re-accent a region; without `dark` they follow the page's appearance.
+`BLProvider` takes a `tint` and sets `--primary` for everything below it. Nest providers to re-accent a region; with `appearance` left at `'auto'` they follow the page's appearance.
 
 {% demo src="theming/tint-gallery" %}
 

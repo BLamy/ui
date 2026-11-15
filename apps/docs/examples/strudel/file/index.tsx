@@ -4,7 +4,7 @@ import { StrudelPlayer } from '@/components/ui/strudel-player'
 export default function File() {
   return (
     <div style={{ width: '100%', maxWidth: 720 }}>
-      <StrudelPlayer src={`${import.meta.env.BASE_URL}strudel/night-drive.strudel`} title="Night drive" showCode />
+      <StrudelPlayer src={`${import.meta.env.BASE_URL}strudel/night-drive.strudel`} title="Night drive" defaultCodeOpen />
     </div>
   )
 }

@@ -14,7 +14,7 @@ import { Button } from '@ui-sdk/react/button';
 import { changeDetails } from '@/lib/change-details';
 import { useControllableChange } from '@/lib/controllable-state';
 import { Icon } from '@/lib/icon';
-import { direction, springs } from '@/lib/motion';
+import { motionDirection, springs } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 import type { ModelOption, ModelProvider } from './models';
@@ -113,7 +113,7 @@ function LegacyMenu({ legacy, value, providerOf, onPick }: { legacy: ModelOption
         <span className="text-caption text-tertiary-foreground">{legacy.length} models</span>
         <Icon name="chevron-right-wide" size={12} sw={2.4} className="text-tertiary-foreground" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent size="sm" side="right" align="end" sideOffset={4} palette="trigger" className="min-w-[220px]">
+      <DropdownMenuContent size="sm" side="end" align="end" sideOffset={4} palette="trigger" className="min-w-[220px]">
         <DropdownMenuRadioGroup value={value} onValueChange={(id, details) => id && onPick(id, details.event)}>
           {legacy.map((m) => (
             <DropdownMenuRadioItem key={m.id} value={m.id} label={m.name} closeOnSelect icon={<span className="text-caption text-muted-foreground">{providerOf(m)?.icon}</span>}>
@@ -269,7 +269,7 @@ export function ModelPicker({
                 deselectable={false}
                 onValueChange={([next]) => {
                   if (!next) return;
-                  setTravel(direction(railOrder.indexOf(tab), railOrder.indexOf(next)));
+                  setTravel(motionDirection(railOrder.indexOf(tab), railOrder.indexOf(next)));
                   setTab(next);
                   setQuery('');
                 }}

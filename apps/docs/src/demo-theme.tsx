@@ -1,5 +1,6 @@
 import type { DemoComponent, DemoComponentProps } from '@brett_lamy/docstream';
-import { ThemeScopeContext, themeScopeProps, useAppearance } from '@/lib/theme';
+import { themeScopeProps, useAppearance } from '@/lib/theme';
+import { ThemeScopeContext } from '@/lib/theme-context';
 
 /* Every demo renders inside the bl-theme for the docs' appearance: a `light` / `dark` wrapper (display: contents, so
    the demo canvas' layout is untouched) that also sets the text color the demos inherit. A plain element rather than

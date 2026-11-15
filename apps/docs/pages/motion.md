@@ -53,9 +53,7 @@ The same four springs exist in JavaScript (framer-motion) and in CSS (sampled in
 
 ```tsx
 import { motion } from 'framer-motion'
-import {
-  springs, springCss, useDirection, useSpringTransition,
-} from '@brett_lamy/ui'
+import { springs, springCss, useDirection, useSpringTransition } from '@brett_lamy/ui/lib/motion'
 
 // framer-motion
 <motion.div layout transition={springs.smooth} />
@@ -78,7 +76,7 @@ Exits are quicker than entrances: what leaves gets out of the way, what arrives 
 | `--duration-spring-{snappy,smooth,tray,bouncy}` | 383 / 550 / 413 / 597ms | the time each spring takes to settle |
 | `--ease-exit` / `--duration-exit` | ease-in, 140ms | overlays and panels leaving |
 | `--duration-exit-tray` | 240ms | sheets and trays leaving |
-| `fades.in` / `fades.out` | 220ms / 140ms | opacity and blur in framer-motion |
+| `motionFades.in` / `motionFades.out` | 220ms / 140ms | opacity and blur in framer-motion |
 
 {% demo src="motion/spring-presets" %}
 

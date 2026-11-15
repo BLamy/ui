@@ -90,7 +90,7 @@ A polite `role="status"` region: a pill with an icon and a word, and the details
 
 ### TailscaleMark
 
-The nine-dot mark in `currentColor`, `aria-hidden`: `size` (px, default 16) and `className`. Tailscale's name and logo are Tailscale Inc.'s trademarks; check their brand guidelines before you ship them.
+The nine-dot mark in `currentColor`. It is 16px (`size-4`): size it with a class, as an `Icon` (`className="size-5"`). It takes the svg element's props and `ref`; it is decorative (`aria-hidden`) unless you name it with `aria-label`, which makes it an image (`role="img"`). Tailscale's name and logo are Tailscale Inc.'s trademarks; check their brand guidelines before you ship them.
 
 ## The connection panel
 
@@ -108,7 +108,7 @@ The demo is real: it runs Tailscale's client and needs a Tailscale account; appr
   <PopoverContent align="end" className="w-80">
     <PopoverTitle className="sr-only">Tailscale</PopoverTitle>
     <div className="flex flex-col gap-3">
-      <TailscaleSummary detail="3 pages and 9 requests this session." />
+      <TailscaleSummary description="3 pages and 9 requests this session." />
       <TailscaleExitNodes onAction={choose} />
       <TailscaleLoginButton size="sm" variant="outline" />
     </div>
@@ -118,11 +118,11 @@ The demo is real: it runs Tailscale's client and needs a Tailscale account; appr
 
 ### TailscaleSummary
 
-Where the connection stands, in words, over this device's name, with an optional `detail` line under them (Safari: how many pages and requests this session went through the tailnet). By state: "Connected to *tailnet*" and "As *this device*"; "Connecting to *tailnet*" while signing in or starting; "Waiting for approval" until an admin approves the device; "Not connected" otherwise. Like the badge, it can be driven without a provider.
+Where the connection stands, in words, over this device's name, with an optional `description` line under them (Safari: how many pages and requests this session went through the tailnet). By state: "Connected to *tailnet*" and "As *this device*"; "Connecting to *tailnet*" while signing in or starting; "Waiting for approval" until an admin approves the device; "Not connected" otherwise. Like the badge, it can be driven without a provider.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `detail` | — | A line of your own under the summary. |
+| `description` | — | A line of your own under the summary. |
 | `status` / `tailnet` / `selfName` | the controller's | Show these instead. |
 | `tailscale` | the provider's | The controller. |
 

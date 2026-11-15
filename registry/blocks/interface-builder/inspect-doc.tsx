@@ -125,7 +125,7 @@ export function ContextPanel({ ctx, doc }: { ctx: ContextDef; doc: Doc }) {
             <div className="flex items-center gap-1.5">
               <div className="min-w-0 flex-1"><NameInput label="Field name" value={f.name} taken={ctx.fields.filter((_, k) => k !== i).map((x) => x.name)} onCommit={(v) => upd({ fields: ctx.fields.map((x, k) => (k === i ? { ...x, name: v } : x)) })} /></div>
               <div className="w-24 shrink-0"><ChoiceInput label="Type" value={f.type} options={TYPES} onChange={(v) => upd({ fields: ctx.fields.map((x, k) => (k === i ? { ...x, type: v as ValueType } : x)) })} /></div>
-              <IconAction icon="trash" label={`Remove ${f.name}`} tone="danger" onClick={() => upd({ fields: ctx.fields.filter((_, k) => k !== i) })} />
+              <IconAction icon="trash" label={`Remove ${f.name}`} tone="destructive" onClick={() => upd({ fields: ctx.fields.filter((_, k) => k !== i) })} />
             </div>
             <ExprInput label={`${f.name} initial value`} value={f.initial} names={new Set()} onCommit={(v) => upd({ fields: ctx.fields.map((x, k) => (k === i ? { ...x, initial: v } : x)) })} />
           </div>

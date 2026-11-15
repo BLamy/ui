@@ -137,3 +137,14 @@ export const calloutVariants = cva(
     stack, a drag handle) inside. */
 export const valueChip =
   'inline-flex h-7 max-w-full items-center gap-0.5 rounded-full bg-secondary pe-0.5 text-subhead text-secondary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
+/** The toolbar height in px, for JavaScript math (navigation and drawer bars, chrome offsets); `h-toolbar` in CSS. */
+export const BARH = 52;
+
+/** Pressables: no tap flash, the host font, and a brightness nudge on hover (dimmer on light surfaces, brighter on
+    dark ones — the terminal scope is dark in both appearances). */
+export const pressable =
+  '[-webkit-tap-highlight-color:transparent] [font-family:inherit] hover:brightness-[.97] dark:hover:brightness-[1.12]';
+
+/** A brand tile: the accent into iOS indigo (#5E5CE6, a fixed brand color). */
+export const brandTile = 'bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]';

@@ -41,7 +41,7 @@ afterEach(() => cleanup());
 const agent = createAgent();
 
 describe('FileUpload', () => {
-  it('renders the zone with its hint and a Browse button, and an empty list renders nothing', () => {
+  it('renders the zone with its description and a Browse button, and an empty list renders nothing', () => {
     const { container } = render(<FileUpload accept={['image/*']} maxSize={5_000_000} maxFiles={3} />);
     const zone = container.querySelector('[data-slot=file-input-dropzone]') as HTMLElement;
     expect(within(zone).getByText('Drag files here')).toBeTruthy();

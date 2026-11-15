@@ -3,14 +3,15 @@ import { useState } from 'react';
 import { Resizable, ResizableHandle, ResizablePanel } from '@ui-sdk/react/resizable';
 import { Toggle as ToggleButton, ToggleGroup, type ToggleGroupValueChangeReason } from '@ui-sdk/react/toggle';
 import type { ChangeDetails } from '@ui-sdk/core';
-import { AdaptivePane, type AdaptivePanePresentation } from '@/components/ui/adaptive-pane';
+import { AdaptivePane, AdaptivePaneTrigger, createAdaptivePaneController, type AdaptivePaneController, type AdaptivePanePresentation } from '@/components/ui/adaptive-pane';
 import { FloatingSheet, FloatingSheetBody } from '@/components/ui/floating-sheet';
 import { SizeClassProvider, useSizeClass, type SizeClass } from '@/lib/container';
 import { Icon, type IconName } from '@/lib/icon';
 import { type Appearance, ThemeScope, useScopeAppearance } from '@/lib/theme';
-import { cn, pressable } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { pressable } from '@/lib/primitives';
 import { Button } from '@/components/ui/button';
-import { Toggle } from '@/components/ui/toggle';
+import { Toggle, toggleVariants } from '@/components/ui/toggle';
 
 
 /* ══ WorkbenchShell — a thin layout root and the parts that compose an IDE-style agent workspace ══
@@ -54,6 +55,9 @@ export interface WorkbenchShellContextValue {
   togglePanel: () => void;
   panelFullscreen: boolean;
   setPanelFullscreen: (full: boolean) => void;
+  /** The sidebar's and the panel's controllers: their header triggers (AdaptivePaneTrigger) reach them through these. */
+  sidebarPane: AdaptivePaneController;
+  panelPane: AdaptivePaneController;
 }
 
 const WorkbenchShellContext = React.createContext<WorkbenchShellContextValue | null>(null);
@@ -110,6 +114,8 @@ export function WorkbenchShell({
   const [panelPref, setPanelPref] = useState<boolean | null>(defaultPanelOpen ?? null);
   const [panelPage, setPanelPage] = useState(defaultPanelOpen === true);
   const [panelFullscreen, setPanelFullscreen] = useState(defaultPanelFullscreen);
+  const [sidebarPane] = useState(createAdaptivePaneController);
+  const [panelPane] = useState(createAdaptivePaneController);
 
   const sidebarOpen = compact ? sideDrawer : sideColumn;
   const dockOpen = dockPref ?? sizeClass === 'regular';
@@ -137,6 +143,8 @@ export function WorkbenchShell({
     togglePanel: () => setPanelOpen(!panelOpen),
     panelFullscreen,
     setPanelFullscreen,
+    sidebarPane,
+    panelPane,
   };
   return (
     <WorkbenchShellContext.Provider value={ctx}>
@@ -176,9 +184,10 @@ export interface WorkbenchSidebarProps {
 export function WorkbenchSidebar({ width = 242, drawerWidth = 280, children }: WorkbenchSidebarProps) {
   const shell = useOptionalWorkbenchShell();
   if (!shell) return <>{children}</>;
-  const { compact, sidebarOpen, setSidebarOpen } = shell;
+  const { compact, sidebarOpen, setSidebarOpen, sidebarPane } = shell;
   return (
     <AdaptivePane
+      controller={sidebarPane}
       presentation={compact ? 'drawer' : 'column'}
       side="start"
       aria-label="Sidebar"
@@ -219,26 +228,33 @@ function HeaderToggle({ label, pressed, onPressedChange, className, style, child
   );
 }
 
-/** Sidebar control in the header: a hamburger that opens the drawer at compact width, else a "Hide sidebar" toggle. */
-export function WorkbenchSidebarTrigger({ onClick, className, style }: TriggerProps) {
-  const shell = useOptionalWorkbenchShell();
-  if (shell?.compact) {
-    return (
-      <Button variant="quiet" size="icon-sm" aria-label="Menu" title="Menu" className={className} style={style} onClick={onClick ?? (() => shell.setSidebarOpen(true))}>
-        <Icon name="line-3-horizontal" size={18} sw={1.7} />
-      </Button>
-    );
-  }
+/* A header trigger for a pane: an AdaptivePaneTrigger (`aria-expanded`, `aria-controls`, `onOpenChange` hears
+   `trigger-press`) drawn as the kit's quiet icon toggle. A caller's `onClick` replaces the toggle. */
+function PaneTrigger({ controller, label, onClick, filled, className, style, children }: TriggerProps & {
+  controller: AdaptivePaneController; label: string; filled?: boolean; children: React.ReactNode;
+}) {
   return (
-    <HeaderToggle
-      label="Hide sidebar"
-      pressed={shell ? !shell.sidebarOpen : false}
-      onPressedChange={(hidden) => (onClick ? onClick() : shell?.setSidebarOpen(!hidden))}
-      className={className}
+    <AdaptivePaneTrigger
+      controller={controller}
+      aria-label={label}
+      title={label}
+      onClick={onClick ? (event) => { event.preventDefault(); onClick(); } : undefined}
+      className={cn(toggleVariants({ variant: 'quiet', size: 'icon-sm' }), filled && 'data-open:bg-secondary data-open:text-foreground', className)}
       style={style}
     >
-      <Icon name="sidebar-left" size={18} sw={1.7} />
-    </HeaderToggle>
+      {children}
+    </AdaptivePaneTrigger>
+  );
+}
+
+/** Sidebar control in the header: a hamburger that opens the drawer at compact width, else the sidebar's toggle. */
+export function WorkbenchSidebarTrigger({ onClick, className, style }: TriggerProps) {
+  const shell = useOptionalWorkbenchShell();
+  if (!shell) return null;
+  return (
+    <PaneTrigger controller={shell.sidebarPane} label={shell.compact ? 'Menu' : 'Sidebar'} onClick={onClick} className={className} style={style}>
+      <Icon name={shell.compact ? 'line-3-horizontal' : 'sidebar-left'} size={18} sw={1.7} />
+    </PaneTrigger>
   );
 }
 /** Closes the compact sidebar drawer; renders nothing at wider widths. */
@@ -384,7 +400,7 @@ export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight
       // The dock is a `terminal` theme scope: dark in both appearances. Its shadow still follows the shell.
       <ThemeScope scope="terminal" className="contents text-foreground">
         <FloatingSheet
-          variant="sheet"
+          variant="card"
           gutter={0}
           radius={16}
           collapse="hide"
@@ -489,10 +505,11 @@ export function WorkbenchPanel({ className, style, children }: WorkbenchPanelPro
     </div>
   );
   if (!shell) return body;
-  const { compact, sizeClass, panelOpen, panelFullscreen, setPanelOpen } = shell;
+  const { compact, sizeClass, panelOpen, panelFullscreen, setPanelOpen, panelPane } = shell;
   const mode: AdaptivePanePresentation = compact || panelFullscreen ? 'cover' : sizeClass === 'medium' ? 'drawer' : 'column';
   const pane = (
     <AdaptivePane
+      controller={panelPane}
       presentation={mode}
       side="end"
       aria-label="Panel"
@@ -510,20 +527,14 @@ export function WorkbenchPanel({ className, style, children }: WorkbenchPanelPro
   // The cover spans the first grid row — the whole shell above the (compact) tab bar.
   return mode === 'cover' && panelOpen ? <div className="relative z-60 col-span-full row-start-1">{pane}</div> : pane;
 }
-/** Header toggle for the panel; hidden at compact width, where the tab bar switches views. */
+/** Header toggle for the panel, filled while it shows; hidden at compact width, where the tab bar switches views. */
 export function WorkbenchPanelTrigger({ onClick, className, style }: TriggerProps) {
   const shell = useOptionalWorkbenchShell();
-  if (shell?.compact) return null;
+  if (!shell || shell.compact) return null;
   return (
-    <HeaderToggle
-      label="Right panel"
-      pressed={!!shell?.panelOpen}
-      onPressedChange={(open) => (onClick ? onClick() : shell?.setPanelOpen(open))}
-      className={className}
-      style={style}
-    >
+    <PaneTrigger controller={shell.panelPane} label="Right panel" filled onClick={onClick} className={className} style={style}>
       <Icon name="sidebar-right" size={18} sw={1.7} />
-    </HeaderToggle>
+    </PaneTrigger>
   );
 }
 export function WorkbenchPanelHeader({ className, style, children }: { className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {

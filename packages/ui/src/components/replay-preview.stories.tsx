@@ -10,7 +10,7 @@ const meta: Meta<typeof ReplayPreview> = {
   decorators: [
     (Story, ctx) =>
       ctx.parameters.phone ? (
-        <Phone dark={ctx.parameters.dark}>
+        <Phone appearance={ctx.parameters.dark ? 'dark' : 'light'}>
           <div className="absolute inset-0 p-3"><Story /></div>
         </Phone>
       ) : (

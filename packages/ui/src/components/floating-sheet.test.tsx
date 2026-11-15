@@ -250,11 +250,11 @@ describe('FloatingSheet', () => {
     const root = () => document.querySelector<HTMLElement>('[data-slot=floating-sheet]')!;
     expect(root().hasAttribute('data-theme-scope')).toBe(false);
     expect(root().classList.contains('dark')).toBe(false);
-    rerender(<Order appearance="dark" variant="sheet" />);
+    rerender(<Order appearance="dark" variant="card" />);
     await settle();
     expect(root().getAttribute('data-theme-scope')).toBe('sheet');
     expect(root().classList.contains('dark')).toBe(true);
-    expect(root().getAttribute('data-variant')).toBe('sheet');
+    expect(root().getAttribute('data-variant')).toBe('card');
   });
 });
 

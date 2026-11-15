@@ -5,11 +5,13 @@ import { Collapsible, CollapsiblePanel, CollapsibleTrigger, type CollapsibleOpti
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { MarkdownView, type MarkdownViewProps } from '@/components/ui/markdown-view';
-import { MessageScroller, MessageScrollerItem, useInMessageScroller, type MessageScrollerProps } from '@/components/ui/message-scroller';
+import { MessageScroller, MessageScrollerItem, type MessageScrollerProps } from '@/components/ui/message-scroller';
+import { useInMessageScroller } from '@/lib/message-scroller-context';
 import type { ComposerAttachment } from '@/components/ui/composer/composer';
 import { attachmentKind } from '@/components/ui/composer/composer-files';
 import { formatFileSize } from '@/lib/file-size';
-import { cn, pressable, brandTile } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { pressable, brandTile } from '@/lib/primitives';
 import { Chevron, Icon, type IconName } from '@/lib/icon';
 import { springs } from '@/lib/motion';
 import { usePresence } from '@/lib/presence';
@@ -247,7 +249,7 @@ export interface ConversationUserMessageProps extends ConversationAssistantMessa
   attachments?: ComposerAttachment[];
 }
 
-/** The user's turn: a right-aligned bubble, its attachments above it. */
+/** The user's turn: a bubble at the end of the line (the right, in left-to-right text), its attachments above it. */
 export function ConversationUserMessage({ attachments, anchor = true, className, children, ...props }: ConversationUserMessageProps) {
   const images = attachments?.filter((a) => a.src && (a.kind ?? attachmentKind(a.type, a.name)) === 'image') ?? [];
   const files = attachments?.filter((a) => !images.includes(a)) ?? [];
@@ -269,7 +271,7 @@ export function ConversationUserMessage({ attachments, anchor = true, className,
           </div>
         ) : null}
         {children != null && children !== '' ? (
-          <div className="rounded-card rounded-br-sm bg-secondary-strong px-[13px] py-[9px] text-detail leading-[1.5] whitespace-pre-wrap">{children}</div>
+          <div className="rounded-card rounded-ee-sm bg-secondary-strong px-[13px] py-[9px] text-detail leading-[1.5] whitespace-pre-wrap">{children}</div>
         ) : null}
       </div>
     </MessageRoot>
@@ -330,12 +332,14 @@ export interface ConversationWorkLogProps extends Omit<React.HTMLAttributes<HTML
 /** "Worked for Ns" — a UI SDK Collapsible that opens (on a spring) into the tool calls behind the reply. */
 export function ConversationWorkLog({ summary, defaultOpen = false, open, onOpenChange, children, className, ref, ...props }: ConversationWorkLogProps) {
   const has = React.Children.count(children) > 0;
-  const row = 'flex items-center gap-[5px] text-caption text-tertiary-foreground';
+  // The summary is the trigger's label: muted text, as the kit's secondary labels are; the clock stays tertiary.
+  const row = 'flex items-center gap-[5px] text-caption text-muted-foreground';
+  const clock = <Icon name="clock-dial" size={12.5} sw={2} className="text-tertiary-foreground" />;
   if (!has) {
     return (
       <div ref={ref} data-slot="work-log" className={cn('mt-0.5 mb-1.5', className)} {...props}>
         <div className={row}>
-          <Icon name="clock-dial" size={12.5} sw={2} />
+          {clock}
           {summary}
         </div>
       </div>
@@ -344,15 +348,15 @@ export function ConversationWorkLog({ summary, defaultOpen = false, open, onOpen
   return (
     <div ref={ref} data-slot="work-log" className={cn('mt-0.5 mb-1.5', className)} {...props}>
       <Collapsible defaultOpen={defaultOpen} open={open} onOpenChange={onOpenChange}>
-        <CollapsibleTrigger className={cn(row, pressable, 'group/work-log cursor-pointer rounded-sm border-0 bg-transparent p-0 leading-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-ring')}>
-          <Icon name="clock-dial" size={12.5} sw={2} />
+        <CollapsibleTrigger className={cn(row, pressable, 'group/work-log cursor-pointer rounded-sm border-0 bg-transparent p-0 leading-[inherit] outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring')}>
+          {clock}
           {summary}
           <span className="grid transition-[rotate] duration-spring-snappy ease-spring-snappy group-data-open/work-log:rotate-90 motion-reduce:transition-none">
             <Chevron direction="right" size={11} strokeWidth={2.4} />
           </span>
         </CollapsibleTrigger>
         <CollapsiblePanel className="h-(--collapsible-panel-height) overflow-hidden transition-[height,opacity] duration-spring-smooth ease-spring-smooth data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0 motion-reduce:transition-none">
-          <div className="mt-1.5 mb-1 ml-[5px] grid gap-1.5 border-l border-border pl-3">{children}</div>
+          <div className="mt-1.5 mb-1 ms-[5px] grid gap-1.5 border-s border-border ps-3">{children}</div>
         </CollapsiblePanel>
       </Collapsible>
     </div>

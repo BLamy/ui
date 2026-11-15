@@ -225,7 +225,7 @@ it('drags a tab to a place in another strip, and onto an edge, which splits ther
   await dragTo(600, 200);
   expect(document.querySelector('[data-slot=workspace-drop-indicator]')?.getAttribute('data-region')).toBe('center');
   await dragTo(790, 200);
-  expect(document.querySelector('[data-slot=workspace-drop-indicator]')?.getAttribute('data-region')).toBe('right');
+  expect(document.querySelector('[data-slot=workspace-drop-indicator]')?.getAttribute('data-region')).toBe('end');
   expect(strips()).toEqual([['Log'], ['Notes']]);
 
   fireEvent.pointerUp(document, { ...mouse, buttons: 0, clientX: 790, clientY: 200 });
@@ -246,11 +246,11 @@ it('asks `accepts` before a tab leaves its strip, and nothing moves or closes by
   fireEvent.pointerDown(tab('Counter'), { ...mouse, clientX: 50, clientY: 18 });
   await dragTo(60, 18);
   await dragTo(790, 200);
-  expect(accepts).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'counter' }), { tabsetId: 'right', region: 'right' });
+  expect(accepts).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'counter' }), { tabsetId: 'right', region: 'end' });
   expect(document.querySelector('[data-slot=workspace-drop-indicator]')).toBeNull();
   // Its own tabset's edge asks too.
   await dragTo(390, 200);
-  expect(accepts).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'counter' }), { tabsetId: 'left', region: 'right' });
+  expect(accepts).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'counter' }), { tabsetId: 'left', region: 'end' });
   expect(document.querySelector('[data-slot=workspace-drop-indicator]')).toBeNull();
   // Back where it came from.
   expect(strips()).toEqual([['Counter', 'Log'], ['Notes']]);
@@ -384,7 +384,7 @@ it('can be controlled, and a canceled change leaves the layout as it was', () =>
     expect(controller.addTab({ id: 'new', title: 'New', data: null }, { tabsetId: 'right' })).toBe(true);
     expect(controller.addTab({ id: 'new', title: 'New', data: null })).toBe(false);
   });
-  expect(controller.getActiveTabsetId()).toBe('left');
+  expect(controller.getCurrentTabsetId()).toBe('left');
   expect(strips()).toEqual([['Counter', 'Log'], ['Notes', 'New']]);
   expect(tab('Log').getAttribute('aria-selected')).toBe('true');
 });
@@ -397,7 +397,7 @@ it('unmounts hidden content when it is not kept, and tracks the pane last used',
   expect(screen.queryByRole('button', { name: /^Count/ })).toBeNull();
 
   fireEvent.focusIn(screen.getByRole('textbox', { name: 'Draft' }));
-  expect(controller.getActiveTabsetId()).toBe('right');
+  expect(controller.getCurrentTabsetId()).toBe('right');
   expect(screen.getByRole('group', { name: 'Pane 2' }).hasAttribute('data-current')).toBe(true);
   act(() => void controller.addTab({ id: 'new', title: 'New', data: null }));
   expect(strips()).toEqual([['Counter', 'Log'], ['Notes', 'New']]);

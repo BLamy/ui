@@ -69,11 +69,11 @@ const MAILBOXES: TreeNode[] = [
 {% demo src="tree/schema" %}
 
 ```tsx
-const { schema, isLoading } = useSchema()
+const { schema, loading } = useSchema()
 const items = schemaTreeItems(schema)
 
 <Tree aria-label="Database schema" items={items} icons={false} density="compact"
-  loading={isLoading} emptyState="No tables yet" autoExpand={items.map((n) => n.value)}
+  loading={loading} emptyState="No tables yet" autoExpand={items.map((n) => n.value)}
   onAction={(_value, { node }) => {
     const n = node as SchemaTreeNode
     if (n.kind === 'table') insert(`select * from ${n.table.name};`)

@@ -78,7 +78,7 @@ export function ObjectValue({ value, maxLength = STRING_PREVIEW_LENGTH, quote, a
       {...props}
     >
       {tokens.map((token, i) => (
-        <span key={i} className={TINTS[token.tint]}>{token.text}</span>
+        <span key={i} className={TINTS[token.type]}>{token.text}</span>
       ))}
       {hidden > 0 ? (
         <>

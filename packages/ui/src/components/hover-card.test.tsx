@@ -154,4 +154,10 @@ describe('HoverCard', () => {
     expect(header.getAttribute('aria-label')).toBe('Author');
     expect(header.getAttribute('data-slot')).toBe('hover-card-header');
   });
+
+  it('hides the header\'s icon from screen readers, so an avatar does not repeat the title', () => {
+    render(<HoverCardHeader icon={<span role="img" aria-label="Ada Lovelace">A</span>} title="Ada Lovelace" />);
+    expect(screen.queryByRole('img', { name: 'Ada Lovelace' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+  });
 });

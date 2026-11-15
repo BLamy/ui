@@ -10,7 +10,7 @@ export type WorkspaceTabSide = 'top' | 'bottom' | 'start' | 'end';
 export type WorkspaceMinSize = `${number}px` | `${number}rem`;
 
 /** A tab within a tabset. */
-export type TabNode<TabData = unknown> = {
+export type WorkspaceTabNode<TabData = unknown> = {
   /** Unique in the workspace, and chosen by the app: it usually names something real, like a file path. */
   id: string;
   /** What the tab reads, wherever the workspace writes it: the default tab, its close button, what a screen reader
@@ -25,7 +25,7 @@ export type TabNode<TabData = unknown> = {
 };
 
 /** A set of tabs, one of them showing. */
-export type TabsetNode<TabData = unknown, TabsetData = unknown> = {
+export type WorkspaceTabsetNode<TabData = unknown, TabsetData = unknown> = {
   type: 'tabset';
   /** Unique in the workspace. Left out of an input, it comes from the tabset's place in the tree (`tabset-0-1`);
    *  a tabset the workspace makes, by a drop on an edge, gets a generated one. */
@@ -44,11 +44,11 @@ export type TabsetNode<TabData = unknown, TabsetData = unknown> = {
   selectedId?: string;
   /** The app's own data. */
   data?: TabsetData;
-  tabs: TabNode<TabData>[];
+  tabs: WorkspaceTabNode<TabData>[];
 };
 
 /** Lays its children out side by side (`horizontal`) or stacked (`vertical`), with a handle between each pair. */
-export type SplitNode<TabData = unknown, TabsetData = unknown> = {
+export type WorkspaceSplitNode<TabData = unknown, TabsetData = unknown> = {
   type: 'split';
   /** Unique in the workspace. Left out of an input, it comes from the split's place in the tree (`split-root`). */
   id: string;
@@ -58,7 +58,7 @@ export type SplitNode<TabData = unknown, TabsetData = unknown> = {
   children: WorkspaceNode<TabData, TabsetData>[];
 };
 
-export type WorkspaceNode<TabData = unknown, TabsetData = unknown> = SplitNode<TabData, TabsetData> | TabsetNode<TabData, TabsetData>;
+export type WorkspaceNode<TabData = unknown, TabsetData = unknown> = WorkspaceSplitNode<TabData, TabsetData> | WorkspaceTabsetNode<TabData, TabsetData>;
 
 /** A workspace's whole arrangement. An empty workspace is one tabset with no tabs. */
 export type WorkspaceLayout<TabData = unknown, TabsetData = unknown> = {
@@ -68,26 +68,26 @@ export type WorkspaceLayout<TabData = unknown, TabsetData = unknown> = {
   maximizedTabsetId?: string;
 };
 
-export type TabsetNodeInput<TabData = unknown, TabsetData = unknown> = Omit<TabsetNode<TabData, TabsetData>, 'id'> & { id?: string };
-export type SplitNodeInput<TabData = unknown, TabsetData = unknown> = Omit<SplitNode<TabData, TabsetData>, 'id' | 'children'> & {
+export type WorkspaceTabsetNodeInput<TabData = unknown, TabsetData = unknown> = Omit<WorkspaceTabsetNode<TabData, TabsetData>, 'id'> & { id?: string };
+export type WorkspaceSplitNodeInput<TabData = unknown, TabsetData = unknown> = Omit<WorkspaceSplitNode<TabData, TabsetData>, 'id' | 'children'> & {
   id?: string;
   children: WorkspaceNodeInput<TabData, TabsetData>[];
 };
-export type WorkspaceNodeInput<TabData = unknown, TabsetData = unknown> = SplitNodeInput<TabData, TabsetData> | TabsetNodeInput<TabData, TabsetData>;
+export type WorkspaceNodeInput<TabData = unknown, TabsetData = unknown> = WorkspaceSplitNodeInput<TabData, TabsetData> | WorkspaceTabsetNodeInput<TabData, TabsetData>;
 /** A layout whose splits and tabsets may leave out their ids: what `layout`, `defaultLayout` and `setLayout` take. */
 export type WorkspaceLayoutInput<TabData = unknown, TabsetData = unknown> = Omit<WorkspaceLayout<TabData, TabsetData>, 'root'> & {
   root: WorkspaceNodeInput<TabData, TabsetData>;
 };
 
 /** An edge of a tabset's content, or its middle. */
-export type TabDropRegion = 'bottom' | 'center' | 'left' | 'right' | 'top';
+export type WorkspaceDropRegion = 'center' | 'start' | 'end' | 'top' | 'bottom';
 /** Where a tab can go: a place among a tabset's tabs, or a region of its content. An edge splits the tabset there,
  *  the middle adds the tab to it. */
-export type TabDropTarget = { tabsetId: string; index: number } | { tabsetId: string; region: TabDropRegion };
+export type WorkspaceDropTarget = { tabsetId: string; index: number } | { tabsetId: string; region: WorkspaceDropRegion };
 
 type AnyNode = WorkspaceNode<any, any>;
-type AnyTabset = TabsetNode<any, any>;
-type AnySplit = SplitNode<any, any>;
+type AnyTabset = WorkspaceTabsetNode<any, any>;
+type AnySplit = WorkspaceSplitNode<any, any>;
 type AnyLayout = WorkspaceLayout<any, any>;
 
 const EMPTY_ROOT = 'tabset-root';
@@ -97,8 +97,8 @@ const EMPTY_ROOT = 'tabset-root';
 /** Every tabset, in reading order. */
 export function workspaceTabsets<TabData, TabsetData>(
   from: WorkspaceLayout<TabData, TabsetData> | WorkspaceNode<TabData, TabsetData>,
-  out: TabsetNode<TabData, TabsetData>[] = [],
-): TabsetNode<TabData, TabsetData>[] {
+  out: WorkspaceTabsetNode<TabData, TabsetData>[] = [],
+): WorkspaceTabsetNode<TabData, TabsetData>[] {
   const node = 'root' in from ? from.root : from;
   if (node.type === 'tabset') out.push(node);
   else for (const child of node.children) workspaceTabsets(child, out);
@@ -123,7 +123,7 @@ export function findTab<TabData, TabsetData>(layout: WorkspaceLayout<TabData, Ta
 }
 
 /** Each child's share of a split, in percent, adding up to 100: the sizes written on them, the rest shared evenly. */
-export function splitSizes(split: Pick<SplitNode<any, any>, 'children'>): number[] {
+export function splitSizes(split: Pick<WorkspaceSplitNode<any, any>, 'children'>): number[] {
   const given = split.children.map((child) => (typeof child.size === 'number' && child.size > 0 ? child.size : undefined));
   const taken = given.reduce<number>((sum, size) => sum + (size ?? 0), 0);
   const open = given.filter((size) => size === undefined).length;
@@ -271,7 +271,7 @@ export function selectTab<TabData, TabsetData>(layout: WorkspaceLayout<TabData, 
  *  already there is selected instead, as it is. */
 export function addTab<TabData, TabsetData>(
   layout: WorkspaceLayout<TabData, TabsetData>,
-  tab: TabNode<TabData>,
+  tab: WorkspaceTabNode<TabData>,
   { tabsetId, index, select = true }: { tabsetId?: string; index?: number; select?: boolean } = {},
 ) {
   if (findTab(layout, tab.id)) return select ? selectTab(layout, tab.id) : layout;
@@ -307,7 +307,7 @@ export function closeTabset<TabData, TabsetData>(layout: WorkspaceLayout<TabData
 export function updateTab<TabData, TabsetData>(
   layout: WorkspaceLayout<TabData, TabsetData>,
   tabId: string,
-  changes: Partial<Omit<TabNode<TabData>, 'id'>>,
+  changes: Partial<Omit<WorkspaceTabNode<TabData>, 'id'>>,
 ) {
   const tabset = tabsetOfTab(layout, tabId);
   if (!tabset) return layout;
@@ -318,7 +318,7 @@ export function updateTab<TabData, TabsetData>(
 export function updateTabset<TabData, TabsetData>(
   layout: WorkspaceLayout<TabData, TabsetData>,
   tabsetId: string,
-  changes: Partial<Pick<TabsetNode<TabData, TabsetData>, 'data' | 'keepWhenEmpty' | 'minHeight' | 'minWidth' | 'tabSide'>>,
+  changes: Partial<Pick<WorkspaceTabsetNode<TabData, TabsetData>, 'data' | 'keepWhenEmpty' | 'minHeight' | 'minWidth' | 'tabSide'>>,
 ) {
   return findTabset(layout, tabsetId) ? mapTabset(layout, tabsetId, (node) => ({ ...node, ...changes })) : layout;
 }
@@ -347,9 +347,9 @@ export function restoreTabset<TabData, TabsetData>(layout: WorkspaceLayout<TabDa
   return normalizeLayout<TabData, TabsetData>({ version: 1, root: layout.root });
 }
 
-const EDGES: Record<Exclude<TabDropRegion, 'center'>, { orientation: WorkspaceOrientation; before: boolean }> = {
-  left: { orientation: 'horizontal', before: true },
-  right: { orientation: 'horizontal', before: false },
+const EDGES: Record<Exclude<WorkspaceDropRegion, 'center'>, { orientation: WorkspaceOrientation; before: boolean }> = {
+  start: { orientation: 'horizontal', before: true },
+  end: { orientation: 'horizontal', before: false },
   top: { orientation: 'vertical', before: true },
   bottom: { orientation: 'vertical', before: false },
 };
@@ -357,7 +357,7 @@ const EDGES: Record<Exclude<TabDropRegion, 'center'>, { orientation: WorkspaceOr
 /** Moves a tab to a place among a tabset's tabs, or to a region of its content: an edge puts it in a new tabset
  *  there, which takes half of the room, and the middle adds it to the tabset. The tab is on show where it lands.
  *  `index` counts the tabs without the one moving. */
-export function moveTab<TabData, TabsetData>(layout: WorkspaceLayout<TabData, TabsetData>, tabId: string, target: TabDropTarget) {
+export function moveTab<TabData, TabsetData>(layout: WorkspaceLayout<TabData, TabsetData>, tabId: string, target: WorkspaceDropTarget) {
   const source = tabsetOfTab(layout, tabId);
   const destination = findTabset(layout, target.tabsetId);
   const tab = source?.tabs.find((candidate) => candidate.id === tabId);

@@ -1,7 +1,7 @@
 /* The launcher's shared state: the clipboard history, calculator history, Trash, appearance, the power overlay,
    workflow drafts, and the "Copied" HUD — one context, so any page can act on it. */
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import type { Hud } from '@/components/ui/toast';
+import type { ToastHud } from '@/components/ui/toast';
 import { CLIPS, REPOS, TRASH, type Clip } from './data';
 
 export type PowerState = 'lock' | 'sleep' | 'restart' | 'off' | null;
@@ -54,7 +54,7 @@ const INITIAL_HISTORY: CalcEntry[] = [
 
 export function AlfredProvider({ hud, dark, toggleDark, reset, close, children }: {
   /** The desktop's HUD queue (`createHud()`), shown by its `<ToastRegion variant="hud" />`. */
-  hud: Hud; dark: boolean; toggleDark: () => void; reset: () => void; close: () => void; children: ReactNode;
+  hud: ToastHud; dark: boolean; toggleDark: () => void; reset: () => void; close: () => void; children: ReactNode;
 }) {
   const [clips, setClips] = useState(CLIPS);
   const [history, setHistory] = useState(INITIAL_HISTORY);

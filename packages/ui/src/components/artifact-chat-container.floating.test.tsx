@@ -56,7 +56,7 @@ function Chat(props: Partial<ArtifactChatContainerProps>) {
   return (
     <BLProvider>
       <div style={{ position: 'relative', height: 640 }}>
-        <ArtifactChatContainer layout="floating" hideOnScroll={false} {...props}>
+        <ArtifactChatContainer presentation="floating" hideOnScroll={false} {...props}>
           <ArtifactChatContainerContent><p>Map</p></ArtifactChatContainerContent>
           <ArtifactChatContainerChat><p>Three things changed.</p><Close /></ArtifactChatContainerChat>
           <ArtifactChatContainerComposer>

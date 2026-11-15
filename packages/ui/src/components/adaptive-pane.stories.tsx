@@ -21,7 +21,7 @@ type Story = StoryObj<typeof AdaptivePane>;
 function Frame({ w, h, dark, children }: { w: number; h: number; dark?: boolean; children?: ReactNode }) {
   return (
     <div className="relative overflow-hidden rounded-[20px] shadow-hairline" style={{ width: '100%', maxWidth: w, height: h }}>
-      <BLProvider dark={dark}>{children}</BLProvider>
+      <BLProvider appearance={dark ? 'dark' : 'light'}>{children}</BLProvider>
     </div>
   );
 }

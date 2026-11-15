@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { cn, pressable, brandTile } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { pressable, brandTile } from '@/lib/primitives'
 import { Icon } from '@/lib/icon'
 
 // `pressable` is a class fragment for a custom tappable element: no tap flash,

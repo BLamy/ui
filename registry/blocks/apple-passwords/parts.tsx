@@ -7,7 +7,7 @@ import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { CountdownRing, useCountdown } from '@/components/ui/progress-ring';
 import { TextMorph } from '@/components/ui/text-morph';
-import { hud as pageHud, type Hud } from '@/components/ui/toast';
+import { hud as pageHud, type ToastHud } from '@/components/ui/toast';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { codeFor } from './data';
@@ -49,9 +49,9 @@ export function WifiTile({ size = 32 }: { size?: number }) {
 }
 
 /* ── Copy ── copies, flips to a check for a moment, and shows "<label> Copied" in the block's HUD. */
-const HudContext = createContext<Hud>(pageHud);
+const HudContext = createContext<ToastHud>(pageHud);
 /** The HUD copy buttons below report to: the block's own (`createHud()`), drawn inside the block. */
-export function HudProvider({ hud, children }: { hud: Hud; children: ReactNode }) {
+export function HudProvider({ hud, children }: { hud: ToastHud; children: ReactNode }) {
   return <HudContext value={hud}>{children}</HudContext>;
 }
 

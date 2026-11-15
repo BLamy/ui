@@ -49,7 +49,7 @@ export type ValuePreview =
 
 export type ValueType = ValuePreview['type'];
 
-/** How a piece of a preview is tinted. */
+/** What a piece of a preview is: the kind of token, which picks its color. */
 export type ValueTokenType =
   | 'string' | 'number' | 'keyword' | 'nullish' | 'function' | 'functionMark' | 'symbol' | 'regexp' | 'date' | 'error'
   | 'className' | 'key' | 'punctuation' | 'muted' | 'plain';
@@ -57,7 +57,7 @@ export type ValueTokenType =
 /** One tinted run of a preview's text. */
 export interface ValueToken {
   text: string;
-  tint: ValueTokenType;
+  type: ValueTokenType;
 }
 
 /** Characters of a string a preview shows before truncating it. */
@@ -88,8 +88,8 @@ export interface ValuePreviewOptions {
 function stringTokens(text: string, max: number, quote: boolean): ValueToken[] {
   const shown = clipString(text, max);
   const cut = shown.length < text.length ? ELLIPSIS : '';
-  if (!quote) return [{ text: shown + cut, tint: 'string' }];
-  return [{ text: `${JSON.stringify(shown).slice(0, -1)}${cut}"`, tint: 'string' }];
+  if (!quote) return [{ text: shown + cut, type: 'string' }];
+  return [{ text: `${JSON.stringify(shown).slice(0, -1)}${cut}"`, type: 'string' }];
 }
 
 function numberText(value: number | string): string {
@@ -116,13 +116,13 @@ function keyText(name: string): string {
 
 function functionTokens(value: Extract<ValuePreview, { type: 'function' }>, nested: boolean): ValueToken[] {
   if (value.flavor === 'class') {
-    return [{ text: 'class', tint: 'keyword' }, ...(value.name ? [{ text: ` ${value.name}`, tint: 'function' as const }] : [])];
+    return [{ text: 'class', type: 'keyword' }, ...(value.name ? [{ text: ` ${value.name}`, type: 'function' as const }] : [])];
   }
   const out: ValueToken[] = [];
-  if (value.flavor === 'async' || value.flavor === 'async generator') out.push({ text: 'async ', tint: 'keyword' });
-  out.push({ text: value.flavor === 'generator' || value.flavor === 'async generator' ? 'ƒ*' : 'ƒ', tint: 'functionMark' });
+  if (value.flavor === 'async' || value.flavor === 'async generator') out.push({ text: 'async ', type: 'keyword' });
+  out.push({ text: value.flavor === 'generator' || value.flavor === 'async generator' ? 'ƒ*' : 'ƒ', type: 'functionMark' });
   if (nested) return out;
-  out.push({ text: ` ${value.name ?? ''}(${value.params ?? ''})`, tint: 'function' });
+  out.push({ text: ` ${value.name ?? ''}(${value.params ?? ''})`, type: 'function' });
   return out;
 }
 
@@ -134,12 +134,12 @@ function collectionName(value: { className?: string }, fallback: string, size: n
 function joined<T>(items: readonly T[], limit: number, more: boolean, one: (item: T) => ValueToken[]): ValueToken[] {
   const out: ValueToken[] = [];
   items.slice(0, limit).forEach((item, i) => {
-    if (i) out.push({ text: ', ', tint: 'punctuation' });
+    if (i) out.push({ text: ', ', type: 'punctuation' });
     out.push(...one(item));
   });
   if (more || items.length > limit) {
-    if (out.length) out.push({ text: ', ', tint: 'punctuation' });
-    out.push({ text: ELLIPSIS, tint: 'punctuation' });
+    if (out.length) out.push({ text: ', ', type: 'punctuation' });
+    out.push({ text: ELLIPSIS, type: 'punctuation' });
   }
   return out;
 }
@@ -151,67 +151,67 @@ function tokensOf(value: ValuePreview, options: Required<ValuePreviewOptions>, d
     case 'string':
       return stringTokens(value.value, options.maxString, options.quote);
     case 'number':
-      return [{ text: numberText(value.value), tint: 'number' }];
+      return [{ text: numberText(value.value), type: 'number' }];
     case 'boolean':
-      return [{ text: String(value.value), tint: 'keyword' }];
+      return [{ text: String(value.value), type: 'keyword' }];
     case 'null':
-      return [{ text: 'null', tint: 'nullish' }];
+      return [{ text: 'null', type: 'nullish' }];
     case 'undefined':
-      return [{ text: 'undefined', tint: 'nullish' }];
+      return [{ text: 'undefined', type: 'nullish' }];
     case 'bigint':
-      return [{ text: bigintText(value.value), tint: 'number' }];
+      return [{ text: bigintText(value.value), type: 'number' }];
     case 'symbol':
-      return [{ text: value.value, tint: 'symbol' }];
+      return [{ text: value.value, type: 'symbol' }];
     case 'function':
       return functionTokens(value, nested);
     case 'date':
-      return [{ text: value.value, tint: 'date' }];
+      return [{ text: value.value, type: 'date' }];
     case 'regexp':
-      return [{ text: value.value, tint: 'regexp' }];
+      return [{ text: value.value, type: 'regexp' }];
     case 'error': {
       if (options.expanded) {
         const full = errorFullText(value);
-        return [{ text: clipString(full, options.maxString) + (full.length > options.maxString ? ELLIPSIS : ''), tint: 'error' }];
+        return [{ text: clipString(full, options.maxString) + (full.length > options.maxString ? ELLIPSIS : ''), type: 'error' }];
       }
       // One line, however many the message has.
       const headline = errorHeadline(value);
       const line = headline.split('\n', 1)[0] ?? '';
       const max = nested ? NESTED_STRING_LENGTH : options.maxString;
-      return [{ text: clipString(line, max) + (line.length > max || line.length < headline.length ? ELLIPSIS : ''), tint: 'error' }];
+      return [{ text: clipString(line, max) + (line.length > max || line.length < headline.length ? ELLIPSIS : ''), type: 'error' }];
     }
     case 'accessor':
-      return [{ text: '(...)', tint: 'muted' }];
+      return [{ text: '(...)', type: 'muted' }];
     case 'unavailable':
-      return [{ text: value.label ?? '<unavailable>', tint: 'muted' }];
+      return [{ text: value.label ?? '<unavailable>', type: 'muted' }];
     case 'entry':
-      return [...inner(value.key), { text: ' => ', tint: 'punctuation' }, ...inner(value.value)];
+      return [...inner(value.key), { text: ' => ', type: 'punctuation' }, ...inner(value.value)];
     case 'object': {
       const named = value.className && value.className !== 'Object' ? value.className : '';
       if (nested || !value.properties) {
-        return named ? [{ text: named, tint: 'className' }] : [{ text: value.properties?.length === 0 ? '{}' : `{${ELLIPSIS}}`, tint: 'punctuation' }];
+        return named ? [{ text: named, type: 'className' }] : [{ text: value.properties?.length === 0 ? '{}' : `{${ELLIPSIS}}`, type: 'punctuation' }];
       }
       return [
-        ...(named ? [{ text: `${named} `, tint: 'className' as const }] : []),
-        { text: '{', tint: 'punctuation' },
+        ...(named ? [{ text: `${named} `, type: 'className' as const }] : []),
+        { text: '{', type: 'punctuation' },
         ...joined(value.properties, OBJECT_PREVIEW_ENTRIES, !!value.overflow, (p) => [
-          { text: keyText(p.name), tint: 'key' },
-          { text: ': ', tint: 'punctuation' },
+          { text: keyText(p.name), type: 'key' },
+          { text: ': ', type: 'punctuation' },
           ...inner(p.value),
         ]),
-        { text: '}', tint: 'punctuation' },
+        { text: '}', type: 'punctuation' },
       ];
     }
     case 'array': {
       const named = value.className && value.className !== 'Array' ? value.className : '';
       const length = value.length ?? value.items?.length;
-      if (nested || !value.items) return [{ text: collectionName(value, 'Array', length), tint: 'className' }];
+      if (nested || !value.items) return [{ text: collectionName(value, 'Array', length), type: 'className' }];
       const more = !!value.overflow || (length !== undefined && length > value.items.length);
       const label = `${named}${length ? `(${length}) ` : named ? ' ' : ''}`;
       return [
-        ...(label ? [{ text: label, tint: 'className' as const }] : []),
-        { text: '[', tint: 'punctuation' },
+        ...(label ? [{ text: label, type: 'className' as const }] : []),
+        { text: '[', type: 'punctuation' },
         ...joined(value.items, LIST_PREVIEW_ENTRIES, more, inner),
-        { text: ']', tint: 'punctuation' },
+        { text: ']', type: 'punctuation' },
       ];
     }
     case 'map':
@@ -219,16 +219,16 @@ function tokensOf(value: ValuePreview, options: Required<ValuePreviewOptions>, d
       const fallback = value.type === 'map' ? 'Map' : 'Set';
       const known = value.type === 'map' ? value.entries : value.items;
       const size = value.size ?? known?.length;
-      const name: ValueToken = { text: collectionName(value, fallback, size), tint: 'className' };
+      const name: ValueToken = { text: collectionName(value, fallback, size), type: 'className' };
       if (nested || !known) return [name];
       const more = !!value.overflow || (size !== undefined && size > known.length);
       return [
         name,
-        { text: ' {', tint: 'punctuation' },
+        { text: ' {', type: 'punctuation' },
         ...(value.type === 'map'
-          ? joined(value.entries ?? [], OBJECT_PREVIEW_ENTRIES, more, (e) => [...inner(e.key), { text: ' => ', tint: 'punctuation' }, ...inner(e.value)])
+          ? joined(value.entries ?? [], OBJECT_PREVIEW_ENTRIES, more, (e) => [...inner(e.key), { text: ' => ', type: 'punctuation' }, ...inner(e.value)])
           : joined(value.items ?? [], LIST_PREVIEW_ENTRIES, more, inner)),
-        { text: '}', tint: 'punctuation' },
+        { text: '}', type: 'punctuation' },
       ];
     }
   }

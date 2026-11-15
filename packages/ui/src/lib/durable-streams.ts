@@ -122,7 +122,7 @@ export function loadCloudSettings(): CloudSettings {
 }
 
 /** An id for this browser, stable across sessions, that marks its writes. */
-export function deviceId(): string {
+export function cloudDeviceId(): string {
   const s = storage();
   let id = s?.getItem(DEVICE_KEY);
   if (!id) {
@@ -241,7 +241,7 @@ export class CloudSync {
     this.running = true;
     this.set({ state: 'syncing' });
     try {
-      const dev = deviceId();
+      const dev = cloudDeviceId();
       for (const name of this.local.names()) {
         const cur = this.cursor(name);
         const len = this.local.length(name);

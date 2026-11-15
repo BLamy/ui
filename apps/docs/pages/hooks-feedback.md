@@ -6,7 +6,8 @@ All three are public.
 
 ```tsx
 // npm
-import { useToast, useCommandMenu, useCommandMenuValue } from '@brett_lamy/ui'
+import { useToast } from '@brett_lamy/ui/toast'
+import { useCommandMenu, useCommandMenuValue } from '@brett_lamy/ui/command-menu'
 
 // shadcn registry (aliases)
 import { useToast } from '@/components/ui/toast'                                         // …/r/toast.json

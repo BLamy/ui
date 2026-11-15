@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { RadioGroup, Radio } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof RadioGroup> = {
@@ -48,6 +48,7 @@ export const Invalid: Story = {
         <Label variant="control"><Radio value="standard" />Standard</Label>
         <Label variant="control"><Radio value="express" />Express</Label>
       </RadioGroup>
+      <FieldError>Choose a delivery option.</FieldError>
     </Field>
   ),
 };

@@ -13,7 +13,7 @@ export default function Toolbar() {
         <Toggle aria-label="Pin" pressed={pinned} onPressedChange={setPinned}>
           <Icon name="pin" size={16} />
         </Toggle>
-        <Toggle variant="filled" aria-label="Favorite" defaultPressed>
+        <Toggle variant="secondary" aria-label="Favorite" defaultPressed>
           <Icon name="star" size={16} />
         </Toggle>
         <Toggle variant="outline" aria-label="Notifications">
@@ -32,9 +32,9 @@ export default function Toolbar() {
         </Toggle>
       </div>
       <div className="flex items-center gap-2">
-        <Toggle size="sm" variant="filled"><ToggleIcon><Icon name="bell" size={14} /></ToggleIcon>Mute</Toggle>
-        <Toggle variant="filled"><ToggleIcon><Icon name="bell" size={16} /></ToggleIcon>Mute</Toggle>
-        <Toggle size="lg" variant="filled"><ToggleIcon><Icon name="bell" size={18} /></ToggleIcon>Mute</Toggle>
+        <Toggle size="sm" variant="secondary"><ToggleIcon><Icon name="bell" size={14} /></ToggleIcon>Mute</Toggle>
+        <Toggle variant="secondary"><ToggleIcon><Icon name="bell" size={16} /></ToggleIcon>Mute</Toggle>
+        <Toggle size="lg" variant="secondary"><ToggleIcon><Icon name="bell" size={18} /></ToggleIcon>Mute</Toggle>
       </div>
       <p className="m-0 text-footnote text-muted-foreground">{pinned ? 'Pinned to the top.' : 'Not pinned.'}</p>
     </div>

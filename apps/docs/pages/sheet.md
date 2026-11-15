@@ -55,7 +55,7 @@ import {
 
 ## Sides
 
-The bottom sheet is full width with rounded top corners (the kit's modal radius, `rounded-sheet`), a 5px grabber (`grabber={false}` on the content removes it) and a height capped 48px short of its host. `top` has the same cap and respects the safe-area top; `left` and `right` (or the writing-direction `start` and `end`) are 85% of the host, up to 360px, full height. Every side follows a drag toward its edge: let go past the threshold, or flick, and it springs away; otherwise it springs back, on the kit's tray spring. `swipe={false}` on the content turns the drag off (Escape and the scrim still close it). A press on the scrim closes it; `dismissible={false}` on the root refuses the scrim, Esc and the swipe (it resists and springs back, and `onDismissAttempt` runs) so the user has to choose an action: the bare `SheetClose` × and the grabber are left out (a sheet with snap points keeps its handle), and a `SheetClose` with children still closes it. The sheet renders into BLProvider's root (see `useLayerHost`) — your app root, or a demo's frame — and stays inside it; without one it renders in the browser's top layer and covers the page.
+The bottom sheet is full width with rounded top corners (the kit's modal radius, `rounded-sheet`), a 5px grabber (`grabber={false}` on the content removes it) and a height capped 48px short of its host. `top` has the same cap and respects the safe-area top; `start` and `end` (the inline edges: left and right in left-to-right text, swapped in right-to-left; `left` and `right` pin a physical edge) are 85% of the host, up to 360px, full height. Every side follows a drag toward its edge: let go past the threshold, or flick, and it springs away; otherwise it springs back, on the kit's tray spring. `swipe={false}` on the content turns the drag off (Escape and the scrim still close it). A press on the scrim closes it; `dismissible={false}` on the root refuses the scrim, Esc and the swipe (it resists and springs back, and `onDismissAttempt` runs) so the user has to choose an action: the bare `SheetClose` × and the grabber are left out (a sheet with snap points keeps its handle), and a `SheetClose` with children still closes it. The sheet renders into BLProvider's root (see `useLayerHost`) — your app root, or a demo's frame — and stays inside it; without one it renders in the browser's top layer and covers the page.
 
 {% demo src="sheet/sides" %}
 
@@ -67,7 +67,7 @@ The bottom sheet is full width with rounded top corners (the kit's modal radius,
 
 ```tsx
 <div className="relative h-full">
-  <Sheet contained side="left" open={open} onOpenChange={setOpen}>
+  <Sheet contained side="start" open={open} onOpenChange={setOpen}>
     <SheetBackdrop />
     <SheetContent variant="panel" aria-label="Folders" className="w-60">…</SheetContent>
   </Sheet>
@@ -84,9 +84,9 @@ The bottom sheet is full width with rounded top corners (the kit's modal radius,
 <Sheet snapPoints={[0.5, 1]}>…</Sheet>
 ```
 
-## A flow in a tray
+## A flow in a sheet
 
-A flow in a sheet is built exactly like a [Dialog](https://blamy.github.io/ui/#/dialog) flow, so there is one way to go back on a phone. Give the root a `view` and put the content in a `SheetView`: each new `view` springs the sheet to its height, and the step and its `SheetTitle` slide in from the right (a view seen before comes back from the left). The header is the flow bar, `SheetHeader variant="bar"`: `SheetBack` (Dialog's `DialogBack`) on the leading edge, folded away with `hidden` on the first step and growing in after it, the `SheetTitle` taking the row, and the `SheetClose` × at the end of it. Keep the header outside the `SheetView`, as Dialog keeps its bar outside `DialogView`: the title travels on its own and goes on naming the sheet. Without a `view`, `SheetView` still springs the sheet when its content changes in place (an error appearing). Use it for short, content-sized trays; a sheet with a scrolling body leaves it out.
+A flow in a sheet is built exactly like a [Dialog](https://blamy.github.io/ui/#/dialog) flow, so there is one way to go back on a phone. Give the root a `view` and put the content in a `SheetView`: each new `view` springs the sheet to its height, and the step and its `SheetTitle` slide in from the right (a view seen before comes back from the left). The header is the flow bar, `SheetHeader variant="bar"`: `SheetBack` (Dialog's `DialogBack`) on the leading edge, folded away with `hidden` on the first step and growing in after it, the `SheetTitle` taking the row, and the `SheetClose` × at the end of it. Keep the header outside the `SheetView`, as Dialog keeps its bar outside `DialogView`: the title travels on its own and goes on naming the sheet. Without a `view`, `SheetView` still springs the sheet when its content changes in place (an error appearing). Use it for short, content-sized sheets; a sheet with a scrolling body leaves it out.
 
 ```tsx
 <Sheet view={step}>
@@ -107,7 +107,7 @@ A flow in a sheet is built exactly like a [Dialog](https://blamy.github.io/ui/#/
 
 ## Accessibility
 
-Like Dialog: focus is trapped, the rest of the host is inert, Esc closes, focus returns to the trigger. The content has the `dialog` role and `aria-modal`, named by a `SheetTitle` (`aria-labelledby`) or `aria-label` — provide one. Always include a visible way to close (`SheetClose`) since the scrim, Esc and the swipe are not discoverable to everyone. The `SheetHandle` is a named button (`aria-label="Resize"` by default) that controls the sheet. A contained sheet makes only its own box inert. In a flow, each view has its own `SheetTitle`, so the sheet's name follows the step; the leaving view is hidden from assistive technology and focus while it slides out, and focus stays in the sheet when the focused control leaves.
+Like Dialog: focus is trapped, the rest of the host is inert, Esc closes, focus returns to the trigger. The content has the `dialog` role and `aria-modal`, named by a `SheetTitle` (`aria-labelledby`) or `aria-label` — provide one. Always include a visible way to close (`SheetClose`) since the scrim, Esc and the swipe are not discoverable to everyone. The `SheetHandle` is a named button (`aria-label="Resize"` by default) that controls the sheet. A contained sheet makes only its own box inert. In a flow the `SheetTitle` in the bar follows the step, so the sheet's name does too; the leaving view is hidden from assistive technology and focus while it slides out, and focus stays in the sheet when the focused control leaves.
 
 ## Props
 

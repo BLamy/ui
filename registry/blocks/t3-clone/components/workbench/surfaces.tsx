@@ -4,7 +4,8 @@ import { FileTree, useFileTree } from '@pierre/trees/react';
 import { Button } from '@ui-sdk/react/button';
 import { useScopeAppearance } from '@/lib/theme';
 import { Icon, type IconName } from '@/lib/icon';
-import { cn, pressable, brandTile } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { pressable, brandTile } from '@/lib/primitives';
 
 
 /* ══ Surfaces — what fills the WorkbenchPanel ══

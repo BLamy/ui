@@ -1,7 +1,8 @@
 import { useCallback, useLayoutEffect, useMemo, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import {
-  AdaptivePane, AdaptivePaneClose, AdaptivePaneHeader, AdaptivePaneTitle, adaptivePanePageClass, type AdaptivePaneOpenChangeDetails,
+  AdaptivePane, AdaptivePaneClose, AdaptivePaneHeader, AdaptivePaneTitle, AdaptivePaneTrigger, adaptivePanePageClass,
+  createAdaptivePaneController, type AdaptivePaneOpenChangeDetails, type AdaptivePaneTriggerProps,
 } from '@/components/ui/adaptive-pane';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
@@ -9,7 +10,8 @@ import { changeDetails } from '@/lib/change-details';
 import { SizeClassProvider, useContainerWidth, useSizeClassScope } from '@/lib/container';
 import { sizeClassOf } from '@/lib/size-class';
 import { Icon } from '@/lib/icon';
-import { ThemeScopeContext, useAppearance, themeScopeProps, type Appearance } from '@/lib/theme';
+import { useAppearance, themeScopeProps, type Appearance } from '@/lib/theme';
+import { ThemeScopeContext } from '@/lib/theme-context';
 import { cn, cx } from '@/lib/utils';
 
 import { ChatShellContext, useChatShell, useOptionalChatShell, type ChatShellContextValue, type ChatShellNavOpenChangeDetails } from './chat-shell-context';
@@ -78,7 +80,8 @@ export function ChatShell({
   // Compact below `breakpoint`; the shell is a size-class scope, so popups inside (dialogs, menus with
   // `presentation="auto"`) and its own navigation follow its box. Its pixel width answers the docking questions.
   const sizeClass = sizeClassOf(width, { medium: breakpoint, regular: Math.max(breakpoint, 1024) });
-  const ctx: ChatShellContextValue = { width, compact: sizeClass === 'compact', navOpen, setNavOpen, hasNav: navs > 0, registerNav };
+  const [navPane] = useState(createAdaptivePaneController);
+  const ctx: ChatShellContextValue = { width, compact: sizeClass === 'compact', navOpen, setNavOpen, hasNav: navs > 0, registerNav, navPane };
   const scope = themeScopeProps({ scope: 'chat', appearance, tint });
   // Published too, so overlays opened inside (hover cards, menus) portal out wearing the same chat scope.
   const scopeState = useMemo(() => ({ scope: 'chat' as const, appearance, tint }), [appearance, tint]);
@@ -115,11 +118,12 @@ export interface ChatShellNavProps {
  *  `ChatShellNavTrigger` and closed by the scrim or by anything that calls `useChatShell().setNavOpen(false)` (a close button, picking a
  *  channel). */
 export function ChatShellNav({ children, className, style }: ChatShellNavProps) {
-  const { navOpen, setNavOpen, registerNav } = useChatShell();
+  const { navOpen, setNavOpen, registerNav, navPane } = useChatShell();
   const compact = useSizeClassScope() === 'compact';
   useLayoutEffect(registerNav, [registerNav]);
   return (
     <AdaptivePane
+      controller={navPane}
       presentation={compact ? 'drawer' : 'column'}
       side="start"
       aria-label="Navigation"
@@ -136,28 +140,25 @@ export function ChatShellNav({ children, className, style }: ChatShellNavProps) 
   );
 }
 
-export interface ChatShellNavTriggerProps extends Omit<ComponentProps<typeof SdkButton>, 'children'> {
+export interface ChatShellNavTriggerProps extends Omit<AdaptivePaneTriggerProps, 'controller' | 'children'> {
   children?: ReactNode;
 }
 
-/** The hamburger that opens the navigation drawer. Renders nothing while the navigation is docked (or when
- *  the shell has no ChatShellNav). */
-export function ChatShellNavTrigger({ className, children, onClick, ...props }: ChatShellNavTriggerProps) {
-  const { compact, hasNav, navOpen, setNavOpen } = useChatShell();
+/** The hamburger that opens the navigation drawer: an AdaptivePaneTrigger on the navigation pane, so it says whether
+ *  the drawer shows and which element it opens (`aria-expanded`, `aria-controls`), and the shell hears
+ *  `trigger-press`. Renders nothing while the navigation is docked (or when the shell has no ChatShellNav). */
+export function ChatShellNavTrigger({ className, children, ...props }: ChatShellNavTriggerProps) {
+  const { compact, hasNav, navPane } = useChatShell();
   if (!compact || !hasNav) return null;
   return (
-    <SdkButton
+    <AdaptivePaneTrigger
+      controller={navPane}
       aria-label="Channels"
-      aria-expanded={navOpen}
-      onClick={(e, details) => {
-        onClick?.(e, details);
-        if (!e.defaultPrevented) setNavOpen(true, changeDetails({ reason: 'trigger-press', event: e.nativeEvent }));
-      }}
       className={cx('grid cursor-pointer border-0 bg-transparent p-1 text-muted-foreground', className)}
       {...props}
     >
       {children ?? <Icon name="line-3-horizontal" size={17} sw={2} />}
-    </SdkButton>
+    </AdaptivePaneTrigger>
   );
 }
 

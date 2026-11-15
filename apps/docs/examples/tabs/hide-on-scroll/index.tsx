@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Tabs, TabsBar, TabsList, TabsTab } from '@/components/ui/tabs'
 import type { IconName } from '@/lib/icon'
-import { chromeStore } from '@/lib/theme'
+import { setChromeHidden } from '@/lib/theme'
 
 const items: { value: string; title: string; icon: IconName }[] = [
   { value: 'favorites', title: 'Favorites', icon: 'star' },
@@ -19,12 +19,12 @@ const calls = [
 // The bottom tab bar on its own: Tabs with variant="bar" and no panels. The bar
 // is absolutely positioned at the bottom of the nearest positioned ancestor, and
 // you render the screen behind it. Scrolling down hides it — the screen
-// publishes that through `chromeStore` (a NavigationStack page does this for
+// publishes that through `setChromeHidden` (a NavigationStack page does this for
 // you) — and scrolling up brings it back.
 export default function HideOnScroll() {
   const [tab, setTab] = useState('recents')
   const last = useRef(0)
-  useEffect(() => () => chromeStore.set(false), [])
+  useEffect(() => () => setChromeHidden(false), [])
   const title = items.find((i) => i.value === tab)?.title
   return (
     <div className="relative mx-auto h-[440px] max-w-sm overflow-hidden rounded-card bg-background shadow-hairline">
@@ -34,8 +34,8 @@ export default function HideOnScroll() {
           const y = e.currentTarget.scrollTop
           const dy = y - last.current
           last.current = y
-          if (y < 40 || dy < -5) chromeStore.set(false)
-          else if (dy > 5) chromeStore.set(true)
+          if (y < 40 || dy < -5) setChromeHidden(false)
+          else if (dy > 5) setChromeHidden(true)
         }}
       >
         <h2 className="m-0 px-5 pt-5 pb-3 text-title font-bold">{title}</h2>

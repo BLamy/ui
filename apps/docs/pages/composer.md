@@ -114,7 +114,7 @@ Addons and bumps order themselves (block-start → input → block-end, top bump
 | `fabAlign` | `'end'` | Where the FAB sits along the inline axis: `'start' \| 'center' \| 'end'`. |
 | `fabIcon` | compose glyph | The FAB's icon. |
 
-Every callback runs before the state moves, and `details.cancel()` keeps an uncontrolled value as it was. A send empties the draft first (reason `send` on both, with the click or key behind it): canceling either refuses the send, so nothing reaches `onSubmit` or the queue and the editor keeps the draft. The root takes `className`, `style` and `ref`. Parts read the state with [`useComposer()`](https://blamy.github.io/ui/#/hooks-composer).
+Every callback runs before the state moves, and `details.cancel()` keeps an uncontrolled value as it was. A send empties the draft first (reason `send` on both, with the click or key behind it): canceling either refuses the send, so nothing reaches `onSubmit` or the queue and the editor keeps the draft. The root takes `className`, `style`, `ref` and its element's props (`id`, `aria-*`, `data-*`, handlers). Parts read the state with [`useComposer()`](https://blamy.github.io/ui/#/hooks-composer).
 
 ### ComposerCard
 
@@ -198,7 +198,7 @@ Wrap the pills in `ComposerOptions`: they stay on one line and scroll sideways w
 | `maxReveal` | `320` | The open height (px). |
 | `closeOnEscape` | `true` | Escape closes an open draggable bump (it is a layer, so a menu opened from it closes first). |
 
-`ComposerBumpHandle` is the bump's row (`grip`, default `true`, and `aria-label` for the grip's name, default "Expand" / "Collapse"); in a draggable bump the whole row is the drag handle and a tap on it toggles. `ComposerBumpContent` (`aria-label`, default "Details") is the revealed region. A draggable bump is a strip that belongs to the card (a monitor's output above the composer, say); a chat that floats over a page, peeks, grows and folds into a button is [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container) on a FloatingSheet. `ComposerText` (`icon`) is muted inline text for a bump or a footer hint; `ComposerSpacer` pushes what follows to the end; `ComposerSeparator` is a short vertical [Separator](https://blamy.github.io/ui/#/separator).
+`ComposerBumpHandle` is the bump's row (`grip`, default `true`, and `aria-label` for the grip's name, default "Expand" / "Collapse"; in a bump that doesn't drag it names the row, which is then a `group`); in a draggable bump the whole row is the drag handle and a tap on it toggles. `ComposerBumpContent` (`aria-label`, default "Details") is the revealed region; its props and `ref` go on that region. A draggable bump is a strip that belongs to the card (a monitor's output above the composer, say); a chat that floats over a page, peeks, grows and folds into a button is [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container) on a FloatingSheet. `ComposerText` (`icon`) is muted inline text for a bump or a footer hint; `ComposerSpacer` pushes what follows to the end; `ComposerSeparator` is a short vertical [Separator](https://blamy.github.io/ui/#/separator).
 
 {% demo src="composer/compositional-parts" %}
 

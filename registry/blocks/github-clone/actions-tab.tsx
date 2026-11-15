@@ -8,6 +8,7 @@ import type { WorkflowRun } from './data';
 import { Box, Oct, ghButton, Branch, type Layout } from './parts';
 import { FilterMenus } from './lists';
 import { Loaded, useLoad, useRepo } from './repo-context';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const RUN_ICON: Record<WorkflowRun['status'], ReactNode> = {
   success: <Oct name="checkFill" className="text-[var(--gh-open)]" />,
@@ -80,7 +81,7 @@ function Runs({ ui, data, workflow, setWorkflow }: {
               ) : null}
             </div>
           ))}
-          {!runs.length ? <div className="px-4 py-10 text-center text-muted-foreground">No workflow runs yet.</div> : null}
+          {!runs.length ? <EmptyState size="sm" title="No workflow runs yet." className="py-10" /> : null}
         </Box>
       </div>
     </div>

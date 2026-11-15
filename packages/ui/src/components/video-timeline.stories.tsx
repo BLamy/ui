@@ -119,7 +119,7 @@ function TimelineDemo({ zoom, time, fps, snap, readOnly, initial = TIMELINE, sel
 function Frame({ dark, width, children }: { dark?: boolean; width?: number; children: ReactNode }) {
   return (
     <div className="relative h-[300px] w-(--w,100%) overflow-hidden" style={width ? ({ '--w': `${width}px` } as CSSProperties) : undefined}>
-      <BLProvider dark={dark}>{children}</BLProvider>
+      <BLProvider appearance={dark ? 'dark' : 'light'}>{children}</BLProvider>
     </div>
   );
 }

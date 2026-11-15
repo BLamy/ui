@@ -6,7 +6,7 @@
   "exports": [
     "Icon",
     "Chevron",
-    "IC",
+    "isIconName",
     "ICON_NAMES",
     "ICON_ALIASES",
     "ICON_CATEGORIES",

@@ -139,7 +139,7 @@ function Passwords({ initialCategory = 'all', initialItem, live = true, auth: au
   };
 
   return (
-    <BLProvider dark={dark} tint={PASSWORDS_TINT[dark ? 'dark' : 'light']} className="bg-background">
+    <BLProvider appearance={dark ? 'dark' : 'light'} tint={PASSWORDS_TINT[dark ? 'dark' : 'light']} className="bg-background">
       {/* The "Copied" HUD: the block's own, drawn inside the block; copy buttons reach it through HudProvider. */}
       <SignInsProvider value={{ ...signIns, signIn: setSignIn, savePasskey }}>
       <HudProvider hud={hud}>

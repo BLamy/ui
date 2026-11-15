@@ -43,12 +43,12 @@ Browsers start audio only after a press, so nothing plays until someone presses 
 
 ## A .strudel file
 
-`src` fetches a file and plays its text. `showCode` opens the code under the player.
+`src` fetches a file and plays its text. `defaultCodeOpen` opens the code under the player.
 
 {% demo src="strudel/file" %}
 
 ```tsx
-<StrudelPlayer src="/strudel/night-drive.strudel" title="Night drive" showCode />
+<StrudelPlayer src="/strudel/night-drive.strudel" title="Night drive" defaultCodeOpen />
 ```
 
 ## In Markdown
@@ -83,11 +83,18 @@ subscribeStrudel(() => getStrudelSnapshot()) // { owner, status: 'idle' | 'loadi
 | `code` | — | Strudel code to play. |
 | `src` | — | URL of a `.strudel` file, used when `code` is absent. |
 | `title` | the file name, or "Strudel pattern" | The track name, and the play button's label. |
-| `showCode` | `false` | Open the code under the player. |
-| `rack` | `true` | Offer the equipment rack behind the sliders button. |
-| `showRack` | `false` | Open the rack from the start. |
-| `onCodeChange` | — | Called with the code after each rack edit. |
+| `codeOpen` · `defaultCodeOpen` · `onCodeOpenChange` | `false` | Whether the code panel under the player is open: controlled, uncontrolled, and `(open, details)` when it opens or closes (`details.reason`: `trigger-press`, `find-in-page` or `imperative`; `details.cancel()` keeps it as it is). |
+| `rack` | `true` | Offer the equipment rack behind the sliders button; `false` leaves the button out. |
+| `rackOpen` · `defaultRackOpen` · `onRackOpenChange` | `false` | The same for the rack panel. |
+| `onCodeChange` | — | `(code, details)` after each rack edit and after Revert: `details.reason` is `rack-edit` or `revert`, and for a rack edit `details.rack` says which control made it. |
 | `samples` | dirt-samples | Sample banks to load before the first play. |
+| `className` · `style` · `ref` | — | On the root `<figure>`. |
+| `aria-label` | `title` | The figure's accessible name; defaults to the title, then the file name, then "Strudel pattern". |
+
+```tsx
+const [rackOpen, setRackOpen] = useState(false)
+<StrudelPlayer code={code} title="Four on the floor" rackOpen={rackOpen} onRackOpenChange={setRackOpen} onCodeChange={(next, { reason }) => save(next, reason)} />
+```
 
 ## The rack
 
@@ -103,15 +110,15 @@ The master strip's **Rack | Grid** switch moves the modules onto a masonry grid:
 
 ```tsx
 const [code, setCode] = useState(song)
-<StrudelRack code={code} onChange={setCode} onPlayableChange={setPlayable} layout="grid" persistKey="night-drive" />
+<StrudelRack value={code} onValueChange={setCode} onPlayableChange={setPlayable} layout="grid" persistKey="night-drive" />
 ```
 
-The rack is controlled: `code` in, the edited code out through `onChange`. Mute and solo don't edit the code; they change what plays, which `onPlayableChange` reports (the code with the silenced tracks replaced by `silence`).
+The rack is controlled: `value` in, the edited code out through `onValueChange(code, details)`, where `details` says which control edited it (`details.control`: `gain`, `effect`, `tempo`, `sound`, `steps`…, with `track` and `param`) and how (`details.reason`). Mute and solo don't edit the code; they change what plays, which `onPlayableChange` reports (the code with the silenced tracks replaced by `silence`).
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `code` | — | The Strudel code. |
-| `onChange` | — | Called with the edited code. |
+| `value` | — | The Strudel code. |
+| `onValueChange` | — | `(code, details)` with the edited code and what edited it. |
 | `onPlayableChange` | — | Called with the code to play under the current mute/solo mix. |
 | `layout` | `"rack"` | `"grid"` puts the modules on the masonry grid. |
 | `persistKey` | — | Remember the mode, order and sizes in localStorage. |
@@ -131,7 +138,7 @@ The rack is controlled: `code` in, the edited code out through `onChange`. Mute 
 
 ### The hardware on its own
 
-`Knob`, `Fader` and `StepGrid` (also from `@brett_lamy/docstream/strudel`) are ARIA sliders and buttons you can use anywhere inside a `.strudel-rack` panel: drag (Shift for fine), arrow keys, Page Up/Down, Home/End, and double-click to reset.
+`Knob`, `Fader` and `StepGrid` (also from `@brett_lamy/docstream/strudel`) are ARIA sliders and buttons you can use anywhere inside a `.strudel-rack` panel: drag, arrow keys (Shift for a large step, Alt for a fine one), Page Up/Down, Home/End, and double-click to reset. `Knob` and `Fader` report `onValueChange(value, details)`, where `details.reason` is `drag`, `step-key`, `track-press` or `reset-press`.
 
 {% demo src="strudel/hardware" %}
 

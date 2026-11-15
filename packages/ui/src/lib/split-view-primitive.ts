@@ -179,6 +179,11 @@ type Store = {
   focusedDetail: string | null;
   /** Each pane (by its key) whose content is rendered, and how far that content has scrolled. */
   panes: Record<string, PaneScroll>;
+  /** A sidebar that becomes a tab bar: the tab group (a `tab` section's value) of each value in one, the group's own
+   *  value included. */
+  tabGroups: Record<string, string>;
+  /** A tab bar switch is under way: the columns jump to their places, as iOS's tabs do, instead of sliding. */
+  jumping: boolean;
 };
 
 /** A pane's content: past the top (`scrolled`), past the large title (`under`). */
@@ -207,10 +212,16 @@ const registeredIn = (state: Store) => SPLIT_VIEW_COLUMNS.filter((c) => state.sp
 /** Compact, a sidebar with `tabs` is a tab bar over the other columns instead of the stack's first page. */
 const tabbedIn = (state: Store) =>
   sizeClassIn(state) === 'compact' && !!state.specs.sidebar?.tabs && (!!state.specs.supplementary || !!state.specs.detail);
+/** Compact, with the sidebar as a tab bar: the tab group the selection is in, whose rows the sidebar shows as that
+ *  tab's first page. */
+const tabGroupIn = (state: Store): string | null => {
+  const v = state.value.sidebar;
+  return tabbedIn(state) && v != null ? state.tabGroups[v] ?? null : null;
+};
 /** Registered columns that are hidden: the supplementary, closed, when there's a detail to take its space; and,
- *  compact, a sidebar that is a tab bar. */
+ *  compact, a sidebar that is a tab bar, unless it is showing a tab group's rows. */
 const hiddenIn = (state: Store): SplitViewColumn[] => [
-  ...(tabbedIn(state) ? (['sidebar'] as const) : []),
+  ...(tabbedIn(state) && tabGroupIn(state) == null ? (['sidebar'] as const) : []),
   ...(!state.supplementaryOpen && state.specs.supplementary && state.specs.detail ? (['supplementary'] as const) : []),
 ];
 /** Columns that are shown, in order. */
@@ -222,6 +233,10 @@ const topIn = (state: Store): SplitViewColumn => {
   const present = presentIn(state);
   const top = state.compactColumn;
   if (top && present.includes(top)) return top;
+  // A tab group's tab starts on its rows (the sidebar) when the group itself is picked, on the picked row's page
+  // when one of them is.
+  const group = tabGroupIn(state);
+  if (group != null && present.includes('sidebar') && state.value.sidebar !== group) return present[present.indexOf('sidebar') + 1] ?? 'sidebar';
   return present.includes('supplementary') ? 'supplementary' : present.includes('sidebar') ? 'sidebar' : present[0] ?? 'detail';
 };
 const sidebarOpenIn = (state: Store) => presentIn(state).includes('sidebar') && state.sidebarOpen;
@@ -367,6 +382,9 @@ export type SplitViewState = {
   supplementaryOpen: boolean;
   /** Collapsed, and the sidebar (`compactPresentation="tabs"`) is a tab bar over the other columns. */
   sidebarTabs: boolean;
+  /** With the sidebar as a tab bar: the tab group (a `tab` section's value) the selection is in, whose rows the
+   *  sidebar shows as that tab's first page; else null. */
+  tabGroup: string | null;
 };
 
 /** What a column's parts hand `render` functions and state-based class names. */
@@ -431,6 +449,7 @@ function stateOf(state: Store): SplitViewState {
     columnWidths: state.columnWidths,
     supplementaryOpen: state.supplementaryOpen,
     sidebarTabs: tabbedIn(state),
+    tabGroup: tabGroupIn(state),
   };
 }
 
@@ -480,6 +499,8 @@ export const splitView = definePrimitive({
       focusedSupplementary: null,
       focusedDetail: null,
       panes: {},
+      tabGroups: {},
+      jumping: false,
     };
   },
   sync: (options) => ({
@@ -574,7 +595,7 @@ export const splitView = definePrimitive({
       createRovingFocus<Store, ItemProps>(context, {
         slot: 'item',
         key,
-        focusable: (item) => !item.props.disabled && !itemEls.get(item.key)?.closest('[inert]'),
+        focusable: (item) => !item.props.disabled && !itemEls.get(item.key)?.closest('[inert],[hidden]'),
         preferred: (item) => store.get().value[column] === item.props.item,
       });
     const rovers: Record<SplitViewColumn, ReturnType<typeof roving>> = {
@@ -611,6 +632,10 @@ export const splitView = definePrimitive({
       };
     }
 
+    // The two frames a tab bar switch jumps for.
+    const jump = [0, 0];
+    context.onDestroy(() => { cancelAnimationFrame(jump[0]); cancelAnimationFrame(jump[1]); });
+
     function setSidebarOpen(open: boolean, o?: Why<SplitViewSidebarOpenChangeReason>) {
       return open !== store.get().sidebarOpen && change('sidebarOpen', open, imperative(o));
     }
@@ -622,10 +647,15 @@ export const splitView = definePrimitive({
       const why = imperative(o);
       // Picking the selected id again still shows what follows it; a canceled change shows nothing.
       const same = state.value[column] === id;
-      if (!same && !change('value', { ...state.value, [column]: id }, { ...why, column })) return false;
-      const present = presentIn(state);
+      const value = { ...state.value, [column]: id };
+      if (!same && !change('value', value, { ...why, column })) return false;
+      // The columns as they are with the new value (a controlled value lands later): picking a tab group in a tab
+      // bar brings in the sidebar with its rows.
+      const next = { ...store.get(), value };
+      const present = presentIn(next);
       const after = present[present.indexOf(column) + 1];
-      show(id != null && after ? after : column, why);
+      const groupRoot = column === 'sidebar' && id != null && tabbedIn(next) && next.tabGroups[id] === id;
+      show(groupRoot ? 'sidebar' : id != null && after ? after : column, why);
       // A floating sidebar gets out of the way once something is picked in it.
       if (column === 'sidebar' && sizeClassIn(state) !== 'compact' && behaviorIn(state) !== 'tile') {
         setSidebarOpen(false, { reason: o?.reason === 'item-press' ? 'item-press' : 'imperative', event: o?.event });
@@ -749,6 +779,25 @@ export const splitView = definePrimitive({
       },
       setColumnWidth,
       internal: {
+        /** The ids of a column and of the selected tab of a sidebar that is a tab bar (its tabpanel's label). */
+        columnId: (column: SplitViewColumn) => `${context.id}-${column}`,
+        tabId: `${context.id}-tab`,
+        /** The sidebar's tab groups (`tabGroups`), from the sections that are tabs. */
+        setTabGroups(groups: Record<string, string>) {
+          const cur = store.get().tabGroups;
+          const keys = Object.keys(groups);
+          if (keys.length === Object.keys(cur).length && keys.every((k) => cur[k] === groups[k])) return;
+          store.set({ tabGroups: groups });
+        },
+        /** Picks a tab of the tab bar: the columns jump to their places for a frame, then move as before. */
+        selectTab(value: string, o?: Why<SplitViewValueChangeReason>) {
+          store.set({ jumping: true });
+          const done = select('sidebar', value, o);
+          cancelAnimationFrame(jump[0]);
+          cancelAnimationFrame(jump[1]);
+          jump[0] = requestAnimationFrame(() => { jump[1] = requestAnimationFrame(() => store.set({ jumping: false })); });
+          return done;
+        },
         stack,
         resize,
         layout: (state: Store) => splitViewLayout(state, (c) => widthOf(state, c)),
@@ -790,10 +839,10 @@ export const splitView = definePrimitive({
           const i = present.indexOf(column);
           return sizeClassIn(state) === 'compact' && i >= 0 && i < present.length - 1;
         },
-        /** Whether `value` is current in `column`: never while collapsed, where rows are navigation, except in a
-         *  sidebar that is a tab bar (its tabs are a place, not a way in). */
+        /** Whether `value` is current in `column`: never while collapsed, where rows are navigation (a sidebar that
+         *  is a tab bar draws its selection in its tabs). */
         current: (state: Store, column: SplitViewColumn, value: string) =>
-          (sizeClassIn(state) !== 'compact' || (column === 'sidebar' && tabbedIn(state))) && state.value[column] === value,
+          sizeClassIn(state) !== 'compact' && state.value[column] === value,
       },
     };
     return api;
@@ -808,9 +857,13 @@ export const splitView = definePrimitive({
       },
       attrs: (state, { api, id }) => {
         const l = api.internal.layout(state).columns[c];
+        // With the sidebar as a tab bar, the column on top is the selected tab's panel.
+        const panel = tabbedIn(state) && !!l?.top;
         return {
           id: `${id}-${c}`,
           tabindex: '-1',
+          role: panel ? 'tabpanel' : undefined,
+          'aria-labelledby': panel ? `${id}-tab` : undefined,
           inert: l ? flag(l.inert) : '',
           'data-top': flag(l?.top),
           'data-behind': flag(l?.behind),
@@ -841,8 +894,8 @@ export const splitView = definePrimitive({
         'data-size-class': sizeClassIn(state),
         'data-sidebar-open': flag(sidebarOpenIn(state)),
         'data-resizing': flag(!!state.resizing),
-        // Nothing animates until the first layout has painted.
-        'data-instant': flag(!state.ready),
+        // Nothing animates until the first layout has painted, nor while a tab bar switch jumps.
+        'data-instant': flag(!state.ready || state.jumping),
       }),
       bind: (el, { api }) => api.internal.bindRoot(el),
     }),

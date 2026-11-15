@@ -17,10 +17,10 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { BLProvider } from '@/lib/theme'
 
-const sides = ['bottom', 'right', 'left', 'top'] as const
+const sides = ['bottom', 'end', 'start', 'top'] as const
 
-// `side` picks the edge: bottom is the iOS card sheet with a grabber, left and
-// right are side panels, top drops down. Each follows a drag toward its edge
+// `side` picks the edge: bottom is the iOS card sheet with a grabber, start and
+// end (the inline edges, left and right here) are side panels, top drops down. Each follows a drag toward its edge
 // and springs away past a threshold. The sheet stays inside BLProvider — here
 // a frame — so open each one and press Esc, the scrim or Apply.
 export default function Sides() {

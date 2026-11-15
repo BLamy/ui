@@ -12,10 +12,10 @@ import {
   minSizeOf,
   splitSizes,
   workspaceTabsets,
-  type SplitNode,
-  type TabNode,
+  type WorkspaceSplitNode,
+  type WorkspaceTabNode,
   type WorkspaceTabSide,
-  type TabsetNode,
+  type WorkspaceTabsetNode,
   type WorkspaceMinSize,
   type WorkspaceNode,
 } from '@/lib/workspace-model';
@@ -30,11 +30,11 @@ import {
 
 export { workspaceTabsets } from '@/lib/workspace-model';
 export type {
-  SplitNode,
-  TabDropRegion,
-  TabDropTarget,
-  TabNode,
-  TabsetNode,
+  WorkspaceSplitNode,
+  WorkspaceDropRegion,
+  WorkspaceDropTarget,
+  WorkspaceTabNode,
+  WorkspaceTabsetNode,
   WorkspaceLayout,
   WorkspaceLayoutInput,
   WorkspaceMinSize,
@@ -129,7 +129,7 @@ const TOOL =
 const TAB_PANELS = 'relative min-h-0 min-w-0 flex-1 bg-background';
 const TAB_CONTENT = 'h-full min-h-0 w-full overflow-auto outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset';
 const DROP_INDICATOR =
-  'pointer-events-none absolute z-10 rounded-md border-2 border-tint bg-primary/15 data-[region=center]:inset-0 data-[region=left]:inset-y-0 data-[region=left]:left-0 data-[region=left]:w-1/2 data-[region=right]:inset-y-0 data-[region=right]:right-0 data-[region=right]:w-1/2 data-[region=top]:inset-x-0 data-[region=top]:top-0 data-[region=top]:h-1/2 data-[region=bottom]:inset-x-0 data-[region=bottom]:bottom-0 data-[region=bottom]:h-1/2';
+  'pointer-events-none absolute z-10 rounded-md border-2 border-tint bg-primary/15 data-[region=center]:inset-0 data-[region=start]:inset-y-0 data-[region=start]:start-0 data-[region=start]:w-1/2 data-[region=end]:inset-y-0 data-[region=end]:end-0 data-[region=end]:w-1/2 data-[region=top]:inset-x-0 data-[region=top]:top-0 data-[region=top]:h-1/2 data-[region=bottom]:inset-x-0 data-[region=bottom]:bottom-0 data-[region=bottom]:h-1/2';
 
 const TAB_HINT =
   'Press Space or Enter to pick this tab up, then the arrow keys to move it along its pane or to another pane, and Space or Enter to drop it. Escape puts it back. Delete closes it.';
@@ -148,17 +148,17 @@ export type WorkspaceProps<TabData = unknown, TabsetData = unknown> = WorkspaceO
   Omit<PartProps<'div', WorkspaceState<TabData, TabsetData>>, 'children' | 'defaultValue'> & {
     /** A tab's content. It renders again when its tab, its state or this function changes, so keep the function
      *  stable (`useCallback`) when content is expensive. */
-    renderTabContent: (tab: TabNode<TabData>, state: WorkspaceTabContentState) => ReactNode;
+    renderTabContent: (tab: WorkspaceTabNode<TabData>, state: WorkspaceTabContentState) => ReactNode;
     /** A tab in its strip: a `WorkspaceTab` around a `WorkspaceTabTrigger` and, to close it, a `WorkspaceTabClose`.
      *  Defaults to the tab's title and a close button. */
-    renderTab?: (tab: TabNode<TabData>) => ReactNode;
+    renderTab?: (tab: WorkspaceTabNode<TabData>) => ReactNode;
     /** What follows a tabset's tabs. Defaults to `WorkspaceToolbar`, which maximizes and restores. */
-    renderTabsetToolbar?: (tabset: TabsetNode<TabData, TabsetData>, state: WorkspaceTabsetState) => ReactNode;
+    renderTabsetToolbar?: (tabset: WorkspaceTabsetNode<TabData, TabsetData>, state: WorkspaceTabsetState) => ReactNode;
     /** What a tabset without tabs shows. */
-    renderEmptyTabset?: (tabset: TabsetNode<TabData, TabsetData>) => ReactNode;
+    renderEmptyTabset?: (tabset: WorkspaceTabsetNode<TabData, TabsetData>) => ReactNode;
     /** Whether a tab's content stays mounted while another tab is on show. Defaults to true; false unmounts it,
      *  and its state with it. Moving a tab never remounts its content. */
-    keepMounted?: boolean | ((tab: TabNode<TabData>) => boolean);
+    keepMounted?: boolean | ((tab: WorkspaceTabNode<TabData>) => boolean);
     /** The narrowest a tabset gets, for those that don't say. */
     tabsetMinWidth?: WorkspaceMinSize;
     /** The shortest a tabset gets, for those that don't say. */
@@ -176,8 +176,8 @@ export type WorkspaceProps<TabData = unknown, TabsetData = unknown> = WorkspaceO
 
 export type WorkspacePresentation = 'auto' | 'docked' | 'tabs';
 
-type AnyTab = TabNode<any>;
-type AnyTabset = TabsetNode<any, any>;
+type AnyTab = WorkspaceTabNode<any>;
+type AnyTabset = WorkspaceTabsetNode<any, any>;
 type AnyNode = WorkspaceNode<any, any>;
 
 type WorkspaceContextValue = {
@@ -416,13 +416,13 @@ function NodeView({ node, tabsetProps }: { node: AnyNode; tabsetProps: (tabset: 
 
 const layouts = new WeakMap<object, number[]>();
 /** A split's shares, the same array for the same split, so Resizable sees a new layout only when one arrives. */
-function layoutOf(node: SplitNode<any, any>) {
+function layoutOf(node: WorkspaceSplitNode<any, any>) {
   let sizes = layouts.get(node);
   if (!sizes) layouts.set(node, (sizes = splitSizes(node)));
   return sizes;
 }
 
-function SplitView({ node, tabsetProps }: { node: SplitNode<any, any>; tabsetProps: (tabset: AnyTabset) => TabsetProps }) {
+function SplitView({ node, tabsetProps }: { node: WorkspaceSplitNode<any, any>; tabsetProps: (tabset: AnyTabset) => TabsetProps }) {
   const { api, classNames, disabled, min } = useWorkspaceContext('A split');
   return (
     // The split's own group part is the element Resizable renders, so one element is both: named for people

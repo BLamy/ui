@@ -8,7 +8,7 @@ export function Screen({ children, dark, h = 640, className, title }: {
   children?: ReactNode; dark?: boolean; h?: number; className?: string; title?: ReactNode;
 }) {
   return (
-    <Phone dark={dark} h={h}>
+    <Phone appearance={dark ? 'dark' : 'light'} h={h}>
       <div className={cn('bl-scroll absolute inset-0 flex flex-col gap-4 overflow-y-auto p-5', className)}>
         {title ? <div className="px-1 pt-2 text-[28px] leading-[34px] font-bold tracking-[-.4px] text-foreground">{title}</div> : null}
         {children}
@@ -19,7 +19,7 @@ export function Screen({ children, dark, h = 640, className, title }: {
 
 export function Panel({ children, dark, w, className }: { children?: ReactNode; dark?: boolean; w?: number; className?: string }) {
   return (
-    <Pad dark={dark} w={w}>
+    <Pad appearance={dark ? 'dark' : 'light'} w={w}>
       <div className={cn('flex flex-col gap-4', className)}>{children}</div>
     </Pad>
   );

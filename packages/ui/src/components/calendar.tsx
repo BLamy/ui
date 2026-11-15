@@ -21,6 +21,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { useSizeClassScope } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn, cx } from '@/lib/utils';
+import { CalendarMonthsContext } from '@/lib/calendar-months';
 
 /* ══ Calendar — UI SDK's Calendar (month grids with one tab stop, arrow-key and PageUp/PageDown navigation, locale
    week starts, min/max, unavailable dates) drawn as iOS: round day cells, a tint-filled selection, and for a range a
@@ -126,11 +127,23 @@ export type CalendarDayProps = Omit<ComponentProps<typeof SdkCalendarDay>, 'chil
   children?: ReactNode | ((day: CalendarDayState) => ReactNode);
 };
 
+/** Whether an ISO date is the first or the last day of its month. */
+function monthEdge(date: unknown): 'start' | 'end' | undefined {
+  if (typeof date !== 'string') return undefined;
+  const [y, m, d] = date.split('-').map(Number);
+  if (!y || !m || !d) return undefined;
+  if (d === 1) return 'start';
+  return new Date(Date.UTC(y, m - 1, d + 1)).getUTCDate() === 1 ? 'end' : undefined;
+}
+
 /** One day. A range's ends are filled and the days between are joined by a band (half a cell at each end, none
     on a one-day range); today is tinted, and an unavailable day is struck through. */
 export function CalendarDay({ className, children, ...props }: CalendarDayProps) {
+  const edge = monthEdge(props.value);
   return (
     <SdkCalendarDay
+      data-month-start={edge === 'start' ? '' : undefined}
+      data-month-end={edge === 'end' ? '' : undefined}
       className={cx(
         [
           // 36px days; in a compact (phone) container, a seventh of the grid's width: 44px touch targets while they fit.
@@ -139,6 +152,8 @@ export function CalendarDay({ className, children, ...props }: CalendarDayProps)
           'before:absolute before:inset-0 before:hidden before:bg-primary/15 data-range-start:before:block data-range-middle:before:block data-range-end:before:block data-range-start:before:start-1/2 data-range-end:before:end-1/2',
           // The band is rounded where a week row cuts it, and an end at a row's edge has no half-cell tab beside it.
           'first:before:rounded-s-full last:before:rounded-e-full first:data-range-end:before:hidden last:data-range-start:before:hidden',
+          // So is it where a month ends: a range across two stacked months reads as two rounded runs, not a cut.
+          'data-month-start:before:rounded-s-full data-month-end:before:rounded-e-full data-month-start:data-range-end:before:hidden data-month-end:data-range-start:before:hidden',
         ],
         className,
       )}
@@ -175,23 +190,40 @@ export function CalendarWeeks({ children, ...props }: ComponentProps<typeof SdkC
    instead of running past the card's edge. */
 const compactGrid = 'border-separate border-spacing-0 in-data-[size-class=compact]:w-77 in-data-[size-class=compact]:max-w-full in-data-[size-class=compact]:table-fixed';
 
-/** A month: the weekday row and its days. `offset` picks which of the months on show it is, from 0. */
+/** Whether the grids show their own month caption: CalendarMonths turns it on when it draws more than one. */
+const CalendarGridHeadingContext = createContext(false);
+
+/** A month's caption over its grid, like "October 2026". CalendarMonths draws one over each grid when it shows more
+    than one month, visible while the months stack (a compact scope), so every stacked month is labelled on screen.
+    Hidden from screen readers: the grid is already named by its month. */
+export function CalendarGridHeading({ className, ...props }: ComponentProps<'caption'>) {
+  return (
+    <caption
+      data-slot="calendar-grid-heading"
+      aria-hidden="true"
+      className={cn('hidden px-2 pt-1 pb-1.5 text-start text-subhead font-semibold in-data-[size-class=compact]:table-caption', className)}
+      {...props}
+    />
+  );
+}
+
+/** A month: the weekday row and its days (and its CalendarGridHeading when the months stack). `offset` picks which
+    of the months on show it is, from 0. */
 export function CalendarGrid({ className, children, ...props }: ComponentProps<typeof SdkCalendarGrid>) {
+  const heading = useContext(CalendarGridHeadingContext);
   return (
     <SdkCalendarGrid className={cx(compactGrid, className)} {...props}>
-      {children ?? (
+      {children ?? ((state) => (
         <>
+          {heading ? <CalendarGridHeading>{state.label}</CalendarGridHeading> : null}
           <CalendarWeekdays />
           <CalendarWeeks />
         </>
-      )}
+      ))}
     </SdkCalendarGrid>
   );
 }
 
-/** How many months the host shows, for CalendarMonths: a Calendar and a DatePicker provide their `months`, so
-    CalendarMonths draws the right number of grids in either without being told again. */
-export const CalendarMonthsContext = createContext(1);
 
 export interface CalendarMonthsProps extends ComponentProps<'div'> {
   /** How many grids. Default: the `months` of the Calendar or DatePicker it is in. */
@@ -199,14 +231,17 @@ export interface CalendarMonthsProps extends ComponentProps<'div'> {
 }
 
 /** The month grids on show, one CalendarGrid per month, side by side while they fit and wrapping onto rows,
-    centred under the header, in a narrow container (a phone, a sidebar) rather than running past its edge. */
+    centred under the header, in a narrow container (a phone, a sidebar) rather than running past its edge. Stacked
+    months each carry their own caption (CalendarGridHeading). */
 export function CalendarMonths({ months, className, ...props }: CalendarMonthsProps) {
   const fromCalendar = useContext(CalendarMonthsContext);
   const shown = Math.max(1, Math.floor(months ?? fromCalendar));
   return (
-    <div data-slot="calendar-months" className={cn('flex flex-wrap justify-center gap-x-6 gap-y-3', className)} {...props}>
-      {Array.from({ length: shown }, (_, offset) => <CalendarGrid key={offset} offset={offset} />)}
-    </div>
+    <CalendarGridHeadingContext.Provider value={shown > 1}>
+      <div data-slot="calendar-months" className={cn('flex flex-wrap justify-center gap-x-6 gap-y-3', className)} {...props}>
+        {Array.from({ length: shown }, (_, offset) => <CalendarGrid key={offset} offset={offset} />)}
+      </div>
+    </CalendarGridHeadingContext.Provider>
   );
 }
 

@@ -2,10 +2,11 @@
 import * as React from 'react';
 import { useRef, useState } from 'react';
 import { createParts } from '@ui-sdk/react/primitive';
-import { cn, pressable } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Chevron } from '@/lib/icon';
-import { pressableFocusRing } from '@/lib/primitives';
+import { coarseHitArea, pressableFocusRing, pressable } from '@/lib/primitives';
 import { messageScroller } from '@/lib/message-scroller-primitive';
+import { ScrollerContext } from '@/lib/message-scroller-context';
 
 /* ══ MessageScroller — a chat transcript that anchors turns and follows the live edge ══
    <MessageScroller threadKey={thread.id} streaming={busy} aria-label="Thread">
@@ -21,16 +22,6 @@ import { messageScroller } from '@/lib/message-scroller-primitive';
    The column is `--message-column-width` wide (780px) with `--message-gutter` (22px) at its sides: set them on the
    scroller (or any ancestor) to fit it to a narrower or wider host. */
 
-interface ScrollerContextValue {
-  /** The open thread has committed once: items that mount after that are arriving (they rise in). */
-  opened: React.RefObject<boolean>;
-}
-const ScrollerContext = React.createContext<ScrollerContextValue | null>(null);
-
-/** Whether an element is inside a MessageScroller (ConversationUserMessage / ConversationAssistantMessage render as items there). */
-export function useInMessageScroller(): boolean {
-  return React.useContext(ScrollerContext) !== null;
-}
 
 export interface MessageScrollerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
   /** Identifies the thread; switching it re-opens the scroller at the last anchor. */
@@ -154,13 +145,16 @@ export function MessageScroller({
             className={cn(
               pressable,
               pressableFocusRing,
-              'group/jump flex cursor-pointer items-center overflow-hidden rounded-full border border-border bg-card p-[7px] text-caption font-semibold text-foreground shadow-popover',
+              // About 31px drawn; on a touch screen its hit area reaches past 44 (`coarseHitArea`), as the shell's other
+              // small controls do. Not clipped, so the hit area isn't either: the label clips itself as it grows.
+              'group/jump relative flex cursor-pointer items-center rounded-full border border-border bg-card p-[7px] text-caption font-semibold text-foreground shadow-popover',
+              coarseHitArea,
             )}
           >
             <span aria-hidden="true" className="grid grid-cols-[0fr] opacity-0 transition-[grid-template-columns,opacity] duration-spring-snappy ease-spring-snappy group-data-streaming/jump:grid-cols-[1fr] group-data-streaming/jump:opacity-100 motion-reduce:transition-none">
               <span className="flex min-w-0 items-center gap-[7px] overflow-hidden whitespace-nowrap">
-                <span className="ml-1.5 size-[7px] shrink-0 animate-[wbPulse_1.1s_infinite] rounded-full bg-primary motion-reduce:animate-none" />
-                <span className="pr-[7px]">Streaming</span>
+                <span className="ms-1.5 size-[7px] shrink-0 animate-[wbPulse_1.1s_infinite] rounded-full bg-primary motion-reduce:animate-none" />
+                <span className="pe-[7px]">Streaming</span>
               </span>
             </span>
             <Chevron direction="down" size={15} strokeWidth={2.2} />
@@ -199,8 +193,8 @@ export function MessageScrollerItem({ value, anchor = false, className, children
         className={cn(
           'transition-[opacity,translate,scale] duration-spring-smooth ease-spring-smooth data-starting-style:opacity-0 motion-reduce:transition-none',
           anchor
-            ? 'origin-bottom-right data-starting-style:translate-y-[18px] data-starting-style:scale-98'
-            : 'origin-top-left data-starting-style:translate-y-2.5',
+            ? 'origin-bottom-right rtl:origin-bottom-left data-starting-style:translate-y-[18px] data-starting-style:scale-98'
+            : 'origin-top-left rtl:origin-top-right data-starting-style:translate-y-2.5',
         )}
       >
         {children}

@@ -38,7 +38,7 @@ const PALETTE_ROWS = [
 function Panel({ dark, height = 320, children }: { dark?: boolean; height?: number; children: React.ReactNode }) {
   return (
     <div style={{ width: 720, height }} className="overflow-hidden rounded-xl border border-border">
-      <BLProvider dark={dark}>{children}</BLProvider>
+      <BLProvider appearance={dark ? 'dark' : 'light'}>{children}</BLProvider>
     </div>
   );
 }
@@ -84,7 +84,7 @@ function LineMode({ dark, width }: { dark?: boolean; width?: number }) {
     return made;
   });
   const content = <Terminal shell={shell} />;
-  return width ? <Phone w={width} h={420} dark={dark}>{content}</Phone> : <Panel dark={dark}>{content}</Panel>;
+  return width ? <Phone w={width} h={420} appearance={dark ? 'dark' : 'light'}>{content}</Phone> : <Panel dark={dark}>{content}</Panel>;
 }
 
 export const Prompt: Story = { render: () => <LineMode /> };

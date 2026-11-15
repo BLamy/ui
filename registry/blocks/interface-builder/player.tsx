@@ -243,7 +243,7 @@ function DeviceScreen({ device, appearance, speed, onLog, onActive, onTick }: {
   return (
     <div className="relative overflow-hidden bg-black" style={{ width: device.w, height: device.h, borderRadius: device.radius }}>
       {/* The device is the app's own layer host: its menus, dialogs and toasts open inside the screen. */}
-      <BLProvider dark={appearance === 'dark'} className="bg-transparent">
+      <BLProvider appearance={appearance} className="bg-transparent">
         <LayoutGroup id="ib-player">
           <AnimatePresence initial={false}>
             {frames.map((f, i) => (

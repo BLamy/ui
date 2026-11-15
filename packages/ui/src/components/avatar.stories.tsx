@@ -10,7 +10,7 @@ const meta: Meta<typeof Avatar> = {
   title: 'Atoms/Avatar',
   component: Avatar,
   // `parameters.dark` switches the frame; a Dark story's own frame would nest inside this one.
-  decorators: [(Story, { parameters }) => <Pad dark={parameters.dark}><Story /></Pad>],
+  decorators: [(Story, { parameters }) => <Pad appearance={parameters.dark ? 'dark' : 'light'}><Story /></Pad>],
 };
 export default meta;
 type Story = StoryObj<typeof Avatar>;

@@ -116,8 +116,9 @@ function links(content: ReactNode) {
   return <span data-slot="request-table-links" data-no-row-press="" className="ms-auto flex shrink-0 items-center gap-1">{content}</span>;
 }
 
-/** A built-in column's cell, class and sort value, for the table's time range and links. */
-function builtIn<T extends RequestRow>(id: RequestColumnId, range: DataTableTimeRange, renderLink: ((row: T) => ReactNode) | undefined): Partial<DataTableColumn<T>> {
+/** A built-in column's cell, class and sort value, for the table's time range (`timed`: a real one, given or from
+ *  rows with a time, not the placeholder an empty table gets) and links. */
+function builtIn<T extends RequestRow>(id: RequestColumnId, range: DataTableTimeRange, timed: boolean, renderLink: ((row: T) => ReactNode) | undefined): Partial<DataTableColumn<T>> {
   const sortValue = (row: T) => requestSortValue(row, id);
   switch (id) {
     case 'name':
@@ -142,7 +143,8 @@ function builtIn<T extends RequestRow>(id: RequestColumnId, range: DataTableTime
       return {
         sortValue,
         className: 'relative mx-2 h-full px-0',
-        headerEnd: span > 0 ? formatDuration(span) : undefined,
+        // The span the waterfall covers, only when there is one: an empty table has no duration to state.
+        headerEnd: timed && span > 0 ? formatDuration(span) : undefined,
         cell: (row) => <Bar row={row} range={range} />,
       };
     }
@@ -158,7 +160,7 @@ export interface RequestTableProps<T extends RequestRow = RequestRow>
   timeRange?: DataTableTimeRange;
   /** `row` (default): focus moves by request, as in a network pane, where a row is one thing to open or seek to. `cell`
    *  steps through a request's values too, as DataTable does. */
-  focus?: 'cell' | 'row';
+  navigation?: 'cell' | 'row';
   /** Links to the other end of a call, usually `RequestTableLink`s, after the name (or the second line of a two-line row).
    *  Must be stable (`useCallback`). */
   renderLink?: (row: T) => ReactNode;
@@ -189,12 +191,13 @@ function currentTimeLine<T extends RequestRow>({ columns, stacked }: DataTableOv
 }
 
 export function RequestTable<T extends RequestRow = RequestRow>({
-  rows, columns: columnsProp = DEFAULT_COLUMNS, timeRange, renderLink, density = 'compact', focus = 'row', emptyState, rowProps: ownRowProps,
+  rows, columns: columnsProp = DEFAULT_COLUMNS, timeRange, renderLink, density = 'compact', navigation = 'row', emptyState, rowProps: ownRowProps,
   'aria-label': ariaLabel = 'Requests', ...props
 }: RequestTableProps<T>) {
   const from = timeRange?.[0];
   const to = timeRange?.[1];
   const range = useMemo<DataTableTimeRange>(() => (from !== undefined && to !== undefined ? [from, to] : requestTimeRange(rows)), [from, to, rows]);
+  const timed = (from !== undefined && to !== undefined) || rows.some((row) => row.time !== undefined);
   // A list of ids is the same list whenever it says the same thing, so writing one inline doesn't re-render the rows.
   const key = columnsProp.every((column) => typeof column === 'string') ? columnsProp.join() : columnsProp;
   const columns = useMemo(() => columnsProp.map((column): DataTableColumn<T> => {
@@ -202,8 +205,8 @@ export function RequestTable<T extends RequestRow = RequestRow>({
     const known = (REQUEST_COLUMNS as Record<string, DataTableColumn<RequestRow> | undefined>)[spec.id] as DataTableColumn<T> | undefined;
     if (!known) return spec;
     // A column of your own with a built-in's id keeps the built-in's cell unless it brings one.
-    return { ...known, ...builtIn<T>(spec.id as RequestColumnId, range, renderLink), ...spec };
-  }), [key, range, renderLink]);
+    return { ...known, ...builtIn<T>(spec.id as RequestColumnId, range, timed, renderLink), ...spec };
+  }), [key, range, timed, renderLink]);
 
   const has = useMemo(() => new Set(columns.map((column) => column.id)), [columns]);
   const renderStackedRow = useMemo(() => (row: T) => (
@@ -234,7 +237,7 @@ export function RequestTable<T extends RequestRow = RequestRow>({
       rows={rows}
       columns={columns}
       density={density}
-      focus={focus}
+      navigation={navigation}
       timeRange={range}
       rowTime={rowTime}
       overlay={currentTimeLine}

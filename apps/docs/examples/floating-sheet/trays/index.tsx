@@ -89,7 +89,7 @@ export default function Trays() {
   const last = step === trays.length - 1
   return (
     <Host note="Continue and the back chevron move through the trays: each has its own height, and the sheet springs between them while the content travels the way the flow moves.">
-      <FloatingSheet peek={tray.peek} variant="sheet" collapse="none" aria-label="Checkout" hideOnScroll={false}>
+      <FloatingSheet peek={tray.peek} variant="card" collapse="none" aria-label="Checkout" hideOnScroll={false}>
         <FloatingSheetBody>
           <div className={cn(surfaceHeaderVariants({ variant: 'bar' }), 'pt-1')}>
             <SheetBack hidden={step === 0} onClick={() => go(step - 1)} />

@@ -322,8 +322,31 @@ export interface FontListProps {
   className?: string;
 }
 
-/** The list alone: search, category filter, and the families. */
-export function FontList({
+/** The list: search, category filter, and the families. On its own it holds its family (`value` / `defaultValue` /
+    `onValueChange`). Inside a FontPickerContent or a FontStackPickerContent, given none of those, it is the root's
+    list: it shows the root's value, a pick goes to the root (and closes the popup), and in a stack it carries the
+    stack's places, its limit and its footer. So a content part can hold `<FontList />` beside your own rows. */
+export function FontList(props: FontListProps) {
+  const picker = useContext(FontPickerContext);
+  const stack = useContext(FontStackContext);
+  const own = props.value !== undefined || props.defaultValue !== undefined || props.onValueChange !== undefined;
+  if (!own && stack) return <StackList stack={stack} autoFocus={props.autoFocus ?? true} className={props.className} />;
+  if (!own && picker) {
+    return (
+      <StandaloneList
+        {...picker.list}
+        systemLabel={picker.systemLabel}
+        autoFocus
+        {...props}
+        value={picker.value}
+        onValueChange={(family, details) => { picker.choose(family, details); }}
+      />
+    );
+  }
+  return <StandaloneList {...props} />;
+}
+
+function StandaloneList({
   value: valueProp, defaultValue = null, onValueChange, onPreview, fonts = GOOGLE_FONTS, allowSystem = true, systemLabel = 'System', ...rest
 }: FontListProps) {
   const [value, setValue] = useValue(valueProp, defaultValue, onValueChange);
@@ -524,15 +547,7 @@ export function FontPickerContent({ className, side = 'bottom', align = 'start',
   return (
     <PopoverContent variant="plain" side={side} align={align} className={cx(fontPopup, className)} {...props}>
       <PopoverTitle className="sr-only">{picker.label}</PopoverTitle>
-      {children ?? (
-        <FontList
-          {...picker.list}
-          value={picker.value}
-          systemLabel={picker.systemLabel}
-          autoFocus
-          onValueChange={(family, details) => { picker.choose(family, details); }}
-        />
-      )}
+      {children ?? <FontList />}
     </PopoverContent>
   );
 }
@@ -666,7 +681,7 @@ export function FontStackPickerInputGroup({ className, size, ref, ...props }: Fo
   }, [setField, ref]);
   return (
     <div
-      data-slot="font-stack-picker"
+      data-slot="font-stack-picker-input-group"
       role="group"
       data-disabled={disabled || undefined}
       id={fieldProps?.id as string | undefined}
@@ -741,32 +756,39 @@ export type FontStackPickerContentProps = Omit<ComponentProps<typeof PopoverCont
     front of the stack, or leaves it if it was in it. */
 export function FontStackPickerContent({ className, side = 'bottom', align = 'start', anchor, children, ...props }: FontStackPickerContentProps) {
   const stack = useStack('FontStackPickerContent');
-  const { value, full, maxCount } = stack;
   return (
     <PopoverContent variant="plain" anchor={anchor ?? stack.field} side={side} align={align} className={cx(fontPopup, className)} {...props}>
       <PopoverTitle className="sr-only">{stack.label}</PopoverTitle>
-      {children ?? (
-        <FontListCore
-          fonts={stack.fonts}
-          allowSystem={false}
-          systemLabel="System"
-          defaultCategory={stack.defaultCategory}
-          current={value[0] ?? null}
-          autoFocus
-          mark={(f) => {
-            const at = f ? value.indexOf(f) : -1;
-            return at < 0 ? null : <Badge size="sm">{at + 1}</Badge>;
-          }}
-          isRowDisabled={(f) => full && !!f && !value.includes(f)}
-          onPick={stack.toggle}
-          onActive={(f) => stack.onPreview?.(f == null ? undefined : [f, ...value.filter((x) => x !== f)])}
-          footer={(
-            <p className="m-0 border-t border-border px-3 py-2 text-caption text-foreground/70">
-              {full ? `${maxCount} of ${maxCount}: remove one to add another.` : `Up to ${maxCount}: the first that loads is used.`}
-            </p>
-          )}
-        />
-      )}
+      {children ?? <FontList />}
     </PopoverContent>
+  );
+}
+
+/** The stack's list: its places as badges, a full stack's other rows disabled, a pick added to the front (or taken
+    out), the preview with the hovered family in front, and a footer saying how many fit. */
+function StackList({ stack, autoFocus, className }: { stack: FontStackContextValue; autoFocus?: boolean; className?: string }) {
+  const { value, full, maxCount } = stack;
+  return (
+    <FontListCore
+      fonts={stack.fonts}
+      allowSystem={false}
+      systemLabel="System"
+      defaultCategory={stack.defaultCategory}
+      current={value[0] ?? null}
+      autoFocus={autoFocus}
+      className={className}
+      mark={(f) => {
+        const at = f ? value.indexOf(f) : -1;
+        return at < 0 ? null : <Badge size="sm">{at + 1}</Badge>;
+      }}
+      isRowDisabled={(f) => full && !!f && !value.includes(f)}
+      onPick={stack.toggle}
+      onActive={(f) => stack.onPreview?.(f == null ? undefined : [f, ...value.filter((x) => x !== f)])}
+      footer={(
+        <p className="m-0 border-t border-border px-3 py-2 text-caption text-foreground/70">
+          {full ? `${maxCount} of ${maxCount}: remove one to add another.` : `Up to ${maxCount}: the first that loads is used.`}
+        </p>
+      )}
+    />
   );
 }

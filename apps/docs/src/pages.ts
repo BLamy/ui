@@ -11,7 +11,7 @@ export interface NavPage {
 export interface Nav {
   /** The sidebar, in reading order. */
   sections: Array<{ section: string; pages: NavPage[] }>;
-  /** Pages outside the components list (the Blocks overview). */
+  /** Pages outside the components list: the Blocks overview, and the block shells listed under it. */
   standalone: Array<NavPage & { section: string }>;
 }
 export interface PageInfo extends NavPage {

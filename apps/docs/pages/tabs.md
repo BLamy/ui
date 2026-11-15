@@ -162,7 +162,7 @@ When your router shows the screen, leave the panels out: the bar is then only th
 
 ### Hiding with the scroll
 
-`TabsBar` in the `bar` look follows the kit's chrome state: scrolling down hides it, scrolling up (or reaching the top) brings it back, in step with a [NavigationStack](https://blamy.github.io/ui/#/navigation-stack)'s bar above. It needs no wiring: a NavigationStack page publishes the state as it scrolls. In a scroller of your own, call `chromeStore.set(true)` on a scroll down and `chromeStore.set(false)` on a scroll up, as the demo above does (import it from `@/lib/theme`, or `@brett_lamy/ui/lib/theme` on npm). `hideOnScroll={false}` pins the bar. Anything else that should duck out of the way reads the same flag with `useChromeHidden()`.
+`TabsBar` in the `bar` look follows the kit's chrome state: scrolling down hides it, scrolling up (or reaching the top) brings it back, in step with a [NavigationStack](https://blamy.github.io/ui/#/navigation-stack)'s bar above. It needs no wiring: a NavigationStack page publishes the state as it scrolls. In a scroller of your own, call `setChromeHidden(true)` on a scroll down and `setChromeHidden(false)` on a scroll up, as the demo above does (from `@/lib/theme`, or the package root on npm). `hideOnScroll={false}` pins the bar. Anything else that should duck out of the way reads the same flag with `useChromeHidden()`.
 
 ### Tabs and navigation stacks
 

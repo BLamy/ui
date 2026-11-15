@@ -138,7 +138,7 @@ The popover's content, 320px wide; `PopoverContent`'s props pass through.
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `side` / `align` | `bottom` / `start` | Where the list opens. |
-| `children` | a `FontList` of the root's family | Replace the list. |
+| `children` | a `FontList` | Replace the default. Put a `FontList` (no props) in them to keep the root's list, bound to the root: `<FontPickerContent><FontList /><MyFooter /></FontPickerContent>`. |
 
 ### FontStackPicker
 
@@ -169,15 +169,15 @@ The popover's content, 320px wide, hung from the field; `PopoverContent`'s props
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `side` / `align` | `bottom` / `start` | Where the list opens. |
-| `children` | the list, with the stack's marks and a footer | Replace the list. |
+| `children` | a `FontList` (the stack's marks and a footer) | Replace the default. Put a `FontList` (no props) in them to keep the stack's list, places, limit and footer included. |
 
 ### FontList
 
-`value`, `defaultValue`, `onValueChange`, `onPreview`, `fonts`, `allowSystem`, `systemLabel` and `defaultCategory` as FontPicker's, plus `autoFocus` (the search field) and `className`. The list is 288px tall (`h-72`); in a popup with less room it gives way first, so the search, the categories and a footer stay whole.
+`value`, `defaultValue`, `onValueChange`, `onPreview`, `fonts`, `allowSystem`, `systemLabel` and `defaultCategory` as FontPicker's (inside a FontPickerContent or FontStackPickerContent, a `FontList` given no `value`, `defaultValue` or `onValueChange` is the root's list), plus `autoFocus` (the search field) and `className`. The list is 288px tall at most; in a popup with less room it gives way first, so the search, the categories and a footer stay whole.
 
 ## Styling
 
-Slots: the trigger is UI SDK's `popover-trigger` (marked `data-font-picker`), the list the kit's [CommandMenu](https://blamy.github.io/ui/#/command-menu) (`command` > `command-input` / `command-list` > `command-item`, and `empty-state`), the stack `font-stack-picker`, the kit's filled field box (`fieldSurfaceVariants`), with its chips in the same pill as a Combobox's. A row carries `data-highlighted` (the pointer or the arrow keys are on it) and `data-disabled` (an unlisted family Google Fonts doesn't have, or any family once a stack is full); a chip carries `data-dragging` (while a pointer drags it, translated by `--drag-x` / `--drag-y`) and `data-grabbed` (picked up). The trigger's recipe is `selectTriggerVariants` (from Select), the stack field's `fontStackPickerInputGroupVariants`.
+Slots: the trigger is UI SDK's `popover-trigger` (marked `data-font-picker`), the list the kit's [CommandMenu](https://blamy.github.io/ui/#/command-menu) (`command` > `command-input` / `command-list` > `command-item`, and `empty-state`), the stack's field `font-stack-picker-input-group`, the kit's filled field box (`fieldSurfaceVariants`), with its chips in the same pill as a Combobox's. A row carries `data-highlighted` (the pointer or the arrow keys are on it) and `data-disabled` (an unlisted family Google Fonts doesn't have, or any family once a stack is full); a chip carries `data-dragging` (while a pointer drags it, translated by `--drag-x` / `--drag-y`) and `data-grabbed` (picked up). The trigger's recipe is `selectTriggerVariants` (from Select), the stack field's `fontStackPickerInputGroupVariants`.
 
 ## cva recipes
 

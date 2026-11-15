@@ -214,7 +214,7 @@ export interface QueryState<T> {
   /** The error of the last run (parse errors, missing tables, …) with its position in the SQL. */
   error: SqlError | null;
   /** True while the first result is loading and while a re-run is in flight. */
-  isLoading: boolean;
+  loading: boolean;
   /** Run again now. Resolves when the new result is in. */
   refetch: () => Promise<void>;
 }
@@ -271,7 +271,7 @@ export function useQuery<T = Record<string, unknown>>(sql: string, params?: read
     rows: state.rows,
     fields: state.fields,
     error: state.error ?? failed,
-    isLoading: enabled && !failed && (!db || state.loading),
+    loading: enabled && !failed && (!db || state.loading),
     refetch,
   };
 }
@@ -281,7 +281,7 @@ export interface LiveQueryState<T> {
   fields: SqlResult<T>['fields'];
   error: SqlError | null;
   /** True until the first result arrives. */
-  isLoading: boolean;
+  loading: boolean;
 }
 
 export interface UseLiveQueryOptions {
@@ -298,7 +298,7 @@ export interface UseLiveQueryOptions {
  *  is the same ~40 lines on top of `db.live`, wired to our provider's status. */
 export function useLiveQuery<T = Record<string, unknown>>(sql: string, params?: readonly unknown[], { key, enabled = true }: UseLiveQueryOptions = {}): LiveQueryState<T> {
   const { db } = useDatabaseStatus();
-  const [state, setState] = useState<LiveQueryState<T>>({ rows: EMPTY, fields: EMPTY, error: null, isLoading: true });
+  const [state, setState] = useState<LiveQueryState<T>>({ rows: EMPTY, fields: EMPTY, error: null, loading: true });
   const pKey = paramsKey(params);
   const paramsRef = useRef(params);
   paramsRef.current = params;
@@ -306,13 +306,13 @@ export function useLiveQuery<T = Record<string, unknown>>(sql: string, params?: 
   useEffect(() => {
     if (!db || !enabled) return;
     if (!db.live) {
-      setState({ rows: EMPTY, fields: EMPTY, error: { message: 'useLiveQuery needs the live extension: the provider was opened with live={false}.' }, isLoading: false });
+      setState({ rows: EMPTY, fields: EMPTY, error: { message: 'useLiveQuery needs the live extension: the provider was opened with live={false}.' }, loading: false });
       return;
     }
     let cancelled = false;
     const p = paramsRef.current ? [...paramsRef.current] : undefined;
     const push = (r: SqlResult<T>) => {
-      if (!cancelled) setState({ rows: r.rows, fields: r.fields, error: null, isLoading: false });
+      if (!cancelled) setState({ rows: r.rows, fields: r.fields, error: null, loading: false });
     };
     let unsubscribe: () => void = noop;
     const handle = key ? db.live.incrementalQuery<T>(sql, p, key) : db.live.query<T>(sql, p);
@@ -327,7 +327,7 @@ export function useLiveQuery<T = Record<string, unknown>>(sql: string, params?: 
         unsubscribe = () => void h.unsubscribe(push);
       },
       (e: unknown) => {
-        if (!cancelled) setState({ rows: EMPTY, fields: EMPTY, error: toSqlError(e, sql), isLoading: false });
+        if (!cancelled) setState({ rows: EMPTY, fields: EMPTY, error: toSqlError(e, sql), loading: false });
       },
     );
     return () => {

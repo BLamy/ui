@@ -12,8 +12,8 @@ import { bindSizeClass, type SizeClass, type SizeClassBreakpoints } from '@/lib/
 
 /* ══ The data-table primitive: rows of one height under headers that sort and resize ══
    One tab stop, as APG's grid has it. The rows in view are rendered (`createVirtualRows`: UI SDK's virtualizer and grid
-   focus, by row); with `focus: 'cell'` (the default) focus is on a cell of the active row, which ← → move along it and
-   ↑ ↓ carry to the same column of the next row, so one value can be reached and read on its own. `focus: 'row'` keeps it
+   focus, by row); with `navigation: 'cell'` (the default) focus is on a cell of the active row, which ← → move along it and
+   ↑ ↓ carry to the same column of the next row, so one value can be reached and read on its own. `navigation: 'row'` keeps it
    on whole rows (stacked rows always are). The column headers are a row of their own on a second grid focus, reached
    with ↑ from the first row. Column widths are UI SDK's
    resize (`createColumnResize`): a drag keeps its width in a live draft, written to the grid's column template with no
@@ -87,7 +87,7 @@ export type DataTableOptions<T extends DataTableRow = DataTableRow> = {
   /** `single` (default): a press selects the row. `none`: rows press (`onAction`) but are never selected. */
   mode?: 'single' | 'none';
   /** `cell` (default): the arrow keys move between cells. `row`: focus stays on whole rows, and ← → scroll sideways. */
-  focus?: 'cell' | 'row';
+  navigation?: 'cell' | 'row';
   value?: RowId | null;
   defaultValue?: RowId | null;
   onValueChange?: (value: RowId | null, details: ChangeDetails<DataTableValueChangeReason>) => void;
@@ -105,7 +105,7 @@ export type DataTableOptions<T extends DataTableRow = DataTableRow> = {
   /** Where the table's own size classes start. */
   breakpoints?: DataTableBreakpoints;
   /** `auto` goes to stacked rows while the table is compact; `table` and `stacked` stay as they are. */
-  layout?: 'auto' | 'table' | 'stacked';
+  presentation?: 'auto' | 'table' | 'stacked';
   controller?: DataTableController;
 };
 
@@ -120,7 +120,7 @@ export type DataTableState = {
   measured: Readonly<Record<string, number>>;
   /** The active row. */
   active: GridCell | null;
-  /** The active cell's column in the active row, from 0, with `focus: 'cell'`. */
+  /** The active cell's column in the active row, from 0, with `navigation: 'cell'`. */
   col: number;
   /** The active column header. */
   header: GridCell | null;
@@ -128,7 +128,7 @@ export type DataTableState = {
   columns: readonly DataTableColumnSpec[];
   /** The table's own size class, once it's measured. */
   sizeClass: SizeClass | null;
-  /** Stacked rows: `layout="stacked"`, or `auto` while the table is compact. */
+  /** Stacked rows: `presentation="stacked"`, or `auto` while the table is compact. */
   stacked: boolean;
   /** Live: a column's edge while a pointer drags it, the current time, the range and the view's height. */
   draft: ResizeDraft | null;
@@ -193,7 +193,7 @@ export const dataTable = definePrimitive({
     value: 'value', defaultValue: 'value', onValueChange: 'callback', onAction: 'callback',
     sort: 'value', defaultSort: 'value', onSortChange: 'callback',
     columnWidths: 'value', defaultColumnWidths: 'value', onColumnWidthsChange: 'callback',
-    rows: 'value', columns: 'value', currentTime: 'value', timeRange: 'value', mode: 'string', focus: 'string', rowHeights: 'value', headerHeight: 'number', breakpoints: 'value', layout: 'string', controller: 'value',
+    rows: 'value', columns: 'value', currentTime: 'value', timeRange: 'value', mode: 'string', navigation: 'string', rowHeights: 'value', headerHeight: 'number', breakpoints: 'value', presentation: 'string', controller: 'value',
   },
   controlled: ['value', 'sort', 'columnWidths'],
   live: ['draft', 'currentTime', 'range', 'view', 'layout'],
@@ -212,7 +212,7 @@ export const dataTable = definePrimitive({
       header: null,
       columns: shownColumns(options.columns, null),
       sizeClass: null,
-      stacked: options.layout === 'stacked',
+      stacked: options.presentation === 'stacked',
       draft: null,
       currentTime: options.currentTime ?? null,
       range: options.timeRange ?? null,
@@ -231,11 +231,11 @@ export const dataTable = definePrimitive({
     const change = createChange(context);
     let scroller: HTMLElement | undefined;
 
-    /* ── The layout: the size class, the columns it shows, the rows' height ── */
+    /* ── The presentation: the size class, the columns it shows, the rows' height ── */
 
     const isStacked = (sizeClass: SizeClass | null) => {
-      const { layout = 'auto' } = options();
-      return layout === 'stacked' || (layout === 'auto' && sizeClass === 'compact');
+      const { presentation = 'auto' } = options();
+      return presentation === 'stacked' || (presentation === 'auto' && sizeClass === 'compact');
     };
     const rowHeightOf = (state: Pick<DataTableState, 'stacked'>) => options().rowHeights[state.stacked ? 'stacked' : 'table'];
     let rowHeight = rowHeightOf(store.get());
@@ -371,9 +371,9 @@ export const dataTable = definePrimitive({
 
     /* ── Rows and their cells ── */
 
-    /** Focus is on cells: `focus: 'cell'`, in a table (stacked rows are one cell each) with columns. */
+    /** Focus is on cells: `navigation: 'cell'`, in a table (stacked rows are one cell each) with columns. */
     const cellFocus = (state: Pick<DataTableState, 'stacked' | 'columns'> = store.get()) =>
-      (options().focus ?? 'cell') === 'cell' && !state.stacked && state.columns.length > 0;
+      (options().navigation ?? 'cell') === 'cell' && !state.stacked && state.columns.length > 0;
     /** The active cell's column, kept in the columns shown. */
     const colOf = (state: Pick<DataTableState, 'col' | 'columns'>) => Math.max(0, Math.min(state.col, state.columns.length - 1));
     const cellIn = (row: HTMLElement | undefined, col: number) =>
@@ -613,7 +613,7 @@ export const dataTable = definePrimitive({
       state: (state) => ({
         sort: state.sort, rows: state.rows, columns: state.columns, sizeClass: state.sizeClass, stacked: state.stacked,
       }),
-      attrs: (state) => ({ 'data-layout': state.stacked ? 'stacked' : 'table' }),
+      attrs: (state) => ({ 'data-presentation': state.stacked ? 'stacked' : 'table' }),
       bind: (el, { api }) => api.internal.connectRoot(el),
     }),
 

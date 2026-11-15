@@ -10,11 +10,12 @@ import { Button as SdkButton } from '@ui-sdk/react/button';
 import { checkboxVariants } from '@/components/ui/checkbox';
 import { renderEmptyState } from '@/components/ui/empty-state';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Icon, IC } from '@/lib/icon';
+import { Icon, isIconName } from '@/lib/icon';
 import { springs } from '@/lib/motion';
 import { usePresenceList } from '@/lib/presence';
 import { sectionLabelVariants } from '@/lib/primitives';
-import { chromeOffset, BLStickyCtx, useChromeHidden } from '@/lib/theme';
+import { useChromeHidden } from '@/lib/theme';
+import { chromeOffset, BLStickyCtx } from '@/lib/theme-context';
 import { cn } from '@/lib/utils';
 import { RowLabelContext } from '@/lib/row-label';
 import {
@@ -324,7 +325,7 @@ export interface ListRowProps extends Omit<ComponentProps<'div'>, 'title' | 'chi
 const actionW = (a: ListRowAction) => (a.icon ? 74 : 88);
 
 function ActionIcon({ icon }: { icon: ListRowAction['icon'] }) {
-  if (typeof icon === 'string') return IC[icon] ? <Icon name={icon} size={20} sw={2.2} /> : null;
+  if (typeof icon === 'string') return isIconName(icon) ? <Icon name={icon} size={20} sw={2.2} /> : null;
   return <>{icon}</>;
 }
 

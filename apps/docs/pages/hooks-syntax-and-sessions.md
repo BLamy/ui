@@ -6,9 +6,9 @@ All seven are public.
 
 ```tsx
 // npm
-import {
-  useSyntaxTokens, useCodeEditor, useCountdown, useSessionRecording, useSessions, useSessionCloud, useCloud,
-} from '@brett_lamy/ui'
+import { useSyntaxTokens, useCodeEditor } from '@brett_lamy/ui/code-editor'
+import { useCountdown } from '@brett_lamy/ui/progress-ring'
+import { useSessionRecording, useSessions, useSessionCloud, useCloud } from '@brett_lamy/ui'
 
 // shadcn registry (aliases)
 import { useSyntaxTokens, useCodeEditor } from '@/components/ui/code-editor'  // …/r/code-editor.json
@@ -91,9 +91,9 @@ A `duration`-second countdown on the wall clock. It reads `Date.now()`, so timer
 function useCountdown(
   duration: number,
   options?: { running?: boolean; loop?: boolean; onEnd?: () => void; offset?: number },
-): Countdown
+): UseCountdown
 
-interface Countdown {
+interface UseCountdown {
   remaining: number   // whole seconds left in the current period
   period: number      // periods completed so far (0 at the start)
   elapsed: number     // whole seconds elapsed, offset included
@@ -259,7 +259,7 @@ Behaviors to know:
 
 The same status and settings, for **any** `CloudSync` you build yourself, which is what `useSessionCloud` calls with `sessionCloud`.
 
-- **Export:** public, with `CloudSync`, `DurableStreamsClient` and `deviceId`. Registry item `durable-streams` (`@/lib/durable-streams`).
+- **Export:** public, with `CloudSync`, `DurableStreamsClient` and `cloudDeviceId`. Registry item `durable-streams` (`@/lib/durable-streams`).
 - **Needs:** nothing.
 
 ```ts

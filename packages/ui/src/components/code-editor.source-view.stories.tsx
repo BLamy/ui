@@ -27,12 +27,12 @@ const LINES = splitCodeLines(STORE_SOURCE);
 
 /** A window of the size the desktop app starts at. */
 function WindowFrame({ children, dark }: { children?: ReactNode; dark?: boolean }) {
-  return <Frame w={1240} h={680} dark={dark}>{children}</Frame>;
+  return <Frame w={1240} h={680} appearance={dark ? 'dark' : 'light'}>{children}</Frame>;
 }
 
 /** A phone-size window. */
 function PhoneFrame({ children, dark }: { children?: ReactNode; dark?: boolean }) {
-  return <Frame w={390} h={844} dark={dark}>{children}</Frame>;
+  return <Frame w={390} h={844} appearance={dark ? 'dark' : 'light'}>{children}</Frame>;
 }
 
 function Header({ title, detail }: { title: string; detail?: string }) {
@@ -238,7 +238,7 @@ function DebuggerDemo({ wide = true }: { wide?: boolean }) {
   ], [breakpoints, go, position, toggle, wide]);
 
   const lineDecoration = useCallback((line: number): CodeEditorLineDecoration | null => {
-    if (line === 15) return { tint: 'info' };
+    if (line === 15) return { tone: 'info' };
     if (NEVER_RAN.has(line)) return { textClassName: 'opacity-45' };
     return null;
   }, []);

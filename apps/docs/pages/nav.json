@@ -143,7 +143,6 @@
       "section": "Chat",
       "pages": [
         { "id": "artifact-chat-container", "title": "ArtifactChatContainer" },
-        { "id": "chat-shell", "title": "ChatShell" },
         { "id": "composer", "title": "Composer" },
         { "id": "conversation", "title": "Conversation" },
         { "id": "message-scroller", "title": "MessageScroller" }
@@ -161,7 +160,6 @@
         { "id": "terminal", "title": "Terminal" },
         { "id": "trace-timeline", "title": "TraceTimeline" },
         { "id": "tui-preview", "title": "TuiPreview" },
-        { "id": "workbench-shell", "title": "WorkbenchShell" },
         { "id": "workspace", "title": "Workspace" }
       ]
     },
@@ -224,6 +222,8 @@
     }
   ],
   "standalone": [
-    { "id": "blocks", "title": "Blocks", "section": "Blocks", "wide": true }
+    { "id": "blocks", "title": "Blocks", "section": "Blocks", "wide": true },
+    { "id": "chat-shell", "title": "ChatShell", "section": "Blocks" },
+    { "id": "workbench-shell", "title": "WorkbenchShell", "section": "Blocks" }
   ]
 }

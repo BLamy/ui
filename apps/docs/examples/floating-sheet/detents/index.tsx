@@ -108,7 +108,7 @@ export default function Detents() {
       <FloatingSheet
         peek={110}
         snapPoints={[0.5]}
-        variant="sheet"
+        variant="card"
         gutter={12}
         radius={24}
         aria-label="Places"

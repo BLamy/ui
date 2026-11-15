@@ -25,12 +25,14 @@ import { usePresence } from '@/lib/presence';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { useControllableChange } from '@/lib/controllable-state';
 import type { ChangeGiven } from '@/lib/change-details';
-import { ThemeScope, ThemeScopeContext, themeScopeClass, type Appearance, type ThemeScopeState } from '@/lib/theme';
+import { ThemeScope, themeScopeClass, type Appearance, type ThemeScopeState } from '@/lib/theme';
+import { ThemeScopeContext } from '@/lib/theme-context';
 import { useKeptChildren, type KeptChildren } from '@/lib/kept-children';
 import { focusRing } from '@/lib/primitives';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { ComposerOutlet, composerCardVariants } from '@/components/ui/composer/composer';
+import { composerCardVariants } from '@/components/ui/composer/composer';
+import { ComposerOutlet } from '@/components/ui/composer/composer-context';
 import {
   FloatingSheet,
   FloatingSheetBody,
@@ -52,13 +54,13 @@ import {
      <ArtifactChatContainerChat>…the transcript…</ArtifactChatContainerChat>
      <ArtifactChatContainerComposer><Composer>…</Composer></ArtifactChatContainerComposer>
    </ArtifactChatContainer>
-   On a wide container the chat is a column beside the content (`split`); on a compact one (or `layout="floating"`)
+   On a wide container the chat is a column beside the content (`split`); on a compact one (or `presentation="floating"`)
    it is a FloatingSheet over the content: the composer is its foot, the transcript its body, and it peeks, grows
    and folds into a FAB. The transcript and composer are rendered once and move between the two, so a draft, the
    caret and a streaming reply survive the switch. ══ */
 
 /** The resolved presentation: the docked chat column, or the chat floating over the content. */
-export type ArtifactChatLayout = 'split' | 'floating';
+export type ArtifactChatPresentation = 'split' | 'floating';
 /** Which inline edge the docked column sits on (left / right in a left-to-right page). */
 export type ArtifactChatSide = 'start' | 'end';
 /** What `onOpenChange` receives: the floating sheet's details (`swipe`, `handle-press`, `handle-key`, `escape-key`,
@@ -75,7 +77,7 @@ export interface ArtifactChatContainerContextValue {
   /** The container's own size class (`compact` below `breakpoint`). */
   sizeClass: SizeClass;
   /** The resolved presentation. */
-  layout: ArtifactChatLayout;
+  presentation: ArtifactChatPresentation;
   /** Whether the floating chat has grown over the content. Always false while docked. */
   open: boolean;
   /** Grows the floating chat or brings it back to rest (`onOpenChange` hears `imperative`). */
@@ -100,7 +102,7 @@ export function useArtifactChatContainer(): ArtifactChatContainerContextValue {
 
 /* What the parts read from the root; not public. */
 interface PartsContextValue {
-  layout: ArtifactChatLayout;
+  presentation: ArtifactChatPresentation;
   side: ArtifactChatSide;
   contentRef: RefObject<HTMLDivElement | null>;
   /** The Chat and Composer parts keep their children mounted (`useKeptChildren`) and hand the root their dock refs. */
@@ -123,17 +125,17 @@ export const artifactChatContainerVariants = cva(
   'ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden bg-background font-sans text-foreground',
   {
     variants: {
-      layout: {
+      presentation: {
         split: 'grid',
         floating: 'block',
       },
       chatSide: { start: '', end: '' },
     },
     compoundVariants: [
-      { layout: 'split', chatSide: 'start', class: 'grid-cols-[minmax(0,var(--ck-artifact-chat-width,400px))_minmax(0,1fr)]' },
-      { layout: 'split', chatSide: 'end', class: 'grid-cols-[minmax(0,1fr)_minmax(0,var(--ck-artifact-chat-width,400px))]' },
+      { presentation: 'split', chatSide: 'start', class: 'grid-cols-[minmax(0,var(--ck-artifact-chat-width,400px))_minmax(0,1fr)]' },
+      { presentation: 'split', chatSide: 'end', class: 'grid-cols-[minmax(0,1fr)_minmax(0,var(--ck-artifact-chat-width,400px))]' },
     ],
-    defaultVariants: { layout: 'split', chatSide: 'start' },
+    defaultVariants: { presentation: 'split', chatSide: 'start' },
   },
 );
 
@@ -143,7 +145,7 @@ export interface ArtifactChatContainerProps extends Omit<ComponentProps<'div'>, 
    * it below. `floating` always floats it over the content (maps, canvases, full-bleed artifacts); `split` always
    * docks it.
    */
-  layout?: 'auto' | ArtifactChatLayout;
+  presentation?: 'auto' | ArtifactChatPresentation;
   /** The container width, px, below which `auto` floats the chat: the container's size class is `compact` under it
       (`data-size-class` on the root, and the size-class scope popups inside follow). Default 760. */
   breakpoint?: number;
@@ -192,10 +194,10 @@ export interface ArtifactChatContainerProps extends Omit<ComponentProps<'div'>, 
 
 /**
  * The one chat shell: a chat column docked beside an artifact on a wide container, a FloatingSheet over it on a
- * compact one. Its own box's size class picks the layout and is the size-class scope of what it renders.
+ * compact one. Its own box's size class picks the presentation and is the size-class scope of what it renders.
  */
 export function ArtifactChatContainer({
-  layout: requestedLayout = 'auto',
+  presentation: requestedPresentation = 'auto',
   breakpoint = 760,
   chatWidth = 400,
   chatSide = 'start',
@@ -247,9 +249,9 @@ export function ArtifactChatContainer({
     [rootRef, ref],
   );
   const scheme: Appearance | undefined = appearance === 'auto' ? undefined : appearance;
-  const layout: ArtifactChatLayout =
-    requestedLayout === 'auto' ? (sizeClass === 'compact' ? 'floating' : 'split') : requestedLayout;
-  const floating = layout === 'floating';
+  const presentation: ArtifactChatPresentation =
+    requestedPresentation === 'auto' ? (sizeClass === 'compact' ? 'floating' : 'split') : requestedPresentation;
+  const floating = presentation === 'floating';
   const end = chatSide === 'end';
 
   // Every change goes through these with its reason: the consumer hears it first and may cancel it.
@@ -390,7 +392,7 @@ export function ArtifactChatContainer({
 
   const value: ArtifactChatContainerContextValue = {
     sizeClass,
-    layout,
+    presentation,
     open: floating && open,
     setOpen: (next, given) => {
       changeOpen(next, given);
@@ -405,7 +407,7 @@ export function ArtifactChatContainer({
     },
   };
   const parts: PartsContextValue = {
-    layout,
+    presentation,
     side: chatSide,
     contentRef,
     keepChat,
@@ -424,10 +426,10 @@ export function ArtifactChatContainer({
               {...props}
               ref={setRoot}
               data-slot="artifact-chat-container"
-              data-layout={layout}
+              data-presentation={presentation}
               data-appearance={scheme}
               data-chat-side={chatSide}
-              className={cn(artifactChatContainerVariants({ layout, chatSide }), className)}
+              className={cn(artifactChatContainerVariants({ presentation, chatSide }), className)}
               style={{
                 '--ck-artifact-chat-width': typeof chatWidth === 'number' ? `${chatWidth}px` : chatWidth,
                 ...style,
@@ -501,7 +503,7 @@ export type ArtifactChatContainerContentProps = ComponentProps<'div'>;
     floating chat (which hides while it scrolls down). A plain element, not a landmark: pass `role="main"` (or
     `role="region"` with an `aria-label`) when it is the page's main content. */
 export function ArtifactChatContainerContent({ className, ref, ...props }: ArtifactChatContainerContentProps) {
-  const { layout, side, contentRef } = useParts('ArtifactChatContainerContent');
+  const { presentation, side, contentRef } = useParts('ArtifactChatContainerContent');
   return (
     <div
       ref={(el) => {
@@ -513,7 +515,7 @@ export function ArtifactChatContainerContent({ className, ref, ...props }: Artif
       // ck-artifact-chat__content stays as a hook for hosts that restyle the artifact pane.
       className={cn(
         'ck-artifact-chat__content min-h-0 min-w-0 overflow-auto bg-background',
-        layout === 'floating' ? 'absolute inset-0' : cn('relative', side === 'end' && 'col-start-1 row-start-1'),
+        presentation === 'floating' ? 'absolute inset-0' : cn('relative', side === 'end' && 'col-start-1 row-start-1'),
         className,
       )}
       {...props}

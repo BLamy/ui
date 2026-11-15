@@ -14,8 +14,8 @@ const meta: Meta<Args> = {
       <MapChatDemo {...props} />
     </div>
   ),
-  args: { width: 430, height: 800, layout: 'floating', peek: 236 },
-  argTypes: { layout: { control: 'radio', options: ['auto', 'floating', 'split'] } },
+  args: { width: 430, height: 800, presentation: 'floating', peek: 236 },
+  argTypes: { presentation: { control: 'radio', options: ['auto', 'floating', 'split'] } },
   parameters: {
     docs: {
       description: {
@@ -30,7 +30,7 @@ type Story = StoryObj<Args>;
 
 export const Floating: Story = {};
 export const Seeded: Story = { args: { initialPrompt: 'Plan an afternoon in SoHo' } };
-export const Split: Story = { args: { width: 1100, height: 720, layout: 'split' } };
+export const Split: Story = { args: { width: 1100, height: 720, presentation: 'split' } };
 
 /** Follows an ambient AppearanceProvider: light basemap and chat on the left, dark on the right. */
 export const Appearance: Story = {
@@ -46,4 +46,4 @@ export const Appearance: Story = {
     </div>
   ),
 };
-export const AppearanceLightSplit: Story = { args: { width: 1100, height: 720, layout: 'split', appearance: 'light' } };
+export const AppearanceLightSplit: Story = { args: { width: 1100, height: 720, presentation: 'split', appearance: 'light' } };

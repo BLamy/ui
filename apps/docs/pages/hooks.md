@@ -6,14 +6,14 @@ Every hook BL UI defines, in one table, and where each is documented in detail. 
 
 BL UI ships two ways from the same files (see [How the registry works](https://blamy.github.io/ui/#/registry)), and the hooks follow:
 
-- **Public** hooks are re-exported from the package root: `import { useToast } from '@brett_lamy/ui'`. They are also in the registry, so a source copy gives you the same hook at an alias path (`@/components/ui/toast`, `@/lib/container`).
+- **Public** hooks are on npm, at their module's entry: `import { useToast } from '@brett_lamy/ui/toast'`. The kit's own hooks are also re-exported from the package root (`import { useToast } from '@brett_lamy/ui'`); the engines' hooks (the vault, PGlite, Tailscale, file upload, the filter query) are only on their `@brett_lamy/ui/lib/<module>` entry, which the Export column names. They are also in the registry, so a source copy gives you the same hook at an alias path (`@/components/ui/toast`, `@/lib/container`).
 - **Registry-only** hooks are not in the package root. One is: `useRowLabel`, plus the framework-free `createTitleFlight`. They are internals of components (`ListRow`, `NavigationStack`) and are copied into your project, with the component that uses them, when you add that component. You can also add one on its own, for example `npx shadcn@latest add https://blamy.github.io/ui/r/row-label.json`.
 
 A "must be called under" entry below means the hook reads a React context that the named component provides. Components render their children where you put them, so the rule is about the **React tree**, not the DOM: a node rendered through a portal sees the context of the place the portal was created, not of the element it lands in.
 
 ## All hooks
 
-Grouped by page. "Needs" is the component or provider the hook must be called under, and what happens outside it. "Export" says whether it is in the package root (`public`) or only in the registry (`registry-only`).
+Grouped by page. "Needs" is the component or provider the hook must be called under, and what happens outside it. "Export" says whether it is public on npm (`public`: the package root and its module entry; `public, lib/<module>`: that entry only) or only in the registry (`registry-only`).
 
 ### Layout
 
@@ -34,7 +34,7 @@ Documented on [Layout hooks](https://blamy.github.io/ui/#/hooks-layout).
 | `useTabsTab` | the tab's UI SDK state, `{ selected, disabled }` | the content of a `TabsTab`; `null` outside | public |
 | `useFloatingSheet` | `{ open, setOpen, progress, peek, minimized, setMinimized }` | `FloatingSheet`; throws outside | public |
 | `useHideOnScroll` | `boolean` | nothing (takes the scroller's ref) | public |
-| `useArtifactChatContainer` | `{ sizeClass, layout, open, setOpen, composing, minimized, … }` | `ArtifactChatContainer`; throws outside | public |
+| `useArtifactChatContainer` | `{ sizeClass, presentation, open, setOpen, composing, minimized, … }` | `ArtifactChatContainer`; throws outside | public |
 
 ### Motion
 
@@ -73,6 +73,8 @@ Documented on [State hooks](https://blamy.github.io/ui/#/hooks-state).
 | `usePersistentState` | `[value, setValue]` | nothing | public |
 | `useControllableChange` | `[value, set]` | nothing | public |
 | `useKeptChildren` | `{ dock, portal, inline }` | nothing | public |
+| `useCopy` | `{ copy, copied }` | nothing | public |
+| `usePaced` | the latest value, at a pace React keeps up with | nothing | public |
 | `useRowLabel` | an `aria-labelledby` id or `undefined` | a `ListRow` with a title; `undefined` outside | registry-only |
 
 6.0 removed `useHotkey` (use UI SDK's `useShortcut`) and `useBackHistory` (use the kit's `bindBack` from `@/lib/back`); see [State and platform hooks](https://blamy.github.io/ui/#/hooks-state).
@@ -123,17 +125,17 @@ Each is documented on the page of the component or module it belongs to.
 | `useCronParse` | `{ support, match, pending, … }` for a line of English | nothing (loads `gpu-cron`; needs WebGPU) | public | [CronEditor](https://blamy.github.io/ui/#/cron-editor) |
 | `useFilters` | the controlled filter list and its actions | nothing | public | [Filter](https://blamy.github.io/ui/#/filter) |
 | `useFilterBar` | the filter bar's state and actions | `FilterBar`; throws outside | public | [Filter](https://blamy.github.io/ui/#/filter) |
-| `useFilterQuery` | a natural-language query turned into filters | nothing (loads the vendored gpu-query model) | public | [Filter](https://blamy.github.io/ui/#/filter) |
-| `useFileUpload` | `{ files, add, remove, retry, … }` | nothing | public | [useFileUpload](https://blamy.github.io/ui/#/use-file-upload) |
-| `useFilePreview` | an object URL for a file, revoked on unmount | nothing | public | [useFileUpload](https://blamy.github.io/ui/#/use-file-upload) |
-| `useVault`, `useVaultState` | the passkey vault and its state | `VaultProvider`; throws outside | public | [Passkey vault](https://blamy.github.io/ui/#/passkey-vault) |
-| `usePasskey`, `useWebAuthnSupport` | passkey create and use; what the browser supports | nothing (`usePasskey` takes the vault when present) | public | [Passkey vault](https://blamy.github.io/ui/#/passkey-vault) |
-| `useEncryptedState` | `[value, set, meta]` stored encrypted in the vault | `VaultProvider` | public | [Passkey vault](https://blamy.github.io/ui/#/passkey-vault) |
-| `usePGlite`, `useReadyDatabase`, `useDatabaseStatus` | the database, or its status | `PGliteProvider`; throws outside | public | [PGlite](https://blamy.github.io/ui/#/pglite) |
-| `useQuery`, `useLiveQuery`, `useExec`, `useTransaction` | rows and status; a function that runs SQL | `PGliteProvider` | public | [PGlite](https://blamy.github.io/ui/#/pglite) |
-| `useSchema`, `usePersistenceSupport`, `useTabLock` | the database's tables; where it can persist; a one-tab lock | `PGliteProvider` for `useSchema` | public | [PGlite](https://blamy.github.io/ui/#/pglite) |
-| `useTailscale`, `useTailscaleStatus`, `useTailscaleFetch` | the tailnet connection, its status, a `fetch` that routes through it | `TailscaleProvider`; throws outside | public | [Sign in with Tailscale](https://blamy.github.io/ui/#/tailscale) |
-| `useTailscaleRouter` | the service-worker router's status | `TailscaleProvider` | public | [Tailscale request router](https://blamy.github.io/ui/#/tailscale-router) |
+| `useFilterQuery` | a natural-language query turned into filters | nothing (loads the vendored gpu-query model) | public, `lib/filter-query` | [Filter](https://blamy.github.io/ui/#/filter) |
+| `useFileUpload` | `{ files, add, remove, retry, … }` | nothing | public, `lib/use-file-upload` | [useFileUpload](https://blamy.github.io/ui/#/use-file-upload) |
+| `useFilePreview` | an object URL for a file, revoked on unmount | nothing | public, `lib/use-file-upload` | [useFileUpload](https://blamy.github.io/ui/#/use-file-upload) |
+| `useVault`, `useVaultState` | the passkey vault and its state | `VaultProvider`; throws outside | public, `lib/vault-react` | [Passkey vault](https://blamy.github.io/ui/#/passkey-vault) |
+| `usePasskey`, `useWebAuthnSupport` | passkey create and use; what the browser supports | nothing (`usePasskey` takes the vault when present) | public, `lib/vault-react` | [Passkey vault](https://blamy.github.io/ui/#/passkey-vault) |
+| `useEncryptedState` | `[value, set, meta]` stored encrypted in the vault | `VaultProvider` | public, `lib/vault-react` | [Passkey vault](https://blamy.github.io/ui/#/passkey-vault) |
+| `usePGlite`, `useReadyDatabase`, `useDatabaseStatus` | the database, or its status | `PGliteProvider`; throws outside | public, `lib/pglite` | [PGlite](https://blamy.github.io/ui/#/pglite) |
+| `useQuery`, `useLiveQuery`, `useExec`, `useTransaction` | rows and status; a function that runs SQL | `PGliteProvider` | public, `lib/pglite` | [PGlite](https://blamy.github.io/ui/#/pglite) |
+| `useSchema`, `usePersistenceSupport`, `useTabLock` | the database's tables; where it can persist; a one-tab lock | `PGliteProvider` for `useSchema` | public, `lib/pglite-schema`, `lib/pglite-storage`, `lib/tab-lock` | [PGlite](https://blamy.github.io/ui/#/pglite) |
+| `useTailscale`, `useTailscaleStatus`, `useTailscaleFetch` | the tailnet connection, its status, a `fetch` that routes through it | `TailscaleProvider`; throws outside | public, `lib/tailscale-react` | [Sign in with Tailscale](https://blamy.github.io/ui/#/tailscale) |
+| `useTailscaleRouter` | the service-worker router's status | `TailscaleProvider` | public, `lib/tailscale-router/react` | [Tailscale request router](https://blamy.github.io/ui/#/tailscale-router) |
 
 BL UI is built on [UI SDK](https://blamy.github.io/ui/#/ui-sdk), and the behaviors it builds on (press, focus, shortcuts, clipboard, drag and drop, popups) are UI SDK's, not BL UI's own. You can use them beside the kit; they are covered in [Behaviors](https://blamy.github.io/ui/#/behaviors). Keyboard shortcuts in particular are UI SDK's `useShortcut` (`@ui-sdk/react/shortcuts`): 6.0 removed `useHotkey` and `matchesHotkey`.
 

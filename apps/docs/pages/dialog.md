@@ -91,7 +91,7 @@ if (await confirm()) deletePhoto()
 
 ## Forms
 
-A `Dialog` closes on Esc, on a press outside the card and (as a sheet) on a swipe down. `DialogClose` on its own is the round ×, pinned to the card's top-end corner; with children or `render` it is whatever you make it, such as a footer Button: `<DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>`. Like an alert's answers it reports a `value` and runs an `action` before it closes, so Save can commit the draft and close in one press, and `disabled` keeps it from closing while the form is invalid. `DialogBody` scrolls when the content is taller than its host, between a fixed header and footer. `initialFocus` on the content picks where focus starts (a selector, an element or a function), like the input in the form demo.
+A `Dialog` closes on Esc, on a press outside the card and (as a sheet) on a swipe down. `DialogClose` on its own is the round ×, pinned to the card's top-end corner; with children or `render` it is whatever you make it, such as a footer Button: `<DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>`. Like an alert's answers it reports a `value` and runs an `action` before it closes, so Save can commit the draft and close in one press, and `disabled` keeps it from closing while the form is invalid. `DialogBody` scrolls when the content is taller than its host, between a fixed header and footer. `initialFocus` on the content picks where focus starts (a selector, an element or a function), like the input in the form demo.
 
 {% demo src="dialog/forms" %}
 
@@ -101,7 +101,7 @@ A `Dialog` closes on Esc, on a press outside the card and (as a sheet) on a swip
 
 `presentation` defaults to `"auto"`: the Dialog reads the nearest size-class scope where it is **written** (BLProvider's root, a SplitView column, a NavigationStack…; see `SizeClassProvider` in [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)) and opens as a centered card in a medium or regular one, as a sheet in a compact one. Context crosses portals, so a Dialog with no trigger, written inside a compact column of a wide app, is a sheet even though it renders into BLProvider's root. Outside every scope, UI SDK's own rule decides (a small touch screen). The choice is made each time it opens.
 
-As a sheet it is dragged down to dismiss (`details.reason === 'swipe'`; a dialog that isn't `dismissible` springs back), it rides above the on-screen keyboard, its grabber shows while it can be dismissed, and a horizontal `DialogFooter` shares the width between its buttons, as iOS does. `DialogContent`'s `variant` shapes it: `default` is attached to the bottom edge like the kit's [Sheet](https://blamy.github.io/ui/#/sheet), `tray` floats 10px in from the edges (`trayInset` in `@/lib/surface`) with `--radius-sheet` corners, the same card as a resting [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet). The centered card is the same for both variants.
+As a sheet it is dragged down to dismiss (`details.reason === 'swipe'`; a dialog that isn't `dismissible` springs back), it rides above the on-screen keyboard, its grabber shows while it can be dismissed, and a `DialogFooter`'s buttons are 44px tall (a touch target) and a horizontal one shares the width between them, as iOS does, ending at the same inset as a Sheet's footer. `DialogContent`'s `variant` shapes it: `default` is attached to the bottom edge like the kit's [Sheet](https://blamy.github.io/ui/#/sheet), `tray` floats 10px in from the edges (`trayInset` in `@/lib/surface`) with `--radius-sheet` corners, the same card as a resting [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet). The centered card is the same for both variants. `plain` draws no card at all (no surface, size cap, entry scale or grabber) and keeps the Dialog's focus, dismissal and theme scope: the content is yours to place and style, for a surface that brings its own look and motion, such as a [Morph](https://blamy.github.io/ui/#/morph) the content renders (`<DialogContent variant="plain" render={<Morph layoutId="player" />}>`).
 
 {% demo src="dialog/responsive" %}
 
@@ -195,7 +195,7 @@ UI SDK traps focus inside the dialog, makes the rest of its host inert, closes o
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `size` (DialogContent) | `default` | `default` ≤400px · `lg` ≤560px wide as a card. An alert is always 270px. |
-| `variant` (DialogContent) | `default` | As a sheet: `default` is attached to the bottom edge, `tray` floats inset. The card is the same. |
+| `variant` (DialogContent) | `default` | As a sheet: `default` is attached to the bottom edge, `tray` floats inset; the card is the same. `plain`: no card at all, the content is yours (a `Morph`). |
 | `initialFocus` / `finalFocus` | first focusable / the trigger | Where focus goes as it opens and closes. |
 | `aria-label` | — | Name when there is no title. |
 | `className` / `style` | — | Merged onto the card; either may be a function of its state. |
@@ -237,22 +237,25 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/dialog`. Base classes:
 
 ```text
-cn( modalCard, 'group/dialog w-[calc(100%-48px)] duration-spring-snappy ease-spring-snappy', 'not-data-[presentation=sheet]:data-starting-style:opacity-0 not-data-[presentation=sheet]:data-ending-style:opacity-0 motion-safe:not-data-[presentation=sheet]:data-starting-style:scale-90 motion-safe:not-data-[presentation=sheet]:data-ending-style:scale-96', 'data-[presentation=sheet]:relative data-[presentation=sheet]:inset-auto data-[presentation=sheet]:max-w-none data-[presentation=sheet]:transition-none', )
+group/dialog outline-none
 ```
 
 **`size`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `default` (default) | `max-w-[400px]` |
-| `lg` | `max-w-[560px]` |
+| `default` (default) | — |
+| `lg` | — |
 
 **`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `default` (default) | `data-[presentation=sheet]:m-0 data-[presentation=sheet]:w-full data-[presentation=sheet]:rounded-b-none data-[presentation=sheet]:pb-[max(12px,env(safe-area-in…` |
-| `tray` | `data-[presentation=sheet]:mx-2.5 data-[presentation=sheet]:mt-0 data-[presentation=sheet]:mb-[max(10px,env(safe-area-inset-bottom))] data-[presentation=sheet]:…` |
+| `default` (default) | `cn( dialogCard, 'data-[presentation=sheet]:m-0 data-[presentation=sheet]:w-full data-[presentation=sheet]:rounded-b-none data-[presentation=she…` |
+| `tray` | `cn( dialogCard, 'data-[presentation=sheet]:mx-2.5 data-[presentation=sheet]:mt-0 data-[presentation=sheet]:mb-[max(10px,env(safe-area-inset-bot…` |
+| `plain` | — |
+
+2 compound variants — see the source.
 
 ### `alertDialogCloseVariants`
 

@@ -97,7 +97,7 @@ export default function AppearanceMorph({
 }: {
   variant?: string
 }) {
-  const look: FloatingSheetVariant = variant === 'sheet' ? 'sheet' : 'glass'
+  const look: FloatingSheetVariant = variant === 'card' ? 'card' : 'glass'
   return (
     <Host
       note={

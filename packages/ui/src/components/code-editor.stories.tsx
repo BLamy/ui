@@ -46,11 +46,11 @@ const describePlace = (selection: CodeEditorSelection | null) => {
 };
 
 function WindowFrame({ children, dark }: { children?: ReactNode; dark?: boolean }) {
-  return <Frame w={1240} h={680} dark={dark}>{children}</Frame>;
+  return <Frame w={1240} h={680} appearance={dark ? 'dark' : 'light'}>{children}</Frame>;
 }
 
 function PhoneFrame({ children, dark }: { children?: ReactNode; dark?: boolean }) {
-  return <Frame w={390} h={844} dark={dark}>{children}</Frame>;
+  return <Frame w={390} h={844} appearance={dark ? 'dark' : 'light'}>{children}</Frame>;
 }
 
 /** A page: a column with space around it, for the editor to sit in as a card. */

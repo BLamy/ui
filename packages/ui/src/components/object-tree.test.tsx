@@ -354,12 +354,14 @@ describe('ObjectTree', () => {
     const writeText = vi.fn(async () => {});
     vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
     render(<ObjectTree aria-label="T" root={[leaf('s', 5)]} onValueChange={onSelect} />);
-    const copy = screen.getByRole('button', { name: 'Copy the value' });
+    const copy = screen.getByRole('button', { name: 'Copy the value', hidden: true });
     expect(copy.getAttribute('tabindex')).toBe('-1');
     await act(async () => { fireEvent.click(copy); });
     expect(writeText).toHaveBeenCalledWith('5');
     expect(onSelect).not.toHaveBeenCalled();
-    expect(await screen.findByRole('button', { name: 'Copied' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Copied', hidden: true })).toBeTruthy();
+    // For the pointer only: out of the focused row's name.
+    expect(copy.closest('[aria-hidden=true]')).not.toBeNull();
     expect(await announced()).toBe('Copied');
     // No live region of its own: UI SDK's shared announcer says it.
     expect(document.querySelector('[data-slot="object-tree"] [role="status"]')).toBeNull();
@@ -434,7 +436,7 @@ describe('ObjectTree', () => {
   it('shows the whole of a long value in a popover', async () => {
     const long = 'x'.repeat(60);
     render(<ObjectTree aria-label="T" root={[{ id: 's', name: 's', value: { type: 'string', value: long } }]} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Show the whole value' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show the whole value', hidden: true }));
     const dialog = await screen.findByRole('dialog', { name: 'The value of s' });
     expect(dialog.textContent).toContain(long);
     expect(row('s').hasAttribute('aria-selected')).toBe(false);

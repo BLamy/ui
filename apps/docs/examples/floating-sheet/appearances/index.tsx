@@ -52,7 +52,7 @@ const presets: Record<string, Preset> = {
       'while resting.',
   },
   card: {
-    look: 'sheet',
+    look: 'card',
     gutter: 14,
     radius: 26,
     peek: 150,
@@ -61,7 +61,7 @@ const presets: Record<string, Preset> = {
     note: 'An opaque card that floats inside a gutter.',
   },
   docked: {
-    look: 'sheet',
+    look: 'card',
     gutter: 0,
     radius: 20,
     peek: 250,

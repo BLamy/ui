@@ -79,7 +79,7 @@ const SMALL_RANGE = requestTimeRange(SMALL);
 function Desktop({ children, dark }: { children?: ReactNode; dark?: boolean }) {
   return (
     <div className="h-dvh w-full">
-      <BLProvider dark={dark}>
+      <BLProvider appearance={dark ? 'dark' : 'light'}>
         <div className="flex h-full min-h-0 flex-col gap-2 p-3">{children}</div>
       </BLProvider>
     </div>
@@ -88,7 +88,7 @@ function Desktop({ children, dark }: { children?: ReactNode; dark?: boolean }) {
 
 function PhoneWindow({ children, dark }: { children?: ReactNode; dark?: boolean }) {
   return (
-    <PhoneFrame w={390} h={844} dark={dark}>
+    <PhoneFrame w={390} h={844} appearance={dark ? 'dark' : 'light'}>
       <div className="flex h-full min-h-0 flex-col gap-2 p-2">{children}</div>
     </PhoneFrame>
   );
@@ -97,7 +97,7 @@ function PhoneWindow({ children, dark }: { children?: ReactNode; dark?: boolean 
 const NOW = SMALL[60].time;
 
 export const Default: Story = {
-  args: { rows: SMALL, currentTime: NOW, timeRange: [0, SMALL[120].time ?? 1], defaultValue: 'request-52', density: 'compact', layout: 'auto' },
+  args: { rows: SMALL, currentTime: NOW, timeRange: [0, SMALL[120].time ?? 1], defaultValue: 'request-52', density: 'compact', presentation: 'auto' },
   render: (args) => <Desktop><RequestTable aria-label="Requests" {...args} className="min-h-0 flex-1" /></Desktop>,
 };
 
@@ -289,7 +289,7 @@ function DevtoolsDemo() {
         columns={open ? ['name', 'status'] : ['name', 'status', 'method', 'type', 'duration', 'waterfall']}
         value={selected}
         onAction={(id) => setSelected(id === selected ? null : id)}
-        layout={open ? 'table' : 'auto'}
+        presentation={open ? 'table' : 'auto'}
         className={open ? 'w-72 shrink-0' : 'min-h-0 flex-1'}
       />
       {open ? <div className="grid min-w-0 flex-1 place-items-center rounded-panel bg-card text-footnote text-muted-foreground shadow-hairline">Headers, payload and response of {String(selected)}</div> : null}

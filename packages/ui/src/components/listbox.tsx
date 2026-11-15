@@ -74,6 +74,13 @@ export type ListboxProps<T = string, Multiple extends boolean | undefined = fals
     emptyState?: ReactNode;
   };
 
+/** UI SDK's Listbox options: what the empty box leaves off (everything else is a DOM prop it keeps). */
+const LISTBOX_OPTIONS = new Set([
+  'value', 'defaultValue', 'onValueChange', 'multiple', 'activation', 'deselectable', 'orientation', 'loop', 'keepInView',
+  'items', 'itemToValue', 'isItemEqualToValue', 'onHighlight', 'disabled', 'readOnly', 'required', 'name', 'form',
+  'controller', 'debug', 'render',
+]);
+
 export function Listbox<T = string, Multiple extends boolean | undefined = false>({
   className, variant, children, emptyState, ...props
 }: ListboxProps<T, Multiple>) {
@@ -83,8 +90,23 @@ export function Listbox<T = string, Multiple extends boolean | undefined = false
     : children === undefined || children === null ? !list.items?.length
     : Children.count(children) === 0;
   if (empty) {
+    // The list's own DOM props (name, id, ref, style, data-*) stay on the empty box, so a filter that empties the
+    // list keeps its name and its hooks; the options are dropped.
+    const { value, defaultValue, multiple, disabled, readOnly, required, name, form } = list;
+    const dom = Object.fromEntries(Object.entries(list).filter(([key]) => !LISTBOX_OPTIONS.has(key)));
+    const state = {
+      value: value ?? defaultValue ?? (multiple ? [] : null), multiple: !!multiple, disabled: !!disabled,
+      formDisabled: false, readOnly: !!readOnly, required: !!required, name, form, open: true, items: [],
+    } as unknown as ListboxState;
     return (
-      <div data-slot="listbox-empty" data-variant={v} className={cn(listboxVariants({ variant: v }), typeof className === 'string' ? className : undefined)}>
+      <div
+        role="group"
+        {...(dom as ComponentProps<'div'>)}
+        data-slot="listbox-empty"
+        data-variant={v}
+        data-disabled={disabled ? '' : undefined}
+        className={cn(listboxVariants({ variant: v }), typeof className === 'function' ? className(state) : className)}
+      >
         {renderEmptyState(emptyState, { title: 'No options' })}
       </div>
     );
@@ -124,8 +146,10 @@ export function ListboxGroup({ className, ...props }: ComponentProps<typeof SdkL
   return <SdkListboxGroup className={cx(optionGroupClass, className)} {...props} />;
 }
 
+/** In the `inset` card the label starts on the rows' text edge (16px), as iOS grouped lists do. */
 export function ListboxGroupLabel({ className, ...props }: ComponentProps<typeof SdkListboxGroupLabel>) {
-  return <SdkListboxGroupLabel className={cx(optionGroupLabelClass, className)} {...props} />;
+  const variant = useContext(ListboxVariantCtx);
+  return <SdkListboxGroupLabel className={cx(cn(optionGroupLabelClass, variant === 'inset' && 'px-4'), className)} {...props} />;
 }
 
 /** A hairline between options or groups, hidden from screen readers. */

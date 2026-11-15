@@ -1,0 +1,46 @@
+{
+  "name": "canvas-math",
+  "title": "Canvas math",
+  "description": "The frame math behind Canvas, as plain functions on plain data: board and screen coordinates for a view, hit tests (a point in a rotated frame, rectangles that intersect, distance to a segment or a polyline), selection handles and their cursors, resize, rotate, and snapping a box to its neighbours with alignment guides.",
+  "page": "canvas",
+  "files": [
+    "lib/canvas-math.ts"
+  ],
+  "exports": [
+    "toBoard",
+    "toScreen",
+    "MIN_SIZE",
+    "rotatePt",
+    "centerOf",
+    "dist",
+    "cornersOf",
+    "rectOf",
+    "unionRect",
+    "intersects",
+    "inFrame",
+    "distToSegment",
+    "distToPolyline",
+    "HANDLE_DIR",
+    "ALL_HANDLES",
+    "EDGE_HANDLES",
+    "frameHandles",
+    "handleCursor",
+    "resizeFrame",
+    "rotateFrame",
+    "snapMove"
+  ],
+  "imports": [
+    "frameHandles",
+    "resizeFrame",
+    "snapMove"
+  ],
+  "types": [
+    "Viewport",
+    "Pt",
+    "Rect",
+    "Frame",
+    "HandleId",
+    "Handle",
+    "Guide"
+  ]
+}

@@ -110,7 +110,7 @@ export function MessageAuthor({ className, children, ...props }: ComponentProps<
     <HoverCard>
       {/* A button, so a keyboard reaches the card too (focus opens it, like a hover). */}
       <HoverCardTrigger render={<button type="button" className={cn(inlineTrigger, authorClass)} {...(props as ComponentProps<'button'>)} />}>{children ?? user.name}</HoverCardTrigger>
-      <HoverCardContent side="right" align="start" sideOffset={10}>
+      <HoverCardContent side="end" align="start" sideOffset={10}>
         <UserCard user={user} />
       </HoverCardContent>
     </HoverCard>

@@ -53,7 +53,7 @@ export const disclosureGroupVariants = cva('flex flex-col', {
 /* The look both families share: a row, its trigger, and a panel that animates open and closed. */
 const item = 'group/disclosure relative text-foreground not-last:shadow-hairline-b';
 const trigger =
-  'bl-btn box-border -mx-2 flex min-h-11 flex-1 cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-2 py-[11px] text-left [font-family:inherit] text-body leading-[22px] font-normal text-foreground outline-none rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/45 focus-visible:ring-inset active:not-data-disabled:opacity-60 data-disabled:cursor-default data-disabled:opacity-40';
+  'bl-btn box-border -mx-2 flex min-h-11 flex-1 cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-2 py-[11px] text-start [font-family:inherit] text-body leading-[22px] font-normal text-foreground outline-none rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/45 focus-visible:ring-inset active:not-data-disabled:opacity-60 data-disabled:cursor-default data-disabled:opacity-40';
 const panel =
   'group/disclosure-panel overflow-clip text-subhead leading-[20px] text-muted-foreground transition-[height] duration-spring-tray ease-spring-tray data-starting-style:h-0 data-ending-style:h-0 motion-reduce:transition-none';
 

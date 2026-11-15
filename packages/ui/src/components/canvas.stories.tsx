@@ -59,7 +59,7 @@ function Cards({ selected }: { selected?: string }) {
 /** Dotted background, three cards. Scroll to pan, pinch or ⌘-scroll to zoom; Tab to it to see its focus ring. */
 export const Dots: Story = {
   render: ({ dark, ...args }) => (
-    <Phone w={460} h={380} dark={dark}>
+    <Phone w={460} h={380} appearance={dark ? 'dark' : 'light'}>
       <Canvas {...args} defaultViewport={{ x: 10, y: 0, zoom: 1 }}><Cards /></Canvas>
     </Phone>
   ),
@@ -74,7 +74,7 @@ export const Grid: Story = {
 export const Dark: Story = {
   args: { dark: true },
   render: ({ dark, ...args }) => (
-    <Phone w={460} h={380} dark={dark}>
+    <Phone w={460} h={380} appearance={dark ? 'dark' : 'light'}>
       <Canvas {...args} defaultViewport={{ x: 10, y: 0, zoom: 1 }}><Cards selected="b" /></Canvas>
     </Phone>
   ),
@@ -88,7 +88,7 @@ export const ZoomedOutSelection: Story = {
   render: function ZoomedOut({ dark, ...args }) {
     const [viewport, setViewport] = useState<Viewport>({ x: 70, y: 40, zoom: 0.55 });
     return (
-      <Phone w={460} h={380} dark={dark}>
+      <Phone w={460} h={380} appearance={dark ? 'dark' : 'light'}>
         <Canvas {...args} viewport={viewport} onViewportChange={setViewport}>
           <Cards selected="b" />
           <CanvasMarquee rect={{ x: 20, y: 200, w: 120, h: 80 }} />
@@ -102,7 +102,7 @@ export const ZoomedOutSelection: Story = {
 /** The empty state is an overlay: drawn in screen space, not scaled with the board. */
 export const Empty: Story = {
   render: ({ dark, ...args }) => (
-    <Phone w={460} h={300} dark={dark}>
+    <Phone w={460} h={300} appearance={dark ? 'dark' : 'light'}>
       <Canvas {...args} overlay={<EmptyState className="pointer-events-none absolute inset-0" title="A blank board" description="Add a card to start." />} />
     </Phone>
   ),
@@ -115,7 +115,7 @@ export const MiniMapAndController: Story = {
     const [viewport, setViewport] = useState<Viewport>({ x: 10, y: 0, zoom: 1 });
     const fit = { x: 40, y: 50, w: 340, h: 264 };
     return (
-      <Phone w={460} h={420} dark={dark}>
+      <Phone w={460} h={420} appearance={dark ? 'dark' : 'light'}>
         <div className="absolute inset-x-0 top-0 bottom-11">
           <Canvas
             {...args}

@@ -369,7 +369,7 @@ const HISTORY_COLUMNS: DataTableColumn<HistoryRow>[] = [
  *  in two tabs. It fills the height beside the editor and the results. */
 export function SqlConsoleSidebar({ className, ...props }: ComponentProps<'aside'>) {
   const { database, ready, history, setValue, editor, insertTable } = useConsole('SqlConsoleSidebar');
-  const { schema, isLoading } = useSchema();
+  const { schema, loading } = useSchema();
   const items = useMemo(() => schemaTreeItems(schema), [schema]);
   const rows = useMemo(() => history.entries.map((sql): HistoryRow => ({ id: sql, sql })), [history.entries]);
   if (database.status === 'error') return null;
@@ -387,7 +387,7 @@ export function SqlConsoleSidebar({ className, ...props }: ComponentProps<'aside
             items={items}
             icons={false}
             density="compact"
-            loading={isLoading || !ready}
+            loading={loading || !ready}
             emptyState={<EmptyState size="sm" title="No tables yet" />}
             // Schemas open as they appear; tables stay closed until opened.
             autoExpand={items.map((n) => n.value)}
@@ -404,7 +404,7 @@ export function SqlConsoleSidebar({ className, ...props }: ComponentProps<'aside
             rows={rows}
             columns={HISTORY_COLUMNS}
             density="compact"
-            layout="table"
+            presentation="table"
             mode="none"
             onAction={(_id, { row }) => { setValue(row.sql); editor.current?.focus(); }}
             emptyState={<EmptyState size="sm" title="No history yet" description="Statements you run appear here." />}

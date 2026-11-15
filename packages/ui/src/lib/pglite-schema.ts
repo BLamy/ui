@@ -149,7 +149,7 @@ export async function loadSchema(db: SqlRunner, { system = false, internal = fal
 
 export interface UseSchemaState {
   schema: SchemaInfo | null;
-  isLoading: boolean;
+  loading: boolean;
   error: SqlError | null;
   refetch: () => void;
 }
@@ -174,7 +174,7 @@ export function useSchema(options: LoadSchemaOptions = {}): UseSchemaState {
     };
   }, [db, epoch, manual, system, internal, rowCounts, maxCounted]);
 
-  return { schema: state.schema, isLoading: !db || state.loading, error: state.error, refetch: () => setManual((n) => n + 1) };
+  return { schema: state.schema, loading: !db || state.loading, error: state.error, refetch: () => setManual((n) => n + 1) };
 }
 
 /* ── The schema as a Tree's items ── */

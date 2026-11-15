@@ -37,7 +37,7 @@ export const NarrowWindow: Story = {
 export const Dark: Story = {
   decorators: [
     (Story) => (
-      <BLProvider dark>
+      <BLProvider appearance="dark">
         <Story />
       </BLProvider>
     ),

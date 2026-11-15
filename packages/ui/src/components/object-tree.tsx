@@ -168,7 +168,8 @@ function NodeRow({ row }: { row: ValueRow }) {
         <ObjectValue value={value} actions={false} title={text} className="min-w-0 flex-1 truncate leading-5 whitespace-pre" />
       ) : <span className="flex-1" />}
       {value && !isGetter ? (
-        <span className="hidden shrink-0 items-center group-focus-within/tree-item:flex group-hover/tree-item:flex">
+        // For the pointer: out of the tab order and out of the row's name (⌘C and Return do these from the keyboard).
+        <span aria-hidden="true" className="hidden shrink-0 items-center group-focus-within/tree-item:flex group-hover/tree-item:flex">
           {text.length > LONG_VALUE ? <RowButton icon="ellipsis" label="Show the whole value" onUse={(el) => api.showValue(row, el)} /> : null}
           <RowButton
             icon={api.copiedKey === row.key ? 'check' : 'copy'}

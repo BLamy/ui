@@ -12,7 +12,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/lib/icon';
 import { calloutVariants } from '@/lib/primitives';
-import { useAppearance, useThemeScope, type Appearance } from '@/lib/theme';
+import { useAppearance, useThemeScope, type AppearancePreference } from '@/lib/theme';
 import { useSizeClass } from '@/lib/container';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -80,9 +80,9 @@ export interface OpenCodeBaseProps
   loadRuntime?: () => Promise<OpenCodeRuntime>;
   /** The visible title, and the name of the region, its terminal and its preview frames. Default `OpenCode`. */
   title?: string;
-  /** The terminal's color scheme. Defaults to the nearest ThemeScope's, else the ambient appearance, else dark.
+  /** The terminal's color scheme. `'auto'` (the default) follows the nearest ThemeScope, else the ambient appearance, else dark.
       Changing it restarts the session. */
-  appearance?: Appearance;
+  appearance?: AppearancePreference;
   /** Start when mounted. Set false to require the Start button. */
   autoStart?: boolean;
   /** Attach Agent Browser-compatible MCP tools for the selected app iframe. */
@@ -121,7 +121,7 @@ export function OpenCode({
 }: OpenCodeProps) {
   const scopeAppearance = useThemeScope()?.appearance;
   const ambient = useAppearance();
-  const theme = appearanceProp ?? scopeAppearance ?? ambient ?? 'dark';
+  const theme = (appearanceProp === 'auto' ? undefined : appearanceProp) ?? scopeAppearance ?? ambient ?? 'dark';
   const terminal = useRef<HTMLDivElement>(null);
   const [sizeRef] = useSizeClass<HTMLElement>();
   const rootRef = useMemo(

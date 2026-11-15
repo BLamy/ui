@@ -168,9 +168,9 @@ describe('DataTable', () => {
     expect(document.activeElement).toBe(row(1).querySelector('[data-column=pages]'));
   });
 
-  it('keeps focus on whole rows with focus="row": rows by arrow, headers above, Enter presses and sorts', () => {
+  it('keeps focus on whole rows with navigation="row": rows by arrow, headers above, Enter presses and sorts', () => {
     const onAction = vi.fn();
-    render(<DataTable rows={books} columns={COLUMNS} focus="row" onAction={onAction} />);
+    render(<DataTable rows={books} columns={COLUMNS} navigation="row" onAction={onAction} />);
     expect(row(0).querySelector('[data-column=title]')?.hasAttribute('tabindex')).toBe(false);
     expect(grid().getAttribute('tabindex')).toBe('0');
     tabIn();
@@ -242,16 +242,23 @@ describe('DataTable', () => {
     resizeTable(600);
     expect(column('year')).toBeNull();
     resizeTable(400);
-    expect(root.getAttribute('data-layout')).toBe('stacked');
+    expect(root.getAttribute('data-presentation')).toBe('stacked');
     expect(screen.getByText('3 rows')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Sort by' })).toBeTruthy();
-    // The first column's cell over the others'.
-    expect(row(0).textContent).toBe('SolarisLem204');
+    expect(screen.getByRole('button', { name: 'Sort' })).toBeTruthy();
+    // The first column's cell over the others', each named for a screen reader (there are no headers above).
+    expect(row(0).textContent).toBe('SolarisAuthor: LemPages: 204');
+    expect(row(0).querySelector('.sr-only')?.textContent).toBe('Author: ');
     expect(grid().style.getPropertyValue('--data-table-row')).toBe('50px');
   });
 
+  it('names the stacked sort button by what it shows: the column and its direction, after "Sort by"', () => {
+    render(<DataTable rows={books} columns={COLUMNS} presentation="stacked" defaultSort={{ column: 'author', direction: 'ascending' }} />);
+    const button = screen.getByRole('button', { name: /^Sort by Author ?, ascending$/ });
+    expect(button.textContent).toContain('Author');
+  });
+
   it('draws a stacked row of its own with `renderStackedRow`', () => {
-    render(<DataTable rows={books} columns={COLUMNS} layout="stacked" countLabel={(n) => `${n} books`} renderStackedRow={(b) => <DataTableCell col={0}>{b.title} by {b.author}</DataTableCell>} />);
+    render(<DataTable rows={books} columns={COLUMNS} presentation="stacked" countLabel={(n) => `${n} books`} renderStackedRow={(b) => <DataTableCell col={0}>{b.title} by {b.author}</DataTableCell>} />);
     expect(screen.getByText('3 books')).toBeTruthy();
     expect(row(2).textContent).toBe('A Wizard of Earthsea by Le Guin');
     expect(row(2).querySelector('[role=gridcell]')).toBeTruthy();

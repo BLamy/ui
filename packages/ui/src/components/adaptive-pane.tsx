@@ -20,9 +20,9 @@ import { useSizeClassScope, type SizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { useKeptChildren } from '@/lib/kept-children';
 import { BackLabel, backName, barBackButton, barTitle, useBackFit } from '@/lib/nav-bar';
-import { barSurface } from '@/lib/primitives';
-import { BLSafeCtx } from '@/lib/theme';
-import { BARH, cn, cx } from '@/lib/utils';
+import { barSurface, BARH } from '@/lib/primitives';
+import { BLSafeCtx } from '@/lib/theme-context';
+import { cn, cx } from '@/lib/utils';
 
 export { createAdaptivePaneController } from '@/lib/adaptive-pane-primitive';
 export type {

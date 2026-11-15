@@ -189,7 +189,7 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
 
   const states = boxes.length;
   return (
-    <BLProvider dark={(appearance ?? ambient) === 'dark'}>
+    <BLProvider appearance={appearance ?? ambient}>
       <div
         ref={ref}
         data-slot="replay-canvas"

@@ -50,7 +50,7 @@ export default function Forms() {
                   </Field>
                 </DialogBody>
                 <DialogFooter>
-                  <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+                  <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
                   <DialogClose
                     render={<Button />}
                     disabled={empty}

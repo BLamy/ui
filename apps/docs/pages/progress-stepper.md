@@ -10,7 +10,7 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  ProgressStepper, ProgressStep,
+  ProgressStepper, ProgressStepperItem,
 } from '@/components/ui/progress-stepper'
 ```
 {% endtab %}
@@ -23,7 +23,7 @@ Import the stylesheet once at your app's entry, then the parts from their module
 import '@brett_lamy/ui/styles.css'
 
 import {
-  ProgressStepper, ProgressStep,
+  ProgressStepper, ProgressStepperItem,
 } from '@brett_lamy/ui/progress-stepper'
 ```
 {% endtab %}
@@ -46,18 +46,18 @@ const steps = [
 
 ## Parts
 
-`steps` is the shorthand for the parts. Pass `ProgressStep` children instead when a step needs more than a label and an icon: a `description` (a time, a place), a class of its own, or a marker of your own. A `ProgressStep` with no children renders its `ProgressStepIcon`, `ProgressStepTrack`, `ProgressStepLabel` and `ProgressStepDescription` from its `icon`, `label` and `description`; give it children to arrange them yourself. Each step works out its state from its position, so the parts only need `current` on the root.
+`steps` is the shorthand for the parts. Pass `ProgressStepperItem` children instead when a step needs more than a label and an icon: a `description` (a time, a place), a class of its own, or a marker of your own. A `ProgressStepperItem` with no children renders its `ProgressStepperItemIcon`, `ProgressStepperItemTrack`, `ProgressStepperItemLabel` and `ProgressStepperItemDescription` from its `icon`, `label` and `description`; give it children to arrange them yourself. Each step works out its state from its position, so the parts only need `current` on the root.
 
 {% demo src="progress-stepper/parts" %}
 
 ```tsx
 <ProgressStepper current={2} labels aria-label="Delivery">
-  <ProgressStep icon={<Icon name="check-circle" />} label="Placed" description="12:04" />
-  <ProgressStep>
-    <ProgressStepIcon><Spinner size={18} /></ProgressStepIcon>
-    <ProgressStepTrack />
-    <ProgressStepLabel>On the way</ProgressStepLabel>
-  </ProgressStep>
+  <ProgressStepperItem icon={<Icon name="check-circle" />} label="Placed" description="12:04" />
+  <ProgressStepperItem>
+    <ProgressStepperItemIcon><Spinner size={18} /></ProgressStepperItemIcon>
+    <ProgressStepperItemTrack />
+    <ProgressStepperItemLabel>On the way</ProgressStepperItemLabel>
+  </ProgressStepperItem>
 </ProgressStepper>
 ```
 
@@ -73,7 +73,7 @@ The root is an `ol` named "Progress" by default; name each stepper with `aria-la
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `steps` | — | `{ id, label, icon?, description? }[]` (`ProgressStepItem`). `label` is the accessible name. Leave out to pass `ProgressStep` children. |
+| `steps` | — | `{ id, label, icon?, description? }[]` (`ProgressStepperStep`). `label` is the accessible name. Leave out to pass `ProgressStepperItem` children. |
 | `current` | — | Index of the step in progress; earlier ones are complete, later ones upcoming. `steps.length` for all complete. |
 | `variant` | `bars` | `bars` or `line`. |
 | `animated` | `true` | Shimmer the current segment. |
@@ -82,7 +82,7 @@ The root is an `ol` named "Progress" by default; name each stepper with `aria-la
 | `aria-label` / `aria-labelledby` | `"Progress"` | The list's name. Name each stepper when a page has more than one (an order and a deploy). |
 | `className` / `style` | — | Merged onto the `ol`, which takes the other `ol` attributes (and `ref`) too. |
 
-### ProgressStep
+### ProgressStepperItem
 
 | Prop | Default | Effect |
 | --- | --- | --- |
@@ -90,11 +90,11 @@ The root is an `ol` named "Progress" by default; name each stepper with `aria-la
 | `children` | — | The parts, arranged yourself (replaces the shorthand). |
 | `className`, `li` attributes | — | Merged onto the `li`. |
 
-`ProgressStepIcon`, `ProgressStepTrack`, `ProgressStepLabel` and `ProgressStepDescription` are `span`s that take `className` and `span` attributes, and read their step's state from context.
+`ProgressStepperItemIcon`, `ProgressStepperItemTrack`, `ProgressStepperItemLabel` and `ProgressStepperItemDescription` are `span`s that take `className` and `span` attributes, and read their step's state from context.
 
 ## Styling
 
-Slots: `progress-stepper` (with `data-variant`, and `data-animated` when on), `progress-step` (with `data-state="complete|current|upcoming"`), `progress-step-icon` (with `progress-step-check` on complete steps), `progress-step-track`, `progress-step-fill`, `progress-step-label` and `progress-step-description`. The accent is the `--stepper-accent` custom property (the primary colour by default) and the rail `--stepper-track` (`--secondary-strong`, the Progress rail); override them on the root to recolour. Style one state with a `data-[state=complete]:` selector.
+Slots: `progress-stepper` (with `data-variant`, and `data-animated` when on), `progress-stepper-item` (with `data-state="complete|current|upcoming"`), `progress-stepper-item-icon` (with `progress-stepper-item-check` on complete steps), `progress-stepper-item-track`, `progress-stepper-item-fill`, `progress-stepper-item-label` and `progress-stepper-item-description`. The accent is the `--stepper-accent` custom property (the primary colour by default) and the rail `--stepper-track` (`--secondary-strong`, the Progress rail); override them on the root to recolour. Style one state with a `data-[state=complete]:` selector.
 
 ## cva recipes
 

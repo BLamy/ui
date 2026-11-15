@@ -24,7 +24,7 @@ const compact = new Intl.NumberFormat('en', { notation: 'compact' });
 
 export const avatarGroupVariants = cva(
   // Each avatar after the first tucks under its neighbour, ringed in the surface so the overlap reads as a cut.
-  'inline-flex items-center rounded-full outline-none [&>*]:ring-2 [&>*]:ring-(--avatar-ring,var(--background)) [&>*+*]:-ml-(--avatar-overlap)',
+  'inline-flex items-center rounded-full outline-none [&>*]:ring-2 [&>*]:ring-(--avatar-ring,var(--background)) [&>*+*]:-ms-(--avatar-overlap)',
 );
 
 export interface AvatarGroupProps extends Omit<ComponentProps<'div'>, 'children' | 'onSelect'> {

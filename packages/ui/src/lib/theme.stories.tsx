@@ -50,7 +50,7 @@ function Sample({ open }: { open?: boolean }) {
 function Frame({ children, dark, h = 300, w = 760 }: { children: ReactNode; dark?: boolean; h?: number; w?: number }) {
   return (
     <div style={{ width: w, height: h }} className="overflow-hidden rounded-xl">
-      <BLProvider dark={dark}>
+      <BLProvider appearance={dark ? 'dark' : 'light'}>
         <div className="grid h-full grid-cols-2 gap-4 p-4">{children}</div>
       </BLProvider>
     </div>

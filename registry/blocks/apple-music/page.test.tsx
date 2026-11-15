@@ -102,17 +102,43 @@ it('keeps the open album across the compact boundary, both ways', async () => {
   expect(albumTitle()).toContain('Neon Tidewater');
 
   // Phone: the same SplitView (nothing remounts), its sidebar now the tab bar, the Library tab current, and the
-  // album over Albums over the Library page.
+  // album over Albums, over the Library rows (the sidebar, behind).
   const split = element.querySelector('[data-slot="split-view"]');
   await resize(390, 844);
   expect(element.querySelector('[data-slot="split-view"]')).toBe(split);
   const tab = element.querySelector('[role="tab"][aria-selected="true"]');
   expect(tab?.textContent).toContain('Library');
-  expect(detailPages()).toHaveLength(3);
+  expect(detailPages()).toHaveLength(2);
   expect(albumTitle()).toContain('Neon Tidewater');
+  expect(element.querySelector('[data-slot="split-view-sidebar"]')?.hasAttribute('data-behind')).toBe(true);
 
   await resize(1200);
   expect(detailPages()).toHaveLength(2);
   expect(element.querySelector('[data-slot="split-view-item"][data-current]')?.textContent).toContain('Albums');
   expect(albumTitle()).toContain('Neon Tidewater');
+});
+
+it('on a phone the Library tab is the Library rows, and pressing it again comes back to them', async () => {
+  size = { width: 390, height: 844 };
+  await act(async () => root.render(<AppleMusic initialSection="listen" />));
+  await settle();
+  const sidebar = () => element.querySelector<HTMLElement>('[data-slot="split-view-sidebar"]')!;
+  const tab = (name: string) => [...element.querySelectorAll<HTMLElement>('[role="tab"]')].find((t) => t.textContent?.includes(name))!;
+  const row = (name: string) => [...sidebar().querySelectorAll<HTMLElement>('[data-slot="split-view-item"]')].find((r) => r.textContent?.includes(name))!;
+  await act(async () => tab('Library').click());
+  await settle();
+  // The sidebar on top, headed "Library", its rows and playlists shown and the other tabs' rows hidden.
+  expect(sidebar().hasAttribute('data-top')).toBe(true);
+  expect(sidebar().querySelector('[role="heading"]')?.textContent).toBe('Library');
+  expect(row('Artists').closest('[hidden]')).toBeNull();
+  expect(row('Late Night Drive').closest('[hidden]')).toBeNull();
+  expect(row('Browse').closest('[hidden]')).not.toBeNull();
+  await act(async () => row('Albums').click());
+  await settle();
+  expect(element.querySelector('[data-slot="split-view-detail"]')?.hasAttribute('data-top')).toBe(true);
+  expect(albumTitle()).toContain('Albums');
+  // The selected tab again: back to the rows.
+  await act(async () => tab('Library').click());
+  await settle();
+  expect(sidebar().hasAttribute('data-top')).toBe(true);
 });

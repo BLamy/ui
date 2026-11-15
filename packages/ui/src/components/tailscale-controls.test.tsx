@@ -175,9 +175,9 @@ async function connected(opts: FakeTailscaleOptions = {}) {
 const shell = (tailscale: Tailscale, ui: React.ReactNode) => render(<TailscaleProvider tailscale={tailscale}>{ui}</TailscaleProvider>);
 
 describe('TailscaleSummary', () => {
-  it('shows the tailnet, this device and the detail', async () => {
+  it('shows the tailnet, this device and the description', async () => {
     const { tailscale } = await connected();
-    shell(tailscale, <TailscaleSummary detail="3 pages and 9 requests this session." />);
+    shell(tailscale, <TailscaleSummary description="3 pages and 9 requests this session." />);
     expect(screen.getByText('Connected to tail1234.ts.net')).toBeTruthy();
     expect(screen.getByText(/^As phone\./)).toBeTruthy();
     expect(screen.getByText('3 pages and 9 requests this session.')).toBeTruthy();

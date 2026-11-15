@@ -1,4 +1,4 @@
-import { ProgressStep, ProgressStepIcon, ProgressStepLabel, ProgressStepper, ProgressStepTrack, ProgressStepDescription } from '@/components/ui/progress-stepper'
+import { ProgressStepperItem, ProgressStepperItemIcon, ProgressStepperItemLabel, ProgressStepper, ProgressStepperItemTrack, ProgressStepperItemDescription } from '@/components/ui/progress-stepper'
 import { Spinner } from '@/components/ui/spinner'
 import { Icon } from '@/lib/icon'
 
@@ -8,17 +8,17 @@ export default function Parts() {
   return (
     <div className="mx-auto w-full max-w-md">
       <ProgressStepper current={2} labels aria-label="Delivery">
-        <ProgressStep icon={<Icon name="check-circle" size={22} />} label="Placed" description="12:04" />
-        <ProgressStep icon={<Icon name="archivebox" size={22} />} label="Packed" description="12:19" />
-        <ProgressStep>
-          <ProgressStepIcon><Spinner size={18} /></ProgressStepIcon>
-          <ProgressStepTrack />
+        <ProgressStepperItem icon={<Icon name="check-circle" size={22} />} label="Placed" description="12:04" />
+        <ProgressStepperItem icon={<Icon name="archivebox" size={22} />} label="Packed" description="12:19" />
+        <ProgressStepperItem>
+          <ProgressStepperItemIcon><Spinner size={18} /></ProgressStepperItemIcon>
+          <ProgressStepperItemTrack />
           <span className="flex min-w-0 max-w-full flex-col items-center">
-            <ProgressStepLabel>On the way</ProgressStepLabel>
-            <ProgressStepDescription>About 8 min</ProgressStepDescription>
+            <ProgressStepperItemLabel>On the way</ProgressStepperItemLabel>
+            <ProgressStepperItemDescription>About 8 min</ProgressStepperItemDescription>
           </span>
-        </ProgressStep>
-        <ProgressStep icon={<Icon name="house" size={22} />} label="Delivered" />
+        </ProgressStepperItem>
+        <ProgressStepperItem icon={<Icon name="house" size={22} />} label="Delivered" />
       </ProgressStepper>
     </div>
   )

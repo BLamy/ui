@@ -59,7 +59,7 @@ const GIT = {
 } as const;
 
 function Frame({ w = 340, h = 520, dark, children }: { w?: number; h?: number; dark?: boolean; children?: ReactNode }) {
-  return <Phone w={w} h={h} dark={dark}><div className="absolute inset-0 flex flex-col bg-card py-2">{children}</div></Phone>;
+  return <Phone w={w} h={h} appearance={dark ? 'dark' : 'light'}><div className="absolute inset-0 flex flex-col bg-card py-2">{children}</div></Phone>;
 }
 
 function Files(props: Partial<React.ComponentProps<typeof Tree>>) {

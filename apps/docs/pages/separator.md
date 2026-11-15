@@ -39,7 +39,7 @@ A horizontal rule is full width, `inset` indents the start by 16px like an iOS l
 </div>
 ```
 
-`inset` only affects horizontal separators: it adds a 16px left margin and shortens the width to match (`calc(100% - 16px)`). A vertical separator ignores it.
+`inset` only affects horizontal separators: it adds a 16px margin on the leading (start) side, the left in left-to-right text and the right in right-to-left, and shortens the width to match (`calc(100% - 16px)`). A vertical separator ignores it.
 
 ## Accessibility
 
@@ -84,5 +84,5 @@ m-0 shrink-0 border-0 bg-border
 
 | Value | Adds |
 | --- | --- |
-| `true` | `ml-4 w-[calc(100%-16px)] data-[orientation=vertical]:ml-0 data-[orientation=vertical]:w-px` |
+| `true` | `ms-4 w-[calc(100%-16px)] data-[orientation=vertical]:ms-0 data-[orientation=vertical]:w-px` |
 | `false` (default) | — |

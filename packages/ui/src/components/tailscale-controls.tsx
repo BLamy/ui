@@ -28,16 +28,22 @@ import { cn } from '@/lib/utils';
 
    <PopoverContent>
      <PopoverTitle className="sr-only">Tailscale</PopoverTitle>
-     <TailscaleSummary detail="4 pages and 17 requests this session." />
+     <TailscaleSummary description="4 pages and 17 requests this session." />
      <TailscaleExitNodes onAction={choose} />
      <TailscaleLoginButton size="sm" variant="outline" />
    </PopoverContent> */
 
-/** The nine-dot mark, drawn in currentColor (Tailscale's logo is a trademark of Tailscale Inc.; check their brand guidelines before shipping it). */
-export function TailscaleMark({ className, size = 16 }: { className?: string; size?: number }) {
+export type TailscaleMarkProps = ComponentProps<'svg'>;
+
+/** The nine-dot mark, drawn in currentColor (Tailscale's logo is a trademark of Tailscale Inc.; check their brand
+ *  guidelines before shipping it). 16px (`size-4`); size it with a class, as an `Icon`. Decorative unless it is
+ *  given a name (`aria-label`), which makes it an image. Takes the svg element's props and `ref`. */
+export function TailscaleMark({ className, ...props }: TailscaleMarkProps) {
   const dim = new Set([0, 2, 6, 8]);
+  const named = props['aria-label'] != null || props['aria-labelledby'] != null;
   return (
-    <svg data-slot="tailscale-mark" aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" className={cn('shrink-0', className)}>
+    <svg data-slot="tailscale-mark" aria-hidden={named ? undefined : true} role={named ? 'img' : undefined} viewBox="0 0 24 24"
+      {...props} className={cn('size-4 shrink-0', className)}>
       {Array.from({ length: 9 }, (_, i) => (
         <circle key={i} cx={4 + (i % 3) * 8} cy={4 + Math.floor(i / 3) * 8} r={2.6} fill="currentColor" opacity={dim.has(i) ? 0.3 : 1} />
       ))}
@@ -214,13 +220,13 @@ export interface TailscaleSummaryProps extends ComponentProps<'div'> {
   /** This device's name on the tailnet (default: the controller's). */
   selfName?: string | null;
   /** A line under the summary (Safari: how many pages and requests this session). */
-  detail?: ReactNode;
+  description?: ReactNode;
 }
 
 /** Where the connection stands, in words, over this device's name, and an optional line of your own: the head of a
     connection panel. "Connected to <tailnet>" when connected, "Connecting to <tailnet>" or "Waiting for approval"
     on the way, "Not connected" otherwise. Like the badge, it can be driven without a provider. */
-export function TailscaleSummary({ tailscale, status: statusProp, tailnet: tailnetProp, selfName: selfProp, detail, className, ...props }: TailscaleSummaryProps) {
+export function TailscaleSummary({ tailscale, status: statusProp, tailnet: tailnetProp, selfName: selfProp, description, className, ...props }: TailscaleSummaryProps) {
   const snap = useSnapshot(useOptionalTailscale(tailscale));
   const status = statusProp ?? snap?.status ?? 'idle';
   const tailnet = (tailnetProp !== undefined ? tailnetProp : snap?.tailnet) ?? 'your tailnet';
@@ -235,7 +241,7 @@ export function TailscaleSummary({ tailscale, status: statusProp, tailnet: tailn
     <div data-slot="tailscale-summary" data-status={status} className={cn('flex flex-col gap-0.5', className)} {...props}>
       <span className="text-subhead font-semibold">{head}</span>
       {phase === 'connected' || self ? <span className="text-footnote text-muted-foreground">As {self ?? 'this device'}</span> : null}
-      {detail ? <p className="m-0 mt-1 text-footnote text-muted-foreground">{detail}</p> : null}
+      {description ? <p className="m-0 mt-1 text-footnote text-muted-foreground">{description}</p> : null}
     </div>
   );
 }

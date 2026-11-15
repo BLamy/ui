@@ -29,7 +29,7 @@ function Frame({ w, h, dark, children }: { w: number; h: number; dark?: boolean;
     <div className={phone ? undefined : 'p-6'}>
       <div className={phone ? 'relative mx-auto overflow-hidden' : 'relative mx-auto overflow-hidden rounded-[20px] shadow-hairline'}
         style={{ maxWidth: w, height: phone ? '100vh' : h, maxHeight: h }}>
-        <BLProvider dark={dark}>{children}</BLProvider>
+        <BLProvider appearance={dark ? 'dark' : 'light'}>{children}</BLProvider>
       </div>
     </div>
   );

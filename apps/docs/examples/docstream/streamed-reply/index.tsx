@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { MarkdownView } from '@/components/ui/markdown-view'
-import { FONT } from '@/lib/utils'
 
 const reply = `Both servers are now running detached and won't be killed by the
 tool's session limits.
@@ -75,7 +74,7 @@ export default function StreamedReply() {
   }
 
   return (
-    <div style={{ fontFamily: FONT }}>
+    <div className="font-sans">
       <DemoButton
         label={live ? 'Streaming…' : 'Replay stream'}
         onClick={replay}

@@ -227,7 +227,6 @@ function HourTimeline({ axisKind = 'time', startAt = 1_512_000, startView, ...pr
   return (
     <TraceTimeline
       range={RANGE}
-      gutter={84}
       axis={axisKind === 'stops' ? session.stopAxis : js}
       lanes={session.lanes}
       stops={session.stops}
@@ -292,7 +291,7 @@ function FakePanel({ title = 'Console', clearStart }: { title?: string; clearSta
 
 function PhoneRail({ dark, clearStart, children }: { dark?: boolean; clearStart?: boolean; children?: ReactNode }) {
   return (
-    <Phone w={390} h={844} dark={dark}>
+    <Phone w={390} h={844} appearance={dark ? 'dark' : 'light'}>
       <FakePanel clearStart={clearStart} />
       {children}
     </Phone>
@@ -302,7 +301,7 @@ function PhoneRail({ dark, clearStart, children }: { dark?: boolean; clearStart?
 /** A desktop-width frame, as tall as the strip's rows want. */
 function Desktop({ dark, children, h }: { dark?: boolean; children?: ReactNode; h?: number }) {
   return (
-    <Phone w={1280} h={h ?? stripHeight(hour().lanes, { requests: true, stops: true })} dark={dark}>
+    <Phone w={1280} h={h ?? stripHeight(hour().lanes, { requests: true, stops: true })} appearance={dark ? 'dark' : 'light'}>
       <div className="absolute inset-0 overflow-hidden">{children}</div>
     </Phone>
   );

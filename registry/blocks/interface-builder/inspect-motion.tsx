@@ -67,7 +67,7 @@ export function TargetEditor({ target, onChange, onBegin, help }: { target: Targ
             {k !== 'backgroundColor' ? (
               <IconAction icon={Array.isArray(v) ? 'minus' : 'ellipsis'} label={Array.isArray(v) ? 'One value' : 'Keyframes'} onClick={() => set(k, Array.isArray(v) ? v[0] : [v, typeof v === 'number' ? v : v, ki.key === 'scale' ? 1.1 : typeof v === 'number' ? v / 2 : v])} />
             ) : null}
-            <IconAction icon="xmark" label={`Remove ${ki.label}`} tone="danger" onClick={() => remove(k)} />
+            <IconAction icon="xmark" label={`Remove ${ki.label}`} tone="destructive" onClick={() => remove(k)} />
           </div>
         );
       })}
@@ -200,7 +200,7 @@ export function MotionPanel({ ctx, onPlay }: { ctx: NodeCtx; onPlay: () => void 
                 <NameInput label="Variant name" value={name} taken={Object.keys(m.variants ?? {}).filter((x) => x !== name)}
                   onCommit={(to) => setM({ variants: Object.fromEntries(Object.entries(m.variants!).map(([k, x]) => [k === name ? to : k, x])) })} />
               </div>
-              <IconAction icon="trash" label={`Remove ${name}`} tone="danger" onClick={() => { const vs = { ...m.variants }; delete vs[name]; setM({ variants: Object.keys(vs).length ? vs : undefined }); }} />
+              <IconAction icon="trash" label={`Remove ${name}`} tone="destructive" onClick={() => { const vs = { ...m.variants }; delete vs[name]; setM({ variants: Object.keys(vs).length ? vs : undefined }); }} />
             </div>
             <TargetEditor target={v.target} onBegin={ctx.begin} onChange={(t, live) => setM({ variants: { ...m.variants, [name]: { ...v, target: t } } }, live)} />
             <TransitionButton spec={v.transition} onBegin={ctx.begin} onChange={(s, live) => setM({ variants: { ...m.variants, [name]: { ...v, transition: s } } }, live)} />

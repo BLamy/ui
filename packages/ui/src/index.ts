@@ -3,7 +3,7 @@ import './styles.css';
 // lib
 export { cn, cx } from './lib/utils';
 export {
-  springs, springCss, direction, useDirection, fades, useSpringTransition, useReducedMotion, type SpringName,
+  springs, springCss, motionDirection, useDirection, motionFades, useSpringTransition, useReducedMotion, type SpringName,
   prefersReducedMotion,
 } from './lib/motion';
 export { usePresence, usePresenceList, useEnterExit } from './lib/presence';
@@ -20,22 +20,16 @@ export type {
   CanvasProps, CanvasPointerInfo, CanvasContextValue, CanvasController, CanvasFitOptions, CanvasViewportChangeDetails, CanvasViewportReason,
   CanvasFrameProps, CanvasHandlesProps, CanvasMarqueeProps, CanvasGuidesProps, CanvasMiniMapProps, CanvasMiniMapItem, CanvasPointerLayer,
 } from './components/canvas';
-export {
-  toBoard, toScreen, MIN_SIZE,
-  dist, cornersOf, rectOf, unionRect, intersects, inFrame, distToSegment, distToPolyline,
-  frameHandles, handleCursor, resizeFrame, rotateFrame, snapMove,
-} from './lib/canvas-math';
-export type { Viewport, Frame, Guide, Handle, HandleId, Pt, Rect } from './lib/canvas-math';
 export type { AnimatedHeightProps } from './components/animated-height';
 export { Celebrate } from './components/celebrate';
 export type { CelebrateProps } from './components/celebrate';
 export {
-  BLProvider, useChromeHidden,
+  BLProvider, useChromeHidden, setChromeHidden,
   AppearanceProvider, useAppearance,
   ThemeScope, useThemeScope, useScopeAppearance, useThemeScopeProps, themeScopeProps, readThemeVars, tintForeground, THEME_VARS,
   useLayerHost,
 } from './lib/theme';
-export type { BLProviderProps, Appearance, ThemeScopeProps, ThemeScopeName, ThemeScopeState, ThemeVars, ThemeVar } from './lib/theme';
+export type { BLProviderProps, Appearance, AppearancePreference, ThemeScopeProps, ThemeScopeName, ThemeScopeState, ThemeVars, ThemeVar } from './lib/theme';
 export { useContainerWidth, useContainerSize, useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation } from './lib/container';
 export { bindSizeClass, sizeClassOf } from './lib/size-class';
 export type { SizeClass, SizeClassBreakpoints, BindSizeClassOptions } from './lib/size-class';
@@ -50,14 +44,14 @@ export type { BindPullToRefreshOptions, PullToRefreshDetails, PullToRefresh } fr
 export { bindScrollEdge, useHideOnScroll } from './lib/scroll-edge';
 export type { BindScrollEdgeOptions } from './lib/scroll-edge';
 export { LocalStreams } from './lib/append-stream';
-export { DurableStreamsClient, CloudSync, useCloud, deviceId } from './lib/durable-streams';
+export { DurableStreamsClient, CloudSync, useCloud, cloudDeviceId } from './lib/durable-streams';
 export type { DurableStreamsConfig, CloudSettings, CloudStatus } from './lib/durable-streams';
 export { useSessionRecording, startSessionRecording, useSessions, useSessionCloud, sessionCloud, readSession, deleteSession, clearSessions, currentSessionId, storageUsage } from './lib/session-recorder';
 export type { SessionInfo, SessionRecordingOptions, RecordedEvent, IndexRecord } from './lib/session-recorder';
 export { usePersistentState, loadJSON, saveJSON } from './lib/persistent-state';
 export { useControllableChange } from './lib/controllable-state';
 export type { ContainerSize, UseSizeClassOptions } from './lib/container';
-export { Icon, Chevron, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS } from './lib/icon';
+export { Icon, Chevron, isIconName, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS } from './lib/icon';
 export type { IconProps, IconName, IconCanonicalName, IconShape, IconWeight, IconCategory, ChevronProps, ChevronDirection } from './lib/icon';
 
 // components
@@ -121,7 +115,7 @@ export type {
   SplitViewSupplementaryOpenChangeReason, SplitViewColumnWidthsChangeDetails, SplitViewColumnWidthsChangeReason,
 } from './components/split-view';
 export {
-  AdaptivePane, AdaptivePaneHeader, AdaptivePaneTitle, AdaptivePaneClose, adaptivePanePageClass, createAdaptivePaneController,
+  AdaptivePane, AdaptivePaneHeader, AdaptivePaneTitle, AdaptivePaneClose, AdaptivePaneTrigger, adaptivePanePageClass, createAdaptivePaneController,
 } from './components/adaptive-pane';
 export { useKeptChildren } from './lib/kept-children';
 export type { KeptChildren, KeptChildrenOptions } from './lib/kept-children';
@@ -135,7 +129,7 @@ export type {
   SidebarAccountProps, SidebarSearchProps, SidebarSectionProps, SidebarItemProps, SidebarTriggerProps, SidebarController, SidebarOpenChangeDetails, SidebarOpenChangeReason,
 } from './components/sidebar';
 export type {
-  AdaptivePaneProps, AdaptivePaneState, AdaptivePaneCloseProps, AdaptivePanePresentation, AdaptivePaneController, AdaptivePaneOpenChangeDetails,
+  AdaptivePaneProps, AdaptivePaneState, AdaptivePaneCloseProps, AdaptivePaneTriggerProps, AdaptivePanePresentation, AdaptivePaneController, AdaptivePaneOpenChangeDetails,
   AdaptivePaneOpenChangeReason, AdaptivePaneSide, AdaptivePaneWidths, AdaptivePaneWidthsChangeDetails, AdaptivePaneWidthsChangeReason,
 } from './components/adaptive-pane';
 export {
@@ -297,6 +291,8 @@ export {
   MarkdownView,
   type MarkdownViewProps,
   type ReferenceNode,
+  type CodeBlockNode,
+  type CodeBlockRenderDetails,
 } from './components/markdown-view';
 export { MessageScroller, MessageScrollerItem, type MessageScrollerProps, type MessageScrollerItemProps } from './components/message-scroller';
 export {
@@ -406,12 +402,12 @@ export {
   type ArtifactChatContainerOpenChangeDetails,
   type ArtifactChatComposingChangeDetails,
   type ArtifactChatComposingChangeReason,
-  type ArtifactChatLayout,
+  type ArtifactChatPresentation,
   type ArtifactChatSide,
 } from './components/artifact-chat-container';
 export {
-  ProgressStepper, ProgressStep, ProgressStepIcon, ProgressStepTrack, ProgressStepLabel, ProgressStepDescription, progressStepperVariants,
-  type ProgressStepperProps, type ProgressStepProps, type ProgressStepItem, type ProgressStepState,
+  ProgressStepper, ProgressStepperItem, ProgressStepperItemIcon, ProgressStepperItemTrack, ProgressStepperItemLabel, ProgressStepperItemDescription, progressStepperVariants,
+  type ProgressStepperProps, type ProgressStepperItemProps, type ProgressStepperStep, type ProgressStepperItemState,
 } from './components/progress-stepper';
 
 // PencilKit — freehand drawing on perfect-freehand (formerly @brett_lamy/pencilkit)
@@ -458,11 +454,11 @@ export {
   useToast, toastRegionVariants, toastVariants, toastIconVariants,
 } from './components/toast';
 export type {
-  ToastRegionProps, ToastProps, ToastIconProps, ToastVariant, ToastExtras, Hud, Toaster, ToastData, ToastOptions, ToastType, ToastItem,
+  ToastRegionProps, ToastProps, ToastIconProps, ToastVariant, ToastExtras, ToastHud, Toaster, ToastData, ToastOptions, ToastType, ToastItem,
   ToastState, ToastRegionState, ToastActionData, ToastCancel, ToastDismissDetails, ToastDismissReason,
 } from './components/toast';
 export { ProgressRing, CountdownRing, useCountdown, progressRingVariants, countdownRingValueVariants } from './components/progress-ring';
-export type { ProgressRingProps, ProgressRingSize, ProgressRingTone, CountdownRingProps, UseCountdownOptions, Countdown } from './components/progress-ring';
+export type { ProgressRingProps, ProgressRingSize, ProgressRingTone, CountdownRingProps, UseCountdownOptions, UseCountdown } from './components/progress-ring';
 // ReplayPreview lives in docstream; re-exported here (see components/replay-preview.tsx)
 export { ReplayPreview } from './components/replay-preview';
 export type {
@@ -473,7 +469,7 @@ export type {
 export { StlViewer } from './components/stl-viewer';
 export type { StlViewerProps } from './components/stl-viewer';
 export { StrudelPlayer, playStrudel, stopStrudel, updateStrudel, subscribeStrudel, getStrudelSnapshot } from './components/strudel-player';
-export type { StrudelPlayerProps, StrudelSnapshot } from './components/strudel-player';
+export type { StrudelPlayerProps, StrudelCodeChangeDetails, StrudelPanelChangeReason, StrudelSnapshot } from './components/strudel-player';
 export { NowPlayingBars } from './components/now-playing-bars';
 export type { NowPlayingBarsProps } from './components/now-playing-bars';
 export { MorphGroup, Morph, MorphPresence, useMorphTransition } from './components/morph';
@@ -504,7 +500,7 @@ export {
 // ── Calendar / DateInput / DatePicker / ColorPicker ──
 export {
   Calendar, CalendarHeader, CalendarHeading, CalendarPrevious, CalendarNext, CalendarMonthSelect, CalendarYearSelect,
-  CalendarMonths, CalendarGrid, CalendarWeekdays, CalendarWeekday, CalendarWeeks, CalendarDay, calendarVariants, createCalendarController,
+  CalendarMonths, CalendarGrid, CalendarGridHeading, CalendarWeekdays, CalendarWeekday, CalendarWeeks, CalendarDay, calendarVariants, createCalendarController,
   type CalendarProps, type CalendarMonthsProps, type CalendarDayProps, type CalendarController, type CalendarDayState, type CalendarGridCell,
   type CalendarMode, type CalendarValue, type DateMatcher, type DateMatchers,
 } from './components/calendar';
@@ -556,58 +552,15 @@ export {
 
 // ── Passkey vault ──
 export {
-  PasskeyError, detectPasskeySupport, createPasskey, getPrfSecret, passkeyUnsupportedReason, bytesToBase64Url, base64UrlToBytes, wipe,
-} from './lib/passkey';
-export type {
-  Bytes, PasskeyEnv, PasskeyErrorReason, PasskeySupport, CreatePasskeyOptions, CreatePasskeyResult, GetPrfSecretOptions, PasskeyCredentialRef, PrfSecret,
-} from './lib/passkey';
-export { createVault, VaultError } from './lib/vault';
-export type {
-  Vault, VaultOptions, VaultState, VaultStatus, VaultBusy, VaultErrorReason, VaultUnsupportedReason, VaultPasskeyInfo, EnrollOptions, AddPasskeyOptions,
-  QuarantineEntry, BroadcastChannelLike,
-} from './lib/vault';
-export { indexedDbStorage, localStorageStorage, memoryStorage, VaultStorageError } from './lib/vault-storage';
-export type { VaultStorage, IndexedDbOptions, LocalStorageOptions } from './lib/vault-storage';
-export { VaultProvider, useVault, useVaultState, useWebAuthnSupport, usePasskey, useEncryptedState, vaultErrorMessage } from './lib/vault-react';
-export type { VaultProviderProps, UsePasskey, EncryptedStateMeta, EncryptedStateSetter } from './lib/vault-react';
-export {
   VaultGate, VaultUnlock, VaultSetup, VaultUnsupported, VaultStatusBadge, VaultEnrollDialog, VaultRecoveryKey, vaultRecoveryKeyVariants,
-  unsupportedMessage,
+  vaultUnsupportedMessage,
 } from './components/vault-gate';
 export type {
-  VaultGateProps, VaultUnlockProps, VaultSetupProps, VaultUnsupportedProps, VaultStatusBadgeProps, VaultEnrollDialogProps,
+  VaultGateProps, VaultGateScreens, VaultUnlockProps, VaultSetupProps, VaultUnsupportedProps, VaultStatusBadgeProps, VaultEnrollDialogProps,
   VaultRecoveryKeyProps,
 } from './components/vault-gate';
 
-// ── PGlite ──
-export {
-  PGliteProvider, usePGlite, useReadyDatabase, useDatabaseStatus, useQuery, useLiveQuery, useExec, useTransaction,
-} from './lib/pglite';
-export type {
-  PGliteProviderProps, DatabaseState, DatabaseStatus, QueryState, UseQueryOptions, LiveQueryState, UseLiveQueryOptions, MutationState,
-} from './lib/pglite';
-export {
-  openDatabase, runMigrations, runSql, toSqlError, peekDataDirVersion, deleteDatabase,
-  PGliteError, DataDirVersionError, MigrationError,
-} from './lib/pglite-core';
-export type {
-  Database, DatabaseInfo, OpenDatabaseOptions, OpenedDatabase, PGliteAssets, Migration, MigrationOptions, MigrationResult,
-  MigrationErrorKind, PGliteErrorCode, ParsedDataDir, DataDirKind, RunOutcome, StatementResult, SqlError, SqlField, SqlResult,
-  SqlRunner, SqlTransaction, LiveNamespace, LiveQueryHandle,
-} from './lib/pglite-core';
-export { useTabLock, SingleTabGate } from './lib/tab-lock';
-export type { TabLock, TabLockStatus, SingleTabGateProps } from './lib/tab-lock';
-export {
-  exportDatabase, importDatabase,
-} from './lib/pglite-transfer';
-export type { ExportFormat, ExportOptions, ExportResult, ImportResult } from './lib/pglite-transfer';
-export { downloadFile, pickFile } from './lib/pglite-files';
-export { loadSchema, useSchema, schemaTreeItems } from './lib/pglite-schema';
-export type {
-  SchemaInfo, SchemaNode, SchemaTable, SchemaColumn, ColumnReference, RelationKind, LoadSchemaOptions, UseSchemaState, SchemaTreeNode,
-} from './lib/pglite-schema';
-export { usePersistenceSupport } from './lib/pglite-storage';
-export type { PersistenceSupport } from './lib/pglite-storage';
+// ── SqlConsole (the PGlite engine is on its own entries: @brett_lamy/ui/lib/pglite, lib/pglite-core, …) ──
 export {
   SqlConsole, SqlConsoleHeader, SqlConsoleDatabaseMenu, SqlConsoleSidebar, SqlConsoleEditor, SqlConsoleEditorFooter, SqlConsoleEditorRun,
   SqlConsoleResults, useSqlHistory,
@@ -617,32 +570,14 @@ export type {
   SqlHistory,
 } from './components/sql-console';
 
-// Spreadsheet: a virtualized grid with GPU sorting and histograms, and the CSV reader it pairs with
+// Spreadsheet: a virtualized grid with GPU sorting and histograms (its model and the CSV reader: @brett_lamy/ui/lib/spreadsheet-model, lib/csv)
 export { Spreadsheet, spreadsheetVariants, createSpreadsheetController } from './components/spreadsheet';
 export type {
   SpreadsheetProps, SpreadsheetController, SpreadsheetSortInfo, SpreadsheetSortChangeReason, SpreadsheetValueChangeReason, SpreadsheetColumnWidthsChangeReason,
 } from './components/spreadsheet';
-export {
-  parseCellNumber, parseCellDate, columnNumbers, sortKeys, sortPermutationCpu, sortRows,
-  selectionStats, columnHistogram,
-} from './lib/spreadsheet-model';
-export type {
-  SpreadsheetColumnType, SpreadsheetSortDirection, SpreadsheetSort, SpreadsheetEngine, SpreadsheetRanOn, SpreadsheetSortResult,
-  SpreadsheetEngineOptions, SelectionStats, SpreadsheetHistogram,
-} from './lib/spreadsheet-model';
-export { parseCsv, stringifyCsv, delimiterForPath } from './lib/csv';
-export type { CsvDelimiter, CsvFormat, CsvParseResult, CsvParseOptions } from './lib/csv';
 
 
 // ── Filters ──
-export {
-  coerceFilter, createFilter, dateRange, defaultOperator, describeFilter, describeValue,
-  matchFilters, matchesFilters, operatorLabel, operatorsFor, parseFilters, serializeFilters, toTime,
-  withOperator, withValue,
-} from './lib/filter-model';
-export type {
-  DateValue, Filter, FilterField, FilterKind, FilterOperator, FilterOption, FilterValue, MatchOptions,
-} from './lib/filter-model';
 export {
   FilterBar, FilterToolbar, FilterMenu, FilterList, FilterChip, FilterClear, FilterMatch, FilterValueEditor, useFilters, useFilterBar, useOptionalFilterBar,
   filterChipVariants,
@@ -654,10 +589,6 @@ export type {
 } from './components/filter';
 export { FilterInput } from './components/filter-input';
 export type { FilterInputProps } from './components/filter-input';
-export {
-  useFilterQuery, warmFilterQuery, interpretQuery, buildQuerySchema, clausesToFilters, matchOption, parseDateText,
-} from './lib/filter-query';
-export type { FilterQueryResult, UseFilterQueryOptions, Interpretation, Unresolved, QuerySchema, Trace } from './lib/filter-query';
 
 
 // ── FileUpload ──
@@ -667,89 +598,20 @@ export {
 export type {
   FileUploadProps, FileUploadDropzoneProps, FileUploadTriggerProps, FileUploadListProps, FileUploadItemProps, FileUploadThumbnailProps, FileUploadContextValue, FileUploadFilesHandler,
 } from './components/file-upload';
-export { xhrUpload, describeAccept, describeRules, fileKind, rejectionMessage } from './lib/file-upload-model';
 export { formatFileSize } from './lib/file-size';
-export type {
-  UploadFile, UploadFn, UploadContext, UploadResult, FileStatus,
-  FileUploadRules, RejectionReason, RejectionContext, RejectionMessages, XhrUploadOptions, FileKind,
-} from './lib/file-upload-model';
-export { fileUpload, createFileUploadController } from './lib/file-upload-primitive';
-export type {
-  FileUploadOptions, FileUploadController, FileUploadAddResult, FileUploadRootState,
-  FileUploadValueChangeReason, FileUploadValueChangeDetails, FileUploadChangeOptions,
-} from './lib/file-upload-primitive';
-export { useFileUpload, useFilePreview } from './lib/use-file-upload';
-export type { FileUploadState, FileUploadInputProps } from './lib/use-file-upload';
-
 
 
 // ── Tailscale ──
 export {
-  createTailscale, tailscaleErrorMessage, TailscaleError,
-  memoryTailscalePersistence, webStorageTailscalePersistence, vaultTailscalePersistence,
-} from './lib/tailscale';
-export type {
-  Tailscale, TailscaleOptions, TailscaleSnapshot, TailscaleStatus, TailscaleAuth, TailscaleEnv, TailscalePopup, TailscalePeer,
-  TailscaleClient, TailscaleClientEvent, TailscaleClientStartOptions, TailscaleClientState, TailscaleNetMap, TailscaleNode,
-  TailscaleRequest, TailscaleResponse, TailscaleSession, TailscalePersistence, TailscaleVaultLike, TailscaleErrorReason,
-} from './lib/tailscale';
-export {
-  resolveTailscalePolicy, matchTailscalePolicy,
-  TailscalePolicyError,
-} from './lib/tailscale-policy';
-export type {
-  TailscalePolicy, ResolvedTailscalePolicy, TailscaleIntercept, TailscaleUnavailable, TailscaleMatch, TailscaleMatchReason,
-} from './lib/tailscale-policy';
-export { pickExitNode, exitNodePeers, exitNodeOnline, exitNodeName } from './lib/tailscale-exit';
-export type { PickExitNodeOptions } from './lib/tailscale-exit';
-export { TailscaleProvider, useTailscale, useTailscaleStatus, useTailscaleFetch, useOptionalTailscale } from './lib/tailscale-react';
-export type { TailscaleProviderProps } from './lib/tailscale-react';
-export { createTailscaleConnectClient } from './lib/tailscale-connect';
-export type { TailscaleConnectOptions, TailscaleConnectModule, TailscaleIpn } from './lib/tailscale-connect';
-export { createFakeTailscaleClient } from './lib/tailscale-fake';
-export type { FakeTailscale, FakeTailscaleOptions, FakeTailnetHandler } from './lib/tailscale-fake';
-export { registerTailscaleRouter } from './lib/tailscale-router/bridge';
-export type {
-  TailscaleRouterHandle, TailscaleRouterOptions, TailscaleRouterState, TailscaleRouterStatus, TailscaleRouteTarget,
-  TailscaleRoutedRequest,
-} from './lib/tailscale-router/bridge';
-export { TailscaleRouter, useTailscaleRouter } from './lib/tailscale-router/react';
-export type { TailscaleRouterProps, UseTailscaleRouterOptions } from './lib/tailscale-router/react';
-export {
   TailscaleLoginButton, TailscaleStatusBadge, TailscaleMark, TailscaleSummary, TailscaleExitNodes, tailscaleStatusBadgeVariants,
 } from './components/tailscale-controls';
 export type {
-  TailscaleLoginButtonProps, TailscaleLoginButtonLabels, TailscaleStatusBadgeProps, TailscaleSummaryProps,
+  TailscaleLoginButtonProps, TailscaleLoginButtonLabels, TailscaleStatusBadgeProps, TailscaleSummaryProps, TailscaleMarkProps,
   TailscaleExitNodesProps, TailscaleExitNodeLabels, TailscaleExitNodeState, TailscaleExitNodeChangeDetails,
 } from './components/tailscale-controls';
 
 
-// ── Video: FFmpeg, the timeline model, render, playback and the editing parts ──
-export {
-  createFfmpeg, ffmpegUnsupportedReason, FfmpegError, parseProbe, mediaFileName,
-} from './lib/ffmpeg';
-export type {
-  Ffmpeg, FfmpegOptions, FfmpegJob, FfmpegResult, FfmpegProgress, FfmpegInput, FfmpegTool, FfmpegErrorCode, ProbeOptions,
-  MediaInfo, MediaKind, VideoStreamInfo, AudioStreamInfo,
-} from './lib/ffmpeg';
-export { extractFrames, extractPeaks, frameTimes } from './lib/ffmpeg/media';
-export type { MediaFrame, FramesOptions, MediaPeaks, PeaksOptions } from './lib/ffmpeg/media';
-export {
-  FfmpegProvider, useFfmpeg, useFfmpegSupport, useMediaInfo, useMediaFrames, useMediaPeaks, releaseMedia,
-} from './lib/ffmpeg/react';
-export type { FfmpegProviderProps, MediaFrameURL, AsyncResult } from './lib/ffmpeg/react';
-export {
-  clipDuration, clipEnd, sourceTime, timelineDuration, quantize, clipsAt,
-  layoutTrack, updateClip, updateTrack, removeClips, splitClip, trimClip, moveClip, insertClip,
-  sliceTimeline, snapTargets, snapTime, formatTimecode, parseTimecode,
-} from './lib/video-timeline-model';
-export type {
-  Timeline, TimelineTrack, TimelineClip, TimelineFormat, TimelineLook, TrackKind, ClipFrame, TrimLimits, PlaceOptions,
-} from './lib/video-timeline-model';
-export { buildRender, renderTimeline } from './lib/video-render';
-export type { RenderMedia, RenderContainer, RenderQuality, RenderOptions, RenderPlan, RenderTimelineOptions } from './lib/video-render';
-export { createPlayback, usePlaybackClock, usePlaybackState } from './lib/playback';
-export type { Playback, PlaybackState } from './lib/playback';
+// ── Video: the editing parts (FFmpeg, the timeline model, render and playback are on @brett_lamy/ui/lib/ffmpeg, lib/video-timeline-model, …) ──
 export { VideoTimeline, timelineMediaType, fitTimelineZoom } from './components/video-timeline';
 export type {
   VideoTimelineProps, TimelineMediaInfo, TimelineDrop, TimelineDropDetails, VideoTimelineAction, VideoTimelineChangeDetails, VideoTimelineChangeReason,
@@ -763,13 +625,10 @@ export { Waveform, waveformVariants } from './components/waveform';
 export type { WaveformProps } from './components/waveform';
 
 export { TuiPreview } from './components/tui-preview';
-export type { TuiPreviewProps, TuiPreviewOptions, TuiPreviewState, TuiTheme } from './components/tui-preview';
+export type { TuiPreviewProps, TuiPreviewOptions, TuiPreviewState, TuiAppearance, TuiTheme } from './components/tui-preview';
 export { OpenCode, openCodeVariants } from './components/open-code';
 export type { OpenCodeProps, OpenCodeBaseProps, OpenCodeHostProps, OpenCodeState } from './components/open-code';
-export { createAlmostNodeOpenCodeHost, createAgentWasmOpenCodeHost } from './lib/open-code-host';
-export type { OpenCodeHostBridge, OpenCodePort, OpenCodeWorkspaceBridge, OpenCodeProcessBridge, OpenCodeCommand, OpenCodeMcpServer, OpenCodeRuntime, OpenCodeRuntimeSession, AlmostNodeOpenCodeContainer, AlmostNodeOpenCodeOptions } from './lib/open-code-host';
 
-export type { OpenCodeCredentialStore, OpenCodeConnectionStore, OpenCodeKeychainStore } from './lib/open-code-host';
 
 export {
   Workspace, WorkspaceTab, WorkspaceTabTrigger, WorkspaceTabClose, WorkspaceToolbar, WorkspaceMaximize,
@@ -777,8 +636,8 @@ export {
 } from './components/workspace';
 export type {
   WorkspaceProps, WorkspaceTabProps, WorkspaceTabTriggerProps, WorkspaceTabCloseProps, WorkspaceToolbarProps, WorkspaceMaximizeProps,
-  WorkspaceLayout, WorkspaceLayoutInput, WorkspaceNode, WorkspaceNodeInput, TabNode, TabsetNode, SplitNode,
-  TabDropTarget, TabDropRegion, WorkspaceOrientation, WorkspaceTabSide, WorkspaceMinSize,
+  WorkspaceLayout, WorkspaceLayoutInput, WorkspaceNode, WorkspaceNodeInput, WorkspaceTabNode, WorkspaceTabsetNode, WorkspaceSplitNode,
+  WorkspaceDropTarget, WorkspaceDropRegion, WorkspaceOrientation, WorkspaceTabSide, WorkspaceMinSize,
   WorkspaceController, WorkspaceChangeOptions, WorkspaceAction,
   WorkspaceLayoutChangeReason, WorkspaceLayoutChangeDetails, WorkspaceLayoutCommitDetails,
   WorkspaceState, WorkspaceTabsetState, WorkspaceTabState, WorkspaceTabContentState, WorkspaceClassNames, WorkspacePresentation,
@@ -789,8 +648,6 @@ export { DebugToolbar, DebugToolbarButton, debugToolbarActions } from './compone
 export type { DebugToolbarAction, DebugToolbarActionDetails, DebugToolbarProps, DebugToolbarButtonProps } from './components/debug-toolbar';
 export { TraceTimeline, TraceTimelinePreview, traceTimelineVariants } from './components/trace-timeline';
 export type { TraceTimelineProps, TraceTimelinePreviewProps, TraceTimelineHandle, TraceValueChangeDetails, TraceValueChangeReason, TraceValueCommitDetails, TraceViewChangeDetails, TraceViewChangeReason, TracePickReason, TraceFocusedLaneChangeDetails, TraceSelectedThreadChangeDetails, TraceSelectedRequestChangeDetails, TraceDrawStats, TraceFetchActivity } from './components/trace-timeline';
-export { linearAxis, stopAxis, advanceAlong, selectStops, formatTraceTime } from './lib/trace-timeline-model';
-export type { TraceActivity, TraceAxis, TraceDensity, TraceDiamonds, TraceKey, TraceLane, TraceMarkSeries, TraceRange, TraceRequest, TraceScrubSpeed, TraceStop, TraceStopMark, TraceThread, TraceTone, TraceWindow } from './lib/trace-timeline-model';
 export {
   CodeEditor, CodeEditorHeader, CodeEditorTitle, CodeEditorCopyButton, CodeEditorContent, useCodeEditor, SyntaxTokens, useSyntaxTokens,
   codeEditorVariants, codeEditorLineVariants, codeEditorGutterCellVariants,
@@ -801,40 +658,26 @@ export type {
   CodeEditorLineDecoration, CodeEditorScrollOptions, CodeEditorScrollTarget, CodeEditorPosition, CodeEditorSelection, CodeEditorAlign, CodeHighlight, CodeHighlightContext, CodeLineRange,
   UseSyntaxTokensOptions, SyntaxTokensState,
 } from './components/code-editor';
-export { splitCodeLines, lexCodeLine, tooBigForPage, MAX_PAGE_LINES, MAX_PAGE_LINE_LENGTH, MAX_PAGE_CHARS } from './lib/code-editor-model';
-export { splitEditorLines, lineAfterEdit } from './lib/code-document';
-export { createGpuCodeHighlight } from './lib/code-editor-gpu';
-export type { GpuCodeHighlightOptions } from './lib/code-editor-gpu';
 export { ObjectTree } from './components/object-tree';
 export type { ObjectTreeProps, ObjectTreeValueChangeDetails } from './components/object-tree';
 export { ObjectValue } from './components/object-value';
 export type { ObjectValueProps } from './components/object-value';
-export { nodeFromValue, objectTreeKey } from './lib/object-tree-model';
-export type { ObjectTreeGetterResult, ObjectTreeNode, ObjectTreeRoot } from './lib/object-tree-model';
 export { copyTextOf, previewFromValue, previewText, previewTokens } from './lib/object-tree-value';
 export type { ValueMapEntry, ValuePreview, ValuePreviewOptions, ValueProperty, ValueTokenType, ValueToken, ValueType } from './lib/object-tree-value';
 export { CallStack } from './components/call-stack';
 export type { CallStackProps, CallStackValueChangeDetails } from './components/call-stack';
-export type { CallStackFrame, CallStackFrameKind, CallStackLocation } from './lib/call-stack-model';
 export { LogList, LogListRowContent, logListVariants, createLogListController } from './components/log-list';
 export type {
   LogListProps, LogListController, LogListActionDetails, LogListValueChangeReason, LogListExpandedChangeReason,
   LogListFollowingChangeReason, LogListRowContentProps, LogRowState,
 } from './components/log-list';
-export { LOG_LEVELS, countLogLevels, formatLogTime, logRowText, nodeText, normalizeLogLevel } from './lib/log-list-model';
-export type { LogLevel, LogLevelCounts, LogRow, RowId } from './lib/log-list-model';
 export { DataTable, DataTableCell, dataTableVariants, createDataTableController } from './components/data-table';
 export type {
   DataTableProps, DataTableColumn, DataTableDensity, DataTableOverlayState, DataTableRowAttributes, DataTableRow, DataTableController,
   DataTableActionDetails, DataTableValueChangeReason, DataTableSortChangeReason, DataTableColumnWidthsChangeReason, DataTableBreakpoints,
   DataTableColumnSize, DataTableSort, DataTableSortDirection, DataTableSortValue, DataTableTimeRange,
 } from './components/data-table';
-export { sortDataTableRows } from './lib/data-table-model';
 export { RequestTableLink, RequestTable, REQUEST_COLUMNS } from './components/request-table';
 export type { RequestColumnId, RequestTableLinkProps, RequestTableProps } from './components/request-table';
-export { isRequestFailed, requestDurationText, requestName, requestSizeText, requestStatusText, requestTimeRange } from './lib/request-table-model';
-export type { RequestRow, RequestTone } from './lib/request-table-model';
 export { Terminal, terminalVariants } from './components/terminal';
 export type { TerminalProps, TerminalHandle } from './components/terminal';
-export { createTerminalShell, applyKey, applyCompletion, readKeys, renderLine } from './lib/terminal-line';
-export type { TerminalCommandHandler, TerminalCommandIO, TerminalCompleter, TerminalShell, TerminalShellOptions, TerminalSink } from './lib/terminal-line';

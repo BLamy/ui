@@ -277,7 +277,7 @@ A stepping debugger re-renders on every step. With `gutters` memoized and the ca
 
 `currentLine` draws a band across the line, and `currentColumn` a mark inside it. When they change the editor brings them into view if they aren't already, a third of the way down, so what comes next shows too. `revealCurrentLine={false}` leaves that to you, and `{ smooth: true }` animates it. On a long line it scrolls sideways to the column as well.
 
-`lineDecoration(lineNumber)` gives a line a `tint` (`info`, `success`, `warning`, `danger`, `muted`), or classes for its band, its text and its gutter cells, like dimming lines that never ran. It's only called for rows on screen.
+`lineDecoration(lineNumber)` gives a line a `tone` (`info`, `success`, `warning`, `destructive`, `muted`), or classes for its band, its text and its gutter cells, like dimming lines that never ran. It's only called for rows on screen.
 
 `markers` puts things to press at a column inside a line, like column-level breakpoints: an array of `{ line, column, label, onClick, pressed }` (`onClick(event, details)`, with `details.marker` and `details.line`), or a function from a line to its markers when there are many. A line of a bundle can have tens of thousands, and only those in the rendered part of the line are in the page. A marker sits over the grid and never moves the text. `children` replaces the default notch.
 
@@ -406,7 +406,7 @@ The code is a list of lines, each announcing its place in the whole file with `a
 | `gutters` | `[]` | `CodeEditorGutter[]`, in order. Memoize it. |
 | `currentLine` / `currentColumn` | — | The line and column execution is on. |
 | `revealCurrentLine` | `true` | Keep the current line in view. `{ smooth: true }` animates it. |
-| `lineDecoration` | — | `(lineNumber) => { tint, className, textClassName, gutterClassName }`. |
+| `lineDecoration` | — | `(lineNumber) => { tone, className, textClassName, gutterClassName }`. |
 | `markers` | — | `CodeEditorMarker[]`, or `(lineNumber) => CodeEditorMarker[]`. |
 | `revealLine` | — | Brings this line into view when it changes: a line, or `{ line, column, align, smooth }`. |
 | `maxLineLength` | — | The widest line in cells, if you know it. Saves a pass over the file. |

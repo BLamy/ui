@@ -3,7 +3,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@ui-sdk/react/button';
 import { FloatingSheet, FloatingSheetBody } from '@/components/ui/floating-sheet';
 import { ThemeScope } from '@/lib/theme';
-import { cn, pressable } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { pressable } from '@/lib/primitives';
 import { TerminalHeader, TerminalBody, TerminalAction } from './terminal';
 import { TERMINAL_SEED } from './fixtures';
 
@@ -36,7 +37,7 @@ function SheetDemo({ open: initialOpen }: { open: boolean }) {
         {/* The drawer holds a terminal: a `terminal` theme scope, dark in either appearance. */}
         <ThemeScope scope="terminal" className="contents">
           <FloatingSheet
-            variant="sheet"
+            variant="card"
             gutter={0}
             radius={16}
             collapse="hide"

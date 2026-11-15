@@ -81,6 +81,6 @@ export const Plain: Story = { args: { variant: 'plain', defaultValue: '0 9 * * 1
 export const Disabled: Story = { args: { disabled: true, defaultValue: '0 9 * * 1-5' } };
 
 export const Dark: Story = {
-  decorators: [(Story) => <Pad w={440} dark><Story /></Pad>],
+  decorators: [(Story) => <Pad w={440} appearance="dark"><Story /></Pad>],
   args: { defaultValue: '0 9 * * 1-5' },
 };

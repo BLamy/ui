@@ -70,7 +70,7 @@ export default function LoopQA({ appearance, initialProject, initialTab, initial
             {/* The block is a size-class scope (its compact break is BLProvider's 640px): its dialogs are trays on a phone. */}
             <SizeClassProvider value={sizeClass}>
               <ArtifactChatContainer
-                layout={dock && qa.askOpen ? 'split' : 'floating'}
+                presentation={dock && qa.askOpen ? 'split' : 'floating'}
                 chatSide="end"
                 chatLabel="Ask QA"
                 chatWidth={384}

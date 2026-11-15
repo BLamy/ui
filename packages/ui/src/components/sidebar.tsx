@@ -37,10 +37,10 @@ import { Kbd } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger, createTooltipController, type TooltipController } from '@/components/ui/tooltip';
 import { SizeClassProvider, useSizeClassScope } from '@/lib/container';
 import { Icon, type IconName } from '@/lib/icon';
-import { sectionLabelVariants } from '@/lib/primitives';
+import { sectionLabelVariants, brandTile } from '@/lib/primitives';
 import type { SizeClass } from '@/lib/size-class';
 import { sidebar, type SidebarApi, type SidebarOpenChangeReason, type SidebarOptions } from '@/lib/sidebar-primitive';
-import { brandTile, cn, cx } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 
 export { createSidebarController } from '@/lib/sidebar-primitive';
 export type { SidebarController, SidebarOpenChangeDetails, SidebarOpenChangeReason } from '@/lib/sidebar-primitive';

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TerminalHandle } from '@/components/ui/terminal';
-import { workspaceTabsets, type TabNode, type WorkspaceAction, type WorkspaceController, type WorkspaceLayoutCommitDetails } from '@/components/ui/workspace';
+import { workspaceTabsets, type WorkspaceTabNode, type WorkspaceAction, type WorkspaceController, type WorkspaceLayoutCommitDetails } from '@/components/ui/workspace';
 import { createMemoryRuntime } from './memory-runtime';
 import type { RuntimeTerminal, VSCodeRuntime } from './runtime';
 import { VSCodeStore, type TabData, type VSCodeLayout } from './store';
@@ -22,8 +22,8 @@ function fakeWorkspace() {
   };
   const handle = {
     getLayout: () => structuredClone(layout),
-    getActiveTabsetId: () => 'editors',
-    addTab(tab: TabNode<TabData>, options: { tabsetId?: string } = {}) {
+    getCurrentTabsetId: () => 'editors',
+    addTab(tab: WorkspaceTabNode<TabData>, options: { tabsetId?: string } = {}) {
       const target = tabsets().find((t) => t.id === options.tabsetId) ?? tabsets()[0];
       target.tabs.push(tab);
       target.selectedId = tab.id;

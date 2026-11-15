@@ -25,7 +25,7 @@ export interface TriggerPaletteProps {
 
 /** Whether an element sits on a light surface: the nearest appearance root (`.light` / `.dark`, set by BLProvider,
     ThemeScope and the themed shells) decides, else the computed color scheme. */
-export function isLightSurface(el: Element | null | undefined): boolean {
+function isLightSurface(el: Element | null | undefined): boolean {
   if (!el) return false;
   const root = el.closest('.light,.dark,[data-tone]');
   if (root) return root.classList.contains('light') || root.getAttribute('data-tone') === 'light';

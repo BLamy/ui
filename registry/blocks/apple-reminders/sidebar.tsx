@@ -13,6 +13,7 @@ import type { TaskRoot } from './use-task-files';
 import { ListIcon, ListPreview, ReminderRow } from './reminder-row';
 import { useReminders } from './store';
 import { buildView, countFor } from './views';
+import { EmptyState } from '@/components/ui/empty-state';
 
 /** A calendar page with nothing printed on it: Today's tile writes the date on it. */
 const PAGE = [{ d: 'M4.2 6.6c0-.9.7-1.6 1.6-1.6h12.4c.9 0 1.6.7 1.6 1.6v11.8c0 .9-.7 1.6-1.6 1.6H5.8c-.9 0-1.6-.7-1.6-1.6z' }];
@@ -67,7 +68,7 @@ function ListItem({ l, collapsed }: { l: RList; collapsed: boolean }) {
 function InlineResults() {
   const api = useReminders();
   const v = buildView('search', api.items, api.lists, api.recent, api.showCompleted, api.query);
-  if (!v.groups.length) return <div className="py-16 text-center text-body text-muted-foreground">No Results</div>;
+  if (!v.groups.length) return <EmptyState size="sm" role="status" title="No Results" className="py-16" />;
   return (
     <div className="-mx-4">
       {v.groups.map((g) => (

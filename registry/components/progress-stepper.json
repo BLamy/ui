@@ -1,23 +1,23 @@
 {
   "name": "progress-stepper",
   "title": "ProgressStepper",
-  "description": "A row of milestones for a multi-step process, as filling bars or a joined line, with complete, current and upcoming states; from a steps array or composed from ProgressStep parts with your own icon, label and description.",
+  "description": "A row of milestones for a multi-step process, as filling bars or a joined line, with complete, current and upcoming states; from a steps array or composed from ProgressStepperItem parts with your own icon, label and description.",
   "page": "progress-stepper",
   "exports": [
     "ProgressStepper",
-    "ProgressStep",
-    "ProgressStepIcon",
-    "ProgressStepTrack",
-    "ProgressStepLabel",
-    "ProgressStepDescription",
+    "ProgressStepperItem",
+    "ProgressStepperItemIcon",
+    "ProgressStepperItemTrack",
+    "ProgressStepperItemLabel",
+    "ProgressStepperItemDescription",
     "progressStepperVariants"
   ],
   "imports": [
     "ProgressStepper",
-    "ProgressStep"
+    "ProgressStepperItem"
   ],
   "types": [
-    "ProgressStepItem",
-    "ProgressStepState"
+    "ProgressStepperStep",
+    "ProgressStepperItemState"
   ]
 }

@@ -6,7 +6,8 @@ All three are public.
 
 ```tsx
 // npm
-import { useComposer, useComposerBump, usePencilHistory } from '@brett_lamy/ui'
+import { useComposer, useComposerBump } from '@brett_lamy/ui/composer/composer'
+import { usePencilHistory } from '@brett_lamy/ui/pencilkit/use-pencil-history'
 
 // shadcn registry (aliases)
 import { useComposer, useComposerBump } from '@/components/ui/composer/composer'              // …/r/composer.json

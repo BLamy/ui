@@ -192,7 +192,7 @@ describe('CodeEditor as a source view', () => {
       render(<CodeEditor readOnly variant="plain" lines={numbered(5)} currentLine={3} currentColumn={2} />);
       const bands = document.querySelectorAll('[data-slot="code-editor-band"]');
       expect(bands.length).toBe(1);
-      expect((bands[0] as HTMLElement).dataset.tint).toBe('current');
+      expect((bands[0] as HTMLElement).dataset.tone).toBe('current');
       expect((bands[0] as HTMLElement).style.top).toBe(`${2 * LINE}px`);
       const mark = lineEl(3)?.querySelector('[data-slot="code-editor-column"]') as HTMLElement;
       expect(parseFloat(mark.style.left)).toBe(PADDING + 2 * CELL);
@@ -200,10 +200,10 @@ describe('CodeEditor as a source view', () => {
     });
 
     it('decorates lines by function: bands, classes on the text and on the gutter', () => {
-      const decorate = (n: number) => (n === 2 ? { tint: 'danger' as const, textClassName: 'dim', gutterClassName: 'gutter-dim' } : n === 4 ? { className: 'mine' } : null);
+      const decorate = (n: number) => (n === 2 ? { tone: 'destructive' as const, textClassName: 'dim', gutterClassName: 'gutter-dim' } : n === 4 ? { className: 'mine' } : null);
       render(<CodeEditor readOnly variant="plain" lines={numbered(5)} lineDecoration={decorate} />);
       const bands = [...document.querySelectorAll<HTMLElement>('[data-slot="code-editor-band"]')];
-      expect(bands.map((b) => b.dataset.tint)).toEqual(['danger', undefined]);
+      expect(bands.map((b) => b.dataset.tone)).toEqual(['destructive', undefined]);
       expect(bands[1].className).toContain('mine');
       expect(lineEl(2)?.className).toContain('dim');
       expect(document.querySelector('[data-line="2"] [data-gutter="line-number"]')?.className).toContain('gutter-dim');
@@ -1032,8 +1032,8 @@ describe('what is kept by line, through an edit', () => {
 
   it('a current line and a decoration stay on the numbers they were given', async () => {
     const ref = createRef<CodeEditorHandle>();
-    render(<CodeEditor ref={ref} defaultValue={'one\ntwo\nthree'} currentLine={3} lineDecoration={(line) => (line === 1 ? { tint: 'warning' } : null)} />);
-    const bands = () => [...document.querySelectorAll<HTMLElement>('[data-slot="code-editor-band"]')].map((el) => [el.dataset.tint, parseFloat(el.style.top)]);
+    render(<CodeEditor ref={ref} defaultValue={'one\ntwo\nthree'} currentLine={3} lineDecoration={(line) => (line === 1 ? { tone: 'warning' } : null)} />);
+    const bands = () => [...document.querySelectorAll<HTMLElement>('[data-slot="code-editor-band"]')].map((el) => [el.dataset.tone, parseFloat(el.style.top)]);
     const before = bands();
     act(() => ref.current?.setSelection({ anchor: { line: 3, column: 0 }, focus: { line: 3, column: 0 } }));
     await type('x');

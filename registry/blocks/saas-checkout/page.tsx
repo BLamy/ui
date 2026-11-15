@@ -72,7 +72,7 @@ export default function SaasCheckout({ initialStep, initial, today, onDashboard 
   const toDashboard = () => (onDashboard && checkout.receipt ? onDashboard(checkout.receipt) : checkout.restart());
 
   return (
-    <BLProvider dark={dark} tint={tint.fill} style={{ '--link': tint.ink } as CSSProperties} className="bg-background">
+    <BLProvider appearance={dark ? 'dark' : 'light'} tint={tint.fill} style={{ '--link': tint.ink } as CSSProperties} className="bg-background">
       <CheckoutCtx.Provider value={checkout}>
         <div ref={ref} className="flex h-full min-h-0 w-full flex-col">
           <header className="shrink-0 border-b border-border bg-background">

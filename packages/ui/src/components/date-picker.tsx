@@ -14,7 +14,8 @@ import {
 import type { PartProps } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { buttonVariants } from '@/components/ui/button';
-import { CalendarHeader, CalendarMonths, CalendarMonthsContext, type CalendarValue } from '@/components/ui/calendar';
+import { CalendarHeader, CalendarMonths, type CalendarValue } from '@/components/ui/calendar';
+import { CalendarMonthsContext } from '@/lib/calendar-months';
 import { fieldSurfaceVariants } from '@/components/ui/input';
 import { popoverContentVariants } from '@/components/ui/popover';
 import { Icon } from '@/lib/icon';

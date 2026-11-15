@@ -255,7 +255,7 @@ describe('ToggleGroup', () => {
   });
 
   it('shows the pressed item in every variant, and draws segments only from the group', () => {
-    for (const variant of ['default', 'filled', 'outline', 'quiet'] as const) {
+    for (const variant of ['default', 'secondary', 'outline', 'quiet'] as const) {
       const r = render(<Views variant={variant} defaultValue={['grid']} />);
       const grid = screen.getByRole('button', { name: 'Grid' });
       expect(grid.getAttribute('aria-pressed')).toBe('true');
@@ -266,7 +266,7 @@ describe('ToggleGroup', () => {
     // An item's own variant picks a Toggle look; it never makes a bare segment outside a segmented group.
     render(
       <ToggleGroup aria-label="Mixed" defaultValue={['a']}>
-        <ToggleGroupItem value="a" variant="filled">A</ToggleGroupItem>
+        <ToggleGroupItem value="a" variant="secondary">A</ToggleGroupItem>
       </ToggleGroup>,
     );
     expect(screen.getByRole('button', { name: 'A' }).className).toContain('bg-secondary');

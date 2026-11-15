@@ -46,7 +46,7 @@ A region renders one `Toast` for each toast in its queue, newest first. Without 
 Place a region once, near the root, then call `toast` from anywhere (an event handler, a fetch callback, outside React):
 
 ```tsx
-import { ToastRegion, toast } from '@brett_lamy/ui'
+import { ToastRegion, toast } from '@brett_lamy/ui/toast'
 
 <ToastRegion />                                   // once
 
@@ -74,7 +74,7 @@ A banner can have a `description`, a `type` (`success`, `info`, `warning`, `erro
 The pill is a region of its own with `variant="hud"`, and `hud()` shows it. There is only ever one pill: calling `hud()` again while it is up replaces what it says, and its label morphs (the letters the two labels share stay put). It lasts 1.6 seconds and can't be swiped or closed. Its material is the `hud` color (`bg-hud` / `text-hud-foreground`), dark in both appearances as on iOS; set `--hud` and `--hud-foreground` to retheme it.
 
 ```tsx
-import { ToastRegion, hud } from '@brett_lamy/ui'
+import { ToastRegion, hud } from '@brett_lamy/ui/toast'
 
 <ToastRegion variant="hud" />                     // once, beside the banner region
 

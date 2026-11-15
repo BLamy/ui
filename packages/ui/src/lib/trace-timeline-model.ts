@@ -729,7 +729,7 @@ const LANE_GAP = 2;
 
 /** The strip's ruler height, and the default width of its label gutter. */
 export const TRACE_RULER = RULER;
-export const TRACE_GUTTER = 64;
+export const TRACE_GUTTER = 84;
 
 /** The rail: thin columns along the outer edge, in `zone` px, after `outer` px for the view's position. */
 const RAIL_OUTER = 3;

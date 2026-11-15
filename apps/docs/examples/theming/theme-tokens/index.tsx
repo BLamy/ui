@@ -22,7 +22,7 @@ export default function Appearance() {
         boxShadow: '0 0 0 1px var(--border)',
       }}
     >
-      <BLProvider dark={dark} tint={tint}>
+      <BLProvider appearance={dark ? 'dark' : 'light'} tint={tint}>
         <div style={{ padding: 16 }}>
           <div
             style={{

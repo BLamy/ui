@@ -83,7 +83,7 @@ export function TailscaleStatusItem({ defaultOpen }: { defaultOpen?: boolean }) 
     <Popover defaultOpen={defaultOpen}>
       <PopoverTrigger render={<Button variant="quiet" size="icon-sm" aria-label={label} className={ITEM} />}>
         <span className="relative grid">
-          <TailscaleMark size={15} className={cn('transition-opacity duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', !connected && 'opacity-45')} />
+          <TailscaleMark className={cn('size-3.75 transition-opacity duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', !connected && 'opacity-45')} />
           {exit ? <span data-slot="macos-exit-node-dot" aria-hidden="true" className="absolute -top-px -right-px size-1.5 rounded-full bg-success" /> : null}
         </span>
       </PopoverTrigger>

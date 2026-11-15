@@ -58,7 +58,7 @@ export const NoDescription: Story = {
 };
 
 export const Dark: Story = {
-  decorators: [(Story) => <Pad w={760} dark><div className="min-h-[200px]"><Story /></div></Pad>],
+  decorators: [(Story) => <Pad w={760} appearance="dark"><div className="min-h-[200px]"><Story /></div></Pad>],
   render: () => (
     <FilterBar fields={fields}>
       <FilterInput defaultValue="priority urgent and points over 3" parse={{ reference: new Date(2026, 0, 14) }} />

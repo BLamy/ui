@@ -45,7 +45,7 @@ export function Gate({ open, initialFocus, finalFocus }: GateProps) {
           <div className="relative grid size-20 place-items-center rounded-card bg-primary text-primary-foreground">
             <Icon name="globe" size={44} />
             <span className="absolute -right-2 -bottom-2 grid size-8 place-items-center rounded-full bg-background text-foreground shadow-hairline">
-              <TailscaleMark size={18} />
+              <TailscaleMark className="size-4.5" />
             </span>
           </div>
           <div className="flex flex-col gap-1.5">

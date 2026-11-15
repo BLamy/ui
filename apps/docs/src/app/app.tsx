@@ -63,10 +63,13 @@ function docsFiles(): Record<string, string> {
     }
     summary.push('');
   }
-  // Pages with no place in the sidebar: the pointer an old name leaves behind, so its links still land somewhere.
+  // Pages outside the components list: the block shells (listed under Blocks below) and any pointer an old name leaves.
   for (const p of NAV.standalone) if (p.id !== SITE_BLOCKS) files[`${p.id}.md`] = pageSource(p.id);
   // Blocks: the overview, then one wide page per block.
   summary.push('## Blocks', '', `* [Overview](${SITE_BLOCKS}/README.md)`);
+  // The shells some blocks are built from, documented like components (ChatShell, WorkbenchShell): nav.json lists them
+  // as standalone pages of the Blocks section, so they sit with the blocks rather than among the library's components.
+  for (const p of NAV.standalone) if (p.section === 'Blocks' && p.id !== SITE_BLOCKS) summary.push(`* [${p.title}](${p.id}.md)`);
   files[`${SITE_BLOCKS}/README.md`] = `---\nlayout: wide\n---\n\n${pageSource(SITE_BLOCKS)}`;
   for (const b of BLOCK_PAGES) {
     const file = `${b.id}.md`;

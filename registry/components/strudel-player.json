@@ -16,6 +16,8 @@
   ],
   "types": [
     "StrudelPlayerProps",
+    "StrudelCodeChangeDetails",
+    "StrudelPanelChangeReason",
     "StrudelSnapshot"
   ]
 }

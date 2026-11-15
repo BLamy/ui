@@ -86,7 +86,8 @@ export function FilterInput({
       const details = changeDetails<FilterChangeReason>({ reason: 'apply', event });
       onApply(filters, details);
       if (details.canceled) return;
-    } else bar?.apply(filters, mode, { event });
+    } else if (!bar?.apply(filters, mode, { event })) return;
+    // Applied: the sentence has become chips. A canceled apply (either route) keeps it to edit.
     input.clear();
     setNote('');
   };

@@ -189,10 +189,10 @@ export interface FileUploadDropzoneProps
   onFiles?: FileUploadFilesHandler;
   /** With `onFiles`: the files the rules turned away. */
   onReject?: (rejected: FileRejection[]) => void;
-  /** What the zone takes: the hint under the title, and (with `onFiles`) the checks. Defaults to the `FileUpload`'s rules. */
+  /** What the zone takes: the description under the title, and (with `onFiles`) the checks. Defaults to the `FileUpload`'s rules. */
   rules?: ZoneRules;
   /** The line under the title; default is built from the rules ("Images and PDFs · up to 5 MB each"). */
-  hint?: ReactNode;
+  description?: ReactNode;
   /** Title while idle (default "Drag files here"). */
   title?: ReactNode;
   /** An Icon name or any node (default an upward arrow). */
@@ -213,13 +213,13 @@ export interface FileUploadDropzoneProps
 }
 
 export function FileUploadDropzone({
-  className, orientation, onFiles, onReject, rules, hint, title = 'Drag files here', icon = 'arrow-up', browseLabel = 'Browse files',
+  className, orientation, onFiles, onReject, rules, description, title = 'Drag files here', icon = 'arrow-up', browseLabel = 'Browse files',
   multiple, directory, capture, disabled, children, ...props
 }: FileUploadDropzoneProps) {
   const ctx = useFileUploadContext();
   const effective = rules ?? ctx?.rules ?? {};
-  const hintText = hint ?? describeRules(effective);
-  const hintId = useId();
+  const descriptionText = description ?? describeRules(effective);
+  const descriptionId = useId();
 
   const zone = (
     <FileInputDropzone {...props} className={cx(fileUploadDropzoneVariants({ orientation }), className)}>
@@ -237,13 +237,13 @@ export function FileUploadDropzone({
               </span>
               <div className={cn('flex min-w-0 flex-col gap-0.5', orientation === 'horizontal' ? 'flex-1 items-start' : 'items-center')}>
                 <span className="text-subhead font-semibold text-foreground">{state.dragging ? 'Drop to add' : title}</span>
-                {hintText ? (
-                  <span id={hintId} className="text-footnote text-foreground/70">
-                    {hintText}
+                {descriptionText ? (
+                  <span id={descriptionId} className="text-footnote text-foreground/70">
+                    {descriptionText}
                   </span>
                 ) : null}
               </div>
-              <FileInputTrigger aria-describedby={hintText ? hintId : undefined} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+              <FileInputTrigger aria-describedby={descriptionText ? descriptionId : undefined} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
                 {browseLabel}
               </FileInputTrigger>
             </>

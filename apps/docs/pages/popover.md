@@ -87,7 +87,7 @@ const share = createPopoverController<{ file: string }>()
 
 ## Popups wear their ThemeScope
 
-A popover renders into its layer host — BLProvider's root, or the browser's top layer without one — outside the DOM of whatever opened it, so inherited CSS variables do not reach it. `Popover`, `Tooltip`, `HoverCard`, `DropdownMenu`, `Select`, `ComboBox`, `Dialog` and `Sheet` therefore read the nearest [ThemeScope](https://blamy.github.io/ui/#/theming) (`useThemeScopeProps`) and apply its `data-theme-scope`, appearance class, tint and variables to their own popup. Open each one in the dark, amber scope below: the popover surface, the menu, the tooltip and the primary button all belong to it, though the page around it is light or dark on its own. Nothing is applied outside a scope.
+A popover renders into its layer host — BLProvider's root, or the browser's top layer without one — outside the DOM of whatever opened it, so inherited CSS variables do not reach it. `Popover`, `Tooltip`, `HoverCard`, `DropdownMenu`, `Select`, `Combobox`, `Dialog` and `Sheet` therefore read the nearest [ThemeScope](https://blamy.github.io/ui/#/theming) (`useThemeScopeProps`) and apply its `data-theme-scope`, appearance class, tint and variables to their own popup. Open each one in the dark, amber scope below: the popover surface, the menu, the tooltip and the primary button all belong to it, though the page around it is light or dark on its own. Nothing is applied outside a scope.
 
 {% demo src="popover/scoped" %}
 
@@ -142,7 +142,7 @@ When the trigger sits on a surface that CSS paints rather than a ThemeScope (a h
 
 ## Styling
 
-Slots (from UI SDK): `popover-trigger`, `popover-content`, `popover-title`, `popover-description`, `popover-close`, `popover-arrow`. The content carries `data-open` / `data-closed`, `data-side`, `data-align`, `data-presentation` (`popover` or `sheet`), and `data-starting-style` / `data-ending-style` while it enters and leaves: it grows out of its trigger from `--transform-origin` on the snappy spring and leaves quicker (`popoverMotion`), and only fades under reduced motion. `popoverContentVariants({ variant })` returns the surface classes. Select, ComboBox and DropdownMenu draw the same surface, so their content parts take the same overrides.
+Slots (from UI SDK): `popover-trigger`, `popover-content`, `popover-title`, `popover-description`, `popover-close`, `popover-arrow`. The content carries `data-open` / `data-closed`, `data-side`, `data-align`, `data-presentation` (`popover` or `sheet`), and `data-starting-style` / `data-ending-style` while it enters and leaves: it grows out of its trigger from `--transform-origin` on the snappy spring and leaves quicker (`popoverMotion`), and only fades under reduced motion. `popoverContentVariants({ variant })` returns the surface classes. Select, Combobox and DropdownMenu draw the same surface, so their content parts take the same overrides.
 
 ## cva recipes
 

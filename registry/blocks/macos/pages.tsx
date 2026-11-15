@@ -17,6 +17,7 @@ import { APPS as DESKTOP_APPS } from './apps';
 import { useDesktop } from './desktop';
 import { AppTile, CalcGlyph, ClipGlyph, FileGlyph, Tile } from './parts';
 import { useAlfred } from './state';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const isMod = (e: KeyboardEvent) => e.metaKey || e.ctrlKey;
 
@@ -229,7 +230,7 @@ export function ClipboardPage() {
     <CommandMenuPage value="clipboard" title="Clipboard" placeholder="Search clipboard history…" numbered onKeyDown={onKeyDown}>
       <CommandMenuGroup><CommandMenuGroupLabel>Pinned</CommandMenuGroupLabel>{pinned.map(item)}</CommandMenuGroup>
       <CommandMenuGroup><CommandMenuGroupLabel>Recent</CommandMenuGroupLabel>{rest.map(item)}</CommandMenuGroup>
-      {!a.clips.length ? <div className="py-10 text-center text-detail text-muted-foreground">Clipboard history is empty</div> : null}
+      {!a.clips.length ? <EmptyState size="sm" title="Clipboard history is empty" className="py-10" /> : null}
     </CommandMenuPage>
   );
 }

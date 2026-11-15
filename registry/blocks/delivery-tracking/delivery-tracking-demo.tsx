@@ -8,7 +8,7 @@ import {
   createHoverCardController,
 } from '@/components/ui/hover-card';
 import { Button } from '@ui-sdk/react/button';
-import { ProgressStepper, type ProgressStepItem } from '@/components/ui/progress-stepper';
+import { ProgressStepper, type ProgressStepperStep } from '@/components/ui/progress-stepper';
 import { springs, useReducedMotion } from '@/lib/motion';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { themeScopeProps, useAppearance } from '@/lib/theme';
@@ -226,7 +226,7 @@ export function DeliveryTrackingDemo({
   autoAdvance = true,
   stageMs = 6500,
   peek = 344,
-  variant = 'sheet',
+  variant = 'card',
   appearance = 'auto',
   gutter = 0,
   accent = DELIVERY_ACCENT,
@@ -277,7 +277,7 @@ export function DeliveryTrackingDemo({
   ];
   const route: MapRoute = { points: ROUTE, color: DELIVERY_MAP_INK[scheme].route };
 
-  const steps: ProgressStepItem[] = DELIVERY_STAGES.map((s, i) => ({ id: s.id, label: s.step, icon: <Icon name={STEP_ICONS[i]} size={16} /> }));
+  const steps: ProgressStepperStep[] = DELIVERY_STAGES.map((s, i) => ({ id: s.id, label: s.step, icon: <Icon name={STEP_ICONS[i]} size={16} /> }));
 
   const total = ORDER_ITEMS.reduce((sum, item) => sum + item.qty * item.price, 0);
   const storeCard = <StoreCard accent={accent} remainingMeters={remainingMeters} arrived={arrived} />;

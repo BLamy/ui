@@ -42,7 +42,7 @@ const CHECKOUT: CallStackFrame[] = [
 ];
 
 function Frame({ w = 760, h = 560, dark, children }: { w?: number; h?: number; dark?: boolean; children?: React.ReactNode }) {
-  return <Phone w={w} h={h} dark={dark}><div className="absolute inset-0 bg-card py-2">{children}</div></Phone>;
+  return <Phone w={w} h={h} appearance={dark ? 'dark' : 'light'}><div className="absolute inset-0 bg-card py-2">{children}</div></Phone>;
 }
 
 function Stack({ frames, initial, density }: { frames: readonly CallStackFrame[]; initial: string; density?: 'compact' | 'default' | 'comfortable' }) {

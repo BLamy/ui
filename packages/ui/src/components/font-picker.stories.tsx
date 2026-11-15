@@ -120,3 +120,37 @@ export const InAField: Story = {
     </form>
   ),
 };
+
+/** The invalid state: a Field marked `invalid` gives both pickers the destructive edge, and its FieldError shows. */
+export const Invalid: Story = {
+  render: () => (
+    <div className="grid gap-4">
+      <Field invalid>
+        <FieldLabel>Headline font</FieldLabel>
+        <FontPicker required />
+        <FieldError>Choose a headline font.</FieldError>
+      </Field>
+      <Field invalid>
+        <FieldLabel>Text fonts</FieldLabel>
+        <FontStackPicker required />
+        <FieldError>Choose at least one font.</FieldError>
+      </Field>
+    </div>
+  ),
+};
+
+/** A content part composes: a bare `FontList` in it is the root's list (value, pick-and-close, the stack's places and
+    footer), and your own rows sit beside it. */
+export const ContentWithFooter: Story = {
+  render: () => (
+    <div className="grid gap-4">
+      <FontPicker aria-label="Headline font" defaultValue="Fraunces" defaultOpen>
+        <FontPickerTrigger />
+        <FontPickerContent>
+          <FontList />
+          <p className="m-0 border-t border-border px-3 py-2 text-caption text-foreground/70">Fonts load from Google Fonts.</p>
+        </FontPickerContent>
+      </FontPicker>
+    </div>
+  ),
+};

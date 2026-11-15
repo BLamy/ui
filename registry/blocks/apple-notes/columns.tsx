@@ -45,7 +45,7 @@ function FolderRow({ notes, f, className }: { notes: NotesState; f: Folder; clas
         <span className="text-caption text-muted-foreground">{notes.count(f)}</span><Chevron direction="right" size={15} />
       </HoverCardTrigger>
     </ItemMenu>
-    <HoverCardContent side="right" align="start"><FolderPreview notes={notes} folder={f} /></HoverCardContent>
+    <HoverCardContent side="end" align="start"><FolderPreview notes={notes} folder={f} /></HoverCardContent>
   </HoverCard>;
 }
 
@@ -76,7 +76,7 @@ function OtherFileRows({ notes, files, onOpen }: { notes: NotesState; files: Oth
               : <FileBadgeIcon name={f.name} className="shrink-0" />}
             <span className="min-w-0 flex-1 truncate">{f.name}{where}</span>
           </HoverCardTrigger>
-          <HoverCardContent side="right" align="start"><FilePreview file={f} /></HoverCardContent>
+          <HoverCardContent side="end" align="start"><FilePreview file={f} /></HoverCardContent>
         </HoverCard></li>;
       }
       return <li key={f.id} {...fileDragProps(f.path)} title={`${f.path} · Drag onto a note to embed it`}

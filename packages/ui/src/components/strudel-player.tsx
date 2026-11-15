@@ -4,4 +4,6 @@
 export {
   StrudelPlayer, playStrudel, stopStrudel, updateStrudel, subscribeStrudel, getStrudelSnapshot,
 } from '@brett_lamy/docstream/strudel';
-export type { StrudelPlayerProps, StrudelSnapshot } from '@brett_lamy/docstream/strudel';
+export type {
+  StrudelPlayerProps, StrudelCodeChangeDetails, StrudelPanelChangeReason, StrudelSnapshot,
+} from '@brett_lamy/docstream/strudel';

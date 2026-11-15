@@ -96,7 +96,7 @@ function Artifact() {
 type DemoProps = Partial<ArtifactChatContainerProps> & { frame?: 'desktop' | 'phone' };
 
 /* The frame shrinks with the viewport (`w-full max-w-…`), so `--size 390x844` shows the container in a phone box and
-   `layout="auto"` really floats there. */
+   `presentation="auto"` really floats there. */
 function Demo({ frame = 'desktop', working: startWorking = false, ...props }: DemoProps) {
   const [busy, setBusy] = useState(startWorking);
   return (
@@ -129,9 +129,9 @@ const meta: Meta<DemoProps> = {
     },
   },
   argTypes: {
-    layout: { control: 'radio', options: ['auto', 'split', 'floating'] },
+    presentation: { control: 'radio', options: ['auto', 'split', 'floating'] },
     chatSide: { control: 'radio', options: ['start', 'end'] },
-    variant: { control: 'radio', options: ['glass', 'sheet'] },
+    variant: { control: 'radio', options: ['glass', 'card'] },
     appearance: { control: 'radio', options: ['auto', 'light', 'dark'] },
     fabSide: { control: 'radio', options: ['top', 'bottom', 'start', 'end'] },
     fabAlign: { control: 'radio', options: ['start', 'center', 'end'] },
@@ -155,9 +155,9 @@ export const FloatingFolded: Story = { args: { frame: 'phone', defaultMinimized:
 /** The agent is working: the composer is a tappable status until pressed. */
 export const Working: Story = { args: { frame: 'phone', working: true, peek: 120 } };
 /** The opaque `sheet` variant instead of glass. */
-export const FloatingSheetVariant: Story = { name: 'Floating (sheet variant)', args: { frame: 'phone', variant: 'sheet', peek: 180 } };
-/** `layout="floating"` floats the chat even on a wide container (maps, canvases). */
-export const AlwaysFloating: Story = { args: { layout: 'floating', peek: 180 } };
+export const FloatingSheetVariant: Story = { name: 'Floating (card variant)', args: { frame: 'phone', variant: 'card', peek: 180 } };
+/** `presentation="floating"` floats the chat even on a wide container (maps, canvases). */
+export const AlwaysFloating: Story = { args: { presentation: 'floating', peek: 180 } };
 /** A dark chat over a light page: only the chat column (and its composer) is dark; the artifact keeps the page's
     light theme. */
 export const DarkChatOnLightPage: Story = { args: { appearance: 'dark' } };

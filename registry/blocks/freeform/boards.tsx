@@ -11,6 +11,7 @@ import { unionRect } from '@/lib/canvas-math';
 import { ItemView } from './items';
 import type { Board } from './model';
 import { useFreeform } from './store';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const noop = () => undefined;
 
@@ -99,7 +100,7 @@ export function BoardGallery({ compact }: { compact: boolean }) {
             ))}
           </ul>
         ) : (
-          <p className="m-0 py-16 text-center text-detail text-muted-foreground">No favorites yet — open a board’s menu and add one.</p>
+          <EmptyState size="sm" title="No favorites yet" description="Open a board’s menu and add one." className="py-16" />
         )}
       </div>
     </div>

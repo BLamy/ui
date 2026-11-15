@@ -126,6 +126,8 @@ import { fieldSurfaceVariants } from '@/components/ui/input'
 </div>
 ```
 
+`fieldFocusRing` (from the same module) is the focus line alone, for a control that keeps its own fill instead of the field's ([SearchInput](https://blamy.github.io/ui/#/search-input)'s pill): add it to that control's classes.
+
 ## cva recipes
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).

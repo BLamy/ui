@@ -159,19 +159,21 @@ describe('InterfaceBuilder panes', () => {
     const tabs = host.querySelector('[aria-label="Inspectors"]');
     expect(!tabs || !!tabs.closest('[hidden]')).toBe(true);
     const toggle = button('Inspector');
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
     await act(async () => toggle.click());
     await settle();
     const drawer = document.querySelector<HTMLElement>('[data-variant=panel][aria-label="Inspector"]')!;
     expect(drawer).not.toBeNull();
-    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    const controlled = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
+    expect(!!controlled && (controlled.contains(drawer) || drawer.contains(controlled))).toBe(true);
     expect(drawer.contains(document.activeElement)).toBe(true);
     // Not modal: no scrim, nothing inert.
     expect(document.querySelector('[data-slot=drawer-backdrop]')).toBeNull();
     expect(inert(host.querySelector('[data-slot=canvas]'))).toBe(false);
     await press('Escape');
     await settle();
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('drops the toolbar’s labels when compact', async () => {

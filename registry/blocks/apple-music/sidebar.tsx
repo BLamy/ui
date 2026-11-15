@@ -1,7 +1,8 @@
 /* The sidebar, as on iPad and Mac: Apple Music, Library and Playlists sections. Each row is a SplitViewItem, so
    picking one selects it in the SplitView (and closes the sidebar when it floats). On a phone the SplitView shows it
    as the iOS tab bar (`compactPresentation="tabs"`): the `tab` items are tabs, and the Library section is one tab
-   (its `value`), current while any of its rows is the selection. */
+   (its `value`), current while any of its rows is the selection. That tab's first page is this sidebar showing the
+   Library section alone, the Playlists nested in it included, under a large "Library". */
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection } from '@/components/ui/split-view';
 import { Icon, type IconName, type IconShape } from '@/lib/icon';
 import { PlaylistArt } from './artwork';
@@ -30,11 +31,11 @@ export function MusicSidebar() {
           <Item id="artists" icon="mic" title="Artists" />
           <Item id="albums" icon={ALBUM_ICON} title="Albums" />
           <Item id="songs" icon="music-notes" title="Songs" />
-        </SplitViewSection>
-        <SplitViewSection title="Playlists">
-          {PLAYLISTS.map((p) => (
-            <SplitViewItem key={p.id} value={'playlist:' + p.id} title={p.title} icon={<PlaylistArt playlist={p} size={24} rounded={4} />} />
-          ))}
+          <SplitViewSection title="Playlists">
+            {PLAYLISTS.map((p) => (
+              <SplitViewItem key={p.id} value={'playlist:' + p.id} title={p.title} icon={<PlaylistArt playlist={p} size={24} rounded={4} />} />
+            ))}
+          </SplitViewSection>
         </SplitViewSection>
       </SplitViewContent>
     </>

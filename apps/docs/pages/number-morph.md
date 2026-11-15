@@ -61,4 +61,4 @@ The formatted number is plain text in the root (a visually hidden span), so assi
 
 ## Styling
 
-The root is `data-slot="number-morph"`. Size and colour are inherited from the parent (or set with `className`). Digits are masked with a soft fade at the top and bottom of the reel, scaled to the font size (`.12em`).
+The root is `data-slot="number-morph"`. Size and colour are inherited from the parent (or set with `className`). Digits are masked with a soft fade (`.3em`, scaled to the font size) at the top and bottom of each reel, and each reel is clipped to its own box.

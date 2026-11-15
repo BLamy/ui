@@ -95,7 +95,7 @@ export default function StrudelStudio({ initialSong = 'night-drive' }: StrudelSt
 
   return (
     // BLProvider's root measures the block's own box: its size class (regular from 1024px) splits the panes.
-    <BLProvider dark className="group/studio bg-background">
+    <BLProvider appearance="dark" className="group/studio bg-background">
       <div className="flex h-full min-h-[640px] w-full flex-col text-foreground">
         <header className="flex flex-wrap items-center gap-3 border-b border-white/10 px-4 py-3">
           <Button onClick={toggle} aria-label={status === 'idle' ? 'Play' : 'Stop'} className="min-w-24">
@@ -150,7 +150,7 @@ export default function StrudelStudio({ initialSong = 'night-drive' }: StrudelSt
             </TabsPanel>
           </Tabs>
           <div className="min-w-0 overflow-auto">
-            <StrudelRack key={songId} code={code} onChange={setCode} onPlayableChange={setPlayable} layout="grid" persistKey={`strudel-studio:${songId}`} />
+            <StrudelRack key={songId} value={code} onValueChange={setCode} onPlayableChange={setPlayable} layout="grid" persistKey={`strudel-studio:${songId}`} />
           </div>
         </div>
       </div>

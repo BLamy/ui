@@ -18,7 +18,7 @@ const migrations = [
 ]
 
 function Notes() {
-  const { rows, isLoading, error } = useQuery<{ id: number; body: string }>(
+  const { rows, loading, error } = useQuery<{ id: number; body: string }>(
     'select id, body from notes order by id desc',
   )
   const { run, isPending } = useExec()
@@ -40,7 +40,7 @@ function Notes() {
         <Button type="submit" disabled={isPending || !draft.trim()}>Add</Button>
       </form>
       {error ? <p role="alert" className="text-footnote text-destructive">{error.message}</p> : null}
-      <ul className="grid gap-1.5" aria-busy={isLoading}>
+      <ul className="grid gap-1.5" aria-busy={loading}>
         {rows.map((n) => (
           <li key={n.id} className="flex items-center gap-2 rounded-ctl bg-card px-3 py-2 text-subhead shadow-hairline">
             <span className="min-w-0 flex-1 truncate">{n.body}</span>

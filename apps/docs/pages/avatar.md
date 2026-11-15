@@ -55,7 +55,7 @@ With no children an Avatar renders an `AvatarImage` for `src` and an `AvatarFall
 
 ## Hover card
 
-`card` takes a [HoverCard](https://blamy.github.io/ui/#/hover-card)'s content about the person, shown while the pointer rests on the avatar or keyboard focus stays on it. The avatar becomes a button named after them. It is shorthand for the composition, which you can write out when you need the HoverCard's own props:
+`card` takes a [HoverCard](https://blamy.github.io/ui/#/hover-card)'s content about the person, shown while the pointer rests on the avatar or keyboard focus stays on it. The avatar becomes a button named after them. `HoverCardHeader` hides its `icon` from screen readers, so the avatar inside the card doesn't read the name a second time after the heading. It is shorthand for the composition, which you can write out when you need the HoverCard's own props:
 
 ```tsx
 <Avatar name="Ada Lovelace" card={<HoverCardHeader icon={<Avatar name="Ada Lovelace" size={44} />} title="Ada Lovelace" description="Wrote the first program" />} />
@@ -67,6 +67,15 @@ With no children an Avatar renders an `AvatarImage` for `src` and an `AvatarFall
 ```
 
 ## AvatarGroup
+
+`AvatarGroup` is its own module (and registry item), so install and import it beside `Avatar`:
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/avatar-group.json{% endcommand %}
+
+```tsx
+import { AvatarGroup } from '@/components/ui/avatar-group'
+// npm: import { AvatarGroup } from '@brett_lamy/ui/avatar-group'
+```
 
 `AvatarGroup` wraps `Avatar`s, overlaps them (`overlap` px, 28% of the size by default) and rings each in the surface colour. Past `max` (5 by default) the rest fold into a `+N` bubble. By default it is a plain stack and each avatar keeps its own hover card. With `menu`, the stack becomes one button that opens a menu listing everyone (avatar and name), and `onAction` receives the chosen avatar's `key`. Inside that button, avatars drop their cards: they would be buttons in a button, and the menu lists everyone anyway.
 
@@ -137,7 +146,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/avatar-group`. Base classes:
 
 ```text
-inline-flex items-center rounded-full outline-none [&>*]:ring-2 [&>*]:ring-(--avatar-ring,var(--background)) [&>*+*]:-ml-(--avatar-overlap)
+inline-flex items-center rounded-full outline-none [&>*]:ring-2 [&>*]:ring-(--avatar-ring,var(--background)) [&>*+*]:-ms-(--avatar-overlap)
 ```
 
 No variants.

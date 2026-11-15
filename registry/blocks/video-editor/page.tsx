@@ -8,11 +8,11 @@
    exporting is off. The sample clips are made by FFmpeg's test sources when the editor opens. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { registerShortcut, useShortcutHint } from '@ui-sdk/react/shortcuts';
-import { AdaptivePane } from '@/components/ui/adaptive-pane';
+import { AdaptivePane, AdaptivePaneTrigger, createAdaptivePaneController } from '@/components/ui/adaptive-pane';
 import { Button } from '@/components/ui/button';
 import { Filmstrip } from '@/components/ui/filmstrip';
 import { Slider } from '@/components/ui/slider';
-import { Toggle } from '@/components/ui/toggle';
+import { Toggle, toggleVariants } from '@/components/ui/toggle';
 import { VideoPreviewControls, VideoPreview, type PreviewMedia } from '@/components/ui/video-preview';
 import { fitTimelineZoom, timelineZoomRange, VideoTimeline, type TimelineMediaInfo } from '@/components/ui/video-timeline';
 import { Waveform } from '@/components/ui/waveform';
@@ -64,6 +64,9 @@ export default function VideoEditor({ ffmpegURL, samples = true, defaultName = '
   );
 }
 
+/** A toolbar button that opens a side drawer: the kit's toggle look, tinted while its pane shows. */
+const paneTrigger = cn(toggleVariants({ size: 'sm' }), 'data-open:bg-primary/15 data-open:text-primary');
+
 function Shell({ samples }: { samples: boolean }) {
   const ed = useEditor();
   const ffmpeg = useFfmpeg();
@@ -74,6 +77,9 @@ function Shell({ samples }: { samples: boolean }) {
   const [ref, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: { medium: 640, regular: 960 } });
   const wide = sizeClass === 'regular';
   const [panel, setPanel] = useState<'media' | 'inspector' | null>(null);
+  // The toolbar's pane triggers reach the drawers through their controllers (AdaptivePaneTrigger).
+  const [mediaPane] = useState(createAdaptivePaneController);
+  const [inspectorPane] = useState(createAdaptivePaneController);
   const [zoom, setZoom] = useState(60);
   const [snap, setSnap] = useState(true);
   const [sampling, setSampling] = useState<SamplesState>({ status: 'idle' });
@@ -204,9 +210,9 @@ function Shell({ samples }: { samples: boolean }) {
       {/* Toolbar */}
       <header className="flex h-12 shrink-0 items-center gap-1.5 border-b border-border px-2.5">
         {!wide ? (
-          <Toggle size="sm" aria-label="Media" pressed={panel === 'media'} onPressedChange={(on) => setPanel(on ? 'media' : null)}>
+          <AdaptivePaneTrigger controller={mediaPane} aria-label="Media" className={paneTrigger}>
             <Icon name="photo" size={16} />
-          </Toggle>
+          </AdaptivePaneTrigger>
         ) : null}
         <div className="min-w-0 flex-1 px-1">
           <div className="truncate text-subhead font-semibold">{project.name}</div>
@@ -221,16 +227,16 @@ function Shell({ samples }: { samples: boolean }) {
           <Icon name="arrow-uturn-forward" size={17} />
         </Button>
         {!wide ? (
-          <Toggle size="sm" aria-label="Inspector" pressed={panel === 'inspector'} onPressedChange={(on) => setPanel(on ? 'inspector' : null)}>
+          <AdaptivePaneTrigger controller={inspectorPane} aria-label="Inspector" className={paneTrigger}>
             <Icon name="sliders" size={16} />
-          </Toggle>
+          </AdaptivePaneTrigger>
         ) : null}
         <ExportDialog ffmpeg={runner} engine={engine} project={project} media={ed.media} />
       </header>
 
       {/* Library, viewer, inspector */}
       <div className="relative flex min-h-0 flex-1">
-        <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="start" aria-label="Media" open={wide || panel === 'media'}
+        <AdaptivePane controller={mediaPane} presentation={wide ? 'column' : 'drawer'} side="start" aria-label="Media" open={wide || panel === 'media'}
           onOpenChange={(open) => setPanel(open ? 'media' : null)} columnWidth={256} className={cn(side, 'border-r border-border')}>
           {media}
         </AdaptivePane>
@@ -247,7 +253,7 @@ function Shell({ samples }: { samples: boolean }) {
             <VideoPreviewControls playback={clock} fps={fps} />
           </div>
         </div>
-        <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="end" aria-label="Inspector" open={wide || panel === 'inspector'}
+        <AdaptivePane controller={inspectorPane} presentation={wide ? 'column' : 'drawer'} side="end" aria-label="Inspector" open={wide || panel === 'inspector'}
           onOpenChange={(open) => setPanel(open ? 'inspector' : null)} columnWidth={288} className={cn(side, 'border-l border-border')}>
           {inspector}
         </AdaptivePane>

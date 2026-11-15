@@ -39,7 +39,7 @@ export const CustomIcon: Story = {
 };
 
 export const Dark: Story = {
-  decorators: [(Story) => <Pad dark><Story /></Pad>],
+  decorators: [(Story) => <Pad appearance="dark"><Story /></Pad>],
   render: () => (
     <div className="flex flex-col gap-3">
       <Demo initial="Chen" />

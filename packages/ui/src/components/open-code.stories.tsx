@@ -67,7 +67,7 @@ const broken = async (): Promise<OpenCodeRuntime> => {
 function Page({ children, dark, h = 520 }: { children: ReactNode; dark?: boolean; h?: number }) {
   return (
     <div style={{ width: 880, height: h }} className="overflow-hidden rounded-xl">
-      <BLProvider dark={dark}>
+      <BLProvider appearance={dark ? 'dark' : 'light'}>
         <div className="flex h-full flex-col p-4">{children}</div>
       </BLProvider>
     </div>

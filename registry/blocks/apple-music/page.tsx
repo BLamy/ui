@@ -2,15 +2,15 @@
    Songs, playlists), album / artist / playlist pages, and a player that is one element: the mini player
    springs open into the full Now Playing screen (scrubber, transport, volume, lyrics, up next) and folds back.
    One SplitView at every size: a sidebar beside a pushed detail stack, and on a phone the same sidebar as the iOS
-   tab bar (`compactPresentation="tabs"`), with the mini player above it. Nothing remounts across the boundary.
+   tab bar (`compactPresentation="tabs"`), with the mini player above it. The Library tab is the sidebar's Library
+   section, which the SplitView shows as that tab's first page. Nothing remounts across the boundary.
    All artists, albums and songs are invented; artwork is generated. */
 import { useState, type ReactNode } from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { MorphGroup, MorphPresence } from '@/components/ui/morph';
 import { NavigationStack } from '@/components/ui/navigation-stack';
-import { SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSidebarTrigger } from '@/components/ui/split-view';
+import { SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSidebarTrigger, useSplitView } from '@/components/ui/split-view';
 import { useContainerSize } from '@/lib/container';
-import { sizeClassOf } from '@/lib/size-class';
 import { BLProvider, useAppearance } from '@/lib/theme';
 import { ALBUM, albumSongs } from './data';
 import { FullPlayer, MiniPlayer } from './now-playing';
@@ -29,35 +29,28 @@ export interface AppleMusicProps {
   nowPlaying?: boolean;
 }
 
+/** The detail's first page for a sidebar value. The Library tab itself (on a phone, the Library rows) shows its
+ *  Recently Added behind them, which is what a wider window shows for it. */
 const sectionPage = (id: string): Page =>
-  id.startsWith('playlist:') ? { kind: 'playlist', id: id.slice(9) } : ({ kind: id } as Page);
-/** The sidebar sections the phone's Library tab holds: on a phone the Library page sits under them. */
-const inLibrary = (section: string) => ['recent', 'artists', 'albums', 'songs'].includes(section) || section.startsWith('playlist:');
+  id.startsWith('playlist:') ? { kind: 'playlist', id: id.slice(9) } : id === 'library' ? { kind: 'recent' } : ({ kind: id } as Page);
 
 /** Music's accent red (light / dark). */
 const MUSIC_TINT = { light: '#FA2D48', dark: '#FF375F' } as const;
 
 export default function AppleMusic({ initialSection = 'listen', initialAlbum, nowPlaying = false }: AppleMusicProps) {
   const dark = useAppearance() === 'dark';
-  // Pixels, not just the size class: the full player fits its artwork to the height, and 900px wide shows more.
+  // The full player fits its artwork to the block's height.
   const [ref, box] = useContainerSize<HTMLDivElement>();
-  const phone = sizeClassOf(box.width) === 'compact';
   const player = usePlayer(initialAlbum ? { queue: albumSongs(ALBUM[initialAlbum]), index: 0, position: 48 } : undefined);
   const [expanded, setExpanded] = useState(nowPlaying);
   // Where you are: the sidebar section (on a phone, the tab that holds it) and the pages pushed over it.
   const [section, setSection] = useState<string>(initialSection);
   const [pages, setPages] = useState<Page[]>(() => (initialAlbum ? [{ kind: 'album', id: initialAlbum }] : []));
-  const env = { player, dark, wide: !phone && box.width >= 900 };
-  const ctx: Ctx = { ...env, open: (page) => setPages((p) => [...p, page]) };
-
-  // The stack's first pages: the section, and on a phone the Library page under a Library section.
-  const roots: Page[] = phone && inLibrary(section) ? [{ kind: 'library' }, sectionPage(section)] : [sectionPage(section)];
-  const all = [...roots, ...pages];
-  // The first page keeps one key for every section, so picking another section pops the pages over it.
-  const keyOf = (p: Page, i: number) => (i === 0 ? 'section' : stackKey(p, i));
+  const ctx: Ctx = { player, dark, open: (page) => setPages((p) => [...p, page]) };
+  const all = [sectionPage(section), ...pages];
 
   return (
-    <BLProvider dark={dark} tint={MUSIC_TINT[dark ? 'dark' : 'light']} className="bg-background">
+    <BLProvider appearance={dark ? 'dark' : 'light'} tint={MUSIC_TINT[dark ? 'dark' : 'light']} className="bg-background">
       <MorphGroup>
         {/* Popups opened in it present for its size, not the window's: BLProvider's root, the same box, is the
             size-class scope they follow. */}
@@ -69,39 +62,58 @@ export default function AppleMusic({ initialSection = 'listen', initialAlbum, no
             </SplitViewSidebar>
             <SplitViewDetail>
               <MusicContext.Provider value={ctx}>
-                {/* The mini player rides over the content: keep room for it under the last rows. */}
-                <NavigationStack pages={all.map(keyOf)} bottomInset={phone ? 64 : 68}
-                  onPagesChange={(keys) => {
-                    // Back from a Library section, on a phone, lands on the Library page: the Library tab.
-                    if (keys.length < roots.length) { setSection('library'); setPages([]); }
-                    else setPages((p) => p.slice(0, keys.length - roots.length));
-                  }}>
-                  {all.map((page, i) => (
-                    <MusicPage key={keyOf(page, i)} value={keyOf(page, i)} page={page} leading={i === 0 ? <SplitViewSidebarTrigger /> : undefined} maxWidth={1180} />
-                  ))}
-                </NavigationStack>
+                <DetailStack pages={all} onPop={(n) => setPages((p) => p.slice(0, n - 1))} />
               </MusicContext.Provider>
-              <Mini phone={phone} hidden={expanded} player={player} onOpen={() => setExpanded(true)} />
+              <Mini in="detail" hidden={expanded} player={player} onOpen={() => setExpanded(true)} />
             </SplitViewDetail>
+            <Mini in="root" hidden={expanded} player={player} onOpen={() => setExpanded(true)} />
+            {/* Now Playing is a Dialog (focus moves in and comes back to the mini player, Esc closes it, the app
+                behind is inert) whose content is the morphing player. */}
+            <NowPlaying open={expanded} onOpenChange={setExpanded} player={player} height={box.height}
+              finalFocus={() => ref.current?.querySelector<HTMLElement>('[data-now-playing-open]') ?? null} />
           </SplitView>
-          {/* Now Playing is a Dialog (focus moves in and comes back to the mini player, Esc closes it, the app
-              behind is inert) whose content is the morphing player. */}
-          <Dialog open={expanded} onOpenChange={setExpanded} presentation="dialog">
-            <FullPlayer player={player} phone={phone} height={box.height}
-              onClose={() => setExpanded(false)} finalFocus={() => ref.current?.querySelector<HTMLElement>('[data-now-playing-open]') ?? null} />
-          </Dialog>
         </div>
       </MorphGroup>
     </BLProvider>
   );
 }
 
-/** The mini player: over the tab bar on a phone (`--tabs-bar-h`, which the SplitView publishes while its sidebar is
-    the tab bar), a floating card at the bottom of the detail column otherwise. */
-function Mini({ phone, hidden, player, onOpen }: { phone: boolean; hidden: boolean; player: Ctx['player']; onOpen: () => void }): ReactNode {
+/** The first page keeps one key for every section, so picking another section pops the pages over it. */
+const keyOf = (p: Page, i: number) => (i === 0 ? 'section' : stackKey(p, i));
+
+/** The detail column's stack: the section, and the pages pushed over it. Under a Library row on a phone its first
+ *  page goes back to the Library rows by itself (the SplitView's column before). */
+function DetailStack({ pages, onPop }: { pages: Page[]; onPop: (length: number) => void }) {
+  const phone = useSplitView().collapsed;
+  return (
+    // The mini player rides over the content: keep room for it under the last rows.
+    <NavigationStack pages={pages.map(keyOf)} bottomInset={phone ? 64 : 68} onPagesChange={(keys) => onPop(keys.length)}>
+      {pages.map((page, i) => (
+        <MusicPage key={keyOf(page, i)} value={keyOf(page, i)} page={page} leading={i === 0 ? <SplitViewSidebarTrigger /> : undefined} maxWidth={1180} />
+      ))}
+    </NavigationStack>
+  );
+}
+
+function NowPlaying({ open, onOpenChange, player, height, finalFocus }: {
+  open: boolean; onOpenChange: (open: boolean) => void; player: Ctx['player']; height: number; finalFocus: () => HTMLElement | null;
+}) {
+  const phone = useSplitView().collapsed;
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange} presentation="dialog">
+      <FullPlayer player={player} phone={phone} height={height} onClose={() => onOpenChange(false)} finalFocus={finalFocus} />
+    </Dialog>
+  );
+}
+
+/** The mini player: on a phone, over the tab bar and every tab's page (`--tabs-bar-h`, which the SplitView publishes
+    while its sidebar is the tab bar), so it is drawn by the SplitView's root (`in="root"`); otherwise a floating card
+    at the bottom of the detail column (`in="detail"`). It morphs from one place to the other at the boundary. */
+function Mini({ in: place, hidden, player, onOpen }: { in: 'root' | 'detail'; hidden: boolean; player: Ctx['player']; onOpen: () => void }): ReactNode {
+  const phone = useSplitView().collapsed;
   return (
     <MorphPresence mode="sync">
-      {hidden ? null : (
+      {hidden || (place === 'root') !== phone ? null : (
         <MiniPlayer key="mini" player={player} phone={phone} onOpen={onOpen}
           className={phone ? 'inset-x-2 bottom-[calc(var(--tabs-bar-h,0px)+8px)]' : 'inset-x-5 bottom-4 mx-auto max-w-[640px]'} />
       )}

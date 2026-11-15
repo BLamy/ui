@@ -5,13 +5,21 @@
  *   @/lib/<path>            (registry copy)  ↔  @brett_lamy/ui/lib/<path>  the modules of a lib item that has a
  *                                                                         registry/components/<name>.json manifest
  *   (a folder's index.ts is the folder: @/lib/ffmpeg ↔ @brett_lamy/ui/lib/ffmpeg)
+ *   except a module marked `@internal` in its header comment (see `isInternalModule`)
  *
  * tools/registry/build.mjs writes them into packages/ui/package.json `exports` (and fails `--check` when they are
  * stale); packages/ui/vite.config.mts builds every one of them as an entry, so each dist module keeps all of its
  * exports. Hand-written entries (".", the stylesheets, "./opencode", the worker scripts) are kept as they are. */
-import { SRC, aliasOf, moduleExports } from './graph.mjs';
+import { readFileSync } from 'node:fs';
+import { ROOT, SRC, aliasOf, moduleExports } from './graph.mjs';
 
 const GENERATED_SOURCE = /^\.\/src\/(components|lib)\/.+\.tsx?$/;
+
+/* A module whose header comment (the first comment, after an optional 'use client') carries `@internal` is the kit's
+   own wiring between its modules (a context, a store, helpers): registry installs copy it with the item that owns it,
+   but it gets no npm entry, so none of its exports is package API. */
+const INTERNAL = /^(?:\s*['"]use client['"];?)?\s*\/\*(?:(?!\*\/)[\s\S])*@internal\b/;
+export const isInternalModule = (mod) => INTERNAL.test(readFileSync(`${ROOT}/${SRC}/${mod}`, 'utf8'));
 
 /** `@/components/ui/dialog` → `./dialog`, `@/lib/theme` → `./lib/theme`. */
 export const subpathOf = (mod) => aliasOf(mod).replace(/^@\/components\/ui\//, './').replace(/^@\/lib\//, './lib/');
@@ -21,6 +29,7 @@ export function packageModules(graph) {
   return graph.modules.filter((mod) => {
     const item = graph.items.get(graph.owner.get(mod));
     if (!item || (item.kind === 'lib' && !item.manifest)) return false;
+    if (isInternalModule(mod)) return false;
     return moduleExports(`${SRC}/${mod}`).values.size > 0;
   });
 }

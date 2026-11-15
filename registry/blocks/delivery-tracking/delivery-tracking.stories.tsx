@@ -13,10 +13,10 @@ const meta: Meta<Args> = {
       <DeliveryTrackingDemo {...props} />
     </div>
   ),
-  args: { width: 430, height: 860, autoAdvance: true, peek: 344, variant: 'sheet', appearance: 'light', gutter: 0 },
+  args: { width: 430, height: 860, autoAdvance: true, peek: 344, variant: 'card', appearance: 'light', gutter: 0 },
   argTypes: {
     stage: { control: { type: 'range', min: 0, max: 3, step: 1 } },
-    variant: { control: 'radio', options: ['glass', 'sheet'] },
+    variant: { control: 'radio', options: ['glass', 'card'] },
     appearance: { control: 'radio', options: ['auto', 'dark', 'light'] },
   },
   parameters: {

@@ -5,7 +5,7 @@
    Render <MiniPlayer> where the bar belongs and <FullPlayer> inside a controlled <Dialog> over the block, all inside
    one <MorphGroup>. */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { DialogTitle } from '@/components/ui/dialog';
+import { DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Swap } from '@/components/ui/swap';
 import { Morph } from '@/components/ui/morph';
 import { Button as SdkButton } from '@ui-sdk/react/button';
@@ -13,7 +13,6 @@ import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { Slider } from '@/components/ui/slider';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { DialogContent } from '@ui-sdk/react/dialog';
 import { Artwork } from './artwork';
 import { fmt, lyricsFor, type Album } from './data';
 import type { Player } from './player';
@@ -102,7 +101,7 @@ export function FullPlayer({ player: p, phone, height, onClose, finalFocus }: {
   const side = panel === 'lyrics' ? <Lyrics p={p} /> : panel === 'queue' ? <Queue p={p} /> : null;
 
   return (
-    <DialogContent render={<Morph layoutId="player" radius={0} dragToDismiss onDismiss={onClose} />} finalFocus={finalFocus}
+    <DialogContent variant="plain" render={<Morph layoutId="player" radius={0} dragToDismiss onDismiss={onClose} />} finalFocus={finalFocus}
       className={cn(
         'absolute inset-0 flex flex-col overflow-hidden text-white shadow-[0_-10px_40px_black] shadow-black/30 outline-none',
         // Leaving, it fades while the mini bar morphs out of its frame.

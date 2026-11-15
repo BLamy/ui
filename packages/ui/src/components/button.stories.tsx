@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Toggle } from '@/components/ui/toggle';
 import { Icon } from '@/lib/icon';
 import { Pad } from '../stories/frame';
@@ -56,7 +57,7 @@ export const Variants: Story = { render: () => variants };
 
 /** The variants on a dark surface. */
 export const Dark: Story = {
-  decorators: [(Story) => <Pad w={460} dark><Story /></Pad>],
+  decorators: [(Story) => <Pad w={460} appearance="dark"><Story /></Pad>],
   render: () => variants,
 };
 
@@ -117,14 +118,22 @@ export const PressCounter: Story = {
   },
 };
 
-/** Return a Promise from `onClick` and the button is pending until it settles: it keeps focus, ignores presses and
-    carries `data-pending`. */
+/** Return a Promise from `onClick` and the button is pending until it settles: it keeps focus, ignores presses,
+    carries `data-pending` and dims to 70%. The second one adds the docs' spinner recipe (`in-data-pending:`). */
 export const Pending: Story = {
-  render: () => (
-    <Button onClick={() => new Promise((resolve) => setTimeout(resolve, 1500))} pendingAnnouncement="Saving">
-      Save
-    </Button>
-  ),
+  render: () => {
+    const wait = () => new Promise((resolve) => setTimeout(resolve, 1500));
+    return (
+      <div className="flex items-center gap-3">
+        <Button onClick={wait} pendingAnnouncement="Saving">Save</Button>
+        <Button onClick={wait} pendingAnnouncement="Downloading" variant="secondary">
+          <Icon name="arrow-down" className="in-data-pending:hidden" />
+          <Spinner className="not-in-data-pending:hidden" />
+          Download
+        </Button>
+      </div>
+    );
+  },
 };
 
 /** The two text-only looks. `plain` is the iOS bar button: the size's height and padding, tint text, no fill.

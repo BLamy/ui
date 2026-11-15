@@ -53,9 +53,9 @@ export function AddButton({ label, onClick }: { label: string; onClick: () => vo
   );
 }
 
-export function IconAction({ icon, label, onClick, className, tone }: { icon: string; label: string; onClick: () => void; className?: string; tone?: 'danger' }) {
+export function IconAction({ icon, label, onClick, className, tone }: { icon: string; label: string; onClick: () => void; className?: string; tone?: 'destructive' }) {
   return (
-    <SdkButton aria-label={label} title={label} onClick={onClick} className={cn('grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring', tone === 'danger' ? 'hover:text-destructive' : 'hover:text-foreground', className)}>
+    <SdkButton aria-label={label} title={label} onClick={onClick} className={cn('grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring', tone === 'destructive' ? 'hover:text-destructive' : 'hover:text-foreground', className)}>
       <Icon name={icon} size={13} sw={2.2} />
     </SdkButton>
   );
@@ -334,7 +334,7 @@ export function InspectorColorInput({ value, onChange, label, allowNone = true }
         <span className={cn('size-[18px] shrink-0 rounded-[5px] shadow-hairline', !value && 'bg-[linear-gradient(135deg,transparent_45%,var(--destructive)_45%,var(--destructive)_55%,transparent_55%)]')} style={value ? { background: cssColor(value) } : undefined} />
         <span className="truncate">{text}</span>
       </PopoverTrigger>
-      <PopoverContent side="left" align="start" className="w-64 p-0">
+      <PopoverContent side="start" align="start" className="w-64 p-0">
         <div className="flex flex-col gap-3 p-3">
           <div>
             <div className="mb-1.5 text-caption2 font-semibold tracking-wide text-muted-foreground uppercase">Theme</div>
@@ -392,7 +392,7 @@ export function IconInput({ value, onChange, label, allowNone = true }: { value:
         <span className="grid size-[18px] shrink-0 place-items-center text-primary">{value ? <Icon name={value} size={16} sw={1.9} /> : <Icon name="minus" size={12} sw={2} className="text-muted-foreground" />}</span>
         <span className="truncate">{value ?? 'None'}</span>
       </PopoverTrigger>
-      <PopoverContent side="left" align="start" className="w-72 p-0">
+      <PopoverContent side="start" align="start" className="w-72 p-0">
         <div className="flex flex-col">
           <div className="p-2">
             <input autoFocus aria-label="Filter symbols" placeholder="Filter symbols" value={q} onChange={(e) => setQ(e.target.value)} className={inputBox} />

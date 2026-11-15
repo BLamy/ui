@@ -235,7 +235,7 @@ export interface TraceTimelineProps<K extends TraceKey = TraceKey> extends Omit<
   minSpan?: number;
   /** Prints a time, given how far apart the times worth telling apart are. Default: `formatTraceTime`. */
   formatTime?: (time: number, resolution: number) => string;
-  /** Strip: the width of the label gutter, 0 for none. */
+  /** Strip: the width of the label gutter, px (default 84, which fits a word like "Checkpoints"); 0 for none. */
   gutter?: number;
   /** Strip: the gutter's label for the requests row and the stops row. */
   requestsLabel?: string;

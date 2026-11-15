@@ -188,7 +188,7 @@ export function SheetContent<Payload = unknown>({
         const showGrabber = state.side === 'bottom' && grabber && (dismissible || resizable);
         return (
           <>
-            {showGrabber && !resizable ? <span data-slot="sheet-grabber" aria-hidden="true" className={sheetGrabberVariants()} /> : null}
+            {showGrabber && !resizable ? <span data-slot="sheet-grabber" aria-hidden="true" className={cn(sheetGrabberVariants(), 'absolute inset-x-0 top-0 z-3')} /> : null}
             <div className="relative flex min-h-0 flex-1 flex-col">
               {content}
             </div>

@@ -73,7 +73,7 @@ export interface NaturalTimeInputProps
   parse?: NaturalTimeInputParseOptions;
   /** Show which backend ("CPU" or "GPU") parsed the text. Default: false. */
   showBackend?: boolean;
-  /** `card` (default): the preview sits on a filled panel under the field. `plain`: no surface. */
+  /** `card` (default): the preview sits in an outlined well under the field (not the field's fill). `plain`: no surface. */
   variant?: VariantProps<typeof previewPanelVariants>['variant'];
   className?: string;
   style?: CSSProperties;

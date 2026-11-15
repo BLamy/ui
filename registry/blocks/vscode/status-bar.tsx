@@ -72,7 +72,7 @@ export function StatusBar({ store }: { store: VSCodeStore }) {
             data-status={tailnet.status}
             className="flex h-[22px] shrink-0 cursor-pointer items-center gap-1 border-0 bg-transparent px-1 text-inherit outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/70 hover:bg-primary-foreground/15"
           >
-            <TailscaleMark size={12} />
+            <TailscaleMark className="size-3" />
             <span>{tailnet.status === 'connected' ? 'Tailscale: Connected' : 'Tailscale'}</span>
           </PopoverTrigger>
           <PopoverContent variant="plain" side="top" align="start" className="w-72 p-3.5 outline-none">

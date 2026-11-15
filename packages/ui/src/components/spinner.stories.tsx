@@ -10,7 +10,7 @@ const meta: Meta<typeof Spinner> = {
   // One frame per story: `parameters.pad` sets its width, `dark` and the text color.
   decorators: [(Story, { parameters }) => {
     const pad = (parameters.pad ?? {}) as { w?: number; dark?: boolean; tone?: string };
-    return <Pad w={pad.w} dark={pad.dark}><div className={pad.tone ?? 'text-muted-foreground'}><Story /></div></Pad>;
+    return <Pad w={pad.w} appearance={pad.dark ? 'dark' : 'light'}><div className={pad.tone ?? 'text-muted-foreground'}><Story /></div></Pad>;
   }],
 };
 export default meta;

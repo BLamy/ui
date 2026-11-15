@@ -20,11 +20,16 @@ import {
   type DropdownMenuProps,
 } from '@/components/ui/dropdown-menu';
 import { Separator, type SeparatorProps } from '@/components/ui/separator';
-import { cn, cx, pressable } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 import { Chevron, Icon, type IconName } from '@/lib/icon';
-import { pressableFocusRing } from '@/lib/primitives';
+import { pressableFocusRing, pressable } from '@/lib/primitives';
 import { looksLikeMarkdown, insertMarkdown } from '@/components/ui/markdown-editor';
-import { ImageAnnotator, useImageAnnotatorEngine, type ImageAnnotatorEngine } from '@/components/ui/pencilkit/image-annotator';
+import { ImageAnnotator, type ImageAnnotatorEngine } from '@/components/ui/pencilkit/image-annotator';
+import { useImageAnnotatorEngine } from '@/components/ui/pencilkit/annotator-engine';
+import {
+  ComposerContext, ComposerOutletContext, useComposerInternals,
+  type ComposerEditor, type ComposerInternals, type ComposerQueueTake,
+} from '@/components/ui/composer/composer-context';
 import { animate } from 'framer-motion';
 import { useToast } from '@/components/ui/toast';
 import {
@@ -66,8 +71,9 @@ import { useControllableChange } from '@/lib/controllable-state';
 
    The root owns the draft (markdown + attachments), expanded, streaming, disabled and send/stop; every part reads
    it from `useComposer()`. Popups, menus and buttons are the kit's own (DropdownMenu, Button, ImageAnnotator).
-   `ComposerOutlet` (not in the barrel) lets an ancestor add parts to (or wrap the card of) the Composer inside it:
-   ArtifactChatContainer uses it to swap the card for a working status while its agent works. */
+   `ComposerOutlet` (in the internal `composer-context` module, no npm entry) lets an ancestor add parts to (or wrap
+   the card of) the Composer inside it: ArtifactChatContainer uses it to swap the card for a working status while its
+   agent works. */
 
 export type { ComposerAttachmentKind } from '@/components/ui/composer/composer-files';
 
@@ -116,13 +122,9 @@ export type ComposerExpandedChangeReason = 'press' | 'imperative';
 /** The collapse: the scroller moved, the FAB was pressed, or code. */
 export type ComposerCollapsedChangeReason = 'scroll' | 'press' | 'imperative';
 export type ComposerValueChangeDetails = ChangeDetails<ComposerValueChangeReason>;
-/** How a ComposerQueue takes a draft sent while a reply streams: `false` when its `onItemsChange` refused it. */
-type ComposerQueueTake = (markdown: string, attachments: ComposerAttachment[], event?: Event) => boolean;
 export type ComposerAttachmentsChangeDetails = ChangeDetails<ComposerAttachmentsChangeReason>;
 export type ComposerExpandedChangeDetails = ChangeDetails<ComposerExpandedChangeReason>;
 export type ComposerCollapsedChangeDetails = ChangeDetails<ComposerCollapsedChangeReason>;
-
-type ComposerEditor = NonNullable<Parameters<NonNullable<GitbookEditorProps['onEditorReady']>>[0]>;
 
 export interface ComposerContextValue {
   /** The draft as GitBook-flavored Markdown (attachment chips serialize as `![name](attachment:id)`). */
@@ -174,64 +176,20 @@ export interface ComposerContextValue {
   disabled: boolean;
 }
 
-/** What the Composer's own parts read beside the public value: registrations and the outlet's hooks. */
-export interface ComposerInternals extends ComposerContextValue {
-  /** A ComposerQueue registers where queued drafts go. */
-  setQueue: (queue: ComposerQueueTake | null) => void;
-  /** ComposerInput registers its editor here. */
-  setEditor: (editor: ComposerEditor | null) => void;
-  /** Set by a ComposerOutlet above the root. */
-  renderCard?: (card: React.ReactNode) => React.ReactNode;
-  /** Where ComposerOptions move to while compact. */
-  optionsOutlet: HTMLElement | null;
-  setOptionsOutlet: (el: HTMLElement | null) => void;
-  /** The FAB the card folds into, when this composer can fold. */
-  fab: { icon?: React.ReactNode; restore: (event?: React.MouseEvent) => void } | null;
-}
 
 /** `none`: the full card · `compact`: one row, options in the bottom bump · `fab`: a floating button. */
 export type ComposerCollapse = 'none' | 'compact' | 'fab';
 
-const ComposerContext = React.createContext<ComposerInternals | null>(null);
 
 /** The nearest Composer's draft, attachments and state, and the actions on them. */
 export function useComposer(): ComposerContextValue {
   return useComposerInternals();
 }
 
-/** The Composer's parts' own view of it (not in the barrel). */
-export function useComposerInternals(): ComposerInternals {
-  const ctx = React.useContext(ComposerContext);
-  if (!ctx) throw new Error('useComposer must be used within <Composer>');
-  return ctx;
-}
 
-/* ── Outlet ── */
-export interface ComposerOutletProps {
-  /** Parts added to the Composer below this outlet, as if they were its first children (e.g. a top bump). */
-  parts?: React.ReactNode;
-  /** Wraps (or replaces) the Composer's card, e.g. to swap it for a status while an agent works. */
-  renderCard?: (card: React.ReactNode) => React.ReactNode;
-  /** Classes merged into the Composer root. */
-  className?: string;
-  children?: React.ReactNode;
-}
-interface OutletValue {
-  parts?: React.ReactNode;
-  renderCard?: (card: React.ReactNode) => React.ReactNode;
-  className?: string;
-}
-const ComposerOutletContext = React.createContext<OutletValue | null>(null);
-
-/** Lets an ancestor contribute parts to the nearest Composer inside it. The Composer consumes it, so
-    Composers nested in those parts are unaffected. */
-export function ComposerOutlet({ parts, renderCard, className, children }: ComposerOutletProps) {
-  const value = React.useMemo(() => ({ parts, renderCard, className }), [parts, renderCard, className]);
-  return <ComposerOutletContext.Provider value={value}>{children}</ComposerOutletContext.Provider>;
-}
 
 /* ── Root ── */
-export interface ComposerProps {
+interface ComposerOwnProps {
   /** Controlled draft Markdown. */
   value?: string;
   defaultValue?: string;
@@ -307,6 +265,9 @@ export interface ComposerProps {
   ref?: React.Ref<HTMLDivElement>;
 }
 
+/** The composer's own props, and its root element's (`id`, `aria-*`, `data-*`, handlers), spread on that element. */
+export interface ComposerProps extends ComposerOwnProps, Omit<React.HTMLAttributes<HTMLDivElement>, keyof ComposerOwnProps> {}
+
 const newId = () => 'att-' + Math.random().toString(36).slice(2, 12);
 
 /** An attachment's kind: its own, else from its type and name (untyped legacy attachments are images). */
@@ -349,6 +310,7 @@ export function Composer({
   className,
   style,
   ref,
+  ...rest
 }: ComposerProps) {
   const outlet = React.useContext(ComposerOutletContext);
   const contextAnnotator = useImageAnnotatorEngine();
@@ -722,6 +684,7 @@ export function Composer({
       {/* The outlet applies to this Composer only. */}
       <ComposerOutletContext.Provider value={null}>
         <div
+          {...rest}
           ref={(el) => {
             rootRef.current = el;
             if (typeof ref === 'function') ref(el);
@@ -735,6 +698,7 @@ export function Composer({
           data-disabled={disabled || undefined}
           onPointerDownCapture={(event) => {
             pressedAttachment.current = (event.target as Element).closest?.('[data-attachment-id]') ?? null;
+            rest.onPointerDownCapture?.(event);
           }}
           className={cn('group/composer relative box-border flex w-full min-w-0 flex-col', outlet?.className, className)}
           style={style}
@@ -2142,7 +2106,8 @@ export function ComposerBump({
 export interface ComposerBumpHandleProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Show the grip bar above the row (draggable bumps; default true). */
   grip?: boolean;
-  /** In a draggable bump, the grip's accessible name (default "Expand" / "Collapse"); else the row's. */
+  /** In a draggable bump, the grip's accessible name (default "Expand" / "Collapse"); else the row's, which then
+   *  becomes a `group` (a plain row has no role to carry a name). */
   'aria-label'?: string;
 }
 
@@ -2154,7 +2119,8 @@ export function ComposerBumpHandle({ grip = true, 'aria-label': ariaLabel, class
   const bump = useBumpInternals();
   if (!bump.draggable)
     return (
-      <div data-slot="composer-bump-handle" aria-label={ariaLabel} className={cn('flex min-w-0 items-center gap-[7px] px-[11px] py-1.5', className)} onPointerDown={onPointerDown} onClick={onClick} {...props}>
+      // A name needs a role to be heard: a named row is a group (ARIA doesn't name a generic div).
+      <div data-slot="composer-bump-handle" role={ariaLabel ? 'group' : undefined} aria-label={ariaLabel} className={cn('flex min-w-0 items-center gap-[7px] px-[11px] py-1.5', className)} onPointerDown={onPointerDown} onClick={onClick} {...props}>
         {children}
       </div>
     );
@@ -2214,17 +2180,26 @@ export function ComposerBumpHandle({ grip = true, 'aria-label': ariaLabel, class
 export interface ComposerBumpContentProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Accessible name of the revealed region (default "Details"). */
   'aria-label'?: string;
+  /** The region (merged with the bump's own). Props go on it too. */
+  ref?: React.Ref<HTMLDivElement>;
 }
 
 /** The body a draggable bump reveals above its handle. Laid out at its full open height and pinned to the
     handle, so it slides out without reflowing mid-drag. */
-export function ComposerBumpContent({ 'aria-label': ariaLabel = 'Details', className, children, ...props }: ComposerBumpContentProps) {
+export function ComposerBumpContent({ 'aria-label': ariaLabel = 'Details', className, children, ref, ...props }: ComposerBumpContentProps) {
   const bump = useBumpInternals();
   // Still shown while it closes, until the transition is done.
   const expanded = bump.reveal > 0 || bump.settling;
+  const windowRef = bump.windowRef;
+  const setRef = React.useCallback((el: HTMLDivElement | null) => {
+    windowRef.current = el;
+    if (typeof ref === 'function') ref(el);
+    else if (ref) ref.current = el;
+  }, [windowRef, ref]);
   return (
     <div
-      ref={bump.windowRef}
+      {...props}
+      ref={setRef}
       id={bump.contentId}
       role="region"
       aria-label={ariaLabel}
@@ -2244,7 +2219,7 @@ export function ComposerBumpContent({ 'aria-label': ariaLabel = 'Details', class
         className,
       )}
     >
-      <div data-slot="composer-bump-body" className="absolute inset-x-0 bottom-0 flex h-(--bump-max) min-w-0 flex-col justify-end overflow-hidden" {...props}>
+      <div data-slot="composer-bump-body" className="absolute inset-x-0 bottom-0 flex h-(--bump-max) min-w-0 flex-col justify-end overflow-hidden">
         {children}
       </div>
     </div>

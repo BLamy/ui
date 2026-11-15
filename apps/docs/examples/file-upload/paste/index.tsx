@@ -31,7 +31,7 @@ export default function Paste() {
           orientation="horizontal"
           icon="photo"
           title="Paste a screenshot"
-          hint="Focus the button, then press ⌘V or Ctrl+V."
+          description="Focus the button, then press ⌘V or Ctrl+V."
         />
         <FileUploadList />
       </FileUpload>

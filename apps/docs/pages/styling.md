@@ -122,7 +122,7 @@ defaultVariants: { variant: 'secondary', size: 'lg' },
 - **npm package.** The source is not yours to edit, so wrap the component and set your defaults there:
 
 ```tsx
-import { Button, type ButtonProps } from '@brett_lamy/ui'
+import { Button, type ButtonProps } from '@brett_lamy/ui/button'
 
 export function AppButton(props: ButtonProps) {
   return <Button size="lg" variant="secondary" {...props} />

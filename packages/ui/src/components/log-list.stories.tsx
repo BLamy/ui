@@ -93,7 +93,7 @@ const END_OF = (rows: readonly LogRow[]) => rows[rows.length - 1]?.time ?? 0;
 function Desktop({ children, dark }: { children?: ReactNode; dark?: boolean }) {
   return (
     <div className="h-dvh w-full">
-      <BLProvider dark={dark}>
+      <BLProvider appearance={dark ? 'dark' : 'light'}>
         <div className="flex h-full min-h-0 flex-col gap-2 p-3">{children}</div>
       </BLProvider>
     </div>
@@ -103,7 +103,7 @@ function Desktop({ children, dark }: { children?: ReactNode; dark?: boolean }) {
 /** A window dragged down to phone size. */
 function PhoneWindow({ children, dark }: { children?: ReactNode; dark?: boolean }) {
   return (
-    <PhoneFrame w={390} h={844} dark={dark}>
+    <PhoneFrame w={390} h={844} appearance={dark ? 'dark' : 'light'}>
       <div className="flex h-full min-h-0 flex-col gap-2 p-2">{children}</div>
     </PhoneFrame>
   );

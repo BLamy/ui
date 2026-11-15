@@ -221,7 +221,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/dropdown-menu`. Base classes:
 
 ```text
-[popoverSurface, popoverMotion, popoverSheet, 'bl-scroll box-border overflow-y-auto py-1']
+[popoverSurface, popoverMotion, popoverSheet, 'bl-scroll box-border overflow-y-auto']
 ```
 
 **`size`** — default `default`
@@ -229,14 +229,14 @@ Defined in `@/components/ui/dropdown-menu`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `min-w-[230px]` |
-| `sm` | `min-w-[190px] px-1` |
+| `sm` | `min-w-[190px] p-1` |
 
 ### `dropdownMenuItemVariants`
 
 Defined in `@/components/ui/dropdown-menu`. Base classes:
 
 ```text
-[ 'bl-btn relative box-border flex cursor-pointer items-center text-foreground outline-none', 'data-highlighted:bg-accent data-highlighted:not-data-disabled:active:bg-secondary-strong data-open:bg-accent data-disabled:cursor-default data-disabled:opacity-40 data-destructive:text-destructive data-pending:cursor-progress', ]
+[ // A row rendered as a link (`render={<a href/>}`) looks like every other row: no underline. 'bl-btn relative box-border flex cursor-pointer items-center text-foreground no-underline outline-none', 'data-highlighted:bg-accent data-highlighted:not-data-disabled:active:bg-secondary-strong data-open:bg-accent data-disabled:cursor-default data-disabled:opacity-40 data-destructive:text-destructive data-pending:cursor-progress', ]
 ```
 
 **`size`** — default `default`

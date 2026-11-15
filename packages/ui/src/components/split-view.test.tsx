@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import {
@@ -754,26 +754,42 @@ it('provides its size class to what is inside, popups included', async () => {
   expect(seen).toBe('compact');
 });
 
-function Music({ sizeClass, onValueChange }: { sizeClass: 'compact' | 'regular'; onValueChange?: SplitViewProps['onValueChange'] }) {
+function Music({ sizeClass, onValueChange, detail }: { sizeClass: 'compact' | 'regular'; onValueChange?: SplitViewProps['onValueChange']; detail?: ReactNode }) {
   return (
     <SplitView aria-label="Music" sizeClass={sizeClass} defaultValue={{ sidebar: 'albums' }} onValueChange={onValueChange}>
       <SplitViewSidebar aria-label="Library" compactPresentation="tabs">
+        <SplitViewHeader title="Music" />
         <SplitViewContent>
           <SplitViewItem value="listen" title="Listen Now" icon="play-circle" tab />
           <SplitViewItem value="radio" title="Radio" icon="radiowaves" tab />
           <SplitViewSection title="Library" tab value="library" icon="books-vertical">
             <SplitViewItem value="albums" title="Albums" />
             <SplitViewItem value="songs" title="Songs" />
+            <SplitViewSection title="Playlists">
+              <SplitViewItem value="mix" title="Mix" />
+            </SplitViewSection>
+          </SplitViewSection>
+          <SplitViewSection title="Elsewhere">
+            <SplitViewItem value="other" title="Other" />
           </SplitViewSection>
         </SplitViewContent>
       </SplitViewSidebar>
       <SplitViewDetail aria-label="Detail">
-        <SplitViewHeader title="Detail" />
-        <SplitViewContent><p>Body</p></SplitViewContent>
+        {detail ?? (
+          <>
+            <SplitViewHeader title="Detail" />
+            <SplitViewContent><p>Body</p></SplitViewContent>
+          </>
+        )}
       </SplitViewDetail>
     </SplitView>
   );
 }
+
+const shown = (name: string) => {
+  const el = screen.queryByRole('button', { name, hidden: true });
+  return !!el && !el.closest('[hidden]');
+};
 
 it('compactPresentation="tabs": collapsed, the sidebar is a tab bar over the detail, in the sidebar\'s order', async () => {
   const onValueChange = vi.fn();
@@ -782,19 +798,106 @@ it('compactPresentation="tabs": collapsed, the sidebar is a tab bar over the det
   const list = screen.getByRole('tablist', { name: 'Library' });
   const tabs = [...list.querySelectorAll('[role=tab]')];
   expect(tabs.map((t) => t.textContent)).toEqual(['Listen Now', 'Radio', 'Library']);
-  // The Library section is one tab, current while one of its rows is the selection.
-  expect(screen.getByRole('tab', { name: 'Library' }).getAttribute('aria-selected')).toBe('true');
-  // The sidebar is out of the stack: the detail is on top, with nothing to go back to.
-  expect(column('sidebar').hasAttribute('inert')).toBe(true);
-  expect(column('detail').hasAttribute('data-top')).toBe(true);
-  expect(screen.queryByRole('button', { name: /^Back/ })).toBeNull();
   // The bar's room is published for what scrolls under it.
   expect(screen.getByRole('group', { name: 'Music' }).style.getPropertyValue('--tabs-bar-h')).toContain('--spacing-bar');
   await act(async () => screen.getByRole('tab', { name: 'Radio' }).click());
   await settle();
   expect(onValueChange).toHaveBeenLastCalledWith({ sidebar: 'radio' }, expect.objectContaining({ reason: 'item-press', column: 'sidebar' }));
   expect(screen.getByRole('tab', { name: 'Radio' }).getAttribute('aria-selected')).toBe('true');
+  // A plain tab: the sidebar is out of the stack, the detail is on top with nothing to go back to.
+  expect(column('sidebar').hasAttribute('inert')).toBe(true);
   expect(column('detail').hasAttribute('data-top')).toBe(true);
+  expect(screen.queryByRole('button', { name: /^Back/ })).toBeNull();
+});
+
+it('a tab section\'s tab is the sidebar showing that section\'s rows, which push the detail', async () => {
+  const onValueChange = vi.fn();
+  render(<Music sizeClass="compact" onValueChange={onValueChange} />);
+  await settle();
+  // A row of the Library section is the selection: the Library tab is current, and its row's page is on top of
+  // the Library page, with the way back to it.
+  expect(screen.getByRole('tab', { name: 'Library' }).getAttribute('aria-selected')).toBe('true');
+  expect(column('detail').hasAttribute('data-top')).toBe(true);
+  expect(column('sidebar').hasAttribute('data-behind')).toBe(true);
+  await act(async () => screen.getByRole('button', { name: 'Back to Library' }).click());
+  await settle();
+  // The Library page: the sidebar, headed by the section, showing its rows (a nested section too) and nothing else.
+  expect(column('sidebar').hasAttribute('data-top')).toBe(true);
+  expect(column('sidebar').hasAttribute('inert')).toBe(false);
+  expect(column('sidebar').querySelector('[role=heading]')?.textContent).toBe('Library');
+  expect(shown('Albums') && shown('Songs') && shown('Mix')).toBe(true);
+  expect(shown('Listen Now') || shown('Other')).toBe(false);
+  // Its rows are navigation: no current row, a push.
+  expect(screen.getByRole('button', { name: 'Albums' }).hasAttribute('aria-current')).toBe(false);
+  await act(async () => screen.getByRole('button', { name: 'Songs' }).click());
+  await settle();
+  expect(onValueChange).toHaveBeenLastCalledWith({ sidebar: 'songs' }, expect.objectContaining({ reason: 'item-press' }));
+  expect(column('detail').hasAttribute('data-top')).toBe(true);
+  // Another tab, and back to Library: the group's own value, on its rows.
+  await act(async () => screen.getByRole('tab', { name: 'Listen Now' }).click());
+  await settle();
+  expect(column('sidebar').hasAttribute('inert')).toBe(true);
+  await act(async () => screen.getByRole('tab', { name: 'Library' }).click());
+  await settle();
+  expect(onValueChange).toHaveBeenLastCalledWith({ sidebar: 'library' }, expect.objectContaining({ reason: 'item-press' }));
+  expect(column('sidebar').hasAttribute('data-top')).toBe(true);
+  expect(screen.getByRole('tab', { name: 'Library' }).getAttribute('aria-selected')).toBe('true');
+});
+
+it('the selected tab controls the column on top, its tabpanel', async () => {
+  render(<Music sizeClass="compact" />);
+  await settle();
+  const tab = screen.getByRole('tab', { name: 'Library' });
+  const panel = document.getElementById(tab.getAttribute('aria-controls')!);
+  expect(panel).toBe(column('detail'));
+  expect(panel?.getAttribute('role')).toBe('tabpanel');
+  expect(panel?.getAttribute('aria-labelledby')).toBe(tab.id);
+  expect(column('sidebar').getAttribute('role')).toBeNull();
+});
+
+it('pressing the selected tab again goes back to its first page, then to the top', async () => {
+  const onValueChange = vi.fn();
+  render(<Music sizeClass="compact" onValueChange={onValueChange} />);
+  await settle();
+  // Under the Library tab, on a row's page: back to the Library rows.
+  await act(async () => screen.getByRole('tab', { name: 'Library' }).click());
+  await settle();
+  expect(onValueChange).toHaveBeenLastCalledWith({ sidebar: 'library' }, expect.objectContaining({ reason: 'item-press' }));
+  expect(column('sidebar').hasAttribute('data-top')).toBe(true);
+  // At its first page: its content scrolls to the top.
+  const content = column('sidebar').querySelector<HTMLElement>('[data-slot="split-view-content"]')!;
+  content.scrollTop = 120;
+  const scrollTo = vi.fn();
+  content.scrollTo = scrollTo as unknown as typeof content.scrollTo;
+  await act(async () => screen.getByRole('tab', { name: 'Library' }).click());
+  expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
+});
+
+it('pressing the selected tab again pops the NavigationStack beside it to its first page', async () => {
+  const controller = createNavigationStackController();
+  render(
+    <Music sizeClass="compact" detail={(
+      <NavigationStack controller={controller} defaultPages={['root', 'album']}>
+        <NavigationStackPage value="root"><NavigationStackBar><NavigationStackTitle>Radio</NavigationStackTitle></NavigationStackBar></NavigationStackPage>
+        <NavigationStackPage value="album"><NavigationStackBar><NavigationStackTitle>Album</NavigationStackTitle></NavigationStackBar></NavigationStackPage>
+      </NavigationStack>
+    )} />,
+  );
+  await settle();
+  await act(async () => screen.getByRole('tab', { name: 'Radio' }).click());
+  await settle();
+  expect(controller.getPages()).toEqual(['root', 'album']);
+  await act(async () => screen.getByRole('tab', { name: 'Radio' }).click());
+  await settle();
+  expect(controller.getPages()).toEqual(['root']);
+});
+
+it('a tab section takes a value and an icon (types)', () => {
+  // @ts-expect-error: a tab section without its value
+  void <SplitViewSection title="Library" tab icon="books-vertical" />;
+  // @ts-expect-error: a tab item without its icon
+  void <SplitViewItem value="home" title="Home" tab />;
+  void <SplitViewSection title="Library" tab value="library" icon="books-vertical" />;
 });
 
 it('compactPresentation="tabs" is a sidebar like any other while tiled: no tab bar', async () => {

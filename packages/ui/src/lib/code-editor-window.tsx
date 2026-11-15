@@ -91,7 +91,7 @@ type Controls = PrimitiveHandle<typeof codeEditorControls>;
 /** The band behind a line, across gutters and code. */
 export const codeEditorLineVariants = cva('pointer-events-none absolute inset-x-0 h-(--code-editor-line)', {
   variants: {
-    tint: {
+    tone: {
       none: '',
       /** The line a debugger is stopped on. */
       current: 'bg-primary/15 shadow-[inset_3px_0_var(--primary)]',
@@ -99,11 +99,11 @@ export const codeEditorLineVariants = cva('pointer-events-none absolute inset-x-
       info: 'bg-primary/10 shadow-[inset_3px_0_color-mix(in_srgb,var(--primary)_45%,transparent)]',
       success: 'bg-success/15',
       warning: 'bg-warning/15',
-      danger: 'bg-destructive/15',
+      destructive: 'bg-destructive/15',
       muted: 'bg-secondary',
     },
   },
-  defaultVariants: { tint: 'none' },
+  defaultVariants: { tone: 'none' },
 });
 
 export const codeEditorGutterCellVariants = cva('box-border flex h-full shrink-0 items-center overflow-hidden', {
@@ -143,8 +143,8 @@ export interface CodeEditorGutter {
 
 export interface CodeEditorLineDecoration {
   /** A band behind the line, across gutters and code. */
-  tint?: 'current' | 'info' | 'success' | 'warning' | 'danger' | 'muted';
-  /** On the band: a tint of your own. */
+  tone?: 'current' | 'info' | 'success' | 'warning' | 'destructive' | 'muted';
+  /** On the band: a color of your own. */
   className?: string;
   /** On the row of code: dim a line that never ran. */
   textClassName?: string;
@@ -2103,9 +2103,9 @@ export function CodeEditorWindow({
     const top = (clamp(row, windowRows.start - 1, windowRows.end) - view.originRow) * lineHeight;
     const decoration = lineDecoration?.(lineNumber) ?? null;
     const current = currentLine === lineNumber;
-    const tint = decoration?.tint ?? (current ? 'current' : null);
-    if (tint || decoration?.className) {
-      bands.push(<div key={row} data-slot="code-editor-band" data-tint={tint ?? undefined} className={cn(codeEditorLineVariants({ tint: tint ?? 'none' }), decoration?.className)} style={{ top }} />);
+    const tone = decoration?.tone ?? (current ? 'current' : null);
+    if (tone || decoration?.className) {
+      bands.push(<div key={row} data-slot="code-editor-band" data-tone={tone ?? undefined} className={cn(codeEditorLineVariants({ tone: tone ?? 'none' }), decoration?.className)} style={{ top }} />);
     }
     const mark = lineMarks.added.has(lineNumber) ? 'add' : lineMarks.removed.has(lineNumber) ? 'del' : lineMarks.marked.has(lineNumber) ? 'highlight' : null;
     if (mark) {

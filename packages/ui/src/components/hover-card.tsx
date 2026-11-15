@@ -100,12 +100,13 @@ export interface HoverCardHeaderProps extends Omit<ComponentProps<'div'>, 'title
   trailing?: ReactNode;
 }
 
-/** The usual top of a card, in the kit's row anatomy: `icon`, `title` (a heading), `description` and `trailing`.
+/** The usual top of a card, in the kit's row anatomy: `icon`, `title` (a heading), `description` and `trailing`. The icon
+    is hidden from screen readers: the title already says what it shows (an avatar would read the name twice).
     Other props go on its `div`. */
 export function HoverCardHeader({ icon, title, description, trailing, className, ...props }: HoverCardHeaderProps) {
   return (
     <div data-slot="hover-card-header" className={cn('flex min-w-0 items-center gap-3', className)} {...props}>
-      {icon ? <div className="shrink-0">{icon}</div> : null}
+      {icon ? <div aria-hidden="true" className="shrink-0">{icon}</div> : null}
       <div className="min-w-0 flex-1">
         <h3 className={cn(surfaceTitleVariants({ size: 'sm' }), 'truncate')}>{title}</h3>
         {description ? <p className={cn(surfaceDescriptionVariants({ size: 'sm' }), 'truncate')}>{description}</p> : null}

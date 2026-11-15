@@ -44,13 +44,13 @@ export const Setup: Story = {
   render: () => <Phone h={560}><VaultGate vault={stubVault({})} appName="Notes"><Demo>unlocked</Demo></VaultGate></Phone>,
 };
 export const SetupDark: Story = {
-  render: () => <Phone h={560} dark><VaultGate vault={stubVault({})} appName="Notes"><Demo>unlocked</Demo></VaultGate></Phone>,
+  render: () => <Phone h={560} appearance="dark"><VaultGate vault={stubVault({})} appName="Notes"><Demo>unlocked</Demo></VaultGate></Phone>,
 };
 export const Locked: Story = {
   render: () => <Phone h={560}><VaultGate vault={stubVault(enrolled)} appName="Notes"><Demo>unlocked</Demo></VaultGate></Phone>,
 };
 export const LockedDark: Story = {
-  render: () => <Phone h={560} dark><VaultGate vault={stubVault(enrolled)} appName="Notes"><Demo>unlocked</Demo></VaultGate></Phone>,
+  render: () => <Phone h={560} appearance="dark"><VaultGate vault={stubVault(enrolled)} appName="Notes"><Demo>unlocked</Demo></VaultGate></Phone>,
 };
 export const Unlocking: Story = {
   render: () => <Phone h={560}><VaultUnlock vault={stubVault({ ...enrolled, busy: 'unlock' })} appName="Notes" autoFocus={false} /></Phone>,
@@ -121,7 +121,7 @@ export const EnrollDialog: Story = {
   render: () => <Phone h={640}><Demo><div className="p-4"><Button>Set up</Button></div>{dialog(stubVault({}))}</Demo></Phone>,
 };
 export const EnrollDialogDark: Story = {
-  render: () => <Phone h={640} dark><Demo><div className="p-4"><Button>Set up</Button></div>{dialog(stubVault({}))}</Demo></Phone>,
+  render: () => <Phone h={640} appearance="dark"><Demo><div className="p-4"><Button>Set up</Button></div>{dialog(stubVault({}))}</Demo></Phone>,
 };
 export const EnrollDialogRecoveryKey: Story = {
   render: () => (
@@ -132,7 +132,7 @@ export const EnrollDialogRecoveryKey: Story = {
 };
 export const EnrollDialogRecoveryKeyDark: Story = {
   render: () => (
-    <Phone h={640} dark>
+    <Phone h={640} appearance="dark">
       <PressOnMount label="Create passkey"><Demo>{dialog(stubVault({}))}</Demo></PressOnMount>
     </Phone>
   ),

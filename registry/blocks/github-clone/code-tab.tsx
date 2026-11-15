@@ -13,6 +13,7 @@ import { CommitMessage, UserAvatar, UserName } from './cards';
 import type { FileNode } from './data';
 import { Box, CodeView, Counter, FileTree, Oct, ghButton, githubMarkdown, type OctName, type Layout, type Nav } from './parts';
 import { Loaded, Pending, useLoad, useRepo } from './repo-context';
+import { EmptyState } from '@/components/ui/empty-state';
 
 /** Files GitHub's own viewer won't show inline either. */
 const TOO_LARGE = 1_000_000;
@@ -134,7 +135,7 @@ export function FileTable({ ui, nodes, nav, parent, path = '' }: { ui: Layout; n
         <FileRow key={n.path} ui={ui} name={n.name} commit={n.commit} when={n.when} onOpen={() => nav.openPath(n.path)}
           icon={n.type === 'dir' ? <Oct name="folder" className="text-[var(--gh-folder)]" /> : <Oct name="file" className="text-muted-foreground" />} />
       ))}
-      {!sorted.length ? <div className="px-4 py-8 text-center text-muted-foreground">This folder is empty.</div> : null}
+      {!sorted.length ? <EmptyState size="sm" title="This folder is empty." className="py-8" /> : null}
     </Box>
   );
 }

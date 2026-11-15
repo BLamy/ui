@@ -119,6 +119,8 @@ describe('RequestTable', () => {
   it('shows the empty state and footer', () => {
     const { rerender } = render(<RequestTable rows={[]} emptyState="No requests yet" />);
     expect(screen.getByText('No requests yet')).toBeTruthy();
+    // No rows, no time: the waterfall header states no made-up duration.
+    expect(document.querySelector('[data-slot=data-table-header-end]')).toBeNull();
     rerender(<RequestTable rows={makeRows(1)} footer="3 more later" />);
     expect(screen.getByText('3 more later')).toBeTruthy();
   });
@@ -375,31 +377,31 @@ describe('its own size class', () => {
     expect(headers()).toEqual(['name', 'method', 'status', 'duration', 'waterfall']);
     expect(grid().getAttribute('aria-colcount')).toBe('5');
     expect(row(0).querySelector('[data-column=type]')).toBeNull();
-    expect(root().getAttribute('data-layout')).toBe('table');
+    expect(root().getAttribute('data-presentation')).toBe('table');
     resizeTable(400);
-    expect(root().getAttribute('data-layout')).toBe('stacked');
+    expect(root().getAttribute('data-presentation')).toBe('stacked');
     expect(headers()).toEqual([]);
-    expect(screen.getByRole('button', { name: 'Sort by' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Sort' })).toBeTruthy();
     expect(grid().style.getPropertyValue('--data-table-row')).toBe('46px');
     resizeTable(900);
-    expect(root().getAttribute('data-layout')).toBe('table');
+    expect(root().getAttribute('data-presentation')).toBe('table');
     expect(headers()).toContain('type');
     expect(grid().style.getPropertyValue('--data-table-row')).toBe('26px');
   });
 
-  it('takes breakpoints of its own, and a fixed layout ignores them', () => {
+  it('takes breakpoints of its own, and a fixed presentation ignores them', () => {
     const { rerender } = render(<RequestTable rows={makeRows(5)} breakpoints={{ medium: 700, regular: 1200 }} />);
     expect(root().getAttribute('data-size-class')).toBe('medium');
     expect(headers()).not.toContain('type');
     resizeTable(650);
-    expect(root().getAttribute('data-layout')).toBe('stacked');
+    expect(root().getAttribute('data-presentation')).toBe('stacked');
     rerender(<RequestTable rows={makeRows(5)} breakpoints={{ medium: 600, regular: 1200 }} />);
-    expect(root().getAttribute('data-layout')).toBe('table');
-    rerender(<RequestTable rows={makeRows(5)} breakpoints={{ medium: 600, regular: 1200 }} layout="stacked" />);
-    expect(root().getAttribute('data-layout')).toBe('stacked');
+    expect(root().getAttribute('data-presentation')).toBe('table');
+    rerender(<RequestTable rows={makeRows(5)} breakpoints={{ medium: 600, regular: 1200 }} presentation="stacked" />);
+    expect(root().getAttribute('data-presentation')).toBe('stacked');
   });
 
-  it('keeps the selection and the row at the top through a change of layout', () => {
+  it('keeps the selection and the row at the top through a change of presentation', () => {
     render(<RequestTable rows={makeRows(500)} defaultValue="r40" />);
     expect(row(40).getAttribute('aria-selected')).toBe('true');
     resizeTable(400);
@@ -440,10 +442,10 @@ describe('rows given as they come', () => {
 
 describe('stacked rows', () => {
   it('has two lines and a sort menu instead of column headers', () => {
-    render(<RequestTable rows={makeRows(5)} layout="stacked" />);
-    expect(document.querySelector('[data-slot=data-table]')?.getAttribute('data-layout')).toBe('stacked');
+    render(<RequestTable rows={makeRows(5)} presentation="stacked" />);
+    expect(document.querySelector('[data-slot=data-table]')?.getAttribute('data-presentation')).toBe('stacked');
     expect(column('name')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Sort by' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Sort' })).toBeTruthy();
     expect(screen.getByText('5 requests')).toBeTruthy();
     const text = row(3).textContent ?? '';
     expect(text).toContain('3?v=1');
@@ -454,7 +456,7 @@ describe('stacked rows', () => {
   });
 
   it('leaves out what the columns leave out', () => {
-    render(<RequestTable rows={makeRows(2)} layout="stacked" columns={['name', 'status']} />);
+    render(<RequestTable rows={makeRows(2)} presentation="stacked" columns={['name', 'status']} />);
     const text = row(1).textContent ?? '';
     expect(text).toContain('200');
     expect(text).not.toContain('POST');

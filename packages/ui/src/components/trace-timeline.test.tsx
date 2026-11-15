@@ -51,8 +51,9 @@ const pointer = (type: 'pointerDown' | 'pointerMove' | 'pointerUp' | 'pointerCan
 /** A position by how far out from the rail's inner edge and how far down it. */
 const atRail = (pull: number, along: number) => [346 - pull, along] as const;
 
+// The strip tests' pixel math is laid out on a 64px label gutter (the default is 84).
 function rail(props: Partial<TraceTimelineProps<string>> = {}) {
-  return <TraceTimeline range={RANGE} stops={STOPS} orientation="vertical" {...props} />;
+  return <TraceTimeline range={RANGE} stops={STOPS} orientation="vertical" gutter={64} {...props} />;
 }
 
 beforeAll(() => {

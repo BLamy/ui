@@ -39,7 +39,7 @@ export function AskQA() {
         </span>
         <span className="flex-1" />
         <BarButton label="New chat" icon="square-pencil" className="size-8" disabled={empty} onClick={qa.newChat} />
-        {chat.layout === 'floating' ? (
+        {chat.presentation === 'floating' ? (
           <BarButton label="Collapse chat" icon="chevron-down" className="size-8" onClick={() => qa.setChatOpen(false)} />
         ) : (
           <BarButton label="Hide Ask QA (⌘J)" icon="sidebar-right" className="size-8" onClick={() => qa.setAskOpen(false)} />

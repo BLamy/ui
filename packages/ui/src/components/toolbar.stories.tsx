@@ -131,23 +131,23 @@ function EditMode({ initial = [] as string[] }) {
 
 /** `bar` with a selection: Favorite and Delete in the tint, the count announced between them. */
 export const BarEditMode: Story = {
-  render: ({ dark }) => <Phone dark={dark} h={560}><EditMode initial={['Grace', 'Alan']} /></Phone>,
+  render: ({ dark }) => <Phone appearance={dark ? 'dark' : 'light'} h={560}><EditMode initial={['Grace', 'Alan']} /></Phone>,
 };
 
 /** `bar` with nothing selected: both actions grey (not faded) and still reachable with `aria-disabled`. */
 export const BarEmpty: Story = {
-  render: ({ dark }) => <Phone dark={dark} h={560}><EditMode /></Phone>,
+  render: ({ dark }) => <Phone appearance={dark ? 'dark' : 'light'} h={560}><EditMode /></Phone>,
 };
 
 export const BarDark: Story = {
   args: { dark: true },
-  render: ({ dark }) => <Phone dark={dark} h={560}><EditMode initial={['Ada']} /></Phone>,
+  render: ({ dark }) => <Phone appearance={dark ? 'dark' : 'light'} h={560}><EditMode initial={['Ada']} /></Phone>,
 };
 
 /** `bar` with `side="top"`: the hairline moves under the bar. */
 export const BarTop: Story = {
   render: ({ dark }) => (
-    <Phone dark={dark} h={220}>
+    <Phone appearance={dark ? 'dark' : 'light'} h={220}>
       <Toolbar variant="bar" side="top" aria-label="Library" className="absolute inset-x-0 top-0">
         <ToolbarButton>Edit</ToolbarButton>
         <ToolbarText>24 items</ToolbarText>

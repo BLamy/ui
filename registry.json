@@ -2197,7 +2197,7 @@
           "-webkit-mask-image": "linear-gradient(to top,transparent,#000 28px)",
           "mask-image": "linear-gradient(to top,transparent,#000 28px)"
         },
-        ".ck-floating-sheet[data-body-align=\"start\"][data-variant=\"sheet\"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal": {
+        ".ck-floating-sheet[data-body-align=\"start\"][data-variant=\"card\"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal": {
           "-webkit-mask-image": "none",
           "mask-image": "none"
         },
@@ -2515,10 +2515,7 @@
         ".docstream-stl": {
           "--gb-primary": "var(--primary)",
           "--gb-muted": "var(--secondary)",
-          "--gb-border": "var(--border)",
-          "--gb-panel": "var(--popover)",
-          "--gb-panel-foreground": "var(--primary)",
-          "--gb-hover": "var(--accent)"
+          "--gb-border": "var(--border)"
         },
         "[data-slot=\"tree\"]": {
           "--trees-accent-override": "var(--primary)",
@@ -3142,7 +3139,7 @@
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/sheet.json",
         "https://blamy.github.io/ui/r/surface.json",
-        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/theme-context.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -3218,6 +3215,7 @@
         "https://blamy.github.io/ui/r/reduced-motion.json",
         "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/theme-context.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -3406,6 +3404,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/calendar-months.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -3429,6 +3428,7 @@
           "CalendarYearSelect",
           "CalendarMonths",
           "CalendarGrid",
+          "CalendarGridHeading",
           "CalendarWeekdays",
           "CalendarWeekday",
           "CalendarWeeks",
@@ -3489,6 +3489,51 @@
           "shortLocation",
           "fullLocation",
           "fileBaseName"
+        ]
+      }
+    },
+    {
+      "name": "canvas-math",
+      "type": "registry:lib",
+      "title": "Canvas math",
+      "description": "The frame math behind Canvas, as plain functions on plain data: board and screen coordinates for a view, hit tests (a point in a rotated frame, rectangles that intersect, distance to a segment or a polyline), selection handles and their cursors, resize, rotate, and snapping a box to its neighbours with alignment guides.",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/canvas-math.ts",
+          "type": "registry:lib",
+          "target": "lib/canvas-math.ts"
+        }
+      ],
+      "meta": {
+        "page": "canvas",
+        "exports": [
+          "toBoard",
+          "toScreen",
+          "MIN_SIZE",
+          "rotatePt",
+          "centerOf",
+          "dist",
+          "cornersOf",
+          "rectOf",
+          "unionRect",
+          "intersects",
+          "inFrame",
+          "distToSegment",
+          "distToPolyline",
+          "HANDLE_DIR",
+          "ALL_HANDLES",
+          "EDGE_HANDLES",
+          "frameHandles",
+          "handleCursor",
+          "resizeFrame",
+          "rotateFrame",
+          "snapMove"
         ]
       }
     },
@@ -3879,7 +3924,7 @@
       "title": "Composer",
       "description": "A prompt box as parts: a card with the Docstream editor, attachment tiles (images open the ImageAnnotator), footer option pills on the kit's DropdownMenu, send / stop / add buttons on the kit's Button, bumps above and below, a queue for drafts sent while a reply streams, and compact and FAB collapse.",
       "dependencies": [
-        "@brett_lamy/docstream-editor@2.0.0",
+        "@brett_lamy/docstream-editor@2.0.1",
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1",
@@ -3912,6 +3957,11 @@
           "path": "packages/ui/src/components/composer/composer-cards.tsx",
           "type": "registry:ui",
           "target": "components/ui/composer/composer-cards.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/composer/composer-context.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/composer/composer-context.tsx"
         },
         {
           "path": "packages/ui/src/components/composer/composer-files.ts",
@@ -3976,8 +4026,10 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/markdown-view.json",
         "https://blamy.github.io/ui/r/message-scroller.json",
+        "https://blamy.github.io/ui/r/message-scroller-context.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/presence.json",
+        "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/reduced-motion.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -4017,6 +4069,7 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/change-details.json",
         "https://blamy.github.io/ui/r/cron.json",
         "https://blamy.github.io/ui/r/disclosure.json",
         "https://blamy.github.io/ui/r/field.json",
@@ -4173,6 +4226,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/calendar.json",
+        "https://blamy.github.io/ui/r/calendar-months.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
@@ -4741,6 +4795,7 @@
         "https://blamy.github.io/ui/r/sheet.json",
         "https://blamy.github.io/ui/r/surface.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/theme-context.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -4947,7 +5002,7 @@
         "exports": [
           "Icon",
           "Chevron",
-          "IC",
+          "isIconName",
           "ICON_NAMES",
           "ICON_ALIASES",
           "ICON_CATEGORIES",
@@ -5113,6 +5168,7 @@
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/row-label.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/theme-context.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -5232,8 +5288,8 @@
       "title": "MarkdownEditor",
       "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, and the built-in formatting toolbar or one of your own (a Toolbar of MarkdownEditorToolbarButtons).",
       "dependencies": [
-        "@brett_lamy/docstream@2.0.0",
-        "@brett_lamy/docstream-editor@2.0.0",
+        "@brett_lamy/docstream@2.0.1",
+        "@brett_lamy/docstream-editor@2.0.1",
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
@@ -5269,7 +5325,7 @@
       "title": "MarkdownView",
       "description": "Read-only GitBook-flavored Markdown rendered by Docstream: headings, lists, tables, hints, tabs, highlighted code, live demos and reference chips, whole or streamed.",
       "dependencies": [
-        "@brett_lamy/docstream@2.0.0"
+        "@brett_lamy/docstream@2.0.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -5300,6 +5356,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/message-scroller-context.json",
         "https://blamy.github.io/ui/r/message-scroller-primitive.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -5374,9 +5431,12 @@
         "exports": [
           "springs",
           "springCss",
-          "fades",
+          "motionFades",
           "useReducedMotion",
           "useSpringTransition",
+          "prefersReducedMotion",
+          "useDirection",
+          "motionDirection",
           "TextMorph",
           "NumberMorph",
           "Swap",
@@ -5444,7 +5504,7 @@
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/stack.json",
         "https://blamy.github.io/ui/r/stack-parent.json",
-        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/theme-context.json",
         "https://blamy.github.io/ui/r/title-flight.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -5710,8 +5770,10 @@
           "usePasskey",
           "useEncryptedState",
           "vaultErrorMessage",
+          "vaultUnsupportedMessage",
           "VaultEnrollDialog",
           "VaultRecoveryKey",
+          "vaultRecoveryKeyVariants",
           "VaultGate",
           "VaultUnlock",
           "VaultSetup",
@@ -5747,6 +5809,11 @@
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
+        {
+          "path": "packages/ui/src/components/pencilkit/annotator-engine.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/pencilkit/annotator-engine.tsx"
+        },
         {
           "path": "packages/ui/src/components/pencilkit/constants.ts",
           "type": "registry:ui",
@@ -5987,7 +6054,7 @@
       "name": "progress-stepper",
       "type": "registry:ui",
       "title": "ProgressStepper",
-      "description": "A row of milestones for a multi-step process, as filling bars or a joined line, with complete, current and upcoming states; from a steps array or composed from ProgressStep parts with your own icon, label and description.",
+      "description": "A row of milestones for a multi-step process, as filling bars or a joined line, with complete, current and upcoming states; from a steps array or composed from ProgressStepperItem parts with your own icon, label and description.",
       "dependencies": [
         "class-variance-authority@^0.7.1"
       ],
@@ -6008,11 +6075,11 @@
         "page": "progress-stepper",
         "exports": [
           "ProgressStepper",
-          "ProgressStep",
-          "ProgressStepIcon",
-          "ProgressStepTrack",
-          "ProgressStepLabel",
-          "ProgressStepDescription",
+          "ProgressStepperItem",
+          "ProgressStepperItemIcon",
+          "ProgressStepperItemTrack",
+          "ProgressStepperItemLabel",
+          "ProgressStepperItemDescription",
           "progressStepperVariants"
         ]
       }
@@ -6115,7 +6182,7 @@
       "title": "ReplayPreview",
       "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, Console and Network buttons that open a DevTools panel cut at the playhead (requests, failures, errors), a drawn cursor with click ripples, and a skeleton poster while the player loads.",
       "dependencies": [
-        "@brett_lamy/docstream@2.0.0"
+        "@brett_lamy/docstream@2.0.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -6724,7 +6791,7 @@
       "title": "StlViewer",
       "description": "A 3D preview of an .stl model, binary or ASCII: WebGL, drag to orbit, pinch or ⌘-scroll to zoom, double-click to reset, and the triangle count and size under it. The model takes the theme's primary color. A re-export of @brett_lamy/docstream/stl's viewer.",
       "dependencies": [
-        "@brett_lamy/docstream@2.0.0"
+        "@brett_lamy/docstream@2.0.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -6749,7 +6816,7 @@
       "title": "StrudelPlayer",
       "description": "An audio player for a Strudel live-coded pattern, inline code or a .strudel file: play/stop, a scrolling piano roll, the code, and an equipment rack. Strudel runs in the page, loaded on the first play; one pattern plays at a time. A re-export of @brett_lamy/docstream/strudel's player and the functions that drive its runtime.",
       "dependencies": [
-        "@brett_lamy/docstream@2.0.0"
+        "@brett_lamy/docstream@2.0.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -7180,6 +7247,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/size-class.json",
+        "https://blamy.github.io/ui/r/theme-context.json",
         "https://blamy.github.io/ui/r/tokens.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -7201,7 +7269,12 @@
           "useScopeAppearance",
           "readThemeVars",
           "tintForeground",
-          "useLayerHost"
+          "useLayerHost",
+          "useChromeHidden",
+          "setChromeHidden",
+          "useThemeScopeProps",
+          "themeScopeProps",
+          "THEME_VARS"
         ]
       }
     },
@@ -7489,9 +7562,9 @@
       "name": "tui-preview",
       "type": "registry:ui",
       "title": "TuiPreview",
-      "description": "An OpenTUI terminal program run on demand in a sandboxed, opaque-origin frame by OpenTUI's WebAssembly renderer: Run / Stop, keyboard input, visible start-up and render errors, and the same runtime Docstream uses for `tui` code fences.",
+      "description": "An OpenTUI terminal program run on demand in a sandboxed, opaque-origin frame by OpenTUI's WebAssembly renderer: Run / Stop, a light or dark terminal that follows the page (`appearance`), keyboard input, visible start-up and render errors, and the same runtime Docstream uses for `tui` code fences.",
       "dependencies": [
-        "@brett_lamy/docstream@2.0.0"
+        "@brett_lamy/docstream@2.0.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -7592,7 +7665,7 @@
       "name": "utils",
       "type": "registry:lib",
       "title": "Utilities",
-      "description": "BL UI's class-name helpers: cn (clsx + tailwind-merge that knows the token utilities) and cx (the same under a UI SDK part's className), the pressable and brandTile class fragments, and the FONT and BARH constants.",
+      "description": "BL UI's class-name helpers: cn (clsx + tailwind-merge that knows the token utilities) and cx (the same under a UI SDK part's className).",
       "dependencies": [
         "clsx@^2.1.1",
         "tailwind-merge@^3.6.0"
@@ -7612,11 +7685,7 @@
         "page": "utilities",
         "exports": [
           "cn",
-          "cx",
-          "pressable",
-          "brandTile",
-          "FONT",
-          "BARH"
+          "cx"
         ]
       }
     },
@@ -7900,21 +7969,19 @@
       ]
     },
     {
-      "name": "canvas-math",
+      "name": "calendar-months",
       "type": "registry:lib",
-      "title": "Canvas Math",
-      "description": "Canvas Math — part of BL UI's library (lib/canvas-math.ts).",
-      "dependencies": [
-        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
-      ],
+      "title": "Calendar Months",
+      "description": "Calendar Months — part of BL UI's library (lib/calendar-months.ts).",
+      "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "files": [
         {
-          "path": "packages/ui/src/lib/canvas-math.ts",
+          "path": "packages/ui/src/lib/calendar-months.ts",
           "type": "registry:lib",
-          "target": "lib/canvas-math.ts"
+          "target": "lib/calendar-months.ts"
         }
       ]
     },
@@ -8316,6 +8383,23 @@
           "path": "packages/ui/src/lib/log-list-primitive.ts",
           "type": "registry:lib",
           "target": "lib/log-list-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "message-scroller-context",
+      "type": "registry:lib",
+      "title": "Message Scroller Context",
+      "description": "Message Scroller Context — part of BL UI's library (lib/message-scroller-context.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/message-scroller-context.ts",
+          "type": "registry:lib",
+          "target": "lib/message-scroller-context.ts"
         }
       ]
     },
@@ -9016,6 +9100,25 @@
       ]
     },
     {
+      "name": "theme-context",
+      "type": "registry:lib",
+      "title": "Theme Context",
+      "description": "Theme Context — part of BL UI's library (lib/theme-context.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/theme-context.tsx",
+          "type": "registry:lib",
+          "target": "lib/theme-context.tsx"
+        }
+      ]
+    },
+    {
       "name": "title-flight",
       "type": "registry:lib",
       "title": "Title Flight",
@@ -9278,7 +9381,7 @@
         "media"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@2.0.0",
+        "@brett_lamy/docstream@2.0.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
@@ -9292,7 +9395,6 @@
         "https://blamy.github.io/ui/r/navigation-stack.json",
         "https://blamy.github.io/ui/r/now-playing-bars.json",
         "https://blamy.github.io/ui/r/search-input.json",
-        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/slider.json",
         "https://blamy.github.io/ui/r/split-view.json",
         "https://blamy.github.io/ui/r/swap.json",
@@ -9358,7 +9460,7 @@
       "dependencies": [
         "use-fs@2.1.0",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
-        "@brett_lamy/docstream@2.0.0",
+        "@brett_lamy/docstream@2.0.1",
         "@visual-json/react@0.4.0",
         "@visual-json/yaml@0.4.0"
       ],
@@ -9635,7 +9737,7 @@
       ],
       "dependencies": [
         "use-fs@2.1.0",
-        "@brett_lamy/docstream@2.0.0",
+        "@brett_lamy/docstream@2.0.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
@@ -9644,6 +9746,7 @@
         "https://blamy.github.io/ui/r/celebrate.json",
         "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/list.json",
@@ -9950,6 +10053,7 @@
         "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/tabs.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/theme-context.json",
         "https://blamy.github.io/ui/r/toolbar.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -10068,6 +10172,7 @@
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/pencilkit.json",
@@ -10330,6 +10435,7 @@
         "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/disclosure.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/font-picker.json",
         "https://blamy.github.io/ui/r/google-fonts.json",
@@ -10592,7 +10698,7 @@
         "command-menu"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@2.0.0",
+        "@brett_lamy/docstream@2.0.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
@@ -10772,6 +10878,7 @@
         "https://blamy.github.io/ui/r/command-menu.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/kbd.json",
@@ -11013,7 +11120,7 @@
         "application"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@2.0.0",
+        "@brett_lamy/docstream@2.0.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
@@ -11481,7 +11588,7 @@
         "audio"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@2.0.0",
+        "@brett_lamy/docstream@2.0.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
@@ -11554,6 +11661,7 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/toast.json",
         "https://blamy.github.io/ui/r/toggle.json",
@@ -11675,7 +11783,7 @@
         "productivity"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@2.0.0",
+        "@brett_lamy/docstream@2.0.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
@@ -12033,6 +12141,7 @@
         "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/segmented.json",

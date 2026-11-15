@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { ProgressStepper, type ProgressStepItem } from '@/components/ui/progress-stepper'
+import { ProgressStepper, type ProgressStepperStep } from '@/components/ui/progress-stepper'
 import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Switch } from '@/components/ui/switch'
 import { Icon } from '@/lib/icon'
 
-const steps: ProgressStepItem[] = [
+const steps: ProgressStepperStep[] = [
   { id: 'placed', label: 'Placed', icon: <Icon name="check-circle" size={22} /> },
   { id: 'packed', label: 'Packed', icon: <Icon name="archivebox" size={22} /> },
   { id: 'shipped', label: 'Shipped', icon: <Icon name="airplane" size={22} /> },

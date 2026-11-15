@@ -103,14 +103,14 @@ const Stage = ({ children }: { children?: React.ReactNode }) => (
 
 /** In a medium or regular container the default (`presentation="auto"`) is a centered card. */
 export const DefaultOpen: Story = { render: () => <Phone {...REGULAR}><Stage><Rename /></Stage></Phone> };
-export const DefaultDark: Story = { render: () => <Phone {...REGULAR} dark><Stage><Rename /></Stage></Phone> };
+export const DefaultDark: Story = { render: () => <Phone {...REGULAR} appearance="dark"><Stage><Rename /></Stage></Phone> };
 export const Large: Story = { render: () => <Phone w={760} h={560}><Stage><Rename size="lg" /></Stage></Phone> };
 /** The same dialog in a compact container: a sheet attached to the bottom edge, with a grabber, buttons sharing the row. */
 export const Compact: Story = { render: () => <Phone {...COMPACT}><Stage><Rename /></Stage></Phone> };
-export const CompactDark: Story = { render: () => <Phone {...COMPACT} dark><Stage><Rename /></Stage></Phone> };
+export const CompactDark: Story = { render: () => <Phone {...COMPACT} appearance="dark"><Stage><Rename /></Stage></Phone> };
 /** `variant="tray"` in a compact container: a tray floating inset from the edges. */
 export const CompactTray: Story = { render: () => <Phone {...COMPACT}><Stage><Rename variant="tray" /></Stage></Phone> };
-export const CompactTrayDark: Story = { render: () => <Phone {...COMPACT} dark><Stage><Rename variant="tray" /></Stage></Phone> };
+export const CompactTrayDark: Story = { render: () => <Phone {...COMPACT} appearance="dark"><Stage><Rename variant="tray" /></Stage></Phone> };
 /** `presentation="dialog"` opts out: a centered card even in a compact container. */
 export const CompactPinnedToDialog: Story = { render: () => <Phone {...COMPACT}><Stage><Rename presentation="dialog" /></Stage></Phone> };
 
@@ -205,9 +205,9 @@ function Share({ start = 'menu' }: { start?: string }) {
 /** Step with the buttons (or `--do click:role=button[name="QR Code"]`): the card springs to each view's height, the
     title travels with it, and the back chevron grows in. */
 export const Flow: Story = { render: () => <Phone {...REGULAR}><Share /></Phone> };
-export const FlowDark: Story = { render: () => <Phone {...REGULAR} dark><Share /></Phone> };
+export const FlowDark: Story = { render: () => <Phone {...REGULAR} appearance="dark"><Share /></Phone> };
 export const FlowCompact: Story = { render: () => <Phone {...COMPACT}><Share /></Phone> };
-export const FlowCompactDark: Story = { render: () => <Phone {...COMPACT} dark><Share /></Phone> };
+export const FlowCompactDark: Story = { render: () => <Phone {...COMPACT} appearance="dark"><Share /></Phone> };
 /** The second step of the flow, open from the start: the back chevron is in the bar. */
 export const FlowSecondStep: Story = { render: () => <Phone {...COMPACT}><Share start="qr" /></Phone> };
 

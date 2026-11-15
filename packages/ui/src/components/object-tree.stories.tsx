@@ -97,7 +97,7 @@ const loadHeld = (node: ObjectTreeNode) => HELD[String(node.data)] ?? [];
 const answerGetter = (): ObjectTreeGetterResult => ({ value: num(4) });
 
 function Frame({ w = 760, h = 560, dark, children }: { w?: number; h?: number; dark?: boolean; children?: React.ReactNode }) {
-  return <Phone w={w} h={h} dark={dark}><div className="absolute inset-0 bg-card py-2">{children}</div></Phone>;
+  return <Phone w={w} h={h} appearance={dark ? 'dark' : 'light'}><div className="absolute inset-0 bg-card py-2">{children}</div></Phone>;
 }
 
 function Scopes({ selectable, density }: { selectable?: boolean; density?: 'compact' | 'default' | 'comfortable' }) {

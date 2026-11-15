@@ -140,11 +140,6 @@
       "types": "./dist/components/composer/composer-cards.d.ts",
       "default": "./dist/components/composer/composer-cards.js"
     },
-    "./composer/composer-files": {
-      "@org/source": "./src/components/composer/composer-files.ts",
-      "types": "./dist/components/composer/composer-files.d.ts",
-      "default": "./dist/components/composer/composer-files.js"
-    },
     "./conversation": {
       "@org/source": "./src/components/conversation.tsx",
       "types": "./dist/components/conversation.d.ts",
@@ -259,6 +254,11 @@
       "@org/source": "./src/lib/call-stack-model.ts",
       "types": "./dist/lib/call-stack-model.d.ts",
       "default": "./dist/lib/call-stack-model.js"
+    },
+    "./lib/canvas-math": {
+      "@org/source": "./src/lib/canvas-math.ts",
+      "types": "./dist/lib/canvas-math.d.ts",
+      "default": "./dist/lib/canvas-math.js"
     },
     "./lib/code-document": {
       "@org/source": "./src/lib/code-document.ts",
@@ -892,8 +892,8 @@
     }
   },
   "dependencies": {
-    "@brett_lamy/docstream": "2.0.0",
-    "@brett_lamy/docstream-editor": "2.0.0",
+    "@brett_lamy/docstream": "2.0.1",
+    "@brett_lamy/docstream-editor": "2.0.1",
     "@tiptap/core": "3.30.5",
     "@tiptap/extension-code": "3.30.5",
     "@tiptap/extension-code-block": "3.30.5",

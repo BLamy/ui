@@ -35,11 +35,11 @@ import {
   updateTab,
   updateTabset,
   workspaceTabsets,
-  type TabDropRegion,
-  type TabDropTarget,
-  type TabNode,
+  type WorkspaceDropRegion,
+  type WorkspaceDropTarget,
+  type WorkspaceTabNode,
   type WorkspaceTabSide,
-  type TabsetNode,
+  type WorkspaceTabsetNode,
   type WorkspaceLayout,
   type WorkspaceLayoutInput,
 } from '@/lib/workspace-model';
@@ -108,22 +108,22 @@ export type WorkspaceController<TabData = unknown, TabsetData = unknown> = {
   getLayout: () => WorkspaceLayout<TabData, TabsetData>;
   /** Replaces the layout. Read what was applied with `getLayout()`. */
   setLayout: (layout: WorkspaceLayoutInput<TabData, TabsetData>, options?: WorkspaceChangeOptions) => boolean;
-  /** The tabset the user last used, by pointer or focus. */
-  getActiveTabsetId: () => string | undefined;
-  /** Adds a tab: to `tabsetId`, else the active tabset, at `index`, else the end, on show unless `select` is false.
+  /** The current tabset (`data-current`): the one the user last used, by pointer or focus. */
+  getCurrentTabsetId: () => string | undefined;
+  /** Adds a tab: to `tabsetId`, else the current tabset, at `index`, else the end, on show unless `select` is false.
    *  A tab whose id is already open is selected instead. Returns whether the tab was added. */
-  addTab: (tab: TabNode<TabData>, options?: WorkspaceChangeOptions & { tabsetId?: string; index?: number; select?: boolean }) => boolean;
+  addTab: (tab: WorkspaceTabNode<TabData>, options?: WorkspaceChangeOptions & { tabsetId?: string; index?: number; select?: boolean }) => boolean;
   closeTab: (tabId: string, options?: WorkspaceChangeOptions) => boolean;
   /** Closes a tabset with its tabs, like one kept when empty. */
   closeTabset: (tabsetId: string, options?: WorkspaceChangeOptions) => boolean;
   /** Moves a tab to a place among a tabset's tabs or to a region of its content: an edge splits there. */
-  moveTab: (tabId: string, target: TabDropTarget, options?: WorkspaceChangeOptions) => boolean;
+  moveTab: (tabId: string, target: WorkspaceDropTarget, options?: WorkspaceChangeOptions) => boolean;
   selectTab: (tabId: string, options?: WorkspaceChangeOptions) => boolean;
   /** Changes a tab's title, data or flags. `data` is replaced, not merged. */
-  updateTab: (tabId: string, changes: Partial<Omit<TabNode<TabData>, 'id'>>, options?: WorkspaceChangeOptions) => boolean;
+  updateTab: (tabId: string, changes: Partial<Omit<WorkspaceTabNode<TabData>, 'id'>>, options?: WorkspaceChangeOptions) => boolean;
   updateTabset: (
     tabsetId: string,
-    changes: Partial<Pick<TabsetNode<TabData, TabsetData>, 'data' | 'keepWhenEmpty' | 'minHeight' | 'minWidth' | 'tabSide'>>,
+    changes: Partial<Pick<WorkspaceTabsetNode<TabData, TabsetData>, 'data' | 'keepWhenEmpty' | 'minHeight' | 'minWidth' | 'tabSide'>>,
     options?: WorkspaceChangeOptions,
   ) => boolean;
   /** Lets a tabset cover the others. */
@@ -150,9 +150,9 @@ export type WorkspaceOptions<TabData = unknown, TabsetData = unknown> = {
   disabled?: boolean;
   /** Whether a tab may go to `target`: another tabset, or an edge of any tabset (its own included), which splits
    *  there. A tab can always go back along its own strip. Defaults to yes. */
-  accepts?: (tab: TabNode<TabData>, target: TabDropTarget) => boolean;
+  accepts?: (tab: WorkspaceTabNode<TabData>, target: WorkspaceDropTarget) => boolean;
   /** What a tabset is called, for screen readers and agents. Defaults to `Pane 1`, `Pane 2`… in reading order. */
-  tabsetLabel?: (tabset: TabsetNode<TabData, TabsetData>, index: number) => string;
+  tabsetLabel?: (tabset: WorkspaceTabsetNode<TabData, TabsetData>, index: number) => string;
   /** Where tabs sit around their content, for tabsets that don't say. Defaults to `top`. */
   tabSide?: WorkspaceTabSide;
   /** Drives the workspace from anywhere. Create one with `createWorkspaceController()`. */
@@ -160,7 +160,7 @@ export type WorkspaceOptions<TabData = unknown, TabsetData = unknown> = {
 } & PrimitiveOptions;
 
 type Layout = WorkspaceLayout<any, any>;
-type Tabset = TabsetNode<any, any>;
+type Tabset = WorkspaceTabsetNode<any, any>;
 
 type WorkspaceStore = {
   layout: Layout;
@@ -169,7 +169,7 @@ type WorkspaceStore = {
   moving: TransferDraft | null;
   // The tab a pointer is dragging, and the region of a tabset's content it is over.
   dragging: string | null;
-  target: { tabsetId: string; region: TabDropRegion } | null;
+  target: { tabsetId: string; region: WorkspaceDropRegion } | null;
   // The tabset last used, by pointer or focus.
   active: string | null;
   disabled: boolean;
@@ -218,11 +218,11 @@ export type WorkspaceTabState = {
 };
 
 const EDGE = '\u001f';
-const EDGE_REGIONS = ['left', 'right', 'top', 'bottom'] as const;
-const edgeList = (tabsetId: string, region: TabDropRegion) => `${tabsetId}${EDGE}${region}`;
-const targetOf = (list: string, index: number): TabDropTarget => {
+const EDGE_REGIONS = ['start', 'end', 'top', 'bottom'] as const;
+const edgeList = (tabsetId: string, region: WorkspaceDropRegion) => `${tabsetId}${EDGE}${region}`;
+const targetOf = (list: string, index: number): WorkspaceDropTarget => {
   const [tabsetId, region] = list.split(EDGE);
-  return region ? { tabsetId, region: region as TabDropRegion } : { tabsetId, index };
+  return region ? { tabsetId, region: region as WorkspaceDropRegion } : { tabsetId, index };
 };
 
 const listed = new WeakMap<Layout, TransferLists>();
@@ -240,8 +240,9 @@ function listsOf(layout: Layout) {
 }
 
 const EMPTY: WorkspaceLayoutInput = { version: 1, root: { type: 'tabset', tabs: [] } };
-const BESIDE: Record<string, string> = { left: 'to the left of', right: 'to the right of', top: 'above', bottom: 'below' };
-const FLIPPED: Partial<Record<TabDropRegion, TabDropRegion>> = { left: 'right', right: 'left' };
+/** How an announcement says where a new pane goes: `start` / `end` are the left / right edge in left-to-right text. */
+const beside = (region: string, rtl: boolean) =>
+  region === 'top' ? 'above' : region === 'bottom' ? 'below' : (region === 'start') !== rtl ? 'to the left of' : 'to the right of';
 const ARROWS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
 // Controls inside a tab that keep their own presses, so they neither drag the tab nor pick it up.
 const CONTROLS = 'button, a[href], input, select, textarea, [role="button"]';
@@ -360,7 +361,7 @@ export const workspace = definePrimitive({
 
     /** Whether a tab may go to `target`. Its own strip always takes it back; its own edge never does when it is
      *  alone there, and otherwise asks `accepts` like any other target. */
-    function accepts(key: string, target: TabDropTarget) {
+    function accepts(key: string, target: WorkspaceDropTarget) {
       const { layout } = store.get();
       const home = tabsetOfTab(layout, key);
       const tab = home?.tabs.find((candidate) => candidate.id === key);
@@ -389,7 +390,9 @@ export const workspace = definePrimitive({
       label: tabLabel,
       listLabel(list) {
         const [tabsetId, region] = list.split(EDGE);
-        return region ? `a new pane ${BESIDE[region]} ${tabsetLabel(tabsetId)}` : tabsetLabel(tabsetId);
+        if (!region) return tabsetLabel(tabsetId);
+        const panels = context.element('panels', tabsetId);
+        return `a new pane ${beside(region, !!panels && isRTL(panels))} ${tabsetLabel(tabsetId)}`;
       },
     });
 
@@ -428,13 +431,14 @@ export const workspace = definePrimitive({
       return index;
     }
 
-    /** The nearest edge within a quarter of the content, else its middle. */
-    function regionAt(rect: DOMRect, x: number, y: number): TabDropRegion {
+    /** The nearest edge within a quarter of the content, else its middle. Splits are laid out in reading order, so in
+     *  right-to-left text the left edge is the end. */
+    function regionAt(rect: DOMRect, x: number, y: number, rtl: boolean): WorkspaceDropRegion {
       const across = (x - rect.left) / (rect.width || 1);
       const down = (y - rect.top) / (rect.height || 1);
-      const edges: [TabDropRegion, number][] = [
-        ['left', across],
-        ['right', 1 - across],
+      const edges: [WorkspaceDropRegion, number][] = [
+        [rtl ? 'end' : 'start', across],
+        [rtl ? 'start' : 'end', 1 - across],
         ['top', down],
         ['bottom', 1 - down],
       ];
@@ -443,13 +447,13 @@ export const workspace = definePrimitive({
     }
 
     /** What is under a point: a place in a tabset's strip, or a region of its content. */
-    function targetAt(key: string, x: number, y: number): TabDropTarget | null {
+    function targetAt(key: string, x: number, y: number): WorkspaceDropTarget | null {
       for (const tabset of visibleTabsets(store.get().layout)) {
         const header = context.element('header', tabset.id);
         if (header && within(header.getBoundingClientRect(), x, y)) return { tabsetId: tabset.id, index: indexAt(tabset, key, x, y) };
         const panels = context.element('panels', tabset.id);
         const rect = panels?.getBoundingClientRect();
-        if (panels && rect && within(rect, x, y)) return { tabsetId: tabset.id, region: regionAt(rect, x, y) };
+        if (panels && rect && within(rect, x, y)) return { tabsetId: tabset.id, region: regionAt(rect, x, y, isRTL(panels)) };
       }
       return null;
     }
@@ -474,10 +478,7 @@ export const workspace = definePrimitive({
         transfer.moveTo(over.tabsetId, Number.MAX_SAFE_INTEGER);
         return;
       }
-      // Splits are laid out in reading order, so in right-to-left text the left edge is the far one.
-      const panels = context.element('panels', over.tabsetId);
-      const region = (panels && isRTL(panels) && FLIPPED[over.region]) || over.region;
-      transfer.moveTo(edgeList(over.tabsetId, region), 0);
+      transfer.moveTo(edgeList(over.tabsetId, over.region), 0);
     }
 
     // The drag in progress: what stops following the pointer, and what takes its copy and its scrolling away.
@@ -578,8 +579,8 @@ export const workspace = definePrimitive({
     const api = {
       getLayout: () => store.get().layout,
       setLayout: (layout: WorkspaceLayoutInput<any, any>, o?: WorkspaceChangeOptions) => apply(normalizeLayout(layout), { ...imperative(o), action: 'set' }),
-      getActiveTabsetId: () => activeIn(store.get()) ?? undefined,
-      addTab(tab: TabNode<any>, { tabsetId, index, select, ...o }: WorkspaceChangeOptions & { tabsetId?: string; index?: number; select?: boolean } = {}) {
+      getCurrentTabsetId: () => activeIn(store.get()) ?? undefined,
+      addTab(tab: WorkspaceTabNode<any>, { tabsetId, index, select, ...o }: WorkspaceChangeOptions & { tabsetId?: string; index?: number; select?: boolean } = {}) {
         const state = store.get();
         const open = !!findTab(state.layout, tab.id);
         const next = addTab(state.layout, tab, { tabsetId: tabsetId ?? activeIn(state) ?? undefined, index, select });
@@ -592,7 +593,7 @@ export const workspace = definePrimitive({
       },
       closeTabset: (tabsetId: string, o?: WorkspaceChangeOptions) =>
         apply(closeTabset(store.get().layout, tabsetId), { ...imperative(o), action: 'close', tabset: tabsetId }),
-      moveTab(tabId: string, target: TabDropTarget, o?: WorkspaceChangeOptions) {
+      moveTab(tabId: string, target: WorkspaceDropTarget, o?: WorkspaceChangeOptions) {
         const next = moveTab(store.get().layout, tabId, target);
         return apply(next, { ...imperative(o), action: 'move', tab: tabId, tabset: tabsetOfTab(next, tabId)?.id });
       },
@@ -600,7 +601,7 @@ export const workspace = definePrimitive({
         const { layout } = store.get();
         return apply(selectTab(layout, tabId), { ...imperative(o), action: 'select', tab: tabId, tabset: tabsetOfTab(layout, tabId)?.id });
       },
-      updateTab: (tabId: string, changes: Partial<Omit<TabNode<any>, 'id'>>, o?: WorkspaceChangeOptions) =>
+      updateTab: (tabId: string, changes: Partial<Omit<WorkspaceTabNode<any>, 'id'>>, o?: WorkspaceChangeOptions) =>
         apply(updateTab(store.get().layout, tabId, changes), { ...imperative(o), action: 'update', tab: tabId }),
       updateTabset: (
         tabsetId: string,
@@ -773,7 +774,7 @@ export const workspace = definePrimitive({
       present: (state, { key }) => !findTabset(state.layout, key)?.tabs.length,
     }),
 
-    'drop-indicator': slot<{ value?: string }, { region: TabDropRegion | null }>({
+    'drop-indicator': slot<{ value?: string }, { region: WorkspaceDropRegion | null }>({
       role: 'presentation',
       props: { value: { kind: 'string', from: 'tabset', required: true } },
       present: (state, { key }) => state.target?.tabsetId === key,

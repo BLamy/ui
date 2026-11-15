@@ -149,7 +149,7 @@ export default function FloatingPeek() {
     <div>
       <Frame width={430}>
         <ArtifactChatContainer
-          layout="floating"
+          presentation="floating"
           peek={140}
           working={working}
           onComposingChange={(composing) => {

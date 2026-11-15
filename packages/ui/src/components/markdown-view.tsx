@@ -1,12 +1,12 @@
 'use client';
 import * as React from 'react';
-import { GitbookStreamdown, type GitbookStreamdownProps } from '@brett_lamy/docstream/streamdown';
+import { GitbookStreamdown, type GitbookStreamdownProps, type CodeBlockRenderDetails } from '@brett_lamy/docstream/streamdown';
 import { DocstreamRefContext, type DocstreamRefContextValue } from '@brett_lamy/docstream/reference';
-import type { ReferenceNode } from '@brett_lamy/docstream/gitbook';
+import type { CodeBlockNode, ReferenceNode } from '@brett_lamy/docstream/gitbook';
 import '@brett_lamy/docstream/styles.css';
 import { cn } from '@/lib/utils';
 
-export type { ReferenceNode };
+export type { CodeBlockNode, CodeBlockRenderDetails, ReferenceNode };
 
 /* ══ MarkdownView — Docstream-rendered GitBook-flavored Markdown, read-only ══
    Headings, lists, tables, hints, tabs, highlighted code fences, live demos and @mention / #tag / citation chips,
@@ -28,6 +28,10 @@ export interface MarkdownViewProps extends Omit<React.ComponentProps<'div'>, 'ch
   onReferenceClick?: (ref: ReferenceNode) => void;
   /** Override chip rendering; return `null` to fall back to the default chip. */
   renderReference?: (ref: ReferenceNode) => React.ReactNode | null;
+  /** Draw a code fence yourself (a CodeEditor, your own highlighter); return `null` to fall back to Docstream's.
+   *  `details.placement` is `block` (a whole fence) or `tab` (one tab's body); `details.highlighted` is Docstream's
+   *  own highlighted `<code>`, to frame. Widget fences (tui, mermaid, strudel, live demos) never reach it. */
+  renderCode?: (block: CodeBlockNode, details: CodeBlockRenderDetails) => React.ReactNode | null | undefined;
 }
 
 export function MarkdownView({
@@ -38,6 +42,7 @@ export function MarkdownView({
   tui,
   onReferenceClick,
   renderReference,
+  renderCode,
   className,
   ...props
 }: MarkdownViewProps) {
@@ -50,7 +55,7 @@ export function MarkdownView({
   );
   const view = (
     <div data-slot="markdown-view" data-renderer="docstream" data-streaming={streaming ? '' : undefined} {...props} className={cn('wb-md', className)}>
-      <GitbookStreamdown markdown={markdown ?? ''} isStreaming={streaming} demoResolver={demoResolver} sourceRenderer={sourceRenderer} tui={tui} />
+      <GitbookStreamdown markdown={markdown ?? ''} isStreaming={streaming} demoResolver={demoResolver} sourceRenderer={sourceRenderer} tui={tui} renderCode={renderCode} />
     </div>
   );
   if (!onReferenceClick && !renderReference) return view;

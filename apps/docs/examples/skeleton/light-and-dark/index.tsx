@@ -43,7 +43,7 @@ export default function LightAndDark() {
       {[false, true].map((dark) => (
         <BLProvider
           key={String(dark)}
-          dark={dark}
+          appearance={dark ? 'dark' : 'light'}
           style={{ height: 'auto', padding: 14, borderRadius: 16 }}
         >
           <div

@@ -8,12 +8,12 @@ const migrations = [
 ]
 
 function Visits() {
-  const { rows, isLoading, error } = useQuery<{ n: number }>('select count(*)::int as n from visits')
+  const { rows, loading, error } = useQuery<{ n: number }>('select count(*)::int as n from visits')
   const { exec } = useExec()
   const { info } = useDatabaseStatus()
   const n = rows[0]?.n ?? 0
   return (
-    <div className="grid gap-3" aria-busy={isLoading}>
+    <div className="grid gap-3" aria-busy={loading}>
       {error ? <p role="alert" className="text-footnote text-destructive">{error.message}</p> : null}
       <p className="text-subhead">
         This database has <strong data-testid="visit-count" className="tabular-nums">{n}</strong> {n === 1 ? 'visit' : 'visits'}. Reload the page: they stay.

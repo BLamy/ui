@@ -36,7 +36,7 @@ import { cn, cx } from '@/lib/utils';
    APG grid with one tab stop. ← → move between a row's cells and ↑ ↓ Page Up/Down to the same cell of another row, Home
    and End to the row's ends (with Ctrl or ⌘ to the first and last rows), Enter or Space presses the row, and Tab goes
    through the cell's own controls and on out; ↑ from the first row reaches the headers, where ← → move, Enter sorts and
-   ⌥← ⌥→ resize. `focus="row"` keeps focus on whole rows instead (← → then scroll sideways); stacked rows always do.
+   ⌥← ⌥→ resize. `navigation="row"` keeps focus on whole rows instead (← → then scroll sideways); stacked rows always do.
    Presets build on it: RequestTable (a waterfall and the current time) and the SQL console's results. */
 
 export const dataTableVariants = cva(
@@ -138,7 +138,8 @@ function cellContent<T extends DataTableRow>(column: Column<T>, row: T): ReactNo
   return column.cell ? column.cell(row) : fieldText(row, column.id);
 }
 
-/** The stacked row the table draws without `renderStackedRow`: the first column's cell, over the others' in a line. */
+/** The stacked row the table draws without `renderStackedRow`: the first column's cell, over the others' in a line.
+ *  The line has no column headers above it, so each value after the first is named for screen readers. */
 function DefaultStackedRow<T extends DataTableRow>({ row, columns }: { row: T; columns: readonly Column<T>[] }) {
   const [first, ...rest] = columns;
   return (
@@ -146,7 +147,11 @@ function DefaultStackedRow<T extends DataTableRow>({ row, columns }: { row: T; c
       {first ? <span className="min-w-0 truncate leading-[18px] font-medium">{cellContent(first, row)}</span> : null}
       {rest.length ? (
         <span className="flex h-[18px] min-w-0 items-center gap-2 overflow-hidden text-caption2 whitespace-nowrap text-muted-foreground">
-          {rest.map((column) => <span key={column.id} className={cn('min-w-0 truncate', column.align === 'end' && 'tabular-nums')}>{cellContent(column, row)}</span>)}
+          {rest.map((column) => (
+            <span key={column.id} className={cn('min-w-0 truncate', column.align === 'end' && 'tabular-nums')}>
+              <span className="sr-only">{dataTableColumnName(column as never)}: </span>{cellContent(column, row)}
+            </span>
+          ))}
         </span>
       ) : null}
     </parts.Cell>
@@ -228,11 +233,14 @@ function SortMenu<T extends DataTableRow>({ columns, allColumns, sort }: { colum
   return (
     <parts.Heading className="flex items-center">
       <DropdownMenu onAction={(id, { event }) => { api.internal.sortBy(id === ORIGINAL_ORDER ? null : id, { reason: 'item-press', event }); }}>
+        {/* Named by what it shows (the sorted column and its direction, or "Sort"), with "Sort by" before it for
+            screen readers, so the name holds the visible label. */}
         <DropdownMenuTrigger
-          aria-label="Sort by"
           render={<Button variant="quiet" size="sm" className="h-6 gap-1 rounded-md px-1.5 text-caption font-medium text-foreground/70" />}
         >
-          <span>{sortedColumn ? dataTableColumnName(sortedColumn as never) : 'Sort'}</span>
+          {sortedColumn && sort ? (
+            <span><span className="sr-only">Sort by </span>{dataTableColumnName(sortedColumn as never)}<span className="sr-only">, {sort.direction}</span></span>
+          ) : <span>Sort</span>}
           {sort ? <Icon name={sort.direction === 'ascending' ? 'arrow-up' : 'arrow-down'} size={10} sw={2.6} /> : <Icon name="chevron-up-down" size={12} sw={2} />}
         </DropdownMenuTrigger>
         <DropdownMenuContent aria-label="Sort by" side="bottom" align="end">
@@ -255,7 +263,7 @@ export interface DataTableProps<T extends DataTableRow = DataTableRow>
   mode?: 'single' | 'none';
   /** `cell` (default): the arrow keys move between cells, so one value can be reached and read on its own. `row`: focus
    *  stays on whole rows, and ← → scroll sideways. Stacked rows are always `row`. */
-  focus?: 'cell' | 'row';
+  navigation?: 'cell' | 'row';
   /** The rows aren't here yet: while there are none, placeholder rows show instead of the empty state; the grid is
    *  `aria-busy` while it's true. */
   loading?: boolean;
@@ -274,7 +282,7 @@ export interface DataTableProps<T extends DataTableRow = DataTableRow>
   defaultColumnWidths?: Readonly<Record<string, number>>;
   onColumnWidthsChange?: (widths: Readonly<Record<string, number>>, details: ChangeDetails<DataTableColumnWidthsChangeReason>) => void;
   /** `auto` (default) stacks the rows while the table is compact. `table` and `stacked` stay as they are. */
-  layout?: 'auto' | 'table' | 'stacked';
+  presentation?: 'auto' | 'table' | 'stacked';
   /** Where the table's own size classes start, in px: `medium` (default 480) ends the stacked rows, `regular` (default
    *  760) shows the columns with `hideBelow: 'regular'`. */
   breakpoints?: DataTableBreakpoints;
@@ -460,8 +468,8 @@ const Body = memo(BodyInner) as typeof BodyInner;
 const defaultCountLabel = (count: number) => `${count.toLocaleString('en-US')} ${count === 1 ? 'row' : 'rows'}`;
 
 export function DataTable<T extends DataTableRow = DataTableRow>({
-  rows, columns: columnsProp, mode, focus, loading = false, value, defaultValue, onValueChange, onAction, sort, defaultSort, onSortChange,
-  columnWidths, defaultColumnWidths, onColumnWidthsChange, layout = 'auto', breakpoints, renderStackedRow,
+  rows, columns: columnsProp, mode, navigation, loading = false, value, defaultValue, onValueChange, onAction, sort, defaultSort, onSortChange,
+  columnWidths, defaultColumnWidths, onColumnWidthsChange, presentation = 'auto', breakpoints, renderStackedRow,
   countLabel = defaultCountLabel, currentTime = null, timeRange, rowTime, rowProps, overlay, emptyState, toolbar, footer, controller,
   density, 'aria-label': ariaLabel = 'Rows', ...rootProps
 }: DataTableProps<T>) {
@@ -473,8 +481,8 @@ export function DataTable<T extends DataTableRow = DataTableRow>({
   // As on LogList, this is why a moving current time costs no rows: its prop stops here, as an option the primitive
   // writes to the page.
   const options: DataTableOptions<T> = {
-    rows, columns: allColumns, mode, focus, currentTime, timeRange: range, value, defaultValue, onValueChange, onAction, sort,
-    defaultSort, onSortChange, columnWidths, defaultColumnWidths, onColumnWidthsChange, breakpoints, layout, controller,
+    rows, columns: allColumns, mode, navigation, currentTime, timeRange: range, value, defaultValue, onValueChange, onAction, sort,
+    defaultSort, onSortChange, columnWidths, defaultColumnWidths, onColumnWidthsChange, breakpoints, presentation, controller,
     rowHeights: ROW_HEIGHT[d], headerHeight: HEADER_HEIGHT[d],
   };
   const handle = usePrimitive(dataTable, options as unknown as DataTableOptions);

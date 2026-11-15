@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { AdaptivePaneOpenChangeDetails } from '@/components/ui/adaptive-pane';
+import type { AdaptivePaneController, AdaptivePaneOpenChangeDetails } from '@/components/ui/adaptive-pane';
 
 /** Why the compact navigation drawer opened or closed: the AdaptivePane's own details (Escape, the scrim, a swipe…),
     `trigger-press` from ChatShellNavTrigger, or `imperative` from code. */
@@ -19,6 +19,8 @@ export interface ChatShellContextValue {
   hasNav: boolean;
   /** called by ChatShellNav on mount; returns its unregister */
   registerNav: () => () => void;
+  /** The navigation pane's controller, which ChatShellNavTrigger (an AdaptivePaneTrigger) opens it through. */
+  navPane: AdaptivePaneController;
 }
 
 export const ChatShellContext = createContext<ChatShellContextValue | null>(null);

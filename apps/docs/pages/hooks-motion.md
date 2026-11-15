@@ -8,7 +8,8 @@ Tab panels no longer need a hook to slide in from the side of the selected tab: 
 
 ```tsx
 // npm
-import { useSpringTransition, useDirection, useReducedMotion, useMorphTransition } from '@brett_lamy/ui'
+import { useSpringTransition, useDirection, useReducedMotion } from '@brett_lamy/ui/lib/motion'
+import { useMorphTransition } from '@brett_lamy/ui/morph'
 
 // shadcn registry (aliases)
 import { useSpringTransition, useDirection } from '@/lib/motion'              // …/r/motion.json

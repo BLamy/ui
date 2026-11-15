@@ -34,11 +34,12 @@ import {
 The parts take UI SDK's FileInput part names after the kit's root: `FileUploadDropzone`, `FileUploadTrigger`, `FileUploadList`, `FileUploadItem`. Three levels, from least to most:
 
 - **`FileUploadTrigger`** when all you need is "choose a file": FileInput's trigger with the [Button](https://blamy.github.io/ui/#/button) look. Give it `onFiles` and it gets a FileInput of its own; you receive plain `File`s and do what you like with them.
-- **`FileUploadDropzone`** when people should be able to drag files in too. Same `onFiles`, plus the drag-over, disabled and invalid states, an accepted-types hint and paste.
+- **`FileUploadDropzone`** when people should be able to drag files in too. Same `onFiles`, plus the drag-over, disabled and invalid states, an accepted-types description and paste.
 - **`FileUpload`** when you want the whole thing: it owns a `useFileUpload`, runs the rules and the queue, and renders the zone and the list. Pass children to arrange it yourself.
 
 ```tsx
-import { FileUpload, xhrUpload } from '@brett_lamy/ui'
+import { FileUpload } from '@brett_lamy/ui/file-upload'
+import { xhrUpload } from '@brett_lamy/ui/lib/file-upload-model'
 
 <FileUpload
   accept={['image/*', '.pdf']}
@@ -106,7 +107,7 @@ Uploads run through a queue: `concurrency` at a time (default 3), in list order.
 `fetch` cannot report upload progress; `XMLHttpRequest` can. `xhrUpload(url, options)` makes an `upload` function on it:
 
 ```tsx
-import { xhrUpload } from '@brett_lamy/ui'
+import { xhrUpload } from '@brett_lamy/ui/lib/file-upload-model'
 
 const upload = xhrUpload('/api/upload', {
   fieldName: 'file',                       // multipart field (default "file")
@@ -200,7 +201,7 @@ A `FileUploadDropzone` with `onFiles` (its own FileInput) works the same way ins
 
 ## Accessibility
 
-- **Browse files** is FileInput's trigger, a real button in the Tab order; `Enter` or `Space` opens the chooser. It is described by the zone's hint and, in a Field, by its description and error. The drop zone itself is not a control, so keep a trigger in it.
+- **Browse files** is FileInput's trigger, a real button in the Tab order; `Enter` or `Space` opens the chooser. It is described by the zone's description and, in a Field, by its description and error. The drop zone itself is not a control, so keep a trigger in it.
 - The listed files are FileInput's list: one Tab stop, arrow keys, `Home` and `End` move between files, `Delete` or `Backspace` removes the focused one and focus moves to its neighbor. Each Remove button is named for its file ("Remove a.png", "Cancel upload of a.png") and stays out of the Tab order. Retry is a button in the row ("Retry a.png").
 - Files that were turned away follow in their own list, "Not added", each a labelled group with its reason and a "Dismiss name" button; dismissing one returns focus to Browse files.
 - FileInput announces what changed in a polite live region: files added, rejected (with the reason for a single file) and removed. Uploads that finish or fail are announced too, batched into one sentence; progress ticks never are.
@@ -229,14 +230,14 @@ UI SDK's `FileInput` root, fed by a `useFileUpload`. Takes every option of `useF
 
 ### `<FileUploadDropzone>`
 
-UI SDK's `FileInputDropzone` with a title, a hint, an icon and a Browse button (`FileInputTrigger`). Inside a `FileUpload` it reads its rules and its files join the list; with `onFiles` it has a FileInput of its own. Also takes the drop zone's `target` (`"document"` takes drops anywhere on the page) and `pasteTarget`.
+UI SDK's `FileInputDropzone` with a title, a description, an icon and a Browse button (`FileInputTrigger`). Inside a `FileUpload` it reads its rules and its files join the list; with `onFiles` it has a FileInput of its own. Also takes the drop zone's `target` (`"document"` takes drops anywhere on the page) and `pasteTarget`.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `onFiles(files, details)` | — | Plain `File`s that passed the checks; `details.reason` is `picker`, `drop` or `paste`. |
 | `onReject(rejected)` | — | With `onFiles`: `{ file, reasons }` for each file turned away. |
-| `rules` | context's rules | `{ accept, maxSize, minSize, maxFiles }`: the hint, and with `onFiles` the checks. |
-| `hint` | built from `rules` | The line under the title ("Images · up to 5 MB each"). |
+| `rules` | context's rules | `{ accept, maxSize, minSize, maxFiles }`: the description, and with `onFiles` the checks. |
+| `description` | built from `rules` | The line under the title ("Images · up to 5 MB each"). |
 | `title`, `icon`, `browseLabel` | "Drag files here", `arrow-up`, "Browse files" | Copy and glyph. |
 | `orientation` | `vertical` | `vertical` stacks the icon, title and button in a tall target; `horizontal` lays them in one row, for a form or a panel. |
 | `multiple`, `directory`, `capture`, `disabled` | — | With `onFiles`, as on `FileUpload`. |
@@ -251,6 +252,20 @@ FileInput's trigger with the `Button` look (`variant`, `size`). Inside a `FileUp
 ### `<FileUploadList>` and `<FileUploadItem>`
 
 `FileUploadList` renders the context's files (or `files`) as `FileUploadItem`s, and nothing while empty; `children={(item) => <FileUploadItem item={item} … />}` renders your own row. Inside a `FileUpload`, listed files are `FileInputItem`s (`data-slot="file-input-item"`) of FileInput's list, and rejected files follow in a list of their own (`data-slot="file-upload-list-rejected"`) as groups (`data-slot="file-upload-item"`). `FileUploadItem` takes an `item` and optional `onRemove` / `onRetry` (defaults come from the context); its children replace the row's contents. `FileUploadThumbnail` (`file`, `preview`) is the leading tile: an image's own thumbnail, or with `preview={false}` (a rejected file) its kind's icon without reading the file. The remove button is the 28px `icon-sm` tool (its hit area reaches 44px on touch). Rows carry `data-status` and `data-file-id`.
+
+### `useFileUploadContext()`
+
+The nearest `FileUpload`'s state, or `null` outside one: the same value `children` receives as a function, for a part of your own placed anywhere inside (a count in a header, a Clear button in a footer). It holds `files`, `counts`, `busy`, `rules`, `add`, `remove`, `retry`, `clear`, `uploadAll`, `inputController` (`open()` the picker from any button), and the root's `disabled`, `multiple` and `directory`. Its type is `FileUploadContextValue`.
+
+```tsx
+import { useFileUploadContext } from '@/components/ui/file-upload'
+
+function ClearAll() {
+  const upload = useFileUploadContext()
+  if (!upload?.files.length) return null
+  return <Button variant="plain" onClick={(event) => upload.clear({ event: event.nativeEvent })}>Clear</Button>
+}
+```
 
 ### `useFileUpload(options)` and the `fileUpload` primitive
 

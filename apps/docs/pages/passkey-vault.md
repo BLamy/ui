@@ -40,9 +40,8 @@ Read [What this protects, and what it does not](#what-this-protects-and-what-it-
 Wrap the app in a provider, put the part that needs the data behind a gate, and use `useEncryptedState` where you would use `useState`:
 
 ```tsx
-import {
-  VaultProvider, VaultGate, useEncryptedState,
-} from '@brett_lamy/ui'
+import { VaultProvider, useEncryptedState } from '@brett_lamy/ui/lib/vault-react'
+import { VaultGate } from '@brett_lamy/ui/vault-gate'
 
 function Notes() {
   const [text, setText] = useEncryptedState('draft', '')
@@ -67,7 +66,7 @@ First run shows the set-up screen; `Set up passkey` opens `VaultEnrollDialog`, w
 Without React, the same thing is plain objects:
 
 ```ts
-import { createVault } from '@brett_lamy/ui'
+import { createVault } from '@brett_lamy/ui/lib/vault'
 
 const vault = createVault({ id: 'notes', rp: { name: 'Notes' } })
 await vault.init()                                  // 'empty' | 'locked' | 'unsupported'
@@ -152,7 +151,8 @@ Nothing runs at import time and nothing reads `window`, `navigator`, `crypto` or
 
 ```tsx
 'use client'
-import { VaultProvider, VaultGate } from '@/lib/vault-react'
+import { VaultProvider } from '@/lib/vault-react'
+import { VaultGate } from '@/components/ui/vault-gate'
 
 export function Protected({ children }: { children: React.ReactNode }) {
   return (
@@ -297,7 +297,7 @@ The screens around the vault, from `@/components/ui/vault-gate`. Use `VaultGate`
 
 ### VaultGate
 
-`<VaultGate appName protects requireVerification recoveryNotice loading unsupported empty locked>` renders its children only while `unlocked`, and otherwise `loading` (a spinner), `VaultSetup`, `VaultUnlock` or `VaultUnsupported`, centred in the gate's box. Each slot prop replaces a screen; `unsupported` may be a node or a function of the state, and may render the children to carry on without protection (an explicit choice you make visible to the person). The gate is a real box that fills its host (`flex` column: the recovery notice, then your app); `className` and `style` go on it. It owns the `VaultEnrollDialog`, above the status switch: enrolling makes the vault `unlocked` before the key has been shown, which unmounts anything rendered for `empty`.
+`<VaultGate appName protects requireVerification recoveryNotice screens>` renders its children only while `unlocked`, and otherwise a spinner, `VaultSetup`, `VaultUnlock` or `VaultUnsupported`, centred in the gate's box. Each key of `screens` (`loading`, `unsupported`, `empty`, `locked`) replaces one screen; `screens.unsupported` may be a node or a function of the state, and may render the children to carry on without protection (an explicit choice you make visible to the person). The gate is a real box that fills its host (`flex` column: the recovery notice, then your app); `className` and `style` go on it. It owns the `VaultEnrollDialog`, above the status switch: enrolling makes the vault `unlocked` before the key has been shown, which unmounts anything rendered for `empty`.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
@@ -305,7 +305,7 @@ The screens around the vault, from `@/components/ui/vault-gate`. Use `VaultGate`
 | `appName` / `protects` | | Wording: "Unlock {appName}", "A passkey will lock {protects}". |
 | `requireVerification` | `false` | The enroll dialog asks for the recovery key typed back. |
 | `recoveryNotice` | `true` | While unlocked and the recovery key was never confirmed, a notice with **Get a new key**. |
-| `loading` / `unsupported` / `empty` / `locked` | the kit's screens | Replace one screen. |
+| `screens` | the kit's screens | `{ loading, unsupported, empty, locked }`: each replaces the screen for that status (`unsupported` may be a function of the state). |
 | `className` / `style` | | On the gate's box. |
 
 ### VaultEnrollDialog
@@ -334,7 +334,7 @@ Sets up the passkey, then shows the recovery key once. It is a [Dialog](https://
 
 ### VaultSetup, VaultUnlock, VaultUnsupported, VaultStatusBadge
 
-The screens of the gate, exported to build your own shell. Each is the kit's [EmptyState](https://blamy.github.io/ui/#/empty-state) at page size, with a heading, and fills and centres in its host. `VaultSetup` takes `onSetup` when a parent owns the dialog (without it, it renders its own). `VaultUnlock` has `Unlock with passkey` and a recovery-key form (it opens on the form where passkeys cannot work, and says the recovery key still works), plus `Lost both? Erase this vault…` behind an AlertDialog; `title`, `description`, `autoFocus` and `onUnlocked` adjust it. `VaultUnsupported` says what is missing in plain words (`unsupportedMessage(reason)` returns the same words for your own screen). `VaultStatusBadge` is a pill with an icon and a word, never colour alone.
+The screens of the gate, exported to build your own shell. Each is the kit's [EmptyState](https://blamy.github.io/ui/#/empty-state) at page size, with a heading, and fills and centres in its host. `VaultSetup` takes `onSetup` when a parent owns the dialog (without it, it renders its own). `VaultUnlock` has `Unlock with passkey` and a recovery-key form (it opens on the form where passkeys cannot work, and says the recovery key still works), plus `Lost both? Erase this vault…` behind an AlertDialog; `title`, `description`, `autoFocus` and `onUnlocked` adjust it. `VaultUnsupported` says what is missing in plain words (`vaultUnsupportedMessage(reason)` returns the same words for your own screen). `VaultStatusBadge` is a pill with an icon and a word, never colour alone.
 
 {% demo src="passkey-vault/unsupported" %}
 
@@ -344,7 +344,7 @@ The dialog and the confirmation are UI SDK dialogs (a [Dialog](https://blamy.git
 
 ## Styling
 
-Slots: `vault-gate` (with `data-status`), `vault-setup`, `vault-unlock` (with `data-mode`), `vault-unsupported`, `vault-status-badge` (with `data-status`) and `recovery-key`; the enroll dialog's card is a `dialog-content` with `data-vault-enroll-dialog`. The screens take `className` and `style`. The vault screens darken the theme's primary where it holds text (white on the iOS blue is 3.6:1, under WCAG AA for body text), so their buttons read a shade deeper than elsewhere in the kit.
+Slots: `vault-gate` (with `data-status`), `vault-setup`, `vault-unlock` (with `data-mode`), `vault-unsupported`, `vault-status-badge` (with `data-status`) and `vault-recovery-key`; the enroll dialog's card is a `dialog-content` with `data-vault-enroll-dialog`. The screens take `className` and `style`. The vault screens darken the theme's primary where it holds text (white on the iOS blue is 3.6:1, under WCAG AA for body text), so in light mode their buttons read a shade deeper than elsewhere in the kit; in dark mode they use the theme's primary.
 
 ## Testing
 

@@ -25,7 +25,7 @@ import { Calendar } from '@brett_lamy/ui/calendar'
 {% endtab %}
 {% endtabs %}
 
-The parts a calendar is built from come from the same module (`@/components/ui/calendar`, or the package root): `CalendarHeader`, `CalendarHeading`, `CalendarPrevious`, `CalendarNext`, `CalendarMonthSelect`, `CalendarYearSelect`, `CalendarMonths`, `CalendarGrid`, `CalendarWeekdays`, `CalendarWeekday`, `CalendarWeeks` and `CalendarDay`, with `createCalendarController`.
+The parts a calendar is built from come from the same module (`@/components/ui/calendar`, or the package root): `CalendarHeader`, `CalendarHeading`, `CalendarPrevious`, `CalendarNext`, `CalendarMonthSelect`, `CalendarYearSelect`, `CalendarMonths`, `CalendarGrid`, `CalendarGridHeading`, `CalendarWeekdays`, `CalendarWeekday`, `CalendarWeeks` and `CalendarDay`, with `createCalendarController`.
 
 ## Dates are ISO strings
 
@@ -56,7 +56,7 @@ No date library is needed. For arithmetic and labels use the helpers in `@ui-sdk
 </Calendar>
 ```
 
-`CalendarHeader` holds `CalendarPrevious`, `CalendarHeading` and `CalendarNext`; `CalendarMonths` holds a `CalendarGrid` per month on show (it is what a Calendar renders under its header); `CalendarGrid` holds `CalendarWeekdays` (a `CalendarWeekday` per column) and `CalendarWeeks` (a `CalendarDay` per date). Each grid is named by its month, so the calendar needs no label of its own.
+`CalendarHeader` holds `CalendarPrevious`, `CalendarHeading` and `CalendarNext`; `CalendarMonths` holds a `CalendarGrid` per month on show (it is what a Calendar renders under its header); `CalendarGrid` holds `CalendarWeekdays` (a `CalendarWeekday` per column) and `CalendarWeeks` (a `CalendarDay` per date). Each grid is named by its month, so the calendar needs no label of its own; when several months stack (on a phone, in a narrow column), each also shows its month over it, and a range's band is rounded where one month ends and the next begins.
 
 ## A single day
 
@@ -154,7 +154,7 @@ The root is UI SDK's `Calendar`; every prop passes through, with `className` (a 
 | `minDays` / `maxDays` / `allowUnavailable` | — | In `range` mode: the shortest and longest range, and whether it may span unavailable days. |
 | `locale` | the page's | Language of the names and labels. |
 | `weekStartsOn` | the locale's | First day of the week, 0 for Sunday. |
-| `weekdayFormat` / `monthFormat` | `short` / `long` | `narrow`, `short` or `long`. |
+| `weekdayFormat` / `monthFormat` | `narrow` / `long` | `narrow`, `short` or `long`. |
 | `fixedWeeks` | `false` | Six rows in every month. |
 | `showOutsideDays` | `false` | Show the days of the months around at the edges. |
 | `today` / `timeZone` | today in the browser's zone | The day marked as today. |
@@ -171,8 +171,9 @@ The root is UI SDK's `Calendar`; every prop passes through, with `className` (a 
 | `CalendarPrevious` / `CalendarNext` | The step buttons. Disabled at the month of `min` / `max`. |
 | `CalendarHeading` | The months on show ("September 2026", "September – October 2026"). |
 | `CalendarMonthSelect` / `CalendarYearSelect` | Native selects that jump to a month or a year. |
-| `CalendarMonths` | The grids on show, one per month, wrapping in a narrow container. `months` defaults to the Calendar's (pass the DatePicker's inside a `DatePickerContent`). |
+| `CalendarMonths` | The grids on show, one per month, wrapping in a narrow container. `months` defaults to the Calendar's or DatePicker's. With more than one month, each grid gets its `CalendarGridHeading`, shown while the months stack. |
 | `CalendarGrid` | One month: the weekday row and its days. `offset={1}` shows the following month (what `CalendarMonths` does for you). |
+| `CalendarGridHeading` | A month's caption over its grid ("October 2026"), a `<caption>` hidden from screen readers (the grid is already named). `CalendarMonths` adds one per grid when it shows several months; it is visible only while they stack (a compact scope), where the shared header can't say which grid is which. |
 | `CalendarWeekdays` / `CalendarWeekday` | The header row and one column header. `CalendarWeekdays` takes a function of the column's index as children. |
 | `CalendarWeeks` / `CalendarDay` | The week rows and one day, given its date as `value`. `CalendarWeeks` takes a function of the cell as children; a day's children replace its number and can be a function of its state. |
 

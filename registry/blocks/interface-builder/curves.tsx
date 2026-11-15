@@ -569,7 +569,7 @@ export function TransitionButton({ spec, onChange, onBegin, label = 'Transition'
         <span className="min-w-0 flex-1 truncate">{describe(spec)}</span>
         <Icon name="chevron-right" size={12} sw={2.4} className="text-muted-foreground" />
       </PopoverTrigger>
-      <PopoverContent side="left" align="start" className="max-h-[min(720px,90vh)] w-[312px] overflow-y-auto">
+      <PopoverContent side="start" align="start" className="max-h-[min(720px,90vh)] w-[312px] overflow-y-auto">
         <TransitionEditor spec={spec} onChange={onChange} onBegin={onBegin} allowInstant={allowInstant} />
       </PopoverContent>
     </Popover>

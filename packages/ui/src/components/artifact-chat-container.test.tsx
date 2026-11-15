@@ -48,8 +48,8 @@ const column = () => document.querySelector<HTMLElement>('[data-slot=artifact-ch
 let scope: string | undefined;
 function Probe() {
   scope = useSizeClassScope();
-  const { layout } = useArtifactChatContainer();
-  return <p>Layout {layout}</p>;
+  const { presentation } = useArtifactChatContainer();
+  return <p>Presentation {presentation}</p>;
 }
 
 function App(props: Partial<ArtifactChatContainerProps>) {
@@ -75,9 +75,9 @@ describe('ArtifactChatContainer', () => {
     width = 900;
     render(<App breakpoint={760} />);
     expect(root().getAttribute('data-size-class')).toBe('medium');
-    expect(root().getAttribute('data-layout')).toBe('split');
+    expect(root().getAttribute('data-presentation')).toBe('split');
     expect(scope).toBe('medium');
-    expect(screen.getByText('Layout split')).toBeTruthy();
+    expect(screen.getByText('Presentation split')).toBeTruthy();
     // The shared composer and transcript live in the column's docks, in a named landmark.
     expect(column()?.contains(screen.getByRole('textbox', { name: 'Message' }))).toBe(true);
     expect(column()?.contains(screen.getByText('Transcript'))).toBe(true);
@@ -94,7 +94,7 @@ describe('ArtifactChatContainer', () => {
     rerender(<App breakpoint={760} />);
     await settle();
     expect(root().getAttribute('data-size-class')).toBe('compact');
-    expect(root().getAttribute('data-layout')).toBe('floating');
+    expect(root().getAttribute('data-presentation')).toBe('floating');
     expect(scope).toBe('compact');
     expect(document.querySelector('[data-slot=floating-sheet]')).not.toBeNull();
     // Same elements, same draft: only the dock changed (the sheet has no host height to rest on here, so it is
@@ -131,7 +131,7 @@ describe('ArtifactChatContainer', () => {
         </ArtifactChatContainer>,
       );
       await settle();
-      expect(root().getAttribute('data-layout')).toBe('floating');
+      expect(root().getAttribute('data-presentation')).toBe('floating');
       expect(column()).toBeNull();
       expect(ending).toEqual([]);
       // The composer is where the floating chat put it, not flying in from the column.
@@ -181,7 +181,7 @@ describe('ArtifactChatContainer', () => {
         </ArtifactChatContainer>
       </BLProvider>,
     );
-    expect(api?.layout).toBe('floating');
+    expect(api?.presentation).toBe('floating');
     act(() => api!.setOpen(true));
     expect(onOpenChange).toHaveBeenCalledTimes(1);
     expect(onOpenChange.mock.calls[0][0]).toBe(true);

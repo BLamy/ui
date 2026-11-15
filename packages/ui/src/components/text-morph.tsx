@@ -1,6 +1,6 @@
 'use client';
-import { useEffect, useLayoutEffect, useRef, useState, type HTMLAttributes, type Ref } from 'react';
-import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'framer-motion';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type HTMLAttributes, type Ref } from 'react';
+import { AnimatePresence, animate, motion, useReducedMotion, type AnimationPlaybackControls } from 'framer-motion';
 import { springs } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
@@ -10,10 +10,15 @@ import { cn } from '@/lib/utils';
    selection and screen readers see ordinary text); the per-letter layer exists only while a morph runs.
    Letters are matched by character and occurrence (the 2nd "o" pairs with the 2nd "o"), which is what reads
    as "shared letters" for labels. The root is an inline-block at rest and while morphing, so box utilities
-   (`truncate`, padding, a background) apply the same way throughout; only its width is pinned during a morph. */
+   (`truncate`, padding, a background) apply the same way throughout. The root's border box (padding included)
+   is pinned and springs only while a morph runs; the inline width is released when it ends, when a new text
+   interrupts it, or when the change can't morph (reduced motion, multi-line), so a later change of font, size or
+   text without a morph is never clipped by a stale width. */
 
 interface Glyph { key: string; ch: string }
-interface Layout { text: string; glyphs: Glyph[]; xs: number[]; w: number }
+/** `xs` are glyph offsets from the root's padding edge (where the absolute letter layer starts); `y` is the run's
+    top from the same edge; `box` is the root's border-box width at rest. */
+interface Layout { text: string; glyphs: Glyph[]; xs: number[]; y: number; box: number }
 
 function glyphsOf(text: string): Glyph[] {
   const seen: Record<string, number> = {};
@@ -23,24 +28,27 @@ function glyphsOf(text: string): Glyph[] {
   });
 }
 
-/** Per-glyph x offsets from the start of the run, in the element's own (unscaled) pixels. */
+/** Measures the root at its natural width, in the element's own (unscaled) pixels. */
 function measure(el: HTMLElement | null, text: string): Layout | null {
-  const node = el?.firstChild;
+  const node = el?.firstElementChild?.firstChild;
   if (!el || !node || node.nodeType !== Node.TEXT_NODE) return null;
+  const box = el.getBoundingClientRect();
+  const scale = el.offsetWidth ? box.width / el.offsetWidth || 1 : 1;
+  const padLeft = box.left + el.clientLeft * scale;
+  const padTop = box.top + el.clientTop * scale;
   const r = document.createRange();
   r.selectNodeContents(node);
   const run = r.getBoundingClientRect();
-  const scale = el.offsetWidth ? run.width / el.offsetWidth || 1 : 1;
   const glyphs = glyphsOf(text);
   const xs: number[] = [];
   let off = 0;
   for (const g of glyphs) {
     r.setStart(node, off);
     r.setEnd(node, off + g.ch.length);
-    xs.push((r.getBoundingClientRect().left - run.left) / scale);
+    xs.push((r.getBoundingClientRect().left - padLeft) / scale);
     off += g.ch.length;
   }
-  return { text, glyphs, xs, w: run.width / scale };
+  return { text, glyphs, xs, y: (run.top - padTop) / scale, box: el.offsetWidth };
 }
 
 interface Morph { from: Layout; to: Layout }
@@ -48,6 +56,7 @@ interface Morph { from: Layout; to: Layout }
 /* Letters cross a little slower than a plain fade so the eye can follow them; leaving is still quicker. */
 const LETTER_IN = { duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.05 } as const;
 const LETTER_OUT = { duration: 0.18, ease: [0.4, 0, 1, 1] } as const;
+const MORPH_MS = 700;
 
 type MotionConflicts = 'onAnimationStart' | 'onAnimationEnd' | 'onAnimationIteration' | 'onDrag' | 'onDragStart' | 'onDragEnd';
 
@@ -56,47 +65,88 @@ export interface TextMorphProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'c
   ref?: Ref<HTMLSpanElement>;
 }
 
-export function TextMorph({ children, className, style, ...props }: TextMorphProps) {
+export function TextMorph({ children, className, style, ref, ...props }: TextMorphProps) {
   const text = String(children ?? '');
   const reduced = useReducedMotion();
-  const runRef = useRef<HTMLSpanElement | null>(null);
+  const rootRef = useRef<HTMLSpanElement | null>(null);
   const last = useRef<Layout | null>(null);
   const [morph, setMorph] = useState<Morph | null>(null);
-  const width = useMotionValue<number | 'auto'>('auto');
+  const morphing = useRef(false);
+  const restWidth = useRef('');
+  const anim = useRef<AnimationPlaybackControls | null>(null);
   const done = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  useLayoutEffect(() => {
-    const now = measure(runRef.current, text);
-    const prev = last.current;
-    last.current = now;
-    if (!now || !prev || prev.text === text || reduced || /\n/.test(text + prev.text)) return;
-    if (morph == null) width.set(prev.w);
-    animate(width, now.w, springs.snappy as never);
-    setMorph({ from: prev, to: now });
+  const setRoot = useCallback((node: HTMLSpanElement | null) => {
+    rootRef.current = node;
+    if (typeof ref === 'function') ref(node);
+    else if (ref) ref.current = node;
+  }, [ref]);
+
+  /* The width is written straight to the element while a morph runs, never through `style`, so ending the morph
+     can hand the inline width back exactly as it was (the caller's `style.width`, or nothing). */
+  const release = useCallback(() => {
     clearTimeout(done.current);
-    done.current = setTimeout(() => { setMorph(null); width.set('auto'); }, 700);
+    anim.current?.stop();
+    anim.current = null;
+    if (morphing.current && rootRef.current) rootRef.current.style.width = restWidth.current;
+    morphing.current = false;
+  }, []);
+
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    const prev = last.current;
+    const pinned = el?.style.width ?? '';
+    // Measure the new text at its natural width (unpin for the read; it is put back before paint).
+    if (el && morphing.current) el.style.width = restWidth.current;
+    const now = measure(el, text);
+    if (el && morphing.current) el.style.width = pinned;
+    last.current = now;
+    if (!el || !now || !prev || prev.text === text) return;
+    if (reduced || /\n/.test(text + prev.text)) {
+      release();
+      setMorph(null);
+      return;
+    }
+    const from = morphing.current ? el.offsetWidth : prev.box;
+    if (!morphing.current) restWidth.current = el.style.width;
+    clearTimeout(done.current);
+    anim.current?.stop();
+    morphing.current = true;
+    el.style.width = `${from}px`;
+    anim.current = animate(from, now.box, {
+      ...(springs.snappy as object),
+      onUpdate: (w: number) => { if (morphing.current) el.style.width = `${w}px`; },
+    } as never);
+    setMorph({ from: prev, to: now });
+    done.current = setTimeout(() => { release(); setMorph(null); }, MORPH_MS);
   }, [text]);
-  // Web fonts can land after the first measure; keep the resting layout current.
+  // Keep the resting layout current when the box changes without a text change (a late web font, a size change).
   useEffect(() => {
+    const el = rootRef.current;
+    if (!el || morph) return;
+    const remeasure = () => { if (!morphing.current) last.current = measure(el, text); };
     let live = true;
-    document.fonts?.ready.then(() => { if (live && !morph) last.current = measure(runRef.current, text); });
-    return () => { live = false; };
+    document.fonts?.ready.then(() => { if (live) remeasure(); });
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(remeasure);
+    ro?.observe(el);
+    return () => { live = false; ro?.disconnect(); };
   }, [text, morph]);
-  useEffect(() => () => clearTimeout(done.current), []);
+  useEffect(() => release, [release]);
 
   const fromX = new Map(morph?.from.glyphs.map((g, i) => [g.key, morph.from.xs[i]]) ?? []);
   const toKeys = new Set(morph?.to.glyphs.map((g) => g.key) ?? []);
   return (
-    <motion.span
+    <span
       {...props}
       data-slot="text-morph"
       data-morphing={morph ? '' : undefined}
       className={cn('inline-block', morph && 'relative text-start whitespace-pre', className)}
-      style={morph ? { ...style, width } : style}
+      ref={setRoot}
+      style={style}
     >
-      <span ref={runRef} style={morph ? { visibility: 'hidden' } : undefined}>{text}</span>
+      <span style={morph ? { visibility: 'hidden' } : undefined}>{text}</span>
       {morph ? (
-        <span aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ top: morph.to.y }}>
           {/* The layer mounts with the morph, so its first children must play their `initial` (no initial={false}). */}
           <AnimatePresence>
             {morph.to.glyphs.map((g, i) => {
@@ -130,6 +180,6 @@ export function TextMorph({ children, className, style, ...props }: TextMorphPro
           </AnimatePresence>
         </span>
       ) : null}
-    </motion.span>
+    </span>
   );
 }

@@ -120,7 +120,7 @@ export type TabsProps<T extends string = string> = Omit<Parameters<typeof SdkTab
    *  `presentation` resolves to, when it is set). */
   side?: TabsSide;
   /** `segmented` and `underline`: the height of the tabs. `sm` 32px, `default` 36px, `lg` 44px for `segmented` (the
-   *  track Segmented and ToggleGroup `filled` share, so the three line up at every size); `underline` scales its
+   *  track Segmented and ToggleGroup `segmented` share, so the three line up at every size); `underline` scales its
    *  label and row the same way. */
   size?: SegmentSize;
   /** The app-navigation looks, chosen by size: `auto` is the bottom `bar` in a compact size-class scope and the side

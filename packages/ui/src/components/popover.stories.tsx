@@ -4,8 +4,10 @@ import {
   Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger, createPopoverController,
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Icon } from '@/lib/icon';
 import { Screen } from '../stories/primitive-frame';
@@ -59,10 +61,10 @@ function Filters({ dark = false }: { dark?: boolean }) {
           <PopoverContent variant="plain" align="start" className="w-56 py-1.5">
             <PopoverTitle className="sr-only">Filters</PopoverTitle>
             {FILTERS.map((f) => (
-              <label key={f} className="flex min-h-11 items-center gap-3 px-4 text-body text-foreground">
-                <input type="checkbox" defaultChecked={f === 'Unread'} className="size-4 accent-primary" />
+              <Label key={f} variant="control" className="flex min-h-11 items-center gap-3 px-4 text-body text-foreground">
+                <Checkbox defaultChecked={f === 'Unread'} />
                 {f}
-              </label>
+              </Label>
             ))}
           </PopoverContent>
         </Popover>
@@ -70,8 +72,8 @@ function Filters({ dark = false }: { dark?: boolean }) {
     </Screen>
   );
 }
-export const Surface: Story = { render: () => <Filters /> };
-export const SurfaceDark: Story = { render: () => <Filters dark /> };
+export const Plain: Story = { render: () => <Filters /> };
+export const PlainDark: Story = { render: () => <Filters dark /> };
 
 /** One popover for many triggers: each row's trigger hands the content its `payload` through a controller. */
 function SharedRows() {

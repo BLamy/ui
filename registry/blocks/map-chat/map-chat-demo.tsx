@@ -48,7 +48,7 @@ interface ChatTurn {
 
 export interface MapChatDemoProps {
   /** Forwarded to the container; the map wants `floating`, which is the default here. */
-  layout?: ArtifactChatContainerProps['layout'];
+  presentation?: ArtifactChatContainerProps['presentation'];
   /** Transcript height that peeks above the composer. */
   peek?: number;
   /** Opening message from the guide; pass `null` to start empty. */
@@ -181,7 +181,7 @@ function PlaceCard({ place, stop }: { place: Place; stop?: number }) {
 }
 
 export function MapChatDemo({
-  layout = 'floating',
+  presentation = 'floating',
   peek = 236,
   greeting = DEFAULT_GREETING,
   initialPrompt,
@@ -427,7 +427,7 @@ export function MapChatDemo({
 
   return (
     <ArtifactChatContainer
-      layout={layout}
+      presentation={presentation}
       peek={peek}
       working={working != null}
       workingLabel={working ?? undefined}
@@ -537,7 +537,7 @@ export function MapChatDemo({
                 <div
                   data-slot="map-chat-suggestions"
                   role="list"
-                  className="flex min-w-0 flex-1 gap-2 overflow-x-auto px-3 pt-2.5 pb-0.5 [scrollbar-width:none] [-webkit-mask-image:linear-gradient(to_right,#000_calc(100%_-_28px),transparent)] [mask-image:linear-gradient(to_right,#000_calc(100%_-_28px),transparent)] [&::-webkit-scrollbar]:hidden group-data-[layout=split]/map-chat:px-3.5 group-data-[layout=split]/map-chat:pt-2.5 group-data-[layout=split]/map-chat:pb-0"
+                  className="flex min-w-0 flex-1 gap-2 overflow-x-auto px-3 pt-2.5 pb-0.5 [scrollbar-width:none] [-webkit-mask-image:linear-gradient(to_right,#000_calc(100%_-_28px),transparent)] [mask-image:linear-gradient(to_right,#000_calc(100%_-_28px),transparent)] [&::-webkit-scrollbar]:hidden group-data-[presentation=split]/map-chat:px-3.5 group-data-[presentation=split]/map-chat:pt-2.5 group-data-[presentation=split]/map-chat:pb-0"
                 >
                   {SUGGESTIONS.map((s) => (
                     <div key={s} role="listitem" className="contents">

@@ -269,6 +269,14 @@ describe('CronEditor (natural language)', () => {
     expect(box.placeholder).toMatch(/every weekday/);
   });
 
+  it('disabled, it is the raw expression alone: no plain-English box, even where WebGPU works', async () => {
+    setWebGPU(true);
+    render(<CronEditor {...base} disabled defaultValue="0 9 * * 1-5" />);
+    await new Promise((r) => setTimeout(r, 30));
+    expect(screen.queryByRole('textbox', { name: 'Describe the schedule' })).toBeNull();
+    expect((screen.getByRole('textbox', { name: 'Cron expression' }) as HTMLInputElement).value).toBe('0 9 * * 1-5');
+  });
+
   it('leads with the box where WebGPU works, shows the expression, and opens the raw editor on "Edit expression"', async () => {
     setWebGPU(true);
     render(<CronEditor {...base} defaultValue="0 9 * * 1-5" />);

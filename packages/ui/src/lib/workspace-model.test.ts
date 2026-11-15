@@ -13,7 +13,7 @@ import {
   splitSizes,
   updateTab,
   workspaceTabsets,
-  type SplitNode,
+  type WorkspaceSplitNode,
   type WorkspaceLayoutInput,
 } from './workspace-model';
 
@@ -37,7 +37,7 @@ const input: WorkspaceLayoutInput = {
   },
 };
 const ids = (layout: { root: unknown }) => workspaceTabsets(layout as never).map((tabset) => `${tabset.id}:${tabset.tabs.map((t) => t.id).join('')}`);
-const root = (layout: { root: unknown }) => layout.root as SplitNode;
+const root = (layout: { root: unknown }) => layout.root as WorkspaceSplitNode;
 
 describe('normalizeLayout', () => {
   it('names what has no id by its place, and shows a tab in every tabset', () => {
@@ -102,7 +102,7 @@ describe('sizes', () => {
     const layout = normalizeLayout(input);
     const next = resizeSplit(layout, 'split-root', [45, 55]);
     expect(root(next).children.map((child) => child.size)).toEqual([45, 55]);
-    expect((root(next).children[1] as SplitNode).children).toBe((root(layout).children[1] as SplitNode).children);
+    expect((root(next).children[1] as WorkspaceSplitNode).children).toBe((root(layout).children[1] as WorkspaceSplitNode).children);
     expect(resizeSplit(next, 'split-root', [45, 55])).toBe(next);
   });
 
@@ -178,7 +178,7 @@ describe('moveTab', () => {
   });
 
   it('joins a split that runs the same way as a sibling, with half of the room', () => {
-    const layout = moveTab(normalizeLayout(input), 'b', { tabsetId: 'files', region: 'right' });
+    const layout = moveTab(normalizeLayout(input), 'b', { tabsetId: 'files', region: 'end' });
     expect(root(layout).children.map((child) => [child.id, child.size])).toEqual([['files', 15], ['tabset-1', 15], ['split-1', 70]]);
     expect(ids(layout)).toEqual(['files:a', 'tabset-1:b', 'editor:cd', 'tabset-1-1:e']);
   });
@@ -195,12 +195,12 @@ describe('moveTab', () => {
     const split = moveTab(alone, 'b', { tabsetId: 'only', region: 'bottom' });
     expect(split.root).toMatchObject({ type: 'split', orientation: 'vertical', children: [{ id: 'only', tabs: [{ id: 'a' }] }, { tabs: [{ id: 'b' }] }] });
     const layout = normalizeLayout(input);
-    expect(moveTab(layout, 'e', { tabsetId: 'tabset-1-1', region: 'left' })).toBe(layout);
+    expect(moveTab(layout, 'e', { tabsetId: 'tabset-1-1', region: 'start' })).toBe(layout);
   });
 
   it('shows every tabset again when a split opens behind a maximized one', () => {
     const layout = maximizeTabset(normalizeLayout(input), 'editor');
     expect(moveTab(layout, 'a', { tabsetId: 'files', index: 1 }).maximizedTabsetId).toBe('editor');
-    expect(moveTab(layout, 'a', { tabsetId: 'editor', region: 'left' }).maximizedTabsetId).toBeUndefined();
+    expect(moveTab(layout, 'a', { tabsetId: 'editor', region: 'start' }).maximizedTabsetId).toBeUndefined();
   });
 });

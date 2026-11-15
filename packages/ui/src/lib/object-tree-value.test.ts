@@ -94,10 +94,10 @@ describe('previewText', () => {
   });
 
   it('tints each piece by what it is', () => {
-    const tints = previewTokens({ type: 'object', className: 'A', properties: [{ name: 'k', value: str('v') }] }).map((t) => t.tint);
+    const tints = previewTokens({ type: 'object', className: 'A', properties: [{ name: 'k', value: str('v') }] }).map((t) => t.type);
     expect(tints).toEqual(['className', 'punctuation', 'key', 'punctuation', 'string', 'punctuation']);
-    expect(previewTokens(num(1))[0]!.tint).toBe('number');
-    expect(previewTokens({ type: 'error' })[0]!.tint).toBe('error');
+    expect(previewTokens(num(1))[0]!.type).toBe('number');
+    expect(previewTokens({ type: 'error' })[0]!.type).toBe('error');
   });
 
   it('shows an error\'s stack only when expanded', () => {

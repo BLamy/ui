@@ -47,7 +47,7 @@ export function MediaPanel({ items, onFiles, onAdd, onRemove, samples, onSamples
         </Button>
       </header>
       <div className="bl-scroll min-h-0 flex-1 overflow-y-auto px-3 pb-3">
-        <FileUploadDropzone orientation="horizontal" title="Import media" hint=""
+        <FileUploadDropzone orientation="horizontal" title="Import media" description=""
           rules={{ accept: ['video/*', 'audio/*', 'image/*'] }} icon="video" browseLabel="Browse"
           onFiles={onFiles} />
         {samples.status === 'error' ? <p className="mt-2 mb-0 text-caption text-destructive">{samples.error}</p> : null}

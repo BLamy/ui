@@ -7,7 +7,7 @@ import {
 } from '@ui-sdk/react/toast';
 import { createOverlays } from '@ui-sdk/core/overlays';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Icon, type IconName } from '@/lib/icon';
+import { Icon, type IconName, type IconProp } from '@/lib/icon';
 import { cn, cx } from '@/lib/utils';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
 import { closeButtonVariants } from '@/lib/surface';
@@ -53,7 +53,7 @@ type RenderToast = NonNullable<SdkToastRegionProps['children']>;
 /** What the kit's toasts read from a toast's `data`. */
 export interface ToastExtras {
   /** An `Icon` name or any node, in place of the icon the toast's type gives it. */
-  icon?: IconName | ReactNode;
+  icon?: IconProp;
 }
 
 /* ── The HUD ── */
@@ -64,11 +64,11 @@ type ShowHud = (title: QueueOptions['title'], options?: Omit<QueueOptions, 'id' 
 
 /** Shows the pill, or updates the one that is up, and returns the toast's id. `toaster` is the queue behind it:
     `<ToastRegion variant="hud" toaster={hud.toaster} />`. */
-export type Hud = ShowHud & { toaster: Queue };
+export type ToastHud = ShowHud & { toaster: Queue };
 
 /** A HUD of your own, for a region inside a block or a panel. Its toasts last `duration` ms (default 1600) and
     can't be swiped or closed; every call replaces what the pill says, so nothing of the last one carries over. */
-export function createHud({ duration = 1600 }: { duration?: number } = {}): Hud {
+export function createHud({ duration = 1600 }: { duration?: number } = {}): ToastHud {
   // A registry of its own, so an overlay host never draws the pill as a banner: a HUD region shows it.
   const toaster = createToaster({ duration, overlays: createOverlays() });
   const show: ShowHud = (title, options) =>
@@ -80,7 +80,7 @@ export function createHud({ duration = 1600 }: { duration?: number } = {}): Hud 
 }
 
 /** The page's HUD: `hud('Password Copied', { type: 'success' })`, shown by `<ToastRegion variant="hud" />`. */
-export const hud: Hud = createHud();
+export const hud: ToastHud = createHud();
 
 /* ── The nearest queue ── */
 

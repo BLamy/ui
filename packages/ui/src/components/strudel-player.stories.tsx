@@ -14,14 +14,16 @@ stack(
 const meta: Meta<StrudelPlayerProps> = {
   title: 'Organisms/StrudelPlayer',
   component: StrudelPlayer,
-  args: { code: CODE, title: 'Four on the floor', showCode: false, rack: true, showRack: false },
+  args: { code: CODE, title: 'Four on the floor', rack: true, defaultCodeOpen: false, defaultRackOpen: false },
   argTypes: {
     code: { control: 'text' },
     src: { control: false },
     samples: { control: false },
     onCodeChange: { control: false },
+    onRackOpenChange: { control: false },
+    onCodeOpenChange: { control: false },
   },
-  decorators: [(Story, ctx) => <Pad w={720} dark={!!ctx.parameters.dark}><Story /></Pad>],
+  decorators: [(Story, ctx) => <Pad w={720} appearance={ctx.parameters.dark ? 'dark' : 'light'}><Story /></Pad>],
 };
 export default meta;
 type Story = StoryObj<StrudelPlayerProps>;
@@ -29,11 +31,11 @@ type Story = StoryObj<StrudelPlayerProps>;
 /** Idle: play/stop, the title and the piano roll of the pattern's first cycles. */
 export const Idle: Story = {};
 
-/** `showCode` opens the pattern under the player. */
-export const WithCode: Story = { args: { showCode: true } };
+/** `defaultCodeOpen` opens the pattern under the player (`codeOpen` / `onCodeOpenChange` control it). */
+export const WithCode: Story = { args: { defaultCodeOpen: true } };
 
-/** `showRack` opens the equipment rack generated from the code. */
-export const WithRack: Story = { args: { showRack: true } };
+/** `defaultRackOpen` opens the equipment rack generated from the code (`rackOpen` / `onRackOpenChange` control it). */
+export const WithRack: Story = { args: { defaultRackOpen: true } };
 
 /** The player on a dark surface. */
 export const Dark: Story = { parameters: { dark: true } };

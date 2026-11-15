@@ -149,38 +149,51 @@ export function DialogBackdrop({ className, style, ...props }: ComponentProps<ty
 const modalCard =
   'fixed inset-0 m-auto box-border flex h-fit max-h-[calc(100%-48px)] flex-col overflow-hidden rounded-sheet bg-card text-card-foreground shadow-[0_24px_80px_--alpha(black/30%),0_0_0_.5px_var(--border)] outline-none transition-[opacity,scale] data-ending-style:duration-exit data-ending-style:ease-exit motion-reduce:duration-spring-smooth motion-reduce:ease-spring-smooth';
 
-/** The Dialog's card. Centered it grows out of the middle on the snappy spring; as a sheet UI SDK moves it (so it is
-    placed with margins, never a translate), shaped by `variant`. */
-export const dialogVariants = cva(
-  cn(
-    modalCard,
-    'group/dialog w-[calc(100%-48px)] duration-spring-snappy ease-spring-snappy',
-    'not-data-[presentation=sheet]:data-starting-style:opacity-0 not-data-[presentation=sheet]:data-ending-style:opacity-0 motion-safe:not-data-[presentation=sheet]:data-starting-style:scale-90 motion-safe:not-data-[presentation=sheet]:data-ending-style:scale-96',
-    'data-[presentation=sheet]:relative data-[presentation=sheet]:inset-auto data-[presentation=sheet]:max-w-none data-[presentation=sheet]:transition-none',
-  ),
-  {
-    variants: {
-      size: {
-        default: 'max-w-[400px]',
-        lg: 'max-w-[560px]',
-      },
-      variant: {
-        /** As a sheet: attached to the bottom edge, like the kit's Sheet. */
-        default:
-          'data-[presentation=sheet]:m-0 data-[presentation=sheet]:w-full data-[presentation=sheet]:rounded-b-none data-[presentation=sheet]:pb-[max(12px,env(safe-area-inset-bottom))]',
-        /** As a sheet: a tray floating `trayInset` (10px) in from the edges, with `--radius-sheet` corners: the same card as FloatingSheet at rest. */
-        tray: 'data-[presentation=sheet]:mx-2.5 data-[presentation=sheet]:mt-0 data-[presentation=sheet]:mb-[max(10px,env(safe-area-inset-bottom))] data-[presentation=sheet]:w-auto',
-      },
-    },
-    defaultVariants: { size: 'default', variant: 'default' },
-  },
+/* The card look shared by `default` and `tray`. */
+const dialogCard = cn(
+  modalCard,
+  'w-[calc(100%-48px)] duration-spring-snappy ease-spring-snappy',
+  'not-data-[presentation=sheet]:data-starting-style:opacity-0 not-data-[presentation=sheet]:data-ending-style:opacity-0 motion-safe:not-data-[presentation=sheet]:data-starting-style:scale-90 motion-safe:not-data-[presentation=sheet]:data-ending-style:scale-96',
+  'data-[presentation=sheet]:relative data-[presentation=sheet]:inset-auto data-[presentation=sheet]:max-w-none data-[presentation=sheet]:transition-none',
 );
+
+/** The Dialog's card. Centered it grows out of the middle on the snappy spring; as a sheet UI SDK moves it (so it is
+    placed with margins, never a translate), shaped by `variant`. `plain` draws no card at all. */
+export const dialogVariants = cva('group/dialog outline-none', {
+  variants: {
+    size: {
+      default: '',
+      lg: '',
+    },
+    variant: {
+      /** As a sheet: attached to the bottom edge, like the kit's Sheet. */
+      default: cn(
+        dialogCard,
+        'data-[presentation=sheet]:m-0 data-[presentation=sheet]:w-full data-[presentation=sheet]:rounded-b-none data-[presentation=sheet]:pb-[max(12px,env(safe-area-inset-bottom))]',
+      ),
+      /** As a sheet: a tray floating `trayInset` (10px) in from the edges, with `--radius-sheet` corners: the same card as FloatingSheet at rest. */
+      tray: cn(
+        dialogCard,
+        'data-[presentation=sheet]:mx-2.5 data-[presentation=sheet]:mt-0 data-[presentation=sheet]:mb-[max(10px,env(safe-area-inset-bottom))] data-[presentation=sheet]:w-auto',
+      ),
+      /** No card, no size cap, no entry scale or fade, no grabber: the content is entirely the caller's (placement
+          included). For a surface that brings its own look and motion, such as a `Morph` the content renders. */
+      plain: '',
+    },
+  },
+  compoundVariants: [
+    { variant: ['default', 'tray'], size: 'default', className: 'max-w-[400px]' },
+    { variant: ['default', 'tray'], size: 'lg', className: 'max-w-[560px]' },
+  ],
+  defaultVariants: { size: 'default', variant: 'default' },
+});
 
 export type DialogContentProps<Payload = unknown> = Parameters<typeof SdkDialogContent<Payload>>[0] &
   VariantProps<typeof dialogVariants>;
 
 /** The card. Name it with a DialogTitle, or `aria-label`. A sheet that can be dragged away shows a grabber; one that
-    isn't `dismissible` doesn't. */
+    isn't `dismissible` doesn't. `variant="plain"` keeps the Dialog's focus, dismissal and theme scope but draws
+    nothing: `<DialogContent variant="plain" render={<Morph layoutId="player" … />}>`. */
 export function DialogContent<Payload = unknown>({
   className, style, size = 'default', variant = 'default', children, ...props
 }: DialogContentProps<Payload>) {
@@ -197,7 +210,7 @@ export function DialogContent<Payload = unknown>({
     >
       {(state) => (
         <>
-          {state.presentation === 'sheet' && dismissible ? (
+          {state.presentation === 'sheet' && dismissible && variant !== 'plain' ? (
             <span data-slot="dialog-grabber" aria-hidden="true" className={cn(sheetGrabberVariants(), 'absolute inset-x-0 top-0 z-3')} />
           ) : null}
           {typeof children === 'function' ? children(state) : children}
@@ -249,13 +262,19 @@ export function DialogBody({ className, ...props }: ComponentProps<'div'>) {
 export interface DialogFooterProps extends ComponentProps<'div'>, VariantProps<typeof surfaceFooterVariants> {}
 
 /** The card's actions: right-aligned (`horizontal`, the default) or stacked full width (`vertical`). Presented as a
-    sheet, a horizontal row shares the width between its buttons, as iOS does. */
+    sheet (a compact, touch scope) the buttons are 44px tall and a horizontal row shares the width between them, as
+    iOS does; the footer then ends at the same inset as a Sheet's. */
 export function DialogFooter({ className, orientation = 'horizontal', ...props }: DialogFooterProps) {
   return (
     <div
       data-slot="dialog-footer"
       data-orientation={orientation}
-      className={cn(surfaceFooterVariants({ orientation }), orientation === 'horizontal' && 'group-data-[presentation=sheet]/dialog:*:flex-1', className)}
+      className={cn(
+        surfaceFooterVariants({ orientation }),
+        'group-data-[presentation=sheet]/dialog:*:h-11 group-data-[presentation=sheet]/dialog:group-data-[variant=default]/dialog:pb-2',
+        orientation === 'horizontal' && 'group-data-[presentation=sheet]/dialog:*:flex-1',
+        className,
+      )}
       {...props}
     />
   );

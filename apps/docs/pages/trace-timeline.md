@@ -200,7 +200,7 @@ Each pick by key is announced ("Server lane", "Request 42, 25:06"). The canvases
 | `orientation` | `horizontal` | `horizontal` is the strip, `vertical` the rail. |
 | `side` | `end` | Rail: the edge it sits on, `start` or `end`, as IndexBar's. Its stops and card are on the inner side. |
 | `insetContent` | `true` | Rail: publish `--bl-index-bar-inset` on its parent (`end` side only). |
-| `gutter` | `64` | Strip: the width of the label gutter, 0 for none. |
+| `gutter` | `84` | Strip: the width of the label gutter (a word like "Checkpoints" fits), 0 for none. |
 | `requestsLabel` / `stopsLabel` | `Requests` / `Stops` | Strip: the gutter's labels for those rows. |
 | `focusedLane` / `defaultFocusedLane` / `onFocusedLaneChange(lane, details)` | none | The lane in focus. A single lane always is. |
 | `selectedThread` / `defaultSelectedThread` / `onSelectedThreadChange(thread, details)` | none | The selected thread, in the focused lane; `details.lane` is its lane. |

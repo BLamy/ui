@@ -78,6 +78,8 @@ The preview is text, read as it shows. Show more and Copy are buttons named by t
 | `quote` | `true` | `false` for the bare text of a top-level console string. |
 | `actions` | `true` | Show more and Copy beside a long string or an error's stack. `false` in a row of fixed height. |
 | `onValueCopy` | none | `(text) => void`: writes what Copy gives yourself, instead of `navigator.clipboard` (a host with a clipboard of its own). |
+
+What Copy gives is `copyTextOf(preview)` (from `@/lib/object-tree-value`, or the package root): a string's own text, an error's stack, otherwise the preview's text. `previewText(preview)` is the preview as plain text and `previewTokens(preview)` the typed runs it is drawn from (`{ text, type }`).
 | `className` / `style` | | On the root `span`, merged last; other props pass through. |
 
 ## Styling

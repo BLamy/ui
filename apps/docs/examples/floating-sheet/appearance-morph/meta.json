@@ -3,7 +3,7 @@
   "status": "Live",
   "variants": [
     { "id": "glass", "label": "Glass" },
-    { "id": "sheet", "label": "Card" }
+    { "id": "card", "label": "Card" }
   ],
   "variantsWidth": 180
 }

@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { animateIn } from '@ui-sdk/core';
 import { Dialog, DialogBackdrop, DialogClose, DialogContent, type DialogCloseActionDetails, type DialogOptions } from '@ui-sdk/react/dialog';
 import { buttonVariants } from '@/components/ui/button';
-import { PencilKitAnnotator } from '@/components/ui/pencilkit/pencilkit-annotator';
+import { EngineContext, useImageAnnotatorEngine } from '@/components/ui/pencilkit/annotator-engine';
 import { prefersReducedMotion } from '@/lib/motion';
 import { themeScopeClass, themeScopeProps, useLayerHost } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -42,7 +42,6 @@ export interface ImageAnnotatorEngineProps {
 /** A drawing engine for the lightbox (`PencilKitAnnotator` is the default one). */
 export type ImageAnnotatorEngine = React.ComponentType<ImageAnnotatorEngineProps>;
 
-const EngineContext = React.createContext<ImageAnnotatorEngine | null>(PencilKitAnnotator);
 
 export interface ImageAnnotatorProviderProps {
   /** The engine every ImageAnnotator (and Composer) below uses; `null` makes them plain previews. */
@@ -55,10 +54,6 @@ export function ImageAnnotatorProvider({ engine, children }: ImageAnnotatorProvi
   return <EngineContext.Provider value={engine}>{children}</EngineContext.Provider>;
 }
 
-/** The engine in effect: the nearest ImageAnnotatorProvider's, else `PencilKitAnnotator`; `null` if opted out. */
-export function useImageAnnotatorEngine(): ImageAnnotatorEngine | null {
-  return React.useContext(EngineContext);
-}
 
 export interface ImageAnnotatorProps extends Pick<DialogOptions, 'open' | 'defaultOpen' | 'onOpenChange' | 'onOpenChangeComplete'> {
   /** The image (a URL or a data URL). */

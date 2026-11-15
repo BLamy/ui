@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentProps,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
@@ -25,7 +26,8 @@ import {
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { type ChangeDetails } from '@ui-sdk/core';
 import { cva } from 'class-variance-authority';
-import { ThemeScopeContext, themeScopeClass, useThemeScope, type Appearance } from '@/lib/theme';
+import { themeScopeClass, useAppearance, useThemeScope, type Appearance } from '@/lib/theme';
+import { ThemeScopeContext } from '@/lib/theme-context';
 import { useHideOnScroll } from '@/lib/scroll-edge';
 import { changeDetails, type ChangeGiven } from '@/lib/change-details';
 import { useControllableChange } from '@/lib/controllable-state';
@@ -43,7 +45,7 @@ import { trayInset } from '@/lib/surface';
    UI SDK's Drawer with snap points at the peek, any `snapPoints` and full height, modal only above the peek. ══ */
 
 /** The look: translucent glass over the page, or an opaque card like a system sheet. */
-export type FloatingSheetVariant = 'glass' | 'sheet';
+export type FloatingSheetVariant = 'glass' | 'card';
 /** The colour scheme of the surface. `auto` follows the page; `light` / `dark` put the bl-theme's `sheet` scope on it
     in that appearance (the host's background and accent stay), so the sheet can disagree with the page. */
 export type FloatingSheetAppearance = 'auto' | Appearance;
@@ -112,8 +114,22 @@ function useParts(part: string): PartsContextValue {
   return value;
 }
 
-/** Height of the grabber cap row at the top of the surface. */
+/** Height of the grabber cap row at the top of the surface: 18px, and 36px on a touch screen, where it is the one
+ *  control that grows the sheet. With the 8px of the dock's padding under it (which passes presses through) it is a
+ *  44px target even when nothing peeks. */
 const CAP_HEIGHT = 18;
+const CAP_HEIGHT_COARSE = 36;
+
+const COARSE = '(pointer: coarse)';
+const subscribeCoarse = (change: () => void) => {
+  const query = typeof matchMedia === 'function' ? matchMedia(COARSE) : null;
+  query?.addEventListener?.('change', change);
+  return () => query?.removeEventListener?.('change', change);
+};
+/** Whether the primary pointer is a finger. */
+function useCoarsePointer() {
+  return useSyncExternalStore(subscribeCoarse, () => typeof matchMedia === 'function' && matchMedia(COARSE).matches, () => false);
+}
 /** The surface's top and bottom borders are outside its flex children. */
 const BORDER_HEIGHT = 2;
 /** The glass blur. Inline, so the production CSS optimizer cannot rewrite the unprefixed property out of Safari's bundle. */
@@ -129,11 +145,11 @@ const surfaceBase =
   'ck-floating-sheet__surface pointer-events-auto absolute top-0 left-1/2 box-border flex h-[max(calc(var(--fs-rest)*1px_-_var(--fs-gutter)*1px),calc(var(--fs-extent)*1px_-_var(--fs-gutter)*1px*(1_-_var(--fs-grown))))] w-[max(52px,calc(100%_-_var(--fs-gutter)*2px*(1_-_var(--fs-grown))))] -translate-x-1/2 flex-col overflow-hidden rounded-t-[calc(var(--fs-radius)*(1_-_var(--fs-grown)*var(--fs-square)))] rounded-b-[calc(var(--fs-radius-bottom)*(1_-_var(--fs-grown)))] border transition-[background-color,border-color,box-shadow,backdrop-filter,color,translate,opacity] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none';
 /* The material, mixed from the scope's own tokens (so it follows the page, or the `sheet` scope of an explicit
    appearance): translucent glass (the card colour at a growing alpha under a highlight gradient), or an opaque
-   system sheet (the card colour, a soft shadow that deepens as it grows). The FAB wears the same. */
+   card (the card colour, a soft shadow that deepens as it grows). The FAB wears the same. */
 const sheetMaterial = {
   glass:
     'border-[color:color-mix(in_srgb,var(--foreground)_calc(var(--ck-sheet-border-alpha,.12)*100%),transparent)] bg-[color:color-mix(in_srgb,var(--card)_calc(var(--ck-sheet-bg-alpha,.28)*100%),transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-white)_8%,transparent),color-mix(in_srgb,var(--color-white)_1.8%,transparent)_34%,color-mix(in_srgb,var(--color-white)_2.6%,transparent))] [box-shadow:inset_0_1px_0_color-mix(in_srgb,var(--color-white)_14%,transparent),inset_0_-1px_0_color-mix(in_srgb,var(--color-white)_3%,transparent),0_2px_10px_color-mix(in_srgb,var(--color-black)_12%,transparent),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_color-mix(in_srgb,var(--color-black)_calc(var(--ck-sheet-shadow-alpha,.22)*100%),transparent)]',
-  sheet:
+  card:
     'border-[color:color-mix(in_srgb,var(--foreground)_calc(var(--ck-sheet-border-alpha,.12)*50%),transparent)] bg-card [box-shadow:0_-1px_0_color-mix(in_srgb,var(--foreground)_4%,transparent),0_2px_10px_color-mix(in_srgb,var(--color-black)_8%,transparent),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_color-mix(in_srgb,var(--color-black)_calc(var(--ck-sheet-shadow-alpha,.22)*100%),transparent)]',
 };
 
@@ -293,6 +309,9 @@ export function FloatingSheet({
   const scheme: Appearance | undefined = appearance === 'auto' ? undefined : appearance;
   const parentScope = useThemeScope();
   const scope = scheme ? { scope: 'sheet', appearance: scheme } : parentScope;
+  // The page's scheme under the sheet (its scope's, else the app's; light without either).
+  const ambient = useAppearance();
+  const pageScheme = parentScope?.appearance ?? ambient ?? 'light';
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   const rootRef = useCallback(
     (el: HTMLDivElement | null) => {
@@ -332,7 +351,8 @@ export function FloatingSheet({
     return () => observer.disconnect();
   }, [root, foot]);
 
-  const dockHeight = (foot ? footHeight : 0) + CAP_HEIGHT;
+  const capHeight = useCoarsePointer() ? CAP_HEIGHT_COARSE : CAP_HEIGHT;
+  const dockHeight = (foot ? footHeight : 0) + capHeight;
   const chrome = dockHeight + BORDER_HEIGHT;
   // Fully grown, the cap touches the host's top edge (or `topGap` short of it) and the foot its bottom edge.
   const gapAbove = typeof topGap === 'string' ? (height * Number.parseFloat(topGap)) / 100 : topGap;
@@ -416,7 +436,11 @@ export function FloatingSheet({
 
   // A sheet that shows only its cap and foot gets out of the way of a scroll; a peeking or risen one stays.
   const hidden = useHideOnScroll(hideOnScroll, scrollRef) && resting === 0 && peek === 0;
-  const restAlpha = peek > 0 ? 0.5 : 0.28;
+  // Glass mixes the card colour over the page. A scheme that disagrees with the page (a dark sheet over a light map)
+  // would mix to a mid grey its own text can't be read on, so its glass starts nearly opaque.
+  const contrasting = !!scheme && scheme !== pageScheme;
+  const restAlpha = contrasting ? 0.82 : peek > 0 ? 0.5 : 0.28;
+  const grownAlpha = contrasting ? 0.92 : 0.58;
   const glass = variant === 'glass';
 
   const value: FloatingSheetContextValue = { open, setOpen, progress, peek, minimized: folded, setMinimized };
@@ -500,7 +524,7 @@ export function FloatingSheet({
                       '--fs-square': gapAbove > 0 ? 0 : 1,
                       // The material firms up as the sheet grows.
                       '--ck-sheet-border-alpha': 'calc(.12 + .04 * var(--fs-grown))',
-                      '--ck-sheet-bg-alpha': `calc(${restAlpha} + ${0.58 - restAlpha} * var(--fs-grown))`,
+                      '--ck-sheet-bg-alpha': `calc(${restAlpha} + ${grownAlpha - restAlpha} * var(--fs-grown))`,
                       '--ck-sheet-shadow-y': 'calc(14px + 20px * var(--fs-grown))',
                       '--ck-sheet-shadow-blur': 'calc(34px + 30px * var(--fs-grown))',
                       '--ck-sheet-shadow-alpha': 'calc(.22 + .18 * var(--fs-grown))',
@@ -515,8 +539,9 @@ export function FloatingSheet({
                       data-open={open || undefined}
                       aria-label={open ? 'Collapse' : 'Expand'}
                       className={cn(
-                        'group/cap box-border grid h-[18px] w-full shrink-0 cursor-grab touch-none place-items-center border-0 bg-transparent p-0 text-inherit focus-visible:ring-inset active:cursor-grabbing',
-                        // 18px drawn; on a touch screen it answers presses 44px tall, over the body's faded top (the footer stays above it).
+                        'group/cap box-border grid h-[18px] w-full shrink-0 cursor-grab touch-none place-items-center border-0 bg-transparent p-0 text-inherit focus-visible:ring-inset active:cursor-grabbing pointer-coarse:h-9',
+                        // 18px drawn, 36px on a touch screen (`CAP_HEIGHT_COARSE`), where it answers presses 44px tall, over the
+                        // body's faded top or the dock's padding.
                         "relative z-1 pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:top-0 pointer-coarse:after:h-11 pointer-coarse:after:content-['']",
                         focusRing,
                       )}

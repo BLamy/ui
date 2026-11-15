@@ -22,7 +22,7 @@ export default function Contained({ variant = 'modal' }: { variant?: string }) {
             <span className="text-muted-foreground">{folder}</span>
           </header>
           <div className="relative min-h-0 flex-1 bg-muted">
-            <Sheet key={variant} contained side="left" modal={modal}>
+            <Sheet key={variant} contained side="start" modal={modal}>
               <div className="p-5">
                 <SheetTrigger className={buttonVariants({ variant: 'secondary' })}>Folders</SheetTrigger>
               </div>

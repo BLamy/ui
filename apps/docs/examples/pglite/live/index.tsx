@@ -11,13 +11,13 @@ const players = ['Ada', 'Grace', 'Linus', 'Margaret', 'Edsger']
 function Board() {
   // The live extension watches the tables this query reads and pushes a new
   // result whenever they change — including writes from anywhere else.
-  const { rows, isLoading } = useLiveQuery<{ player: string; total: number }>(
+  const { rows, loading } = useLiveQuery<{ player: string; total: number }>(
     'select player, sum(points)::int as total from scores group by player order by total desc',
   )
   const { run } = useExec()
   return (
     <div className="grid gap-3">
-      <ol className="grid gap-1.5" aria-busy={isLoading} aria-label="Leaderboard">
+      <ol className="grid gap-1.5" aria-busy={loading} aria-label="Leaderboard">
         {rows.map((r, i) => (
           <li key={r.player} className="flex items-center gap-3 rounded-ctl bg-card px-3 py-2 text-subhead shadow-hairline">
             <span className="w-5 text-foreground/65 tabular-nums">{i + 1}</span>

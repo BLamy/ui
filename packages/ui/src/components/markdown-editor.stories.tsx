@@ -19,7 +19,7 @@ const meta: Meta<typeof MarkdownEditor> = {
   decorators: [
     (Story, ctx) =>
       ctx.parameters.phone ? (
-        <Phone dark={ctx.parameters.dark}>
+        <Phone appearance={ctx.parameters.dark ? 'dark' : 'light'}>
           <div className="absolute inset-0 flex flex-col p-4 pt-14"><Story /></div>
         </Phone>
       ) : (

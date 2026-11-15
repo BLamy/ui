@@ -9,7 +9,7 @@ const meta: Meta<typeof Switch> = {
   component: Switch,
   args: { size: 'default', disabled: false },
   argTypes: { size: { control: 'inline-radio', options: ['default', 'sm'] } },
-  decorators: [(Story, { parameters }) => <Pad dark={parameters.dark}><Story /></Pad>],
+  decorators: [(Story, { parameters }) => <Pad appearance={parameters.dark ? 'dark' : 'light'}><Story /></Pad>],
 };
 export default meta;
 type Story = StoryObj<typeof Switch>;

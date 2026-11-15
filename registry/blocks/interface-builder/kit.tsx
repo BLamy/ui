@@ -176,7 +176,7 @@ export const KIT: Record<string, ComponentSpec> = {
     props: [
       text('children', 'Mute'),
       { name: 'pressed', control: { kind: 'boolean' }, default: false, twoWay: 'onPressedChange' },
-      { name: 'variant', control: { kind: 'enum', options: values('default', 'filled', 'outline', 'quiet') }, default: 'filled' },
+      { name: 'variant', control: { kind: 'enum', options: values('default', 'secondary', 'outline', 'quiet') }, default: 'secondary' },
       { name: 'size', control: { kind: 'enum', options: values('sm', 'default', 'lg') }, default: 'default' },
       { name: 'icon', control: { kind: 'icon' }, default: 'bell', part: '<Icon> child' },
       { name: 'disabled', control: { kind: 'boolean' }, default: false },
@@ -184,7 +184,7 @@ export const KIT: Record<string, ComponentSpec> = {
     events: [{ name: 'onPressedChange', label: 'onPressedChange', value: 'pressed' }],
     layout: { width: 'fit' },
     render: ({ p, on }) => (
-      <Toggle pressed={!!p.pressed} onPressedChange={(v) => on.onPressedChange?.(v)} variant={pick(p.variant, ['default', 'filled', 'outline', 'quiet'] as const, 'filled')} size={pick(p.size, ['sm', 'default', 'lg'] as const, 'default')} disabled={!!p.disabled} aria-label={str(p.children) || 'Toggle'}>
+      <Toggle pressed={!!p.pressed} onPressedChange={(v) => on.onPressedChange?.(v)} variant={pick(p.variant, ['default', 'secondary', 'outline', 'quiet'] as const, 'secondary')} size={pick(p.size, ['sm', 'default', 'lg'] as const, 'default')} disabled={!!p.disabled} aria-label={str(p.children) || 'Toggle'}>
         {p.icon ? <Icon name={str(p.icon)} size={16} sw={2} /> : null}
         {str(p.children)}
       </Toggle>
@@ -205,7 +205,7 @@ export const KIT: Record<string, ComponentSpec> = {
       { name: 'items', control: { kind: 'items' }, default: 'List, Grid, Board', part: '<ToggleGroupItem>s' },
       { name: 'value', label: 'pressed', control: { kind: 'text' }, default: 'Grid', twoWay: 'onValueChange', help: 'An item, or several separated by commas' },
       { name: 'multiple', control: { kind: 'boolean' }, default: false },
-      { name: 'variant', control: { kind: 'enum', options: values('segmented', 'outline', 'default', 'filled', 'quiet') }, default: 'segmented' },
+      { name: 'variant', control: { kind: 'enum', options: values('segmented', 'outline', 'default', 'secondary', 'quiet') }, default: 'segmented' },
       { name: 'aria-label', control: { kind: 'text' }, default: 'View' },
     ],
     events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the pressed items, comma-separated' }],
@@ -218,7 +218,7 @@ export const KIT: Record<string, ComponentSpec> = {
           aria-label={str(p['aria-label'], 'Options')}
           multiple={multiple}
           deselectable={multiple}
-          variant={pick(p.variant, ['segmented', 'outline', 'default', 'filled', 'quiet'] as const, 'segmented')}
+          variant={pick(p.variant, ['segmented', 'outline', 'default', 'secondary', 'quiet'] as const, 'segmented')}
           value={sel}
           onValueChange={(v) => on.onValueChange?.(v.join(', '))}
         >

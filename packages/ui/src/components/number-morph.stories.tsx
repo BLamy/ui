@@ -8,7 +8,7 @@ const meta: Meta<typeof NumberMorph> = {
   title: 'Atoms/NumberMorph',
   component: NumberMorph,
   args: { value: 1234.5 },
-  decorators: [(Story, { parameters }) => <Pad w={420} dark={!!parameters.dark}><Story /></Pad>],
+  decorators: [(Story, { parameters }) => <Pad w={420} appearance={parameters.dark ? 'dark' : 'light'}><Story /></Pad>],
 };
 export default meta;
 type Story = StoryObj<typeof NumberMorph>;

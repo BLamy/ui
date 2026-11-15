@@ -28,7 +28,7 @@ import { MarkdownEditor } from '@brett_lamy/ui/markdown-editor'
 {% endtabs %}
 
 ```tsx
-import { MarkdownEditor } from '@brett_lamy/ui'
+import { MarkdownEditor } from '@brett_lamy/ui/markdown-editor'
 
 const [markdown, setMarkdown] = useState('# Notes')
 

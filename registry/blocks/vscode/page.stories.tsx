@@ -23,7 +23,7 @@ function Frame({ width, height, dark, ...props }: VSCodeProps & { width: number;
   const [runtime] = useState(() => createMemoryRuntime({ files: STARTER_PROJECT, transcript: TRANSCRIPT, status: { text: 'Node: Ready', tone: 'safe' } }));
   return (
     <div style={{ width, height }} className="overflow-hidden rounded-xl border border-border">
-      <BLProvider dark={dark}>
+      <BLProvider appearance={dark ? 'dark' : 'light'}>
         <VSCode runtime={runtime} {...props} />
       </BLProvider>
     </div>

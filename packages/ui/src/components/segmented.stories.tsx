@@ -14,7 +14,7 @@ const meta: Meta<typeof Segmented> = {
     size: { control: 'inline-radio', options: ['sm', 'default', 'lg'] },
     orientation: { control: 'inline-radio', options: ['horizontal', 'vertical'] },
   },
-  decorators: [(Story, { parameters }) => <Pad dark={parameters.dark}><Story /></Pad>],
+  decorators: [(Story, { parameters }) => <Pad appearance={parameters.dark ? 'dark' : 'light'}><Story /></Pad>],
 };
 export default meta;
 type Story = StoryObj<typeof Segmented>;

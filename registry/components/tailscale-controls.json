@@ -18,6 +18,7 @@
     "TailscaleExitNodes"
   ],
   "types": [
+    "TailscaleMarkProps",
     "TailscaleExitNodeLabels",
     "TailscaleExitNodeState",
     "TailscaleExitNodeChangeDetails"

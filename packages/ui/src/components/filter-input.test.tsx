@@ -73,6 +73,17 @@ describe('FilterInput', () => {
     await waitFor(() => expect(screen.getByRole('group', { name: 'Status is not Open' })).toBeTruthy());
   });
 
+  it('inside a FilterBar, a canceled apply keeps the sentence, as onApply does', async () => {
+    const onChange = vi.fn((_f: Filter[], details: { reason: string; cancel: () => void }) => { if (details.reason === 'apply') details.cancel(); });
+    render(<FilterBar fields={fields} onValueChange={onChange}><FilterInput parse={parse} /></FilterBar>);
+    type('priority low');
+    await waitFor(() => expect(spoken()).toContain('1 filter understood: Priority is Low'));
+    fireEvent.keyDown(box(), { key: 'Enter' });
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(expect.any(Array), expect.objectContaining({ reason: 'apply' })));
+    expect((box() as HTMLInputElement).value).toBe('priority low');
+    expect(screen.queryByRole('group', { name: 'Priority is Low' })).toBeNull();
+  });
+
   it('merges into the filters already there: a field it names is replaced, the rest kept', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);

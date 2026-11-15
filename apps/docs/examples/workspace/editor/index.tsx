@@ -4,7 +4,7 @@ import {
   Workspace,
   WorkspaceToolbar,
   createWorkspaceController,
-  type TabNode,
+  type WorkspaceTabNode,
   type WorkspaceLayoutInput,
 } from '@/components/ui/workspace';
 import { Icon } from '@/lib/icon';
@@ -82,7 +82,7 @@ function Counter() {
   );
 }
 
-function renderTabContent(tab: TabNode<View>) {
+function renderTabContent(tab: WorkspaceTabNode<View>) {
   switch (tab.data) {
     case 'counter':
       return <Counter />;

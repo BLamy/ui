@@ -53,7 +53,7 @@ const migrations = [
 ]
 
 function Notes() {
-  const { rows, isLoading, error } = useQuery<{ id: number; body: string }>('select id, body from notes order by id')
+  const { rows, loading, error } = useQuery<{ id: number; body: string }>('select id, body from notes order by id')
   const { run } = useExec()
   // run('insert into notes (body) values ($1)', [body])  — the list refreshes by itself
 }
@@ -231,11 +231,11 @@ Returns the open database, or `null` while it opens or after it failed. Pass a t
 
 ### useQuery(sql, params?, options?)
 
-`{ rows, fields, error, isLoading, refetch }`. Options: `enabled`, `watch` (re-run on invalidation, default true).
+`{ rows, fields, error, loading, refetch }`. Options: `enabled`, `watch` (re-run on invalidation, default true).
 
 ### useLiveQuery(sql, params?, options?)
 
-`{ rows, fields, error, isLoading }`. Options: `key` (incremental), `enabled`.
+`{ rows, fields, error, loading }`. Options: `key` (incremental), `enabled`.
 
 ### useExec()
 
@@ -251,7 +251,7 @@ Returns the open database, or `null` while it opens or after it failed. Pass a t
 
 ### useSchema(options?)
 
-`{ schema, isLoading, error, refetch }` — schemas, tables, views, columns with types, primary and foreign keys and row counts, from `pg_catalog`. Options: `rowCounts` (`'exact'` default, `'estimate'`, `'none'`), `system`, `internal`.
+`{ schema, loading, error, refetch }` — schemas, tables, views, columns with types, primary and foreign keys and row counts, from `pg_catalog`. Options: `rowCounts` (`'exact'` default, `'estimate'`, `'none'`), `system`, `internal`.
 
 ### usePersistenceSupport()
 

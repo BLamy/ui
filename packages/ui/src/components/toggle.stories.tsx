@@ -8,7 +8,7 @@ const meta: Meta<typeof Toggle> = {
   component: Toggle,
   args: { children: 'Bold', variant: 'default', size: 'default' },
   argTypes: {
-    variant: { control: 'inline-radio', options: ['default', 'filled', 'outline', 'quiet'] },
+    variant: { control: 'inline-radio', options: ['default', 'secondary', 'outline', 'quiet'] },
     size: { control: 'inline-radio', options: ['sm', 'default', 'lg', 'icon-sm', 'icon', 'icon-lg'] },
     disabled: { control: 'boolean' },
   },
@@ -22,8 +22,8 @@ export const Default: Story = {};
 
 const grid = (
   <div className="flex flex-col gap-3">
-    {(['default', 'filled', 'outline', 'quiet'] as const).map((variant) => (
-      <div key={variant} className="flex items-center gap-2">
+    {(['default', 'secondary', 'outline', 'quiet'] as const).map((variant) => (
+      <div key={variant} className="flex flex-wrap items-center gap-2">
         <Toggle variant={variant} aria-label="Favorite"><Icon name="star" size={18} /></Toggle>
         <Toggle variant={variant} defaultPressed aria-label="Favorite"><Icon name="starF" size={18} /></Toggle>
         <Toggle variant={variant}><Icon name="bell" size={18} />Alerts</Toggle>
@@ -40,8 +40,8 @@ const grid = (
     <div className="flex items-center gap-2">
       <Toggle variant="quiet" size="icon-sm" aria-label="Bookmark"><Icon name="bookmark" size={18} sw={1.7} /></Toggle>
       <Toggle variant="quiet" size="icon-sm" defaultPressed aria-label="Bookmark"><Icon name="bookmark" size={18} sw={1.7} /></Toggle>
-      <Toggle variant="filled" size="icon" defaultPressed aria-label="Mute"><Icon name="bell" size={18} /></Toggle>
-      <Toggle variant="filled" size="icon-lg" aria-label="Mute"><Icon name="bell" size={20} /></Toggle>
+      <Toggle variant="secondary" size="icon" defaultPressed aria-label="Mute"><Icon name="bell" size={18} /></Toggle>
+      <Toggle variant="secondary" size="icon-lg" aria-label="Mute"><Icon name="bell" size={20} /></Toggle>
     </div>
   </div>
 );
@@ -82,7 +82,7 @@ const groups = (
   <div className="flex flex-col items-start gap-4">
     <Format variant="default" />
     <Format variant="quiet" />
-    <Format variant="filled" />
+    <Format variant="secondary" />
     <Format variant="outline" />
     <Format variant="segmented" />
     <Align variant="segmented" />
@@ -90,7 +90,7 @@ const groups = (
     <div className="flex items-start gap-4">
       <Align variant="outline" orientation="vertical" />
       <Align variant="segmented" orientation="vertical" />
-      <Align variant="filled" orientation="vertical" />
+      <Align variant="secondary" orientation="vertical" />
     </div>
     <ToggleGroup size="sm" variant="outline" defaultValue={['day']} aria-label="Range">
       <ToggleGroupItem value="day">Day</ToggleGroupItem>

@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState, type EmptyStateProps } from '@/components/ui/empty-state';
 import { Swap } from '@/components/ui/swap';
 import { Kbd } from '@/components/ui/kbd';
-import { Icon, type IconName } from '@/lib/icon';
+import { Icon, type IconProp } from '@/lib/icon';
 import { sectionLabelVariants, selectableText } from '@/lib/primitives';
 import { isGlyphShortcut, shortcutKeys, shortcutText } from '@/lib/shortcut-text';
 import { scopeStyle, useThemeScopeProps } from '@/lib/theme';
@@ -666,8 +666,8 @@ export function CommandMenuItemDescription({ className, ...props }: ComponentPro
 export type CommandMenuItemProps = Omit<ComponentProps<typeof CommandItem>, 'title' | 'children'> & {
   /** Identifies the command: passed to `onAction`, and the highlight's value (default: `title` when it is a string). */
   value?: string;
-  /** Leading icon: an Icon name or any node (a monogram, an image). */
-  icon?: IconName | ReactNode;
+  /** Leading icon: an Icon name (type-checked) or any other node (an `<Icon>`, a monogram, an image). */
+  icon?: IconProp;
   /** The row's text. A string shows what the search matched in bold. Plain-text children are the same thing:
       `<CommandMenuItem>New thread</CommandMenuItem>`. */
   title?: ReactNode;

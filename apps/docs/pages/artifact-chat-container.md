@@ -1,6 +1,6 @@
 # ArtifactChatContainer
 
-The kit's chat shell: an agent chat beside the thing it works on (a document, a dashboard, a map, an app's page). On a wide container the chat is a **column docked beside the artifact**; on a compact one it **floats over the artifact** as a [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet) whose foot is your `Composer` and whose body is the transcript: it rests on the composer (or peeks the newest replies), grows over the artifact with a drag of its cap, and folds into a FAB when dragged below rest. The transcript and the composer are rendered once and move between the two layouts, so a half-typed draft, the caret and a streaming reply survive the switch.
+The kit's chat shell: an agent chat beside the thing it works on (a document, a dashboard, a map, an app's page). On a wide container the chat is a **column docked beside the artifact**; on a compact one it **floats over the artifact** as a [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet) whose foot is your `Composer` and whose body is the transcript: it rests on the composer (or peeks the newest replies), grows over the artifact with a drag of its cap, and folds into a FAB when dragged below rest. The transcript and the composer are rendered once and move between the two presentations, so a half-typed draft, the caret and a streaming reply survive the switch.
 
 Use it when a chat and an artifact share a screen. For a chat that *is* the screen, compose [Conversation](https://blamy.github.io/ui/#/conversation) directly; for any other floating card over a page (an order tracker, a map panel, a dock), use [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet); for an inspector beside content, [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane).
 
@@ -58,9 +58,9 @@ import {
 
 The container fills its parent (`h-full w-full`): give the parent a size.
 
-## Layouts
+## Presentations
 
-`layout="auto"` (the default) reads the container's **own** width, not the viewport's: at `breakpoint` (760px) and above it docks the chat, below it floats it. The root carries `data-size-class` and `data-layout`, and it is the size-class scope of what it renders, so dialogs and popovers opened inside with `presentation="auto"` follow it too. `layout="split"` always docks; `layout="floating"` always floats, the right choice for maps, canvases and other full-bleed artifacts.
+`presentation="auto"` (the default) reads the container's **own** width, not the viewport's: at `breakpoint` (760px) and above it docks the chat, below it floats it. The root carries `data-size-class` and `data-presentation`, and it is the size-class scope of what it renders, so dialogs and popovers opened inside with `presentation="auto"` follow it too. `presentation="split"` always docks; `presentation="floating"` always floats, the right choice for maps, canvases and other full-bleed artifacts.
 
 Drag the width across the breakpoint: the column slides away, the composer flies to the floating sheet's foot and the artifact grows into the room, keeping the draft.
 
@@ -100,7 +100,7 @@ The shell's resting states have one meaning each. **Peek** is how much transcrip
 | Part | Renders | Role |
 | --- | --- | --- |
 | `ArtifactChatContainer` | `div` | The root: the grid (docked) or the positioned box (floating). Takes every `div` prop. |
-| `ArtifactChatContainerContent` | `div` | The artifact. Stays mounted, in place, across layouts; full-bleed and scrolling under the floating chat. Not a landmark: pass `role="main"` (or `role="region"` with an `aria-label`) when it is the page's main content. |
+| `ArtifactChatContainerContent` | `div` | The artifact. Stays mounted, in place, across presentations; full-bleed and scrolling under the floating chat. Not a landmark: pass `role="main"` (or `role="region"` with an `aria-label`) when it is the page's main content. |
 | `ArtifactChatContainerChat` | nothing in place | The transcript. Rendered once and moved between the column and the floating sheet's body. Make it a full-height flex column with the newest message at the bottom (a `Conversation` or `MessageScroller` is). |
 | `ArtifactChatContainerComposer` | nothing in place | The `Composer`. Rendered once and moved between the bottom of the column and the floating sheet's foot, inside a `glass` theme scope. |
 
@@ -110,7 +110,7 @@ Write the three parts as direct children, in any order. React context reaches th
 
 | Prop | Type | Default | Effect |
 | --- | --- | --- | --- |
-| `layout` | `'auto' \| 'split' \| 'floating'` | `'auto'` | Docked, floating, or decided by the container's width. |
+| `presentation` | `'auto' \| 'split' \| 'floating'` | `'auto'` | Docked, floating, or decided by the container's width. |
 | `breakpoint` | `number` | `760` | Container width, px, below which `auto` floats the chat (the container's size class is `compact` under it). |
 | `chatWidth` | `number \| string` | `400` | Width of the docked column. |
 | `chatSide` | `'start' \| 'end'` | `'start'` | The inline edge the docked column sits on. |
@@ -130,12 +130,12 @@ Write the three parts as direct children, in any order. React context reaches th
 
 ## Hook
 
-`useArtifactChatContainer()` reads the container from anything inside it (the transcript's own header, for example) and throws outside one: `{ sizeClass, layout, open, setOpen, composing, setComposing, minimized, setMinimized }`. The setters take an optional `{ reason, event }` and go through the same callbacks, so a controlled host hears them; `open` is always false while docked.
+`useArtifactChatContainer()` reads the container from anything inside it (the transcript's own header, for example) and throws outside one: `{ sizeClass, presentation, open, setOpen, composing, setComposing, minimized, setMinimized }`. The setters take an optional `{ reason, event }` and go through the same callbacks, so a controlled host hears them; `open` is always false while docked.
 
 ```tsx
 function TranscriptHeader() {
-  const { layout, setOpen } = useArtifactChatContainer()
-  return layout === 'floating' ? <Button onClick={() => setOpen(false)}>Collapse</Button> : null
+  const { presentation, setOpen } = useArtifactChatContainer()
+  return presentation === 'floating' ? <Button onClick={() => setOpen(false)}>Collapse</Button> : null
 }
 ```
 
@@ -145,11 +145,11 @@ Docked, the chat is a named `complementary` landmark. Floating, it is a dialog n
 
 ## Styling
 
-The root carries `data-slot="artifact-chat-container"`, `data-layout` (`split` / `floating`), `data-size-class`, `data-chat-side` and, for an explicit appearance, `data-appearance`; the docked aside and the floating sheet carry `data-theme-scope="sheet"` and the appearance class. Docked, `artifact-chat-column` holds the `artifact-chat-chat` aside with its `artifact-chat-transcript-dock` and `artifact-chat-composer-dock`; floating, the FloatingSheet's own slots (`floating-sheet`, `floating-sheet-body`, `floating-sheet-footer`) hold the same docks. The artifact is `artifact-chat-content`. `ck-artifact-chat`, `ck-artifact-chat__chat` and `ck-artifact-chat__content` stay as class hooks. `artifactChatContainerVariants({ layout, chatSide })` is the root's recipe.
+The root carries `data-slot="artifact-chat-container"`, `data-presentation` (`split` / `floating`), `data-size-class`, `data-chat-side` and, for an explicit appearance, `data-appearance`; the docked aside and the floating sheet carry `data-theme-scope="sheet"` and the appearance class. Docked, `artifact-chat-column` holds the `artifact-chat-chat` aside with its `artifact-chat-transcript-dock` and `artifact-chat-composer-dock`; floating, the FloatingSheet's own slots (`floating-sheet`, `floating-sheet-body`, `floating-sheet-footer`) hold the same docks. The artifact is `artifact-chat-content`. `ck-artifact-chat`, `ck-artifact-chat__chat` and `ck-artifact-chat__content` stay as class hooks. `artifactChatContainerVariants({ presentation, chatSide })` is the root's recipe.
 
 ## Blocks built on it
 
-- **[Map chat](https://blamy.github.io/ui/#/blocks/map-chat)**: `layout="floating"` over a `TileMap`, with a `peek` so the guide's newest reply stays over the map, and tool calls that move the camera.
+- **[Map chat](https://blamy.github.io/ui/#/blocks/map-chat)**: `presentation="floating"` over a `TileMap`, with a `peek` so the guide's newest reply stays over the map, and tool calls that move the camera.
 
 {% demo src="artifact-chat-container/map-chat" %}
 
@@ -170,7 +170,7 @@ Defined in `@/components/ui/artifact-chat-container`. Base classes:
 ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden bg-background font-sans text-foreground
 ```
 
-**`layout`** — default `split`
+**`presentation`** — default `split`
 
 | Value | Adds |
 | --- | --- |

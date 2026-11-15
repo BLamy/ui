@@ -51,7 +51,7 @@ function TerminalSheet() {
       {/* A `terminal` theme scope: the terminal's own background and ink. */}
       <ThemeScope scope="terminal" style={{ display: 'contents' }}>
       <FloatingSheet
-        variant="sheet"
+        variant="card"
         gutter={0}
         radius={16}
         collapse="hide"

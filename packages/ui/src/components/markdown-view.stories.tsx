@@ -11,7 +11,7 @@ const meta: Meta<typeof MarkdownView> = {
   decorators: [
     (Story, ctx) =>
       ctx.parameters.phone ? (
-        <Phone dark={ctx.parameters.dark}>
+        <Phone appearance={ctx.parameters.dark ? 'dark' : 'light'}>
           <div className="bl-scroll absolute inset-0 overflow-y-auto p-5"><Story /></div>
         </Phone>
       ) : (

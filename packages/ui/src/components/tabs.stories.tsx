@@ -176,11 +176,11 @@ function BottomTabs({ panels = true, defaultValue = 'contacts' }: { panels?: boo
     each panel scrolls on its own and the next one slides in from the side of the tab you picked. */
 export const BottomBar: Story = {
   args: { dark: false },
-  render: ({ dark }) => <Phone w={390} h={720} dark={dark}><BottomTabs /></Phone>,
+  render: ({ dark }) => <Phone w={390} h={720} appearance={dark ? 'dark' : 'light'}><BottomTabs /></Phone>,
 };
 
 export const BottomBarDark: Story = {
-  render: () => <Phone w={390} h={720} dark><BottomTabs defaultValue="recents" /></Phone>,
+  render: () => <Phone w={390} h={720} appearance="dark"><BottomTabs defaultValue="recents" /></Phone>,
 };
 
 const rows = (n: number) => (
@@ -201,7 +201,7 @@ export const BottomBarHideOnScroll: Story = {
   render: function HideOnScroll({ dark }) {
     const [tab, setTab] = useState('contacts');
     return (
-      <Phone w={390} h={720} dark={dark}>
+      <Phone w={390} h={720} appearance={dark ? 'dark' : 'light'}>
         <Tabs variant="bar" value={tab} onValueChange={(next) => { if (next) setTab(next); }} className="absolute inset-0">
           <TabsBar>
             <TabsList aria-label="Sections">
@@ -255,7 +255,7 @@ export const Adaptive: Story = {
   render: function AdaptiveTabs({ dark }) {
     return (
       <div className="relative h-[640px] w-full overflow-hidden rounded-card shadow-hairline">
-        <BLProvider dark={dark} className="absolute inset-0">
+        <BLProvider appearance={dark ? 'dark' : 'light'} className="absolute inset-0">
           <Tabs presentation="auto" defaultValue="contacts" className="absolute inset-0 bg-background">
             <TabsBar>
               <TabsList aria-label="Sections">
@@ -278,7 +278,7 @@ export const Adaptive: Story = {
 function Desk({ children, w = 720, h = 440, dark }: { children: ReactNode; w?: number; h?: number; dark?: boolean }) {
   return (
     <div className="relative overflow-hidden rounded-card shadow-hairline" style={{ width: w, height: h }}>
-      <BLProvider dark={dark}>{children}</BLProvider>
+      <BLProvider appearance={dark ? 'dark' : 'light'}>{children}</BLProvider>
     </div>
   );
 }

@@ -112,7 +112,7 @@ const meta: Meta<Args> = {
     defaultMinimized: false,
   },
   argTypes: {
-    variant: { control: 'radio', options: ['glass', 'sheet'] },
+    variant: { control: 'radio', options: ['glass', 'card'] },
     appearance: { control: 'radio', options: ['auto', 'light', 'dark'] },
     collapse: { control: 'radio', options: ['fab', 'hide', 'none'] },
     bodyAlign: { control: 'radio', options: ['start', 'end'] },
@@ -136,10 +136,10 @@ export const Glass: Story = {};
 /** A peek keeps part of the body visible above the footer. */
 export const GlassPeeking: Story = { args: { peek: 220 } };
 /** The opaque card at rest: the same 10px inset and sheet radius as Dialog's tray. */
-export const Card: Story = { args: { variant: 'sheet', peek: 160 } };
+export const Card: Story = { args: { variant: 'card', peek: 160 } };
 /** Edge to edge, like a system sheet; no FAB. */
 export const DockedSheet: Story = {
-  args: { variant: 'sheet', gutter: 0, peek: 300, collapse: 'none', withFooter: false },
+  args: { variant: 'card', gutter: 0, peek: 300, collapse: 'none', withFooter: false },
 };
 /** Grown to the top of its host over the scrim. */
 export const Open: Story = { args: { defaultOpen: true } };

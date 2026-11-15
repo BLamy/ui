@@ -7,7 +7,7 @@ import { Phone } from '../stories/frame';
 const meta: Meta<{ dark?: boolean }> = {
   title: 'Molecules/IndexBar',
   args: { dark: false },
-  decorators: [(Story, { args }) => <Phone w={390} h={560} dark={args.dark}><Story /></Phone>],
+  decorators: [(Story, { args }) => <Phone w={390} h={560} appearance={args.dark ? 'dark' : 'light'}><Story /></Phone>],
 };
 export default meta;
 type Story = StoryObj<{ dark?: boolean }>;

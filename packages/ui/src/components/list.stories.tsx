@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/navigation-stack';
 import { SearchInput } from '@/components/ui/search-input';
 import { Icon } from '@/lib/icon';
-import { BARH } from '@/lib/utils';
+import { BARH } from '@/lib/primitives';
 import { Pad, Phone } from '../stories/frame';
 
 const meta: Meta<typeof List> = {
@@ -184,7 +184,7 @@ export const ContactsWithIndexBar: Story = {
 };
 
 export const ContactsWithIndexBarDark: Story = {
-  render: () => <Phone dark><ContactsDemo /></Phone>,
+  render: () => <Phone appearance="dark"><ContactsDemo /></Phone>,
 };
 
 /** UITableView .insetGrouped: each letter section floats as a card; IndexBar still jumps. */
@@ -360,7 +360,7 @@ function SettingsScreen({ density }: { density?: 'compact' | 'default' | 'comfor
 
 /** Section titles and footers, a `current` row, a `disabled` row, and a centered `tone="destructive"` button row. */
 export const WithFooter: Story = { render: () => <Phone h={760}><SettingsScreen /></Phone> };
-export const WithFooterDark: Story = { render: () => <Phone h={760} dark><SettingsScreen /></Phone> };
+export const WithFooterDark: Story = { render: () => <Phone h={760} appearance="dark"><SettingsScreen /></Phone> };
 
 /** `density`: `compact` 36px rows, `default` 46px, `comfortable` 56px. */
 export const Density: Story = {
@@ -440,4 +440,4 @@ function ReorderDemo({ startEditing = true }: { startEditing?: boolean }) {
 /** `ListSection animate`: keyed rows grow in, collapse out and slide on reorder. `onOrderChange` adds a grip to
  *  every row — drag it, or focus it and press Space, ↑/↓, Space. */
 export const AnimatedReorder: Story = { render: () => <Phone h={600}><ReorderDemo /></Phone> };
-export const AnimatedReorderDark: Story = { render: () => <Phone h={600} dark><ReorderDemo /></Phone> };
+export const AnimatedReorderDark: Story = { render: () => <Phone h={600} appearance="dark"><ReorderDemo /></Phone> };

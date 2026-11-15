@@ -7,7 +7,7 @@ import { VaultProvider } from '@/lib/vault-react'
 // screen is reproducible; a real unsupported browser lands on the same one.
 // VaultGate renders its children only while unlocked, so the app behind it is
 // never shown unprotected by accident. An app that decides to carry on without
-// encryption passes `unsupported={<App />}` and says so.
+// encryption passes `screens={{ unsupported: <App /> }}` and says so.
 const noWebAuthn = { credentials: null, PublicKeyCredential: null, isSecureContext: true }
 
 export default function Unsupported() {

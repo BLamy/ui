@@ -6,7 +6,7 @@ import { Pad } from '../stories/frame';
 /* The zone on its own (no list, no state; `onFiles` gives it a FileInput of its own): idle, drag-over (a real
    dragenter, so `data-dragging` is the drop zone's own), disabled, invalid (from a Field) and horizontal. */
 
-const inPad = (dark?: boolean): Decorator[] => [(Story) => <Pad w={440} dark={dark}><Story /></Pad>];
+const inPad = (dark?: boolean): Decorator[] => [(Story) => <Pad w={440} appearance={dark ? 'dark' : 'light'}><Story /></Pad>];
 
 const meta: Meta<typeof FileUploadDropzone> = {
   title: 'Molecules/FileUploadDropzone',

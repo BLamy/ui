@@ -73,13 +73,11 @@ function BackRow() {
 
 function Empty() {
   return (
-    <div className="grid h-full place-items-center p-8 text-center text-muted-foreground">
-      <div>
-        <Icon name="clock" size={40} sw={1.4} className="mx-auto mb-3 text-tertiary-foreground" />
-        <div className="text-callout font-semibold text-foreground">No sessions yet</div>
-        <div className="mt-1 max-w-64 text-footnote">Every time this desktop opens it starts a recording. Keep it open for a few seconds and this session appears here.</div>
-      </div>
-    </div>
+    <EmptyState
+      icon={<Icon name="clock" sw={1.4} />}
+      title="No sessions yet"
+      description="Every time this desktop opens it starts a recording. Keep it open for a few seconds and this session appears here."
+    />
   );
 }
 

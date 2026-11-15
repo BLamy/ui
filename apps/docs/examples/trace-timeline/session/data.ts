@@ -64,7 +64,7 @@ function build() {
   const lane = (key: string, title: string, seed: number, data: typeof browser, marks: [number, number, number]): TraceLane => ({
     key,
     title,
-    diamonds: { label: 'checkpts', times: Float64Array.from({ length: 48 }, (_, i) => (i + 0.5) * (HOUR / 48)) },
+    diamonds: { label: 'Checkpoints', times: Float64Array.from({ length: 48 }, (_, i) => (i + 0.5) * (HOUR / 48)) },
     density: { label: 'JS', ...data },
     marks: [
       { key: 'breakpoints', times: pick(seed + 1, data.times, marks[0]), shape: 'bar', tone: 'warning' },

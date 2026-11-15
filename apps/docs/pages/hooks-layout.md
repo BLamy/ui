@@ -7,9 +7,13 @@ Each hook below is public: import it from the package root, or from the alias pa
 ```tsx
 // npm: import '@brett_lamy/ui/styles.css' once, then
 import {
-  useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation, useContainerWidth, useContainerSize, useSplitView, useSidebar, useTabs, useFloatingSheet,
-  useHideOnScroll, useArtifactChatContainer,
+  useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation, useContainerWidth, useContainerSize, useHideOnScroll,
 } from '@brett_lamy/ui'
+import { useSplitView } from '@brett_lamy/ui/split-view'
+import { useSidebar } from '@brett_lamy/ui/sidebar'
+import { useTabs } from '@brett_lamy/ui/tabs'
+import { useFloatingSheet } from '@brett_lamy/ui/floating-sheet'
+import { useArtifactChatContainer } from '@brett_lamy/ui/artifact-chat-container'
 
 // shadcn registry: each part is its own item, imported from its alias
 import { useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation, useContainerWidth, useContainerSize } from '@/lib/container' // npx shadcn@latest add https://blamy.github.io/ui/r/container.json
@@ -201,6 +205,7 @@ function useSplitView(): SplitViewContextValue   // SplitViewState plus the acti
 | `sidebarBehavior` | The resolved behavior for this size class: `tile`, `overlay` or `displace`. |
 | `value`, `select(column, value \| null)`, `isCurrent(column, value)` | The value per column. `select` shows the next column (a push when collapsed); `null` clears. `isCurrent` (what an item draws as current) is always `false` while collapsed, where rows are navigation. |
 | `compactColumn`, `show(column)`, `back()`, `canGoBack` | Which column is on top of the compact stack, and how to move between them. `canGoBack` is true only while collapsed and not on the first column. |
+| `sidebarTabs`, `tabGroup` | The sidebar (`compactPresentation="tabs"`) is the compact tab bar; and while it is, the tab group (a `tab` section's `value`) the selection is in, whose rows the sidebar shows as that tab's first page, or `null`. |
 | `columnWidths`, `setColumnWidth(column, width)` | Resized column widths in px. |
 | `supplementaryOpen`, `setSupplementaryOpen(open)` | Whether the middle column is showing, or has slid away so the detail takes its space. |
 
@@ -392,17 +397,17 @@ It is always `false` when `hideOnScroll` is `false`. The scroller is read from `
 
 ## `useArtifactChatContainer`
 
-State of the enclosing [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container): which layout is showing, and the floating chat's open, folded and composing state.
+State of the enclosing [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container): which presentation is showing, and the floating chat's open, folded and composing state.
 
 - **Export:** public. Registry item `artifact-chat-container`.
-- **Needs:** an `ArtifactChatContainer` ancestor; anything inside `ArtifactChatContainerContent`, `ArtifactChatContainerChat` and `ArtifactChatContainerComposer` counts (the Chat and Composer are portalled into the current layout's docks, but React context follows where you wrote them). **Outside it:** throws `useArtifactChatContainer must be used within <ArtifactChatContainer>`.
+- **Needs:** an `ArtifactChatContainer` ancestor; anything inside `ArtifactChatContainerContent`, `ArtifactChatContainerChat` and `ArtifactChatContainerComposer` counts (the Chat and Composer are portalled into the current presentation's docks, but React context follows where you wrote them). **Outside it:** throws `useArtifactChatContainer must be used within <ArtifactChatContainer>`.
 
 ```ts
 function useArtifactChatContainer(): ArtifactChatContainerContextValue
 
 interface ArtifactChatContainerContextValue {
   sizeClass: 'compact' | 'medium' | 'regular'   // the container's own size class
-  layout: 'split' | 'floating'                  // the resolved presentation
+  presentation: 'split' | 'floating'            // the resolved presentation
   open: boolean                                 // the floating chat is grown (always false while docked)
   setOpen: (open: boolean, given?: { reason; event? }) => void
   composing: boolean                            // the real composer shows, not the working status
@@ -414,8 +419,8 @@ interface ArtifactChatContainerContextValue {
 
 ```tsx
 function ChatToggle() {
-  const { layout, open, setOpen } = useArtifactChatContainer()
-  if (layout === 'split') return null   // docked: the transcript is always visible
+  const { presentation, open, setOpen } = useArtifactChatContainer()
+  if (presentation === 'split') return null   // docked: the transcript is always visible
   return <Button onClick={() => setOpen(!open)}>{open ? 'Hide chat' : 'Show chat'}</Button>
 }
 ```

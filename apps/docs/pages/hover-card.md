@@ -31,7 +31,7 @@ import {
 
 ## Usage
 
-`HoverCard` is the root. `HoverCardTrigger` is the trigger, a link by default (give it an `href`); `render` makes it any other element that has a name — a button, a row, an avatar with an `aria-label`. `HoverCardContent` is the card and holds whatever previews it. `HoverCardHeader` lays out the usual top in the kit's row anatomy: an `icon` (an Avatar, a glyph, a thumbnail), a `title` (the card's heading), a `description` under it and a `trailing` control.
+`HoverCard` is the root. `HoverCardTrigger` is the trigger, a link by default (give it an `href`); `render` makes it any other element that has a name — a button, a row, an avatar with an `aria-label`. `HoverCardContent` is the card and holds whatever previews it. `HoverCardHeader` lays out the usual top in the kit's row anatomy: an `icon` (an Avatar, a glyph, a thumbnail; hidden from screen readers, since the title says the same), a `title` (the card's heading), a `description` under it and a `trailing` control.
 
 ```tsx
 <HoverCard>

@@ -12,12 +12,20 @@
     "useScopeAppearance",
     "readThemeVars",
     "tintForeground",
-    "useLayerHost"
+    "useLayerHost",
+    "useChromeHidden",
+    "setChromeHidden",
+    "useThemeScopeProps",
+    "themeScopeProps",
+    "THEME_VARS"
   ],
   "imports": [
     "BLProvider",
     "ThemeScope",
     "AppearanceProvider",
     "useAppearance"
+  ],
+  "types": [
+    "AppearancePreference"
   ]
 }

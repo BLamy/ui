@@ -136,7 +136,7 @@ describe('PGliteProvider lifecycle', () => {
 
 function Rows({ sql, params }: { sql: string; params?: unknown[] }) {
   const q = useQuery<{ id: number; v: string }>(sql, params);
-  return <ul data-testid="rows" data-loading={q.isLoading}>{q.rows.map((r) => <li key={r.id}>{r.v}</li>)}{q.error && <li data-testid="err">{q.error.message}</li>}</ul>;
+  return <ul data-testid="rows" data-loading={q.loading}>{q.rows.map((r) => <li key={r.id}>{r.v}</li>)}{q.error && <li data-testid="err">{q.error.message}</li>}</ul>;
 }
 
 function Writer({ children }: { children?: ReactNode }) {
@@ -224,8 +224,8 @@ describe('hooks', () => {
 
   it('useLiveQuery pushes updates when the table changes', async () => {
     function Live() {
-      const { rows, isLoading } = useLiveQuery<{ v: string }>('select v from t order by id');
-      return <span data-testid="live" data-loading={isLoading}>{rows.map((r) => r.v).join(',')}</span>;
+      const { rows, loading } = useLiveQuery<{ v: string }>('select v from t order by id');
+      return <span data-testid="live" data-loading={loading}>{rows.map((r) => r.v).join(',')}</span>;
     }
     render(
       <PGliteProvider migrations={[{ id: '1', sql: "create table t (id serial primary key, v text); insert into t (v) values ('a')" }]}>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { ToastRegion, createHud, type Hud } from '@/components/ui/toast'
+import { ToastRegion, createHud, type ToastHud } from '@/components/ui/toast'
 import { BLProvider } from '@/lib/theme'
 
 const fields = [
@@ -9,7 +9,7 @@ const fields = [
   { label: 'Code', value: '482 913' },
 ]
 
-function Fields({ hud }: { hud: Hud }) {
+function Fields({ hud }: { hud: ToastHud }) {
   return (
     <div style={{ display: 'grid', gap: 8, width: 'min(320px, 100%)' }}>
       {fields.map((f) => (

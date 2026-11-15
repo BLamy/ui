@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  ProgressStep, ProgressStepDescription, ProgressStepIcon, ProgressStepLabel, ProgressStepper, ProgressStepTrack,
-  type ProgressStepItem,
+  ProgressStepperItem, ProgressStepperItemDescription, ProgressStepperItemIcon, ProgressStepperItemLabel, ProgressStepper, ProgressStepperItemTrack,
+  type ProgressStepperStep,
 } from '@/components/ui/progress-stepper';
 import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { Caption, Panel } from '../stories/primitive-frame';
 
-const steps: ProgressStepItem[] = [
+const steps: ProgressStepperStep[] = [
   { id: 'cart', label: 'Cart', icon: <Icon name="cart" size={18} sw={2} /> },
   { id: 'address', label: 'Address', icon: <Icon name="house" size={18} sw={2} /> },
   { id: 'payment', label: 'Payment', icon: <Icon name="wallet" size={18} sw={2} /> },
@@ -43,17 +43,17 @@ export const Still: Story = { args: { animated: false } };
 export const Parts: Story = {
   render: () => (
     <ProgressStepper current={2} labels aria-label="Delivery">
-      <ProgressStep icon={<Icon name="check-circle" size={20} />} label="Placed" description="12:04" />
-      <ProgressStep icon={<Icon name="archivebox" size={20} />} label="Packed" description="12:19" />
-      <ProgressStep>
-        <ProgressStepIcon><Spinner size={16} /></ProgressStepIcon>
-        <ProgressStepTrack />
+      <ProgressStepperItem icon={<Icon name="check-circle" size={20} />} label="Placed" description="12:04" />
+      <ProgressStepperItem icon={<Icon name="archivebox" size={20} />} label="Packed" description="12:19" />
+      <ProgressStepperItem>
+        <ProgressStepperItemIcon><Spinner size={16} /></ProgressStepperItemIcon>
+        <ProgressStepperItemTrack />
         <span className="flex min-w-0 max-w-full flex-col items-center">
-          <ProgressStepLabel>On the way</ProgressStepLabel>
-          <ProgressStepDescription>About 8 min</ProgressStepDescription>
+          <ProgressStepperItemLabel>On the way</ProgressStepperItemLabel>
+          <ProgressStepperItemDescription>About 8 min</ProgressStepperItemDescription>
         </span>
-      </ProgressStep>
-      <ProgressStep icon={<Icon name="house" size={20} />} label="Delivered" />
+      </ProgressStepperItem>
+      <ProgressStepperItem icon={<Icon name="house" size={20} />} label="Delivered" />
     </ProgressStepper>
   ),
 };

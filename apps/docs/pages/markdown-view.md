@@ -32,7 +32,7 @@ import { MarkdownView } from '@brett_lamy/ui/markdown-view'
 {% endtabs %}
 
 ```tsx
-import { MarkdownView } from '@brett_lamy/ui'
+import { MarkdownView } from '@brett_lamy/ui/markdown-view'
 
 <MarkdownView markdown={answer} />
 ```
@@ -67,14 +67,15 @@ Pass the latest accumulated markdown as chunks arrive. `streaming` is forwarded 
 | `renderReference` | `(ref: ReferenceNode) => ReactNode \| null` | | Draw a chip yourself; return `null` for the default chip. |
 | `demoResolver` | Docstream's resolver | | Resolves `{% demo %}` blocks to components and their source files. |
 | `sourceRenderer` | Docstream's renderer | | Renders component and Storybook source references. |
+| `renderCode` | `(block: CodeBlockNode, details: CodeBlockRenderDetails) => ReactNode \| null` | | Draw a code fence yourself; return `null` for Docstream's. See "Your own code blocks" below. |
 | `tui` | Docstream's TUI options \| `false` | | Configures the sandboxed terminal behind `tui` code fences (see [TuiPreview](https://blamy.github.io/ui/#/tui-preview)); `false` renders them as code. |
 | `ref`, `className`, `style`, … | `div` props | | Passed to the root `div`; `className` merges after `wb-md`. |
 
-`ReferenceNode` (the chip's `kind`, `label`, `id` and `url`) is exported with the component.
+`ReferenceNode` (the chip's `kind`, `label`, `id` and `url`), `CodeBlockNode` (a fence's `code`, `language`, `title` and `lineNumbers`) and `CodeBlockRenderDetails` are exported with the component.
 
 ## Styling
 
-Import `@brett_lamy/ui/styles.css`; the component brings Docstream's stylesheet with it. The root is `<div data-slot="markdown-view" data-renderer="docstream" class="wb-md">`. `.wb-md` sets the reading rhythm (headings, lists, inline code, tables) from the theme's variables; the first block starts at the top of the box and the last adds no space under it, so a reply that opens with a heading sits flush in a bubble or a card. Code fences take their surface from `--code` / `--code-foreground` and their token colors from CodeEditor's `--bl-syntax-*` knobs (`.wb-md` points Docstream's `--docs-tok-*` at them), so one setting colors a snippet the same in a CodeEditor and in a MarkdownView. Fence tokens come from Docstream's highlighter, which needs WebGPU; in a browser without it, fences are plain text until Docstream gains a fallback lexer. Pass `className` for layout. Docstream's own sheet is not in a cascade layer yet, so to override one of its rules use a selector at least as specific as its own.
+Import `@brett_lamy/ui/styles.css`; the component brings Docstream's stylesheet with it. The root is `<div data-slot="markdown-view" data-renderer="docstream" class="wb-md">`. `.wb-md` sets the reading rhythm (headings, lists, inline code, tables) from the theme's variables; the first block starts at the top of the box and the last adds no space under it, so a reply that opens with a heading sits flush in a bubble or a card. Code fences take their surface from `--code` / `--code-foreground` and their token colors from CodeEditor's `--bl-syntax-*` knobs (`.wb-md` points Docstream's `--docs-tok-*` at them), so one setting colors a snippet the same in a CodeEditor and in a MarkdownView. Fences are colored on first render, on the server too, by Docstream's synchronous lexer; where WebGPU works, its tokens replace those when they arrive. `<code data-highlighter>` says which one drew a fence (`gpu`, `fallback`, or `none` for a `text` fence). Pass `className` for layout. Docstream's own sheet is not in a cascade layer yet, so to override one of its rules use a selector at least as specific as its own.
 
 ## Accessibility
 
@@ -123,3 +124,17 @@ GitBook hints, tables and quotes all come through Docstream, so product copy can
 `@mentions` and `#tags` render as chips, and so do footnote citations (`[^id]` with a `[^id]: url "Label"` definition). `onReferenceClick` hands you the clicked reference; `renderReference` replaces the chip entirely.
 
 {% demo src="docstream/mentions-and-tags" %}
+
+### Your own code blocks
+
+`renderCode` draws a fence yourself: here, with [CodeEditor](https://blamy.github.io/ui/#/code-editor) read-only, so code in a reply looks like code everywhere else in the app. It gets the fence (`block.code`, `block.language`, `block.title`, `block.lineNumbers`) and `details`: `placement` is `block` for a whole fence or `tab` for the body of one tab in a code-only tab set (the tab strip and its copy button stay Docstream's), and `highlighted` is Docstream's own highlighted `<code>`, if you only want to frame it. Return `null` to keep Docstream's fence. Widget fences (`tui`, mermaid, strudel, live demos) keep their widgets and never reach it.
+
+{% demo src="docstream/render-code" %}
+
+```tsx
+<MarkdownView
+  markdown={reply}
+  renderCode={(block, { placement }) =>
+    placement === 'block' ? <CodeEditor readOnly value={block.code} language={block.language ?? undefined} title={block.title ?? undefined} showCopy /> : null}
+/>
+```

@@ -2,16 +2,21 @@
 
 Small utilities for state that survives a reload, the system back gesture, labelling controls inside list rows, and moving one DOM element between homes. The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
-`usePersistentState`, `useControllableChange` and `useKeptChildren` are public. `useRowLabel` is **registry-only**: it is not in `@brett_lamy/ui`. A component that uses it brings it along when you add the component, and you can add it by itself.
+`usePersistentState`, `useControllableChange`, `useKeptChildren`, `useCopy` and `usePaced` are public. `useRowLabel` is **registry-only**: it is not in `@brett_lamy/ui`. A component that uses it brings it along when you add the component, and you can add it by itself.
 
 ```tsx
 // npm (the public hooks)
-import { usePersistentState, useControllableChange, useKeptChildren } from '@brett_lamy/ui'
+import { usePersistentState, useControllableChange } from '@brett_lamy/ui'
+import { useKeptChildren } from '@brett_lamy/ui/lib/kept-children'
+import { useCopy } from '@brett_lamy/ui/lib/use-copy'
+import { usePaced } from '@brett_lamy/ui/lib/use-paced'
 
 // shadcn registry (aliases)
 import { usePersistentState, loadJSON, saveJSON } from '@/lib/persistent-state'   // …/r/persistent-state.json
 import { useControllableChange } from '@/lib/controllable-state'             // …/r/controllable-state.json
 import { useKeptChildren } from '@/lib/kept-children'                          // …/r/kept-children.json
+import { useCopy } from '@/lib/use-copy'                                        // …/r/use-copy.json
+import { usePaced } from '@/lib/use-paced'                                      // …/r/use-paced.json
 import { useRowLabel } from '@/lib/row-label'                                    // …/r/row-label.json (registry-only)
 ```
 
@@ -101,6 +106,47 @@ Gotchas, from the source:
 - Without `given` the reason is `imperative`. `source` falls back to what the event says (UI SDK's `sourceOf`), and is `programmatic` with no event.
 - An updater sees the latest value, even twice within one tick when uncontrolled. The setter keeps its identity while the hook stays controlled or uncontrolled.
 - `defaultValue` is read once, on the first render.
+
+## `useCopy`
+
+Copies text, tells screen readers ("Copied"), and keeps `copied` set for a moment so a button can show a check. Every copy button in the kit uses it (CodeEditor, ObjectValue, ObjectTree, CallStack, LogList, the SQL console, the vault's recovery key).
+
+- **Export:** public, with the `UseCopy` and `UseCopyOptions` types. Registry item `use-copy` (`@/lib/use-copy`).
+- **Needs:** nothing.
+
+```ts
+function useCopy<K = true>(options?: { write?: (text: string) => void | Promise<void>; resetMs?: number; announcement?: string }): {
+  copy: (text: string | Promise<string>, key?: K) => Promise<boolean>
+  copied: K | true | null
+}
+```
+
+```tsx
+const { copy, copied } = useCopy<string>()
+<Button onClick={() => copy(row.url, row.id)}>{copied === row.id ? 'Copied' : 'Copy link'}</Button>
+```
+
+- `copy(text)` without a key sets `copied` to `true`; with one, to that key, so one hook serves a list of buttons.
+- `copied` resets after `resetMs` (1200 ms). `copy` resolves `false` when the clipboard refused (no permission, an insecure page).
+- `write` replaces `navigator.clipboard` for a host with a clipboard of its own (an editor's webview, Electron). An empty `announcement` says nothing.
+
+## `usePaced`
+
+The latest value, taken at a pace React can keep up with: at once while things are quiet, and, while new values keep coming (a playhead dragged through thousands of frames), the newest every `paceMs` (16 ms), skipping the ones in between.
+
+- **Export:** public. Registry item `use-paced` (`@/lib/use-paced`).
+- **Needs:** nothing.
+
+```ts
+function usePaced<T>(value: T, paceMs?: number): T
+```
+
+```tsx
+const frames = usePaced(framesProp) // a strip that redraws as fast as React can, not once per pointer move
+```
+
+- The wait starts after the last value has committed, so a slow render takes fewer values, never queues them. Without it, a new value every frame hits React's limit on nested updates.
+- Values are compared with `Object.is`: pass a stable value (a memoized array) or it is a new value every render.
 
 ## Keyboard shortcuts
 

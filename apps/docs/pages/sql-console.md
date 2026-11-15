@@ -93,11 +93,11 @@ Schemas → tables and views → columns is a [Tree](https://blamy.github.io/ui/
 {% demo src="sql-console/schema-tree" %}
 
 ```tsx
-const { schema, isLoading } = useSchema()
+const { schema, loading } = useSchema()
 const items = schemaTreeItems(schema)
 
 <Tree aria-label="Database schema" items={items} icons={false} density="compact"
-  loading={isLoading} emptyState={<EmptyState size="sm" title="No tables yet" />} autoExpand={items.map((n) => n.value)}
+  loading={loading} emptyState={<EmptyState size="sm" title="No tables yet" />} autoExpand={items.map((n) => n.value)}
   onAction={(_value, { node }) => {
     const n = node as SchemaTreeNode
     if (n.kind === 'table') editor.current?.insert(`select * from ${n.table.name};`)

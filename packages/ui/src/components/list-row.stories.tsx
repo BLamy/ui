@@ -14,7 +14,7 @@ const meta: Meta<typeof ListRow> = {
   title: 'Molecules/ListRow',
   component: ListRow,
   decorators: [(Story, ctx) => (
-    <Pad w={390} dark={!!ctx.parameters.dark}>
+    <Pad w={390} appearance={ctx.parameters.dark ? 'dark' : 'light'}>
       <div style={{ borderRadius: 12, overflow: 'hidden' }}><Story /></div>
     </Pad>
   )],

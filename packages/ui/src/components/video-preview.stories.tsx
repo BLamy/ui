@@ -153,7 +153,7 @@ const meta: Meta<Args> = {
   },
   parameters: { frame: { w: 640, h: 420 } },
   decorators: [(Story, ctx) => (
-    <Phone w={ctx.parameters.frame.w} h={ctx.parameters.frame.h} dark={!!ctx.parameters.dark}><Story /></Phone>
+    <Phone w={ctx.parameters.frame.w} h={ctx.parameters.frame.h} appearance={ctx.parameters.dark ? 'dark' : 'light'}><Story /></Phone>
   )],
 };
 export default meta;

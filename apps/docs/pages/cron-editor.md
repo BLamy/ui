@@ -32,7 +32,7 @@ import { CronEditor } from '@brett_lamy/ui/cron-editor'
 The value is the expression, a string of five space-separated fields.
 
 ```tsx
-import { CronEditor } from '@brett_lamy/ui'
+import { CronEditor } from '@brett_lamy/ui/cron-editor'
 
 const [cron, setCron] = useState('0 9 * * 1-5')
 
@@ -145,7 +145,7 @@ The expression and the plain-English box are UI SDK fields (`Field` + `Input`) w
 | `locale` | the browser's | BCP 47 locale of the run times. |
 | `parse` | — | `{ debounceMs }`: the wait after typing before asking the model (default 0, every keystroke). |
 | `variant` | `card` | `card` puts the next runs in an outlined well (not the field fill, so it never reads as another input); `plain` has no surface. |
-| `disabled` | `false` | Disables the fields and chips. |
+| `disabled` | `false` | Disables the fields and chips. A disabled editor is the raw expression alone (read-only), without the plain-English box. |
 | `className`, `style` | — | Merged onto the root (`data-slot="cron-editor"`). Other div props pass through. |
 
 Parts carry `data-slot`s for tests and styling: `cron-editor-natural`, `cron-editor-expression` (the chosen expression and Edit expression), `cron-editor-fields` (each cell has `data-field`, and `data-active` / `data-invalid`), `cron-editor-description`, `cron-editor-presets` and `cron-editor-next`.

@@ -10,6 +10,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { deleteSession, readSession, type SessionInfo } from '@/lib/session-recorder';
 import { count, duration, fullLabel } from './format';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type Load = { events: ReplayEvent[] } | { error: string } | null;
 
@@ -97,7 +98,7 @@ export function SessionDetail({ session, onDeleted }: { session: SessionInfo; on
         ) : load && 'error' in load ? (
           <p className="m-0 py-16 text-center text-detail text-muted-foreground">{load.error}</p>
         ) : events ? (
-          <p className="m-0 py-16 text-center text-detail text-muted-foreground">Nothing recorded in this session yet.</p>
+          <EmptyState size="sm" title="Nothing recorded in this session yet." className="py-16" />
         ) : (
           <div className="grid place-items-center py-16 text-muted-foreground"><Spinner size={24} /></div>
         )}

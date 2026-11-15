@@ -9,7 +9,7 @@ const meta: Meta<typeof AnimatedHeight> = {
   component: AnimatedHeight,
   args: { spring: 'tray' },
   argTypes: { spring: { control: 'inline-radio', options: ['tray', 'smooth', 'snappy', 'bouncy'] } },
-  decorators: [(Story, { parameters }) => <Pad w={380} dark={!!parameters.dark}><Story /></Pad>],
+  decorators: [(Story, { parameters }) => <Pad w={380} appearance={parameters.dark ? 'dark' : 'light'}><Story /></Pad>],
 };
 export default meta;
 type Story = StoryObj<typeof AnimatedHeight>;

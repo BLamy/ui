@@ -25,8 +25,10 @@ import {
 // Podcasts: a sidebar on a tablet or a wide pane, the iOS tab bar on a phone.
 // Drag the frame below 640px: the same SplitView turns its sidebar into the
 // tab bar (`compactPresentation="tabs"`). The `tab` items are tabs; the
-// Library section is one tab, current while any of its rows is the selection.
-// The detail's NavigationStack stays mounted the whole time.
+// Library section is one tab, current while any of its rows is the selection,
+// whose first page is the sidebar showing Shows, Saved and Downloaded. Press
+// a tab that is already selected to go back to its first page. The detail's
+// NavigationStack stays mounted the whole time.
 const titles: Record<string, string> = {
   home: 'Home',
   new: 'New',

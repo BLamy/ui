@@ -7,7 +7,7 @@ import { OpenCode } from '@/components/ui/open-code';
 import { FileBadgeIcon } from '@/lib/file-icons';
 import {
   Workspace, WorkspaceTab, WorkspaceTabClose, WorkspaceTabTrigger, WorkspaceToolbar,
-  type TabNode, type TabsetNode,
+  type WorkspaceTabNode, type WorkspaceTabsetNode,
 } from '@/components/ui/workspace';
 import { Icon } from '@/lib/icon';
 import { languageFromPath } from '@/lib/syntax';
@@ -112,7 +112,7 @@ function TerminalTabIcon({ store, id }: { store: VSCodeStore; id: string }) {
 }
 
 /** After the tabs: a new terminal or a split, where each makes sense, and maximize in a wide window. */
-function TabsetToolbar({ store, tabset }: { store: VSCodeStore; tabset: TabsetNode<TabData> }) {
+function TabsetToolbar({ store, tabset }: { store: VSCodeStore; tabset: WorkspaceTabsetNode<TabData> }) {
   const narrow = useSyncExternalStore(store.subscribe, () => store.narrow);
   const holdsTerminals = tabset.id === TERMINALS_TABSET || tabset.tabs.some((tab) => tab.data.kind === 'terminal');
   const canSplit = !narrow && tabset.tabs.length > 1;
@@ -140,10 +140,10 @@ const WORKSPACE_CLASSES = {
 /** The editors and the terminals, in one Workspace: drag a tab to any edge to split there. */
 export function EditorArea({ store }: { store: VSCodeStore }) {
   const narrow = useSyncExternalStore(store.subscribe, () => store.narrow);
-  const renderTabContent = useCallback((tab: TabNode<TabData>) => (
+  const renderTabContent = useCallback((tab: WorkspaceTabNode<TabData>) => (
     tab.data.kind === 'file' ? <FileEditor store={store} path={tab.data.path} /> : <TerminalPane store={store} id={tab.data.id} />
   ), [store]);
-  const renderTab = useCallback((tab: TabNode<TabData>) => (
+  const renderTab = useCallback((tab: WorkspaceTabNode<TabData>) => (
     <WorkspaceTab value={tab.id}>
       <WorkspaceTabTrigger>
         {tab.data.kind === 'file'
@@ -154,8 +154,8 @@ export function EditorArea({ store }: { store: VSCodeStore }) {
       <WorkspaceTabClose />
     </WorkspaceTab>
   ), [store]);
-  const renderToolbar = useCallback((tabset: TabsetNode<TabData>) => <TabsetToolbar store={store} tabset={tabset} />, [store]);
-  const renderEmpty = useCallback((tabset: TabsetNode<TabData>) => (
+  const renderToolbar = useCallback((tabset: WorkspaceTabsetNode<TabData>) => <TabsetToolbar store={store} tabset={tabset} />, [store]);
+  const renderEmpty = useCallback((tabset: WorkspaceTabsetNode<TabData>) => (
     tabset.id === TERMINALS_TABSET ? (
       <div className="grid h-full place-items-center">
         <Button variant="quiet" onClick={() => store.newTerminal()}>New Terminal</Button>

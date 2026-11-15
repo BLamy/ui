@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, type HTMLAttributes, type Ref } from 'react';
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from 'framer-motion';
-import { fades, springs } from '@/lib/motion';
+import { motionFades, springs } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 /* ══ NumberMorph — a formatted number whose digits roll and whose separators slide (NumberFlow-style) ══
@@ -97,8 +97,8 @@ export function NumberMorph({ value, format, locale, className, ...props }: Numb
             className="inline-block"
             initial={{ opacity: 0, scale: 0.6, filter: 'blur(3px)', y: trend > 0 ? '.2em' : '-.2em' }}
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)', y: 0 }}
-            exit={{ opacity: 0, scale: 0.6, filter: 'blur(3px)', transition: fades.out }}
-            transition={{ layout: layoutT, y: layoutT, scale: layoutT, default: fades.in }}
+            exit={{ opacity: 0, scale: 0.6, filter: 'blur(3px)', transition: motionFades.out }}
+            transition={{ layout: layoutT, y: layoutT, scale: layoutT, default: motionFades.in }}
           >
             {p.type === 'digit' ? <Digit value={p.value} trend={trend} /> : p.value}
           </motion.span>

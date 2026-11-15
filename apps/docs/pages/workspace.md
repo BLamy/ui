@@ -40,7 +40,7 @@ Increment the counter, type a note, then move those tabs. A tab's content is ren
 ## Usage
 
 ```tsx
-import { Workspace, type TabNode, type WorkspaceLayoutInput } from '@/components/ui/workspace'
+import { Workspace, type WorkspaceTabNode, type WorkspaceLayoutInput } from '@/components/ui/workspace'
 
 const layout: WorkspaceLayoutInput = {
   version: 1,
@@ -54,7 +54,7 @@ const layout: WorkspaceLayoutInput = {
   },
 }
 
-const renderTabContent = (tab: TabNode) => (tab.id === 'editor' ? <Editor /> : <Preview />)
+const renderTabContent = (tab: WorkspaceTabNode) => (tab.id === 'editor' ? <Editor /> : <Preview />)
 
 <Workspace aria-label="Editor" className="h-[600px]" defaultLayout={layout} renderTabContent={renderTabContent} />
 ```
@@ -80,9 +80,9 @@ The layout holds arrangement and tab data only, not an editor's draft or other R
 
 ## Driving it from outside
 
-Create a controller with `createWorkspaceController()` and pass it as `controller`. It has `getLayout`, `setLayout`, `getActiveTabsetId` (the tabset last used, by pointer or focus), `addTab(tab, { tabsetId, index, select })`, `closeTab`, `closeTabset`, `moveTab(tabId, target)`, `selectTab`, `updateTab`, `updateTabset`, `maximizeTabset` and `restoreTabset`. Each write runs `onLayoutChange` with the reason `imperative` (or the one you pass as the last argument) and returns whether the layout changed. A controller is not held back by `disabled`, `disableClose`, `disableDrag` or `accepts`.
+Create a controller with `createWorkspaceController()` and pass it as `controller`. It has `getLayout`, `setLayout`, `getCurrentTabsetId` (the tabset last used, by pointer or focus), `addTab(tab, { tabsetId, index, select })`, `closeTab`, `closeTabset`, `moveTab(tabId, target)`, `selectTab`, `updateTab`, `updateTabset`, `maximizeTabset` and `restoreTabset`. Each write runs `onLayoutChange` with the reason `imperative` (or the one you pass as the last argument) and returns whether the layout changed. A controller is not held back by `disabled`, `disableClose`, `disableDrag` or `accepts`.
 
-A `moveTab` target is a place in a strip, `{ tabsetId, index }`, or a region of a tabset's content, `{ tabsetId, region }`: `center` joins the tabset, and `left`, `right`, `top` or `bottom` splits it there.
+A `moveTab` target is a place in a strip, `{ tabsetId, index }`, or a region of a tabset's content, `{ tabsetId, region }`: `center` joins the tabset, and `start`, `end` (the inline edges: left and right in left-to-right text), `top` or `bottom` splits it there.
 
 ## Tabs, toolbars and empty tabsets
 
@@ -116,7 +116,7 @@ Why its own box and not the size-class scope around, as Tabs, Sidebar, AdaptiveP
 
 ## Styling
 
-`className` styles the root, which draws no frame of its own: add `rounded-card border border-border` for a card. `classNames` adds classes to the parts the workspace renders from its layout: `split`, `handle`, `tabset`, `header`, `tabList`, `tab`, `tabTrigger`, `toolbar`, `tabPanels`, `tabContent` and `dropIndicator`. They carry UI SDK's state attributes: a handle has `data-hovering` and `data-dragging`; a tabset `data-active`, `data-maximized`, `data-empty` and `data-tab-side`; a tab `data-selected`, `data-moving` (picked up) and `data-dragging`, and its copy in flight `data-drag-preview`; the drop indicator `data-region`.
+`className` styles the root, which draws no frame of its own: add `rounded-card border border-border` for a card. `classNames` adds classes to the parts the workspace renders from its layout: `split`, `handle`, `tabset`, `header`, `tabList`, `tab`, `tabTrigger`, `toolbar`, `tabPanels`, `tabContent` and `dropIndicator`. They carry UI SDK's state attributes: a handle has `data-hovering` and `data-dragging`; a tabset `data-current`, `data-maximized`, `data-empty` and `data-tab-side`; a tab `data-selected`, `data-moving` (picked up) and `data-dragging`, and its copy in flight `data-drag-preview`; the drop indicator `data-region` (`center`, `start`, `end`, `top`, `bottom`).
 
 ## Accessibility
 

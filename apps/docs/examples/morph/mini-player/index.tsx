@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
-import { DialogContent } from '@ui-sdk/react/dialog'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Morph, MorphGroup, MorphPresence } from '@/components/ui/morph'
 import { NowPlayingBars } from '@/components/ui/now-playing-bars'
 import { Slider } from '@/components/ui/slider'
@@ -54,6 +53,7 @@ export default function MiniPlayer() {
         </MorphPresence>
         <Dialog open={open} onOpenChange={setOpen} presentation="dialog">
           <DialogContent
+            variant="plain"
             render={<Morph layoutId="player" radius={22} dragToDismiss onDismiss={() => setOpen(false)} />}
             finalFocus={() => bar.current}
             className="absolute inset-0 z-2 flex flex-col overflow-hidden bg-[linear-gradient(180deg,#5a2748,#1e1030)] px-6.5 pt-2.5 pb-6.5 text-white outline-none"

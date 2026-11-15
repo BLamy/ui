@@ -1,6 +1,6 @@
 # Utilities
 
-The small helpers every BL UI component is built from. `cn` merges class names with tailwind-merge taught the library's token utilities; `cx` does the same under a UI SDK part's `className`, which may be a function of state; `pressable` and `brandTile` are class fragments for custom controls. The rest of this page lists the other modules under `lib/` and says which are public and which are internal. The design tokens themselves are in [Styling](https://blamy.github.io/ui/#/styling) and [Theming](https://blamy.github.io/ui/#/theming).
+The small helpers every BL UI component is built from. `cn` merges class names with tailwind-merge taught the library's token utilities; `cx` does the same under a UI SDK part's `className`, which may be a function of state; `pressable` and `brandTile` are class fragments for custom controls (registry installs only). The rest of this page lists the other modules under `lib/` and says which are public and which are internal. The design tokens themselves are in [Styling](https://blamy.github.io/ui/#/styling) and [Theming](https://blamy.github.io/ui/#/theming).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -9,7 +9,7 @@ The small helpers every BL UI component is built from. `cn` merges class names w
 Copies the source into your project's `lib/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import { cn, cx, pressable, brandTile } from '@/lib/utils'
+import { cn, cx } from '@/lib/utils'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -20,7 +20,7 @@ Import the stylesheet once at your app's entry, then the parts from their module
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { cn, cx, pressable, brandTile } from '@brett_lamy/ui/lib/utils'
+import { cn, cx } from '@brett_lamy/ui/lib/utils'
 ```
 {% endtab %}
 {% endtabs %}
@@ -72,14 +72,11 @@ It is for plain elements and [unstyled UI SDK buttons](https://blamy.github.io/u
 
 `brandTile` is `bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]`: the accent fading into iOS indigo. The indigo is a fixed brand color; the start follows `--primary` (and so a `tint`). Use it for a logo tile or an avatar square, as the greeting in [Conversation](https://blamy.github.io/ui/#/conversation) does.
 
-`pressable`, `brandTile` and the constants below are helpers for your own markup, not part of a component's API, so they stay off the package root: with npm, import them from the module, `import { pressable, brandTile } from '@brett_lamy/ui/lib/utils'`.
+`pressable`, `brandTile` and `BARH` live in `lib/primitives.ts` with the kit's other class fragments. A registry install has them at `@/lib/primitives` (it is copied with the components that use them). They are not npm API: on npm, copy the class string into your own code.
 
-## Constants
+## BARH
 
-| Name | Value | Notes |
-| --- | --- | --- |
-| `BARH` | `52` | The toolbar height in px, for JavaScript math (navigation and drawer bars, chrome offsets). In CSS use the `h-toolbar` utility, which is the same 52px. |
-| `FONT` | the iOS system stack | A font-family string. Nothing in the library uses it; set `font-sans` in CSS instead. |
+`BARH` is `52`: the toolbar height in px, for JavaScript math (navigation and drawer bars, chrome offsets), from `@/lib/primitives` like the fragments above. In CSS use the `h-toolbar` utility, which is the same 52px. For the system font stack, use the `font-sans` utility.
 
 ## Other lib modules
 
@@ -89,7 +86,7 @@ It is for plain elements and [unstyled UI SDK buttons](https://blamy.github.io/u
 | --- | --- | --- |
 | `lib/container.ts` | yes | `useSizeClass()` returns `[ref, sizeClass]`, the `compact` / `medium` / `regular` class of an element's own box (`bindSizeClass` from `lib/size-class.ts`, which also writes `data-size-class` on it), or the nearest size-class scope's before the ref is attached; reach for it first. `SizeClassProvider`, `useSizeClassScope()` and `usePresentation()` are the size-class scope that `presentation="auto"` popups follow (see [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)). `useContainerWidth()` and `useContainerSize()` measure an element with a `ResizeObserver` and return `[ref, width]` or `[ref, { width, height }]` (a `ContainerSize`), so a shell sizes itself from its own box instead of the viewport. The `initial` argument (1200, or 1200 by 800) is used until the first measurement. |
 | `lib/qr.ts` | yes | `encodeQR(text, { level, minVersion, maxVersion, mask })` returns `{ size, version, level, mask, modules }` with `modules[y][x]` true for a dark module. Byte mode only; throws a `RangeError` when the text does not fit. It is what `QRCode` draws, so use that component unless you need the matrix. |
-| `lib/primitives.ts` | internal | Shared class fragments for the primitives: `focusRing` and `pressableFocusRing`, `popoverSurface`, `popoverSheet`, `popoverMotion`, `popoverArrow`, `popoverArrowGlyph`, `selectableText`, the group header `sectionLabelVariants({ variant: 'grouped' \| 'sidebar' \| 'menu' })`, the iOS bar `barSurface`, the dense-row layers `dataRowLayers`, `tableHeaderCellClass`, `columnResizerClass` and `valueChip`. The file says it is not exported from the package; copy one in if you need it. |
+| `lib/primitives.ts` | internal | Shared class fragments for the primitives: `pressable`, `brandTile`, `BARH`, `focusRing` and `pressableFocusRing`, `popoverSurface`, `popoverSheet`, `popoverMotion`, `popoverArrow`, `popoverArrowGlyph`, `selectableText`, the group header `sectionLabelVariants({ variant: 'grouped' \| 'sidebar' \| 'menu' })`, the iOS bar `barSurface`, the dense-row layers `dataRowLayers`, `tableHeaderCellClass`, `columnResizerClass` and `valueChip`. The file says it is not exported from the package; copy one in if you need it. |
 | `lib/surface.ts` | yes (through `dialog` and `sheet`) | The modal-surface recipes every surface shares, hook-free so Card can use them on the server: `surfaceHeaderVariants`, `surfaceTitleVariants`, `surfaceDescriptionVariants`, `surfaceBodyVariants`, `surfaceFooterVariants`, `closeButtonVariants` and `sheetGrabberVariants`. |
 | `lib/row-label.ts` | internal | `RowLabelContext` and `useRowLabel`. A list row publishes its title's id so a Switch or Slider inside it is labelled by the row title unless it has its own label. |
 | `lib/kept-children.ts` | yes | `useKeptChildren(children, { slot })`: children rendered once through a portal into a detached element that the current home docks, so they stay mounted (draft, caret, scroll, a streaming reply) while a region moves between presentations. AdaptivePane, Sidebar and `ArtifactChatContainer` use it; see [State hooks](https://blamy.github.io/ui/#/hooks-state). |

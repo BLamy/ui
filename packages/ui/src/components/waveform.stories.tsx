@@ -44,7 +44,7 @@ const meta: Meta<Args> = {
     width: { control: { type: 'range', min: 40, max: 1000, step: 1 } },
     height: { control: { type: 'range', min: 8, max: 200, step: 1 } },
   },
-  decorators: [(Story, ctx) => <Pad w={ctx.args.width + 40} dark={!!ctx.parameters.dark}><Story /></Pad>],
+  decorators: [(Story, ctx) => <Pad w={ctx.args.width + 40} appearance={ctx.parameters.dark ? 'dark' : 'light'}><Story /></Pad>],
   render: ({ width, height, ...props }) => <Box width={width} height={height}><Waveform {...props} /></Box>,
 };
 export default meta;

@@ -4,11 +4,11 @@ import {
   type ComponentProps, type CSSProperties, type ReactElement, type ReactNode,
 } from 'react';
 import { createParts, usePart, usePrimitive } from '@ui-sdk/react/primitive';
-import { chromeStore, BLSafeCtx, BLStickyCtx } from '@/lib/theme';
-import { cn, BARH } from '@/lib/utils';
+import { chromeStore, BLSafeCtx, BLStickyCtx } from '@/lib/theme-context';
+import { cn } from '@/lib/utils';
 import { SizeClassProvider } from '@/lib/container';
-import { barMaterial, barSurface } from '@/lib/primitives';
-import { StackParentContext } from '@/lib/stack-parent';
+import { barMaterial, barSurface, BARH } from '@/lib/primitives';
+import { StackParentContext, scrollToTop } from '@/lib/stack-parent';
 import {
   BackLabel, backName, barBackButton, barTitle, barTitleFade, barTitleHidden, largeTitleText, useBackFit,
 } from '@/lib/nav-bar';
@@ -56,7 +56,8 @@ export type {
    kept on screen until it has slid out.
 
    In a SplitView column the column is the stack's parent (lib/stack-parent): collapsed, the first page gets the back
-   button to the column before; Escape and the swipe pop this stack's pages before the columns move. `resetKey`
+   button to the column before; Escape and the swipe pop this stack's pages before the columns move; pressing the
+   selected tab of a sidebar that is a tab bar pops to the first page (or scrolls it to the top). `resetKey`
    pops to the first page when it changes (the sidebar selection the stack belongs to). ══ */
 
 const {
@@ -275,6 +276,14 @@ function Pages({ api, pages, exiting, present, titles, rootEl, rootBackProp, roo
   }, [nameParent, rootName]);
   const rootBack = rootBackProp === false ? null : rootBackProp ?? (parent?.back ? { title: parent.back.title, onClick: parent.back.onClick } : null);
   rootBackRef.current = rootBack;
+  // The container's place picked again (a SplitView tab bar's selected tab): back to the first page, or its top.
+  const onReselect = parent?.onReselect;
+  useLayoutEffect(() => onReselect?.(() => {
+    const now = api.getPages();
+    if (now.length > 1) { api.popTo(now[0], { reason: 'trigger-press' }); return; }
+    const page = rootEl ? [...rootEl.children].find((e): e is HTMLElement => e instanceof HTMLElement && e.dataset.value === now[0]) : undefined;
+    scrollToTop(page ? own(page, 'content') : null);
+  }), [onReselect, api, rootEl]);
 
   // The stack says which pages render: those in it and those leaving. A page the children drop while it is still
   // there stays, where it was, until it has left.

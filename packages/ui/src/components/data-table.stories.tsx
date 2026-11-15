@@ -71,7 +71,7 @@ const COLUMNS: DataTableColumn<Order>[] = [
 function Desktop({ children, dark }: { children?: ReactNode; dark?: boolean }) {
   return (
     <div className="h-dvh w-full">
-      <BLProvider dark={dark}>
+      <BLProvider appearance={dark ? 'dark' : 'light'}>
         <div className="flex h-full min-h-0 flex-col gap-2 p-3">{children}</div>
       </BLProvider>
     </div>
@@ -80,7 +80,7 @@ function Desktop({ children, dark }: { children?: ReactNode; dark?: boolean }) {
 
 function PhoneWindow({ children, dark }: { children?: ReactNode; dark?: boolean }) {
   return (
-    <PhoneFrame w={390} h={844} dark={dark}>
+    <PhoneFrame w={390} h={844} appearance={dark ? 'dark' : 'light'}>
       <div className="flex h-full min-h-0 flex-col gap-2 p-2">{children}</div>
     </PhoneFrame>
   );
@@ -158,9 +158,9 @@ export const LoadingPhone: Story = {
   render: () => <PhoneWindow><DataTable aria-label="Orders" rows={[]} columns={COLUMNS} loading className="min-h-0 flex-1" /></PhoneWindow>,
 };
 
-/** `focus="row"`: the arrow keys move whole rows (← → scroll sideways), for a list of things more than a table of values. */
+/** `navigation="row"`: the arrow keys move whole rows (← → scroll sideways), for a list of things more than a table of values. */
 export const RowFocus: Story = {
-  render: () => <Desktop><DataTable aria-label="Orders" rows={ORDERS} columns={COLUMNS} focus="row" className="min-h-0 flex-1" /></Desktop>,
+  render: () => <Desktop><DataTable aria-label="Orders" rows={ORDERS} columns={COLUMNS} navigation="row" className="min-h-0 flex-1" /></Desktop>,
 };
 
 let many: Order[] | undefined;

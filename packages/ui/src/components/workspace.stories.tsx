@@ -1,7 +1,7 @@
 import { useCallback, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
-import { Workspace, type TabNode, type WorkspaceLayoutInput, type WorkspacePresentation, type WorkspaceTabSide } from '@/components/ui/workspace';
+import { Workspace, type WorkspaceTabNode, type WorkspaceLayoutInput, type WorkspacePresentation, type WorkspaceTabSide } from '@/components/ui/workspace';
 import { BLProvider } from '@/lib/theme';
 import { Phone } from '../stories/frame';
 
@@ -65,10 +65,10 @@ const layout = (extra?: Partial<WorkspaceLayoutInput<Kind>>): WorkspaceLayoutInp
 });
 
 function Demo({ tabSide, presentation, dark, input = layout(), h = 520 }: Args & { input?: WorkspaceLayoutInput<Kind>; h?: number }) {
-  const renderTabContent = useCallback((tab: TabNode<Kind>) => BODY[tab.data](tab.title ?? tab.id), []);
+  const renderTabContent = useCallback((tab: WorkspaceTabNode<Kind>) => BODY[tab.data](tab.title ?? tab.id), []);
   return (
     <div className="w-full overflow-hidden rounded-card shadow-hairline" style={{ height: h }}>
-      <BLProvider dark={dark} className="size-full">
+      <BLProvider appearance={dark ? 'dark' : 'light'} className="size-full">
         <Workspace<Kind>
           aria-label="Editor"
           tabSide={tabSide}
@@ -130,7 +130,7 @@ export const EmptyTabset: Story = {
 export const Compact: Story = {
   args: { dark: false },
   render: ({ dark }) => (
-    <Phone w={390} h={720} dark={dark}>
+    <Phone w={390} h={720} appearance={dark ? 'dark' : 'light'}>
       <Demo input={layout()} h={720} dark={dark} />
     </Phone>
   ),

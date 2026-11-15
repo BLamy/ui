@@ -126,7 +126,7 @@ function Rename() {
             </Field>
           </DialogBody>
           <DialogFooter>
-            <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+            <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
             <DialogClose render={<Button />} value="save" action={() => setName(draft.trim())}>Save name</DialogClose>
           </DialogFooter>
         </DialogContent>

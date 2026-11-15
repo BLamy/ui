@@ -177,7 +177,7 @@ function NodeHeader({ ctx }: { ctx: NodeCtx }) {
               </DropdownMenuContent>
             </DropdownMenu>
             <IconAction icon="copy" label="Duplicate (⌘D)" onClick={() => b.duplicate([node.id])} />
-            <IconAction icon="trash" label="Delete (⌫)" tone="danger" onClick={() => b.remove([node.id])} />
+            <IconAction icon="trash" label="Delete (⌫)" tone="destructive" onClick={() => b.remove([node.id])} />
           </>
         ) : null}
       </div>

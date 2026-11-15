@@ -16,7 +16,7 @@ const meta: Meta<typeof NavigationStack> = {
   // `parameters.frame` sizes the frame (a phone by default).
   decorators: [(Story, ctx) => {
     const frame = ctx.parameters.frame as { w: number; h: number } | undefined;
-    return <Phone dark={!!ctx.parameters.dark} w={frame?.w} h={frame?.h}><Story /></Phone>;
+    return <Phone appearance={ctx.parameters.dark ? 'dark' : 'light'} w={frame?.w} h={frame?.h}><Story /></Phone>;
   }],
 };
 export default meta;
@@ -106,7 +106,7 @@ export const TitleOnScroll: Story = {
   ),
 };
 
-/** Chrome hide-on-scroll: scroll down and the nav bar and the tab bar ride away together (chromeStore);
+/** Chrome hide-on-scroll: scroll down and the nav bar and the tab bar ride away together (useChromeHidden);
  *  scroll up — or back near the top — and they return. Sticky headers follow the bar. */
 export const ChromeHideOnScroll: Story = {
   render: function ChromeHideStory() {

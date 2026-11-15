@@ -25,7 +25,7 @@ type Story = StoryObj<typeof TailscaleLoginButton>;
 const noop = () => undefined;
 const state = (status: TailscaleStatus, dark?: boolean): Story => ({
   render: (args) => (
-    <Pad dark={dark}>
+    <Pad appearance={dark ? 'dark' : 'light'}>
       <div className="grid justify-items-start gap-3">
         <TailscaleLoginButton {...args} status={status} onSignIn={noop} onCancel={noop} onSignOut={noop} />
         <TailscaleStatusBadge
@@ -72,7 +72,7 @@ export const SummaryStates: Story = {
   render: () => (
     <Pad w={320}>
       <div className="grid gap-4">
-        <TailscaleSummary status="connected" tailnet="tail1234.ts.net" selfName="iphone.tail1234.ts.net." detail="4 pages and 17 requests this session." />
+        <TailscaleSummary status="connected" tailnet="tail1234.ts.net" selfName="iphone.tail1234.ts.net." description="4 pages and 17 requests this session." />
         <TailscaleSummary status="starting" tailnet="tail1234.ts.net" />
         <TailscaleSummary status="needs-approval" selfName="iphone" />
         <TailscaleSummary status="idle" />
@@ -136,7 +136,7 @@ function Tailnet({ exitNode, nodes = NODES, children }: { exitNode?: string; nod
 function PanelBody({ onAction }: { onAction?: (id: string | null) => Promise<void> }) {
   return (
     <div className="flex flex-col gap-3">
-      <TailscaleSummary detail="4 pages and 17 requests this session, all through Tailscale." />
+      <TailscaleSummary description="4 pages and 17 requests this session, all through Tailscale." />
       <TailscaleExitNodes onAction={onAction} />
       <TailscaleLoginButton size="sm" variant="outline" />
     </div>
@@ -145,7 +145,7 @@ function PanelBody({ onAction }: { onAction?: (id: string | null) => Promise<voi
 
 const panel = (extra: { dark?: boolean; exitNode?: string; nodes?: FakeTailscaleOptions; onAction?: (id: string | null) => Promise<void> } = {}): Story => ({
   render: () => (
-    <Pad dark={extra.dark} w={320}>
+    <Pad appearance={extra.dark ? 'dark' : 'light'} w={320}>
       <Tailnet exitNode={extra.exitNode} nodes={extra.nodes}>
         <PanelBody onAction={extra.onAction} />
       </Tailnet>
@@ -173,7 +173,7 @@ export const InPopover: Story = {
         <Tailnet exitNode="bretts-macbook-pro">
           <Popover defaultOpen>
             <PopoverTrigger aria-label="Tailscale connection" className={buttonVariants({ variant: 'quiet', size: 'icon' })}>
-              <TailscaleMark size={18} />
+              <TailscaleMark className="size-4.5" />
             </PopoverTrigger>
             <PopoverContent align="end" className="w-80">
               <PopoverTitle className="sr-only">Tailscale</PopoverTitle>

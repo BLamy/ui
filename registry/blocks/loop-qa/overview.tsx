@@ -83,7 +83,7 @@ function BugLine({ bug: b }: { bug: Bug }) {
   const qa = useLoopQA();
   return (
     <li>
-      <BugPreview bug={b} side="left" align="start"
+      <BugPreview bug={b} side="start" align="start"
         render={<Pressable onClick={() => qa.open({ kind: 'bug', id: b.id })}
           className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-ctl px-2.5 py-2 text-left whitespace-normal hover:bg-muted! active:not-aria-expanded:not-data-disabled:scale-[.99]" />}>
         <SeverityBadge severity={b.severity} className="w-[66px] justify-center" />

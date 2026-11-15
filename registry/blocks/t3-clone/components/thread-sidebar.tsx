@@ -254,7 +254,7 @@ export function ThreadItem({ active, status = 'idle', meta, icon = 'bubble-left'
   return (
     <HoverCard>
       <HoverCardTrigger render={<Button {...rowProps} />}>{content}</HoverCardTrigger>
-      <HoverCardContent side="right" align="start" sideOffset={14}>
+      <HoverCardContent side="end" align="start" sideOffset={14}>
         {preview}
       </HoverCardContent>
     </HoverCard>

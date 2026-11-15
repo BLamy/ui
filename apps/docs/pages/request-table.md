@@ -97,7 +97,7 @@ The table has DataTable's size class of its own, from its own width and not the 
 
 ## Keyboard and accessibility
 
-DataTable's, with `focus="row"` as its default: an ARIA grid with one tab stop, where ↑ ↓ move between requests (a request is one thing to open or seek to, as in a browser's network pane; pass `focus="cell"` to step through its values too), ↑ from the first row reaches the headers, Enter presses a row or sorts by a header, ⌥← ⌥→ resize a column, and Tab goes through the active row's links and on out (Esc comes back). See [DataTable](https://blamy.github.io/ui/#/data-table#keyboard). Links are UI SDK buttons, and a press on one isn't a press of its row. The current time's line is drawn for sighted users; the dimmed rows (`data-future`) say the same.
+DataTable's, with `navigation="row"` as its default: an ARIA grid with one tab stop, where ↑ ↓ move between requests (a request is one thing to open or seek to, as in a browser's network pane; pass `navigation="cell"` to step through its values too), ↑ from the first row reaches the headers, Enter presses a row or sorts by a header, ⌥← ⌥→ resize a column, and Tab goes through the active row's links and on out (Esc comes back). See [DataTable](https://blamy.github.io/ui/#/data-table#keyboard). Links are UI SDK buttons, and a press on one isn't a press of its row. The current time's line is drawn for sighted users; the dimmed rows (`data-future`) say the same.
 
 UI SDK's [Waterfall](https://ui-sdk.dev) draws a trace's spans as a tree of rows on a time axis; RequestTable is a flat, sortable table of requests with a waterfall column, so it places its bars with `requestBar` and leaves Waterfall to traces.
 
@@ -105,7 +105,7 @@ UI SDK's [Waterfall](https://ui-sdk.dev) draws a trace's spans as a tree of rows
 
 ### RequestTable
 
-RequestTable takes DataTable's props (`value`, `onAction`, `sort`, `columnWidths`, `controller`, `layout`, `breakpoints`, `density`, `emptyState`, `footer`, `toolbar`, `mode`, `loading`, `rowProps`…) except the ones it fills in itself (`rowTime`, `overlay`, `renderStackedRow`, `countLabel`), and these. A `rowProps` of your own is merged with the table's `data-failed` and `data-pending`.
+RequestTable takes DataTable's props (`value`, `onAction`, `sort`, `columnWidths`, `controller`, `presentation`, `breakpoints`, `density`, `emptyState`, `footer`, `toolbar`, `mode`, `loading`, `rowProps`…) except the ones it fills in itself (`rowTime`, `overlay`, `renderStackedRow`, `countLabel`), and these. A `rowProps` of your own is merged with the table's `data-failed` and `data-pending`.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
@@ -113,7 +113,7 @@ RequestTable takes DataTable's props (`value`, `onAction`, `sort`, `columnWidths
 | `columns` | all but `url` | Which columns, in order: built-in ids or DataTable columns. |
 | `timeRange` | first request to last answer | The waterfall's range. |
 | `currentTime` | none | Where the recording is now, in ms on the range. |
-| `focus` | `row` | `row` moves by request; `cell` steps through a request's values too. |
+| `navigation` | `row` | `row` moves by request; `cell` steps through a request's values too. |
 | `renderLink` | none | Links to the other end of a call, in the row. Must be stable. |
 | `density` | `compact` | As DataTable's, with `compact` the default here. |
 | `emptyState` | "No requests" | Shown with no rows. |

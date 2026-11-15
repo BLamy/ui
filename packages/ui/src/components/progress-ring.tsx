@@ -229,7 +229,7 @@ export interface UseCountdownOptions {
   offset?: number;
 }
 
-export interface Countdown {
+export interface UseCountdown {
   /** Whole seconds left in the current period (`duration` … 1 while looping; down to 0 when not). */
   remaining: number;
   /** Periods completed so far (0 at the start); a TOTP code's window is its start window + `period`. */
@@ -242,7 +242,7 @@ export interface Countdown {
 
 /** A `duration`-second countdown on the wall clock: it reads `Date.now()` (so throttled or delayed timers catch up
  *  instead of drifting, and a frozen clock freezes it) and re-renders only when the whole second changes. */
-export function useCountdown(duration: number, { running = true, loop = true, onEnd, offset = 0 }: UseCountdownOptions = {}): Countdown {
+export function useCountdown(duration: number, { running = true, loop = true, onEnd, offset = 0 }: UseCountdownOptions = {}): UseCountdown {
   // Milliseconds run before the current stretch, and when the current stretch started (null while paused).
   const acc = useRef(0);
   const since = useRef<number | null>(null);

@@ -34,7 +34,8 @@ import {
 {% endtabs %}
 
 ```tsx
-import { Button, FloatingSheet, FloatingSheetBody, FloatingSheetFooter } from '@brett_lamy/ui'
+import { Button } from '@brett_lamy/ui/button'
+import { FloatingSheet, FloatingSheetBody, FloatingSheetFooter } from '@brett_lamy/ui/floating-sheet'
 
 <div style={{ position: 'relative', height: 560 }}>
   <Map />
@@ -55,8 +56,8 @@ The host must be positioned (`relative`, `absolute`, …) and sized; the sheet m
 | --- | --- |
 | Glass | `variant="glass"` (default), inset by its `gutter`. Blurs whatever is behind it. |
 | Peeking | Any look with `peek`: part of the body stays visible above the footer while resting. |
-| Card | `variant="sheet"`: an opaque card surface with a soft shadow. At rest it is the same floating card as Dialog's `variant="tray"` on a phone: 10px in from the edges, `--radius-sheet` corners. |
-| Docked sheet | `variant="sheet"` with `gutter={0}`: edge to edge with square bottom corners, like a system sheet. |
+| Card | `variant="card"`: an opaque card surface with a soft shadow. At rest it is the same floating card as Dialog's `variant="tray"` on a phone: 10px in from the edges, `--radius-sheet` corners. |
+| Docked sheet | `variant="card"` with `gutter={0}`: edge to edge with square bottom corners, like a system sheet. |
 | Open | `defaultOpen` or a controlled `open`: the cap meets the top of the host and the host dims behind it. |
 
 The material is mixed from the theme's own tokens (`--card`, `--foreground`), so `appearance="auto"` (the default) follows the page and these examples switch with the docs' light/dark toggle. Pass `appearance="light"` or `"dark"` when the surface must disagree with the page (a dark sheet over a light map): the bl-theme's `sheet` scope goes on it, and popups opened inside wear it too.
@@ -70,7 +71,7 @@ The sheet is UI SDK's Drawer with a snap point at the peek, one per entry of `sn
 - **One surface.** The drawer moves a panel as tall as the grown sheet; the surface grows taller, wider and squarer with it as it rises past the peek (`--fs-grown`, 0 → 1), so there is no second card fading in.
 - **Release keeps its momentum.** UI SDK projects the pointer's velocity forward: a flick goes to the next stop in the direction it was thrown, a slow drag settles at the nearest stop, and the tray spring carries the surface there from the finger's speed.
 - **Snap points.** `snapPoints={[0.5]}` adds resting heights between the peek and full (fractions of the grown body, or `'70%'` for a share of the host).
-- **The cap is a handle.** A press steps to the next stop; the arrow keys, Home and End move through them. `Escape` and the scrim bring a grown sheet back to rest (reported to `onOpenChange` with reason `escape-key` / `outside-press`, cancelable).
+- **The cap is a handle.** A press steps to the next stop; the arrow keys, Home and End move through them. It is 18px tall, and 36px on a touch screen (`pointer: coarse`), so with the dock's padding under it it is a 44px target even while nothing peeks. `Escape` and the scrim bring a grown sheet back to rest (reported to `onOpenChange` with reason `escape-key` / `outside-press`, cancelable).
 - **The page stays usable at rest.** Up to the peek the sheet is not modal (`modalAbove`): no dim, nothing inert, focus left alone. Above it the scrim dims the host and Tab stays in the sheet.
 - **Below rest, `collapse` decides.** `fab` (default): the surface folds into a round FAB (placed by `FloatingSheetFab`'s `side` / `align`), and pressing the FAB brings the resting sheet back. `hide`: the surface slides off the bottom edge (`onVisibleChange(false, details)`); `visible` brings it back. `none`: it springs back to rest.
 - **Scroll hides it.** While it rests on its cap and footer alone, `hideOnScroll` slides it away when the shared BL UI chrome hides (the same signal the `Tabs` bar follows) or when `scrollRef`'s scroller moves down.
@@ -93,7 +94,7 @@ A docked bottom sheet you can put away, like the Maps or Find My sheet: `collaps
 
 ```tsx
 <FloatingSheet
-  variant="sheet"
+  variant="card"
   gutter={0}
   collapse="hide"
   visible={open}

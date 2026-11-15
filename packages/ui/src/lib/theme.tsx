@@ -2,19 +2,20 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { bindSizeClass, type SizeClass } from '@/lib/size-class';
 import { SizeClassProvider } from '@/lib/container';
-import { cn, BARH } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { AppearanceContext, BLSafeCtx, ThemeScopeContext, chromeStore } from '@/lib/theme-context';
 import { THEME_VARS, type ThemeVar } from '@/lib/tokens.generated';
 
 export { THEME_VARS, type ThemeVar };
 
 /* ══ Chrome coordination ══
-   Nav bar and tab bar hide together on scroll-down and come back on scroll-up. The scrolling screen
-   publishes here so a `Tabs` bar anywhere in the tree follows without prop drilling. */
-export const chromeStore = {
-  hidden: false,
-  subs: new Set<(v: boolean) => void>(),
-  set(v: boolean) { if (v === this.hidden) return; this.hidden = v; this.subs.forEach(f => f(v)); },
-};
+   Nav bar and tab bar hide together on scroll-down and come back on scroll-up. The scrolling screen publishes
+   (`setChromeHidden`) so a `Tabs` bar anywhere in the tree follows without prop drilling (`useChromeHidden`). */
+
+/** Hides (or shows) the shared chrome from a scroller of your own, as a NavigationStack page does while it scrolls. */
+export function setChromeHidden(hidden: boolean) {
+  chromeStore.set(hidden);
+}
 
 export function useChromeHidden() {
   const [h, setH] = useState(chromeStore.hidden);
@@ -26,22 +27,14 @@ export function useChromeHidden() {
   return h;
 }
 
-/* Safe-area top inset (Dynamic Island) threaded down from the app frame, so it survives frame changes
-   without remounting. --bl-safe-top is still set for CSS that wants it. */
-export const BLSafeCtx = createContext(0);
-
-/* How far down sticky list headers must stop — whatever chrome is above the list (0 when the list is in a
-   bare scroller, so it never needs to know where it lives). While the chrome is hidden every offset moves
-   up by one bar height, floored at the safe-area strip — that's how headers ride along with the bar. */
-export const BLStickyCtx = createContext(0);
-export const chromeOffset = (top: number, hidden: boolean) => (hidden ? Math.max(0, top - BARH) : top);
-
 /* ══ Appearance ══
    Ambient light/dark choice for a subtree. Hosts (a docs site, an app's settings) set it once; every themed
    surface below — BLProvider, ThemeScope, WorkbenchShell, ChatShell — follows unless given an explicit prop.
    `undefined` means "no preference", so each surface keeps its own default (BL light, Workbench/chat dark). */
 export type Appearance = 'light' | 'dark';
-export const AppearanceContext = createContext<Appearance | undefined>(undefined);
+/** What a component's `appearance` prop accepts: a fixed scheme, or `'auto'` (the same as leaving it out) to follow
+    the enclosing scope / ambient appearance. `Appearance` is the resolved value. */
+export type AppearancePreference = 'auto' | Appearance;
 export function AppearanceProvider({ value, children }: { value: Appearance | undefined; children?: ReactNode }) {
   return <AppearanceContext.Provider value={value}>{children}</AppearanceContext.Provider>;
 }
@@ -156,7 +149,6 @@ export function themeScopeProps({ scope, appearance, tint, vars }: { scope?: The
    primitives spread `useThemeScopeProps()` onto their popup — it gets the same `data-theme-scope`, appearance class,
    tint and vars as the surface that opened it. Nothing is applied outside a scope. */
 export interface ThemeScopeState { scope?: ThemeScopeName; appearance?: Appearance; tint?: string; vars?: ThemeVars }
-export const ThemeScopeContext = createContext<ThemeScopeState | null>(null);
 
 /** Props (`data-theme-scope`, `className`, `style`) that carry the surrounding ThemeScope onto a portalled overlay. */
 export function useThemeScopeProps(): { 'data-theme-scope'?: string; className?: string; style?: CSSProperties } {
@@ -202,13 +194,13 @@ export function useThemeScope(): ThemeScopeState | null {
     is always dark; otherwise the explicit value, else the enclosing scope's when it has the same name, else the ambient
     `AppearanceProvider` (or `.dark` on `<html>`), else the scope's default (dark for `workbench`, light for the other
     named scopes, none for a plain scope). For a component that renders its own scope root, such as a shell. */
-export function useScopeAppearance(scope: ThemeScopeName, appearance?: Appearance): Appearance;
-export function useScopeAppearance(scope?: ThemeScopeName, appearance?: Appearance): Appearance | undefined;
-export function useScopeAppearance(scope?: ThemeScopeName, appearance?: Appearance): Appearance | undefined {
+export function useScopeAppearance(scope: ThemeScopeName, appearance?: AppearancePreference): Appearance;
+export function useScopeAppearance(scope?: ThemeScopeName, appearance?: AppearancePreference): Appearance | undefined;
+export function useScopeAppearance(scope?: ThemeScopeName, appearance?: AppearancePreference): Appearance | undefined {
   const parent = useContext(ThemeScopeContext);
   const ambient = useAppearance();
   if (scope === 'terminal') return 'dark';
-  return appearance
+  return (appearance === 'auto' ? undefined : appearance)
     ?? (scope && parent?.scope === scope ? parent.appearance : undefined)
     ?? ambient
     ?? (scope ? (SCOPE_DEFAULT_APPEARANCE[scope] ?? 'light') : undefined);
@@ -219,10 +211,10 @@ export interface ThemeScopeProps extends ComponentProps<'div'> {
       (`workbench`, `chat`, `terminal`, `sheet`, `glass`). Omit for the plain theme. The bl-theme's `workbench` scope
       also paints its root (background, text color, sans font, antialiasing). */
   scope?: ThemeScopeName;
-  /** Defaults to an enclosing scope of the same name, else the ambient `AppearanceProvider` value; without either a
-      plain scope inherits the page's `.dark` / light, `workbench` is dark, other surface scopes are light, and the
-      terminal scope is always dark. */
-  appearance?: Appearance;
+  /** `'auto'` (the default) follows an enclosing scope of the same name, else the ambient `AppearanceProvider` value;
+      without either a plain scope inherits the page's `.dark` / light, `workbench` is dark, other surface scopes are
+      light, and the terminal scope is always dark. */
+  appearance?: AppearancePreference;
   /** Accent for the subtree: --primary and --ring, and a readable --primary-foreground for it (white on a dark tint, a
       near-black on a light one such as the iOS green; see `tintForeground`). Set `vars={{ 'primary-foreground': … }}` to
       choose the ink yourself. */
@@ -267,9 +259,9 @@ export function useLayerHost(): HTMLElement | undefined {
 
 
 export interface BLProviderProps {
-  /** Defaults to the ambient `AppearanceProvider` value; without one the provider inherits the page's appearance
-      (shadcn's `.dark` on an ancestor, else light). */
-  dark?: boolean;
+  /** The color scheme of everything below. `'auto'` (the default) follows the ambient `AppearanceProvider` value;
+      without one the provider inherits the page's appearance (shadcn's `.dark` on an ancestor, else light). */
+  appearance?: AppearancePreference;
   /** Accent for everything below: sets --primary, --ring and a readable --primary-foreground (as ThemeScope's `tint`).
       Defaults to the theme's primary. */
   tint?: string;
@@ -280,9 +272,9 @@ export interface BLProviderProps {
   style?: CSSProperties;
 }
 
-export function BLProvider({ dark: darkProp, tint, safeTop, children, className, style }: BLProviderProps) {
-  const appearance = useAppearance();
-  const dark = darkProp ?? (appearance ? appearance === 'dark' : undefined);
+export function BLProvider({ appearance: appearanceProp, tint, safeTop, children, className, style }: BLProviderProps) {
+  const ambient = useAppearance();
+  const appearance = appearanceProp === 'auto' || appearanceProp === undefined ? ambient : appearanceProp;
   const safe = safeTop === true ? 59 : typeof safeTop === 'number' ? safeTop : 0;
   /* Popups render into this root (see `useLayerHost`), so they stay inside it and inherit its theme variables,
      font and color scheme. null until mounted: a popup open on the first render moves in one commit later. The
@@ -310,7 +302,7 @@ export function BLProvider({ dark: darkProp, tint, safeTop, children, className,
       data-size-class={sizeClass}
       className={cn(
         'relative h-full w-full overflow-hidden bg-muted font-sans [contain:layout] text-foreground select-none transition-[background] duration-spring-smooth ease-spring-smooth',
-        themeScopeClass(dark === undefined ? undefined : dark ? 'dark' : 'light'),
+        themeScopeClass(appearance),
         className,
       )}
       style={{ ...tintVars(tint), '--bl-safe-top': safe + 'px', ...style } as CSSProperties}

@@ -12,10 +12,10 @@ export default function Hardware() {
   return (
     <div className="strudel-rack" style={{ width: '100%', maxWidth: 640 }}>
       <div className="strudel-device" data-kind="drums" style={{ display: 'flex', gap: 18, alignItems: 'center', padding: 18 }}>
-        <Fader label="Gain" value={gain} min={0} max={1.5} defaultValue={1} onChange={setGain} format={(v) => `${Math.round(v * 100)}`} />
-        <Knob label="Cutoff" value={cutoff} min={40} max={16000} log defaultValue={1200} onChange={setCutoff} format={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0))} />
-        <Knob label="Pan" value={pan} min={0} max={1} defaultValue={0.5} onChange={setPan} />
-        <Knob size="lg" label="Drive" value={gain * 2} min={0} max={3} onChange={(v) => setGain(v / 2)} />
+        <Fader label="Gain" value={gain} min={0} max={1.5} defaultValue={1} onValueChange={setGain} format={(v) => `${Math.round(v * 100)}`} />
+        <Knob label="Cutoff" value={cutoff} min={40} max={16000} log defaultValue={1200} onValueChange={setCutoff} format={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0))} />
+        <Knob label="Pan" value={pan} min={0} max={1} defaultValue={0.5} onValueChange={setPan} />
+        <Knob size="lg" label="Drive" value={gain * 2} min={0} max={3} onValueChange={(v) => setGain(v / 2)} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <StepGrid
             mini={parseMini(steps)}

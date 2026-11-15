@@ -30,7 +30,7 @@ import { MorphGroup, Morph } from '@brett_lamy/ui/morph'
 Render the element in whichever layout the state calls for, with the same `<Morph layoutId>` in both places, inside a `<MorphGroup>`. When one unmounts as the other mounts, the element flies from the old frame to the new one — position, size and corner radius — on a spring. Nested `<Morph>`s (the artwork and title inside the player) fly to their own new places at the same time.
 
 ```tsx
-import { MorphGroup, Morph, MorphPresence } from '@brett_lamy/ui'
+import { MorphGroup, Morph, MorphPresence } from '@brett_lamy/ui/morph'
 
 <MorphGroup>
   <MorphPresence>
@@ -50,15 +50,18 @@ import { MorphGroup, Morph, MorphPresence } from '@brett_lamy/ui'
 
 ## Morph into a dialog
 
-When the expanded layout is modal (a full player, a detail sheet), make it a Dialog's content and let `Morph` be the element it renders: `<DialogContent render={<Morph layoutId="player" … />}>`. The Dialog moves focus in, closes on Escape and returns focus to the mini player (`finalFocus`); `Morph` adds the morph and drag-to-dismiss. Don't hand-roll `role="dialog"` on a `Morph`: it would have no focus management.
+When the expanded layout is modal (a full player, a detail sheet), make it a Dialog's content and let `Morph` be the element it renders: `<DialogContent variant="plain" render={<Morph layoutId="player" … />}>` (`plain` keeps the Dialog's focus and dismissal and draws no card, so the morph is the only motion). The Dialog moves focus in, closes on Escape and returns focus to the mini player (`finalFocus`); `Morph` adds the morph and drag-to-dismiss. Don't hand-roll `role="dialog"` on a `Morph`: it would have no focus management.
 
 ```tsx
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Morph, MorphGroup, MorphPresence } from '@/components/ui/morph'
+
 <MorphGroup>
   <MorphPresence>
     {open ? null : <Morph key="mini" ref={bar} layoutId="player" render={<button type="button" />} onClick={() => setOpen(true)}>…</Morph>}
   </MorphPresence>
   <Dialog open={open} onOpenChange={setOpen} presentation="dialog">
-    <DialogContent render={<Morph layoutId="player" radius={22} dragToDismiss onDismiss={() => setOpen(false)} />} finalFocus={() => bar.current}>
+    <DialogContent variant="plain" render={<Morph layoutId="player" radius={22} dragToDismiss onDismiss={() => setOpen(false)} />} finalFocus={() => bar.current}>
       <DialogTitle className="sr-only">Now Playing</DialogTitle>
       …
     </DialogContent>

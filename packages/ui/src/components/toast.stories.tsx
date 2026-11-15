@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ToastRegion, createHud, createToaster, type Hud as HudQueue, type ToastRegionProps } from '@/components/ui/toast';
+import { ToastRegion, createHud, createToaster, type ToastHud as HudQueue, type ToastRegionProps } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Phone } from '../stories/frame';
 
@@ -25,7 +25,7 @@ function Frame({ dark, side = 'bottom', expanded, seed, children, h = 420 }: {
     return () => { queues.toast.dismiss(); queues.hud.toaster.dismiss(); };
   }, [queues, seed]);
   return (
-    <Phone dark={dark} w={420} h={h}>
+    <Phone appearance={dark ? 'dark' : 'light'} w={420} h={h}>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-foreground">{children?.(queues)}</div>
       <ToastRegion toaster={queues.toast} side={side} expanded={expanded} />
       <ToastRegion variant="hud" toaster={queues.hud.toaster} />

@@ -118,7 +118,7 @@ export const NumberEditor: Story = { render: () => <Editor field={fields[3]} val
 export const BooleanEditor: Story = { render: () => <Editor field={fields[5]} value={false} /> };
 
 export const Dark: Story = {
-  decorators: [(Story) => <Pad w={760} dark><div className="min-h-[200px]"><Story /></div></Pad>],
+  decorators: [(Story) => <Pad w={760} appearance="dark"><div className="min-h-[200px]"><Story /></div></Pad>],
   args: { fields, defaultValue: many.slice(0, 3) },
 };
 

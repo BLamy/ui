@@ -1,4 +1,5 @@
 /* ══ Composer files — kinds, accept filters, and cheap previews for attachments ══
+   @internal: the Composer's own helpers (no npm entry; `ComposerAttachmentKind` is public through the Composer).
    Pure helpers for the Composer: which kind a file is (for its tile and icon), whether it passes an
    `accept` filter, and the small previews a tile shows (a video's first frame, a text file's first
    lines). Sizes are the kit's formatFileSize (`@/lib/file-size`). Previews give up quietly (the tile falls back to

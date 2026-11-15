@@ -10,13 +10,6 @@ import { cx } from '@/lib/utils';
    change), a `controller` (`createInputController()`) to write it from outside, and every native attribute.
    Inside a <Field> it takes the field's label, description, error, name and disabled state. */
 
-/** The kit's filled field box, shared by every text-shaped control (Input, Textarea, SearchInput, FilterInput, the
- *  date and color inputs, the select and combobox triggers): the input fill, the control radius, the field heights
- *  (32 / 44 / 50: taller than buttons' 32 / 36 / 44 on purpose, as iOS text fields are), a 1.5px inset primary ring
- *  while anything inside has focus, a destructive ring while invalid (`aria-invalid` on a control, `data-invalid` on
- *  a group, both written by its Field), and the disabled dim. Put it on the control itself, or on a group around one
- *  (an `InputGroup`, a segmented date input): focus and invalid read from inside either way. A multi-line control
- *  replaces the height with its own (`h-auto min-h-…`). */
 /** The field's focus line: a 1.5px inset primary ring while anything inside has focus. Shared with the controls that
  *  keep a fill of their own (SearchInput's pill). */
 export const fieldFocusRing = 'focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)]';
@@ -34,6 +27,13 @@ const fieldSizes = {
   lg: 'h-[50px] rounded-xl text-body',
 };
 
+/** The kit's filled field box, shared by every text-shaped control (Input, Textarea, SearchInput, FilterInput, the
+ *  date and color inputs, the select and combobox triggers): the input fill, the control radius, the field heights
+ *  (32 / 44 / 50: taller than buttons' 32 / 36 / 44 on purpose, as iOS text fields are), a 1.5px inset primary ring
+ *  while anything inside has focus, a destructive ring while invalid (`aria-invalid` on a control, `data-invalid` on
+ *  a group, both written by its Field), and the disabled dim. Put it on the control itself, or on a group around one
+ *  (an `InputGroup`, a segmented date input): focus and invalid read from inside either way. A multi-line control
+ *  replaces the height with its own (`h-auto min-h-…`). */
 export const fieldSurfaceVariants = cva([surface, 'flex items-center gap-2'], {
   variants: { size: fieldSizes },
   defaultVariants: { size: 'default' },

@@ -30,7 +30,7 @@ const meta: Meta<StlViewerProps> = {
     color: { control: 'color' },
     autoRotate: { control: 'boolean' },
   },
-  decorators: [(Story, ctx) => <Pad w={520} dark={!!ctx.parameters.dark}><Story /></Pad>],
+  decorators: [(Story, ctx) => <Pad w={520} appearance={ctx.parameters.dark ? 'dark' : 'light'}><Story /></Pad>],
 };
 export default meta;
 type Story = StoryObj<StlViewerProps>;

@@ -45,7 +45,7 @@ const vaultErrorClass = 'text-[color-mix(in_oklab,var(--destructive)_72%,black)]
 const vaultMutedClass = 'text-foreground/70';
 
 /** Why a passkey vault is unavailable, in plain words, with what the person can do about it. */
-export function unsupportedMessage(reason: VaultUnsupportedReason | null): { title: string; body: string } {
+export function vaultUnsupportedMessage(reason: VaultUnsupportedReason | null): { title: string; body: string } {
   switch (reason) {
     case 'insecure-context':
       return { title: 'Passkeys need a secure connection', body: 'Passkeys only work on HTTPS pages (or localhost). Open this app over a secure connection to protect its data.' };
@@ -126,7 +126,7 @@ export interface VaultUnsupportedProps extends Omit<ComponentProps<'section'>, '
 /** The honest screen for a browser that cannot do this: what is missing, and that nothing was saved. */
 export function VaultUnsupported({ vault, className, ...props }: VaultUnsupportedProps) {
   const state = useVaultState(vault);
-  const { title, body } = unsupportedMessage(state.unsupportedReason);
+  const { title, body } = vaultUnsupportedMessage(state.unsupportedReason);
   return (
     <Panel data-slot="vault-unsupported" icon="shield-exclamation" title={title} description={body} className={className} {...props} />
   );
@@ -337,9 +337,9 @@ export function VaultEnrollDialog({
               </div>
               <DialogFooter>
                 {step === 'working' ? (
-                  <Button variant="ghost" onClick={cancel}>Cancel</Button>
+                  <Button variant="secondary" onClick={cancel}>Cancel</Button>
                 ) : (
-                  <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+                  <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
                 )}
                 {/* Pending for as long as the passkey prompt is up: the press returns its Promise. */}
                 <Button ref={primary} className={vaultActionClass} onClick={() => start()} aria-describedby={error ? errorId : undefined}>
@@ -491,7 +491,7 @@ export function VaultUnlock({ vault, appName, title, description, autoFocus = tr
       className={className}
       {...props}
     >
-      {why ? <p className={cn('m-0 text-footnote', vaultMutedClass)}>{unsupportedMessage(why).title}. Your recovery key still works.</p> : null}
+      {why ? <p className={cn('m-0 text-footnote', vaultMutedClass)}>{vaultUnsupportedMessage(why).title}. Your recovery key still works.</p> : null}
 
       {mode === 'passkey' ? (
         // Pending while the passkey prompt is up: the press returns its Promise.
@@ -542,17 +542,27 @@ export function VaultUnlock({ vault, appName, title, description, autoFocus = tr
 
 /* ── gate ── */
 
+/** The screens a VaultGate shows instead of its children, one per status; each replaces the kit's own. */
+export interface VaultGateScreens {
+  /** While the vault checks passkey support (default: a spinner). */
+  loading?: ReactNode;
+  /** No passkeys here (default: VaultUnsupported). A function gets the vault's state. */
+  unsupported?: ReactNode | ((state: VaultState) => ReactNode);
+  /** Nothing set up yet (default: VaultSetup). */
+  empty?: ReactNode;
+  /** Set up and locked (default: VaultUnlock). */
+  locked?: ReactNode;
+}
+
 export interface VaultGateProps {
   vault?: Vault;
   appName?: string;
   /** What the vault protects, for the set-up screen's wording. */
   protects?: ReactNode;
   requireVerification?: boolean;
-  /** Replace the screen for a given status. `unsupported` can render `children` to carry on without protection: your call, made visible. */
-  loading?: ReactNode;
-  unsupported?: ReactNode | ((state: VaultState) => ReactNode);
-  empty?: ReactNode;
-  locked?: ReactNode;
+  /** Replace the screen for a given status. `unsupported` can render `children` to carry on without protection: your
+   *  call, made visible. */
+  screens?: VaultGateScreens;
   /** While unlocked and the recovery key was never confirmed, show a notice with a button to replace it (default true). */
   recoveryNotice?: boolean;
   /** On the gate's box, which fills its host (a column: the notice, then your app). */
@@ -566,8 +576,9 @@ const ANNOUNCE: Partial<Record<VaultStatus, string>> = { unlocked: 'Unlocked.', 
 /** Renders `children` only while the vault is unlocked; otherwise the screen the status calls for, centred in the
     gate's box. */
 export function VaultGate({
-  vault, appName, protects, requireVerification, loading, unsupported, empty, locked, recoveryNotice = true, className, style, children,
+  vault, appName, protects, requireVerification, screens = {}, recoveryNotice = true, className, style, children,
 }: VaultGateProps) {
+  const { loading, unsupported, empty, locked } = screens;
   const v = useVault(vault);
   const state = v.getState();
   // The dialog lives here, above the status switch: enrolling flips the status to `unlocked` before the recovery key

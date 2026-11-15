@@ -16,7 +16,7 @@ export default function LocalFile() {
         multiple={false}
         rules={{ accept: ['.stl', 'model/stl'] }}
         title={model ? model.name : 'Drop an .stl file here'}
-        hint="Or choose one"
+        description="Or choose one"
         browseLabel="Choose File…"
         onFiles={(files) => open(files[0])}
       />

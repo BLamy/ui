@@ -158,7 +158,7 @@ export function ActionList({ actions, onChange, c, empty = 'No actions' }: { act
                     <IconAction icon="chevron-down" label="Move down" onClick={() => move(i, 1)} />
                   </>
                 ) : null}
-                <IconAction icon="trash" label="Remove action" tone="danger" onClick={() => onChange(actions.filter((x) => x.id !== a.id))} />
+                <IconAction icon="trash" label="Remove action" tone="destructive" onClick={() => onChange(actions.filter((x) => x.id !== a.id))} />
               </div>
               {open === a.id ? <div className="flex flex-col gap-2 px-2 pt-0.5 pb-2.5"><ActionFields a={a} c={c} onChange={(next) => set(a.id, next)} /></div> : null}
             </li>

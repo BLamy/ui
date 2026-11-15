@@ -18,7 +18,7 @@ Defined in `@/components/ui/artifact-chat-container`. Base classes:
 ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden bg-background font-sans text-foreground
 ```
 
-**`layout`** — default `split`
+**`presentation`** — default `split`
 
 | Value | Adds |
 | --- | --- |
@@ -75,7 +75,7 @@ absolute -right-[2px] -bottom-[2px] box-border size-[max(10px,calc(var(--avatar-
 Defined in `@/components/ui/avatar-group`. Base classes:
 
 ```text
-inline-flex items-center rounded-full outline-none [&>*]:ring-2 [&>*]:ring-(--avatar-ring,var(--background)) [&>*+*]:-ml-(--avatar-overlap)
+inline-flex items-center rounded-full outline-none [&>*]:ring-2 [&>*]:ring-(--avatar-ring,var(--background)) [&>*+*]:-ms-(--avatar-overlap)
 ```
 
 No variants.
@@ -157,7 +157,7 @@ Defined in `@/components/ui/breadcrumb`. Base classes:
 Defined in `@/components/ui/button`. Base classes:
 
 ```text
-[ 'bl-btn box-border inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap [&_svg]:shrink-0', 'transition-[scale,background-color,opacity,filter] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, 'data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress', ]
+[ 'bl-btn box-border inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap [&_svg]:shrink-0', 'transition-[scale,background-color,opacity,filter] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, // Pending dims a little (not as far as disabled), so the wait shows without a pointer; a spinner is yours to add. 'data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress data-pending:opacity-70', ]
 ```
 
 **`variant`** — default `default`
@@ -268,7 +268,7 @@ Defined in `@/lib/code-editor-window`. Base classes:
 pointer-events-none absolute inset-x-0 h-(--code-editor-line)
 ```
 
-**`tint`** — default `none`
+**`tone`** — default `none`
 
 | Value | Adds |
 | --- | --- |
@@ -277,7 +277,7 @@ pointer-events-none absolute inset-x-0 h-(--code-editor-line)
 | `info` | `bg-primary/10 shadow-[inset_3px_0_color-mix(in_srgb,var(--primary)_45%,transparent)]` |
 | `success` | `bg-success/15` |
 | `warning` | `bg-warning/15` |
-| `danger` | `bg-destructive/15` |
+| `destructive` | `bg-destructive/15` |
 | `muted` | `bg-secondary` |
 
 ### `codeEditorGutterCellVariants`
@@ -441,22 +441,25 @@ Defined in `@/components/ui/date-picker`. Base classes:
 Defined in `@/components/ui/dialog`. Base classes:
 
 ```text
-cn( modalCard, 'group/dialog w-[calc(100%-48px)] duration-spring-snappy ease-spring-snappy', 'not-data-[presentation=sheet]:data-starting-style:opacity-0 not-data-[presentation=sheet]:data-ending-style:opacity-0 motion-safe:not-data-[presentation=sheet]:data-starting-style:scale-90 motion-safe:not-data-[presentation=sheet]:data-ending-style:scale-96', 'data-[presentation=sheet]:relative data-[presentation=sheet]:inset-auto data-[presentation=sheet]:max-w-none data-[presentation=sheet]:transition-none', )
+group/dialog outline-none
 ```
 
 **`size`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `default` (default) | `max-w-[400px]` |
-| `lg` | `max-w-[560px]` |
+| `default` (default) | — |
+| `lg` | — |
 
 **`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `default` (default) | `data-[presentation=sheet]:m-0 data-[presentation=sheet]:w-full data-[presentation=sheet]:rounded-b-none data-[presentation=sheet]:pb-[max(12px,env(safe-area-in…` |
-| `tray` | `data-[presentation=sheet]:mx-2.5 data-[presentation=sheet]:mt-0 data-[presentation=sheet]:mb-[max(10px,env(safe-area-inset-bottom))] data-[presentation=sheet]:…` |
+| `default` (default) | `cn( dialogCard, 'data-[presentation=sheet]:m-0 data-[presentation=sheet]:w-full data-[presentation=sheet]:rounded-b-none data-[presentation=she…` |
+| `tray` | `cn( dialogCard, 'data-[presentation=sheet]:mx-2.5 data-[presentation=sheet]:mt-0 data-[presentation=sheet]:mb-[max(10px,env(safe-area-inset-bot…` |
+| `plain` | — |
+
+2 compound variants — see the source.
 
 ### `alertDialogCloseVariants`
 
@@ -498,7 +501,7 @@ flex flex-col
 Defined in `@/components/ui/dropdown-menu`. Base classes:
 
 ```text
-[popoverSurface, popoverMotion, popoverSheet, 'bl-scroll box-border overflow-y-auto py-1']
+[popoverSurface, popoverMotion, popoverSheet, 'bl-scroll box-border overflow-y-auto']
 ```
 
 **`size`** — default `default`
@@ -506,14 +509,14 @@ Defined in `@/components/ui/dropdown-menu`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `min-w-[230px]` |
-| `sm` | `min-w-[190px] px-1` |
+| `sm` | `min-w-[190px] p-1` |
 
 ### `dropdownMenuItemVariants`
 
 Defined in `@/components/ui/dropdown-menu`. Base classes:
 
 ```text
-[ 'bl-btn relative box-border flex cursor-pointer items-center text-foreground outline-none', 'data-highlighted:bg-accent data-highlighted:not-data-disabled:active:bg-secondary-strong data-open:bg-accent data-disabled:cursor-default data-disabled:opacity-40 data-destructive:text-destructive data-pending:cursor-progress', ]
+[ // A row rendered as a link (`render={<a href/>}`) looks like every other row: no underline. 'bl-btn relative box-border flex cursor-pointer items-center text-foreground no-underline outline-none', 'data-highlighted:bg-accent data-highlighted:not-data-disabled:active:bg-secondary-strong data-open:bg-accent data-disabled:cursor-default data-disabled:opacity-40 data-destructive:text-destructive data-pending:cursor-progress', ]
 ```
 
 **`size`** — default `default`
@@ -1211,7 +1214,7 @@ m-0 shrink-0 border-0 bg-border
 
 | Value | Adds |
 | --- | --- |
-| `true` | `ml-4 w-[calc(100%-16px)] data-[orientation=vertical]:ml-0 data-[orientation=vertical]:w-px` |
+| `true` | `ms-4 w-[calc(100%-16px)] data-[orientation=vertical]:ms-0 data-[orientation=vertical]:w-px` |
 | `false` (default) | — |
 
 ## Sheet
@@ -1746,7 +1749,7 @@ Defined in `@/components/ui/toggle`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `[ 'bg-transparent text-foreground hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong', 'data-pressed:bg-primary…` |
-| `filled` | `[ 'bg-secondary text-foreground hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong', 'data-pressed:bg-primary/1…` |
+| `secondary` | `[ 'bg-secondary text-foreground hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong', 'data-pressed:bg-primary/1…` |
 | `outline` | `[ 'bg-transparent text-foreground shadow-hairline hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong', 'data-pr…` |
 | `quiet` | `[ 'bg-transparent text-muted-foreground hover:not-data-disabled:bg-secondary hover:not-data-disabled:text-foreground', 'data-pressed:bg-sec…` |
 
@@ -1774,7 +1777,7 @@ group/toggle-group relative isolate inline-flex w-fit items-center data-[orienta
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `gap-1` |
-| `filled` | `gap-1` |
+| `secondary` | `gap-1` |
 | `quiet` | `gap-1` |
 | `outline` | `gap-0 rounded-ctl shadow-hairline` |
 | `segmented` | — |

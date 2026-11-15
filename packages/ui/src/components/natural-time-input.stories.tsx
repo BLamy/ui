@@ -88,6 +88,6 @@ export const Disabled: Story = { args: { disabled: true, defaultValue: 'tomorrow
 export const Standalone: Story = { render: (args) => <NaturalTimeInput {...withoutField(args)} />, args: { defaultValue: 'next friday at 6pm' } };
 
 export const Dark: Story = {
-  decorators: [(Story) => <Pad w={440} dark><Story /></Pad>],
+  decorators: [(Story) => <Pad w={440} appearance="dark"><Story /></Pad>],
   args: { defaultValue: 'every weekday at 9am', maxOccurrences: 3 },
 };

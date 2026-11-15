@@ -146,7 +146,7 @@ function JourneyRow({ journey: j }: { journey: Journey }) {
         <ul className="m-0 list-none px-3 pb-2 pl-9">
           {bugs.map((b) => (
             <li key={b.id}>
-              <BugPreview bug={b} side="right" align="start"
+              <BugPreview bug={b} side="end" align="start"
                 render={<Pressable onClick={() => qa.open({ kind: 'bug', id: b.id })}
                   className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-[9px] px-2 py-1.5 text-left whitespace-normal hover:bg-muted! active:not-aria-expanded:not-data-disabled:scale-[.99]" />}>
                 <SeverityBadge severity={b.severity} />

@@ -101,10 +101,10 @@ describe('AdaptivePane resizing', () => {
     expect(pane.style.getPropertyValue('--adaptive-pane-w')).toBe('200px');
   });
 
-  it('widens a right-hand pane with the left arrow', () => {
+  it('widens an end pane with the left arrow', () => {
     const onWidthsChange = vi.fn();
     const { container } = render(
-      <div><AdaptivePane presentation="column" open side="right" columnWidth={200} resizable onWidthsChange={onWidthsChange}>x</AdaptivePane></div>,
+      <div><AdaptivePane presentation="column" open side="end" columnWidth={200} resizable onWidthsChange={onWidthsChange}>x</AdaptivePane></div>,
     );
     wide(container.firstElementChild!);
     container.querySelector<HTMLElement>('[data-slot=adaptive-pane]')!.getBoundingClientRect = () => rect(200);

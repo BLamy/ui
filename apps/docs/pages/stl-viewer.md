@@ -86,4 +86,5 @@ mesh.min, mesh.max    // bounds, in the file's units
 | `title` | — | A caption above the size line, and the canvas's label. |
 | `color` | the inherited `color` | The model's color; any CSS color. |
 | `autoRotate` | `true` | Turn slowly until the reader interacts. Off under reduced motion. |
-| `className` | — | On the outer `<figure>`. |
+| `className` · `style` · `ref` | — | On the outer `<figure>`. |
+| `aria-label` | `title` | Names the figure and its canvas, when the title isn't the name you want. |

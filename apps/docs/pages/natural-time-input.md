@@ -36,8 +36,8 @@ NaturalTimeInput is designed around that. It never shows a bare "OK": it lists t
 ## Usage
 
 ```tsx
-import { Field, FieldDescription, FieldError, FieldLabel } from '@brett_lamy/ui'
-import { NaturalTimeInput } from '@brett_lamy/ui'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@brett_lamy/ui/field'
+import { NaturalTimeInput } from '@brett_lamy/ui/natural-time-input'
 
 <Field name="when">
   <FieldLabel>When</FieldLabel>

@@ -96,14 +96,14 @@ Search by name or keyword (try "mute", "lyrics" or "settings"), narrow by catego
 | `shapes` | `IconShape[]` | — | Custom geometry drawn with the same stroke system; overrides `name`. |
 | `className`, `style` | | | Passed to the `<svg>`. |
 
-Older names from earlier releases (`chev`, `chevL`, `search`, `x`, `xcirc`, `home`, `mail`, `starF`, `person2`, `wave`, `pin`, `phone`, `message`) still work and draw exactly what they did; `ICON_ALIASES` maps the ones that became canonical names.
+Older names from earlier releases (`chev`, `chevL`, `search`, `x`, `xcirc`, `home`, `mail`, `starF`, `person2`, `wave`, `pin`, `phone`, `message`) still work and draw exactly what they did; `ICON_ALIASES` maps the ones that became canonical names. `isIconName(name)` says whether a string names an icon (a canonical name or an alias), for a prop that takes either an icon name or text of its own.
 
 ## Custom shapes
 
 A glyph is a list of shapes on the 24px grid. Draw your own with `shapes` and it gets the same stroke, weights and knockouts as the built-in set:
 
 ```tsx
-import { Icon, type IconShape } from '@brett_lamy/ui'
+import { Icon, type IconShape } from '@brett_lamy/ui/lib/icon'
 
 const TICKET: IconShape[] = [
   { d: 'M4 7.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2.5 2.5 0 0 0 0 5v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2.5 2.5 0 0 0 0-5z' },

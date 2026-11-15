@@ -12,13 +12,13 @@ import { cn } from '@/lib/utils';
 import { Phone } from '../stories/frame';
 import { Screen } from '../stories/primitive-frame';
 
-type Side = 'bottom' | 'top' | 'left' | 'right';
+type Side = 'bottom' | 'top' | 'start' | 'end';
 
 const meta: Meta<typeof Sheet> = {
   title: 'Organisms/Sheet',
   component: Sheet,
   args: { side: 'bottom' },
-  argTypes: { side: { control: 'inline-radio', options: ['bottom', 'top', 'left', 'right'] } },
+  argTypes: { side: { control: 'inline-radio', options: ['bottom', 'top', 'start', 'end'] } },
 };
 export default meta;
 type Story = StoryObj<typeof Sheet>;
@@ -58,10 +58,12 @@ function Demo({ side, dark, open = true, snapPoints }: { side: Side; dark?: bool
 
 export const Bottom: Story = { render: (args) => <Demo side={(args.side as Side) ?? 'bottom'} /> };
 export const BottomDark: Story = { render: () => <Demo side="bottom" dark /> };
-export const Right: Story = { render: () => <Demo side="right" /> };
-export const RightDark: Story = { render: () => <Demo side="right" dark /> };
-export const Left: Story = { render: () => <Demo side="left" /> };
-export const LeftDark: Story = { render: () => <Demo side="left" dark /> };
+/** `end`: the inline end (the right edge in left-to-right text). */
+export const End: Story = { render: () => <Demo side="end" /> };
+export const EndDark: Story = { render: () => <Demo side="end" dark /> };
+/** `start`: the inline start (the left edge in left-to-right text). */
+export const Start: Story = { render: () => <Demo side="start" /> };
+export const StartDark: Story = { render: () => <Demo side="start" dark /> };
 export const Top: Story = { render: () => <Demo side="top" /> };
 /** Two places to rest: the grabber becomes a handle (press it, or use the arrow keys), and a drag settles on one. */
 export const SnapPoints: Story = { render: () => <Demo side="bottom" snapPoints={[0.5, 1]} /> };
@@ -70,7 +72,7 @@ export const Closed: Story = { render: () => <Demo side="bottom" open={false} />
 /** A flow: the root's `view` and a `SheetView` spring the short sheet to each step's height, and the step and its
  *  title slide in the direction of travel. The header is Dialog's flow bar: SheetBack folds in on the second step,
  *  the title travels, the × stays at the end of the row. */
-function Flow({ dark, start = 'pick' }: { dark?: boolean; start?: 'pick' | 'confirm' }) {
+function FlowDemo({ dark, start = 'pick' }: { dark?: boolean; start?: 'pick' | 'confirm' }) {
   const [step, setStep] = useState<'pick' | 'confirm'>(start);
   return (
     <Screen dark={dark}>
@@ -114,10 +116,10 @@ function Flow({ dark, start = 'pick' }: { dark?: boolean; start?: 'pick' | 'conf
     </Screen>
   );
 }
-export const FlowInTray: Story = { render: () => <Flow /> };
+export const Flow: Story = { render: () => <FlowDemo /> };
 /** The second step: the back chevron has folded into the bar. */
-export const FlowSecondStep: Story = { render: () => <Flow start="confirm" /> };
-export const FlowDark: Story = { render: () => <Flow dark start="confirm" /> };
+export const FlowSecondStep: Story = { render: () => <FlowDemo start="confirm" /> };
+export const FlowDark: Story = { render: () => <FlowDemo dark start="confirm" /> };
 
 /** `dismissible={false}`: no ×, no grabber, no swipe or scrim close; only an answer closes it. Two answers share a
  *  `horizontal` footer. */
@@ -152,14 +154,14 @@ export const NotDismissibleDark: Story = { render: () => <Required dark /> };
 function Contained({ dark, modal = true }: { dark?: boolean; modal?: boolean }) {
   const [folder, setFolder] = useState('Inbox');
   return (
-    <Phone w={390} h={844} dark={dark}>
+    <Phone w={390} h={844} appearance={dark ? 'dark' : 'light'}>
       <div className="absolute inset-0 flex flex-col">
         <header className="flex h-toolbar shrink-0 items-center gap-2 border-b border-border px-4 text-body">
           <strong className="flex-1">Mail</strong>
           <span className="text-muted-foreground">{folder}</span>
         </header>
         <div className="relative m-3 min-h-0 flex-1 overflow-hidden rounded-card bg-muted shadow-hairline">
-          <Sheet contained side="left" defaultOpen modal={modal}>
+          <Sheet contained side="start" defaultOpen modal={modal}>
             <div className="p-4">
               <SheetTrigger className={buttonVariants({ variant: 'secondary' })}>Folders</SheetTrigger>
             </div>

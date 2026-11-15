@@ -64,9 +64,9 @@ function Table() {
 }
 
 export const AllTypes: Story = { render: () => <Phone w={760} h={720}><Table /></Phone> };
-export const AllTypesDark: Story = { render: () => <Phone w={760} h={720} dark><Table /></Phone> };
+export const AllTypesDark: Story = { render: () => <Phone w={760} h={720} appearance="dark"><Table /></Phone> };
 export const AllTypesPhone: Story = { name: 'All types, phone', render: () => <Phone w={390} h={760}><Table /></Phone> };
-export const AllTypesPhoneDark: Story = { name: 'All types, phone dark', render: () => <Phone w={390} h={760} dark><Table /></Phone> };
+export const AllTypesPhoneDark: Story = { name: 'All types, phone dark', render: () => <Phone w={390} h={760} appearance="dark"><Table /></Phone> };
 
 function Long() {
   return (
@@ -80,7 +80,7 @@ function Long() {
 }
 
 export const LongStrings: Story = { render: () => <Phone w={760} h={360}><Long /></Phone> };
-export const LongStringsDark: Story = { name: 'Long strings, dark', render: () => <Phone w={760} h={360} dark><Long /></Phone> };
+export const LongStringsDark: Story = { name: 'Long strings, dark', render: () => <Phone w={760} h={360} appearance="dark"><Long /></Phone> };
 
 /** In a row of fixed height, as ObjectTree's: one line, cut at `maxLength`, with no Show more or Copy. */
 export const InARow: Story = {

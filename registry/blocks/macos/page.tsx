@@ -18,7 +18,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePersistentState } from '@/lib/persistent-state';
 import { createCommandMenuController, type CommandMenuController } from '@/components/ui/command-menu';
 import { Button as SdkButton } from '@ui-sdk/react/button';
-import { ToastRegion, createHud, type Hud } from '@/components/ui/toast';
+import { ToastRegion, createHud, type ToastHud } from '@/components/ui/toast';
 import { useShortcut } from '@ui-sdk/react/shortcuts';
 import { useContainerSize } from '@/lib/container';
 import { usePresence } from '@/lib/presence';
@@ -101,7 +101,7 @@ export default function MacOS({ initialApps, initialPages, initialQuery = '', de
   }, [reset]);
 
   return (
-    <BLProvider dark={dark} tint={ALFRED_TINT[dark ? 'dark' : 'light']} className="bg-transparent">
+    <BLProvider appearance={dark ? 'dark' : 'light'} tint={ALFRED_TINT[dark ? 'dark' : 'light']} className="bg-transparent">
       <TailscaleProvider tailscale={controller} options={tailscale ?? real ?? undefined}>
         <AlfredProvider hud={hud} dark={dark} toggleDark={() => setOverride(!dark)} reset={reset} close={close}>
           <Desktop dark={dark} open={open} show={show} close={close} boot={boot} menu={menu} hud={hud} initialApps={initialApps} initialDock={dock} persistKey={key} initialMenu={initialMenu} />
@@ -134,7 +134,7 @@ function Desktop({ initialApps, persistKey, ...rest }: ScreenProps & { initialAp
 interface ScreenProps {
   dark: boolean; open: boolean; show: () => void; close: () => void;
   boot: { pages?: string[]; query: string; focus: boolean; opening: number }; menu: CommandMenuController;
-  hud: Hud;
+  hud: ToastHud;
   initialDock?: Partial<DockPrefs>;
   persistKey?: string | null;
   initialMenu?: StatusMenu;

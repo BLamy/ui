@@ -14,6 +14,7 @@ import { libraryDrag, useLibraryDrag } from './dnd';
 import { LibraryCard } from './previews';
 import { findNode, placeOf } from './tree';
 import { useBuilder, type Builder } from './store';
+import { EmptyState } from '@/components/ui/empty-state';
 
 /** Where a pressed library item goes: into the selected container, after the selected node, or into the selected scene. */
 export function insertFromLibrary(b: Builder, item: LibraryItem): boolean {
@@ -57,10 +58,10 @@ export function LibraryList({ onDragStart, onInserted, autoFocus, className }: {
               <LibraryRow key={it.id} item={it} previews={previews} onDragStart={onDragStart} onInsert={() => { if (insertFromLibrary(b, it)) onInserted?.(); }} />
             ))}
           </section>
-        )) : <p className="m-0 px-3 py-6 text-center text-footnote text-muted-foreground">No components match “{q}”.</p>}
+        )) : <EmptyState size="sm" role="status" title={`No components match “${q}”.`} />}
       </div>
       <HoverCard controller={previews}>
-        <HoverCardContent<LibraryItem> side="right" align="start" className="w-80">
+        <HoverCardContent<LibraryItem> side="end" align="start" className="w-80">
           {({ payload }) => (payload ? <LibraryCard item={payload} doc={b.doc} /> : null)}
         </HoverCardContent>
       </HoverCard>

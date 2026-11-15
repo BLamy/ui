@@ -34,8 +34,8 @@ export const toggleVariants = cva(
           'bg-transparent text-foreground hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong',
           'data-pressed:bg-primary/15 data-pressed:text-primary data-pressed:active:not-data-disabled:bg-primary/25',
         ],
-        /** Filled at rest, for toggles standing alone on a card. */
-        filled: [
+        /** Filled at rest, for toggles standing alone on a card: Button's `secondary` fill, with a pressed state. */
+        secondary: [
           'bg-secondary text-foreground hover:not-data-disabled:bg-accent active:not-data-disabled:bg-secondary-strong',
           'data-pressed:bg-primary/15 data-pressed:text-primary data-pressed:active:not-data-disabled:bg-primary/25',
         ],
@@ -100,7 +100,7 @@ export const toggleGroupVariants = cva(
     variants: {
       variant: {
         default: 'gap-1',
-        filled: 'gap-1',
+        secondary: 'gap-1',
         quiet: 'gap-1',
         /** Joined items sharing a hairline frame. */
         outline: 'gap-0 rounded-ctl shadow-hairline',

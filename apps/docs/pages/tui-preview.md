@@ -31,7 +31,7 @@ import { TuiPreview } from '@brett_lamy/ui/tui-preview'
 {% endtab %}
 {% endtabs %}
 
-The module re-exports Docstream's component with the types of its props and status (`TuiPreviewProps`, `TuiPreviewOptions`, `TuiPreviewState`, `TuiTheme`). `@brett_lamy/ui/tui` is the same module as its own entry, for a bundle that wants nothing else from the package. The default runtime URL (`DEFAULT_TUI_RUNTIME_URL`) and the fence test (`isTuiCodeBlock`) are Docstream's: import them from `@brett_lamy/docstream/tui`.
+The module re-exports Docstream's component with the types of its props and state (`TuiPreviewProps`, `TuiPreviewOptions`, `TuiPreviewState`, `TuiAppearance`, `TuiTheme`). `@brett_lamy/ui/tui` is the same module as its own entry, for a bundle that wants nothing else from the package. The default runtime URL (`DEFAULT_TUI_RUNTIME_URL`) and the fence test (`isTuiCodeBlock`) are Docstream's: import them from `@brett_lamy/docstream/tui`.
 
 ## Usage
 
@@ -39,13 +39,23 @@ The module re-exports Docstream's component with the types of its props and stat
 <TuiPreview code={program} title="Counter" height={300} />
 ```
 
+## Light and dark
+
+The terminal follows the page: with `appearance="auto"` (the default) it is light inside a light [ThemeScope](https://blamy.github.io/ui/#/theming) or page and dark inside a dark one, and it switches when the scope does. It reads the nearest `.light` / `.dark` class (what `ThemeScope` and `BLProvider` set) or `data-theme` / `data-appearance` attribute, else the page's `color-scheme` and the system setting. `appearance="light"` or `"dark"` forces one, for example a black terminal on a light page:
+
+```tsx
+<TuiPreview code={program} appearance="dark" />
+```
+
+The frame has its own origin, so its colors are sent to it rather than inherited. OpenTUI draws text white unless the program sets a color, so the light terminal is the dark one inverted. For exact colors, `theme` overrides any of the appearance's: `theme={{ background: '#101014' }}`. Changing the appearance while a program runs ends the program, like any other change of source.
+
 ## States
 
-The preview starts **idle**, with a Run button and nothing loaded. Run moves it to **starting** (the runtime frame loads and reports ready, then the source is sent), then **running** once the program draws its first frame. A runtime that does not answer in time, or a program that throws, is an **error**, shown in the frame. Stop, a change of source, or unmounting ends the session (**stopped**) and removes the frame. `onStatusChange` reports each one.
+The preview starts **idle**, with a Run button and nothing loaded. Run moves it to **starting** (the runtime frame loads and reports ready, then the source is sent), then **running** once the program draws its first frame. A runtime that does not answer in time, or a program that throws, is an **error**: an alert under the frame, in the destructive tone, and Run becomes Retry. Stop (Run turns into Stop in place, so focus stays on it), a change of source, or unmounting ends the session (**stopped**) and removes the frame. `onStateChange` reports each one, the same callback name and five states as [OpenCode](https://blamy.github.io/ui/#/open-code)'s.
 
 ## Keyboard input
 
-Select **Run**, focus the terminal, and press the Left and Right arrow keys. **Stop** removes the running program. Starting again creates a fresh frame.
+Select **Run**, focus the terminal (click it, or press **Focus terminal**), and press the Left and Right arrow keys. **Stop** removes the running program. Starting again creates a fresh frame.
 
 {% demo src="tui-preview/keyboard" %}
 
@@ -89,10 +99,11 @@ Point `runtimeUrl` to another deployed copy or a local runtime during developmen
 | `title` | terminal preview | Accessible preview and frame title. |
 | `height` | `360` | Terminal height in pixels, bounded to 160–720. |
 | `runtimeUrl` | OpenTUI Pages frame | Browser runtime to run the program. |
-| `isStreaming` | `false` | Disable Run while the response is incomplete (Docstream's name; `MarkdownView` calls it `streaming` and passes it on). |
-| `theme` | dark: light gray on black | `{ mode, background, foreground }`: the frame's colors. They are concrete colors because the frame has its own origin; for a light page pass `{ mode: 'light', background: '#fff', foreground: '#111' }`. |
+| `streaming` | `false` | Disable Run while the response is incomplete, as `MarkdownView`'s `streaming` does. |
+| `appearance` | `auto` | `auto` follows the surrounding scope or page; `light` or `dark` forces one. |
+| `theme` | from `appearance` | `{ mode?, background?, foreground? }`: explicit terminal colors over the ones `appearance` picks. |
 | `startupTimeoutMs` · `renderTimeoutMs` | `30000` | How long the runtime has to report ready, and the program to draw its first frame. |
 | `className` | — | On the preview's root. |
-| `onStatusChange` | — | Observe `idle`, `starting`, `running`, `error`, and `stopped`. |
+| `onStateChange` | — | `(state)` on each move between `idle`, `starting`, `running`, `error` and `stopped`. |
 
 Set `MarkdownView`'s `tui` prop to `false` to render these fences as code only. Native process execution, SSH servers, audio devices, and FFmpeg decoding need a host runtime; the preview does not emulate them.

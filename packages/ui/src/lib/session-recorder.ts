@@ -2,7 +2,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import type { eventWithTime } from 'rrweb';
 import { LocalStreams, StreamFullError } from './append-stream';
-import { CloudSync, deviceId, useCloud, type CloudSettings, type CloudStatus } from './durable-streams';
+import { CloudSync, cloudDeviceId, useCloud, type CloudSettings, type CloudStatus } from './durable-streams';
 
 /* ══ Session recorder ══
    Records the page with rrweb, one session per page load, as append-only streams (see `append-stream.ts`):
@@ -278,7 +278,7 @@ async function begin(opts: Required<SessionRecordingOptions>) {
   // Keep room for the new session: only the newest `maxSessions` keep their events here.
   await refresh();
   for (const s of cache.filter((x) => x.local).slice(Math.max(0, opts.maxSessions - 1))) streams.remove(streamOf(s.id));
-  active = new Recording(opts, deviceId());
+  active = new Recording(opts, cloudDeviceId());
   active.start(record as unknown as Parameters<Recording['start']>[0]);
 }
 
