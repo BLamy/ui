@@ -353,13 +353,15 @@ the iframe, message listeners, and timers.
 `GitbookStreamdown isStreaming` disables Run while an answer is arriving. Unclosed fences also
 stay inert. Completing a response enables Run without executing it automatically.
 
-For response attachments, import the component directly; it needs no optional runtime peer or
-stylesheet. `TuiEmbed` is an alias of `TuiPreview`:
+For response attachments, import the component directly; it needs no optional runtime peer. It
+runs without a stylesheet, and `@brett_lamy/docstream/styles.css` gives its toolbar, buttons, status
+and source panel docstream's look (`.docstream-tui`; tokens fall back to the host's `--card`,
+`--border`, `--primary`, `--ring` and `--font-mono`). `TuiEmbed` is a deprecated alias of `TuiPreview`:
 
 ```tsx
 import { TuiPreview } from "@brett_lamy/docstream/tui"
 
-<TuiPreview code={generatedSource} language="tsx" isStreaming={isStreaming} height={360} />
+<TuiPreview code={generatedSource} language="tsx" streaming={isStreaming} height={360} />
 ```
 
 Hosts can configure a trusted self-hosted runtime, including its deployment prefix, or disable previews:
@@ -371,10 +373,15 @@ Hosts can configure a trusted self-hosted runtime, including its deployment pref
 ```
 
 Runtime URLs can be absolute or relative to the host page and must resolve to HTTP(S) without credentials. `height` is bounded to
-160–720 pixels; the frame follows its container's width. `theme` takes `{ mode, background, foreground }`.
-`startupTimeoutMs` and `renderTimeoutMs` default to 30 seconds each (bounded to 1–120 seconds).
-The component's `onStatusChange` reports `idle`, `starting`, `running`, `error`, or `stopped`;
-the same state is exposed on `data-tui-state` for browser verification.
+160–720 pixels; the frame follows its container's width. `appearance` (`"auto"`, the default, or
+`"light"` / `"dark"`) picks the terminal's colors: `auto` follows the nearest `.dark` / `.light` class or
+`data-theme` / `data-appearance` attribute, else the page's `color-scheme` and the system setting, and
+the root carries the result as `data-appearance` (a light terminal is the dark one, inverted). `theme` sets explicit colors over it: any of
+`{ mode, background, foreground }`. `startupTimeoutMs` and `renderTimeoutMs` default to 30 seconds each
+(bounded to 1–120 seconds). `streaming` blocks Run (`isStreaming` is its deprecated spelling).
+The component's `onStateChange` reports `idle`, `starting`, `running`, `error`, or `stopped`
+(`onStatusChange` is its deprecated spelling and gets the same calls); the same state is exposed on
+`data-tui-state` for browser verification.
 
 ## 3D models and Strudel music
 
@@ -1092,6 +1099,39 @@ ESM, and your type-check reads `.d.ts` files instead of docstream's sources. The
 The TypeScript sources are published too, behind a `source` export condition, for
 monorepos that want to compile docstream from source (e.g. Vite
 `resolve.conditions: ["source", ...]` or TypeScript `customConditions`).
+
+## Changes in 2.0.1
+
+A patch on 2.0.0: everything that existed keeps its name and meaning; renamed props keep their old spelling,
+marked `@deprecated`.
+
+- **TuiPreview** (and the `tui` fence): the Run / Retry / Run again / Stop / Focus terminal buttons and the
+  **Source code** disclosure are styled like docstream's other widgets, with a visible focus ring and 44px
+  targets on touch screens. They are UI SDK `Button`s, and Run turns into Stop in place, so focus stays on it.
+  The disclosure is the same server-safe `<details>` → Collapsible the expandables use, with a chevron. An error
+  is an `alert` in the danger tone, with an icon. The placeholder and the source use the mono stack
+  (`--font-mono`). Without the stylesheet the component still works, with the browser's controls as in 2.0.0.
+- **TuiPreview `appearance`**: `"auto" | "light" | "dark"`, default `"auto"`, so the terminal follows the page:
+  a light page gets a light terminal (`#fafafa` / `#18181b`). OpenTUI draws text white unless an example sets a
+  color, so the light terminal is the dark one inverted (inverse colors sent, `invert(1) hue-rotate(180deg)` on
+  the frame), as the tscircuit preview does. **This changes the default look on light pages**: pass
+  `appearance="dark"` for 2.0.0's black terminal. `theme` still sets explicit colors, sent as given with no
+  filter, and now accepts any of its fields (`theme={{ background: "#101014" }}`); a complete theme object is
+  used exactly as before.
+- **TuiPreview `streaming`** and **`onStateChange`**, the spellings MarkdownView and OpenCode use.
+  `isStreaming` and `onStatusChange` still work (deprecated). `TuiEmbed` is marked deprecated.
+  New type `TuiAppearance`.
+- **StlViewer**: `style`, `ref` (the root `<figure>`) and `aria-label` (names the figure and the canvas).
+  The Reset pill takes the host's card colors outside an article, so it's no longer white on a dark page,
+  and gains a focus ring.
+- **StrudelPlayer**: `rackOpen` / `defaultRackOpen` / `onRackOpenChange(open, details)` and `codeOpen` /
+  `defaultCodeOpen` / `onCodeOpenChange(open, details)`, with UI SDK's change details. `showRack` and
+  `showCode` still work as the defaults (deprecated). `onCodeChange(code, details)` now says
+  `details.reason`: `"rack-edit"` or `"revert"`. `style`, `ref`, and `aria-label` (the figure is named by
+  its title by default). New types `StrudelPanelChangeReason` and `StrudelCodeChangeDetails`.
+- Markup hooks: `[data-slot="tui-preview-source"]` is now a `<div>` around the disclosure (it was the
+  `<details>`); its trigger is `.docstream-tui__source-trigger`, a `<summary>` before hydration and a
+  `<button aria-expanded>` after. The Stop button is the Run button's own element while a program runs.
 
 ## Upgrading to 2.0
 

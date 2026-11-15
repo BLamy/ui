@@ -43,7 +43,7 @@ Run stays disabled while `isStreaming` is true or the code fence is unclosed. Wh
 
 ## Use the component directly
 
-`TuiPreview` and its alias `TuiEmbed` are exported from the root and the small `@brett_lamy/docstream/tui` entry. This entry uses no almost-node dependency and needs no stylesheet.
+`TuiPreview` (and `TuiEmbed`, a deprecated alias) is exported from the root and the small `@brett_lamy/docstream/tui` entry. This entry uses no almost-node dependency. It runs without a stylesheet; `@brett_lamy/docstream/styles.css` styles its toolbar, buttons, status line and source panel, from your `--card`, `--border`, `--primary`, `--ring` and `--font-mono` tokens when it sits outside a docstream article.
 
 ```tsx title="TerminalAttachment.tsx"
 import { TuiPreview } from "@brett_lamy/docstream/tui"
@@ -53,8 +53,8 @@ import { TuiPreview } from "@brett_lamy/docstream/tui"
   language="typescript"
   title="Generated terminal"
   height={360}
-  isStreaming={isStreaming}
-  onStatusChange={(state) => console.log(state)}
+  streaming={isStreaming}
+  onStateChange={(state) => console.log(state)}
 />
 ```
 
@@ -65,12 +65,26 @@ import { TuiPreview } from "@brett_lamy/docstream/tui"
 | `title` | `OpenTUI preview` | Accessible label and toolbar title. |
 | `height` | `360` | Terminal height in pixels, bounded to 160–720. Width follows the container. |
 | `runtimeUrl` | OpenTUI GitHub Pages example runtime | Trusted HTTP(S) URL, absolute or relative to the host page, including its deployment prefix. |
-| `theme` | Dark, black background, light foreground | `{ mode, background, foreground }` terminal colors. |
-| `isStreaming` | `false` | Disables Run while source is still arriving. |
+| `appearance` | `auto` | `light` or `dark` terminal. `auto` follows the nearest `.dark` / `.light` class or `data-theme` / `data-appearance` attribute, else the page's `color-scheme` and the system setting. The root carries the result as `data-appearance`. Since 2.0.1; 2.0.0 was always dark. |
+| `theme` | from `appearance` | Explicit terminal colors over the appearance's: any of `{ mode, background, foreground }`. A complete object is used as given. |
+| `streaming` | `false` | Disables Run while source is still arriving. `isStreaming` is the deprecated 2.0.0 spelling. |
 | `startupTimeoutMs` | `30000` | Time allowed for the ready handshake, bounded to 1–120 seconds. |
 | `renderTimeoutMs` | `30000` | Time allowed for the first rendered frame, bounded to 1–120 seconds. |
-| `onStatusChange` | — | Reports `idle`, `starting`, `running`, `error`, or `stopped`. |
-| `className` | — | Class on the preview section. |
+| `onStateChange` | — | Reports `idle`, `starting`, `running`, `error`, or `stopped`. `onStatusChange` is the deprecated 2.0.0 spelling and gets the same calls. |
+| `className` | — | Class on the preview section (`section.docstream-tui`). |
+
+Switching the appearance (or the page's theme, with `auto`) while a program runs ends it, like a source change: the terminal's colors are sent to the runtime when it starts. OpenTUI draws text white unless an example sets a color, so a light terminal is the dark one inverted: the runtime gets the inverse colors and the frame a CSS `invert(1) hue-rotate(180deg)` filter (the tscircuit preview does the same). Colors an example sets keep their hue. When you pass your own `background` or `foreground` in `theme`, they are sent as given, with no filter; then make sure the example sets readable colors.
+
+**Controls.** Run (Retry after an error, Run again after Stop) is the primary button and turns into Stop in place while a program runs, so keyboard focus stays on it. Focus terminal appears once the terminal is running. Every button shows a focus ring and is 44px tall on touch screens. An error is an `alert`, drawn in the danger tone. **Source code** is a disclosure that works before hydration (a native `<details>`) and becomes UI SDK's Collapsible after.
+
+| Hook | What it is |
+| --- | --- |
+| `[data-slot="tui-preview"]`, `.docstream-tui` | The root, with `data-tui-state` and `data-appearance`. |
+| `.docstream-tui__toolbar`, `__title`, `__button[data-variant="primary" \| "secondary"]` | The toolbar and its buttons. |
+| `[data-slot="tui-preview-terminal"]`, `.docstream-tui__placeholder` | The terminal screen, and what it shows before Run. |
+| `[data-slot="tui-preview-status"]`, `[data-tone="error"]` | The status line; an error is an alert. |
+| `[data-slot="tui-preview-source"]`, `.docstream-tui__source-trigger`, `__code` | The source disclosure. |
+| `--docstream-tui-border` | The hairline color (2.0.0's hook, still read). |
 
 To host the runtime yourself, configure it on the renderer. Use your actual base path:
 

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 // @vitest-environment-options {"settings":{"disableIframePageLoading":true}}
 import { act, type ReactElement } from "react"
+import { renderToStaticMarkup } from "react-dom/server"
 import { createRoot, type Root } from "react-dom/client"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { MarkdownContent } from "../docs/DocsRenderer"
@@ -57,7 +58,7 @@ function ready(source = terminal()) {
 describe("TuiPreview runtime lifecycle", () => {
   it("requires Run and a real correlated rendered message; iframe load and unrelated frames cannot report success", () => {
     const onStatusChange = vi.fn()
-    mount(<TuiPreview code="const value = 1" language="tsx" onStatusChange={onStatusChange} />)
+    mount(<TuiPreview code="const value = 1" language="tsx" appearance="dark" onStatusChange={onStatusChange} />)
     expect(state()).toBe("idle")
     expect(host.querySelector("iframe")).toBeNull()
     expect(host.querySelector("code")?.textContent).toBe("const value = 1")
@@ -177,6 +178,131 @@ describe("TuiPreview runtime lifecycle", () => {
     click("Run")
     expect(host.querySelector("iframe")!.getAttribute("src")).toBe("http://localhost:3000/opentui/workbench/example/")
     expect(ready().code).toBe("test()")
+  })
+})
+
+describe("TuiPreview appearance and colors", () => {
+  const sentTheme = () => {
+    click("Run")
+    return (ready() as unknown as { theme: { mode: string; background: string; foreground: string } }).theme
+  }
+  const root = () => host.querySelector<HTMLElement>('[data-slot="tui-preview"]')!
+  const screen = () => host.querySelector<HTMLElement>('[data-slot="tui-preview-terminal"]')!
+
+  it("follows the nearest light or dark marker by default, and the page when it changes", async () => {
+    host.className = "dark"
+    mount(<TuiPreview code="test()" />)
+    expect(root().dataset.appearance).toBe("dark")
+    expect(screen().style.background).toBe("#000000")
+    await act(async () => { host.className = "light" })
+    expect(root().dataset.appearance).toBe("light")
+    expect(screen().style.background).toBe("#fafafa")
+    // OpenTUI draws default text white, so the light terminal is the dark one inverted, as the tscircuit preview does.
+    expect(sentTheme()).toEqual({ mode: "dark", background: "#050505", foreground: "#e7e7e4" })
+    expect(host.querySelector("iframe")!.style.filter).toBe("invert(1) hue-rotate(180deg)")
+    host.className = ""
+  })
+
+  it("reads data-theme and data-appearance, and is light on an unmarked light page", () => {
+    host.dataset.theme = "dark"
+    mount(<TuiPreview code="test()" />)
+    expect(root().dataset.appearance).toBe("dark")
+    delete host.dataset.theme
+    host.dataset.appearance = "light"
+    mount(<TuiPreview code="other()" />)
+    expect(root().dataset.appearance).toBe("light")
+    delete host.dataset.appearance
+    mount(<TuiPreview code="third()" />)
+    expect(root().dataset.appearance).toBe("light")
+  })
+
+  it("an explicit appearance wins over the page, and theme overrides single colors over it", () => {
+    host.className = "dark"
+    mount(<TuiPreview code="test()" appearance="light" />)
+    expect(root().dataset.appearance).toBe("light")
+    mount(<TuiPreview code="test()" appearance="dark" theme={{ background: "#101014" }} />)
+    expect(sentTheme()).toEqual({ mode: "dark", background: "#101014", foreground: "#ededed" })
+    expect(host.querySelector("iframe")!.style.filter).toBe("")
+    host.className = ""
+  })
+
+  it("a complete 2.0.0 theme object is still sent exactly as given", () => {
+    host.className = "dark"
+    mount(<TuiPreview code="test()" theme={{ mode: "light", background: "#fff", foreground: "#111" }} />)
+    expect(root().dataset.appearance).toBe("light")
+    expect(sentTheme()).toEqual({ mode: "light", background: "#fff", foreground: "#111" })
+    expect(host.querySelector("iframe")!.style.filter).toBe("")
+    host.className = ""
+  })
+})
+
+describe("TuiPreview names and controls", () => {
+  it("`streaming` blocks Run; the deprecated `isStreaming` still does, and `streaming` wins when both are set", () => {
+    mount(<TuiPreview code="test()" streaming />)
+    expect(button("Run").disabled).toBe(true)
+    expect(host.textContent).toContain("Waiting for the response to finish")
+    mount(<TuiPreview code="test()" isStreaming />)
+    expect(button("Run").disabled).toBe(true)
+    mount(<TuiPreview code="test()" isStreaming streaming={false} />)
+    expect(button("Run").disabled).toBe(false)
+  })
+
+  it("onStateChange and the deprecated onStatusChange get the same calls", () => {
+    const onStateChange = vi.fn()
+    const onStatusChange = vi.fn()
+    mount(<TuiPreview code="test()" onStateChange={onStateChange} onStatusChange={onStatusChange} />)
+    click("Run")
+    expect(onStateChange.mock.calls.map(([value]) => value)).toEqual(["idle", "starting"])
+    expect(onStatusChange.mock.calls).toEqual(onStateChange.mock.calls)
+  })
+
+  it("Run turns into Stop in place, so keyboard focus stays on the button", () => {
+    mount(<TuiPreview code="test()" />)
+    const run = button("Run")
+    expect([run.type, run.className, run.dataset.variant]).toEqual(["button", "docstream-tui__button", "primary"])
+    act(() => run.focus())
+    click("Run")
+    expect(button("Stop")).toBe(run)
+    expect(run.dataset.variant).toBe("secondary")
+    expect(document.activeElement).toBe(run)
+    click("Stop")
+    expect(button("Run again")).toBe(run)
+    expect(document.activeElement).toBe(run)
+  })
+
+  it("an error is an alert in the danger tone with a Retry button; other states are polite status text", () => {
+    mount(<TuiPreview code="test()" />)
+    const idle = host.querySelector<HTMLElement>('[data-slot="tui-preview-status"]')!
+    expect([idle.getAttribute("role"), idle.getAttribute("aria-live"), idle.dataset.tone]).toEqual(["status", "polite", undefined])
+    click("Run")
+    send(terminal(), { type: "opentui-example:ready" })
+    const request = vi.mocked(terminal().postMessage).mock.calls[0]![0] as { requestId: string }
+    send(terminal(), { type: "opentui-example:status", status: "error", requestId: request.requestId, message: "Boom" })
+    const error = host.querySelector<HTMLElement>('[data-slot="tui-preview-status"]')!
+    expect([error.getAttribute("role"), error.dataset.tone, error.textContent]).toEqual(["alert", "error", "Boom"])
+    expect(error.querySelector("svg[aria-hidden='true']")).not.toBeNull()
+    expect(button("Retry").dataset.variant).toBe("primary")
+  })
+
+  it("the source is a disclosure button that names itself and opens a panel of the code", () => {
+    mount(<TuiPreview code="draw()" language="tsx" />)
+    const source = host.querySelector<HTMLElement>('[data-slot="tui-preview-source"]')!
+    const trigger = source.querySelector<HTMLButtonElement>("button.docstream-tui__source-trigger")!
+    expect(trigger.textContent).toBe("Source codetsx")
+    expect(trigger.getAttribute("aria-expanded")).toBe("false")
+    act(() => trigger.click())
+    expect(trigger.getAttribute("aria-expanded")).toBe("true")
+    const panel = document.getElementById(trigger.getAttribute("aria-controls")!)!
+    expect(panel.querySelector("pre.docstream-tui__code code")!.textContent).toBe("draw()")
+  })
+
+  it("renders on the server as a native details disclosure, with the classes the stylesheet styles", () => {
+    const html = renderToStaticMarkup(<TuiPreview code="draw()" />)
+    expect(html).toContain('class="docstream-tui"')
+    expect(html).toMatch(/<div data-slot="tui-preview-source" class="docstream-tui__source"><details/)
+    expect(html).toContain('<summary class="docstream-tui__source-trigger">')
+    expect(html).toContain('class="docstream-tui__button" data-variant="primary"')
+    expect(html).toContain('data-appearance="light"')
   })
 })
 

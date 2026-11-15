@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import { useState } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { describe, expect, it } from "vitest"
+import { createRef } from "react"
+import { describe, expect, it, vi } from "vitest"
 import { click, focus, mount, press, tick } from "../__fixtures__/dom"
 import { StrudelPlayer } from "./StrudelPlayer"
 import { StrudelRack } from "./StrudelRack"
@@ -244,6 +245,72 @@ describe("StrudelPlayer", () => {
     const view = await mount(<StrudelPlayer code={SONG} showCode rack={false} />)
     expect(toggles(view.host).map((t) => t.getAttribute("aria-label"))).toEqual(["Code"])
     expect(view.host.querySelector(".docstream-strudel__code")).not.toBeNull()
+    await view.unmount()
+  })
+
+  it("`defaultCodeOpen` / `defaultRackOpen` open a panel at first; the deprecated `showCode` / `showRack` still do", async () => {
+    for (const props of [{ defaultCodeOpen: true }, { showCode: true }]) {
+      expect(renderToStaticMarkup(<StrudelPlayer code={SONG} rack={false} {...props} />)).toContain("docstream-strudel__code")
+    }
+    const view = await mount(<StrudelPlayer code={SONG} defaultRackOpen />)
+    for (let i = 0; i < 20 && !view.host.querySelector(".strudel-rack"); i++) await tick(10)
+    expect(toggles(view.host)[0]!.getAttribute("aria-expanded")).toBe("true")
+    expect(view.host.querySelector(".strudel-rack")).not.toBeNull()
+    await view.unmount()
+    // The new name wins over the old one.
+    expect(renderToStaticMarkup(<StrudelPlayer code={SONG} rack={false} showCode defaultCodeOpen={false} />)).not.toContain("docstream-strudel__code")
+  })
+
+  it("`codeOpen` / `rackOpen` control the panels: the toggle only asks, with UI SDK's details", async () => {
+    const onCodeOpenChange = vi.fn()
+    const view = await mount(<StrudelPlayer code={SONG} rack={false} codeOpen={false} onCodeOpenChange={onCodeOpenChange} />)
+    const [code] = toggles(view.host)
+    await click(code)
+    expect(onCodeOpenChange).toHaveBeenCalledOnce()
+    expect(onCodeOpenChange.mock.calls[0]![0]).toBe(true)
+    expect(onCodeOpenChange.mock.calls[0]![1]).toMatchObject({ reason: "trigger-press" })
+    expect(code!.getAttribute("aria-expanded")).toBe("false")
+    expect(view.host.querySelector(".docstream-strudel__code")).toBeNull()
+    await view.rerender(<StrudelPlayer code={SONG} rack={false} codeOpen onCodeOpenChange={onCodeOpenChange} />)
+    expect(code!.getAttribute("aria-expanded")).toBe("true")
+    expect(view.host.querySelector(".docstream-strudel__code")).not.toBeNull()
+    await view.unmount()
+  })
+
+  it("an uncontrolled panel reports its changes, and `details.cancel()` keeps it as it was", async () => {
+    const seen: boolean[] = []
+    const view = await mount(<StrudelPlayer code={SONG} rack={false} onCodeOpenChange={(open, details) => { seen.push(open); if (seen.length > 1) details.cancel() }} />)
+    const [code] = toggles(view.host)
+    await click(code)
+    expect(code!.getAttribute("aria-expanded")).toBe("true")
+    await click(code)
+    expect(seen).toEqual([true, false])
+    expect(code!.getAttribute("aria-expanded")).toBe("true")
+    await view.unmount()
+  })
+
+  it("onCodeChange says whether the rack edited the code or Revert put it back", async () => {
+    const calls: [string, { reason: string }][] = []
+    const view = await mount(<StrudelPlayer code={SONG} title="Night drive" defaultRackOpen onCodeChange={(next, details) => calls.push([next, details])} />)
+    for (let i = 0; i < 20 && !view.host.querySelector(".strudel-rack"); i++) await tick(10)
+    const gain = named(device(view.host, "bd · sd · hh"), "slider", "Gain")!
+    await focus(gain)
+    await press("PageUp")
+    expect(calls.at(-1)![0]).toContain(".gain(.945)")
+    expect(calls.at(-1)![1]).toEqual({ reason: "rack-edit" })
+    await click(view.host.querySelector<HTMLButtonElement>("button.docstream-strudel__revert"))
+    expect(calls.at(-1)).toEqual([SONG, { reason: "revert" }])
+    await view.unmount()
+  })
+
+  it("names its figure, and passes className, style and ref to it", async () => {
+    const ref = createRef<HTMLElement>()
+    const view = await mount(<StrudelPlayer ref={ref} code={SONG} title="Night drive" className="wide" style={{ maxWidth: 480 }} />)
+    const figure = view.host.querySelector<HTMLElement>("figure.docstream-strudel")!
+    expect(ref.current).toBe(figure)
+    expect([figure.className, figure.style.maxWidth, figure.getAttribute("aria-label")]).toEqual(["docstream-strudel wide", "480px", "Night drive"])
+    await view.rerender(<StrudelPlayer code={SONG} title="Night drive" aria-label="Night drive, a Strudel loop" />)
+    expect(view.host.querySelector("figure")!.getAttribute("aria-label")).toBe("Night drive, a Strudel loop")
     await view.unmount()
   })
 })

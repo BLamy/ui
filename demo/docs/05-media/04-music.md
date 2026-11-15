@@ -65,7 +65,7 @@ import { StrudelPlayer } from "@brett_lamy/docstream"
 // or: import { StrudelPlayer } from "@brett_lamy/docstream/strudel"
 
 export function Song({ code, save }: { code: string; save: (code: string) => void }) {
-  return <StrudelPlayer code={code} title="Demo song" showRack onCodeChange={save} />
+  return <StrudelPlayer code={code} title="Demo song" defaultRackOpen onCodeChange={save} />
 }
 ```
 
@@ -74,12 +74,20 @@ export function Song({ code, save }: { code: string; save: (code: string) => voi
 | `code` | `string` | none | The pattern, as you would type it at strudel.cc. |
 | `src` | `string` | none | URL of a `.strudel` file, fetched when `code` is absent. Used as given (the embed is what resolves assets). |
 | `title` | `string` | the file name, or "Strudel pattern" | Shown in the bar and used in the button labels. |
-| `showCode` | `boolean` | `false` | Show the code under the player from the start. |
-| `rack` | `boolean` | `true` | Offer the rack at all. |
-| `showRack` | `boolean` | `false` | Open the rack from the start. |
-| `onCodeChange` | `(code) => void` | none | The code after every rack edit. |
+| `rack` | `boolean` | `true` | Offer the rack at all; `false` leaves its toggle out. |
+| `defaultRackOpen` | `boolean` | `false` | Open the rack from the start (uncontrolled). |
+| `rackOpen` / `onRackOpenChange` | `boolean` / `(open, details) => void` | none | Control the rack panel. `details` is UI SDK's change details: `reason` is `"trigger-press"`, `"find-in-page"` or `"imperative"`, and `details.cancel()` keeps an uncontrolled panel as it was. |
+| `defaultCodeOpen` | `boolean` | `false` | Show the code under the player from the start (uncontrolled). |
+| `codeOpen` / `onCodeOpenChange` | `boolean` / `(open, details) => void` | none | Control the code panel, the same way. |
+| `onCodeChange` | `(code, details) => void` | none | The code after every rack edit and after **Revert edits**; `details.reason` is `"rack-edit"` or `"revert"`. |
 | `samples` | `readonly string[]` | `DEFAULT_SAMPLES` | Sample banks to load before the first play, e.g. `["github:tidalcycles/dirt-samples"]`. |
 | `className` | `string` | none | Added to `figure.docstream-strudel`, which carries `data-state="idle" \| "loading" \| "playing"`. |
+| `style` | `CSSProperties` | none | Inline styles on the root figure. |
+| `ref` | `Ref<HTMLElement>` | none | The root figure. |
+| `aria-label` | `string` | `title` | The figure's accessible name. |
+| `showCode`, `showRack` | `boolean` | `false` | Deprecated spellings of `defaultCodeOpen` and `defaultRackOpen`, still honored. |
+
+The open/close trios, `onCodeChange`'s `details`, `style`, `ref` and `aria-label` are new in 2.0.1. A one-argument `onCodeChange` from 2.0.0 keeps working.
 
 ## The syntax tree
 

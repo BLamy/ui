@@ -1,5 +1,5 @@
 export { StrudelPlayer } from "./StrudelPlayer"
-export type { StrudelPlayerProps } from "./StrudelPlayer"
+export type { StrudelCodeChangeDetails, StrudelPanelChangeReason, StrudelPlayerProps } from "./StrudelPlayer"
 export { StrudelRack, STRUDEL_PARAMS, trackName } from "./StrudelRack"
 export type { StrudelRackProps } from "./StrudelRack"
 export { StepGrid } from "./StepGrid"

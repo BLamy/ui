@@ -622,10 +622,13 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
   top: 8px;
   right: 8px;
   padding: 3px 10px;
-  border: 1px solid var(--gb-border);
+  /* Outside a docstream article the --gb-* tokens are unset: take the host's card pair (then the UA's
+     scheme-aware Canvas), never a white pill on a dark stage. */
+  border: 1px solid var(--gb-border, var(--border, rgba(128, 128, 128, 0.35)));
   border-radius: 999px;
-  background: var(--gb-panel, #fff);
-  color: var(--gb-panel-foreground, inherit);
+  background: var(--gb-panel, var(--card, Canvas));
+  color: var(--gb-panel-foreground, var(--card-foreground, CanvasText));
+  color-scheme: inherit;
   font: inherit;
   font-size: 12px;
   cursor: pointer;
@@ -634,7 +637,13 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
 
 .docstream-stl__reset:hover {
   opacity: 1;
-  background: var(--gb-hover, var(--gb-accent));
+  background: var(--gb-hover, var(--accent, rgba(128, 128, 128, 0.16)));
+}
+
+.docstream-stl__reset:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--gb-primary, var(--ring, #6366f1));
+  outline-offset: 2px;
 }
 
 .docstream-stl__caption {
@@ -786,6 +795,232 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
   font: inherit;
   font-size: 12px;
   cursor: pointer;
+}
+
+/* TuiPreview: an OpenTUI example behind a Run button (```tui fences, <TuiPreview>). The chrome (toolbar, status,
+   source) takes the page's tokens; the terminal screen takes the colors `appearance` / `theme` resolve to, inline,
+   because they are also sent to the sandboxed runtime. Outside a docstream article the --gb-* tokens are unset, so
+   every color falls back to the host's shadcn-style token, then to a scheme-aware system color. */
+.docstream-tui {
+  --docstream-tui-line: var(--docstream-tui-border, var(--gb-border, var(--border, rgba(128, 128, 128, 0.3))));
+  --docstream-tui-panel: var(--gb-panel, var(--card, Canvas));
+  --docstream-tui-panel-fg: var(--gb-panel-foreground, var(--card-foreground, CanvasText));
+  --docstream-tui-muted: var(--gb-muted, var(--muted, rgba(128, 128, 128, 0.08)));
+  --docstream-tui-muted-fg: var(--gb-muted-foreground, var(--muted-foreground, color-mix(in srgb, currentColor 62%, transparent)));
+  --docstream-tui-primary: var(--gb-primary, var(--primary, #4f46e5));
+  --docstream-tui-primary-fg: var(--gb-primary-foreground, var(--primary-foreground, #fafafa));
+  --docstream-tui-ring: var(--ring, var(--gb-primary, #6366f1));
+  --docstream-tui-danger: var(--gb-danger, var(--destructive, #dc2626));
+  --docstream-tui-mono: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace);
+  border: 1px solid var(--docstream-tui-line);
+  border-radius: var(--gb-radius, 12px);
+  background: var(--docstream-tui-panel);
+  color: var(--docstream-tui-panel-fg);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.docstream-tui__toolbar {
+  padding: 8px 8px 8px 14px;
+  border-bottom: 1px solid var(--docstream-tui-line);
+  background: var(--docstream-tui-muted);
+}
+
+.docstream-tui__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Run / Retry / Run again (primary) turns into Stop (secondary) in place; Focus terminal is secondary. */
+.docstream-tui__button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--docstream-tui-line);
+  border-radius: 8px;
+  appearance: none;
+  background: var(--docstream-tui-panel);
+  color: var(--docstream-tui-panel-fg);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
+}
+
+.docstream-tui__button[data-variant="primary"] {
+  border-color: transparent;
+  background: var(--docstream-tui-primary);
+  color: var(--docstream-tui-primary-fg);
+}
+
+.docstream-tui__button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--docstream-tui-panel-fg) 8%, var(--docstream-tui-panel));
+}
+
+.docstream-tui__button[data-variant="primary"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--docstream-tui-primary) 88%, var(--docstream-tui-panel-fg));
+}
+
+.docstream-tui__button:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+
+.docstream-tui__button:focus-visible,
+.docstream-tui__source-trigger:focus-visible {
+  outline: 2px solid var(--docstream-tui-ring);
+  outline-offset: 2px;
+}
+
+.docstream-tui__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.docstream-tui__terminal {
+  border-bottom: 1px solid var(--docstream-tui-line);
+}
+
+.docstream-tui__placeholder {
+  font-family: var(--docstream-tui-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  opacity: 0.7;
+}
+
+.docstream-tui__status {
+  padding: 9px 14px;
+  color: var(--docstream-tui-muted-fg);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.docstream-tui__status[data-tone="error"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--docstream-tui-danger) 40%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--docstream-tui-danger) 10%, transparent);
+  color: var(--docstream-tui-panel-fg);
+}
+
+.docstream-tui__status-icon {
+  flex: none;
+  margin-top: 1.5px;
+  color: var(--docstream-tui-danger);
+}
+
+.docstream-tui__source {
+  border-top: 1px solid var(--docstream-tui-line);
+  margin-top: -1px;
+}
+
+.docstream-tui__source-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 36px;
+  margin: 0;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 0 0 var(--gb-radius, 12px) var(--gb-radius, 12px);
+  appearance: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: start;
+  cursor: pointer;
+  list-style: none;
+}
+
+.docstream-tui__source-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.docstream-tui__source-trigger:hover {
+  background: var(--gb-hover, rgba(128, 128, 128, 0.1));
+}
+
+.docstream-tui__source-trigger[data-open],
+details[open] > .docstream-tui__source-trigger {
+  border-radius: 0;
+}
+
+.docstream-tui__caret {
+  flex: none;
+  color: var(--docstream-tui-muted-fg);
+  transition: transform 160ms ease;
+}
+
+.docstream-tui__source-trigger[data-open] .docstream-tui__caret,
+details[open] > .docstream-tui__source-trigger .docstream-tui__caret {
+  transform: rotate(90deg);
+}
+
+.docstream-tui__language {
+  color: var(--docstream-tui-muted-fg);
+  font-weight: 400;
+}
+
+.docstream-tui__code {
+  max-height: 288px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--docstream-tui-line);
+  background: var(--gb-code-bg, rgba(128, 128, 128, 0.08));
+  color: inherit;
+  font-family: var(--docstream-tui-mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.docstream-tui__code code {
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+}
+
+/* Touch layouts: every control is at least 44px tall (and wide) to hit. */
+@media (pointer: coarse) {
+  .docstream-tui__button {
+    min-width: 44px;
+    height: 44px;
+    padding-inline: 16px;
+  }
+
+  .docstream-tui__source-trigger {
+    min-height: 44px;
+  }
+
+  .docstream-stl__reset {
+    min-height: 44px;
+    min-width: 44px;
+    top: 6px;
+    right: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docstream-tui__button,
+  .docstream-tui__caret {
+    transition: none;
+  }
 }
 
 /* The rack is hardware, so it is dark in both themes: a brushed-steel 19" frame with screwed rack ears,

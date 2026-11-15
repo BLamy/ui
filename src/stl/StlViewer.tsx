@@ -1,12 +1,23 @@
-import { useEffect, useId, useRef, useState } from "react"
+import { useEffect, useId, useRef, useState, type CSSProperties, type Ref } from "react"
 import { OrbitCanvas, useOrbit } from "./orbit-parts"
 import { parseStl, type StlMesh } from "./parse"
 
 export interface StlViewerProps {
   /** URL of a binary or ASCII `.stl` file. */
   src: string
+  /** The model's name, shown in the caption and used in the viewer's label. Defaults to the file name. */
   title?: string
+  /** Classes on the root `<figure>` (`.docstream-stl`). */
   className?: string
+  /** Inline styles on the root `<figure>`, e.g. a width, or `--gb-*` tokens. */
+  style?: CSSProperties
+  /** The root `<figure>` element. */
+  ref?: Ref<HTMLElement>
+  /**
+   * The accessible name of the viewer: the figure and its 3D canvas ("<name>: 3D model"). Defaults to `title`, then
+   * the file name.
+   */
+  "aria-label"?: string
   /** Model color; any CSS color. Defaults to the element's `color` (the theme's primary). */
   color?: string
   /** Turn slowly until the reader interacts. Ignored under prefers-reduced-motion. Defaults to true. */
@@ -120,7 +131,7 @@ type Status = { kind: "loading" } | { kind: "error"; message: string } | { kind:
 
 /** Interactive WebGL preview of an `.stl` model: drag to orbit, pinch / ⌘-scroll or +/− to zoom, double-click to reset.
  *  The canvas is the `orbit` primitive (orbit.ts), which holds the view; this draws it. */
-export function StlViewer({ src, title, className, color, autoRotate = true }: StlViewerProps) {
+export function StlViewer({ src, title, className, style, ref, "aria-label": ariaLabel, color, autoRotate = true }: StlViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [status, setStatus] = useState<Status>({ kind: "loading" })
   const spinning = useRef(autoRotate)
@@ -238,8 +249,10 @@ export function StlViewer({ src, title, className, color, autoRotate = true }: S
   }
 
   const label = title ?? src.split(/[?#]/)[0]!.split("/").pop() ?? "STL model"
+  const name = ariaLabel ?? label
   return (
-    <figure className={`docstream-stl ${className ?? ""}`.trim()} data-state={status.kind}>
+    // Without `aria-label` the figcaption (the file link) names the figure, as in 2.0.0.
+    <figure ref={ref} className={`docstream-stl ${className ?? ""}`.trim()} style={style} aria-label={ariaLabel} data-state={status.kind}>
       <div className="docstream-stl__stage">
         {mesh ? (
           <>
@@ -247,7 +260,7 @@ export function StlViewer({ src, title, className, color, autoRotate = true }: S
               orbit={orbit}
               ref={canvasRef}
               className="docstream-stl__canvas"
-              aria-label={`${label}: 3D model`}
+              aria-label={`${name}: 3D model`}
               aria-roledescription="3D viewer"
               aria-describedby={helpId}
             />

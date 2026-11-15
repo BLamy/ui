@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
+import { lazy, Suspense, useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties, type Ref } from "react"
+import type { ChangeDetails } from "@ui-sdk/core"
 import { Code2, Loader2, Pause, Play, SlidersHorizontal, Undo2 } from "lucide-react"
 import { HighlightedCode } from "../docs/HighlightedCode"
 import { Panel, PanelTrigger, usePanel } from "./panel"
@@ -17,23 +18,62 @@ import {
 // The rack parses the code (acorn + the mini-notation parser); it loads the first time someone opens it.
 const StrudelRack = lazy(() => import("./StrudelRack"))
 
+/** Why a panel (equipment or code) opened or closed: UI SDK's collapsible reasons. */
+export type StrudelPanelChangeReason = "trigger-press" | "find-in-page" | "imperative"
+
+/** What `onCodeChange` reports with the code: a rack edit (a knob, fader, mute, sound…) or the Revert button. */
+export interface StrudelCodeChangeDetails {
+  reason: "rack-edit" | "revert"
+}
+
 export interface StrudelPlayerProps {
   /** Strudel pattern code (what you would type at strudel.cc). */
   code?: string
   /** URL of a `.strudel` file to load when `code` is absent. */
   src?: string
+  /** The track name: the player's title and its buttons' names ("Play <title>"). Defaults to the file name. */
   title?: string
+  /** Classes on the root `<figure>` (`.docstream-strudel`). */
   className?: string
-  /** Show the code under the player from the start. Defaults to false. */
-  showCode?: boolean
+  /** Inline styles on the root `<figure>`. */
+  style?: CSSProperties
+  /** The root `<figure>` element. */
+  ref?: Ref<HTMLElement>
+  /** The figure's accessible name. Defaults to `title`, then the file name, then "Strudel pattern". */
+  "aria-label"?: string
   /** Sample banks to load before the first play. Defaults to the Tidal dirt-samples. */
   samples?: readonly string[]
-  /** Offer the equipment rack (generated from the code) behind a toggle. Defaults to true. */
+  /** Offer the equipment rack (generated from the code) behind a toggle. `false` leaves the toggle out. Defaults to true. */
   rack?: boolean
-  /** Open the rack from the start. */
+  /** Whether the equipment panel is open. Pass it to control the panel; pair it with `onRackOpenChange`. */
+  rackOpen?: boolean
+  /** Whether the equipment panel is open at first, when uncontrolled. Defaults to false. */
+  defaultRackOpen?: boolean
+  /** Runs when the equipment panel wants to open or close. `details.reason` says why, `details.cancel()` stops it. */
+  onRackOpenChange?: (open: boolean, details: ChangeDetails<StrudelPanelChangeReason>) => void
+  /** Whether the code panel is open. Pass it to control the panel; pair it with `onCodeOpenChange`. */
+  codeOpen?: boolean
+  /** Whether the code panel is open at first, when uncontrolled. Defaults to false. */
+  defaultCodeOpen?: boolean
+  /** Runs when the code panel wants to open or close. `details.reason` says why, `details.cancel()` stops it. */
+  onCodeOpenChange?: (open: boolean, details: ChangeDetails<StrudelPanelChangeReason>) => void
+  /** @deprecated Use `defaultCodeOpen`. Still honored when `defaultCodeOpen` is not set. */
+  showCode?: boolean
+  /** @deprecated Use `defaultRackOpen`. Still honored when `defaultRackOpen` is not set. */
   showRack?: boolean
-  /** Called with the code after every rack edit. */
-  onCodeChange?: (code: string) => void
+  /** Called with the code after every rack edit, and after Revert; `details.reason` says which. */
+  onCodeChange?: (code: string, details: StrudelCodeChangeDetails) => void
+}
+
+/** Open state for one panel: controlled when `open` is given, else its own, starting at `defaultOpen`. */
+function usePanelOpen(open: boolean | undefined, defaultOpen: boolean, onOpenChange: StrudelPlayerProps["onRackOpenChange"]) {
+  const [own, setOwn] = useState(defaultOpen)
+  const current = open ?? own
+  const change = (next: boolean, details: ChangeDetails<StrudelPanelChangeReason>) => {
+    onOpenChange?.(next, details)
+    if (open === undefined && !details.canceled) setOwn(next)
+  }
+  return [current, change] as const
 }
 
 type Source = { kind: "loading" } | { kind: "error"; message: string } | { kind: "ready"; code: string }
@@ -122,16 +162,25 @@ export function StrudelPlayer({
   src,
   title,
   className,
-  showCode = false,
+  style,
+  ref,
+  "aria-label": ariaLabel,
   samples = DEFAULT_SAMPLES,
   rack = true,
+  rackOpen: rackOpenProp,
+  defaultRackOpen,
+  onRackOpenChange,
+  codeOpen: codeOpenProp,
+  defaultCodeOpen,
+  onCodeOpenChange,
+  showCode = false,
   showRack = false,
   onCodeChange,
 }: StrudelPlayerProps) {
   const id = useId()
   const [source, setSource] = useState<Source>(() => (code !== undefined ? { kind: "ready", code } : { kind: "loading" }))
-  const [codeOpen, setCodeOpen] = useState(showCode)
-  const [rackOpen, setRackOpen] = useState(showRack)
+  const [codeOpen, setCodeOpen] = usePanelOpen(codeOpenProp, defaultCodeOpen ?? showCode, onCodeOpenChange)
+  const [rackOpen, setRackOpen] = usePanelOpen(rackOpenProp, defaultRackOpen ?? showRack, onRackOpenChange)
   // The rack edits a working copy; `playable` is that copy with the rack's mutes and solos applied.
   const [edited, setEdited] = useState<string | null>(null)
   const [playable, setPlayable] = useState<string | null>(null)
@@ -190,9 +239,9 @@ export function StrudelPlayer({
     return () => clearTimeout(timer)
   }, [toPlay])
 
-  const edit = (next: string) => {
+  const edit = (next: string, reason: StrudelCodeChangeDetails["reason"] = "rack-edit") => {
     setEdited(next)
-    onCodeChange?.(next)
+    onCodeChange?.(next, { reason })
   }
 
   useEffect(() => {
@@ -246,7 +295,7 @@ export function StrudelPlayer({
             ? `Cycle ${cycle}`
             : "Strudel"
   return (
-    <figure className={`docstream-strudel ${className ?? ""}`.trim()} data-state={status}>
+    <figure ref={ref} className={`docstream-strudel ${className ?? ""}`.trim()} style={style} aria-label={ariaLabel ?? label} data-state={status}>
       <div className="docstream-strudel__bar">
         {/* A press while the sounds load stops it, so this stays a plain button rather than one that waits. */}
         <button
@@ -291,11 +340,11 @@ export function StrudelPlayer({
         <Panel panel={rackPanel} className="docstream-strudel__equipment">
           <Suspense fallback={<div className="docstream-strudel__sub">Loading equipment…</div>}>
             {edited !== null && edited !== ready && (
-              <button type="button" className="docstream-strudel__revert" onClick={() => edit(ready!)}>
+              <button type="button" className="docstream-strudel__revert" onClick={() => edit(ready!, "revert")}>
                 <Undo2 size={13} aria-hidden="true" /> Revert edits
               </button>
             )}
-            <StrudelRack code={current} onChange={edit} onPlayableChange={setPlayable} />
+            <StrudelRack code={current} onChange={(next) => edit(next)} onPlayableChange={setPlayable} />
           </Suspense>
         </Panel>
       )}

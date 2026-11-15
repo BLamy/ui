@@ -125,3 +125,51 @@ describe("demo canvas and single-file preview sizing", () => {
     expect(preview).not.toContain("120px")
   })
 })
+
+describe("TuiPreview and StlViewer chrome take the page's tokens", () => {
+  const block = (selector: string) => {
+    const at = styles.indexOf(`${selector} {`)
+    expect(at, selector).toBeGreaterThanOrEqual(0)
+    return styles.slice(at, styles.indexOf("}", at))
+  }
+  const coarse = (() => {
+    const at = styles.indexOf("@media (pointer: coarse) {\n  .docstream-tui__button")
+    expect(at).toBeGreaterThanOrEqual(0)
+    return styles.slice(at, styles.indexOf("\n}\n", at))
+  })()
+
+  it("the TUI's buttons and source toggle are styled, with a visible focus ring", () => {
+    const button = block(".docstream-tui__button")
+    expect(button).toContain("appearance: none;")
+    expect(button).toContain("border: 1px solid var(--docstream-tui-line);")
+    expect(block('.docstream-tui__button[data-variant="primary"]')).toContain("background: var(--docstream-tui-primary);")
+    expect(block(".docstream-tui__button:focus-visible,\n.docstream-tui__source-trigger:focus-visible")).toContain("outline: 2px solid var(--docstream-tui-ring);")
+    expect(block(".docstream-tui__source-trigger::-webkit-details-marker")).toContain("display: none;")
+  })
+
+  it("every token falls back to the host's shadcn names outside a docstream article, and 2.0.0's border hook still works", () => {
+    const root = block(".docstream-tui")
+    expect(root).toContain("--docstream-tui-line: var(--docstream-tui-border, var(--gb-border, var(--border,")
+    expect(root).toContain("--docstream-tui-panel: var(--gb-panel, var(--card, Canvas));")
+    expect(root).toContain("--docstream-tui-ring: var(--ring,")
+    expect(root).toContain("--docstream-tui-mono: var(--font-mono, ui-monospace,")
+  })
+
+  it("the placeholder screen and the source use the mono stack", () => {
+    expect(block(".docstream-tui__placeholder")).toContain("font-family: var(--docstream-tui-mono);")
+    expect(block(".docstream-tui__code")).toContain("font-family: var(--docstream-tui-mono);")
+  })
+
+  it("touch layouts get 44px targets", () => {
+    expect(coarse).toMatch(/\.docstream-tui__button \{[^}]*height: 44px;/)
+    expect(coarse).toMatch(/\.docstream-tui__source-trigger \{[^}]*min-height: 44px;/)
+    expect(coarse).toMatch(/\.docstream-stl__reset \{[^}]*min-height: 44px;/)
+  })
+
+  it("the STL Reset pill takes the card pair, not a white fallback, outside an article", () => {
+    const reset = block(".docstream-stl__reset")
+    expect(reset).toContain("background: var(--gb-panel, var(--card, Canvas));")
+    expect(reset).toContain("color: var(--gb-panel-foreground, var(--card-foreground, CanvasText));")
+    expect(block(".docstream-stl__reset:focus-visible")).toContain("outline: 2px solid")
+  })
+})

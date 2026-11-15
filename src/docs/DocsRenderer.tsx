@@ -349,7 +349,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       if (isXStateLanguage(block.language)) return <XStateDiagram code={block.code} />
       if (isTsCircuitLanguage(block.language)) return <TsCircuit code={block.code} title={block.title ?? undefined} />
       if (isTuiCodeBlock(block) && tui.options !== false) {
-        return <TuiPreview {...tui.options} code={block.code} language={block.language ?? undefined} title={block.title ?? tui.options?.title} isStreaming={tui.isStreaming || block.closingFence === ""} />
+        return <TuiPreview {...tui.options} code={block.code} language={block.language ?? undefined} title={block.title ?? tui.options?.title} streaming={tui.isStreaming || block.closingFence === ""} />
       }
       if (block.language === "mermaid") {
         return (

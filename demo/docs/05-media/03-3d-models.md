@@ -64,8 +64,11 @@ export function PartPreview({ url }: { url: string }) {
 | `color` | `string` | the element's `color` | Any CSS color (`oklch()`, `var()`, named…). |
 | `autoRotate` | `boolean` | `true` | Turn until the reader interacts. Read once, on mount. |
 | `className` | `string` | none | Added to the `figure.docstream-stl` root. |
+| `style` | `CSSProperties` | none | Inline styles on the root, e.g. a `maxWidth` or `--gb-*` tokens. Since 2.0.1. |
+| `ref` | `Ref<HTMLElement>` | none | The root `<figure>`. Since 2.0.1. |
+| `aria-label` | `string` | `title`, then the file name | Names the figure and its canvas ("…: 3D model"). Without it the caption names the figure. Since 2.0.1. |
 
-The root carries `data-state="loading" | "error" | "ready"`. Its parts are `.docstream-stl__stage`, `__canvas`, `__status`, `__reset` and `__caption`.
+The root carries `data-state="loading" | "error" | "ready"`. Its parts are `.docstream-stl__stage`, `__canvas`, `__status`, `__reset` and `__caption`. Outside a docstream article the Reset pill takes the host's `--card` / `--card-foreground` pair, so it stays dark on a dark page, and it grows to 44px on touch screens.
 
 ## parseStl and isStlUrl
 
